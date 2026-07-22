@@ -7,9 +7,10 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
-export default async function PublicReportPage({ params }: { params: { token: string } }) {
+export default async function PublicReportPage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
   const link = await prisma.sharedReportLink.findUnique({
-    where: { token: params.token },
+    where: { token },
     include: { workspace: true },
   });
 
@@ -34,37 +35,35 @@ export default async function PublicReportPage({ params }: { params: { token: st
   const cplVerified = totals.verified > 0 ? Math.round((totals.cost / totals.verified) * 100) / 100 : 0;
 
   return (
-    <html dir="rtl" lang="ar" data-accent="blue" data-mode="dark">
-      <body className="bg-bg p-10">
-        <div className="mx-auto max-w-2xl">
-          <div className="mb-1 text-[13px] text-text-muted">تقرير أداء</div>
-          <h1 className="mb-6 text-[26px] font-semibold text-text-primary">{workspace.name}</h1>
+    <div dir="rtl" data-accent="blue" data-mode="dark" className="min-h-screen bg-bg p-10">
+      <div className="mx-auto max-w-2xl">
+        <div className="mb-1 text-[13px] text-text-muted">تقرير أداء</div>
+        <h1 className="mb-6 text-[26px] font-semibold text-text-primary">{workspace.name}</h1>
 
-          <div className="mb-6 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-surface p-5">
-              <div className="mb-2 text-xs text-text-muted">إجمالي الإنفاق (30 يوم)</div>
-              <div className="font-mono text-2xl text-text-primary">
-                {totals.cost.toLocaleString()} {workspace.currency}
-              </div>
-            </div>
-            <div className="rounded-2xl bg-surface p-5">
-              <div className="mb-2 text-xs text-text-muted">تكلفة العميل الحقيقية</div>
-              <div className="font-mono text-2xl text-verified">{cplVerified}</div>
-            </div>
-          </div>
-
+        <div className="mb-6 grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-surface p-5">
-            <div className="mb-2 text-xs text-text-muted">المحادثات الموثّقة مقابل المعلنة</div>
-            <div className="font-mono text-sm">
-              <span className="text-verified">{totals.verified} متحقق</span>
-              {" / "}
-              <span className="text-gap">{totals.raw} معلن</span>
+            <div className="mb-2 text-xs text-text-muted">إجمالي الإنفاق (30 يوم)</div>
+            <div className="font-mono text-2xl text-text-primary">
+              {totals.cost.toLocaleString()} {workspace.currency}
             </div>
           </div>
-
-          <p className="mt-8 text-center text-xs text-text-faint">تم إنشاء هذا التقرير بواسطة AdLoop</p>
+          <div className="rounded-2xl bg-surface p-5">
+            <div className="mb-2 text-xs text-text-muted">تكلفة العميل الحقيقية</div>
+            <div className="font-mono text-2xl text-verified">{cplVerified}</div>
+          </div>
         </div>
-      </body>
-    </html>
+
+        <div className="rounded-2xl bg-surface p-5">
+          <div className="mb-2 text-xs text-text-muted">المحادثات الموثّقة مقابل المعلنة</div>
+          <div className="font-mono text-sm">
+            <span className="text-verified">{totals.verified} متحقق</span>
+            {" / "}
+            <span className="text-gap">{totals.raw} معلن</span>
+          </div>
+        </div>
+
+        <p className="mt-8 text-center text-xs text-text-faint">تم إنشاء هذا التقرير بواسطة AdLoop</p>
+      </div>
+    </div>
   );
 }

@@ -190,6 +190,17 @@ Meta Shops checkout tracking (بند 70)**
 `lib/aiRateLimit.ts` - كل الفحوصات **قبل** أي نداء Claude فعلي. التفاصيل
 الكاملة في `docs/claude-api-usage-map.md`.
 
+### 🔴🔴 فشل بناء تالت (params + html/body مكرر) - اتصلح
+`app/report/[token]/page.tsx` لسه بصيغة Next.js 14 القديمة للـparams -
+**فاتتني وقت إصلاح الـ21 API route قبل كده لأني فحصت `route.ts` بس،
+مش صفحات `page.tsx`.** دوّرت منهجياً على كل الصفحات الديناميكية -
+واحدة بس محتاجة إصلاح.
+
+**اكتشاف إضافي مرتبط:** نفس الصفحة كانت فيها `<html>/<body>` خاصة
+بيها - من ساعة `app/layout.tsx` الجذري، ده كان هيعمل تعشيش HTML غير
+صحيح. اتصلح: شلت التكرار، حوّلت data-accent/data-mode لـdiv عادي.
+اتأكدت إن الملفين الوحيدين اللي فيهم `<html>` هما layout.tsx وglobal-error.tsx (الاتنين صح).
+
 ### 🔴🔴 فشل بناء تاني على فيرسل (Module not found: fs/tls/net) - اتصلح
 المستخدم بعت خطأ webpack حقيقي: `AutomationClient.tsx` (client
 component) بيستورد `RULE_TEMPLATES` من `automationRules.ts` مباشرة،
