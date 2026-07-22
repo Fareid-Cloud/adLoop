@@ -14,6 +14,10 @@ import { prisma } from "@/lib/prisma";
 import type { CampaignLink, ConnectedPlatform } from "@prisma/client";
 import { decryptToken } from "@/lib/encryption";
 
+// حقول جودة الإعلان بترجع من Google API كـ enum (رقم/سلسلة)، وحقول Prisma
+// نوعها String? - بنحوّلها لنص، ونسيب null زي ما هي
+const enumToStr = (v: unknown): string | null => (v == null ? null : String(v));
+
 export async function syncGoogleAdsForWorkspace(
   workspaceId: string,
   dateRange?: { from: string; to: string } // YYYY-MM-DD - لو مش موجودة، بتتزامن "إمبارح" بس (المزامنة اليومية العادية)
@@ -609,15 +613,15 @@ export async function syncQualityScoreForWorkspace(workspaceId: string) {
           qualityScore: row.ad_group_criterion?.quality_info?.quality_score ?? null,
           // المكوّنات الفرعية بترجع كـ enum نصي (ABOVE_AVERAGE/AVERAGE/BELOW_AVERAGE)
           // مش رقم - جوجل بتخفي الدقة الفعلية، بتدّي تصنيف بس
-          adRelevance: row.ad_group_criterion?.quality_info?.creative_quality_score ?? null,
-          landingPageExperience: row.ad_group_criterion?.quality_info?.post_click_quality_score ?? null,
-          expectedCtr: row.ad_group_criterion?.quality_info?.search_predicted_ctr ?? null,
+          adRelevance: enumToStr(row.ad_group_criterion?.quality_info?.creative_quality_score),
+          landingPageExperience: enumToStr(row.ad_group_criterion?.quality_info?.post_click_quality_score),
+          expectedCtr: enumToStr(row.ad_group_criterion?.quality_info?.search_predicted_ctr),
         },
         update: {
           qualityScore: row.ad_group_criterion?.quality_info?.quality_score ?? null,
-          adRelevance: row.ad_group_criterion?.quality_info?.creative_quality_score ?? null,
-          landingPageExperience: row.ad_group_criterion?.quality_info?.post_click_quality_score ?? null,
-          expectedCtr: row.ad_group_criterion?.quality_info?.search_predicted_ctr ?? null,
+          adRelevance: enumToStr(row.ad_group_criterion?.quality_info?.creative_quality_score),
+          landingPageExperience: enumToStr(row.ad_group_criterion?.quality_info?.post_click_quality_score),
+          expectedCtr: enumToStr(row.ad_group_criterion?.quality_info?.search_predicted_ctr),
         },
       });
     }

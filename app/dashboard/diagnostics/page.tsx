@@ -94,11 +94,15 @@ export default async function DiagnosticsPage() {
   const marketWide = detectMarketWideMove(cplChanges);
 
   // كشف البوتات - من بيانات الضغطات الفعلية المسجّلة
+  // CtaClickEvent مالوش IP (ده في UnmatchedClick) - بنمرّر ipAddress: null
+  // عشان كشف توقيع البوت بالـ userAgent يشتغل، وكشف IP يتخطاها تلقائياً
   const recentClicks = await prisma.ctaClickEvent.findMany({
     where: { workspaceId: workspace.id, clickedAt: { gte: sevenDaysAgo } },
-    select: { ipAddress: true, clickedAt: true, userAgent: true },
+    select: { clickedAt: true, userAgent: true },
   });
-  const botFlags = detectSuspiciousIPs(recentClicks).filter((f) => f.isSuspicious);
+  const botFlags = detectSuspiciousIPs(
+    recentClicks.map((c) => ({ ...c, ipAddress: null }))
+  ).filter((f) => f.isSuspicious);
 
   // منطقية استراتيجية المزايدة - من بيانات مخزّنة (Google Ads بس، بتتحدث
   // يومياً بالـ cron) + تكلفة العميل الحقيقية/العائد الفعلي المحسوبين

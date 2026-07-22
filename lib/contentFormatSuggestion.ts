@@ -49,7 +49,7 @@ export async function checkContentFormatSuggestionForWorkspace(workspaceId: stri
   const cheapest = sorted[0];
   const mostExpensive = sorted[sorted.length - 1];
 
-  const diffPct = Math.round(((mostExpensive.cpa - cheapest.cpa) / cheapest.cpa) * 100);
+  const diffPct = Math.round(((mostExpensive.cpa! - cheapest.cpa!) / cheapest.cpa!) * 100);
   if (diffPct < MEANINGFUL_DIFFERENCE_PCT) return;
 
   await pushToActionFeed({
@@ -57,7 +57,7 @@ export async function checkContentFormatSuggestionForWorkspace(workspaceId: stri
     type: "SUGGESTION",
     severity: "MEDIUM",
     title: `${FORMAT_LABELS[cheapest.format]} بيجيب عميل أرخص بـ${diffPct}% من ${FORMAT_LABELS[mostExpensive.format]}`,
-    description: `تكلفة العميل عبر ${FORMAT_LABELS[cheapest.format]} (${Math.round(cheapest.cpa)}) أرخص بوضوح من ${FORMAT_LABELS[mostExpensive.format]} (${Math.round(mostExpensive.cpa)}) - يستاهل تحويل ميزانية أكتر للشكل الأرخص.`,
+    description: `تكلفة العميل عبر ${FORMAT_LABELS[cheapest.format]} (${Math.round(cheapest.cpa!)}) أرخص بوضوح من ${FORMAT_LABELS[mostExpensive.format]} (${Math.round(mostExpensive.cpa!)}) - يستاهل تحويل ميزانية أكتر للشكل الأرخص.`,
     linkUrl: "/dashboard/campaigns/content-formats",
   });
 }

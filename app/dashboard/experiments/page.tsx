@@ -101,7 +101,7 @@ export default async function ExperimentsPage() {
     for (const s of dailySnapshots) {
       const key = s.date.toISOString().slice(0, 10);
       const existing = byDate.get(key) ?? 0;
-      const value = computeMetricFromAgg(log.measuredMetric, {
+      const value = computeMetricFromAgg(log.measuredMetric!, {
         cost: s.cost, verifiedConversions: s.verifiedConversions, rawConversions: s.rawConversions,
       });
       byDate.set(key, existing + value);
