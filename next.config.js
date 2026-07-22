@@ -40,10 +40,30 @@ const nextConfig = {
   },
 };
 
-// silent: true عشان مش نغرق الـ build logs، ومفيش authToken هنا لأن رفع
-// الـ source maps خطوة اختيارية لاحقاً (محتاجة حساب Sentry فعلي وتوكن)
-module.exports = withSentryConfig(nextConfig, {
+// إصلاح باگ حقيقي: البناء كان بيفشل بـ SIGKILL/Out-of-Memory على فيرسل.
+// السبب المؤكد (بحث + حالة مشابهة موثّقة من مشروع Cal.com مفتوح المصدر):
+// Sentry بتلف كل صفحة وAPI route وقت البناء (48 صفحة + 71 route = حمل
+// كبير)، وده استهلاك ذاكرة معروف حتى لو Sentry نفسه مش مفعّل فعلياً
+// (مفيش SENTRY_ORG/token حقيقي متظبط لسه). الحل: نتخطى اللف كله لو
+// Sentry مش متظبط فعلياً (بندفع تكلفة ذاكرة كاملة مقابل صفر فايدة)،
+// ولو اتظبط بعدين، نقلل حمله بإيقاف الأجزاء الأغلى (auto-instrument
+// لكل route/middleware) اللي مش لازمة إلا لو فعلاً بنستخدم tracing.
+const sentryOptions = {
   silent: true,
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
-});
+  widenClientFileUpload: false,
+  sourcemaps: { disable: true }, // كانت مفعّلة افتراضياً بدون توكن حقيقي - استهلاك ذاكرة مجاني بلا فايدة
+  // الصيغة الصحيحة الحالية (autoInstrumentServerFunctions/Middleware
+  // وdisableLogger على المستوى الأعلى قديمة، اتأكد ده باختبار حقيقي
+  // للملف بنسخة Sentry المُثبَّتة فعلاً - v10.65.0)
+  webpack: {
+    autoInstrumentServerFunctions: false,
+    autoInstrumentMiddleware: false,
+    treeshake: { removeDebugLogging: true },
+  },
+};
+
+module.exports = process.env.SENTRY_ORG
+  ? withSentryConfig(nextConfig, sentryOptions)
+  : nextConfig;
