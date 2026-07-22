@@ -190,6 +190,13 @@ Meta Shops checkout tracking (بند 70)**
 `lib/aiRateLimit.ts` - كل الفحوصات **قبل** أي نداء Claude فعلي. التفاصيل
 الكاملة في `docs/claude-api-usage-map.md`.
 
+### 🔴 فشل بناء رابع (خطأ أنواع حقيقي: قسمة على قيمة ممكن تكون null)
+`budget-simulator/page.tsx` - كان فيه `.filter(p => p.cpa !== null)`
+شغالة صح وقت التشغيل، لكن TypeScript مقدرش يتتبّع إن الفلتر بيشيل
+القيم null (الأنواع كانت `any` طول السلسلة). **الإصلاح الصحيح (مش
+إسكات بـ`!`):** `interface PlatformCpa` صريح + type predicate حقيقي
+في الفلتر - عشان TypeScript يتتبّع النوع الصحيح فعلياً، مش وقت التشغيل بس.
+
 ### 🔴🔴 فشل بناء تالت (params + html/body مكرر) - اتصلح
 `app/report/[token]/page.tsx` لسه بصيغة Next.js 14 القديمة للـparams -
 **فاتتني وقت إصلاح الـ21 API route قبل كده لأني فحصت `route.ts` بس،

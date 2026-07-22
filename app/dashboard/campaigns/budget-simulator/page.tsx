@@ -38,19 +38,30 @@ export default async function BudgetSimulatorPage() {
     _sum: { cost: true, verifiedConversions: true },
   });
 
+  interface PlatformCpa {
+    platform: string;
+    cost: number;
+    conversions: number;
+    cpa: number | null;
+  }
+
   const platforms = byPlatform
-    .map((p: any) => {
+    .map((p: any): PlatformCpa => {
       const cost = p._sum.cost ?? 0;
       const conv = p._sum.verifiedConversions ?? 0;
       return {
-        platform: p.platform,
+        platform: p.platform as string,
         cost,
         conversions: conv,
         cpa: conv > 0 ? cost / conv : null,
       };
     })
-    .filter((p: any) => p.cpa !== null)
-    .sort((a: any, b: any) => a.cpa - b.cpa);
+    // type predicate صريح - عشان TypeScript يتتبّع فعلياً إن الفلتر ده
+    // بيشيل القيم null، مش بس وقت التشغيل. من غيره، النوع المُستنتج
+    // بيفضل `number | null` حتى بعد الفلترة، وده اللي كان بيسبب خطأ
+    // البناء (قسمة على قيمة ممكن تكون null نظرياً حسب الأنواع)
+    .filter((p: PlatformCpa): p is PlatformCpa & { cpa: number } => p.cpa !== null)
+    .sort((a: PlatformCpa & { cpa: number }, b: PlatformCpa & { cpa: number }) => a.cpa - b.cpa);
 
   const SIMULATION_AMOUNT = 1000;
 
