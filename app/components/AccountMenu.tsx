@@ -55,7 +55,7 @@ export function AccountMenu({
       </button>
 
       {open && (
-        <div className="absolute end-0 z-50 mt-2 w-56 rounded-xl border border-border bg-surface-raised p-1.5 shadow-lg">
+        <div className="pop-shadow absolute right-0 z-50 mt-2 w-56 rounded-xl card-shadow border border-border bg-surface p-1.5">
           <div className="border-b border-border px-3 pb-2 pt-1.5">
             <div className="truncate text-sm text-text-primary">{name ?? "—"}</div>
             <div className="truncate text-xs text-text-faint">{email}</div>

@@ -38,7 +38,7 @@ export function MetricCard({ label, value, color = "default", href, trend, verif
   const style = COLOR_STYLES[color];
 
   const content = (
-    <div className={`group rounded-2xl border border-border/60 p-5 transition-colors hover:bg-surface-raised ${style.cardTint || "bg-surface"}`}>
+    <div className={`group card-shadow rounded-2xl border border-border p-5 transition-all hover:-translate-y-0.5 ${style.cardTint || "bg-surface"}`}>
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {Icon && (

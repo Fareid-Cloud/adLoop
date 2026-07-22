@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
       data-mode="light"
       className="flex min-h-screen items-center justify-center bg-bg px-4 font-display"
     >
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8">
+      <div className="w-full max-w-sm rounded-2xl card-shadow border border-border bg-surface p-8">
         <div className="mb-6 text-center">
           <div className="text-lg font-bold tracking-tight text-text-primary">AdLoop</div>
           <div className="mt-1 text-sm text-text-muted">{t(locale, "auth.forgotTitle")}</div>
@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="mb-3 block w-full rounded-xl border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-faint outline-none transition-colors focus:border-accent"
+              className="mb-3 block w-full rounded-xl card-shadow border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-faint outline-none transition-colors focus:border-accent"
             />
             <button
               type="submit"

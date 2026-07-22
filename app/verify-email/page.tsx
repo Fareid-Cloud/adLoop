@@ -50,7 +50,7 @@ function VerifyEmailInner() {
       data-mode="light"
       className="flex min-h-screen items-center justify-center bg-bg px-4 font-display"
     >
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 text-center">
+      <div className="w-full max-w-sm rounded-2xl card-shadow border border-border bg-surface p-8 text-center">
         <div className="mb-4 text-lg font-bold tracking-tight text-text-primary">AdLoop</div>
         {status === "loading" && <p className="text-text-muted">{t(locale, "auth.verifying")}</p>}
         {status === "success" && (

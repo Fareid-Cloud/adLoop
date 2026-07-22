@@ -6,7 +6,7 @@ import { t, Locale } from "@/lib/i18n/dictionary";
 import { PasswordRequirements } from "@/app/components/PasswordRequirements";
 
 const INPUT_CLASS =
-  "mb-3 block w-full rounded-xl border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-faint outline-none transition-colors focus:border-accent";
+  "mb-3 block w-full rounded-xl card-shadow border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-faint outline-none transition-colors focus:border-accent";
 const PRIMARY_BTN =
   "w-full rounded-xl bg-accent py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50";
 
@@ -66,7 +66,7 @@ export function SignupForm() {
       data-mode="light"
       className="flex min-h-screen items-center justify-center bg-bg px-4 py-10 font-display"
     >
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8">
+      <div className="w-full max-w-sm rounded-2xl card-shadow border border-border bg-surface p-8">
         <div className="mb-6 text-center">
           <div className="text-lg font-bold tracking-tight text-text-primary">AdLoop</div>
           <div className="mt-1 text-sm text-text-muted">{t(locale, "auth.signupTitle")}</div>

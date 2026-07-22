@@ -48,7 +48,13 @@
   --accent: #4C8DFF;
   --accent-dim: #4C8DFF1A;
 
-  --radius: 12px;
+  --radius: 14px;
+
+  /* ظلال ناعمة ملوّنة بلمسة رمادي بارد - ده اللي بيخلّي الكروت "تطفو"
+     وتبان احترافية بدل ما تبقى مربعات مسطّحة (درس من Cometly/Triple Whale).
+     القيمة هنا للوضع الداكن (ظل أسود أعمق)، و[data-mode=light] بيغطيها. */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 30px -12px rgba(0, 0, 0, 0.6);
+  --shadow-pop: 0 16px 48px -12px rgba(0, 0, 0, 0.7);
 
   /* مقياس المسافات - وحدة أساسية 4px */
   --space-1: 4px;
@@ -79,7 +85,32 @@
   --text-primary: #16181D;
   --text-muted: #667085;
   --text-faint: #98A1AE;
+  /* ظلال الوضع الفاتح: ناعمة، بلمسة رمادي بارد (مش أسود قاسي) - المفتاح
+     البصري لإحساس المنتجات الكبيرة */
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 28px -12px rgba(16, 24, 40, 0.10);
+  --shadow-pop: 0 16px 48px -12px rgba(16, 24, 40, 0.18);
 }
+
+/* الوضع الداكن صراحةً - ضروري: القيم الغامقة على :root، لكن لمّا يكون
+   الوضع الافتراضي فاتح (html data-mode=light)، أي عنصر متداخل بـ
+   data-mode=dark كان بيورّث الفاتح لأن مفيش قاعدة تعيد تطبيق الغامق.
+   البلوك ده بيخلّي التبديل للداكن يشتغل في أي مكان. */
+[data-mode="dark"] {
+  --bg: #0A0C10;
+  --surface: #12151C;
+  --surface-raised: #1A1F28;
+  --border: #232833;
+  --border-visible: #313745;
+  --text-primary: #F2F3F5;
+  --text-muted: #868D99;
+  --text-faint: #4E545E;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 30px -12px rgba(0, 0, 0, 0.6);
+  --shadow-pop: 0 16px 48px -12px rgba(0, 0, 0, 0.7);
+}
+
+/* أداة الظل الموحّدة - بتتغيّر تلقائياً حسب الوضع (فاتح/داكن) */
+.card-shadow { box-shadow: var(--shadow-card); }
+.pop-shadow { box-shadow: var(--shadow-pop); }
 
 /* ==== طبقة Tailwind: تحويل المتغيرات فوق لـ utility classes ====
  * كل سطر هنا بيولّد classes تلقائي - مثلاً --color-surface يولّد

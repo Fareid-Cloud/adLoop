@@ -87,7 +87,7 @@ export function WelcomeGate({ locale, startStep = 0 }: { locale: "ar" | "en"; st
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-bg/85 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl border border-border bg-surface p-8 shadow-2xl">
+      <div className="w-full max-w-md rounded-3xl card-shadow border border-border bg-surface p-8 shadow-2xl">
         <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/15 text-accent">
           <Icon size={26} />
         </div>

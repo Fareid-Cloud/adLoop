@@ -10,12 +10,14 @@
 
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Almarai } from "next/font/google";
+import { IBM_Plex_Sans_Arabic } from "next/font/google";
 import "./dashboard/theme.css";
 
-const almarai = Almarai({
-  subsets: ["arabic"],
-  weight: ["300", "400", "700", "800"],
+// خط عربي/لاتيني احترافي واحد للواجهة كلها - IBM Plex Sans Arabic: نظيف،
+// حديث، تغطية ممتازة للعربي والأرقام، ويقترن طبيعياً مع IBM Plex Mono.
+const display = IBM_Plex_Sans_Arabic({
+  subsets: ["arabic", "latin"],
+  weight: ["300", "400", "500", "600", "700"],
   variable: "--font-display",
   display: "swap",
 });
@@ -28,7 +30,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ar" dir="rtl" data-mode="light" data-accent="blue">
-      <body className={`${almarai.variable} font-display antialiased`}>{children}</body>
+      <body className={`${display.variable} font-display antialiased`}>{children}</body>
     </html>
   );
 }

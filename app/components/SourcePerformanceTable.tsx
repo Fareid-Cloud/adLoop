@@ -39,7 +39,7 @@ export function SourcePerformanceTable({ rows }: { rows: SourceRow[] }) {
   const sorted = [...rows].sort((a, b) => b.cost - a.cost);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+    <div className="overflow-hidden rounded-2xl card-shadow border border-border bg-surface">
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
         <h3 className="text-sm font-semibold text-text-primary">الأداء حسب المصدر</h3>
         <span className="rounded-full bg-surface-raised px-2.5 py-1 text-[11px] text-text-muted">آخر 30 يوماً</span>

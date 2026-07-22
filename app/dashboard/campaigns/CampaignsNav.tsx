@@ -65,7 +65,7 @@ export function CampaignsNav() {
       {SECTIONS.map((section) => (
         <div
           key={section.label}
-          className="rounded-2xl border border-border bg-surface p-4"
+          className="rounded-2xl card-shadow border border-border bg-surface p-4"
           style={{ ["--pc" as string]: section.color ?? "#3A4150" } as React.CSSProperties}
         >
           <div className="mb-3 flex items-center gap-2">
@@ -80,7 +80,7 @@ export function CampaignsNav() {
               <a
                 key={link.href}
                 href={link.href}
-                className="rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs text-text-muted no-underline transition-colors hover:border-[var(--pc)] hover:text-text-primary"
+                className="rounded-lg card-shadow border border-border bg-surface-raised px-3 py-1.5 text-xs text-text-muted no-underline transition-colors hover:border-[var(--pc)] hover:text-text-primary"
               >
                 {link.label}
               </a>

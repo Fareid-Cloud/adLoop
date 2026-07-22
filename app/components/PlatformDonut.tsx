@@ -15,7 +15,7 @@ export function PlatformDonut({ data }: { data: { platform: string; value: numbe
   if (rows.length === 0 || total === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-border bg-surface p-6">
+    <div className="rounded-2xl card-shadow border border-border bg-surface p-6">
       <div className="mb-3 text-[13px] text-text-muted">التحويلات المحقّقة حسب المصدر</div>
       <div className="flex items-center gap-4">
         <div className="relative h-[150px] w-[150px] shrink-0">

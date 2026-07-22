@@ -7,7 +7,7 @@ export function DocShell({ title, updated, children }: { title: string; updated:
     <article>
       <h1 className="mb-1 text-2xl font-bold text-text-primary">{title}</h1>
       <p className="mb-6 text-xs text-text-faint">آخر تحديث: {updated}</p>
-      <div className="mb-8 rounded-xl border border-border bg-surface p-4 text-[13px] leading-relaxed text-text-muted">
+      <div className="mb-8 rounded-xl card-shadow border border-border bg-surface p-4 text-[13px] leading-relaxed text-text-muted">
         هذه الوثيقة مسودة أولية أُعدّت بناءً على وظائف المنصة، وهي للتوضيح ولا تُعدّ
         استشارة قانونية. يُنصح بمراجعتها من مختص قانوني قبل الاعتماد النهائي.
       </div>

@@ -10,7 +10,7 @@ interface Msg { id: string; fromSupport: boolean; body: string; imageUrls: strin
 interface Thread { id: string; subject: string; status: string; messages: Msg[]; }
 
 const COUNTRIES = ["السعودية", "مصر", "الإمارات", "الكويت", "قطر", "البحرين", "عُمان", "الأردن", "المغرب", "أخرى"];
-const INPUT = "w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-faint outline-none focus:border-accent";
+const INPUT = "w-full rounded-xl card-shadow border border-border bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-faint outline-none focus:border-accent";
 
 export function SupportChat({ name, email }: { name: string; email: string }) {
   const [open, setOpen] = useState(false);
@@ -67,7 +67,7 @@ export function SupportChat({ name, email }: { name: string; email: string }) {
   return (
     <div className="fixed bottom-6 left-6 z-50">
       {open ? (
-        <div className="flex h-[520px] w-[360px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+        <div className="flex h-[520px] w-[360px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl card-shadow border border-border bg-surface shadow-2xl">
           <div className="flex items-center justify-between border-b border-border bg-surface-raised px-4 py-3">
             <div>
               <div className="text-sm font-semibold text-text-primary">الدعم الفني</div>

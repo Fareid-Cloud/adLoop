@@ -14,7 +14,7 @@ export function Skeleton({ className = "" }: { className?: string }) {
 // شكل جاهز لبطاقة مقياس وهي بتحمّل - يُستخدم بدل MetricCard وقت التحميل
 export function MetricCardSkeleton() {
   return (
-    <div className="rounded-card border border-border bg-surface p-4">
+    <div className="rounded-card card-shadow border border-border bg-surface p-4">
       <Skeleton className="mb-3 h-3 w-24" />
       <Skeleton className="h-7 w-16" />
     </div>

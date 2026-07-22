@@ -178,7 +178,7 @@ export default async function GlancePage() {
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">أهلاً، {firstName}</h1>
-        <div className="inline-flex items-center gap-2.5 rounded-full border border-border bg-surface py-1.5 pe-4 ps-1.5">
+        <div className="inline-flex items-center gap-2.5 rounded-full card-shadow border border-border bg-surface py-1.5 pe-4 ps-1.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-raised font-mono text-[11px] font-semibold text-text-muted">
             {health.overallScore || "—"}
           </div>
@@ -197,7 +197,7 @@ export default async function GlancePage() {
         <>
           {/* هيرو طبقة الحقيقة - المعلن مقابل المتحقّق منه فعلاً */}
           <div className="mb-4 grid gap-3 lg:grid-cols-[1.4fr_1fr]">
-            <div className="rounded-2xl border border-border bg-surface p-6">
+            <div className="rounded-2xl card-shadow border border-border bg-surface p-6">
               <div className="mb-4 text-[13px] font-medium text-text-muted">الحقيقة مقابل ما تقوله المنصات</div>
               <div className="flex flex-wrap items-end gap-8">
                 <div>
@@ -221,7 +221,7 @@ export default async function GlancePage() {
                 </div>
               )}
             </div>
-            <div className="flex items-center justify-around rounded-2xl border border-border bg-surface p-6">
+            <div className="flex items-center justify-around rounded-2xl card-shadow border border-border bg-surface p-6">
               <TrackingAccuracyGauge verified={totalVerified} raw={totalRaw} />
               <ReportedVsActualBars reported={totalRaw} actual={totalVerified} />
             </div>
@@ -261,7 +261,7 @@ export default async function GlancePage() {
           <div className="mb-4 grid gap-3 lg:grid-cols-2">
             <PlatformDonut data={sourceRows.map((r) => ({ platform: r.platform, value: r.verifiedConversions }))} />
             {trendData.length > 1 && (
-              <div className="rounded-2xl border border-border bg-surface p-6">
+              <div className="rounded-2xl card-shadow border border-border bg-surface p-6">
                 <div className="mb-3 text-[13px] text-text-muted">اتجاه آخر 14 يوماً</div>
                 <TrendChart data={trendData} />
               </div>
@@ -283,7 +283,7 @@ export default async function GlancePage() {
               <a
                 key={item.id}
                 href="/dashboard/actions"
-                className="flex items-center gap-2.5 rounded-xl border border-border bg-surface px-3.5 py-3 text-[13.5px] text-text-primary no-underline transition-colors hover:bg-surface-raised"
+                className="flex items-center gap-2.5 rounded-xl card-shadow border border-border bg-surface px-3.5 py-3 text-[13.5px] text-text-primary no-underline transition-colors hover:bg-surface-raised"
               >
                 <PriorityDot priority={item.severity} />
                 <span>{item.title}</span>
@@ -302,7 +302,7 @@ export default async function GlancePage() {
             <a
               key={task.id}
               href="/dashboard/diagnostics"
-              className="flex items-center gap-2.5 rounded-xl border border-border bg-surface px-3.5 py-3 text-[13.5px] text-text-primary no-underline transition-colors hover:bg-surface-raised"
+              className="flex items-center gap-2.5 rounded-xl card-shadow border border-border bg-surface px-3.5 py-3 text-[13.5px] text-text-primary no-underline transition-colors hover:bg-surface-raised"
             >
               <PriorityDot priority={task.priority} />
               <span>{task.title}</span>

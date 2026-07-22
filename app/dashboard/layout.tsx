@@ -10,7 +10,7 @@ import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Almarai, IBM_Plex_Mono } from "next/font/google";
+import { IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/font/google";
 import { SupportChat } from "@/app/components/SupportChat";
 import { ImpersonationBanner } from "@/app/components/ImpersonationBanner";
 import { NotificationBell } from "@/app/components/NotificationBell";
@@ -21,9 +21,9 @@ import { SidebarNav } from "@/app/components/SidebarNav";
 // next/font/google بيحمّل ملف الخط فعلياً وقت الـ build ويربطه بمتغير CSS -
 // ده الفرق عن مجرد كتابة اسم الخط في font-family من غير ما يكون مستورد
 // فعلياً (المشكلة اللي حصلت في المعاينة السابقة)
-const almarai = Almarai({
-  subsets: ["arabic"],
-  weight: ["300", "400", "700", "800"],
+const display = IBM_Plex_Sans_Arabic({
+  subsets: ["arabic", "latin"],
+  weight: ["300", "400", "500", "600", "700"],
   variable: "--font-display",
   display: "swap",
 });
@@ -78,7 +78,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       dir={locale === "ar" ? "rtl" : "ltr"}
       data-accent={accent}
       data-mode={mode}
-      className={`${almarai.variable} ${plexMono.variable} flex min-h-screen flex-col bg-bg font-display`}
+      className={`${display.variable} ${plexMono.variable} flex min-h-screen flex-col bg-bg font-display`}
     >
       {isImpersonating && <ImpersonationBanner />}
       <div className="flex flex-1">

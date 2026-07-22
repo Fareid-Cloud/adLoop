@@ -32,7 +32,7 @@ export default async function PricingPage() {
       <h1 className="mb-6 text-[26px] font-semibold text-text-primary">التسعير</h1>
 
       {roasGapInsight && (
-        <div className="mb-4 rounded-2xl border border-border bg-surface p-4 text-[13px] text-text-muted">
+        <div className="mb-4 rounded-2xl card-shadow border border-border bg-surface p-4 text-[13px] text-text-muted">
           💡 {roasGapInsight}
         </div>
       )}
