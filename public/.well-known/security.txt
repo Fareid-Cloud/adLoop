@@ -1,0 +1,8 @@
+Contact: mailto:security@adloop.example
+Expires: 2027-07-18T00:00:00.000Z
+Preferred-Languages: ar, en
+Canonical: https://YOUR_ADLOOP_DOMAIN/.well-known/security.txt
+
+# ملاحظة للتفعيل: غيّر security@adloop.example للإيميل الحقيقي بتاعك،
+# وحدّث YOUR_ADLOOP_DOMAIN بالدومين الفعلي وقت النشر. تاريخ "Expires"
+# لازم يتجدد سنوياً (RFC 9116 بيعتبر الملف "قديم" بعده).

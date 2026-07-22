@@ -1,0 +1,75 @@
+<!--
+  كود مرجعي يتحط في صفحة الهبوط نفسها (Thawabet/Tamkeen وغيرها) - بيولّد
+  معرف زائر ثابت طول الزيارة، وبيبعت إشارة لكل ضغطة CTA بغض النظر عن نوعها.
+
+  الاستخدام: نادي trackCtaClick('WHATSAPP') قبل التوجيه لرابط واتساب،
+  و trackCtaClick('CALL') على رابط tel:، و trackCtaClick('FORM') عند
+  إرسال أي فورم تواصل.
+-->
+<script>
+(function () {
+  const WORKSPACE_ID = "REPLACE_WITH_ACTUAL_WORKSPACE_ID"; // من إعدادات AdLoop
+
+  // معرف ثابت طول الزيارة - نفس القيمة لكل ضغطات CTA في نفس الجلسة،
+  // عشان النظام يقدر يربطهم ببعض ويحسبهم كتحويل واحد بس
+  function getSessionId() {
+    let id = localStorage.getItem("adloop_session_id");
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem("adloop_session_id", id);
+    }
+    return id;
+  }
+
+  // بيتقرا مرة واحدة وقت تحميل الصفحة - أي منصة من دول ممكن تكون موجودة
+  // في الرابط، مش جوجل بس (كان ده بالظبط سبب فجوة كبيرة: كليكات ميتا/تيك
+  // توك/سناب شات كانت بتتجاهل تماماً، مش حتى "غير منسوبة")
+  const CLICK_ID_PARAMS = {
+    gclid: "GOOGLE_ADS",
+    fbclid: "META_ADS",
+    ttclid: "TIKTOK_ADS",
+    sc_click_id: "SNAPCHAT_ADS",
+  };
+
+  function getClickInfo() {
+    const params = new URLSearchParams(window.location.search);
+    for (const [param, platform] of Object.entries(CLICK_ID_PARAMS)) {
+      const value = params.get(param);
+      if (value) return { clickId: value, platform };
+    }
+    // مفيش باراميتر جديد في الرابط - نرجع اللي كان محفوظ من زيارة سابقة
+    // في نفس الجلسة (الزائر ممكن يتنقل بين صفحات)
+    const savedId = localStorage.getItem("adloop_click_id");
+    const savedPlatform = localStorage.getItem("adloop_click_platform");
+    return savedId && savedPlatform ? { clickId: savedId, platform: savedPlatform } : null;
+  }
+
+  const clickInfo = getClickInfo();
+  if (clickInfo) {
+    localStorage.setItem("adloop_click_id", clickInfo.clickId);
+    localStorage.setItem("adloop_click_platform", clickInfo.platform);
+  }
+
+  window.trackCtaClick = function (ctaType) {
+    fetch("https://YOUR_ADLOOP_DOMAIN/api/track/cta-click", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        workspaceId: WORKSPACE_ID,
+        sessionId: getSessionId(),
+        gclid: clickInfo?.platform === "GOOGLE_ADS" ? clickInfo.clickId : undefined,
+        clickId: clickInfo?.clickId,
+        clickPlatform: clickInfo?.platform,
+        ctaType: ctaType, // "WHATSAPP" | "CALL" | "FORM"
+      }),
+      keepalive: true, // يضمن إرسال الطلب حتى لو الصفحة بدأت تتنقل فوراً (زي الضغط على رابط واتساب)
+    });
+  };
+})();
+</script>
+
+<!-- مثال استخدام على زرار واتساب موجود عندك بالفعل: -->
+<!--
+<a href="https://wa.me/966..." onclick="trackCtaClick('WHATSAPP')">تواصل واتساب</a>
+<a href="tel:+966..." onclick="trackCtaClick('CALL')">اتصل بنا</a>
+-->

@@ -1,0 +1,194 @@
+/* app/dashboard/theme.css
+ *
+ * نظام تصميم AdLoop، دلوقتي مبني على Tailwind v4 (CSS-first config عن طريق
+ * @theme) - بدل ما يكون كل تصميم عن طريق style={{}} متفرق في كل ملف
+ * (كان صعب نغيّر "حجم الزوايا المدورة" أو "المسافة الأساسية" من مكان واحد).
+ *
+ * المبدأ: المتغيرات الأساسية (--bg, --accent, إلخ) لسه هي مصدر الحقيقة،
+ * وبتتغيّر وقت التشغيل حسب data-mode وdata-accent زي ما كانت بالظبط - إحنا
+ * بس ضفنا طبقة @theme فوقها عشان Tailwind يولّد classes زي bg-surface أو
+ * text-verified تلقائياً من نفس المتغيرات دي، من غير ما نفقد قدرة التبديل
+ * اللحظي بين الألوان والوضع الداكن/الفاتح.
+ *
+ * الفكرة البصرية المحورية لسه "عداد الفجوة" (Gap Meter) - شريط مزدوج بيوري
+ * الرقم اللي المنصة بتقوله جنب الرقم الحقيقي المتحقق منه.
+ */
+
+@import "tailwindcss";
+
+:root {
+  /* طبقات الخلفية - الفرق بين الطبقات دقيق جداً دلوقتي (فرق درجة لون
+     خفيف، مش حدود واضحة حوالين كل كارت) - ده اللي بيدّي إحساس "برنامج
+     حقيقي" زي Mercury/Revealbot بدل "قالب كروت جاهز مقسوم بخطوط" */
+  --bg: #0A0C10;
+  --surface: #0E1116;
+  --surface-raised: #14171D;
+  --border: #1C2027;
+  --border-visible: #262B33;
+
+  /* النص */
+  --text-primary: #F2F3F5;
+  --text-muted: #868D99;
+  --text-faint: #4E545E;
+
+  /* الألوان الدلالية - ثابتة دائماً، مش قابلة للتخصيص (مبدأ §3 في الـ ADR) */
+  --verified: #34D399;
+  --gap: #F5A623;
+  --critical: #F55252;
+
+  /* الخطوط - next/font/google في layout.tsx بيحمّل الخط الفعلي ويربطه
+     بنفس المتغيرات دي (Almarai / IBM Plex Mono) وقت التشغيل عن طريق
+     className على عنصر أب، فبتتغطى القيمة هنا تلقائياً لكل العناصر
+     اللي جواه - القيمة هنا مجرد fallback لو التحميل فشل لأي سبب */
+  --font-display: system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+
+  --radius: 12px;
+
+  /* مقياس المسافات - وحدة أساسية 4px */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+}
+
+/* الألوان القابلة للاختيار (themeColor من إعدادات المستخدم) */
+[data-accent="blue"]   { --accent: #4C8DFF; --accent-dim: #4C8DFF1A; }
+[data-accent="purple"] { --accent: #A585FF; --accent-dim: #A585FF1A; }
+[data-accent="orange"] { --accent: #FF9950; --accent-dim: #FF99501A; }
+[data-accent="sky"]    { --accent: #4FCEF0; --accent-dim: #4FCEF01A; }
+[data-accent="red"]    { --accent: #F55252; --accent-dim: #F552521A; }
+
+[data-mode="light"] {
+  --bg: #FAFAFA;
+  --surface: #FFFFFF;
+  --surface-raised: #FFFFFF;
+  --border: #EDEEF0;
+  --border-visible: #DFE1E5;
+  --text-primary: #16181D;
+  --text-muted: #6B7280;
+  --text-faint: #A1A6AF;
+}
+
+/* ==== طبقة Tailwind: تحويل المتغيرات فوق لـ utility classes ====
+ * كل سطر هنا بيولّد classes تلقائي - مثلاً --color-surface يولّد
+ * bg-surface / text-surface / border-surface. القيم بتشاور لمتغيراتنا
+ * (var(--x)) مش أرقام ثابتة، عشان تبديل الثيم وقت التشغيل يفضل شغال. */
+@theme {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-border-visible: var(--border-visible);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+
+  --color-verified: var(--verified);
+  --color-gap: var(--gap);
+  --color-critical: var(--critical);
+
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+
+  /* مش عايزين نكتب var(--font-display) هنا - ده كان بيعمل مرجعية دائرية
+     غير واضحة بين طبقة @theme والقيمة الفعلية. next/font بيغطي القيمة
+     دي تلقائياً لأي عنصر جواه بالـ className، فمفيش داعي للتلاعب هنا */
+  --font-display: system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+
+  --radius-card: var(--radius);
+
+  --spacing-1: var(--space-1);
+  --spacing-2: var(--space-2);
+  --spacing-3: var(--space-3);
+  --spacing-4: var(--space-4);
+  --spacing-6: var(--space-6);
+  --spacing-8: var(--space-8);
+  --spacing-12: var(--space-12);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-display);
+}
+
+/* ==== عداد الفجوة (Gap Meter) - العنصر التوقيعي، بيتكرر بحجمين ====
+ * لسه CSS خام هنا (مش Tailwind كامل) لأن الأنيميشن والتراكب الدقيق بين
+ * الشريطين أوضح كـ CSS مخصص من سلسلة utility classes طويلة - قرار متعمد،
+ * مش كل حاجة لازم تتحول لـ Tailwind، بس الأغلبية الساحقة (مبدأ §4 في الـ ADR:
+ * لا تكرار، لكن مش كل مكوّن لازم "نقاوة" أسلوبية على حساب الوضوح) */
+
+.gap-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gap-meter-track {
+  position: relative;
+  height: 8px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.gap-meter-verified {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  height: 100%;
+  background: var(--verified);
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 2;
+}
+
+.gap-meter-reported {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  height: 100%;
+  background: color-mix(in srgb, var(--gap) 22%, transparent);
+  border-inline-end: 2px solid var(--gap);
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1;
+}
+
+.gap-meter-labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.gap-meter-labels .verified { color: var(--verified); }
+.gap-meter-labels .reported { color: var(--gap); }
+
+/* ==== أنماط الطباعة - لصفحة التقارير تحديداً ====
+ * بنستخدم window.print() المدمجة في المتصفح بدل أي مكتبة أو خدمة PDF -
+ * أبسط وأوثق، ومتصفح حقيقي بيتعامل مع النص والجداول صح تلقائياً (نفس
+ * القرار اللي اتخد لتقرير فحص الموقع، بس هنا مباشرة من المتصفح مش
+ * خدمة سيرفر خارجية لأن المستخدم بنفسه اللي بيطبع، مش عملية آلية) */
+@media print {
+  aside, .no-print { display: none !important; }
+  main { padding: 0 !important; }
+  body, .print-area {
+    background: white !important;
+    color: black !important;
+  }
+  .print-area table { border-collapse: collapse; width: 100%; }
+  .print-area th, .print-area td {
+    border: 1px solid #ddd !important;
+    color: black !important;
+    padding: 6px 10px !important;
+  }
+  .print-area .print-bg-white { background: white !important; }
+}
+

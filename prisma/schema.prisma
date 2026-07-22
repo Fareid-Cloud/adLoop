@@ -1,0 +1,1461 @@
+// prisma/schema.prisma
+//
+// البنية دي بتعكس بالظبط اللي اتفقنا عليه:
+// User واحد (انت) -> عنده كذا Workspace (زي "الفايلات") -> كل Workspace
+// مربوط بحسابات إعلانية مختارة من Google Ads / Meta، بالإضافة لملفات Excel مرفوعة.
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==================== حماية عامة من تكرار معالجة الـ Webhooks ====================
+// أي مصدر webhook (سلة، شوبيفاي، إيزي أوردرز، إلخ) بيسجل هنا معرف الحدث
+// اللي عالجه فعلاً، قبل ما يعالجه - لو نفس الحدث وصل تاني (retry شائع جداً
+// من كل مزودي الـ webhooks)، بنتجاهله بدل ما نعالجه مرتين ونضاعف البيانات.
+
+model ProcessedWebhookEvent {
+  id           String   @id @default(cuid())
+  source       String   // "SALLA" | "SHOPIFY" | "WHATSAPP" ...
+  externalEventId String // معرف الحدث من عند المصدر نفسه (order id مثلاً)
+  processedAt  DateTime @default(now())
+
+  @@unique([source, externalEventId])
+}
+
+// ==================== المستخدمين ====================
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  // اختياري دلوقتي - حساب مسجّل بجوجل/فيسبوك مالوش باسورد أصلاً، مش
+  // كل المستخدمين لازم يبقى عندهم واحد
+  passwordHash  String?
+  name          String?
+  // صورة الملف الشخصي - بتيجي مباشرة من جوجل/فيسبوك وقت تسجيل الدخول
+  // بيهم، مش رفع يدوي
+  avatarUrl     String?
+  // معرفات تسجيل الدخول - مختلفين تماماً عن ConnectedPlatform (اللي ده
+  // لربط حساب إعلاني للإدارة، ده لتسجيل الدخول للمنتج نفسه - نطاق
+  // صلاحيات مختلف كلياً: بريد واسم بس، مش إدارة إعلانات)
+  googleLoginId   String? @unique
+  facebookLoginId String? @unique
+  isAdmin       Boolean  @default(false) // صاحب المنتج (انت) - مش عميل عادي، بيشوف لوحة تحكم شاملة
+  isSuspended   Boolean  @default(false) // تعليق مؤقت من الأدمن - الحساب موجود، بس مش يقدر يستخدم المنتج
+  lastLoginAt   DateTime?
+  // آخر مرة المستخدم فعلياً فتح التطبيق (مش بس سجّل دخول - ممكن يفضل
+  // مسجّل دخول لمدة الجلسة كلها 30 يوم من غير ما يفتح) - أساس تنبيه
+  // "معملتش فتح من فترة"
+  lastActiveAt  DateTime?
+  // آخر مرة اتبعتله تنبيه "معملتش فتح" - عشان منكررهوش كل يوم لو فضل
+  // مش فاتح أصلاً (cooldown 7 أيام)
+  lastInactivityPushAt DateTime?
+  pushSubscriptions PushSubscription[]
+  // تتبع جولة التعريف بالمنتج (Onboarding Tour) - null = لسه معملهاش،
+  // بنعتمد على "أيام استخدام فعلية" مش أيام تقويمية عادية (لو المستخدم
+  // فتح مرة واحدة وسابه أسبوعين، مينفعش الجولة تختفي من غير ما يشوفها)
+  onboardingStep       Int      @default(0) // فين وقف - 0 = لسه ما بدأش
+  onboardingCompleted  Boolean  @default(false)
+  onboardingCelebrationShown Boolean @default(false) // عشان الشاشة الاحتفالية تظهر مرة واحدة بس، مش كل مرة يفتح الداشبورد
+  onboardingDismissed  Boolean  @default(false) // دس Skip نهائي - مختلف عن "خلص" الجولة كاملة
+  onboardingActiveDaysSeen Int  @default(0) // كام يوم استخدام فعلي شاف فيهم الجولة لسه متاحة - أساس الاختفاء بعد 7-10 أيام
+  // إبطال الجلسات (Fix B من الاختبار العدائي): أي توكن اتصدر قبل التاريخ
+  // ده بيترفض، حتى لو لسه ما انتهتش صلاحيته الطبيعية. بيتحدّث عند تسجيل
+  // الخروج - يبطّل كل التوكنات القديمة فوراً، مش بس يمسح الكوكي المحلي
+  sessionInvalidatedAt DateTime?
+  emailVerified Boolean  @default(false)
+  verificationToken String? @unique
+  verificationTokenExpiresAt DateTime?
+  resetPasswordToken String? @unique
+  resetPasswordTokenExpiresAt DateTime?
+  // التحقق بخطوتين (TOTP) - اختياري، المستخدم يفعّله بنفسه من الإعدادات
+  mfaSecret     String? // مشفّر بنفس آلية توكنات OAuth (AES-256-GCM)
+  mfaEnabled    Boolean @default(false)
+  mfaLastUsedCode String? // آخر كود نجح - يمنع إعادة استخدام نفس الكود مرتين (Replay)
+  // حماية من محاولات الدخول المتكررة (Brute Force) - قفل مؤقت بعد محاولات فاشلة كتير
+  failedLoginAttempts Int @default(0)
+  lockedUntil   DateTime?
+  createdAt     DateTime       @default(now())
+
+  // ==================== الاشتراك والدفع (Paymob) ====================
+  // على مستوى User مش Workspace - المنتج "اشتراك لمستخدم واحد بمساحات
+  // عمل عامة" (قرار منتج سابق)، يعني اشتراك واحد لكل مستخدم بغض النظر
+  // عن عدد الـWorkspaces بتاعته.
+  //
+  // ملاحظة معمارية: Paymob مالهاش مفهوم "Customer/Subscription" جاهز
+  // زي Stripe بالظبط - بتشتغل بمنطق "نية دفع" (Intention) + "توكن كارت
+  // محفوظ" نعيد استخدامه شهرياً للتجديد. subscriptionReferenceId هنا
+  // معناها "معرف الاشتراك عندنا احنا"، مش معرف من Paymob نفسها.
+  paymobCustomerId     String?  @unique // لو Paymob بترجع معرف عميل موحّد - يتأكد بأول اتصال حقيقي
+  savedCardToken       String?  // توكن الكارت المحفوظ - يُستخدم لتحصيل التجديد الشهري تلقائياً
+  subscriptionStatus   SubscriptionStatus @default(NONE)
+  subscriptionPlan     String?  // "starter" | "pro" | إلخ - اسم الخطة، مش الـ price id
+  currentPeriodEnd     DateTime?
+  // مبدأ عام بغض النظر عن مزوّد الدفع: لما مستخدم يلغي، منقفلش الوصول
+  // فوراً - بنسيبه شغال لحد نهاية الفترة اللي دفعها فعلاً، ده أعدل تجربة
+  cancelAtPeriodEnd    Boolean  @default(false)
+
+  workspaces    Workspace[]
+  // التوكنات دي على مستوى المستخدم مش على مستوى الـ Workspace،
+  // لأن عندك MCC واحد بيشوف كل العملاء - تربط مرة واحدة بس
+  connectedPlatforms ConnectedPlatform[]
+  savedViews    SavedView[]
+  feedback      Feedback[]
+
+  // ==== تفضيلات الواجهة (عامة على كل الحساب) ====
+  themeColor    String   @default("blue") // blue | purple | orange | sky | red ...
+  themeMode     String   @default("dark") // dark | light
+  preferredLocale String @default("ar")   // ar | en - يتحدد أول مرة من متصفح المستخدم، قابل للتغيير لاحقاً
+  timezone      String   @default("Asia/Riyadh") // لعرض الأوقات والتواريخ بتوقيت المستخدم نفسه
+
+  // ==== الملف الشخصي ====
+  // افتراضي: أيقونة من مجموعة مصممة تناسب هوية النظام (كود/AI/أتمتة)،
+  // أو صورة مرفوعة لو المستخدم حب - افتراضي واحد بس مش الاتنين مع بعض
+  avatarIcon    String?  @default("bot") // "bot" | "cpu" | "sparkles" | "terminal" | "brain" | "zap"
+  avatarImageUrl String? @db.Text        // لو رفع صورة فعلية، بتلغي الأيقونة الافتراضية
+
+  // من سؤال الـ Onboarding "بتدير كام عميل؟" - بيفيد في تخصيص الافتراضيات
+  // لاحقاً (وكيل واحد بحجم أعمال مختلف عن وكالة بـ50 عميل)
+  businessScale String? // "solo" | "1_5" | "5_20" | "20_50" | "50_plus"
+
+  // ==== حد استخدام الـ AI - على مستوى الحساب ككل (مش لكل Workspace لوحده) ====
+  // ده مهم جداً: لو الحد كان لكل Workspace، حد يقدر يعمل عشرات الـ Workspaces
+  // الفاضية ويستهلك رصيد مضاعف. الحد هنا مجمّع على كل الحساب.
+  // الحد اليدوي 120/شهر + استدعاء تلقائي واحد يومياً (30/شهر) = 150 إجمالاً (5/يوم)
+  aiRefreshMonthlyCount Int      @default(0)
+  aiRefreshMonthlyReset DateTime @default(now())
+  aiRefreshHourlyCount  Int      @default(0)
+  aiRefreshHourlyReset  DateTime @default(now())
+  // سقف تكلفة Claude API - كانت الحاجتين دول من غير أي حد أقصى خالص
+  // (ثغرة مالية حقيقية مفتوحة). أضيفت عشان نضمن سقف $4/شهر لكل مشترك
+  // (راجع docs/claude-api-usage-map.md للحساب الكامل)
+  imageQualityMonthlyCount Int      @default(0)
+  imageQualityMonthlyReset DateTime @default(now())
+  imageQualityHourlyCount  Int      @default(0)
+  imageQualityHourlyReset  DateTime @default(now())
+  siteScanMonthlyCount     Int      @default(0)
+  siteScanMonthlyReset     DateTime @default(now())
+  siteScanHourlyCount      Int      @default(0)
+  siteScanHourlyReset      DateTime @default(now())
+}
+
+// ربط المنصة على مستوى المستخدم (مرة واحدة لكل منصة)
+model ConnectedPlatform {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform      Platform
+  accessToken   String   @db.Text
+  refreshToken  String?  @db.Text
+  // للـ Google Ads: الـ MCC id بتاعك (login-customer-id)
+  managerAccountId String?
+  expiresAt     DateTime?
+  connectedAt   DateTime @default(now())
+
+  @@unique([userId, platform])
+}
+
+// ==================== Workspaces (الفايلات) ====================
+
+model Workspace {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String   // مثلاً "Thawabet"
+  currency    String   @default("SAR")
+  // هامش الربح - الأساس الحقيقي لحساب "نقطة تعادل ROAS" (= 1 ÷ الهامش)
+  // بدل رقم ثابت عشوائي زي "3x للكل". مصادر متعددة متفقة: رقم ROAS
+  // ثابت من غير معرفة الهامش قرار أعمى - هامش 25% معناه لازم 4x عشان
+  // تتعادل، هامش 50% معناه 2x كفاية. اختياري - لو مش متحدد، القرار
+  // بيرجع لمقارنة نسبية بمتوسط الحساب (أقل دقة لكن أفضل من لا شيء)
+  profitMarginPct Float?
+  targetLocation String? // السوق المستهدف "SA" | "EG" | "AE" ... - سياق مش قيد تقني
+  // معرف صفحة فيسبوك (Page ID) - مطلوب لربط ويب هوك ماسنجر بمساحة العمل
+  // الصحيحة (ميتا بتبعت page id بس، مش workspace id طبعاً)
+  facebookPageId String? @unique
+  // آخر مرة المستخدم راجع صفحة مصطلحات البحث المهدرة - يغذّي تذكير
+  // "معملتش مراجعة من فترة" في المهام اليومية (كان TODO قبل كده)
+  lastSearchTermsReviewAt DateTime?
+  // هدف الميزانية الشهري (اختياري) - من غيره، فحص "وتيرة الصرف" مينفعش
+  // يحكم على أي حاجة، لأنه معندوش رقم مرجعي يقارن بيه
+  // ==== تفضيلات التنبيهات - أنهي قناة توصل بيها التنبيهات العاجلة ====
+  // داخل النظام دايماً موجود بغض النظر عن الإعدادات دي (Action Feed نفسه)
+  // - دول بس بيتحكموا في هل يوصل كمان إيميل، ومتى
+  notifyUrgentByEmail Boolean @default(true)
+  notifyHighByEmail    Boolean @default(false)
+  notificationEmail    String? // لو فاضي، بيستخدم إيميل الحساب الأساسي
+  // قواعد منفصلة تماماً عن الإيميل - المستخدم طلب صراحة قواعد مختلفة
+  // لكل قناة، مش نفس التوجّل بيتحكم في القنوات كلها مع بعض
+  notifyUrgentByPush   Boolean @default(true)
+  notifyHighByPush     Boolean @default(true)
+  // سقف أقصى لمجموع نسب تغيير المزايدة/الميزانية المُنفَّذة فعلياً في
+  // نفس الشهر لكل إعلان/مجموعة - حاجز أمان يمنع تراكم تغييرات آلية
+  // كتير فوق بعض في وقت قصير. افتراضي 50% (معقول ومحافظ، قابل للتعديل)
+  monthlyChangeCeilingPct Float @default(50)
+
+  monthlyBudgetTarget Float?
+  createdAt   DateTime @default(now())
+
+  // ON: الـ CPL/ROAS بتحسب Verified + Modeled مع بعض (بفصل واضح في العرض)
+  // OFF: الحسابات بتشتغل على Verified بس، والمجهول بيفضل رقم توعوي بره الحسابات
+  useModeledAttribution Boolean @default(false)
+
+  // حد أقصى (بالدقايق) لاعتبار الرد "سريع" - قابل للتعديل لكل Workspace
+  responseTimeThresholdMinutes Int @default(15)
+
+  // حد التوقف (بالدقايق) لاعتبار محادثة ماسنجر "ضغطة بالخطأ" - قابل
+  // للتعديل، بدل ما يكون رقم ثابت (120 دقيقة) مقفول جوه الكود
+  messengerInactivityThresholdMinutes Int @default(120)
+
+  // "المصدر الأساسي" للتحويل لكل Workspace - بيتحكم في أنهي قناة نعتبرها
+  // مرجع أساسي وقت المقارنة بين ماسنجر/واتساب/فورم على نفس الحملة
+  primaryConversionSource String @default("WHATSAPP") // WHATSAPP | MESSENGER | LEAD_FORM
+
+  // نص الرد التلقائي/رسالة الترحيب المستخدمة في واتساب بيزنس بتاع العميل
+  // بيُستخدم لاستبعاد الردود الأوتوماتيك من حساب سرعة رد فريق المبيعات الحقيقي
+  autoReplyText String? @db.Text
+
+  // ==== مفاتيح تشغيل/إيقاف رئيسية لكل نظام - تحكم كامل زي ما طلب المستخدم ====
+  // كل نظام فرعي له مفتاح مستقل، عشان أي حد يقدر يوقف جزء معين مؤقتاً
+  // من غير ما يأثر على الباقي (مثال: يوقف الأتمتة بس، ويسيب التشخيص شغال)
+  enableAIInsights          Boolean @default(true)
+  enableAutomationRules     Boolean @default(true)
+  enableDailyDiagnostics    Boolean @default(true)
+  enablePricingHealthChecks Boolean @default(true)
+
+  // ==== عتبات قابلة للتعديل - كانت أرقام ثابتة جوه الكود، بقت إعدادات ====
+  adFatigueFrequencyThreshold Float @default(3.5) // فوقه = "الإعلان تعبان"
+  ctrDropThresholdPct         Int   @default(30)  // % الانخفاض اللي يستاهل تنبيه
+  pricingWarningThresholdPct  Int   @default(5)   // % الفرق عن السعر المطلوب - منطقة تحذير مبكر
+  pricingCriticalThresholdPct Int   @default(15)  // % الفرق - خطر عاجل
+  rtoAnomalyMultiplier        Float @default(2.0) // نسبة المرتجعات مقارنة بالمتوسط قبل ما تعتبر "غير طبيعية"
+
+  // ==== نتيجة الـ Onboarding - بيحدد الـ Default الذكي للداشبورد ====
+  // إجابات المستخدم وقت إنشاء الـ Workspace: مين المنصات المستخدمة، ونوع المجال
+  industryVertical String? // "ecommerce" | "recruitment" | "clinic" | "real_estate" | "b2b" | ...
+  activePlatforms  Platform[] // المنصات اللي هيربطها فعلاً (بيحدد شكل الداشبورد الافتراضي)
+
+  // قائمة بمفاتيح المقاييس اللي المستخدم عايز يشوفها - قابلة للتعديل في أي وقت
+  // مثال: ["cpl_verified", "roas", "ctr", "video_hook_rate"]
+  // لو null، بيتحسب default ذكي بناءً على industryVertical + activePlatforms
+  visibleMetrics   Json?
+  onboarded        Boolean  @default(false)
+
+  campaignLinks   CampaignLink[]
+  uploadedSheets  UploadedSheet[]
+  metricSnapshots MetricSnapshot[]
+  conversionValueConfig ConversionValueConfig?
+  automationRules AutomationRule[]
+  landingPageAudits LandingPageAudit[]
+  dailyTasks      DailyTask[]
+  actionFeedItems ActionFeedItem[]
+  experimentLogs  ExperimentLog[]
+  ctaClickEvents  CtaClickEvent[]
+  products        Product[]
+  creativeSnapshots CreativeSnapshot[]
+  monitoredPages    MonitoredPage[]
+  searchTermSnapshots SearchTermSnapshot[]
+  sharedReportLinks SharedReportLink[]
+  audienceSegmentSnapshots AudienceSegmentSnapshot[]
+  siteScanResults SiteScanResult[]
+  metaAdSetSnapshots MetaAdSetSnapshot[]
+  qualityScoreSnapshots QualityScoreSnapshot[]
+  shoppingProductSnapshots ShoppingProductSnapshot[]
+  pmaxChannelSnapshots PmaxChannelSnapshot[]
+  youtubeMetricSnapshots YoutubeMetricSnapshot[]
+  devicePerformanceSnapshots DevicePerformanceSnapshot[]
+  geoPerformanceSnapshots GeoPerformanceSnapshot[]
+  matchTypeSnapshots MatchTypeSnapshot[]
+  displayPlacementSnapshots DisplayPlacementSnapshot[]
+  leadFormSubmissions LeadFormSubmission[]
+  adSetDailyConversions AdSetDailyConversions[]
+  catalogCampaignSnapshots CatalogCampaignSnapshot[]
+  tikTokVideoMetricSnapshots TikTokVideoMetricSnapshot[]
+  tikTokWeeklyEngagements TikTokWeeklyEngagement[]
+
+  // سقف إجمالي شهري لأي تغييرات ميزانية عن طريق الأتمتة (زيادة أو تقليل)،
+  // بغض النظر عن عدد القواعد أو القرارات المعتمدة - حماية أخيرة من انجراف
+  // الميزانية بمرور الوقت حتى لو كل قرار فردي كان معقولاً وقت اتخاذه
+  automationMonthlyBudgetChangeCeilingPct Int? @default(50)
+}
+
+// أي كامبين (من جوجل أو ميتا) تم اختياره ليتبع لـ Workspace معين
+model CampaignLink {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  platform        Platform
+  externalAccountId String  // Google Ads customer id / Meta ad account id
+  externalCampaignId String // campaign id في المنصة نفسها
+  campaignName    String
+  addedAt         DateTime  @default(now())
+
+  // آخر بيانات استراتيجية مزايدة معروفة - بتتحدث يومياً عن طريق الـ cron،
+  // مش بتُستدعى حية وقت فتح صفحة التشخيص (تجنباً لبطء وحصة API استهلاك زيادة)
+  biddingStrategyType String?
+  targetCpa       Float?
+  targetRoas      Float?
+  biddingDataUpdatedAt DateTime?
+
+  @@unique([workspaceId, platform, externalCampaignId])
+  // بيخدم نمط بحث الـ webhooks (سلة/شوبيفاي): "لاقي الـ Workspace بتاع
+  // المتجر ده" - من غير الـ index ده، كل webhook هيعمل فحص كامل للجدول
+  @@index([platform, externalAccountId])
+}
+
+// ==================== البيانات المسحوبة يومياً ====================
+
+model MetricSnapshot {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  platform        Platform
+  campaignId      String    // externalCampaignId
+  date            DateTime  @db.Date
+  // "ALL" = مجمّع، القيم التانية (facebook/instagram/audience_network/messenger)
+  // من publisher_platform breakdown
+  placementBreakdown String @default("ALL")
+  // مكان الظهور التفصيلي (Feed/Stories/Reels/Search) - بُعد منفصل عن
+  // المنصة نفسها، من breakdowns=placement بارامتر مختلف تماماً
+  placementDetail String @default("ALL")
+
+  impressions     Int       @default(0)
+  clicks          Int       @default(0)
+  cost            Float     @default(0)      // بعملة الحساب الأصلية
+  // conversions "الخام" زي ما المنصة بتحسبها (dashboard conversions)
+  rawConversions  Float     @default(0)
+  // conversions "الحقيقية" بعد ما اترجعت من نظام تتبع الواتساب المُتحقق منه
+  verifiedConversions Int   @default(0)
+
+  // ==== مقاييس الفيديو (اختيارية - بتتملى بس لو الكامبين نوعه فيديو) ====
+  videoViews         Int?     // عدد المشاهدات
+  videoViewRate       Float?   // نسبة المشاهدة % (views / impressions)
+  videoThruPlays      Int?     // مشاهدات كاملة (ميتا/TikTok/Snapchat)
+  videoAvgWatchTimeSec Float?  // متوسط وقت المشاهدة بالثانية
+  videoCpv            Float?   // Cost Per View
+
+  // ==== مقاييس الإيكومرس (اختيارية - بتتملى من Salla/Shopify/Easy Orders) ====
+  ordersCount         Int?     // عدد الطلبات
+  revenue             Float?   // إجمالي قيمة الطلبات (قبل خصم أي تكلفة)
+  cogs                Float?   // Cost of Goods Sold - تكلفة المنتج نفسه
+  shippingCost        Float?   // تكلفة الشحن الفعلية
+  returnedOrdersCount Int?     // عدد الطلبات المرتجعة (RTO - خاص بالدفع عند الاستلام)
+
+  @@unique([workspaceId, platform, campaignId, date, placementBreakdown, placementDetail])
+  @@index([workspaceId, date])
+}
+
+// بيانات مرفوعة يدوي (Excel) - بتتخزن بنفس شكل MetricSnapshot تقريباً
+// عشان تدخل في نفس المقارنات والحسابات
+model UploadedSheet {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  fileName     String
+  sourceLabel  String    // اسم يديه المستخدم للمصدر ده، مثلاً "TikTok Ads" أو "Snapchat"
+  uploadedAt   DateTime  @default(now())
+  rowsCount    Int
+  rows         UploadedSheetRow[]
+}
+
+model UploadedSheetRow {
+  id             String   @id @default(cuid())
+  uploadedSheetId String
+  uploadedSheet  UploadedSheet @relation(fields: [uploadedSheetId], references: [id], onDelete: Cascade)
+  date           DateTime @db.Date
+  campaignName   String
+  impressions    Int      @default(0)
+  clicks         Int      @default(0)
+  cost           Float    @default(0)
+  conversions    Float    @default(0)
+
+  @@index([uploadedSheetId])
+}
+
+// عشان نحسب ROAS/ROI حقيقي، محتاجين "قيمة" لكل conversion محددة يدوي لكل Workspace
+model ConversionValueConfig {
+  id             String    @id @default(cuid())
+  workspaceId    String    @unique
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  avgLeadToClientRate Float  // نسبة تحويل الليد لعميل فعلي (مثلاً 0.15 = 15%)
+  avgClientValue      Float // متوسط قيمة العميل الواحد بالعملة المحلية
+  updatedAt      DateTime  @updatedAt
+}
+
+enum SubscriptionStatus {
+  NONE       // لسه معملش اشتراك خالص
+  TRIALING   // في فترة تجربة (لو فعّلناها لاحقاً)
+  ACTIVE     // مدفوع وشغال
+  PAST_DUE   // فشل تحصيل التجديد بالتوكن المحفوظ - محتاج إعادة محاولة أو تحديث بيانات دفع
+  CANCELED   // اتلغى فعلياً (بعد ما تخلص الفترة المدفوعة لو cancelAtPeriodEnd كان true)
+}
+
+enum Platform {
+  GOOGLE_ADS
+  META_ADS
+  TIKTOK_ADS
+  SNAPCHAT_ADS
+  SALLA
+  SHOPIFY
+  EASY_ORDERS
+  MANUAL_UPLOAD
+}
+
+// ==================== Attribution Engine (خدمة مستقلة) ====================
+// الجداول دي مصممة تشتغل لوحدها كخدمة منفصلة، وكمان تتستخدم جوه Workspace
+// عادي لو الـ toggle شغال. مفيش أي ربط إجباري بينها وبين باقي جداول AdLoop.
+
+// كل كليك (حتى لو لسه معندوش رسالة مطابقة) - ده "المرشحين" للتوزيع الاحتمالي
+model UnmatchedClick {
+  id            String    @id @default(cuid())
+  workspaceId   String    // ممكن يكون Workspace في AdLoop، أو "attribution-only" project id
+  platform      Platform
+  code          String    // الكود اللي اتولد وقت الكليك
+  gclid         String?
+  phoneHint     String?   // لو الصفحة سحبت رقم الهاتف قبل التحويل لواتساب
+  ipAddress     String?   // لكشف أنماط البوتات (كليكات متكررة من نفس الـ IP بمعدل غير طبيعي)
+  userAgent     String?   @db.Text // طبقة كشف تانية - نفس مبدأ CtaClickEvent، إشارة مجانية من المتصفح تلقائياً
+  clickedAt     DateTime
+  matched       Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+
+  @@index([workspaceId, matched, clickedAt])
+}
+
+// نتيجة التوزيع الاحتمالي لكل محادثة "مجهولة المصدر"
+model AttributionResult {
+  id                String   @id @default(cuid())
+  workspaceId       String
+  conversationId    String   @unique // معرف الرسالة الواردة من webhook واتساب
+  receivedAt        DateTime
+
+  // هل اترجعت لكود معروف مباشرة (Verified) ولا احتاجت توزيع احتمالي (Modeled)
+  attributionType    AttributionType
+
+  // لو Verified: منصة واحدة بثقة 100%. لو Modeled: JSON فيه توزيع الاحتمالات
+  // مثال: {"GOOGLE_ADS": 0.82, "META_ADS": 0.18}
+  probabilityDistribution Json
+
+  // أهم إشارة استُخدمت في القرار (للشفافية والتدقيق لاحقاً)
+  primarySignal      String?  // "time_proximity" | "phone_match" | "hourly_pattern" | "baseline_ratio"
+
+  createdAt          DateTime @default(now())
+}
+
+enum AttributionType {
+  VERIFIED   // كود مطابق مباشر
+  MODELED    // توزيع احتمالي
+}
+
+// ==================== قائمة يومية ذكية (Smart Daily Checklist) ====================
+
+model DailyTask {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  date         DateTime  @db.Date // اليوم اللي اترشحت فيه المهمة دي
+
+  title        String    // "راجع Search Terms Report - آخر مراجعة من 8 أيام"
+  category     TaskCategory
+  priority     TaskPriority @default(MEDIUM)
+  source       TaskSource   // rule-based ولا AI-generated
+  relatedCampaignId String? // لو مرتبطة بكامبين معين
+
+  completed    Boolean   @default(false)
+  completedAt  DateTime?
+  snoozedUntil DateTime? // لو المستخدم أجّلها
+
+  createdAt    DateTime  @default(now())
+
+  @@index([workspaceId, date, completed])
+}
+
+enum TaskCategory {
+  PRICING_RISK      // فحص أساسي يومي - أعلى أولوية دائماً (وليس اختيارياً)
+  SEARCH_TERMS      // مراجعة الكلمات المفتاحية الفعلية اللي جابت كليكات
+  NEGATIVE_KEYWORDS
+  TRACKING_HEALTH   // فحص إن الـ conversion tracking لسه شغال (مش واقف بصمت)
+  TAG_HEALTH        // وسم تتبع بايظ/معطل (مختلف عن TRACKING_HEALTH - ده خاص بالتنصيب التقني نفسه)
+  CTR_DROP          // انخفاض حاد في نسبة النقر مقارنة بالمعتاد
+  PAGE_SPEED        // بطء تحميل صفحة الهبوط بشكل يؤثر على التحويل
+  BUDGET_PACING     // هل الصرف على المسار الصحيح للوصول لميزانية الشهر
+  AD_FATIGUE        // تكرار الظهور (Frequency) عالي، وقت تغيير الكرياتيف
+  QUALITY_SCORE
+  DISAPPROVED_ADS
+  COMPETITOR_ACTIVITY
+  ANOMALY           // اكتشاف تلقائي (AI) لحاجة غريبة في الأرقام
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskSource {
+  RULE_BASED  // قاعدة ثابتة (كل 7 أيام مثلاً)
+  AI_DETECTED // ناتج من تحليل AI للانحرافات في البيانات
+}
+
+// ==================== محرك الأتوميشن (Automation Rules) ====================
+// مبدأ أساسي: القواعد هنا مبنية بس على بيانات "الحقيقة" (Verified/True)
+// اللي المنصة نفسها معندهاش - مش تكرار لـ Google Ads Automated Rules أو
+// Meta Ads Rules اللي أصلاً بتشتغل مجاناً على بيانات المنصة الخام.
+
+model AutomationRule {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name          String    // اسم يديه المستخدم للقاعدة، مثلاً "إيقاف عند تضخيم المنصة"
+
+  // الشرط - مبني على مقاييس "الحقيقة" فقط (مش raw platform metrics)
+  metric        RuleMetric
+  operator      RuleOperator
+  threshold     Float
+  consecutiveDays Int     @default(1) // الشرط لازم يتحقق كام يوم متتالي قبل التنفيذ
+
+  // هل الحساب يعتمد على المؤكد بس، ولا يشمل التوزيع الاحتمالي (Modeled)
+  // كمان - كل قاعدة تختار مستوى ثقتها بشكل مستقل عن باقي القواعد
+  attributionBasis RuleAttributionBasis @default(VERIFIED_ONLY)
+
+  // الإجراء
+  action        RuleAction
+  actionValue   Float?    // مثلاً نسبة تقليل/زيادة الميزانية
+
+  // ==== ضمانات الأمان المالي (بنفس فلسفة الـ Rate Limiting) ====
+  maxSingleJumpPct Int?   @default(20) // أقصى نسبة تغيير ميزانية في الإجراء الواحد
+  cooldownDays     Int    @default(3)  // أقل مدة بين إجراءين على نفس الكامبين
+  lastExecutedAt   DateTime?           // آخر مرة اتنفذ فيها إجراء - لحساب الـ cooldown
+
+  // نطاق التطبيق
+  appliesTo     RuleScope @default(ALL_CAMPAIGNS)
+  specificCampaignIds String[] @default([])
+
+  enabled       Boolean   @default(true)
+  requireApproval Boolean @default(true) // لو true، القاعدة تقترح بس ومتنفذش أوتوماتيك من غير موافقة
+
+  createdAt     DateTime  @default(now())
+  executions    RuleExecution[]
+}
+
+enum RuleAttributionBasis {
+  VERIFIED_ONLY    // بس المحادثات المؤكدة 100%
+  INCLUDE_MODELED  // المؤكد + نصيب المنصة من التوزيع الاحتمالي (لو الـ Workspace مفعّل عنده)
+}
+
+model RuleExecution {
+  id            String   @id @default(cuid())
+  ruleId        String
+  rule          AutomationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  campaignId    String
+  triggeredAt   DateTime @default(now())
+  metricValueAtTrigger Float
+  actionTaken   String   // وصف الإجراء اللي اتنفذ فعلياً
+  status        ExecutionStatus @default(PENDING_APPROVAL)
+  approvedAt    DateTime?
+}
+
+enum RuleMetric {
+  CPL_VERIFIED        // تكلفة العميل الحقيقي المتحقق منه
+  INFLATION_RATE       // نسبة تضخيم المنصة مقارنة بالحقيقة
+  TRUE_ROAS            // العائد الحقيقي بعد كل التكاليف (إيكومرس)
+  UNATTRIBUTED_RATE     // نسبة المحادثات المجهولة المصدر
+  RESPONSE_TIME_MINUTES // سرعة رد الفريق الحقيقية (بعد استبعاد الردود الأوتوماتيك)
+  RTO_RATE              // نسبة المرتجعات (إيكومرس)
+}
+
+enum RuleOperator {
+  GREATER_THAN
+  LESS_THAN
+}
+
+enum RuleAction {
+  PAUSE_CAMPAIGN
+  REDUCE_BUDGET_PCT
+  INCREASE_BUDGET_PCT
+  SEND_ALERT_ONLY // مجرد تنبيه، من غير أي تنفيذ فعلي
+}
+
+enum RuleScope {
+  ALL_CAMPAIGNS
+  SPECIFIC_CAMPAIGNS
+}
+
+enum ExecutionStatus {
+  PENDING_APPROVAL // مستني موافقة المستخدم (requireApproval = true)
+  EXECUTED
+  REJECTED
+}
+
+// ==================== تدقيق صفحة الهبوط (Landing Page Audit) ====================
+// تدقيق شامل حقيقي، مش قائمة سطحية - يجمع فحوصات تقنية قابلة للقياس
+// (SEO، Schema، سرعة التحميل) مع تحليل عميق بالذكاء الاصطناعي (تصميم،
+// نصوص الإقناع، وضوح أزرار الدعوة للفعل، جودة الصور، ثقة المستخدم).
+
+model LandingPageAudit {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  url          String
+  auditedAt    DateTime @default(now())
+
+  overallScore Int      // 0-100
+
+  // نتيجة كل فئة على حدة + النتائج التفصيلية (JSON لأن كل فئة شكل نتائجها مختلف)
+  designTrustScore    Int
+  designTrustFindings  Json
+
+  copywritingScore    Int
+  copywritingFindings Json
+
+  ctaScore            Int
+  ctaFindings         Json
+
+  layoutScore         Int
+  layoutFindings      Json
+
+  // مقترح استقطاب أول عميل - نوعه بيتحدد حسب المجال (خصم، ضمان، استشارة
+  // مجانية، دراسة حالة، إلخ)، مش دايماً "عرض" تقليدي
+  acquisitionSuggestionType String  // "discount" | "guarantee" | "free_consultation" | "case_study" | "trial" | "certification_display"
+  acquisitionSuggestion     String? @db.Text
+
+  domainTrustScore    Int
+  domainTrustFindings Json
+
+  seoScore            Int
+  seoFindings         Json
+
+  imageQualityScore   Int
+  imageQualityFindings Json
+
+  mobileExperienceScore Int
+  mobileExperienceFindings Json
+
+  trustSignalsScore   Int
+  trustSignalsFindings Json
+
+  valueClarityScore   Int   // هل زائر الصفحة بيفهم "بيقدملك إيه بالظبط" خلال ثوان؟
+  valueClarityFindings Json
+
+  formFrictionScore   Int?  // null لو مفيش فورم أصلاً في الصفحة
+  formFrictionFindings Json?
+
+  legalComplianceScore Int  // سياسة الخصوصية، الشروط، سياسة الإرجاع (مهم جداً لثقة الإيكومرس)
+  legalComplianceFindings Json
+}
+
+// ==================== Action Feed (= AI Command Center + Alerts، مدموجين) ====================
+// نفس الـ engine لبندين كانوا مقترحين منفصلين - أي بند سواء كان "اقتراح
+// تنفيذي" (وفّر فلوس، زوّد ميزانية) أو "تنبيه" (تراكينج واقف، ميزانية
+// هتخلص) بيظهر في نفس القائمة الموحّدة، بفرق بس في `type` و`severity`.
+
+model ActionFeedItem {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  type         ActionFeedType
+  severity     TaskPriority // نفس enum الأولوية المستخدم في DailyTask - توحيد بدل تكرار
+  title        String
+  description  String?  @db.Text
+
+  // رابط اختياري - لما المستخدم يدوس على الإشعار في الجرس، يودّيه للصفحة
+  // المناسبة (صفحة الاشتراك، صفحة القرارات، صفحة فحص الموقع، إلخ)
+  linkUrl      String?
+
+  // لو البند ده ناتج من AutomationRule محدد (بند "تنفيذي" غالباً)
+  relatedRuleExecutionId String?
+
+  status       ActionFeedStatus @default(PENDING)
+  resolvedAt   DateTime?
+
+  // تنفيذ حقيقي - نوع الإجراء + بيانات كافية تنفّذه، بدل "موافق" اللي
+  // بيسجّل بس من غير فعل. null = اقتراح معلوماتي بس، مفيش تنفيذ آلي ليه
+  actionType    String?  // "SET_BID_STRATEGY_GOOGLE" | "SET_BID_STRATEGY_META" | "SET_BID_STRATEGY_TIKTOK"
+  actionPayload Json?    // {campaignId/adSetId/adGroupId, newStrategy, targetValue}
+
+  // حالة القراءة في الجرس - منفصلة عمداً عن status (PENDING/APPLIED/
+  // DISMISSED)، لأن إشعار حسابي زي "الخطة اتفعّلت" مالوش "قرار" يُتخذ
+  // فيه أصلاً، لكن لسه محتاج يتقرا/متتقراش زي أي إشعار عادي
+  read         Boolean  @default(false)
+
+  createdAt    DateTime @default(now())
+
+  @@index([workspaceId, status, createdAt])
+  @@index([workspaceId, read, createdAt])
+}
+
+enum ActionFeedType {
+  SUGGESTION // بند تنفيذي - له Apply/Dismiss فعلي (توفير مصاريف، زيادة ميزانية..)
+  ALERT      // تنبيه - غالباً معلوماتي أو يحتاج مراجعة يدوية مش تنفيذ مباشر
+  ACCOUNT    // إشعار حسابي - اشتراك، تفعيل خطة، اكتمال فحص - مفيش قرار Apply/Dismiss ليه
+}
+
+enum ActionFeedStatus {
+  PENDING
+  APPLIED
+  DISMISSED
+}
+
+// ==================== Experiments Lab ====================
+// تسجيل كل تعديل (ميزانية/عناوين/صفحة هبوط) من لحظة حدوثه، وقياس أثره
+// الحقيقي بعد فترة كافية - عشان نثبت إن تعديلات النظام فعلاً بتحسّن حاجة،
+// مش مجرد ادعاء. التسجيل يبدأ فوراً من أول تعديل، لكن "الثقة" في النتيجة
+// بتتأخر لحد ما تتوفر عينة كافية (نفس فلسفة AI Forecast بالظبط).
+
+model ExperimentLog {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  changeType     ExperimentChangeType
+  description    String   // "زيادة ميزانية كامبين X من 500 لـ 650 ريال"
+  changedAt      DateTime @default(now())
+  relatedCampaignId String?
+
+  // نافذة القياس - بتتحسب تلقائي (مثلاً 7 أيام قبل و7 أيام بعد)
+  beforeMetricValue Float?
+  afterMetricValue  Float?
+  measuredMetric    String? // "cpl_verified" مثلاً - أي مقياس بيتقاس عليه الأثر
+
+  // مستوى الثقة في النتيجة - بيتحدد تلقائي بناءً على حجم العينة المتاحة
+  confidenceLevel ExperimentConfidence @default(INSUFFICIENT_DATA)
+
+  createdAt      DateTime @default(now())
+
+  @@index([workspaceId, changedAt])
+}
+
+enum ExperimentChangeType {
+  BUDGET
+  AD_COPY
+  LANDING_PAGE
+  TARGETING
+  BID_STRATEGY
+  OTHER
+}
+
+enum ExperimentConfidence {
+  INSUFFICIENT_DATA // لسه العينة مش كافية - النتيجة (لو ظاهرة) أولية بس
+  PRELIMINARY        // بداية اتجاه واضح، لكن لسه محتاج وقت أطول للتأكيد
+  RELIABLE            // عينة كافية (أيام + verified conversions) - النتيجة موثوقة
+}
+
+// ==================== توحيد التحويلات المتعددة لنفس الزائر ====================
+// المشكلة: زائر واحد بيدوس على أكتر من زرار CTA (واتساب، اتصال، فورم) في
+// نفس الزيارة - من غير الحل ده، كل ضغطة بتتحسب "تحويل" منفصل، فيتضخم
+// الرقم رغم إنه عميل واحد بس. الحل: كل ضغطات الزائر في نفس الجلسة بتتسجل
+// بنفس sessionId، ولما أول إشارة تحقق حقيقية توصل (رسالة واتساب فعلية،
+// مكالمة مسجّلة، فورم اتبعت)، بيتربط كل أحداث الجلسة دي بتحويل واحد بس -
+// أي إشارة تانية بعد كده لنفس الجلسة بتتسجل كـ"لمسة إضافية" للتحليل،
+// مش تحويل جديد.
+
+model CtaClickEvent {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  sessionId     String   // معرف ثابت للزائر طول الزيارة (كوكي من الطرف الأول)
+  gclid         String?
+  clickPlatform Platform? // أنهي منصة الكليك ده جاي منها فعلياً - قبل كده كان مفروض جوجل بس بالسكوت
+  campaignId    String?
+  ctaType       CtaEventType
+  userAgent     String?  @db.Text // إشارة كشف بوتات مجانية - المتصفح بيبعتها تلقائياً
+  clickedAt     DateTime @default(now())
+
+  @@index([workspaceId, sessionId])
+}
+
+// السجل الوحيد المعتمد لـ"هل الجلسة دي اتحوّلت فعلياً قبل كده" - نفس مبدأ
+// ProcessedWebhookEvent بالظبط (idempotency عن طريق unique constraint)،
+// عشان الفحص يبقى آمن حتى لو إشارتين وصلوا في نفس اللحظة تقريباً (Race
+// Condition) - قاعدة البيانات نفسها بترفض التكرار، مش الكود بيحاول يتأكد
+// بنفسه بشكل غير آمن (زي "افحص الأول وبعدين اكتب" اللي ممكن يفشل تحت ضغط)
+// تتبع محادثات ماسنجر (Click-to-Messenger) عشان نقدر نميّز ضغطة بالغلط
+// عن تواصل حقيقي، ونزوّد verifiedConversions فعلياً بدل ما تفضل صفر.
+// نفس مبدأ tracking الواتساب، لكن الإشارة هنا referral.ad_id (مؤكدة
+// رسمياً من توثيق ميتا) بدل كود Ref نصي.
+// اشتراك Web Push - كل جهاز/متصفح المستخدم فعّل فيه الإشعارات بييجيله
+// صف مستقل هنا (نفس المستخدم ممكن يكون عنده كذا جهاز). مفيش تطبيق
+// موبايل منفصل - Web Push بتشتغل من المتصفح مباشرة، بما فيها الموبايل.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  endpoint  String   @unique @db.Text
+  p256dh    String   @db.Text // مفتاح تشفير - جزء من بروتوكول Web Push القياسي
+  auth      String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model MessengerConversation {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  psid          String   // معرف الشخص عند ميتا (Page-Scoped ID) - فريد لكل شخص لكل صفحة
+  adId          String?  // من referral.ad_id - بيوصل مع أول رسالة بس
+  campaignId    String?  // مُستنتج من adId عبر CampaignLink
+
+  firstMessageAt DateTime
+  lastMessageAt  DateTime
+  messageCount   Int     @default(0) // عدد رسايل المستخدم نفسه
+
+  assessed      Boolean  @default(false)
+  verified      Boolean  @default(false)
+
+  @@unique([workspaceId, psid])
+  @@index([workspaceId, assessed])
+}
+
+model SessionConversion {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  sessionId     String
+  firstCtaType  CtaEventType // أول قناة فعلياً حققت التحويل (مفيد للتحليل: أي زرار بيقنع فعلاً)
+  convertedAt   DateTime @default(now())
+
+  // رقم الهاتف (لو متاح من رسالة واتساب) - إشارة هوية أقوى من sessionId
+  // اللي بيتغيّر لو نفس الشخص جه من جهاز تاني (موبايل بعد كمبيوتر مثلاً).
+  // sessionId وحده كان بيمنع التكرار جوه نفس الزيارة بس، مش عبر الأجهزة
+  phoneNumber   String?
+
+  @@unique([workspaceId, sessionId])
+  @@index([workspaceId, phoneNumber])
+}
+
+enum CtaEventType {
+  WHATSAPP
+  CALL
+  FORM
+}
+
+// ==================== مراقبة تغطية التتبع على مستوى الصفحة ====================
+// السؤال اللي محدش كان بيقدر يجاوبه: "هل كود التتبع فعلاً موجود ومنصّب
+// صح على كل صفحة هبوط عندي، ولا فيه صفحة نسيت أضيفه فيها؟" - فحص تقني
+// مباشر (نجيب الصفحة ونفتش عن بصمة كود التتبع فيها)، مش افتراض.
+
+model MonitoredPage {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  url           String
+  label         String?  // اسم يديه المستخدم للصفحة (مثلاً "صفحة هبوط الرياض")
+
+  trackingDetected Boolean? // null = لسه ما اتفحصتش، true/false = نتيجة آخر فحص
+  lastCheckedAt DateTime?
+  lastError     String?  @db.Text // لو الفحص فشل لسبب تقني (الصفحة مش متاحة مثلاً)
+
+  createdAt     DateTime @default(now())
+
+  @@index([workspaceId])
+}
+
+// ==================== أداء على مستوى الإعلان الفردي (Creative-Level) ====================
+// الفجوة الأهم اللي طلعت من تحليل الأسئلة: مدير أداء حقيقي بيسأل "أنهي
+// صورة/فيديو/نص هو اللي بيجيب النتيجة؟" مش بس "الحملة كويسة؟". كل حاجة
+// كانت متوقفة عند مستوى الحملة لحد دلوقتي.
+
+model CreativeSnapshot {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  platform      Platform
+  campaignId    String   // يربط بـ CampaignLink.externalCampaignId
+  adId          String   // معرف الإعلان الفردي عند المنصة
+  // مطلوب لجوجل تحديداً عشان بناء اسم مصدر صحيح لإيقاف الإعلان
+  // (customers/{id}/adGroupAds/{adGroupId}~{adId}) - مش مستنتج من
+  // adId، لازم يتخزّن منفصل. null لباقي المنصات (مفهوم مختلف عندهم)
+  adGroupId     String?
+  adName        String?
+  creativeType  CreativeType
+  headline      String?  @db.Text
+  thumbnailUrl  String?  @db.Text
+  finalUrl      String?  @db.Text // رابط الوجهة الفعلي (Final URL) - نفس المصطلح المستخدم في جوجل نفسها
+
+  date          DateTime @db.Date
+  impressions   Int      @default(0)
+  clicks        Int      @default(0)
+  cost          Float    @default(0)
+  rawConversions Float   @default(0)
+  // متحقق منها بس لو فيه ربط فعلي (UTM على مستوى الإعلان) - مش مضمون
+  // دايماً، فبتفضل null لو مفيش رابط واضح بدل افتراض صفر خطأ
+  verifiedConversions Int?
+
+  // قيمة التحويلات (لحساب ROAS على مستوى الإعلان الفردي) - مؤكدة متاحة
+  // لجوجل (metrics.conversions_value، حقل رسمي موثّق). ميتا وتيك توك
+  // لسه مش متأكدين إن نفس التفصيل متاح على مستوى الإعلان الفردي عندهم
+  // (محتاج بحث منفصل) - هتفضل null ليهم لحد ما يتأكد، مش تخمين برقم غلط
+  conversionsValue Float?
+
+  @@unique([workspaceId, platform, campaignId, adId, date])
+  @@index([workspaceId, platform, campaignId])
+}
+
+enum CreativeType {
+  IMAGE
+  VIDEO
+  CAROUSEL
+  TEXT
+  RESPONSIVE
+}
+
+// ==================== فحص الموقع العميق (مخزّن، مش لقطة عابرة) ====================
+model SiteScanResult {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  url           String
+  competitorUrls String[] @default([]) // لحد منافسين مقارَنين معه، اختياري
+
+  status        SiteScanStatus @default(PENDING) // الفحص بطيء (صورة + AI + أداء) - بيتنفذ في الخلفية
+
+  overallScore  Int?
+  technicalSEOScore Int?
+  domainTrustScore  Int?
+  performanceScore  Int? // null لو PageSpeed فشل لأي سبب
+  visualScore   Int?     // null لو الصورة فشلت (خدمة Screenshot معطّلة/رابط غير متاح)
+
+  // التقرير الكامل (كل الفئات + التركيب المترابط + بيانات المنافسين لو
+  // موجودة) - بنخزنه JSON عشان نتجنب عشرات الأعمدة لكل فئة تدقيق فرعية،
+  // ونقدر نعرضه/نطبعه لاحقاً بالظبط زي ما اتحسب وقتها
+  fullReport    Json?
+  errorMessage  String? @db.Text
+
+  scannedAt     DateTime @default(now())
+  completedAt   DateTime?
+
+  @@index([workspaceId, scannedAt])
+}
+
+enum SiteScanStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+// ==================== تتبع أسبوعي لمعدل المشاهدة المتفاعلة (تعب الفيديو) ====================
+// جدول منفصل عمداً عن TikTokVideoMetricSnapshot (اللي بيفضل صف واحد
+// بيتحدّث فوق نفسه). "تعب الفيديو" محتاج مقارنة أسبوع بأسبوع حقيقية،
+// مش رقم لحظي - نفس مبدأ AdSetDailyConversions بالظبط لكن أسبوعي هنا
+// (تيك توك نفسها بتقيس Frequency على نافذة 7 أيام، فبنتبعها).
+model TikTokWeeklyEngagement {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  adId          String
+  weekStart     DateTime @db.Date
+  engagedViewRate Float  @default(0) // video_watched_6s ÷ impressions لنفس الأسبوع
+  frequency     Float    @default(0) // من حقل frequency المباشر عند تيك توك
+
+  @@unique([workspaceId, adId, weekStart])
+  @@index([workspaceId, adId])
+}
+
+// ==================== معدل الخطّاف ومعدل الإكمال (تيك توك) ====================
+// أهم مؤشر جودة فيديو خاص بالمنصة - مفيش له مكافئ مباشر في جوجل/ميتا.
+// video_watched_2s (الخطّاف)، video_watched_6s (مشاهدة متفاعلة - تيك
+// توك نفسها بتستخدم عتبة الـ6 ثواني للتحويل المُسند من غير كليك)
+model TikTokVideoMetricSnapshot {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  adId          String
+  adName        String?
+  impressions   Int      @default(0)
+
+  // Spark Ads (AUTH_CODE/TT_USER) مقابل إعلان عادي/Dark Post (CUSTOMIZED_USER)
+  // - نفس مقاييس الخطّاف/الإكمال الموجودة، بس مُصنّفة حسب النوع. بنستخدمها
+  // للمقارنة الحقيقية بدل الاعتماد على أرقام "صناعية" عامة (المصادر
+  // نفسها مختلفة على الرقم - 37% مقابل 48% تحسّن تحويل، حسب المصدر)
+  identityType  String?  // AUTH_CODE | TT_USER | CUSTOMIZED_USER | UNKNOWN
+
+  hookRate      Float    @default(0) // video_watched_2s ÷ impressions
+  engagedViewRate Float  @default(0) // video_watched_6s ÷ impressions
+  completionRate Float   @default(0) // video_views_p100 ÷ impressions
+
+  viewsP25      Int      @default(0)
+  viewsP50      Int      @default(0)
+  viewsP75      Int      @default(0)
+  viewsP100     Int      @default(0)
+
+  // جودة التعليقات - جزء بس من تحليل Spark Ads، مش ميزة منفصلة. بدون AI
+  // خالص - قواعد ثابتة (regex) لكشف السبام، مش تصنيف مشاعر ذكاء اصطناعي
+  totalComments   Int    @default(0)
+  flaggedComments Int    @default(0) // سبام مؤكد بقواعد ثابتة، مش تخمين
+
+  updatedAt     DateTime @updatedAt
+
+  @@unique([workspaceId, adId])
+  @@index([workspaceId])
+}
+
+// ==================== أداء الحملات الديناميكية المرتبطة بكتالوج ====================
+// أداء الحملة ككل فقط - أداء منتج بعينه جوه الحملة مش متاح كرؤية أصلية
+// عند ميتا، محتاج نظام بيانات منفصل كامل (موثّق في التعليق أعلى الدالة)
+model CatalogCampaignSnapshot {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  campaignId    String
+  productSetId  String
+
+  impressions   Int      @default(0)
+  clicks        Int      @default(0)
+  cost          Float    @default(0)
+  purchases     Float    @default(0)
+  updatedAt     DateTime @updatedAt
+
+  @@unique([workspaceId, campaignId])
+  @@index([workspaceId])
+}
+
+// ==================== فورم الليدز داخل ميتا (Instant Forms) ====================
+// "جودة العملاء من فورم ميتا الداخلي مقارنة بفورم موقعي؟" - بيانات حقيقية
+// عن طريق webhook الـ leadgen، نفس نمط webhook واتساب بالظبط. محتاج
+// صلاحيات إضافية (leads_retrieval, pages_show_list) - مسجّل في
+// activation-checklist.md، نفس وضع طبقة جودة رسايل ماسنجر بالظبط.
+model LeadFormSubmission {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  platform      Platform @default(META_ADS) // القيمة الافتراضية دي بس لتوافق الصفوف القديمة قبل إضافة الحقل
+  leadgenId     String   @unique // معرف الليد الفريد عند المنصة - يمنع التكرار لو الويب هوك اتبعت مرتين
+  formId        String
+  adId          String?
+  campaignId    String?
+
+  submittedAt   DateTime
+  fieldData     String?  @db.Text // JSON خام لإجابات العميل - بيانات حساسة، معروضة بحرص
+
+  createdAt     DateTime @default(now())
+
+  @@index([workspaceId, submittedAt])
+}
+
+// ==================== أماكن ظهور الشبكة الإعلانية (Display/YouTube) ====================
+// ملاحظة موثّقة رسمياً من جوجل: أماكن الظهور منخفضة النشاط بتتجمّع في
+// صف "Other" واحد - مجموع الصفوف الفردية ممكن ميساويش مجموع الحملة الكلي
+model DisplayPlacementSnapshot {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  campaignId    String
+  placement     String   // رابط URL أو معرف فيديو يوتيوب أو "Other" للمجمّع
+  displayName   String
+  placementType String   // WEBSITE | MOBILE_APP_CATEGORY | YOUTUBE_VIDEO | YOUTUBE_CHANNEL | إلخ
+  date          DateTime @db.Date
+
+  impressions   Int      @default(0)
+  clicks        Int      @default(0)
+  cost          Float    @default(0)
+  conversions   Float    @default(0)
+
+  @@unique([workspaceId, campaignId, placement, date])
+  @@index([workspaceId, campaignId])
+}
+
+// ==================== أداء أنواع المطابقة (Broad/Phrase/Exact) ====================
+// كل صف هنا بيمثّل "آخر 30 يوم مجمّعة" حسب نوع المطابقة، مُحدّثة يومياً -
+// مش سجل تاريخي يوم بيوم لكل كلمة (الحجم كان هيكبر جداً من غير فايدة
+// إضافية حقيقية للمقارنة بين الأنواع الثلاثة)
+model MatchTypeSnapshot {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  campaignId    String
+  matchType     String   // BROAD | PHRASE | EXACT | UNKNOWN
+  date          DateTime @db.Date // تاريخ آخر تحديث، مش تاريخ حدث فردي
+
+  impressions   Int      @default(0)
+  clicks        Int      @default(0)
+  cost          Float    @default(0)
+  conversions   Float    @default(0)
+
+  @@unique([workspaceId, campaignId, matchType, date])
+  @@index([workspaceId, campaignId])
+}
+
+// ==================== أداء الجهاز والموقع الجغرافي ====================
+// استعلامان منفصلان عمداً (مش مدموجين) - تجنّباً لمشكلة حذف الصفوف
+// الموثّقة في GAQL عند دمج أكتر من بُعد تقسيم في استعلام واحد
+model DevicePerformanceSnapshot {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  campaignId    String
+  date          DateTime @db.Date
+  device        String   // MOBILE | DESKTOP | TABLET | CONNECTED_TV | OTHER
+
+  impressions   Int      @default(0)
+  clicks        Int      @default(0)
+  cost          Float    @default(0)
+  conversions   Float    @default(0)
+
+  @@unique([workspaceId, campaignId, date, device])
+  @@index([workspaceId, campaignId])
+}
+
+model GeoPerformanceSnapshot {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  campaignId    String
+  date          DateTime @db.Date
+  geoTarget     String   // اسم مورد geo_target_constant على مستوى الدولة
+
+  impressions   Int      @default(0)
+  clicks        Int      @default(0)
+  cost          Float    @default(0)
+  conversions   Float    @default(0)
+
+  @@unique([workspaceId, campaignId, date, geoTarget])
+  @@index([workspaceId, campaignId])
+}
+
+// ==================== أداء حملات يوتيوب (فيديو) ====================
+// مقياس نجاح مختلف عن Search - نسبة مشاهدة، تفاعل، مش نقرات. الأرقام
+// هنا كلها مشاهدات مدفوعة بس (العضوية/المكتسبة مش متاحة عن طريق الـ API)
+model YoutubeMetricSnapshot {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  campaignId    String
+  date          DateTime @db.Date
+
+  impressions   Int      @default(0)
+  videoViews    Int      @default(0)
+  videoViewRate Float    @default(0) // نسبة المشاهدة الكاملة (0-1)
+  engagementRate Float   @default(0)
+  cost          Float    @default(0)
+  conversions   Float    @default(0)
+
+  @@unique([workspaceId, campaignId, date])
+  @@index([workspaceId, campaignId])
+}
+
+// ==================== قناة إنفاق Performance Max الفعلية ====================
+// من v23 (يناير 2026) - قبل كده كانت segments.ad_network_type بترجع
+// MIXED دايماً لحملات PMax. البيانات متاحة بس من 1 يونيو 2025 فصاعداً.
+model PmaxChannelSnapshot {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  campaignId    String
+  date          DateTime @db.Date
+  channel       String   // SEARCH | SEARCH_PARTNERS | GMAIL | YOUTUBE | DISPLAY | DISCOVER | MAPS | MIXED
+
+  impressions   Int      @default(0)
+  clicks        Int      @default(0)
+  cost          Float    @default(0)
+  conversions   Float    @default(0)
+
+  @@unique([workspaceId, campaignId, date, channel])
+  @@index([workspaceId, campaignId])
+}
+
+// ==================== أداء منتجات التسوق (Shopping/Merchant Center) ====================
+// عبر shopping_product (المورد الحالي المستمر) مش Content API القديم
+// اللي بيتقفل 18 أغسطس 2026
+model ShoppingProductSnapshot {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  accountId     String
+  itemId        String
+  title         String?
+  feedLabel     String?
+
+  hasIssues     Boolean  @default(false)
+  issuesDetail  String?  @db.Text // JSON خام لتفاصيل سبب الرفض/التقييد
+
+  clicks        Int      @default(0)
+  impressions   Int      @default(0)
+  conversions   Float    @default(0)
+  cost          Float    @default(0)
+  updatedAt     DateTime @updatedAt
+
+  @@unique([workspaceId, accountId, itemId])
+  @@index([workspaceId, hasIssues])
+}
+
+// ==================== مكوّنات درجة الجودة (Quality Score) ====================
+// "الجودة منخفضة" مش كافية - 3 مكوّنات منفصلة بتحدد السبب الفعلي:
+// صلة الإعلان، تجربة صفحة الهبوط، نسبة النقر المتوقعة.
+model QualityScoreSnapshot {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  campaignId    String
+  criterionId   String   // معرف الكلمة المفتاحية عند جوجل
+  keywordText   String?
+
+  qualityScore  Int?     // 1-10، الدرجة الكلية
+  // المكوّنات الفرعية Enum نصي من جوجل (ABOVE_AVERAGE/AVERAGE/BELOW_AVERAGE)
+  // مش رقم دقيق - جوجل بتخفي القيمة الفعلية عمداً
+  adRelevance   String?
+  landingPageExperience String?
+  expectedCtr   String?
+
+  updatedAt     DateTime @updatedAt
+
+  @@unique([workspaceId, campaignId, criterionId])
+  @@index([workspaceId, campaignId])
+}
+
+// ==================== حماية عامة من إساءة الاستخدام (Rate Limiting) ====================
+// للـ endpoints المفتوحة بدون تسجيل دخول (زي تتبع ضغطات CTA من صفحات
+// الهبوط) - معندهاش "مستخدم" نربط بيه عداد زي نظام حصة الذكاء الاصطناعي،
+// فبنتتبع بالـ IP نفسه بدل كده.
+model RateLimitEntry {
+  id          String   @id @default(cuid())
+  identifier  String   // عادة IP address، أو أي معرّف تاني حسب الـ endpoint
+  endpoint    String   // اسم الـ endpoint - نفس IP ممكن يكون له حدود مختلفة لكل endpoint
+  windowStart DateTime @default(now())
+  count       Int      @default(1)
+
+  @@unique([identifier, endpoint, windowStart])
+  @@index([identifier, endpoint])
+}
+
+// ==================== ملاحظات المستخدمين (لصاحب المنتج) ====================
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String   @db.Text
+  category  String?  // "bug" | "feature_request" | "other" - اختياري
+  createdAt DateTime @default(now())
+}
+
+// ==================== سجل تدقيق أفعال الأدمن ====================
+// لازم يجي مع أي قدرة قوية (زي View As أو تعليق حساب) - قوة كبيرة من
+// غير تسجيل = خطر، مش راحة. بيسجل مين عمل إيه وإمتى ولمين.
+model AdminAuditLog {
+  id            String   @id @default(cuid())
+  adminUserId   String
+  action        String   // "IMPERSONATE" | "SUSPEND_USER" | "UNSUSPEND_USER" | ...
+  targetUserId  String?
+  targetWorkspaceId String?
+  details       String?  @db.Text
+  createdAt     DateTime @default(now())
+
+  @@index([adminUserId, createdAt])
+}
+
+// ==================== سجل تشغيل الـ Cron اليومي ====================
+// عشان نعرف "المزامنة إمبارح فشلت لكذا Workspace" بدل ما نكتشف بالصدفة
+// لما عميل يشتكي إن بياناته واقفة
+model CronRunLog {
+  id            String   @id @default(cuid())
+  runAt         DateTime @default(now())
+  totalWorkspaces Int
+  succeeded     Int
+  failed        Int
+  durationMs    Int?
+  errors        String?  @db.Text // ملخص الأخطاء لو فيه، JSON مبسّط
+}
+
+// ==================== أداء المجموعات الإعلانية في ميتا (Lookalike/جمهور) ====================
+// بديل ميتا لمفهوم "عرض الجمهور" في جوجل - هنا الاستهداف بيتحدد على مستوى
+// المجموعة الإعلانية نفسها، مش عرض منفصل.
+model MetaAdSetSnapshot {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  campaignId    String
+  adSetId       String
+  adSetName     String?
+  targetingType String   // LOOKALIKE | CUSTOM_AUDIENCE | CORE | UNKNOWN
+
+  // استراتيجية المزايدة - bid_strategy على مستوى الحملة نفسها، لكن
+  // bid_amount (القيمة الفعلية) على مستوى المجموعة الإعلانية - معمارية
+  // مختلفة عن جوجل (اللي فيها الهدف والقيمة على نفس المستوى)
+  bidStrategyType String?
+  bidAmount     Float?
+
+  impressions   Int      @default(0)
+  clicks        Int      @default(0)
+  cost          Float    @default(0)
+  conversions   Float    @default(0)
+  updatedAt     DateTime @updatedAt
+
+  @@unique([workspaceId, campaignId, adSetId])
+  @@index([workspaceId, campaignId])
+}
+
+// ==================== تتبع يومي لتحويلات المجموعة الإعلانية ====================
+// جدول منفصل عمداً عن MetaAdSetSnapshot (اللي بيفضل صف واحد بيتحدّث فوق
+// نفسه - مستخدم في فحص استراتيجية المزايدة الحالي، تغييره كان هيبوّظه).
+// هنا بالذات محتاجين تفصيل يومي حقيقي عشان حساب "فترة التعلّم" (قاعدة
+// ميتا الموثّقة: ~50 حدث تحسين خلال 7 أيام بالظبط، مش تقريب من مجموع أكبر)
+model AdSetDailyConversions {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  adSetId       String
+  date          DateTime @db.Date
+  conversions   Float    @default(0)
+
+  @@unique([workspaceId, adSetId, date])
+  @@index([workspaceId, adSetId])
+}
+
+// ==================== أداء شرائح الجمهور ====================
+// ملاحظة نطاق مهمة: البيانات هنا موجودة بس للحملات اللي جوجل بترجع لها
+// بيانات جمهور موثوقة فعلياً (Display/YouTube/RLSA) - حملات Search
+// العادية مش هيبقى ليها صفوف هنا، وده قيد من جوجل نفسها مش نقص في المزامنة.
+model AudienceSegmentSnapshot {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  campaignId    String
+  criterionId   String   // معرف الجمهور نفسه عند جوجل
+  criterionType String?  // USER_LIST | USER_INTEREST | ... إلخ
+
+  date          DateTime @db.Date
+  impressions   Int      @default(0)
+  clicks        Int      @default(0)
+  cost          Float    @default(0)
+  conversions   Float    @default(0)
+
+  @@unique([workspaceId, campaignId, criterionId, date])
+  @@index([workspaceId, campaignId])
+}
+
+// ==================== سعر الصرف اليومي ====================
+// مش مربوط بـ Workspace معين - سعر الصرف نفس القيمة لكل الحسابات، فبيتسجل
+// مرة واحدة عامة. الـ API المجاني (open.er-api.com) معندوش بيانات تاريخية،
+// فبنبني الأرشيف بنفسنا بتسجيل يومي، من النهاردة وطالع.
+model ExchangeRateSnapshot {
+  id           String   @id @default(cuid())
+  fromCurrency String   // مثلاً "USD" (عملة حساب جوجل الإعلاني)
+  toCurrency   String   // مثلاً "SAR" (عملة استهداف الـ Workspace)
+  rate         Float
+  date         DateTime @db.Date
+
+  @@unique([fromCurrency, toCurrency, date])
+}
+
+// ==================== رابط تقرير مشاركة للعميل النهائي ====================
+model SharedReportLink {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  token         String   @unique @default(cuid()) // جزء من الرابط العام - عشوائي وطويل كفاية يصعب تخمينه
+  active        Boolean  @default(true)
+  expiresAt     DateTime? // null = بلا انتهاء، أو تاريخ محدد لو حبيت تقفله بعدين
+
+  createdAt     DateTime @default(now())
+}
+
+// ==================== هدر الميزانية على مستوى مصطلح البحث ====================
+// كانت مهمة "راجع Search Terms" مجرد تذكير مواعيد، من غير بيانات حقيقية
+// وراها. دلوقتي بنسحب مصطلحات البحث الفعلية اللي جابت كليكات، عشان نقدر
+// نقول بالظبط "المصطلح ده بالذات باعتلك X من غير ولا تحويل واحد".
+
+model SearchTermSnapshot {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  campaignId    String   // يربط بـ CampaignLink.externalCampaignId
+  searchTerm    String   @db.Text // النص الفعلي اللي الزائر بحث بيه
+  matchedKeyword String? @db.Text // الكلمة المفتاحية اللي أنت حطيتها واللي طابقت البحث ده
+
+  date          DateTime @db.Date
+  impressions   Int      @default(0)
+  clicks        Int      @default(0)
+  cost          Float    @default(0)
+  conversions   Float    @default(0)
+
+  @@unique([workspaceId, campaignId, searchTerm, date])
+  @@index([workspaceId, campaignId])
+}
+
+// ==================== عروض محفوظة للجداول (زي Google Ads Column Sets) ====================
+model SavedView {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId String?  // null = عرض عام لكل مساحات العمل، أو مخصص لواحدة بعينها
+  pageKey     String   // "campaigns" | "reports" | ... - أي صفحة الـ view ده بتاعها
+  name        String   // اسم يختاره المستخدم بنفسه
+  config      Json     // شكل الأعمدة/الفلاتر المختارة - حر الشكل حسب الصفحة
+  createdAt   DateTime @default(now())
+
+  @@index([userId, pageKey])
+}
+
+// ==================== المنتجات (لمحرك التسعير - إيكومرس) ====================
+// كان محرك حساب التسعير (lib/ecommerceMetrics.ts) مبني بالكامل من غير أي
+// مكان يخزن فيه بيانات المنتج الفعلية - فجوة حقيقية، مش تصميم مقصود.
+
+model Product {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  name          String
+  sku           String? // لمطابقة عناصر الطلب الحقيقية من سلة (order.items[].sku) - لازم يتظبط يدوي عشان الربط يشتغل
+  currentPrice  Float
+  cogs          Float    @default(0)
+  outboundShippingCost Float @default(0)
+  returnShippingCost   Float @default(0)
+  rtoRatePct    Float    @default(0)
+  avgAdCostPerOrder Float @default(0) // بيتحدث دورياً من بيانات الحملات، أو يدوي لحد ما نربطه أوتوماتيك
+
+  desiredMarginPct     Float @default(20)
+  paymentGatewayFeePct Float @default(2.85)
+  paymentGatewayFixedFee Float @default(3)
+
+  cogsLastUpdatedAt DateTime @default(now()) // لفحص "التكلفة قديمة" في diagnoseMarginIssue
+  createdAt     DateTime @default(now())
+  saleEvents    ProductSaleEvent[]
+
+  @@index([workspaceId])
+}
+
+// طلبات حقيقية على مستوى المنتج الفردي - كانت الفجوة الحقيقية اللي منعت
+// runFullPricingSafetyNet/explainRoasGap من الشغل بدقة (كنا بس عندنا
+// إجمالي الطلبات على مستوى الـWorkspace، مش مربوط بمنتج بعينه)
+model ProductSaleEvent {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  quantity    Int
+  revenue     Float    // إجمالي قيمة السطر ده في الطلب (مش سعر الوحدة × الكمية بالضرورة لو فيه خصم)
+  returned    Boolean  @default(false)
+  occurredAt  DateTime
+
+  @@index([productId, occurredAt])
+}
