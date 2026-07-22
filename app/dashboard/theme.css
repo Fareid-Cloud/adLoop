@@ -20,21 +20,21 @@
   /* طبقات الخلفية - الفرق بين الطبقات دقيق جداً دلوقتي (فرق درجة لون
      خفيف، مش حدود واضحة حوالين كل كارت) - ده اللي بيدّي إحساس "برنامج
      حقيقي" زي Mercury/Revealbot بدل "قالب كروت جاهز مقسوم بخطوط" */
-  --bg: #0A0C10;
-  --surface: #12151C;
-  --surface-raised: #1A1F28;
-  --border: #232833;
-  --border-visible: #313745;
+  --bg: #0A0E17;
+  --surface: #141A24;
+  --surface-raised: #1C2532;
+  --border: #232C3B;
+  --border-visible: #313D4F;
 
   /* النص */
-  --text-primary: #F2F3F5;
-  --text-muted: #868D99;
-  --text-faint: #4E545E;
+  --text-primary: #E9EDF3;
+  --text-muted: #8A93A4;
+  --text-faint: #59637A;
 
   /* الألوان الدلالية - ثابتة دائماً، مش قابلة للتخصيص (مبدأ §3 في الـ ADR) */
-  --verified: #34D399;
-  --gap: #F5A623;
-  --critical: #F55252;
+  --verified: #22C55E;
+  --gap: #F59E0B;
+  --critical: #EF4444;
 
   /* الخطوط - next/font/google في layout.tsx بيحمّل الخط الفعلي ويربطه
      بنفس المتغيرات دي (Almarai / IBM Plex Mono) وقت التشغيل عن طريق
