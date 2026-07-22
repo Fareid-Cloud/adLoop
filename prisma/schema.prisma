@@ -260,6 +260,7 @@ model Workspace {
   monitoredPages    MonitoredPage[]
   searchTermSnapshots SearchTermSnapshot[]
   sharedReportLinks SharedReportLink[]
+  messengerConversations MessengerConversation[]
   audienceSegmentSnapshots AudienceSegmentSnapshot[]
   siteScanResults SiteScanResult[]
   metaAdSetSnapshots MetaAdSetSnapshot[]
