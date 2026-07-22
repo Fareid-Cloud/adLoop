@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { RULE_TEMPLATES } from "@/lib/automationRules";
+import { RULE_TEMPLATES } from "@/lib/automationRuleDefinitions";
 
 export interface RuleRow {
   id: string;

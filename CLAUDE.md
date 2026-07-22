@@ -190,6 +190,20 @@ Meta Shops checkout tracking (بند 70)**
 `lib/aiRateLimit.ts` - كل الفحوصات **قبل** أي نداء Claude فعلي. التفاصيل
 الكاملة في `docs/claude-api-usage-map.md`.
 
+### 🔴🔴 فشل بناء تاني على فيرسل (Module not found: fs/tls/net) - اتصلح
+المستخدم بعت خطأ webpack حقيقي: `AutomationClient.tsx` (client
+component) بيستورد `RULE_TEMPLATES` من `automationRules.ts` مباشرة،
+لكن نفس الملف فيه استعلامات Prisma واستدعاء `actionFeed.ts` اللي بيجرّ
+معاه `google-ads-api` (gRPC، محتاجة `fs`/`tls`/`net` من Node.js).
+
+**الإصلاح:** استخرجت `RuleDefinition`/`RULE_TEMPLATES` لملف مستقل
+تماماً (`lib/automationRuleDefinitions.ts`)، صفر استيراد فيه.
+`AutomationClient.tsx` بقى بيستورد **مباشرة** من الملف الجديد - مش عن
+طريق إعادة التصدير - عشان الـwebpack مايقرّبش من `automationRules.ts` خالص.
+
+**فحص إضافي:** دوّرت منهجياً على نفس النمط في كل ملفات "use client"
+تانية - نتيجة واحدة بس، طلعت false positive (تعليق نصي، مش استيراد حقيقي).
+
 ### 🔴🔴 فشل بناء حقيقي على فيرسل (SIGKILL/Out-of-Memory) - اتصلح
 المستخدم بعت لوج نشر حقيقي فيه فشل `SIGKILL` + "OOM event" أثناء
 `next build`. **السبب المؤكد (بحث + حالة مطابقة من مشروع Cal.com

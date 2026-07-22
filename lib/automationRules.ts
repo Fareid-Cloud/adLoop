@@ -12,28 +12,13 @@ import { prisma } from "@/lib/prisma";
 import { pushToActionFeed, ruleResultToActionFeedItem } from "@/lib/actionFeed";
 import { computeCampaignCplChanges, detectMarketWideMove } from "@/lib/marketContext";
 
-export interface RuleDefinition {
-  id: string;
-  metric:
-    | "CPL_VERIFIED"
-    | "INFLATION_RATE"
-    | "TRUE_ROAS"
-    | "UNATTRIBUTED_RATE"
-    | "RESPONSE_TIME_MINUTES"
-    | "RTO_RATE";
-  operator: "GREATER_THAN" | "LESS_THAN";
-  threshold: number;
-  consecutiveDays: number;
-  // كل قاعدة تختار مستوى ثقتها بشكل مستقل - محادثات مؤكدة بس، أو مؤكدة
-  // + نصيبها من التوزيع الاحتمالي (لو الـ Workspace مفعّل عنده أصلاً)
-  attributionBasis: "VERIFIED_ONLY" | "INCLUDE_MODELED";
-  action: "PAUSE_CAMPAIGN" | "REDUCE_BUDGET_PCT" | "INCREASE_BUDGET_PCT" | "SEND_ALERT_ONLY";
-  actionValue?: number;
-  requireApproval: boolean;
-  // ضمانات مالية - بنفس فلسفة الـ Rate Limiting بالظبط
-  maxSingleJumpPct?: number; // أقصى نسبة تغيير ميزانية في الإجراء الواحد
-  cooldownDays?: number;     // أقل مدة بين إجراءين على نفس الكامبين
-}
+// RuleDefinition وRULE_TEMPLATES بقوا في ملف منفصل آمن للعميل
+// (automationRuleDefinitions.ts) - إصلاح باگ بناء حقيقي كان بيحصل لما
+// AutomationClient.tsx بيستوردهم من هنا مباشرة ويجرّ معاهم كل الاستعلامات
+// السيرفرية في الملف ده. إعادة التصدير هنا عشان الكود القديم يفضل شغال.
+import type { RuleDefinition } from "@/lib/automationRuleDefinitions";
+export type { RuleDefinition } from "@/lib/automationRuleDefinitions";
+export { RULE_TEMPLATES } from "@/lib/automationRuleDefinitions";
 
 export interface DailyMetricValue {
   date: string; // YYYY-MM-DD
@@ -115,63 +100,8 @@ function describeAction(rule: RuleDefinition, locale: Locale = "ar"): string {
   }
 }
 
-// قوالب جاهزة (Templates) - عشان المستخدم يقدر يبدأ بضغطة واحدة بدل ما
-// يبني كل قاعدة من الصفر. كلها مبنية على مقاييس الحقيقة فقط.
-//
-// ملاحظة تصحيح من المراجعة الشاملة: القوالب دي كانت معرّفة هنا بشكل، ومكررة
-// تاني بشكل مختلف شوية (بحقل name إضافي) جوه AutomationClient.tsx - تناقض
-// حقيقي كان ممكن يخليهم يختلفوا عن بعض بمرور الوقت. دلوقتي RULE_TEMPLATES
-// هي المصدر الوحيد، وبتحتوي name عشان تصلح لإنشاء AutomationRule فعلي مباشرة.
-export const RULE_TEMPLATES: Array<Omit<RuleDefinition, "id"> & { name: string }> = [
-  {
-    name: "تنبيه ارتفاع تكلفة العميل",
-    metric: "CPL_VERIFIED",
-    operator: "GREATER_THAN",
-    threshold: 30, // المستخدم بيعدلها حسب السوق بتاعه
-    consecutiveDays: 3,
-    attributionBasis: "VERIFIED_ONLY",
-    action: "SEND_ALERT_ONLY",
-    requireApproval: true,
-  },
-  {
-    name: "تقليل الميزانية عند تضخم المنصة",
-    metric: "INFLATION_RATE",
-    operator: "GREATER_THAN",
-    threshold: 50,
-    consecutiveDays: 2,
-    attributionBasis: "VERIFIED_ONLY",
-    action: "REDUCE_BUDGET_PCT",
-    actionValue: 20,
-    requireApproval: true,
-    maxSingleJumpPct: 20,
-    cooldownDays: 3,
-  },
-  {
-    name: "إيقاف عند عائد سلبي",
-    metric: "TRUE_ROAS",
-    operator: "LESS_THAN",
-    threshold: 1,
-    consecutiveDays: 3,
-    attributionBasis: "VERIFIED_ONLY",
-    action: "PAUSE_CAMPAIGN",
-    requireApproval: true, // إجراء بهذه الخطورة يستحق موافقة دائماً، حتى لو المستخدم فعّل التنفيذ التلقائي لقواعد تانية
-  },
-  {
-    name: "توسّع عند أداء قوي مستقر",
-    // قاعدة توسّع - مش كل القواعد لازم تكون "إيقاف"، الأداء القوي الحقيقي
-    // يستاهل زيادة ميزانية بنفس منطق الثقة، مش بس خفضها وقت المشاكل
-    metric: "TRUE_ROAS",
-    operator: "GREATER_THAN",
-    threshold: 3,
-    consecutiveDays: 5, // فترة أطول من قاعدة الإيقاف - عشان نتأكد إنه اتجاه مستقر مش يوم حظ
-    attributionBasis: "VERIFIED_ONLY",
-    action: "INCREASE_BUDGET_PCT",
-    actionValue: 15,
-    requireApproval: true,
-    maxSingleJumpPct: 15,
-    cooldownDays: 5, // فترة تهدئة أطول من التقليل - عشان نشوف أثر الزيادة قبل أي زيادة تانية
-  },
-];
+// قوالب جاهزة (RULE_TEMPLATES) بقت في lib/automationRuleDefinitions.ts
+// (معاد تصديرها فوق) - عشان تفضل آمنة للاستيراد من كود العميل مباشرة.
 
 // ==================== المُنسّق اليومي - الحلقة المفقودة التانية ====================
 // نفس الاكتشاف بالظبط بتاع dailyTasks.ts: القواعد كانت بتتعمل من الواجهة،

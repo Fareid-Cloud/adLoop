@@ -1,4 +1,43 @@
+# اعتماديات - بتتنزّل من package.json، مفيش داعي نتتبّعها في git
 node_modules/
+
+# ناتج البناء - بيتولّد من next build، مش كود مصدري
 .next/
+out/
+build/
+
+# ملفات بيئة حقيقية - فيها أسرار حقيقية (مفاتيح API، توكنات، كلمات سر)
+# .env.example بس هو اللي المفروض يتتبّع (قالب فاضي، مفيش أسرار فيه)
 .env
 .env.local
+.env.*.local
+.env.production
+.env.development
+# الاسم الحرفي الموجود فعلاً عندك دلوقتي - غلطة حقيقية حصلت وخلتنا نتأكد منها بالاسم
+.env.local.txt
+# تغطية أي اسم بيبدأ بـ.env حتى لو امتداد زيادة (زي .txt)
+.env.*
+# استثناء صريح - .env.example قالب فاضي آمن، لازم يفضل متتبّع
+!.env.example
+
+# ملفات مؤقتة من TypeScript/Next.js - بتتولّد تلقائي كل مرة
+*.tsbuildinfo
+next-env.d.ts
+
+# ملفات نظام التشغيل ومحرر الأكواد
+.DS_Store
+*.pem
+.vscode/
+.idea/
+
+# لوجات
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vercel
+.vercel
+
+# قاعدة بيانات محلية (لو استخدمت SQLite وقت التطوير)
+*.db
+*.db-journal
