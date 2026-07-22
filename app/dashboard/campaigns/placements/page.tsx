@@ -48,7 +48,7 @@ export default async function PlacementsPage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لسه معملتش مساحة عمل" description="ارجع لـ لمحة عشان تنشئ أول مساحة عمل." />;
+    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
   }
 
   const thirtyDaysAgo = new Date();
@@ -95,7 +95,7 @@ export default async function PlacementsPage() {
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">فيسبوك مقابل إنستجرام والأماكن التفصيلية</h1>
       <p className="mb-6 text-xs text-text-faint">
-        نفس الحملة، مقسّمة حسب المنصة والمكان الفعلي (فيد/ستوري/ريلز) - عشان تعرف بالظبط فين بتيجي أرخص عميل.
+        نفس الحملة، مقسّمة حسب المنصة والمكان الفعلي (فيد/ستوري/ريلز) — لتعرف بالضبط أين يأتي أرخص عميل.
       </p>
 
       {platformGroups.length === 0 ? (

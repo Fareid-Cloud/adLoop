@@ -1,3 +1,4 @@
+import { getAppUrl } from "@/lib/appUrl";
 // app/api/oauth/tiktok/start/route.ts
 //
 // المستخدم بيدوس "اربط حساب تيك توك" في الإعدادات، وده بيودّيه هنا.
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const state = createOAuthState(user.id);
-  const redirectUri = `${process.env.APP_URL}/api/oauth/tiktok/callback`;
+  const redirectUri = `${getAppUrl()}/api/oauth/tiktok/callback`;
 
   const params = new URLSearchParams({
     app_id: process.env.TIKTOK_APP_ID!,

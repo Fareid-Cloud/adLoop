@@ -36,7 +36,7 @@ export function DeepScanClient({ workspaceId, pastScans }: { workspaceId: string
 
   // بنجيب روابط الوجهة الفعلية (Final URLs) من الإعلانات المزامنة فعلياً -
   // اقتراح تلقائي بدل ما المستخدم يكتب يدوي، لكن الحقل يفضل قابل للتعديل
-  // بالكامل (datalist مش select - المستخدم يقدر يكتب أي رابط تاني برضو)
+  // بالكامل (datalist مش select - المستخدم يقدر يكتب أي رابط تاني أيضاً)
   useEffect(() => {
     fetch(`/api/workspaces/${workspaceId}/final-urls`)
       .then((res) => (res.ok ? res.json() : { urls: [] }))

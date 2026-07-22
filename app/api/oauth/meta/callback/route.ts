@@ -1,3 +1,4 @@
+import { getAppUrl } from "@/lib/appUrl";
 // app/api/oauth/meta/callback/route.ts
 //
 // ميتا مختلفة عن جوجل في نقطة مهمة: مفيش refresh_token دائم. اللي بيحصل:
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
   const state = searchParams.get("state");
   const error = searchParams.get("error");
 
-  const settingsUrl = `${process.env.APP_URL}/dashboard/settings`;
+  const settingsUrl = `${getAppUrl()}/dashboard/settings`;
 
   if (error) {
     return NextResponse.redirect(`${settingsUrl}?connection=cancelled`);
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${settingsUrl}?connection=error`);
   }
 
-  const redirectUri = `${process.env.APP_URL}/api/oauth/meta/callback`;
+  const redirectUri = `${getAppUrl()}/api/oauth/meta/callback`;
 
   // الخطوة 1: تبادل الكود بتوكن قصير الأجل
   const shortTokenParams = new URLSearchParams({

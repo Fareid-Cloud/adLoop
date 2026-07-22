@@ -28,7 +28,7 @@ export function TrustNumber({
   return (
     <span
       className={`inline-flex items-center gap-1 border-b border-dashed border-text-faint font-mono text-text-muted opacity-80 ${className}`}
-      title="رقم مُبلَّغ من المنصة - لسه مش متحقق منه"
+      title="رقم مُبلَّغ من المنصة — لم يُتحقق منه بعد"
     >
       {value}
     </span>

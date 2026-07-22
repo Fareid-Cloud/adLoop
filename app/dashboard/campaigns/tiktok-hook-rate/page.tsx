@@ -45,7 +45,7 @@ export default async function TikTokHookRatePage() {
       {videos.length === 0 ? (
         <EmptyState
           title="لا توجد بيانات فيديو كافية بعد"
-          description="محتاجة ظهور كافٍ (100+) لكل إعلان عشان النسب تبقى موثوقة."
+          description="تحتاج ظهوراً كافياً (100+) لكل إعلان لتصبح النسب موثوقة."
         />
       ) : (
         <div className="flex flex-col gap-2">

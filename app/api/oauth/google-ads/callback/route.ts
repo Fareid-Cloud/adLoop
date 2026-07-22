@@ -1,3 +1,4 @@
+import { getAppUrl } from "@/lib/appUrl";
 // app/api/oauth/google-ads/callback/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
@@ -11,7 +12,7 @@ export async function GET(req: NextRequest) {
   const state = searchParams.get("state");
   const error = searchParams.get("error");
 
-  const settingsUrl = `${process.env.APP_URL}/dashboard/settings`;
+  const settingsUrl = `${getAppUrl()}/dashboard/settings`;
 
   // المستخدم رفض الموافقة من عند جوجل - رجّعه بشكل طبيعي، مش خطأ
   if (error) {
@@ -24,11 +25,11 @@ export async function GET(req: NextRequest) {
 
   const verified = verifyOAuthState(state);
   if (!verified) {
-    // state مش صالح - ممكن يكون منتهي أو محاولة اختراق. برضو نرفض بهدوء
+    // state مش صالح - ممكن يكون منتهي أو محاولة اختراق. أيضاً نرفض بهدوء
     return NextResponse.redirect(`${settingsUrl}?connection=error`);
   }
 
-  const redirectUri = `${process.env.APP_URL}/api/oauth/google-ads/callback`;
+  const redirectUri = `${getAppUrl()}/api/oauth/google-ads/callback`;
 
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
@@ -70,7 +71,7 @@ export async function GET(req: NextRequest) {
     },
     update: {
       accessToken: encryptToken(tokens.access_token),
-      refreshToken: tokens.refresh_token ? encryptToken(tokens.refresh_token) : undefined, // جوجل مش دايماً بترجع refresh_token جديد - منمسحش القديم لو مفيش جديد
+      refreshToken: tokens.refresh_token ? encryptToken(tokens.refresh_token) : undefined, // جوجل مش دائماً بترجع refresh_token جديد - منمسحش القديم لو مفيش جديد
       expiresAt,
     },
   });

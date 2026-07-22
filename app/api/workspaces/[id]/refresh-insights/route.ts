@@ -21,7 +21,7 @@ export async function POST(
 
   // إصلاح أمني: كان الـ endpoint بيستهلك رصيد المستخدم من غير ما يتأكد
   // إن الـ Workspace ده فعلاً بتاعه - نمط خطر، خصوصاً وقت ما البيانات
-  // الحقيقية تتوصل (الـ TODO تحت) بدل المصفوفة الفاضية دلوقتي
+  // الحقيقية تتوصل (الـ TODO تحت) بدل المصفوفة الفاضية الآن
   const workspace = await prisma.workspace.findFirst({
     where: { id: id, userId: user.id },
   });

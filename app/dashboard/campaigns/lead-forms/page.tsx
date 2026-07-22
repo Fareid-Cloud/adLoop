@@ -110,7 +110,7 @@ export default async function LeadFormsPage() {
             </div>
             <div className="rounded-2xl bg-surface p-4 text-center">
               <div className="font-mono text-2xl text-text-muted">{messengerBreakdown.pendingCount}</div>
-              <div className="mt-1 text-xs text-text-faint">لسه محتاجة وقت للتقييم</div>
+              <div className="mt-1 text-xs text-text-faint">ما زالت تحتاج وقتاً للتقييم</div>
             </div>
           </div>
         </>

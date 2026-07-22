@@ -90,7 +90,7 @@ function computeMetricFromAgg(
     case "cpl_verified": return verified > 0 ? Math.round((cost / verified) * 100) / 100 : 0;
     case "cpl_raw": return raw > 0 ? Math.round((cost / raw) * 100) / 100 : 0;
     case "verified_conversions": return verified;
-    case "ctr": return clicks; // مبسّطة - محتاجة impressions كمان لحساب CTR فعلي دقيق
+    case "ctr": return clicks; // مبسّطة - محتاجة impressions أيضاً لحساب CTR فعلي دقيق
     default: return 0;
   }
 }

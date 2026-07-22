@@ -1,3 +1,4 @@
+import { getAppUrl } from "@/lib/appUrl";
 // lib/emailVerification.ts
 
 import crypto from "crypto";
@@ -25,7 +26,7 @@ export async function sendVerificationEmail(params: {
   }
 
   const locale = params.locale ?? "ar";
-  const verifyUrl = `${process.env.APP_URL}/verify-email?token=${params.token}`;
+  const verifyUrl = `${getAppUrl()}/verify-email?token=${params.token}`;
 
   const isAr = locale === "ar";
 

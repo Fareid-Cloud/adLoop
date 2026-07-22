@@ -63,16 +63,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // بنسجل الطلب كـ snapshot يومي (بنجمعه مع باقي طلبات نفس اليوم لاحقاً)
+  // بنجمّع طلبات المتجر يومياً في صف واحد (campaignId ثابت "unlinked").
+  // مهم: payload سلة مبيحملش معرّف الكليك/الحملة، فالإسناد لحملة بعينها
+  // بيتم عبر محرك الإسناد (تطابق الطلب بكليك سابق)، مش من هنا. كان الكود
+  // بيحط order.reference_id (مرجع الطلب) في campaignId - وده فريد لكل طلب،
+  // فكان بيعمل صف منفصل لكل طلب و increment عمره ما بيشتغل ويلوّث الحقل.
   const orderDate = new Date(order.created_at ?? Date.now());
   const dateOnly = new Date(orderDate.toISOString().slice(0, 10));
+  const orderRevenue = Number(order.total?.amount ?? 0);
 
   await prisma.metricSnapshot.upsert({
     where: {
       workspaceId_platform_campaignId_date_placementBreakdown_placementDetail: {
         workspaceId: link.workspaceId,
         platform: "SALLA",
-        campaignId: order.reference_id ?? "unlinked", // لو فيه UTM/gclid مربوط بالطلب
+        campaignId: "unlinked",
         date: dateOnly,
         placementBreakdown: "ALL",
         placementDetail: "ALL",
@@ -81,15 +86,15 @@ export async function POST(req: NextRequest) {
     create: {
       workspaceId: link.workspaceId,
       platform: "SALLA",
-      campaignId: order.reference_id ?? "unlinked",
+      campaignId: "unlinked",
       date: dateOnly,
       ordersCount: 1,
-      revenue: Number(order.total?.amount ?? 0),
+      revenue: orderRevenue,
       returnedOrdersCount: 0,
     },
     update: {
       ordersCount: { increment: 1 },
-      revenue: { increment: Number(order.total?.amount ?? 0) },
+      revenue: { increment: orderRevenue },
     },
   });
 

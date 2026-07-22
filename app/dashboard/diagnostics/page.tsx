@@ -46,7 +46,7 @@ export default async function DiagnosticsPage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لسه معملتش مساحة عمل" description="ارجع لـ لمحة عشان تنشئ أول مساحة عمل." />;
+    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
   }
 
   const sevenDaysAgo = new Date();
@@ -86,7 +86,7 @@ export default async function DiagnosticsPage() {
   const exchangeImpact = await getExchangeRateImpact("USD", workspace.currency);
 
   // ضغط السوق العام - دالة مشتركة (lib/marketContext.ts) عشان نفس الحساب
-  // يتكرر في محرك الأتمتة كمان بدل ما يتكتب مرتين ويختلفوا
+  // يتكرر في محرك الأتمتة أيضاً بدل ما يتكتب مرتين ويختلفوا
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 

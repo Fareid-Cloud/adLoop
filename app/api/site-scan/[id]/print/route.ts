@@ -1,7 +1,7 @@
 // app/api/site-scan/[id]/print/route.ts
 //
 // بيرجّع صفحة HTML كاملة جاهزة للطباعة - بيستخدم generateAuditReportHtml.ts
-// اللي كان مبني من زمان بس معندوش أي نقطة استخدام فعلية لحد دلوقتي.
+// اللي كان مبني من زمان بس معندوش أي نقطة استخدام فعلية لحد الآن.
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";

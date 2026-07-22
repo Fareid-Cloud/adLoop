@@ -17,7 +17,7 @@ export default async function SiteScanPage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لسه معملتش مساحة عمل" description="ارجع لـ لمحة عشان تنشئ أول مساحة عمل." />;
+    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
   }
 
   const pastScans = await prisma.siteScanResult.findMany({

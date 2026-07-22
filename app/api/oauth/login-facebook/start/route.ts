@@ -1,3 +1,4 @@
+import { getAppUrl } from "@/lib/appUrl";
 // app/api/oauth/login-facebook/start/route.ts
 //
 // "تسجيل الدخول بفيسبوك" - منفصل تماماً عن ربط حساب Meta Ads (نطاق
@@ -10,7 +11,7 @@ const META_API_VERSION = "v25.0"; // ثابت بالتحديد - نفس النس
 
 export async function GET(req: NextRequest) {
   const state = createLoginOAuthState();
-  const redirectUri = `${process.env.APP_URL}/api/oauth/login-facebook/callback`;
+  const redirectUri = `${getAppUrl()}/api/oauth/login-facebook/callback`;
 
   const params = new URLSearchParams({
     client_id: process.env.META_LOGIN_APP_ID!,

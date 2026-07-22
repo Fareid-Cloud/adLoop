@@ -91,7 +91,7 @@ export function AutomationClient({ workspaceId, rules }: { workspaceId: string; 
 
       {rules.length === 0 ? (
         <div className="rounded-card border border-dashed border-border bg-surface px-8 py-12 text-center text-text-muted">
-          مفيش قواعد أتمتة مضافة لسه - ابدأ بقالب جاهز
+          لا توجد قواعد أتمتة بعد — ابدأ بقالب جاهز
         </div>
       ) : (
         <div className="flex flex-col gap-2">

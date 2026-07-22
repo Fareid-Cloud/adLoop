@@ -122,7 +122,7 @@ export function MetricsExplorer({ workspaceId }: { workspaceId: string }) {
         <div className="flex h-[220px] items-center justify-center text-xs text-text-faint">جارٍ التحميل...</div>
       ) : series.length === 0 ? (
         <div className="flex h-[220px] items-center justify-center text-xs text-text-faint">
-          مفيش بيانات كافية للفترة والمقاييس المختارة
+          لا توجد بيانات كافية للفترة والمقاييس المختارة
         </div>
       ) : (
         <div className="h-[260px] w-full">

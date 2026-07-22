@@ -1,3 +1,4 @@
+import { getAppUrl } from "@/lib/appUrl";
 // app/api/oauth/google-ads/start/route.ts
 //
 // المستخدم بيدوس "اربط حساب Google Ads" في الإعدادات، وده بيودّيه هنا،
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const state = createOAuthState(user.id);
-  const redirectUri = `${process.env.APP_URL}/api/oauth/google-ads/callback`;
+  const redirectUri = `${getAppUrl()}/api/oauth/google-ads/callback`;
 
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_ADS_CLIENT_ID!,

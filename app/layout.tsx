@@ -5,7 +5,7 @@
 // طريق تشغيل `next build` فعلي (مش tsc بس). كل الجلسة دي كانت شغالة
 // على فحص type-level نضيف، بس التطبيق مكانش هيتبني فعلياً.
 //
-// كمان بيحل فجوة مكتشفة: صفحات برّه الداشبورد ماكانتش بتحمّل خط
+// أيضاً بيحل فجوة مكتشفة: صفحات برّه الداشبورد ماكانتش بتحمّل خط
 // Almarai خالص - next/font كان مستورد جوه dashboard/layout.tsx بس.
 
 import type { Metadata } from "next";
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="ar" dir="rtl" data-mode="light" data-accent="blue">
       <body className={`${almarai.variable} font-display antialiased`}>{children}</body>
     </html>
   );

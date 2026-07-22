@@ -65,7 +65,12 @@ function average(nums: number[]): number {
 }
 
 function standardDeviation(nums: number[], mean: number): number {
-  const variance = nums.reduce((sum, n) => sum + (n - mean) ** 2, 0) / nums.length;
+  // انحراف العينة (÷ n−1، تصحيح Bessel) مش انحراف المجتمع (÷ n) - لأننا
+  // بنقدّر التقلّب من عيّنة تاريخية محدودة، مش من كامل المجتمع. القسمة على n
+  // بتقلّل تقدير التقلّب وبتضخّم الـ z-score (تنبيهات كاذبة أكتر) مع العينات
+  // الصغيرة. detectAnomaly بيضمن n ≥ 7 قبل ما يوصل هنا، فـ n−1 آمنة.
+  const denom = Math.max(nums.length - 1, 1);
+  const variance = nums.reduce((sum, n) => sum + (n - mean) ** 2, 0) / denom;
   return Math.sqrt(variance);
 }
 

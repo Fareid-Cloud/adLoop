@@ -22,7 +22,7 @@ export default async function CreativesPage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لسه معملتش مساحة عمل" description="ارجع لـ لمحة عشان تنشئ أول مساحة عمل." />;
+    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
   }
 
   const { performances, daysActiveByAdId, historicalCtrByAdId, fatiguedAdIds } =
@@ -56,7 +56,7 @@ export default async function CreativesPage() {
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
         <h1 className="mb-6 text-[26px] font-semibold text-text-primary">أداء الإعلانات الفردية</h1>
         <EmptyState
-          title="مفيش بيانات على مستوى الإعلان لسه"
+          title="لا توجد بيانات على مستوى الإعلان بعد"
           description="بتتحدث تلقائياً مع المزامنة اليومية بعد ربط الحملات."
         />
       </div>
@@ -114,7 +114,7 @@ export default async function CreativesPage() {
 
       {cplFatiguedAdIds.size > 0 && (
         <>
-          <SectionTitle>تكلفة العميل بتزيد (تعب متأخر - النقر لسه كويس، لكن العملاء بقوا أغلى)</SectionTitle>
+          <SectionTitle>تكلفة العميل ترتفع (تعب متأخر — النقر لا يزال جيداً، لكن العملاء أصبحوا أغلى)</SectionTitle>
           <CreativeGrid items={performances.filter((p) => cplFatiguedAdIds.has(p.adId))} accentColor="gap" />
         </>
       )}

@@ -40,8 +40,8 @@ export default async function CampaignsPage() {
   if (!workspace) {
     return (
       <EmptyState
-        title="لسه معملتش مساحة عمل"
-        description="ارجع لـ لمحة عشان تنشئ أول مساحة عمل."
+        title="لا توجد مساحة عمل بعد"
+        description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل."
       />
     );
   }
@@ -160,14 +160,14 @@ export default async function CampaignsPage() {
     <div className="mx-auto max-w-5xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-1 text-[26px] font-semibold text-text-primary">الحملات</h1>
-      <p className="mb-6 text-xs text-text-faint">اختر منصة أو نظرة شاملة عشان تشوف التحليل التفصيلي.</p>
+      <p className="mb-6 text-xs text-text-faint">اختر منصة أو نظرة شاملة لعرض التحليل التفصيلي.</p>
 
       <CampaignsNav />
 
 
       {rows.length === 0 ? (
         <EmptyState
-          title="مفيش حملات مربوطة لسه"
+          title="لا توجد حملات مربوطة بعد"
           description="اربط حملاتك من الإعدادات → مساحة العمل."
         />
       ) : (

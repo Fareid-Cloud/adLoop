@@ -71,7 +71,7 @@ export function TrackingCoverageClient({ workspaceId, pages }: { workspaceId: st
 
       {pages.length === 0 ? (
         <div className="rounded-card border border-dashed border-border bg-surface px-8 py-12 text-center text-text-muted">
-          مفيش صفحات مراقَبة لسه
+          لا توجد صفحات مُراقَبة بعد
         </div>
       ) : (
         <div className="flex flex-col gap-2">

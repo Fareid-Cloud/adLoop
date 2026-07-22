@@ -78,7 +78,7 @@ const TABS = [
 ] as const;
 
 // فهرس بحث حقيقي - كل سطر هنا بيمثّل حقل فعلاً موجود في إحدى التبويبات
-// فوق، مش أسماء وهمية. لو ضفت حقل جديد لأي تبويب، لازم يتضاف هنا كمان
+// فوق، مش أسماء وهمية. لو ضفت حقل جديد لأي تبويب، لازم يتضاف هنا أيضاً
 // عشان البحث يفضل دقيق ومطابق للواقع.
 const SEARCH_INDEX: Array<{ label: string; tab: (typeof TABS)[number]["key"] }> = [
   { label: "الاسم", tab: "profile" },
@@ -524,7 +524,7 @@ function WorkspaceTab({
 
       <FieldLabel>هامش الربح التقريبي (%)</FieldLabel>
       <p className="mb-2 text-xs text-text-faint">
-        اختياري - لو محدد، بيُستخدم لحساب "نقطة تعادل ROAS" الحقيقية بتاعتك (= 100 ÷ الهامش) في قرارات
+        اختياري — إذا حُدِّد، يُستخدم لحساب "نقطة تعادل ROAS" الحقيقية الخاصة بك (= 100 ÷ الهامش) في قرارات
         Scale/Kill، بدل مقارنة نسبية بمتوسط حسابك بس.
       </p>
       <input
@@ -553,7 +553,7 @@ function WorkspaceTab({
 
       <FieldLabel>معرف صفحة فيسبوك (Page ID)</FieldLabel>
       <p className="mb-2 text-xs text-text-faint">
-        اختياري - مطلوب بس لو عايز تفعّل تحقق جودة ليدز ماسنجر الحقيقية (تمييز الضغطة بالخطأ عن تواصل حقيقي).
+        اختياري — مطلوب فقط إذا أردت تفعيل التحقق الحقيقي من جودة ليدز ماسنجر (تمييز الضغطة الخاطئة عن التواصل الحقيقي).
       </p>
       <input
         type="text"
@@ -565,7 +565,7 @@ function WorkspaceTab({
 
       <div className="mb-2 mt-2 text-xs font-medium uppercase tracking-wider text-text-faint">التنبيهات</div>
       <p className="mb-2 text-xs text-text-faint">
-        التنبيهات دايماً موجودة داخل النظام (القرارات/التشخيص) - دي بس بتتحكم في هل توصل إيميل كمان.
+        التنبيهات دائماً موجودة داخل النظام (القرارات/التشخيص) - دي بس بتتحكم في هل توصل إيميل أيضاً.
       </p>
       <ToggleRow label="إيميل للتنبيهات العاجلة" checked={notifyUrgentByEmail} onChange={setNotifyUrgentByEmail} />
       <ToggleRow label="إيميل للتنبيهات المهمة" checked={notifyHighByEmail} onChange={setNotifyHighByEmail} />
@@ -1001,7 +1001,7 @@ function MfaSection() {
     <div className="mb-4 rounded-xl bg-surface p-4">
       <div className="mb-2 text-sm font-medium text-text-primary">التحقق بخطوتين (MFA)</div>
       <p className="mb-3 text-xs text-text-muted">
-        طبقة حماية إضافية - حتى لو حد عرف كلمة سرك، مش هيقدر يدخل من غير كود من تطبيق المصادقة بتاعك.
+        طبقة حماية إضافية — حتى لو عرف أحدٌ كلمة سرك، لن يستطيع الدخول دون رمز من تطبيق المصادقة الخاص بك.
       </p>
 
       {enabled ? (
@@ -1154,7 +1154,7 @@ function DeleteAccountSection() {
     <div className="mt-4 rounded-xl bg-critical/10 p-4">
       <div className="mb-2 text-sm font-medium text-critical">حذف الحساب نهائياً</div>
       <p className="mb-3 text-xs text-text-muted">
-        هيتمسح حسابك وكل مساحات العمل والبيانات المرتبطة بيها بالكامل. إجراء نهائي، مفيش تراجع.
+        سيُحذف حسابك وكل مساحات العمل والبيانات المرتبطة به بالكامل. إجراء نهائي لا رجعة فيه.
       </p>
       {!confirming ? (
         <button

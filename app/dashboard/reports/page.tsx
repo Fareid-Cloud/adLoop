@@ -37,7 +37,7 @@ export default async function ReportsPage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لسه معملتش مساحة عمل" description="ارجع لـ لمحة عشان تنشئ أول مساحة عمل." />;
+    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
   }
 
   const thirtyDaysAgo = new Date();
@@ -78,14 +78,14 @@ export default async function ReportsPage() {
   // إصلاح فجوة حقيقية: الـtoggle "useModeledAttribution" كان موجود في
   // الإعدادات، والدالة اللي تنفّذه (applyModeledAttribution) كانت مبنية
   // من زمان، لكن مفيش خيط واحد بيوصل بينهم - التقرير كان بيحسب
-  // verified الخام بس دايماً بغض النظر عن اختيار المستخدم.
+  // verified الخام بس دائماً بغض النظر عن اختيار المستخدم.
   let modeledConversions = 0;
   if (workspace.useModeledAttribution) {
     const attribution = await getAttributionSummaryForWorkspace(workspace.id, thirtyDaysAgo, new Date());
     const totalModeledContribution = Object.values(attribution.byPlatform).reduce((s, v) => s + v, 0);
     // platform هنا قيمة شكلية بس - النوع RawMetrics مصمم لبيانات منصة
     // واحدة، لكن إحنا بنجمع كل المنصات مع بعض هنا (والحقل مش مستخدم فعلياً
-    // جوه applyModeledAttribution). اكتشفنا كمان إن النوع نفسه قديم -
+    // جوه applyModeledAttribution). اكتشفنا أيضاً إن النوع نفسه قديم -
     // مافيهوش TIKTOK_ADS خالص، فجوة تصميم منفصلة تستاهل مراجعة لاحقاً
     const applied = applyModeledAttribution(
       { platform: "MANUAL_UPLOAD", impressions: totals.impressions, clicks: totals.clicks, cost: totals.cost, rawConversions: totals.raw, verifiedConversions: totals.verified },
@@ -213,7 +213,7 @@ export default async function ReportsPage() {
 
         <SectionTitle>ملخص التشخيص</SectionTitle>
         {activeIssues.length === 0 ? (
-          <p className="mb-6 text-sm text-verified">مفيش مشاكل نشطة دلوقتي - كل الفحوصات سليمة.</p>
+          <p className="mb-6 text-sm text-verified">لا توجد مشاكل نشطة الآن — كل الفحوصات سليمة.</p>
         ) : (
           <Table
             headers={["الفئة", "عدد المشاكل النشطة"]}

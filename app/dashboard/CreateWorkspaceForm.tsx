@@ -1,7 +1,7 @@
 // app/dashboard/CreateWorkspaceForm.tsx
 //
 // أول حاجة أي مستخدم جديد هيشوفها - من غيرها مفيش أي طريقة يبدأ بيها.
-// بتسأل كمان "بتدير كام عميل؟" مرة واحدة بس (على مستوى الحساب، مش لكل
+// بتسأل أيضاً "بتدير كام عميل؟" مرة واحدة بس (على مستوى الحساب، مش لكل
 // Workspace) - بتتحفظ في الملف الشخصي، ومفيدة لتخصيص الافتراضيات لاحقاً.
 
 "use client";
@@ -70,14 +70,14 @@ export function CreateWorkspaceForm() {
     <div className="mx-auto mt-20 max-w-md rounded-2xl bg-surface p-7">
       <h1 className="mb-1.5 text-xl font-semibold text-text-primary">ابدأ بإنشاء مساحة عمل</h1>
       <p className="mb-5 text-sm text-text-muted">
-        مساحة العمل بتمثّل عميل أو مشروع واحد (زي "ثوابت" أو "تمكين")، وهتقدر
-        تعمل أكتر من واحدة لاحقاً.
+        تمثّل مساحة العمل عميلاً أو مشروعاً واحداً (مثل «adLoop»)، ويمكنك إنشاء
+        أكثر من واحدة لاحقاً.
       </p>
 
       <form onSubmit={handleSubmit}>
         <input
           type="text"
-          placeholder="اسم مساحة العمل (مثلاً: ثوابت)"
+          placeholder="اسم مساحة العمل (مثال: adLoop)"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required

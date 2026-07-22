@@ -77,7 +77,7 @@ export default async function BudgetSimulatorPage() {
       {platforms.length < 2 ? (
         <EmptyState
           title="محتاجة منصتين على الأقل ببيانات تحويل حقيقية"
-          description="اربط أكتر من منصة وسيب البيانات تتراكم عشان المحاكاة تبقى ممكنة."
+          description="اربط أكثر من منصة واترك البيانات تتراكم لتصبح المحاكاة ممكنة."
         />
       ) : (
         <div className="flex flex-col gap-3">

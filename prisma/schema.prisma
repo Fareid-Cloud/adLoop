@@ -108,7 +108,7 @@ model User {
 
   // ==== تفضيلات الواجهة (عامة على كل الحساب) ====
   themeColor    String   @default("blue") // blue | purple | orange | sky | red ...
-  themeMode     String   @default("dark") // dark | light
+  themeMode     String   @default("light") // light | dark - الوضع الفاتح هو الأساسي
   preferredLocale String @default("ar")   // ar | en - يتحدد أول مرة من متصفح المستخدم، قابل للتغيير لاحقاً
   timezone      String   @default("Asia/Riyadh") // لعرض الأوقات والتواريخ بتوقيت المستخدم نفسه
 
@@ -1459,4 +1459,37 @@ model ProductSaleEvent {
   occurredAt  DateTime
 
   @@index([productId, occurredAt])
+}
+
+// ==================== دعم العملاء (شات مبني على الإيميل) ====================
+// شات بين العميل وصاحب المنتج: العميل يفتح محادثة (اسم/إيميل/موبايل/دولة/
+// موضوع/تفاصيل + صور)، توصل إيميل لصاحب المنتج، والرد يترد من لوحة المالك
+// ويظهر للعميل في نفس الشات. محفوظ في قاعدة البيانات (يفضل حتى لو قفل الجهاز).
+model SupportThread {
+  id        String   @id @default(cuid())
+  userId    String? // لو العميل مسجّل دخول - عشان نلاقي محادثته عبر الأجهزة
+  name      String
+  email     String
+  phone     String?
+  country   String?
+  subject   String
+  status    String   @default("OPEN") // OPEN | ANSWERED | CLOSED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  messages  SupportMessage[]
+
+  @@index([userId])
+}
+
+model SupportMessage {
+  id          String        @id @default(cuid())
+  threadId    String
+  thread      SupportThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  fromSupport Boolean       @default(false) // true = رد من صاحب المنتج
+  body        String        @db.Text
+  imageUrls   String[] // مرفقات (روابط Vercel Blob)
+  readByUser  Boolean       @default(true) // رسائل الدعم تبدأ false لحد ما العميل يشوفها
+  createdAt   DateTime      @default(now())
+
+  @@index([threadId])
 }

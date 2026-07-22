@@ -55,7 +55,7 @@ export default async function MatchTypesPage() {
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">أنواع المطابقة</h1>
       <p className="mb-6 text-xs text-text-faint">
-        مقارنة مباشرة بين المطابقة الواسعة والعبارة والتامة - أنهي نوع فعلاً بيجيب عملاء أرخص.
+        مقارنة مباشرة بين المطابقة الواسعة والعبارة والتامة - أي نوع فعلاً يجلب عملاء أرخص.
       </p>
 
       {results.length === 0 ? (

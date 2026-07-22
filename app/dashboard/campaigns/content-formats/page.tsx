@@ -66,7 +66,7 @@ export default async function ContentFormatsPage() {
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">أداء شكل المحتوى</h1>
       <p className="mb-6 text-xs text-text-faint">
-        ريلز مقابل ستوري مقابل الفيد العادي - أنهي شكل فعلاً بيجيب عملاء أرخص لنفس الميزانية.
+        ريلز مقابل ستوري مقابل الفيد العادي - أي شكل فعلاً يجلب عملاء أرخص لنفس الميزانية.
       </p>
 
       {results.length === 0 ? (

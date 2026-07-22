@@ -1,3 +1,4 @@
+import { getAppUrl } from "@/lib/appUrl";
 // app/api/oauth/login-google/start/route.ts
 //
 // "تسجيل الدخول بجوجل" - منفصل تماماً عن ربط حساب Google Ads (نطاق
@@ -8,7 +9,7 @@ import { createLoginOAuthState } from "@/lib/loginOAuthState";
 
 export async function GET(req: NextRequest) {
   const state = createLoginOAuthState();
-  const redirectUri = `${process.env.APP_URL}/api/oauth/login-google/callback`;
+  const redirectUri = `${getAppUrl()}/api/oauth/login-google/callback`;
 
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_LOGIN_CLIENT_ID!,

@@ -95,7 +95,7 @@ export default async function AttributionPathPage() {
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">مسار العميل عبر المنصات</h1>
       <p className="mb-6 text-xs text-text-faint">
         مبني على تتبعنا الفعلي للكليكات، مش تخمين - جوجل وميتا ما بيشاركوش بيانات عميل مع بعض،
-        فالصورة دي محدودة بالتفاعلات اللي مرّت عبر أداة التتبع بتاعتنا فقط.
+        فالصورة دي محدودة بالتفاعلات اللي مرّت عبر أداة التتبع الخاصة بنا فقط.
       </p>
 
       <div className="mb-6 grid grid-cols-2 gap-3">

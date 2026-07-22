@@ -61,7 +61,7 @@ export default async function DeviceGeoPage() {
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">الجهاز والموقع الجغرافي</h1>
       <p className="mb-6 text-xs text-text-faint">
-        أنهي جهاز أو موقع فعلاً بيجيب عملاء أرخص - استعلامان منفصلان عمداً لتجنّب فقدان بيانات حقيقية.
+        أي جهاز أو موقع فعلاً يجلب عملاء أرخص — استعلامان منفصلان عمداً لتجنّب فقدان بيانات حقيقية.
       </p>
 
       <div className="mb-6">

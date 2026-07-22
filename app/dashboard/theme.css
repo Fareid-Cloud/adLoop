@@ -21,10 +21,10 @@
      خفيف، مش حدود واضحة حوالين كل كارت) - ده اللي بيدّي إحساس "برنامج
      حقيقي" زي Mercury/Revealbot بدل "قالب كروت جاهز مقسوم بخطوط" */
   --bg: #0A0C10;
-  --surface: #0E1116;
-  --surface-raised: #14171D;
-  --border: #1C2027;
-  --border-visible: #262B33;
+  --surface: #12151C;
+  --surface-raised: #1A1F28;
+  --border: #232833;
+  --border-visible: #313745;
 
   /* النص */
   --text-primary: #F2F3F5;
@@ -42,6 +42,11 @@
      اللي جواه - القيمة هنا مجرد fallback لو التحميل فشل لأي سبب */
   --font-display: system-ui, sans-serif;
   --font-mono: ui-monospace, monospace;
+
+  /* افتراضي (أزرق) - عشان أي صفحة مش محطوط عليها data-accent متطلعش
+     بلون شفاف. [data-accent] بيغطيه لما يتحدد */
+  --accent: #4C8DFF;
+  --accent-dim: #4C8DFF1A;
 
   --radius: 12px;
 
@@ -63,21 +68,30 @@
 [data-accent="red"]    { --accent: #F55252; --accent-dim: #F552521A; }
 
 [data-mode="light"] {
-  --bg: #FAFAFA;
+  /* عمق حقيقي في الوضع الفاتح: خلفية رمادية فاتحة، الكروت بيضاء تطفو
+     فوقها، وطبقة "raised" مميّزة للـ hover/العناصر المرفوعة (كانت كلها
+     أبيض متطابق = مسطّحة بلا عمق، لأن اللوحة اتصممت للدارك أصلاً) */
+  --bg: #F5F6F8;
   --surface: #FFFFFF;
-  --surface-raised: #FFFFFF;
-  --border: #EDEEF0;
-  --border-visible: #DFE1E5;
+  --surface-raised: #EDEFF3;
+  --border: #E4E7EC;
+  --border-visible: #D3D8DF;
   --text-primary: #16181D;
-  --text-muted: #6B7280;
-  --text-faint: #A1A6AF;
+  --text-muted: #667085;
+  --text-faint: #98A1AE;
 }
 
 /* ==== طبقة Tailwind: تحويل المتغيرات فوق لـ utility classes ====
  * كل سطر هنا بيولّد classes تلقائي - مثلاً --color-surface يولّد
  * bg-surface / text-surface / border-surface. القيم بتشاور لمتغيراتنا
- * (var(--x)) مش أرقام ثابتة، عشان تبديل الثيم وقت التشغيل يفضل شغال. */
-@theme {
+ * (var(--x)) مش أرقام ثابتة، عشان تبديل الثيم وقت التشغيل يفضل شغال.
+ *
+ * inline ضروري: من غيره Tailwind بيصدّر المتغيرات لـ :root ويحسب var(--accent)
+ * هناك (وهي مش معرّفة في :root، بس في [data-accent]) فتطلع فاضية وتتوارث
+ * فاضية - ده كان بيكسر لون الأكسنت والوضع الفاتح/الغامق في البرنامج كله.
+ * inline بيخلي Tailwind يحقن var(--accent)/var(--surface) نفسها في كل
+ * utility، فتتحلّ عند العنصر ويشتغل التبديل اللحظي بالوراثة زي المطلوب. */
+@theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);

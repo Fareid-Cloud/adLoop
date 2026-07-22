@@ -1,3 +1,4 @@
+import { getAppUrl } from "@/lib/appUrl";
 // app/api/oauth/login-facebook/callback/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
   const state = searchParams.get("state");
   const error = searchParams.get("error");
 
-  const loginUrl = `${process.env.APP_URL}/login`;
+  const loginUrl = `${getAppUrl()}/login`;
 
   if (error) {
     return NextResponse.redirect(`${loginUrl}?oauth=cancelled`);
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${loginUrl}?oauth=error`);
   }
 
-  const redirectUri = `${process.env.APP_URL}/api/oauth/login-facebook/callback`;
+  const redirectUri = `${getAppUrl()}/api/oauth/login-facebook/callback`;
 
   try {
     const tokenParams = new URLSearchParams({
@@ -87,7 +88,7 @@ export async function GET(req: NextRequest) {
     await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
 
     const token = createSessionToken(user.id);
-    const response = NextResponse.redirect(`${process.env.APP_URL}/dashboard`);
+    const response = NextResponse.redirect(`${getAppUrl()}/dashboard`);
 
     response.cookies.set("session", token, {
       httpOnly: true,

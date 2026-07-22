@@ -11,12 +11,12 @@ import { cookies } from "next/headers";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Almarai, IBM_Plex_Mono } from "next/font/google";
-import { FeedbackWidget } from "@/app/components/FeedbackWidget";
+import { SupportChat } from "@/app/components/SupportChat";
 import { ImpersonationBanner } from "@/app/components/ImpersonationBanner";
 import { NotificationBell } from "@/app/components/NotificationBell";
 import { NotificationToast } from "@/app/components/NotificationToast";
-import { OnboardingTour } from "@/app/components/OnboardingTour";
-import { OnboardingCelebration } from "@/app/components/OnboardingCelebration";
+import { WelcomeGate } from "@/app/components/WelcomeGate";
+import { AccountMenu } from "@/app/components/AccountMenu";
 import { SidebarNav } from "@/app/components/SidebarNav";
 // next/font/google بيحمّل ملف الخط فعلياً وقت الـ build ويربطه بمتغير CSS -
 // ده الفرق عن مجرد كتابة اسم الخط في font-family من غير ما يكون مستورد
@@ -46,7 +46,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const user = await getSessionUserFromCookies();
   const locale: "ar" | "en" = (user?.preferredLocale as "ar" | "en") ?? "ar";
   const accent = user?.themeColor ?? "blue";
-  const mode = user?.themeMode ?? "dark";
+  const mode = user?.themeMode ?? "light";
 
   // تسجيل "آخر نشاط فعلي" - أساس تنبيه "معملتش فتح من فترة". Throttle
   // نص ساعة عشان منكتبش على قاعدة البيانات مع كل تنقّل بين الصفحات
@@ -69,17 +69,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     }
   }
 
-  const ONBOARDING_AUTO_HIDE_DAYS = 10;
-  const showOnboarding =
-    !!user &&
-    !user.onboardingCompleted &&
-    !user.onboardingDismissed &&
-    user.onboardingActiveDaysSeen < ONBOARDING_AUTO_HIDE_DAYS;
-
-  const showCelebration = !!user?.onboardingCompleted && !user.onboardingCelebrationShown;
-  if (showCelebration && user) {
-    void prisma.user.update({ where: { id: user.id }, data: { onboardingCelebrationShown: true } }).catch(() => {});
-  }
+  // بوابة الترحيب بتظهر لحد ما المستخدم يخلّصها أو يتخطاها (مش مربوطة
+  // بعدد أيام - بوابة أولية إجبارية الظهور، لكن التخطّي متاح دائماً)
+  const showOnboarding = !!user && !user.onboardingCompleted && !user.onboardingDismissed;
 
   return (
     <div
@@ -94,32 +86,21 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
       <main className="flex-1 px-10 py-8">
         <div className="mb-4 flex items-center justify-end gap-3">
-          {user && (
-            <div className="flex items-center gap-2">
-              {user.avatarUrl ? (
-                <img src={user.avatarUrl} alt={user.name ?? user.email} className="h-7 w-7 rounded-full object-cover" />
-              ) : (
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-raised text-xs text-text-muted">
-                  {(user.name ?? user.email)[0]?.toUpperCase()}
-                </div>
-              )}
-              <span className="text-[13px] text-text-muted">{user.name ?? user.email}</span>
-            </div>
-          )}
           <div id="tour-notification-bell"><NotificationBell /></div>
+          {user && (
+            <AccountMenu
+              name={user.name}
+              email={user.email}
+              avatarUrl={user.avatarUrl ?? null}
+              locale={locale}
+            />
+          )}
         </div>
         {children}
       </main>
       </div>
-      <FeedbackWidget />
-      {showOnboarding && (
-        <OnboardingTour
-          step={user!.onboardingStep}
-          completed={user!.onboardingCompleted}
-          dismissed={user!.onboardingDismissed}
-        />
-      )}
-      <OnboardingCelebration show={showCelebration} />
+      {user && <SupportChat name={user.name ?? ""} email={user.email} />}
+      {showOnboarding && <WelcomeGate locale={locale} startStep={user!.onboardingStep} />}
       <NotificationToast />
     </div>
   );

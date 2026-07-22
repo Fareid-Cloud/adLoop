@@ -23,7 +23,7 @@ export default async function ExperimentsPage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لسه معملتش مساحة عمل" description="ارجع لـ لمحة عشان تنشئ أول مساحة عمل." />;
+    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
   }
 
   const logs = await prisma.experimentLog.findMany({
@@ -42,23 +42,17 @@ export default async function ExperimentsPage() {
           description: log.description,
           changedAt: log.changedAt.toISOString(),
           confidenceLevel: "INSUFFICIENT_DATA" as const,
-          headline: "مفيش مقياس محدد لقياس الأثر - سجّل تعديل جديد واختار مقياس.",
+          headline: "لا يوجد مقياس محدد لقياس الأثر — سجّل تعديلاً جديداً واختر مقياساً.",
         };
       }
 
       const where: any = { workspaceId: workspace.id, date: { gte: log.changedAt } };
       if (log.relatedCampaignId) where.campaignId = log.relatedCampaignId;
 
-      const [agg, verifiedCount] = await Promise.all([
-        prisma.metricSnapshot.aggregate({
-          where,
-          _sum: { cost: true, verifiedConversions: true, rawConversions: true },
-        }),
-        prisma.metricSnapshot.aggregate({
-          where,
-          _sum: { verifiedConversions: true },
-        }),
-      ]);
+      const agg = await prisma.metricSnapshot.aggregate({
+        where,
+        _sum: { cost: true, verifiedConversions: true, rawConversions: true },
+      });
 
       const afterValue = computeMetricFromAgg(log.measuredMetric, agg._sum);
 
@@ -68,7 +62,7 @@ export default async function ExperimentsPage() {
         LOWER_IS_BETTER.has(log.measuredMetric),
         {
           daysSinceChange,
-          verifiedConversionsSinceChange: verifiedCount._sum.verifiedConversions ?? 0,
+          verifiedConversionsSinceChange: agg._sum.verifiedConversions ?? 0,
         },
         getMetricLabel(log.measuredMetric as MetricKey, "ar"),
         "ar"
@@ -121,7 +115,7 @@ export default async function ExperimentsPage() {
 
       <div className="mb-6 rounded-2xl bg-surface p-4">
         <div className="mb-1 text-sm text-text-primary">
-          الأداء عادةً بيستقر بعد تعديل الميزانية خلال {learningPhase.estimatedDays} يوم تقريباً
+          يستقر الأداء عادةً بعد تعديل الميزانية خلال {learningPhase.estimatedDays} يوم تقريباً
         </div>
         <p className="text-xs text-text-faint">
           {learningPhase.basis === "account_history"

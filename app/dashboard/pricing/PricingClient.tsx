@@ -135,7 +135,7 @@ export function PricingClient({
 
       {products.length === 0 ? (
         <div className="rounded-card border border-dashed border-border bg-surface px-8 py-12 text-center text-text-muted">
-          مفيش منتجات مضافة لسه
+          لا توجد منتجات بعد
         </div>
       ) : (
         <div className="flex flex-col gap-2">

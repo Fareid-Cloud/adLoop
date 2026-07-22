@@ -1,3 +1,4 @@
+import { getAppUrl } from "@/lib/appUrl";
 // app/api/workspaces/[id]/share-link/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
@@ -29,7 +30,7 @@ export async function GET(
     });
   }
 
-  return NextResponse.json({ url: `${process.env.APP_URL}/report/${link.token}` });
+  return NextResponse.json({ url: `${getAppUrl()}/report/${link.token}` });
 }
 
 export async function DELETE(

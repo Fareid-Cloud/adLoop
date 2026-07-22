@@ -1,7 +1,7 @@
 // app/dashboard/campaigns/attribution-engine/page.tsx
 //
 // شفافية كاملة على محرك الإسناد - كام محادثة اتأكدت بكود مباشر (VERIFIED)،
-// وكام احتاجت توزيع احتمالي ذكي (MODELED)، وإزاي اتوزعوا على المنصات.
+// وكام احتاجت توزيع احتمالي ذكي (MODELED)، وكيف اتوزعوا على المنصات.
 
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";

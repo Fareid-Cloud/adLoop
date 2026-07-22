@@ -41,3 +41,9 @@ yarn-error.log*
 # قاعدة بيانات محلية (لو استخدمت SQLite وقت التطوير)
 *.db
 *.db-journal
+
+# local PGlite test harness (not for deploy)
+_pg*
+_seed*.mjs
+_count.mjs
+_pgdata/

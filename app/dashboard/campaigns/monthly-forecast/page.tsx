@@ -29,7 +29,7 @@ export default async function MonthlyForecastPage() {
         <h1 className="mb-2 text-[26px] font-semibold text-text-primary">التوقّع الشهري</h1>
         <EmptyState
           title="لم تُحدَّد ميزانية شهرية بعد"
-          description="اضبط الهدف الشهري من الإعدادات عشان نقدر نتوقّع مسارك الحالي."
+          description="اضبط الهدف الشهري من الإعدادات لنتمكّن من توقّع مسارك الحالي."
         />
       </div>
     );

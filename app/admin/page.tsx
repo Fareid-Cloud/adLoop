@@ -62,7 +62,7 @@ export default async function AdminDashboard() {
 
       <div className="mb-6 rounded-2xl bg-gap/10 p-4 text-xs text-gap">
         <strong>ملاحظة صريحة:</strong> بيانات الفلوس/الاشتراكات مش موجودة هنا
-        لأن نظام الدفع نفسه مش مبني لسه (مسجّل في README.md كفجوة MVP حرجة).
+        لأن نظام الدفع نفسه غير مبني بعد (مسجّل في README.md كفجوة MVP حرجة).
         كل حاجة تانية هنا (المشتركين، الحسابات، الاستهلاك، المشاكل) بيانات حقيقية.
       </div>
 
@@ -83,7 +83,7 @@ export default async function AdminDashboard() {
             </span>
           </div>
         ) : (
-          <p className="text-xs text-text-faint">لسه مفيش تشغيل مسجّل - هيظهر بعد أول تشغيل للـ Cron.</p>
+          <p className="text-xs text-text-faint">لا يوجد تشغيل مسجّل بعد — سيظهر بعد أول تشغيل للـ Cron.</p>
         )}
       </div>
 
@@ -110,7 +110,7 @@ export default async function AdminDashboard() {
                   </td>
                   <td className="px-4 py-2.5">{u.emailVerified ? "✓" : "✗"}</td>
                   <td className={`px-4 py-2.5 text-xs ${isAtRisk ? "text-gap" : "text-text-faint"}`}>
-                    {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString("ar") : "لسه ما دخلش"}
+                    {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString("ar") : "لم يسجّل الدخول بعد"}
                   </td>
                   <td className="px-4 py-2.5 font-mono">{u.aiRefreshMonthlyCount}/120</td>
                   <td className="px-4 py-2.5">
@@ -145,7 +145,7 @@ export default async function AdminDashboard() {
       {/* الفيدباك */}
       <SectionTitle>آخر الملاحظات من المستخدمين</SectionTitle>
       {recentFeedback.length === 0 ? (
-        <p className="mb-6 text-sm text-text-faint">مفيش ملاحظات لسه.</p>
+        <p className="mb-6 text-sm text-text-faint">لا توجد ملاحظات بعد.</p>
       ) : (
         <div className="mb-6 flex flex-col gap-2">
           {recentFeedback.map((f: any) => (
@@ -165,7 +165,7 @@ export default async function AdminDashboard() {
       {/* سجل تدقيق الأدمن */}
       <SectionTitle>سجل تدقيق الأدمن (آخر 10)</SectionTitle>
       {recentAuditLog.length === 0 ? (
-        <p className="text-sm text-text-faint">مفيش أفعال أدمن مسجّلة لسه.</p>
+        <p className="text-sm text-text-faint">لا توجد إجراءات إدارية مسجّلة بعد.</p>
       ) : (
         <div className="flex flex-col gap-1">
           {recentAuditLog.map((log: any) => (

@@ -15,7 +15,7 @@ export function ImpersonationBanner() {
 
   return (
     <div className="flex items-center justify-between bg-critical px-4 py-2 text-xs text-white">
-      <span>أنت دلوقتي شايف الحساب ده كأدمن - أي تعديل هيؤثر على بيانات العميل الحقيقية</span>
+      <span>أنت الآن شايف الحساب ده كأدمن - أي تعديل هيؤثر على بيانات العميل الحقيقية</span>
       <button
         onClick={handleReturn}
         disabled={returning}

@@ -23,6 +23,7 @@ import { checkCostTrendAlertForWorkspace } from "@/lib/costTrendAlert";
 import { checkAttributionPathAlertForWorkspace } from "@/lib/attributionPathAlert";
 import { checkSubscriptionExpiryForWorkspace } from "@/lib/subscriptionAlerts";
 import { checkScaleKillDecisionsForWorkspace } from "@/lib/scaleKillAlerts";
+import { checkPricingHealthAlertsForWorkspace } from "@/lib/pricingHealth";
 import { syncTikTokAdsForWorkspace, syncTikTokVideoMetricsForWorkspace, syncTikTokWeeklyEngagementForWorkspace, checkTikTokAlertsForWorkspace, syncTikTokBidCapForWorkspace, syncTikTokLearningPhaseForWorkspace, syncTikTokLookalikeComparisonForWorkspace, syncTikTokSparkAdsCommentsForWorkspace, syncTikTokLeadFormsForWorkspace, syncTikTokCreativesForWorkspace, checkTikTokBidStrategyProgressionForWorkspace } from "@/lib/syncTikTokAds";
 import { checkMetaBidStrategyAlertsForWorkspace } from "@/lib/metaBidStrategyAudit";
 import { fetchAndStoreExchangeRate } from "@/lib/marketContext";
@@ -140,6 +141,7 @@ export async function GET(req: NextRequest) {
       await checkAttributionPathAlertForWorkspace(workspaceId);
       await checkSubscriptionExpiryForWorkspace(workspaceId);
       await checkScaleKillDecisionsForWorkspace(workspaceId);
+      await checkPricingHealthAlertsForWorkspace(workspaceId); // تنبيه استباقي لخطر التسعير (كان بيتحسب في الصفحة بس)
       await runAutomationForWorkspace(workspaceId);
       results.push({ workspaceId, status: "ok" });
     } catch (err) {

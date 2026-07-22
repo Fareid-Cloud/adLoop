@@ -17,7 +17,7 @@ export default async function SearchTermsPage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لسه معملتش مساحة عمل" description="ارجع لـ لمحة عشان تنشئ أول مساحة عمل." />;
+    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
   }
 
   // تسجيل "آخر مراجعة" - كان TODO قبل كده، بيغذّي تذكير المهام اليومية
@@ -39,7 +39,7 @@ export default async function SearchTermsPage() {
       <div className="mx-auto max-w-3xl">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
         <h1 className="mb-6 text-[26px] font-semibold text-text-primary">مصطلحات البحث المهدرة</h1>
-        <EmptyState title="مفيش بيانات مصطلحات بحث لسه" description="بتتحدث تلقائياً مع المزامنة اليومية." />
+        <EmptyState title="لا توجد بيانات مصطلحات بحث بعد" description="تتحدّث تلقائياً مع المزامنة اليومية." />
       </div>
     );
   }

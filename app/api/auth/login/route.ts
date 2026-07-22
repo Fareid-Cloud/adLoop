@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   // (من غير ما ننده bcrypt.compare)، لكن بيستنى وقت bcrypt الحقيقي (بطيء
   // نسبياً) لو الإيميل موجود بس الباسورد غلط - فرق التوقيت ده بيسرّب
   // "الإيميل ده مسجّل عندنا ولا لأ" حتى لو رسالة الخطأ متطابقة تماماً.
-  // الحل: ننده bcrypt.compare دايماً، حتى لو ضد هاش وهمي، عشان الزمن
+  // الحل: ننده bcrypt.compare دائماً، حتى لو ضد هاش وهمي، عشان الزمن
   // يفضل شبه ثابت في الحالتين
   if (!user) {
     await bcrypt.compare(password, DUMMY_HASH_FOR_TIMING_SAFETY);
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     data: { failedLoginAttempts: 0, lockedUntil: null, lastLoginAt: new Date() },
   });
 
-  // لو MFA مفعّل، الباسورد الصح لوحده مش كافي - بنرجّع توكن مؤقت (5
+  // لو MFA مفعّل، الباسورد الصح بمفرده مش كافي - بنرجّع توكن مؤقت (5
   // دقايق) بس، والجلسة الكاملة بتتاح من endpoint تاني بعد التأكد من كود
   // التطبيق (verify-login)
   if (user.mfaEnabled) {

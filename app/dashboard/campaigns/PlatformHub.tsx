@@ -2,7 +2,7 @@
 //
 // صفحة "رئيسية" لكل منصة على حدة - نفس محرك Scale/Kill/Watch المستخدم
 // في "أداء الإعلانات الفردية" الشامل، لكن مفلتر لمنصة واحدة بس. الهدف:
-// تقييم ومقارنة الإعلانات جوه نفس المنصة، مقابل الصفحة الشاملة اللي
+// تقييم ومقارنة الإعلانات داخل نفس المنصة، مقابل الصفحة الشاملة اللي
 // بتقارن بين المنصات مع بعضها. الاتنين موجودين مع بعض، مفيش حاجة اتلغت.
 
 import { getSessionUserFromCookies } from "@/lib/auth";
@@ -55,7 +55,7 @@ export async function PlatformHub({
           <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: PLATFORM_COLORS[platform].bg }} />
           {platformLabel}
         </h1>
-        <EmptyState title={`${platformLabel} مش مربوطة بعد`} description="اربط حملاتك من الإعدادات → مساحة العمل." />
+        <EmptyState title={`${platformLabel} غير مربوطة بعد`} description="اربط حملاتك من الإعدادات → مساحة العمل." />
       </div>
     );
   }
@@ -83,7 +83,7 @@ export async function PlatformHub({
         {platformLabel}
       </h1>
       <p className="mb-6 text-xs text-text-faint">
-        مقارنة الإعلانات جوه {platformLabel} بس - عشان تقارن باقي المنصات مع بعضها، استخدم
+        مقارنة الإعلانات داخل {platformLabel} فقط — لمقارنة باقي المنصات معاً، استخدم
         "أداء الإعلانات الفردية" في قسم "نظرة شاملة عبر المنصات".
       </p>
 

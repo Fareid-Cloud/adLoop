@@ -1,3 +1,4 @@
+import { getAppUrl } from "@/lib/appUrl";
 // app/api/oauth/tiktok/callback/route.ts
 //
 // ملاحظة مهمة اتأكدنا منها بالبحث: تيك توك بتستخدم اسم باراميتر "auth_code"
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
   const authCode = searchParams.get("auth_code");
   const state = searchParams.get("state");
 
-  const settingsUrl = `${process.env.APP_URL}/dashboard/settings`;
+  const settingsUrl = `${getAppUrl()}/dashboard/settings`;
 
   if (!authCode || !state) {
     return NextResponse.redirect(`${settingsUrl}?connection=cancelled`);

@@ -67,7 +67,7 @@ export function ActionsClient({ items }: { items: ActionItemData[] }) {
   if (visibleItems.length === 0) {
     return (
       <div className="rounded-card border border-dashed border-border bg-surface px-8 py-12 text-center">
-        <div className="text-text-muted">مفيش قرارات معلّقة دلوقتي</div>
+        <div className="text-text-muted">لا توجد قرارات معلّقة الآن</div>
       </div>
     );
   }

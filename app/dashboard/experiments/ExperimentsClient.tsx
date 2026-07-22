@@ -107,7 +107,7 @@ export function ExperimentsClient({
 
       {experiments.length === 0 ? (
         <div className="rounded-card border border-dashed border-border bg-surface px-8 py-12 text-center text-text-muted">
-          لسه معملتش أي تجربة - سجّل أول تعديل تعمله عشان نبدأ نقيس أثره
+          لا توجد تجارب بعد — سجّل أول تعديل لنبدأ قياس أثره
         </div>
       ) : (
         <div className="flex flex-col gap-2">

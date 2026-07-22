@@ -1,3 +1,4 @@
+import { getAppUrl } from "@/lib/appUrl";
 // app/api/oauth/meta/start/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
@@ -11,7 +12,7 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const state = createOAuthState(user.id);
-  const redirectUri = `${process.env.APP_URL}/api/oauth/meta/callback`;
+  const redirectUri = `${getAppUrl()}/api/oauth/meta/callback`;
 
   const params = new URLSearchParams({
     client_id: process.env.META_APP_ID!,

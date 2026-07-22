@@ -88,7 +88,7 @@ export function NotificationBell() {
   }
 
   // العلامة الحمرا بتتمسح فعلياً (محفوظة، مش بصرية بس) لما تدوس على
-  // الجرس نفسه - مش لازم تفتح كل إشعار لوحده عشان تختفي
+  // الجرس نفسه - مش لازم تفتح كل إشعار بمفرده عشان تختفي
   async function handleBellClick() {
     const nextOpen = !open;
     setOpen(nextOpen);

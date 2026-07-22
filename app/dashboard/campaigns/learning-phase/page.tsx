@@ -56,7 +56,7 @@ export default async function LearningPhasePage() {
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">فترة التعلّم</h1>
       <p className="mb-6 text-xs text-text-faint">
-        قاعدة ميتا الموثّقة علناً: محتاجة ~50 تحويل خلال 7 أيام عشان تخرج من فترة التعلّم بثبات.
+        قاعدة ميتا الموثّقة علناً: تحتاج ~50 تحويلاً خلال 7 أيام لتخرج من فترة التعلّم بثبات.
         محسوبة من بياناتك الفعلية، مش تخمين.
       </p>
 

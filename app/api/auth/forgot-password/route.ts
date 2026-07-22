@@ -1,3 +1,4 @@
+import { getAppUrl } from "@/lib/appUrl";
 // app/api/auth/forgot-password/route.ts
 //
 // أمان مهم: بنرجّع نفس الرسالة سواء الإيميل موجود ولا لأ - عشان محدش
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
     });
 
     const isAr = (user.preferredLocale ?? "ar") === "ar";
-    const resetUrl = `${process.env.APP_URL}/reset-password?token=${token}`;
+    const resetUrl = `${getAppUrl()}/reset-password?token=${token}`;
 
     if (resend) {
       try {

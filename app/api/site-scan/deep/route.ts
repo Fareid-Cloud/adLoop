@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   // إصلاح ثغرة مالية حقيقية: أغلى ميزة في المشروع (4 نداءات Claude لكل
-  // فحص) كانت من غير أي حد أقصى خالص. الفحص هنا قبل أي شغل خالص، عشان
+  // فحص) كانت من غير أي حد أقصى على الإطلاق. الفحص هنا قبل أي شغل خالص، عشان
   // طلب مرفوض ميعملش حتى صف PENDING أو يشغّل أي حاجة في الخلفية
   const quota = await checkAndConsumeSiteScanQuota(user.id);
   if (!quota.allowed) {
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       });
 
       // إشعار "خلص فحص الموقع" - بالظبط الحالة اللي المستخدم ممكن يكون
-      // خرج من الصفحة وسايبه يشتغل لوحده في الخلفية (الفحص بياخد نص دقيقة+)
+      // خرج من الصفحة وسايبه يشتغل بمفرده في الخلفية (الفحص بياخد نص دقيقة+)
       const { pushToActionFeed } = await import("@/lib/actionFeed");
       await pushToActionFeed({
         workspaceId,

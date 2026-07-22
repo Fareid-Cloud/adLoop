@@ -71,14 +71,23 @@ function getMinCostForRanking(creatives: CreativePerformance[]): number {
   return avgCpa;
 }
 
+// "أفضل إعلان" لازم يكون مبنياً على عينة حقيقية - إعلان بتحويل واحد
+// محظوظ بتكلفة منخفضة مش "أفضل إعلان"، ده ضجيج. نفس فلسفة عتبة الـScale
+// (الإثبات قبل الحكم)، بس أخف لأن ده ترتيب عرض مش قرار تنفيذي.
+const MIN_CONVERSIONS_FOR_BEST = 3;
+
 export function rankCreatives(
   creatives: CreativePerformance[],
   historicalCtrByAdId: Map<string, number[]> // آخر N يوم من CTR لكل إعلان - لفحص التعب
 ): CreativeRanking {
   const minCost = getMinCostForRanking(creatives);
   const eligible = creatives.filter((c) => c.cost >= minCost && c.cpa > 0);
+  const convsOf = (c: CreativePerformance) =>
+    c.usingVerifiedData ? c.verifiedConversions! : c.rawConversions;
 
   const sortedByCpa = [...eligible].sort((a, b) => a.cpa - b.cpa);
+  // "الأفضل" من الإعلانات ذات العينة الكافية فقط - مش أرخص تكلفة بأي عينة
+  const sortedBest = sortedByCpa.filter((c) => convsOf(c) >= MIN_CONVERSIONS_FOR_BEST);
 
   const fatigued = creatives
     .map((c) => {
@@ -90,7 +99,7 @@ export function rankCreatives(
     .map(({ isAnomaly, ...rest }) => rest);
 
   return {
-    best: sortedByCpa.slice(0, 3),
+    best: sortedBest.slice(0, 3),
     worst: sortedByCpa.slice(-3).reverse(),
     fatigued,
   };
