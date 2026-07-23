@@ -45,8 +45,8 @@
 
   /* افتراضي (أزرق) - عشان أي صفحة مش محطوط عليها data-accent متطلعش
      بلون شفاف. [data-accent] بيغطيه لما يتحدد */
-  --accent: #4C8DFF;
-  --accent-dim: #4C8DFF1A;
+  --accent: #3B82F6;
+  --accent-dim: #3B82F61A;
 
   --radius: 14px;
 
@@ -67,7 +67,7 @@
 }
 
 /* الألوان القابلة للاختيار (themeColor من إعدادات المستخدم) */
-[data-accent="blue"]   { --accent: #4C8DFF; --accent-dim: #4C8DFF1A; }
+[data-accent="blue"]   { --accent: #3B82F6; --accent-dim: #3B82F61A; }
 [data-accent="purple"] { --accent: #A585FF; --accent-dim: #A585FF1A; }
 [data-accent="orange"] { --accent: #FF9950; --accent-dim: #FF99501A; }
 [data-accent="sky"]    { --accent: #4FCEF0; --accent-dim: #4FCEF01A; }
@@ -77,14 +77,14 @@
   /* عمق حقيقي في الوضع الفاتح: خلفية رمادية فاتحة، الكروت بيضاء تطفو
      فوقها، وطبقة "raised" مميّزة للـ hover/العناصر المرفوعة (كانت كلها
      أبيض متطابق = مسطّحة بلا عمق، لأن اللوحة اتصممت للدارك أصلاً) */
-  --bg: #F5F6F8;
+  --bg: #F6F7F9;
   --surface: #FFFFFF;
-  --surface-raised: #EDEFF3;
-  --border: #E4E7EC;
-  --border-visible: #D3D8DF;
-  --text-primary: #16181D;
-  --text-muted: #667085;
-  --text-faint: #98A1AE;
+  --surface-raised: #F1F3F6;
+  --border: #E7EAEF;
+  --border-visible: #D5DAE2;
+  --text-primary: #111827;
+  --text-muted: #6B7280;
+  --text-faint: #9AA3AF;
   /* ظلال الوضع الفاتح: ناعمة، بلمسة رمادي بارد (مش أسود قاسي) - المفتاح
      البصري لإحساس المنتجات الكبيرة */
   --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 28px -12px rgba(16, 24, 40, 0.10);
@@ -96,14 +96,14 @@
    data-mode=dark كان بيورّث الفاتح لأن مفيش قاعدة تعيد تطبيق الغامق.
    البلوك ده بيخلّي التبديل للداكن يشتغل في أي مكان. */
 [data-mode="dark"] {
-  --bg: #0A0C10;
-  --surface: #12151C;
-  --surface-raised: #1A1F28;
-  --border: #232833;
-  --border-visible: #313745;
-  --text-primary: #F2F3F5;
-  --text-muted: #868D99;
-  --text-faint: #4E545E;
+  --bg: #0A0E17;
+  --surface: #141A24;
+  --surface-raised: #1C2532;
+  --border: #232C3B;
+  --border-visible: #313D4F;
+  --text-primary: #E9EDF3;
+  --text-muted: #8A93A4;
+  --text-faint: #59637A;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 30px -12px rgba(0, 0, 0, 0.6);
   --shadow-pop: 0 16px 48px -12px rgba(0, 0, 0, 0.7);
 }
@@ -140,11 +140,12 @@
   --color-accent: var(--accent);
   --color-accent-dim: var(--accent-dim);
 
-  /* مش عايزين نكتب var(--font-display) هنا - ده كان بيعمل مرجعية دائرية
-     غير واضحة بين طبقة @theme والقيمة الفعلية. next/font بيغطي القيمة
-     دي تلقائياً لأي عنصر جواه بالـ className، فمفيش داعي للتلاعب هنا */
-  --font-display: system-ui, sans-serif;
-  --font-mono: ui-monospace, monospace;
+  /* next/font بيحمّل الخط ويحطه في --font-sans / --font-mono-code (أسماء
+     مختلفة عن توكن @theme لتجنّب المرجعية الدائرية). @theme بيشاور عليها،
+     فـ.font-display / .font-mono بيتحلّوا للخط المُحمّل فعلاً، مش system.
+     (كان system-ui ثابت محقون هنا = سبب إن الخط مايتغيّرش أبداً) */
+  --font-display: var(--font-sans, system-ui, sans-serif);
+  --font-mono: var(--font-mono-code, ui-monospace, monospace);
 
   --radius-card: var(--radius);
 
@@ -160,7 +161,7 @@
 body {
   background: var(--bg);
   color: var(--text-primary);
-  font-family: var(--font-display);
+  font-family: var(--font-sans, system-ui, sans-serif);
 }
 
 /* ==== عداد الفجوة (Gap Meter) - العنصر التوقيعي، بيتكرر بحجمين ====

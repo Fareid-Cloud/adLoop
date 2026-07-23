@@ -2,18 +2,20 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Settings, LogOut, CreditCard } from "lucide-react";
+import { ChevronDown, Settings, LogOut, CreditCard, Shield } from "lucide-react";
 
 export function AccountMenu({
   name,
   email,
   avatarUrl,
   locale,
+  isOwner = false,
 }: {
   name: string | null;
   email: string;
   avatarUrl: string | null;
   locale: "ar" | "en";
+  isOwner?: boolean;
 }) {
   const router = useRouter();
   const ar = locale === "ar";
@@ -72,6 +74,14 @@ export function AccountMenu({
           >
             <CreditCard size={15} /> {ar ? "الاشتراك والفوترة" : "Billing"}
           </a>
+          {isOwner && (
+            <a
+              href="/admin"
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-accent no-underline transition-colors hover:bg-surface"
+            >
+              <Shield size={15} /> {ar ? "لوحة المالك" : "Admin panel"}
+            </a>
+          )}
           <button
             onClick={logout}
             className="mt-0.5 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-critical transition-colors hover:bg-surface"

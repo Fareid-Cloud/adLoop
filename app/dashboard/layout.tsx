@@ -24,14 +24,14 @@ import { SidebarNav } from "@/app/components/SidebarNav";
 const display = IBM_Plex_Sans_Arabic({
   subsets: ["arabic", "latin"],
   weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-display",
+  variable: "--font-sans",
   display: "swap",
 });
 
 const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-  variable: "--font-mono",
+  variable: "--font-mono-code",
   display: "swap",
 });
 
@@ -93,6 +93,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               email={user.email}
               avatarUrl={user.avatarUrl ?? null}
               locale={locale}
+              isOwner={user.isAdmin || user.email === process.env.OWNER_EMAIL}
             />
           )}
         </div>
