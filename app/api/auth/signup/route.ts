@@ -63,6 +63,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: t(locale, "auth.emailExists") }, { status: 409 });
   }
 
+  // الحقول الإضافية (اختيارية) + التأكد إن اسم المستخدم غير مكرر
+  const { username, companyName, gender, howHeard, referralSource, country, adSpendMonthly, businessScale } = rawBody;
+  const cleanUsername = username ? String(username).trim().toLowerCase() : null;
+  if (cleanUsername) {
+    const uExists = await prisma.user.findUnique({ where: { username: cleanUsername } });
+    if (uExists) {
+      return NextResponse.json(
+        { error: locale === "ar" ? "اسم المستخدم مستخدم بالفعل، اختر اسماً آخر" : "This username is already taken, please choose another" },
+        { status: 409 }
+      );
+    }
+  }
+
   const passwordHash = await bcrypt.hash(password, 12);
   const { token: verificationToken, expiresAt: verificationTokenExpiresAt } = generateVerificationToken();
 
@@ -70,6 +83,14 @@ export async function POST(req: NextRequest) {
     data: {
       email, passwordHash, name, preferredLocale: locale,
       verificationToken, verificationTokenExpiresAt,
+      username: cleanUsername,
+      companyName: companyName ? String(companyName).trim() : null,
+      gender: gender || null,
+      howHeard: howHeard || null,
+      referralSource: referralSource ? String(referralSource).trim() : null,
+      country: country || null,
+      adSpendMonthly: adSpendMonthly || null,
+      businessScale: businessScale || null,
     },
   });
 

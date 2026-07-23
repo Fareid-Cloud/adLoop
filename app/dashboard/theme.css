@@ -20,16 +20,18 @@
   /* طبقات الخلفية - الفرق بين الطبقات دقيق جداً دلوقتي (فرق درجة لون
      خفيف، مش حدود واضحة حوالين كل كارت) - ده اللي بيدّي إحساس "برنامج
      حقيقي" زي Mercury/Revealbot بدل "قالب كروت جاهز مقسوم بخطوط" */
-  --bg: #0A0E17;
-  --surface: #141A24;
-  --surface-raised: #1C2532;
-  --border: #232C3B;
-  --border-visible: #313D4F;
+  /* الوضع الداكن "بترولي" (teal/petrol glow) - مش أسود، أقرب لإحساس
+     التيرمنال اللي بينوّر. طلب المستخدم صراحةً. */
+  --bg: #08191D;
+  --surface: #0D2529;
+  --surface-raised: #143439;
+  --border: #1D4147;
+  --border-visible: #2A5B62;
 
-  /* النص */
-  --text-primary: #E9EDF3;
-  --text-muted: #8A93A4;
-  --text-faint: #59637A;
+  /* النص - أبيض مائل للبرودة يليق بالخلفية البترولية */
+  --text-primary: #E7F1F1;
+  --text-muted: #8AA7AA;
+  --text-faint: #547074;
 
   /* الألوان الدلالية - ثابتة دائماً، مش قابلة للتخصيص (مبدأ §3 في الـ ADR) */
   --verified: #22C55E;
@@ -96,16 +98,17 @@
    data-mode=dark كان بيورّث الفاتح لأن مفيش قاعدة تعيد تطبيق الغامق.
    البلوك ده بيخلّي التبديل للداكن يشتغل في أي مكان. */
 [data-mode="dark"] {
-  --bg: #0A0E17;
-  --surface: #141A24;
-  --surface-raised: #1C2532;
-  --border: #232C3B;
-  --border-visible: #313D4F;
-  --text-primary: #E9EDF3;
-  --text-muted: #8A93A4;
-  --text-faint: #59637A;
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 30px -12px rgba(0, 0, 0, 0.6);
-  --shadow-pop: 0 16px 48px -12px rgba(0, 0, 0, 0.7);
+  --bg: #08191D;
+  --surface: #0D2529;
+  --surface-raised: #143439;
+  --border: #1D4147;
+  --border-visible: #2A5B62;
+  --text-primary: #E7F1F1;
+  --text-muted: #8AA7AA;
+  --text-faint: #547074;
+  /* ظل بلمسة توهّج (glow) خفيفة بلون بترولي بدل الأسود الجاف */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35), 0 14px 34px -14px rgba(0, 40, 44, 0.7);
+  --shadow-pop: 0 18px 50px -14px rgba(0, 45, 50, 0.85);
 }
 
 /* أداة الظل الموحّدة - بتتغيّر تلقائياً حسب الوضع (فاتح/داكن) */

@@ -3,6 +3,7 @@
 // الجوهري اللي بيميّزنا. صفوف بهوية كل منصة اللونية + مؤشرات اتجاه.
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { platformMeta } from "@/lib/platformMeta";
+import { PlatformLogo } from "@/app/components/PlatformLogo";
 
 export interface SourceRow {
   platform: string;
@@ -62,7 +63,7 @@ export function SourcePerformanceTable({ rows }: { rows: SourceRow[] }) {
                 <tr key={r.platform} className="border-t border-border transition-colors hover:bg-surface-raised">
                   <td className="px-5 py-3.5">
                     <span className="flex items-center gap-2.5">
-                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: meta.color }} />
+                      <PlatformLogo platform={r.platform} size={18} />
                       <span className="font-medium text-text-primary">{meta.label}</span>
                     </span>
                   </td>

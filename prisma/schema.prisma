@@ -120,7 +120,16 @@ model User {
 
   // من سؤال الـ Onboarding "بتدير كام عميل؟" - بيفيد في تخصيص الافتراضيات
   // لاحقاً (وكيل واحد بحجم أعمال مختلف عن وكالة بـ50 عميل)
-  businessScale String? // "solo" | "1_5" | "5_20" | "20_50" | "50_plus"
+  businessScale String? // "solo" | "1_5" | "5_20" | "20_50" | "50_plus" - عدد العملاء الحاليين
+
+  // بيانات التسجيل الإضافية
+  username       String? @unique // اسم مستخدم فريد يختاره العميل
+  companyName    String? // اسم الشركة (اختياري)
+  gender         String? // "male" | "female"
+  howHeard       String? // من أين سمع عن AdLoop
+  referralSource String? // كود/مصدر إحالة (اختياري)
+  country        String? // الدولة
+  adSpendMonthly String? // نطاق الإنفاق الإعلاني الشهري
 
   // ==== حد استخدام الـ AI - على مستوى الحساب ككل (مش لكل Workspace لوحده) ====
   // ده مهم جداً: لو الحد كان لكل Workspace، حد يقدر يعمل عشرات الـ Workspaces

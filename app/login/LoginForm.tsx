@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 import { t, Locale } from "@/lib/i18n/dictionary";
+import { PlatformLogo } from "@/app/components/PlatformLogo";
 
 const INPUT_CLASS =
   "mb-3 block w-full rounded-xl card-shadow border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-faint outline-none transition-colors focus:border-accent";
@@ -18,6 +20,7 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
+  const [showPw, setShowPw] = useState(false);
 
   useEffect(() => {
     const browserLang = navigator.language.toLowerCase();
@@ -103,16 +106,18 @@ export function LoginForm() {
           <>
             <a
               href="/api/oauth/login-google/start"
-              className="mb-2.5 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium no-underline"
+              className="mb-2.5 flex w-full items-center justify-center gap-2.5 rounded-xl py-2.5 text-sm font-medium no-underline"
               style={{ background: "#fff", color: "#3c4043", border: "1px solid #dadce0" }}
             >
+              <PlatformLogo platform="GOOGLE_ADS" size={18} />
               {t(locale, "auth.googleContinue")}
             </a>
             <a
               href="/api/oauth/login-facebook/start"
-              className="mb-5 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium text-white no-underline"
+              className="mb-5 flex w-full items-center justify-center gap-2.5 rounded-xl py-2.5 text-sm font-medium text-white no-underline"
               style={{ background: "#0866FF" }}
             >
+              <PlatformLogo platform="FACEBOOK" size={18} />
               {t(locale, "auth.facebookContinue")}
             </a>
 
@@ -131,14 +136,25 @@ export function LoginForm() {
                 required
                 className={INPUT_CLASS}
               />
-              <input
-                type="password"
-                placeholder={t(locale, "auth.password")}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className={INPUT_CLASS}
-              />
+              <div className="relative mb-3">
+                <input
+                  type={showPw ? "text" : "password"}
+                  placeholder={t(locale, "auth.password")}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="block w-full rounded-xl card-shadow border border-border bg-surface-raised px-3.5 py-2.5 pe-10 text-sm text-text-primary placeholder:text-text-faint outline-none transition-colors focus:border-accent"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw((v) => !v)}
+                  className="absolute inset-y-0 end-2.5 flex items-center text-text-faint hover:text-text-primary"
+                  aria-label={showPw ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+                  tabIndex={-1}
+                >
+                  {showPw ? <EyeOff size={17} /> : <Eye size={17} />}
+                </button>
+              </div>
               {error && <p className="mb-2 text-xs text-critical">{error}</p>}
               <button type="submit" disabled={loading} className={PRIMARY_BTN}>
                 {loading ? t(locale, "auth.loginLoading") : t(locale, "auth.loginButton")}
