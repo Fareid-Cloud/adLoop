@@ -34,6 +34,10 @@ export interface DiagnosticCheck {
   trend: number[];
   /** المنصة المصدر إن كان الفحص خاصاً بمنصة */
   platform?: string | null;
+  /** من أين جاء رقم هذا الفحص بالضبط - يُعرض في التفاصيل */
+  sourceAr?: string;
+  /** خطوات المعالجة الفعلية - لا يُعرض زر تفاصيل بلا محتوى حقيقي */
+  remedyAr?: string[];
   lastScanAt: Date;
   actionHref?: string;
 }
@@ -138,6 +142,13 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
         : hasData ? `وصلت بيانات ${rows.length} يوماً خلال آخر 30 يوماً.`
         : "المنصة مرتبطة لكن لم تصل أي بيانات - تحقّق من صلاحيات الحساب.",
       trend: seriesFrom(rows, (r) => r.cost),
+      sourceAr: `جدول لقطات الأداء اليومية، منصة ${label}، آخر 30 يوماً.`,
+      remedyAr: !isLinked
+        ? ["اربط حساب المنصة من الإعدادات ثم اختر الحملات التي تريد متابعتها."]
+        : hasData ? undefined
+        : ["تأكد أن حساب الإعلانات ما زال مرتبطاً ولم تنتهِ صلاحيته.",
+           "تأكد أن المستخدم المرتبط يملك صلاحية القراءة على الحساب.",
+           "المزامنة تعمل يومياً - البيانات الجديدة قد تحتاج دورة واحدة للظهور."],
       lastScanAt: now,
       actionHref: "/dashboard/settings?tab=workspace",
     });
@@ -159,6 +170,12 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       : `${Math.round(verificationRate)}% فقط من التحويلات المُعلنة تأكّدت (${totals.verified} من ${totals.raw}).`,
     monthlyImpact: totals.raw > 0 && verificationRate < 60 ? Math.round(wastedOnUnverified) : null,
     trend: seriesFrom(snapshots, (r) => r.verifiedConversions),
+    sourceAr: "مقارنة rawConversions (ما تعلنه المنصة) بـ verifiedConversions (ما تأكّد عبر محادثة حقيقية) خلال 30 يوماً.",
+    remedyAr: verificationRate >= 60 ? undefined : [
+      "تأكد من تثبيت وسم AdLoop على كل صفحة هبوط تستقبل زيارات إعلانية.",
+      "تأكد أن أزرار واتساب تحمل معرّف التتبع، وإلا تصل المحادثة بلا مصدر.",
+      "اربط رقم واتساب الأعمال أو صفحة ماسنجر لتصل المحادثات إلينا.",
+    ],
     lastScanAt: now,
     actionHref: "/dashboard/diagnostics/tracking-coverage",
   });
@@ -222,6 +239,12 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
         : `الهامش ضيق: التكلفة ${Math.round(cost)} ${currency} من سعر ${Math.round(price)} ${currency}.`,
       monthlyImpact: losing ? Math.round((cost - price) * 30) : null,
       trend: [],
+      sourceAr: "تكلفة المنتج + الشحن + تكلفة الإعلان للطلب + التغليف، مقارنة بسعر البيع الحالي.",
+      remedyAr: [
+        `ارفع السعر إلى ما يغطي التكلفة الحقيقية ${Math.round(cost)} ${currency} على الأقل.`,
+        "أو اخفض تكلفة الاكتساب بتحسين استهداف الحملة.",
+        "افتح المنتج في صفحة التسعير لترى انهيار التكلفة وأكبر بند فيها.",
+      ],
       lastScanAt: now,
       actionHref: "/dashboard/pricing",
     });
@@ -239,6 +262,12 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
     severity: totals.impressions === 0 ? "NONE" : ctr >= 2 ? "NONE" : ctr >= 1 ? "MEDIUM" : "HIGH",
     findingAr: totals.impressions === 0 ? "لا توجد بيانات ظهور بعد." : `معدل النقر ${ctr.toFixed(2)}%.`,
     trend: seriesFrom(snapshots, (r) => (r.impressions > 0 ? (r.clicks / r.impressions) * 100 : 0)),
+    sourceAr: "إجمالي النقرات ÷ إجمالي مرات الظهور من لقطات الأداء، آخر 30 يوماً.",
+    remedyAr: ctr >= 2 ? undefined : [
+      "راجع نص الإعلان: هل يذكر عرضاً واضحاً أم وصفاً عاماً؟",
+      "ضيّق الاستهداف - الوصول الواسع يخفض النقر عادةً.",
+      "جرّب صورة أو فيديو جديداً؛ الانحدار قد يكون إرهاقاً إبداعياً.",
+    ],
     lastScanAt: now,
     actionHref: "/dashboard/campaigns",
   });
@@ -256,6 +285,12 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       : `المنصات تُبلّغ عن ${Math.round(inflation)}% أكثر مما تأكّد فعلياً.`,
     monthlyImpact: inflation > 25 ? Math.round(monthlySpend * (inflation / 100)) : null,
     trend: seriesFrom(snapshots, (r) => (r.rawConversions > 0 ? ((r.rawConversions - r.verifiedConversions) / r.rawConversions) * 100 : 0)),
+    sourceAr: "الفارق بين ما تعلنه المنصات وما تأكّد فعلياً، مقسوماً على المُعلن.",
+    remedyAr: inflation <= 25 ? undefined : [
+      "تضخيم مرتفع قد يعني احتساب المنصة لتحويلات لم تحدث فعلاً (نماذج إحصائية).",
+      "راجع إعداد التحويلات في المنصة: أحداث مكرّرة تُحتسب مرات متعددة.",
+      "استخدم التكلفة الحقيقية لا المُعلنة عند اتخاذ قرارات الميزانية.",
+    ],
     lastScanAt: now,
     actionHref: "/dashboard/reports",
   });

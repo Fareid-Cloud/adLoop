@@ -129,6 +129,18 @@
 }
 .pop-shadow { box-shadow: var(--shadow-pop); }
 
+/* ظهور تدريجي: كل عنصر يظهر بعد سابقه بفارق بسيط، فتُقرأ الصفحة على
+ * مراحل بدل أن تُلقى كاملة دفعة واحدة. المدة قصيرة عمداً - الهدف إيقاع
+ * هادئ لا انتظار. */
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.reveal { opacity: 0; animation: reveal-up .45s cubic-bezier(.22,.61,.36,1) forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; animation: none; }
+}
+
 /* تنبيه الخسارة: نبض واضح ثلاث مرات ثم يهدأ ويثبت.
  * الاختفاء الكامل غير مناسب هنا - الخسارة قائمة، فالعلامة تبقى ظاهرة
  * لكنها تتوقف عن جذب الانتباه بعد أن تؤدي غرضها. */

@@ -6,11 +6,11 @@
 // النسخة السابقة كانت شبكة بطاقات متطابقة بلا مصدر ولا أثر ولا اتجاه،
 // وبلا أي تقسيم بالخطورة أو زر فحص - فبدت فارغة رغم أن البيانات موجودة.
 
-import { useState, useMemo, useTransition } from "react";
+import { useState, useMemo, useTransition, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import {
   RefreshCw, AlertOctagon, AlertTriangle, Info, CheckCircle2, Search,
-  ChevronLeft, Activity, Loader2,
+  ChevronLeft, ChevronDown, Activity, Loader2,
 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { CATEGORY_META, type CheckCategory, type CheckSeverity, type CheckStatus } from "@/lib/diagnosticsEngine";
@@ -24,6 +24,8 @@ export interface CheckRow {
   severity: CheckSeverity;
   findingAr?: string;
   monthlyImpact?: number | null;
+  sourceAr?: string;
+  remedyAr?: string[];
   trend: number[];
   platform?: string | null;
   lastScanAt: string;
@@ -98,6 +100,7 @@ export function DiagnosticsView({
   const [category, setCategory] = useState<"all" | CheckCategory>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | CheckStatus>("all");
   const [query, setQuery] = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const scoreLabel = healthScore >= 80 ? "جيد" : healthScore >= 55 ? "يحتاج انتباهاً" : "حرج";
   const scoreTone = healthScore >= 80 ? "var(--verified)" : healthScore >= 55 ? "var(--gap)" : "var(--critical)";
@@ -136,9 +139,9 @@ export function DiagnosticsView({
   const busy = scanning || pending;
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-6xl pb-10">
       {/* الرأس */}
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+      <div className="reveal mb-8 flex flex-wrap items-start justify-between gap-4" style={{ animationDelay: "0ms" }}>
         <div>
           <div className="mb-1 text-[13px] text-text-muted">{workspaceName}</div>
           <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">التشخيص</h1>
@@ -162,8 +165,8 @@ export function DiagnosticsView({
       </div>
 
       {/* مؤشر الصحة + بطاقات الخطورة */}
-      <div className="mb-5 grid gap-3 lg:grid-cols-[1.15fr_2fr]">
-        <div className="card-shadow flex items-center gap-4 rounded-2xl border border-border bg-surface p-5">
+      <div className="reveal mb-6 grid gap-4 lg:grid-cols-[1.15fr_2fr]" style={{ animationDelay: "80ms" }}>
+        <div className="card-shadow flex items-center gap-4 rounded-2xl border border-border bg-surface p-6">
           <Gauge score={healthScore} />
           <div className="min-w-0">
             <div className="text-[13px] text-text-muted">مؤشر صحة الحساب</div>
@@ -184,7 +187,7 @@ export function DiagnosticsView({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {SEVERITY_CARDS.map((s) => {
             const n = counts[s.key];
             const active = s.key !== "passing" && n > 0;
@@ -212,7 +215,7 @@ export function DiagnosticsView({
       </div>
 
       {/* المشاكل + النشاط */}
-      <div className="mb-5 grid gap-3 lg:grid-cols-[1.6fr_1fr]">
+      <div className="reveal mb-6 grid gap-4 lg:grid-cols-[1.6fr_1fr]" style={{ animationDelay: "200ms" }}>
         <section className="card-shadow overflow-hidden rounded-2xl border border-border bg-surface">
           <div className="flex items-center gap-2 border-b border-border p-4">
             <h2 className="text-[14px] font-semibold text-text-primary">مشاكل تحتاج اهتمامك</h2>
@@ -300,8 +303,8 @@ export function DiagnosticsView({
       </div>
 
       {/* جدول كل الفحوصات */}
-      <section className="card-shadow overflow-hidden rounded-2xl border border-border bg-surface">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
+      <section className="reveal card-shadow overflow-hidden rounded-2xl border border-border bg-surface" style={{ animationDelay: "320ms" }}>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
           <div className="flex items-center gap-2">
             <h2 className="text-[15px] font-semibold text-text-primary">كل الفحوصات</h2>
             <span className="rounded-full bg-surface-raised px-2 py-0.5 font-mono text-[11.5px] text-text-muted">
@@ -337,7 +340,7 @@ export function DiagnosticsView({
             <thead>
               <tr className="border-b border-border text-start">
                 {["الفحص", "الفئة", "الحالة", "آخر فحص", "الاتجاه", "الإجراء"].map((h) => (
-                  <th key={h} className="p-3 text-start text-[11.5px] font-medium text-text-muted">{h}</th>
+                  <th key={h} className="px-4 py-3 text-start text-[11.5px] font-medium text-text-muted">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -348,9 +351,12 @@ export function DiagnosticsView({
                 const st = STATUS_META[c.status];
                 const cat = CATEGORY_META[c.category];
                 const failing = c.status === "FAILED" || c.status === "WARNING";
+                const isOpen = expanded === c.id;
+                const hasDetails = !!(c.sourceAr || (c.remedyAr && c.remedyAr.length > 0));
                 return (
-                  <tr key={c.id} className="border-b border-border last:border-0 hover:bg-surface-raised/45">
-                    <td className="p-3">
+                  <Fragment key={c.id}>
+                  <tr className={`border-b border-border last:border-0 ${isOpen ? "bg-surface-raised/35" : "hover:bg-surface-raised/45"}`}>
+                    <td className="px-4 py-3.5">
                       <div className="flex items-start gap-2.5">
                         <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
                               style={{ background: `color-mix(in srgb, ${cat.color} 13%, transparent)` }}>
@@ -363,34 +369,94 @@ export function DiagnosticsView({
                         </div>
                       </div>
                     </td>
-                    <td className="p-3">
+                    <td className="px-4 py-3.5">
                       <span className="whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium"
                             style={{ background: `color-mix(in srgb, ${cat.color} 13%, transparent)`, color: cat.color }}>
                         {cat.ar}
                       </span>
                     </td>
-                    <td className="p-3">
+                    <td className="px-4 py-3.5">
                       <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium"
                             style={{ background: `color-mix(in srgb, ${st.tone} 13%, transparent)`, color: st.tone }}>
                         <span className="h-1.5 w-1.5 rounded-full" style={{ background: st.tone }} />
                         {st.ar}
                       </span>
                     </td>
-                    <td className="whitespace-nowrap p-3 text-[11.5px] text-text-muted">{c.lastScanAt}</td>
-                    <td className="p-3"><Spark data={c.trend} tone={st.tone} /></td>
-                    <td className="p-3">
-                      {c.actionHref && (
-                        <a href={c.actionHref}
-                           className="inline-flex items-center gap-1 whitespace-nowrap rounded-xl border px-3 py-1.5 text-[11.5px] no-underline"
-                           style={failing
-                             ? { borderColor: `color-mix(in srgb, ${st.tone} 32%, transparent)`, background: `color-mix(in srgb, ${st.tone} 9%, transparent)`, color: st.tone }
-                             : { borderColor: "var(--border)", background: "var(--surface-raised)", color: "var(--text-primary)" }}>
-                          {failing ? "معالجة" : "التفاصيل"}
-                          <ChevronLeft size={12} className="rtl:rotate-0 ltr:rotate-180" />
-                        </a>
+                    <td className="whitespace-nowrap px-4 py-3.5 text-[11.5px] text-text-muted">{c.lastScanAt}</td>
+                    <td className="px-4 py-3.5"><Spark data={c.trend} tone={st.tone} /></td>
+                    <td className="px-4 py-3.5">
+                      {/* زر واحد فقط عندما يوجد محتوى حقيقي وراءه: تفاصيل
+                          قابلة للتوسيع، أو رابط معالجة لمشكلة قائمة. لا يُعرض
+                          زر "تفاصيل" يقود إلى صفحة لا تخصّ الفحص. */}
+                      {hasDetails ? (
+                        <button
+                          onClick={() => setExpanded(isOpen ? null : c.id)}
+                          className="inline-flex items-center gap-1 whitespace-nowrap rounded-xl border px-3 py-1.5 text-[11.5px]"
+                          style={failing
+                            ? { borderColor: `color-mix(in srgb, ${st.tone} 32%, transparent)`, background: `color-mix(in srgb, ${st.tone} 9%, transparent)`, color: st.tone }
+                            : { borderColor: "var(--border)", background: "var(--surface-raised)", color: "var(--text-primary)" }}
+                        >
+                          {isOpen ? "إخفاء" : "التفاصيل"}
+                          <ChevronDown size={12} className={isOpen ? "rotate-180 transition-transform" : "transition-transform"} />
+                        </button>
+                      ) : (
+                        <span className="text-[11.5px] text-text-faint">—</span>
                       )}
                     </td>
                   </tr>
+
+                  {isOpen && (
+                    <tr className="border-b border-border bg-surface-raised/35">
+                      <td colSpan={6} className="px-4 py-4">
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div>
+                            <div className="mb-1 text-[11.5px] font-medium text-text-muted">ماذا يقيس هذا الفحص</div>
+                            <p className="text-[12.5px] leading-relaxed text-text-primary">{c.descAr}</p>
+                            {c.sourceAr && (
+                              <>
+                                <div className="mb-1 mt-3 text-[11.5px] font-medium text-text-muted">مصدر الرقم</div>
+                                <p className="text-[12.5px] leading-relaxed text-text-muted">{c.sourceAr}</p>
+                              </>
+                            )}
+                            {c.monthlyImpact ? (
+                              <p className="mt-3 text-[12.5px] text-text-muted">
+                                الأثر المقدَّر:{" "}
+                                <span className="font-mono font-semibold text-critical">
+                                  {c.monthlyImpact.toLocaleString("en-US")} {currency}
+                                </span>{" "}
+                                شهرياً
+                              </p>
+                            ) : null}
+                          </div>
+
+                          {c.remedyAr && c.remedyAr.length > 0 && (
+                            <div>
+                              <div className="mb-2 text-[11.5px] font-medium text-text-muted">خطوات المعالجة</div>
+                              <ol className="flex flex-col gap-2">
+                                {c.remedyAr.map((step, i) => (
+                                  <li key={i} className="flex gap-2.5 text-[12.5px] leading-relaxed text-text-primary">
+                                    <span className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-accent/12 font-mono text-[10px] font-semibold text-accent"
+                                          style={{ height: 18, width: 18 }}>
+                                      {i + 1}
+                                    </span>
+                                    {step}
+                                  </li>
+                                ))}
+                              </ol>
+                              {c.actionHref && (
+                                <a href={c.actionHref}
+                                   className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-accent px-3.5 py-2 text-[12px] font-medium text-white no-underline">
+                                  اذهب للمعالجة
+                                  <ChevronLeft size={12} className="rtl:rotate-0 ltr:rotate-180" />
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })}
             </tbody>

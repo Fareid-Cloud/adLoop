@@ -11,6 +11,14 @@ import { DiagnosticsView, type CheckRow, type ActivityRow } from "./DiagnosticsV
 
 export const dynamic = "force-dynamic";
 
+function safeHost(url: string): string {
+  try {
+    return new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).hostname;
+  } catch {
+    return url.slice(0, 40);
+  }
+}
+
 function timeAgo(d: Date): string {
   const mins = Math.floor((Date.now() - d.getTime()) / 60000);
   if (mins < 1) return "الآن";
@@ -59,7 +67,9 @@ export default async function DiagnosticsPage() {
       at: timeAgo(r.runAt),
     })),
     ...recentPages.map((p: any) => ({
-      titleAr: `فحص صفحة ${p.label ?? new URL(p.url).hostname}`,
+      // new URL() ترمي استثناءً على رابط بلا بروتوكول (مثل "example.com")
+      // وكان ذلك كافياً لإسقاط الصفحة بالكامل - نتعامل معه بأمان
+      titleAr: `فحص صفحة ${p.label ?? safeHost(p.url)}`,
       detailAr: p.trackingDetected ? "التتبع مكتشف" : "لم يُكتشف تتبع",
       at: timeAgo(p.lastCheckedAt),
     })),
