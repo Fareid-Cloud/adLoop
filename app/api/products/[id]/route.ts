@@ -31,8 +31,13 @@ export async function PATCH(
   const body = validation.data;
 
   const ALLOWED = [
-    "name", "currentPrice", "cogs", "outboundShippingCost", "returnShippingCost",
+    "name", "sku", "currentPrice", "cogs", "outboundShippingCost", "returnShippingCost",
     "rtoRatePct", "avgAdCostPerOrder", "desiredMarginPct",
+    // حقول التكلفة الحقيقية المضافة إلى المعادلة - بدونها هنا تُحفظ من
+    // الواجهة ثم يرفضها الـAPI بصمت (نفس الفخ الذي تكرر سابقاً)
+    "packagingCost", "handlingCost", "codFeePct", "restockingLossPct",
+    "paymentGatewayFeePct", "paymentGatewayFixedFee",
+    "stockQuantity", "lowStockThreshold",
   ];
 
   const data: Record<string, any> = {};

@@ -1514,6 +1514,12 @@ model Product {
   paymentGatewayFeePct Float @default(2.85)
   paymentGatewayFixedFee Float @default(3)
 
+  // ==== تكاليف حقيقية لم تكن ضمن المعادلة ====
+  packagingCost   Float @default(0)  // التغليف والتجهيز لكل طلب
+  handlingCost    Float @default(0)  // المناولة/التخزين المنسوب للطلب
+  codFeePct       Float @default(0)  // عمولة الدفع عند الاستلام (شائعة في السوق العربي)
+  restockingLossPct Float @default(0) // نسبة ما لا يعود قابلاً للبيع من المرتجعات
+
   // ==== المخزون - أساس قواعد "أوقف الإعلان قبل نفاد الرصيد" ====
   // يُحدَّث تلقائياً من منصة الإيكومرس المربوطة عند توفّرها، أو يدوياً.
   stockQuantity     Int?     // null = غير متتبَّع (لا تُطبَّق قواعد المخزون)

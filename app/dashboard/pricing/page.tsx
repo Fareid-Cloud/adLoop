@@ -26,6 +26,21 @@ export default async function PricingPage() {
 
   const { rows, roasGapInsight } = await getWorkspacePricing(workspace.id, workspace.currency);
 
+  // السجلات الكاملة للمنتجات - العرض المركّز يعيد حساب التسعير لحظياً في
+  // المتصفح، فيحتاج كل المدخلات لا الملخّص فقط
+  const productRecords = await prisma.product.findMany({
+    where: { workspaceId: workspace.id },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true, name: true, sku: true, currentPrice: true, cogs: true,
+      outboundShippingCost: true, returnShippingCost: true, packagingCost: true,
+      handlingCost: true, avgAdCostPerOrder: true, rtoRatePct: true,
+      restockingLossPct: true, paymentGatewayFeePct: true,
+      paymentGatewayFixedFee: true, codFeePct: true, desiredMarginPct: true,
+      stockQuantity: true,
+    },
+  });
+
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
@@ -36,7 +51,7 @@ export default async function PricingPage() {
           💡 {roasGapInsight}
         </div>
       )}
-      <PricingClient workspaceId={workspace.id} products={rows} />
+      <PricingClient workspaceId={workspace.id} products={rows} records={productRecords} currency={workspace.currency} />
     </div>
   );
 }

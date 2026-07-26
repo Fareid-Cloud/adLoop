@@ -62,6 +62,17 @@ export const productSchema = z.object({
   rtoRatePct: z.number().min(0).max(100).optional(),
   avgAdCostPerOrder: z.number().nonnegative().finite().optional(),
   desiredMarginPct: z.number().min(0).max(100).optional(),
+  // حقول التكلفة الحقيقية الجديدة - إغفالها هنا يعني رفض الطلب بصمت
+  // حتى لو أدرجناها في قائمة الحقول المسموح بها داخل الـroute
+  sku: z.string().max(120).nullish(),
+  packagingCost: z.number().nonnegative().finite().optional(),
+  handlingCost: z.number().nonnegative().finite().optional(),
+  codFeePct: z.number().min(0).max(100).optional(),
+  restockingLossPct: z.number().min(0).max(100).optional(),
+  paymentGatewayFeePct: z.number().min(0).max(100).optional(),
+  paymentGatewayFixedFee: z.number().nonnegative().finite().optional(),
+  stockQuantity: z.number().int().min(0).nullish(),
+  lowStockThreshold: z.number().int().min(0).optional(),
 });
 
 // ==================== أفعال الأدمن (أخطر نقطة في النظام كله) ====================

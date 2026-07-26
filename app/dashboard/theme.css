@@ -129,6 +129,20 @@
 }
 .pop-shadow { box-shadow: var(--shadow-pop); }
 
+/* تنبيه الخسارة: نبض واضح ثلاث مرات ثم يهدأ ويثبت.
+ * الاختفاء الكامل غير مناسب هنا - الخسارة قائمة، فالعلامة تبقى ظاهرة
+ * لكنها تتوقف عن جذب الانتباه بعد أن تؤدي غرضها. */
+@keyframes pulse-attention {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.22); opacity: .65; }
+}
+.animate-pulse-attention {
+  animation: pulse-attention .85s ease-in-out 3;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-attention { animation: none; }
+}
+
 /* بطاقات المؤشرات - نفس العمق مع الحفاظ على لونها المميز */
 .kpi-card {
   box-shadow:
