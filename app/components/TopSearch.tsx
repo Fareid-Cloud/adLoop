@@ -45,7 +45,7 @@ export function TopSearch({ locale }: { locale: "ar" | "en" }) {
         onFocus={() => setOpen(true)}
         onChange={(e) => { setQ(e.target.value); setOpen(true); }}
         placeholder={ar ? "ابحث في الحملات والمصادر والمقاييس..." : "Search campaigns, sources, or metrics..."}
-        className="w-full rounded-xl border border-border bg-surface py-2 ps-9 pe-14 text-[13px] text-text-primary placeholder:text-text-faint outline-none focus:border-accent"
+        className="card-shadow w-full rounded-xl border border-border bg-surface py-2 ps-9 pe-14 text-[13px] text-text-primary placeholder:text-text-faint outline-none focus:border-accent"
       />
       <span className="pointer-events-none absolute inset-y-0 end-2.5 my-auto flex h-5 items-center rounded-md border border-border px-1.5 text-[10px] text-text-faint">⌘ K</span>
 

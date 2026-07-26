@@ -27,7 +27,7 @@ export default function HelpPage() {
         ))}
       </div>
 
-      <div className="mt-8 rounded-xl border border-border bg-surface-raised p-4 text-center text-sm text-text-muted">
+      <div className="card-shadow mt-8 rounded-xl border border-border bg-surface-raised p-4 text-center text-sm text-text-muted">
         لم تجد إجابتك؟ استخدم زر المحادثة أسفل الشاشة وسيصلك الرد داخل المحادثة نفسها.
       </div>
     </div>

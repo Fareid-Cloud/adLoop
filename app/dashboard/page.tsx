@@ -16,6 +16,13 @@ import { MetricsExplorer } from "@/app/components/MetricsExplorer";
 import { computeHealthScore } from "@/lib/healthScore";
 import { getConnectStates } from "@/lib/connectionState";
 import { ConnectPlatforms } from "@/app/components/ConnectPlatforms";
+import { SetupChecklist } from "@/app/components/SetupChecklist";
+import { getSetupProgress } from "@/lib/setupProgress";
+import { PostConnectCampaignPrompt } from "@/app/components/PostConnectCampaignPrompt";
+import { Suspense } from "react";
+import { PlatformSwitcher } from "@/app/components/PlatformSwitcher";
+import { KpiSection } from "@/app/components/KpiSection";
+import { computeKpis, KPI_DEFS } from "@/lib/kpiEngine";
 import { computeMetrics, comparePlatforms } from "@/lib/metricsEngine";
 import { compareMetric } from "@/lib/periodComparison";
 import { Megaphone, ShieldCheck, Wallet, Target, Activity } from "lucide-react";
@@ -28,7 +35,14 @@ function fmt(n: number): string {
   return Math.round(n).toLocaleString("en-US");
 }
 
-export default async function GlancePage() {
+export default async function GlancePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ platform?: string; days?: string }>;
+}) {
+  const sp = await searchParams;
+  const platformFilter = sp.platform && AD_PLATFORMS.includes(sp.platform) ? sp.platform : "";
+  const days = [7, 30, 90].includes(Number(sp.days)) ? Number(sp.days) : 30;
   const user = await getSessionUserFromCookies();
   if (!user) {
     return (
@@ -175,6 +189,13 @@ export default async function GlancePage() {
   // كروت الربط - تظهر في الداشبورد مباشرة (بدل "روح للإعدادات")
   const connectStates = await getConnectStates(workspace.id, user.id);
 
+  // تقدّم الإعداد الحقيقي - كل خطوة تكتمل بالإنجاز الفعلي لا بالضغط
+  const setup = await getSetupProgress(workspace.id, user.id);
+
+  // كل المؤشرات تُحسب مرة واحدة (استعلام واحد) - العميل يعرض ما اختاره فقط،
+  // فتغيير الاختيار فوري بلا طلب جديد. تتبع فلتر المنصة والمدة المختارين.
+  const allKpis = await computeKpis(workspace.id, KPI_DEFS.map((d) => d.key), days, platformFilter || null);
+
   const health = computeHealthScore({ tracking: null, landing: null, ads: null, audience: null, creatives: null });
   const firstName = user.name?.split(" ")[0] ?? user.email.split("@")[0];
 
@@ -193,11 +214,29 @@ export default async function GlancePage() {
         </div>
       </div>
 
+      {/* اختيار الحملات يفتح تلقائياً فور العودة من ربط المنصة */}
+      <Suspense fallback={null}>
+        <PostConnectCampaignPrompt workspaceId={workspace.id} locale="ar" />
+      </Suspense>
+
+      {/* خطوات الإعداد الحقيقية - تختفي وحدها عند اكتمالها كلها */}
+      <SetupChecklist
+        progress={setup}
+        workspaceId={workspace.id}
+        connectedPlatforms={connectStates.filter((s) => s.connected).map((s) => s.platform) as Array<"GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS">}
+        locale="ar"
+      />
+
       {/* ربط المنصات - دائماً في المقدمة لو فيه منصة ناقصة، بلوجوها وزر مباشر */}
       <ConnectPlatforms states={connectStates} onlyUnconnected={hasAnyData} />
 
+      {hasAnyData && <PlatformSwitcher platform={platformFilter} days={days} locale="ar" />}
+
       {!hasAnyData ? null : (
         <>
+          {/* مؤشرات الأداء القابلة للاختيار - رسم صغير تحت كل مؤشر */}
+          <KpiSection all={allKpis} currency={workspace.currency} locale="ar" />
+
           {/* هيرو طبقة الحقيقة - المعلن مقابل المتحقّق منه فعلاً */}
           <div className="mb-4 grid gap-3 lg:grid-cols-[1.4fr_1fr]">
             <div className="rounded-2xl card-shadow border border-border bg-surface p-6">

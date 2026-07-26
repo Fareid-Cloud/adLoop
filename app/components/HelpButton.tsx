@@ -48,7 +48,7 @@ export function HelpButton({ locale }: { locale: "ar" | "en" }) {
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder={ar ? "ابحث في المساعدة..." : "Search help..."}
-                  className="w-full rounded-xl border border-border bg-surface-raised py-2 ps-9 pe-3 text-[13px] text-text-primary placeholder:text-text-faint outline-none focus:border-accent"
+                  className="card-shadow w-full rounded-xl border border-border bg-surface-raised py-2 ps-9 pe-3 text-[13px] text-text-primary placeholder:text-text-faint outline-none focus:border-accent"
                 />
               </div>
             </div>
@@ -90,7 +90,7 @@ export function HelpButton({ locale }: { locale: "ar" | "en" }) {
 
 function Article({ a, open, onToggle }: { a: { id: string; q: string; a: string }; open: boolean; onToggle: () => void }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface-raised">
+    <div className="card-shadow overflow-hidden rounded-xl border border-border bg-surface-raised">
       <button onClick={onToggle} className="flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-start text-[13.5px] font-medium text-text-primary">
         {a.q}
         <ChevronDown size={15} className={`shrink-0 text-text-faint transition-transform ${open ? "rotate-180" : ""}`} />

@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { t, Locale } from "@/lib/i18n/dictionary";
+import { useAuthLocale } from "@/app/components/useAuthLocale";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { AuthShell } from "@/app/components/AuthShell";
 import { SocialButton, FIELD, PRIMARY_BTN } from "@/app/components/AuthControls";
 
 export function LoginForm() {
   const router = useRouter();
-  const [locale, setLocale] = useState<Locale>("ar");
+  const [locale, setLocale] = useAuthLocale();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -18,10 +19,6 @@ export function LoginForm() {
   const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
   const [showPw, setShowPw] = useState(false);
-
-  useEffect(() => {
-    setLocale(navigator.language.toLowerCase().startsWith("en") ? "en" : "ar");
-  }, []);
 
   const ar = locale === "ar";
 
@@ -66,7 +63,7 @@ export function LoginForm() {
   }
 
   return (
-    <AuthShell dir={ar ? "rtl" : "ltr"}>
+    <AuthShell locale={locale} onLocaleChange={setLocale}>
       <div className="mb-7">
         <div className="mb-6 text-[17px] font-bold tracking-tight text-text-primary">AdLoop</div>
         <h1 className="text-[28px] font-bold tracking-tight text-text-primary">

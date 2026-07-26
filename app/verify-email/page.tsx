@@ -5,17 +5,14 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { t, Locale } from "@/lib/i18n/dictionary";
+import { useAuthLocale } from "@/app/components/useAuthLocale";
 
 function VerifyEmailInner() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
-  const [locale, setLocale] = useState<Locale>("ar");
+  const [locale, setLocale] = useAuthLocale();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setLocale(navigator.language.toLowerCase().startsWith("en") ? "en" : "ar");
-  }, []);
 
   useEffect(() => {
     if (!token) {

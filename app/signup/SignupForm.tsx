@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { t, Locale } from "@/lib/i18n/dictionary";
+import { useAuthLocale } from "@/app/components/useAuthLocale";
 import { PasswordRequirements } from "@/app/components/PasswordRequirements";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { AuthShell } from "@/app/components/AuthShell";
@@ -39,7 +40,7 @@ const HEARD = [
 
 export function SignupForm() {
   const router = useRouter();
-  const [locale, setLocale] = useState<Locale>("ar");
+  const [locale, setLocale] = useAuthLocale();
   const [f, setF] = useState({
     name: "", username: "", email: "", password: "", confirm: "",
     companyName: "", gender: "", country: "", adSpendMonthly: "", businessScale: "", howHeard: "", referralSource: "",
@@ -49,8 +50,6 @@ export function SignupForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
-
-  useEffect(() => setLocale(navigator.language.toLowerCase().startsWith("en") ? "en" : "ar"), []);
 
   useEffect(() => {
     const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -90,7 +89,8 @@ export function SignupForm() {
   return (
     <AuthShell
       wide
-      dir={ar ? "rtl" : "ltr"}
+      locale={locale}
+      onLocaleChange={setLocale}
       headline={ar ? "ابدأ بأرقام تثق فيها" : "Start with numbers you can trust"}
       sub={ar ? "دقائق للربط، ثم ترى الفرق بين ما تقوله المنصات وما تحقّق فعلاً." : "Connect in minutes, then see the gap between reported and verified."}
     >

@@ -11,6 +11,23 @@ import { KPI_DEFS, type KpiKey, type KpiResult } from "@/lib/kpiEngine";
 const MIN_KPIS = 4;
 const MAX_KPIS = 10;
 
+// لون مميز لكل مؤشر - ليس زخرفة: يجعل التعرّف على البطاقة فورياً عند
+// التمرير الأفقي، ويربط المؤشر بمعناه (تكلفة/تحقّق/وصول/عائد).
+const KPI_COLORS: Record<KpiKey, string> = {
+  cost: "#F59E0B",
+  conversions_reported: "#8B5CF6",
+  conversions_verified: "#10B981",
+  verification_rate: "#06B6D4",
+  cpl_verified: "#EC4899",
+  cpl_raw: "#F472B6",
+  clicks: "#3B82F6",
+  impressions: "#6366F1",
+  ctr: "#0EA5E9",
+  cpc: "#14B8A6",
+  inflation_rate: "#EF4444",
+  roas: "#22C55E",
+};
+
 function fmt(v: number, format: string, currency: string): string {
   if (format === "percent") return `${v.toFixed(1)}%`;
   if (format === "decimal") return `${v.toFixed(2)}x`;
@@ -19,12 +36,11 @@ function fmt(v: number, format: string, currency: string): string {
 }
 
 // رسم صغير (SVG خالص - بدون مكتبة، خفيف وسريع)
-function Spark({ data, positive }: { data: number[]; positive: boolean }) {
+function Spark({ data, color }: { data: number[]; color: string }) {
   if (data.length < 2) return <div className="h-9" />;
   const max = Math.max(...data), min = Math.min(...data);
   const range = max - min || 1;
   const pts = data.map((v, i) => `${(i / (data.length - 1)) * 100},${28 - ((v - min) / range) * 24}`);
-  const color = positive ? "var(--verified)" : "var(--critical)";
   const id = `sg-${Math.random().toString(36).slice(2, 8)}`;
   return (
     <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="h-9 w-full">
@@ -109,9 +125,23 @@ export function KpiStrip({
           const def = KPI_DEFS.find((d) => d.key === r.key)!;
           const up = (r.changePct ?? 0) > 0;
           const good = r.changePct === null ? true : def.lowerIsBetter ? !up : up;
+          const color = KPI_COLORS[r.key];
           return (
-            <div key={r.key} className="card-shadow min-w-[210px] flex-1 rounded-2xl border border-border bg-surface p-4">
-              <div className="mb-1.5 truncate text-[12.5px] text-text-muted">{ar ? def.labelAr : def.labelEn}</div>
+            <div
+              key={r.key}
+              className="kpi-card group relative min-w-[210px] flex-1 overflow-hidden rounded-2xl border p-4"
+              style={{
+                borderColor: `color-mix(in srgb, ${color} 26%, transparent)`,
+                background: `linear-gradient(160deg, color-mix(in srgb, ${color} 9%, var(--surface)) 0%, var(--surface) 62%)`,
+              }}
+            >
+              {/* شريط لوني علوي - تمييز بصري فوري عند التمرير الأفقي */}
+              <span className="absolute inset-x-0 top-0 h-[3px]" style={{ background: color }} />
+
+              <div className="mb-1.5 flex items-center gap-1.5">
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
+                <span className="truncate text-[12.5px] text-text-muted">{ar ? def.labelAr : def.labelEn}</span>
+              </div>
               <div className="font-mono text-[24px] font-semibold leading-none text-text-primary">
                 {fmt(r.value, def.format, currency)}
               </div>
@@ -122,7 +152,7 @@ export function KpiStrip({
                   <span className="text-text-faint">{ar ? "عن الفترة السابقة" : "vs prev."}</span>
                 </div>
               )}
-              <div className="mt-2"><Spark data={r.series} positive={good} /></div>
+              <div className="mt-2"><Spark data={r.series} color={color} /></div>
             </div>
           );
         })}

@@ -126,72 +126,137 @@ async function getGoogleCampaigns(userId: string) {
     );
   }
 
+  if (!connection.refreshToken) {
+    return NextResponse.json(
+      { error: "صلاحية الوصول إلى Google Ads منتهية. أعد ربط الحساب." },
+      { status: 400 }
+    );
+  }
+
   const client = new GoogleAdsApi({
     client_id: process.env.GOOGLE_ADS_CLIENT_ID!,
     client_secret: process.env.GOOGLE_ADS_CLIENT_SECRET!,
     developer_token: process.env.GOOGLE_ADS_DEVELOPER_TOKEN!,
   });
 
-  // بنجيب كل الحسابات الفرعية تحت الـ MCC (login-customer-id)
-  const manager = client.Customer({
-    customer_id: connection.managerAccountId!,
-    refresh_token: decryptToken(connection.refreshToken!),
-  });
+  const refreshToken = decryptToken(connection.refreshToken);
 
-  const subAccounts = await manager.query(`
-    SELECT customer_client.id, customer_client.descriptive_name
-    FROM customer_client
-    WHERE customer_client.manager = false
-  `);
-
-  // لكل حساب فرعي، بنجيب الكامبينز بتاعته + نتأكد أيهم فعلاً نشط في آخر
-  // 10 أيام (عشان الافتراضي في الواجهة يبقى نظيف - لا داعي نوري كامبين
-  // واقف من شهور ومحدش محتاجه، لكن مش بنخفيه نهائياً، بنعلّمه بس)
   const tenDaysAgo = new Date();
   tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
   const tenDaysAgoStr = tenDaysAgo.toISOString().slice(0, 10);
+  const todayStr = new Date().toISOString().slice(0, 10);
 
-  const result = [];
-  for (const acc of subAccounts) {
-    const customerId = String(acc.customer_client?.id);
-    const customer = client.Customer({
-      customer_id: customerId,
-      login_customer_id: connection.managerAccountId!,
-      refresh_token: decryptToken(connection.refreshToken!),
-    });
+  try {
+    // الحسابات التي يملك هذا التوكن صلاحية عليها. سابقاً كان الكود يفترض
+    // وجود حساب وكالة (MCC) مخزّن في managerAccountId - وهو حقل لا تكتبه
+    // عملية الربط إطلاقاً، فكان الاستعلام يُرسل بمعرّف فارغ ويفشل دائماً،
+    // ولذلك لم تظهر أي حملة. الآن نكتشف الحسابات فعلياً من جوجل نفسها.
+    const accessible = await client.listAccessibleCustomers(refreshToken);
+    const accessibleIds = (accessible.resource_names ?? []).map((rn: string) => rn.split("/")[1]);
 
-    const [campaigns, recentActivity] = await Promise.all([
-      customer.query(`
-        SELECT campaign.id, campaign.name, campaign.status
-        FROM campaign
-        WHERE campaign.status != 'REMOVED'
-      `),
-      customer.query(`
-        SELECT campaign.id, metrics.impressions
-        FROM campaign
-        WHERE segments.date >= '${tenDaysAgoStr}'
-      `),
-    ]);
+    if (accessibleIds.length === 0) {
+      return NextResponse.json(
+        { error: "لا توجد حسابات Google Ads مرتبطة بهذا الحساب.", accounts: [] },
+        { status: 200 }
+      );
+    }
 
-    const activeIds = new Set(
-      recentActivity
-        .filter((r: any) => Number(r.metrics?.impressions ?? 0) > 0)
-        .map((r: any) => String(r.campaign?.id))
+    // حساب مباشر أم وكالة؟ الوكالة تُوسَّع إلى حساباتها الفرعية.
+    const targets: { customerId: string; loginCustomerId?: string; name?: string }[] = [];
+    let discoveredManagerId: string | null = null;
+
+    for (const accountId of accessibleIds) {
+      try {
+        const cust = client.Customer({ customer_id: accountId, refresh_token: refreshToken });
+        const info = await cust.query(
+          `SELECT customer.id, customer.descriptive_name, customer.manager FROM customer LIMIT 1`
+        );
+        const row: any = info[0];
+
+        if (row?.customer?.manager) {
+          discoveredManagerId = accountId;
+          const children = await cust.query(`
+            SELECT customer_client.id, customer_client.descriptive_name
+            FROM customer_client
+            WHERE customer_client.manager = false AND customer_client.status = 'ENABLED'
+          `);
+          for (const ch of children as any[]) {
+            targets.push({
+              customerId: String(ch.customer_client?.id),
+              loginCustomerId: accountId,
+              name: ch.customer_client?.descriptive_name,
+            });
+          }
+        } else {
+          targets.push({ customerId: accountId, name: row?.customer?.descriptive_name });
+        }
+      } catch {
+        continue; // حساب بلا صلاحية كافية - نتخطاه ولا نُسقط الطلب كله
+      }
+    }
+
+    // نحفظ معرّف الوكالة عند اكتشافه لأول مرة - المزامنة اليومية تعتمد عليه
+    if (discoveredManagerId && connection.managerAccountId !== discoveredManagerId) {
+      await prisma.connectedPlatform.update({
+        where: { id: connection.id },
+        data: { managerAccountId: discoveredManagerId },
+      });
+    }
+
+    const result = [];
+    for (const target of targets) {
+      try {
+        const customer = client.Customer({
+          customer_id: target.customerId,
+          ...(target.loginCustomerId ? { login_customer_id: target.loginCustomerId } : {}),
+          refresh_token: refreshToken,
+        });
+
+        const [campaigns, recentActivity] = await Promise.all([
+          customer.query(`
+            SELECT campaign.id, campaign.name, campaign.status
+            FROM campaign
+            WHERE campaign.status != 'REMOVED'
+          `),
+          customer.query(`
+            SELECT campaign.id, metrics.impressions
+            FROM campaign
+            WHERE segments.date BETWEEN '${tenDaysAgoStr}' AND '${todayStr}'
+          `),
+        ]);
+
+        const activeIds = new Set(
+          (recentActivity as any[])
+            .filter((r) => Number(r.metrics?.impressions ?? 0) > 0)
+            .map((r) => String(r.campaign?.id))
+        );
+
+        result.push({
+          accountId: target.customerId,
+          accountName: target.name ?? target.customerId,
+          campaigns: (campaigns as any[]).map((c) => ({
+            id: String(c.campaign?.id),
+            name: c.campaign?.name,
+            status: c.campaign?.status,
+            recentlyActive: activeIds.has(String(c.campaign?.id)),
+          })),
+        });
+      } catch {
+        continue; // حساب فرعي تعذّر قراءته - نُكمل الباقي
+      }
+    }
+
+    return NextResponse.json({ accounts: result });
+  } catch (err: any) {
+    // سابقاً لم يكن هناك try/catch إطلاقاً، فكان أي خطأ من جوجل يتحول إلى
+    // 500 صامت بلا رسالة - وهو ما جعل تشخيص المشكلة مستحيلاً على المستخدم.
+    console.error("فشل جلب حملات Google Ads:", err);
+    const detail = err?.errors?.[0]?.message ?? err?.message ?? "خطأ غير معروف";
+    return NextResponse.json(
+      { error: `تعذّر جلب حملات Google Ads: ${detail}` },
+      { status: 400 }
     );
-
-    result.push({
-      accountId: customerId,
-      accountName: acc.customer_client?.descriptive_name,
-      campaigns: campaigns.map((c: any) => ({
-        id: String(c.campaign?.id),
-        name: c.campaign?.name,
-        status: c.campaign?.status,
-        recentlyActive: activeIds.has(String(c.campaign?.id)),
-      })),
-    });
   }
-
-  return NextResponse.json({ accounts: result });
 }
 
 async function getMetaCampaigns(userId: string) {

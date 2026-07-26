@@ -61,7 +61,7 @@ function Card({ s }: { s: ConnectState }) {
           </p>
           <a
             href="/dashboard/settings?tab=workspace"
-            className="inline-flex w-full items-center justify-center rounded-xl border border-border bg-surface-raised py-2.5 text-sm font-medium text-text-primary no-underline"
+            className="card-shadow inline-flex w-full items-center justify-center rounded-xl border border-border bg-surface-raised py-2.5 text-sm font-medium text-text-primary no-underline"
           >
             اختيار الحملات
           </a>

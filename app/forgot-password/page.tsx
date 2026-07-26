@@ -4,16 +4,13 @@
 
 import { useState, useEffect } from "react";
 import { t, Locale } from "@/lib/i18n/dictionary";
+import { useAuthLocale } from "@/app/components/useAuthLocale";
 
 export default function ForgotPasswordPage() {
-  const [locale, setLocale] = useState<Locale>("ar");
+  const [locale, setLocale] = useAuthLocale();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    setLocale(navigator.language.toLowerCase().startsWith("en") ? "en" : "ar");
-  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

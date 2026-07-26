@@ -76,5 +76,5 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  return NextResponse.redirect(`${settingsUrl}?connection=success&platform=google_ads`);
+  return NextResponse.redirect(`${getAppUrl()}/dashboard?connection=success&platform=google_ads`);
 }

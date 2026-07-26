@@ -94,5 +94,5 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  return NextResponse.redirect(`${settingsUrl}?connection=success&platform=meta_ads`);
+  return NextResponse.redirect(`${getAppUrl()}/dashboard?connection=success&platform=meta`);
 }

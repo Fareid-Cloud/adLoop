@@ -5,21 +5,18 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { t, Locale } from "@/lib/i18n/dictionary";
+import { useAuthLocale } from "@/app/components/useAuthLocale";
 import { PasswordRequirements } from "@/app/components/PasswordRequirements";
 
 function ResetPasswordInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");
-  const [locale, setLocale] = useState<Locale>("ar");
+  const [locale, setLocale] = useAuthLocale();
   const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-
-  useEffect(() => {
-    setLocale(navigator.language.toLowerCase().startsWith("en") ? "en" : "ar");
-  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

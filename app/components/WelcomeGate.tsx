@@ -41,8 +41,8 @@ const SLIDES: Slide[] = [
     icon: Sparkles,
     titleAr: "قرارات جاهزة للتنفيذ",
     titleEn: "Decisions ready to act on",
-    bodyAr: "يحلّل النظام بياناتك ويقترح قرارات (زيادة/إيقاف ميزانية، تنبيهات) يمكنك تنفيذها بضغطة واحدة. أنت جاهز الآن!",
-    bodyEn: "AdLoop analyzes your data and suggests decisions (scale/kill budget, alerts) you can apply in one click. You're all set!",
+    bodyAr: "يحلّل النظام بياناتك ويقترح قرارات (زيادة/إيقاف ميزانية، تنبيهات) تنفّذها بضغطة. ستجد في اللوحة قائمة «أكمل إعداد حسابك» تقودك خطوة بخطوة — وتكتمل كل خطوة تلقائياً بمجرد إنجازها فعلياً.",
+    bodyEn: "AdLoop analyzes your data and suggests decisions you can apply in one click. On the dashboard you'll find a setup checklist that guides you step by step — each step completes automatically once actually done.",
   },
 ];
 

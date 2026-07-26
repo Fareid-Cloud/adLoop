@@ -66,5 +66,5 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  return NextResponse.redirect(`${settingsUrl}?connection=success&platform=tiktok_ads`);
+  return NextResponse.redirect(`${getAppUrl()}/dashboard?connection=success&platform=tiktok`);
 }
