@@ -3,7 +3,7 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
-import { AutomationClient } from "./AutomationClient";
+import { ActiveRulesList } from "./ActiveRulesList";
 import { RuleCatalogBrowser } from "./RuleCatalogBrowser";
 
 export default async function AutomationPage() {
@@ -43,19 +43,19 @@ export default async function AutomationPage() {
         </div>
       )}
 
-      {/* القواعد المفعّلة حالياً */}
-      <AutomationClient
+      {/* القواعد المفعّلة: تشغيل/إيقاف، تعديل، حذف */}
+      <ActiveRulesList
         workspaceId={workspace.id}
+        campaigns={campaignLinks.map((c: any) => ({
+          id: c.externalCampaignId, name: c.campaignName, platform: c.platform,
+        }))}
         rules={rules.map((r: any) => ({
-          id: r.id,
-          name: r.name,
-          metric: r.metric,
-          operator: r.operator,
-          threshold: r.threshold,
-          action: r.action,
-          actionValue: r.actionValue,
-          enabled: r.enabled,
-          requireApproval: r.requireApproval,
+          id: r.id, name: r.name, metric: r.metric, operator: r.operator,
+          threshold: r.threshold, action: r.action, actionValue: r.actionValue,
+          enabled: r.enabled, requireApproval: r.requireApproval,
+          platform: r.platform, appliesTo: r.appliesTo,
+          specificCampaignIds: r.specificCampaignIds ?? [],
+          consecutiveDays: r.consecutiveDays,
         }))}
       />
 

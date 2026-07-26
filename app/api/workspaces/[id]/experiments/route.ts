@@ -12,7 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { recordExperiment, EXPERIMENT_METRICS } from "@/lib/experimentEngine";
 
-const ALLOWED_TYPES = ["BUDGET", "AD_COPY", "LANDING_PAGE", "TARGETING", "BID_STRATEGY", "PAUSE", "OTHER"];
+const ALLOWED_TYPES = ["BUDGET", "AD_COPY", "CREATIVE", "LANDING_PAGE", "TARGETING", "BID_STRATEGY", "PAUSE", "OTHER"];
 const ALLOWED_METRICS: string[] = EXPERIMENT_METRICS.map((m) => m.key);
 
 export async function GET(

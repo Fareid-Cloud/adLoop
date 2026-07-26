@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Toggle } from "@/app/components/ui/Toggle";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
@@ -108,20 +109,11 @@ export function AutomationClient({ workspaceId, rules }: { workspaceId: string; 
                     {rule.requireApproval && " (يحتاج موافقة)"}
                   </div>
                 </div>
-                <button
-                  onClick={() => toggleRule(rule.id, !rule.enabled)}
-                  className={`h-6 w-11 shrink-0 rounded-full transition-colors ${
-                    rule.enabled ? "bg-verified" : "bg-surface-raised"
-                  }`}
-                >
-                  <span
-                    className="block rounded-full bg-white transition-transform"
-                    style={{
-                      height: 18, width: 18,
-                      transform: rule.enabled ? "translateX(-22px)" : "translateX(-2px)",
-                    }}
-                  />
-                </button>
+                <Toggle
+                  checked={rule.enabled}
+                  onChange={(v) => toggleRule(rule.id, v)}
+                  label="تفعيل القاعدة"
+                />
               </div>
             </div>
           ))}

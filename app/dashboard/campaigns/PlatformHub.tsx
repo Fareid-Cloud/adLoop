@@ -1,3 +1,4 @@
+import * as Icons from "lucide-react";
 // app/dashboard/campaigns/PlatformHub.tsx
 //
 // صفحة "رئيسية" لكل منصة على حدة - نفس محرك Scale/Kill/Watch المستخدم
@@ -17,6 +18,28 @@ import { getWorkspaceCreativePerformances } from "@/lib/creativeAnalysis";
 // بدل الشعار الفعلي (ملف صورة محمي بحقوق ملكية مش متاح لينا). ملاحظة:
 // جوجل مالهاش لون واحد رسمي (شعارها 4 ألوان)، بنستخدم أزرقها الأساسي.
 // تيك توك مالهاش أصفر في هويتها أصلاً (ده لون سناب شات) - أحمر/سماوي هما الحقيقيين.
+// أيقونة تعبّر عن نوع التحليل - مشتقّة من مسار الصفحة نفسه، بدل سهم
+// مكرّر على كل رابط لا يضيف أي معنى
+function iconForLink(href: string) {
+  if (href.includes("creative")) return Icons.Image;
+  if (href.includes("audience")) return Icons.Users;
+  if (href.includes("placement")) return Icons.LayoutGrid;
+  if (href.includes("bid")) return Icons.Gavel;
+  if (href.includes("budget")) return Icons.Wallet;
+  if (href.includes("catalog") || href.includes("shopping")) return Icons.ShoppingCart;
+  if (href.includes("lead")) return Icons.ClipboardList;
+  if (href.includes("video")) return Icons.PlayCircle;
+  if (href.includes("search-terms")) return Icons.Search;
+  if (href.includes("quality")) return Icons.Star;
+  if (href.includes("competitor")) return Icons.Radar;
+  if (href.includes("attribution")) return Icons.GitBranch;
+  if (href.includes("content")) return Icons.Sparkles;
+  if (href.includes("learning")) return Icons.GraduationCap;
+  if (href.includes("spark")) return Icons.Flame;
+  if (href.includes("device") || href.includes("geo")) return Icons.MapPin;
+  return Icons.BarChart3;
+}
+
 const PLATFORM_COLORS: Record<string, { bg: string; text: string }> = {
   GOOGLE_ADS: { bg: "#4285F4", text: "#ffffff" },
   META_ADS: { bg: "#0866FF", text: "#ffffff" },
@@ -122,17 +145,27 @@ export async function PlatformHub({
         </>
       )}
 
-      <div className="mb-2 text-[13px] text-text-muted">تحليلات {platformLabel} التفصيلية</div>
-      <div className="flex flex-wrap gap-1.5">
-        {deepDiveLinks.map((link) => (
-          <a
-            key={link.href}
-            href={link.href}
-            className="rounded-full bg-surface px-3.5 py-1.5 text-xs text-text-muted no-underline hover:bg-surface-raised hover:text-text-primary"
-          >
-            {link.label} ←
-          </a>
-        ))}
+      <div className="mb-2.5 text-[13px] text-text-muted">تحليلات {platformLabel} التفصيلية</div>
+      {/* أيقونة معبّرة لكل تحليل بدل سهم مكرّر لا يضيف معنى */}
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {deepDiveLinks.map((link) => {
+          const Icon = iconForLink(link.href);
+          return (
+            <a
+              key={link.href}
+              href={link.href}
+              className="card-shadow flex items-center gap-2.5 rounded-xl border border-border bg-surface px-3.5 py-3 text-[12.5px] text-text-primary no-underline"
+            >
+              <span
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                style={{ background: `color-mix(in srgb, ${PLATFORM_COLORS[platform].bg} 13%, transparent)` }}
+              >
+                <Icon size={15} style={{ color: PLATFORM_COLORS[platform].bg }} />
+              </span>
+              <span className="min-w-0 flex-1 truncate">{link.label}</span>
+            </a>
+          );
+        })}
       </div>
     </div>
   );

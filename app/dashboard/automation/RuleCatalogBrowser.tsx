@@ -174,6 +174,11 @@ function RuleConfigModal({
   const [threshold, setThreshold] = useState(template.threshold);
   const [days, setDays] = useState(template.consecutiveDays);
   const [actionValue, setActionValue] = useState(template.actionValue ?? 0);
+  // منصة القاعدة تُختار هنا صراحةً قبل الحملات: كان الاعتماد على تبويب
+  // الأعلى ضمنياً فيختار المستخدم حملات دون أن يعرف على أي منصة تُطبَّق.
+  const [rulePlatform, setRulePlatform] = useState<RulePlatform | null>(
+    platform ?? (template.platforms.length === 1 ? template.platforms[0] : null)
+  );
   const [scope, setScope] = useState<"ALL_CAMPAIGNS" | "SPECIFIC_CAMPAIGNS">("ALL_CAMPAIGNS");
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [requireApproval, setRequireApproval] = useState(template.requireApproval);
@@ -181,7 +186,10 @@ function RuleConfigModal({
   const [error, setError] = useState<string | null>(null);
 
   // حملات المنصات التي يصلح لها هذا القرار فقط
-  const eligible = campaigns.filter((c) => template.platforms.includes(c.platform as RulePlatform));
+  const eligible = campaigns.filter(
+    (c) => template.platforms.includes(c.platform as RulePlatform) &&
+           (!rulePlatform || c.platform === rulePlatform)
+  );
 
   async function save() {
     if (scope === "SPECIFIC_CAMPAIGNS" && picked.size === 0) {
@@ -206,7 +214,7 @@ function RuleConfigModal({
         requireApproval,
         maxSingleJumpPct: template.maxSingleJumpPct,
         cooldownDays: template.cooldownDays,
-        platform: platform ?? null,
+        platform: rulePlatform ?? null,
         appliesTo: scope,
         specificCampaignIds: scope === "SPECIFIC_CAMPAIGNS" ? [...picked] : [],
       }),
@@ -267,6 +275,31 @@ function RuleConfigModal({
               />
             </>
           )}
+
+          {/* المنصة - قبل النطاق مباشرة */}
+          <label className="mb-1.5 block text-[12.5px] text-text-muted">المنصة</label>
+          <div className="mb-4 flex flex-wrap gap-2">
+            <button
+              onClick={() => { setRulePlatform(null); setPicked(new Set()); }}
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12.5px] transition-colors ${
+                rulePlatform === null ? "border-accent bg-accent/10 text-accent" : "border-border bg-surface-raised text-text-muted"
+              }`}
+            >
+              <Icons.Layers size={14} /> كل المنصات
+            </button>
+            {template.platforms.map((p) => (
+              <button
+                key={p}
+                onClick={() => { setRulePlatform(p); setPicked(new Set()); }}
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12.5px] transition-colors ${
+                  rulePlatform === p ? "border-accent bg-accent/10 text-accent" : "border-border bg-surface-raised text-text-muted"
+                }`}
+              >
+                <PlatformLogo platform={p} size={14} />
+                {p === "GOOGLE_ADS" ? "Google" : p === "META_ADS" ? "Meta" : "TikTok"}
+              </button>
+            ))}
+          </div>
 
           {/* نطاق الحملات */}
           <label className="mb-1.5 block text-[12.5px] text-text-muted">نطاق التطبيق</label>

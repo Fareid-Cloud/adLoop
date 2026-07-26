@@ -67,7 +67,7 @@ function metricValue(key: string, t: Totals): number {
 /** يُسجَّل عند تنفيذ أي قرار فعلي - هذه هي نقطة الدخول التلقائية. */
 export async function recordExperiment(input: {
   workspaceId: string;
-  changeType: "BUDGET" | "AD_COPY" | "LANDING_PAGE" | "TARGETING" | "BID_STRATEGY" | "PAUSE" | "AUTOMATION_RULE" | "OTHER";
+  changeType: "BUDGET" | "AD_COPY" | "CREATIVE" | "LANDING_PAGE" | "TARGETING" | "BID_STRATEGY" | "PAUSE" | "AUTOMATION_RULE" | "OTHER";
   description: string;
   campaignId?: string | null;
   platform?: string | null;

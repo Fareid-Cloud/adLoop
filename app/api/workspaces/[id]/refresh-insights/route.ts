@@ -5,6 +5,7 @@
 // يستهلك فلوس بلا حدود.
 
 import { NextRequest, NextResponse } from "next/server";
+import { toUserFacingAiError, quotaExhaustedError } from "@/lib/aiErrors";
 import { checkAndConsumeAIRefreshQuota } from "@/lib/aiRateLimit";
 import { generateInsights } from "@/lib/aiInsights";
 import { prisma } from "@/lib/prisma";
@@ -34,12 +35,18 @@ export async function POST(
   const quota = await checkAndConsumeAIRefreshQuota(user.id);
 
   if (!quota.allowed) {
-    const message =
-      quota.reason === "monthly_exhausted"
-        ? t(locale, "aiQuota.monthlyExhausted")
-        : t(locale, "aiQuota.hourlyExhausted", { minutes: quota.retryAfterMinutes ?? 0 });
-
-    return NextResponse.json({ error: message }, { status: 429 });
+    if (quota.reason === "monthly_exhausted") {
+      // حصة المستخدم الشهرية - حالة مشروعة يُعرض معها خيار الترقية
+      const e = quotaExhaustedError();
+      return NextResponse.json(
+        { error: locale === "ar" ? e.messageAr : e.messageEn, kind: e.kind, showUpgrade: true },
+        { status: 429 }
+      );
+    }
+    return NextResponse.json(
+      { error: t(locale, "aiQuota.hourlyExhausted", { minutes: quota.retryAfterMinutes ?? 0 }), showUpgrade: false },
+      { status: 429 }
+    );
   }
 
   // إصلاح باگ حقيقي: الزرار ده كان بيستهلك رصيد المستخدم المحدود يومياً
@@ -72,10 +79,19 @@ export async function POST(
     });
   }
 
-  const insights = await generateInsights(campaigns, locale);
-
-  return NextResponse.json({
-    insights,
-    remainingThisMonth: quota.remainingThisMonth,
-  });
+  // بلا هذا الالتفاف كانت استجابة المزوّد الخام تصل إلى المشترك كما هي،
+  // بما فيها رسائل الفوترة الخاصة بحسابنا ومعرّف الطلب الداخلي.
+  try {
+    const insights = await generateInsights(campaigns, locale);
+    return NextResponse.json({
+      insights,
+      remainingThisMonth: quota.remainingThisMonth,
+    });
+  } catch (err) {
+    const e = toUserFacingAiError(err, "refresh-insights");
+    return NextResponse.json(
+      { error: locale === "ar" ? e.messageAr : e.messageEn, kind: e.kind, showUpgrade: e.showUpgrade },
+      { status: 503 }
+    );
+  }
 }

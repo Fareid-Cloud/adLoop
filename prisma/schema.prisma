@@ -812,6 +812,7 @@ enum ExperimentChangeType {
   LANDING_PAGE
   TARGETING
   BID_STRATEGY
+  CREATIVE
   PAUSE
   AUTOMATION_RULE
   OTHER
@@ -1509,6 +1510,10 @@ model Product {
 
   name          String
   sku           String? // لمطابقة عناصر الطلب الحقيقية من سلة (order.items[].sku) - لازم يتظبط يدوي عشان الربط يشتغل
+  // معرّف المنتج لدى منصة الإيكومرس - يلزم للمنصات التي لا تدعم التحديث
+  // بالـSKU مباشرة (شوبيفاي، ووكومرس، زد)
+  externalProductId String?
+  externalVariantId String? // شوبيفاي تحفظ السعر على المتغيّر لا المنتج
   currentPrice  Float
   cogs          Float    @default(0)
   outboundShippingCost Float @default(0)
@@ -1611,6 +1616,12 @@ model EcommerceConnection {
   storeName     String?
   storeUrl      String?
   webhookSecret String?  @db.Text // مشفّر
+  // توكن API للكتابة (تحديث الأسعار). منفصل عن سرّ الويب هوك: الأول
+  // للاستقبال والتحقق، وهذا للكتابة إلى المتجر - وصلاحياتهما مختلفة.
+  apiToken      String?  @db.Text // مشفّر
+  storeIdentifier String? // معرّف المتجر لدى المنصة (يلزم لووكومرس/شوبيفاي)
+  apiSecret     String?  @db.Text // مشفّر - ووكومرس تستخدم مفتاح + سرّ
+  canWritePrices Boolean @default(false) // هل التوكن يسمح بالكتابة فعلاً
   active        Boolean  @default(true)
 
   lastOrderAt   DateTime?

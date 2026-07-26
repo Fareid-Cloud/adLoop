@@ -40,6 +40,8 @@ export default async function TrackingCoveragePage() {
           url: p.url,
           label: p.label,
           trackingDetected: p.trackingDetected,
+          adloopDetected: p.adloopDetected ?? null,
+          detectedSystems: p.detectedSystems ?? [],
           lastCheckedAt: p.lastCheckedAt?.toISOString() ?? null,
           lastError: p.lastError,
         }))}

@@ -9,7 +9,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { X, Pencil, AlertTriangle, ArrowLeft, Info } from "lucide-react";
+import { X, Pencil, AlertTriangle, ArrowLeft, Info, Check } from "lucide-react";
 import { calculateFullPricing, type FullPricingInputs } from "@/lib/pricingCalculator";
 
 export interface ProductRecord {
@@ -46,6 +46,8 @@ export function ProductFocusView({
   const router = useRouter();
   const [margin, setMargin] = useState(product.desiredMarginPct);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const inputs: FullPricingInputs = useMemo(() => ({
     cogs: product.cogs,
@@ -70,16 +72,31 @@ export function ProductFocusView({
   const losing = result.profitAtCurrentPrice < 0;
   const maxLine = Math.max(...result.lines.map((l) => l.amount), 1);
 
+  // كان الزر يغلق النافذة دون تأكيد نجاح أو فشل، فبدا كأنه لا يفعل شيئاً.
+  // الآن يعرض خطأ صريحاً عند الفشل، وتأكيداً قبل الإغلاق عند النجاح.
   async function applyPrice() {
     setSaving(true);
-    await fetch(`/api/products/${product.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ currentPrice: result.suggestedPrice, desiredMarginPct: margin }),
-    }).catch(() => {});
-    setSaving(false);
-    onClose();
-    router.refresh();
+    setError(null);
+    try {
+      const res = await fetch(`/api/products/${product.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPrice: result.suggestedPrice, desiredMarginPct: margin }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setError(d.error ?? "تعذّر حفظ السعر الجديد.");
+        setSaving(false);
+        return;
+      }
+      setSaved(true);
+      router.refresh();
+      // مهلة قصيرة ليرى المستخدم تأكيد الحفظ قبل إغلاق النافذة
+      setTimeout(() => onClose(), 900);
+    } catch {
+      setError("تعذّر الاتصال بالخادم.");
+      setSaving(false);
+    }
   }
 
   return (
@@ -212,13 +229,31 @@ export function ProductFocusView({
             </p>
           )}
 
+          {error && (
+            <p className="mb-2 rounded-xl border border-critical/35 bg-critical/[0.07] p-3 text-[12.5px] text-critical">
+              {error}
+            </p>
+          )}
+
           <button
             onClick={applyPrice}
-            disabled={saving || result.priceGap <= 0}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-[13.5px] font-medium text-white disabled:opacity-45"
+            disabled={saving || saved || result.priceGap <= 0}
+            className={`flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[13.5px] font-medium text-white disabled:opacity-45 ${
+              saved ? "bg-verified" : "bg-accent"
+            }`}
           >
-            {saving ? "جارٍ الحفظ..." : `اعتماد السعر المقترح ${money(result.suggestedPrice, currency)}`}
-            <ArrowLeft size={15} className="rtl:rotate-0 ltr:rotate-180" />
+            {saved ? (
+              <>تم تحديث السعر <Check size={15} /></>
+            ) : saving ? (
+              "جارٍ الحفظ..."
+            ) : result.priceGap <= 0 ? (
+              "السعر الحالي يحقّق هامشك المستهدف"
+            ) : (
+              <>
+                اعتماد السعر المقترح {money(result.suggestedPrice, currency)}
+                <ArrowLeft size={15} className="rtl:rotate-0 ltr:rotate-180" />
+              </>
+            )}
           </button>
         </div>
       </div>

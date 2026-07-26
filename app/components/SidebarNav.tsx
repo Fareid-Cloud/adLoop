@@ -66,7 +66,10 @@ export function SidebarNav({ locale, supportSlot }: { locale: "ar" | "en"; suppo
     : [];
 
   return (
-    <aside className={`shrink-0 border-e border-border bg-surface px-3 py-5 transition-[width] duration-200 ${collapsed ? "w-[68px]" : "w-60"}`}>
+    <aside
+      // ثابت مع التمرير: القائمة نفسها لا تتحرك، والتنقّل يحدث داخلها
+      className={`sticky top-0 flex h-screen shrink-0 flex-col overflow-y-auto border-e border-border bg-surface px-3 py-5 transition-[width] duration-200 ${collapsed ? "w-[68px]" : "w-60"}`}
+    >
       {/* الشعار */}
       <a href="/dashboard" className={`mb-5 flex items-center gap-2 no-underline ${collapsed ? "justify-center px-0" : "px-2"}`}>
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent text-white">
@@ -141,17 +144,30 @@ export function SidebarNav({ locale, supportSlot }: { locale: "ar" | "en"; suppo
                       {item.children && !collapsed && expanded && (
                         <div className="me-2 mt-0.5 flex flex-col gap-0.5 border-e border-border ps-3">
                           {item.children.map((child) => {
-                            const plat = childPlatform(child.href);
+                            // الصفحات الداخلية للمنصة تظهر فقط عند التواجد
+                            // داخل تلك المنصة - وإلا امتلأت القائمة بعشرات
+                            // الروابط غير المتعلقة بما يشاهده المستخدم الآن.
+                            if (child.nested) {
+                              const insidePlatform = item.children!.some(
+                                (c) => !c.nested && c.platform === child.platform && pathname.startsWith(c.href)
+                              ) || pathname === child.href;
+                              if (!insidePlatform) return null;
+                            }
+
+                            const plat = child.platform ?? childPlatform(child.href);
                             const activeChild = pathname === child.href;
                             return (
                               <a
                                 key={child.href}
                                 href={child.href}
                                 className={`flex items-center gap-2 rounded-lg px-2.5 py-[6px] text-[12.5px] no-underline transition-colors ${
+                                  child.nested ? "ms-3.5" : ""
+                                } ${
                                   activeChild ? "bg-accent/12 font-medium text-accent" : "text-text-faint hover:text-text-primary"
                                 }`}
                               >
-                                {plat && <PlatformLogo platform={plat} size={14} />}
+                                {!child.nested && plat && <PlatformLogo platform={plat} size={14} />}
+                                {child.nested && <span className="h-1 w-1 shrink-0 rounded-full bg-text-faint" />}
                                 <span className="truncate">{label(child)}</span>
                               </a>
                             );

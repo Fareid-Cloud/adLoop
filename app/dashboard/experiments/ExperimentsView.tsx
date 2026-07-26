@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Beaker, Plus, TrendingUp, TrendingDown, Minus, X, Check, Clock } from "lucide-react";
+import { Beaker, Plus, TrendingUp, TrendingDown, Minus, X, Check, Clock, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { EXPERIMENT_METRICS } from "@/lib/experimentMetrics";
 
@@ -30,7 +30,7 @@ export interface ExperimentRow {
 
 const CHANGE_TYPE_LABEL: Record<string, string> = {
   BUDGET: "ميزانية", AD_COPY: "نص إعلان", LANDING_PAGE: "صفحة هبوط",
-  TARGETING: "استهداف", BID_STRATEGY: "استراتيجية مزايدة",
+  TARGETING: "استهداف", BID_STRATEGY: "استراتيجية مزايدة", CREATIVE: "تصميم إعلاني",
   PAUSE: "إيقاف", AUTOMATION_RULE: "قاعدة أتمتة", OTHER: "أخرى",
 };
 
@@ -86,7 +86,7 @@ export function ExperimentsView({
             <Clock size={13} /> قيد القياس ({running.length})
           </h3>
           <div className="flex flex-col gap-2">
-            {running.map((e) => <ExperimentCard key={e.id} exp={e} />)}
+            {running.map((e) => <ExperimentCard key={e.id} exp={e} workspaceId={workspaceId} />)}
           </div>
         </section>
       )}
@@ -95,7 +95,7 @@ export function ExperimentsView({
         <section>
           <h3 className="mb-2 text-[13px] font-medium text-text-muted">نتائج ({done.length})</h3>
           <div className="flex flex-col gap-2">
-            {done.map((e) => <ExperimentCard key={e.id} exp={e} />)}
+            {done.map((e) => <ExperimentCard key={e.id} exp={e} workspaceId={workspaceId} />)}
           </div>
         </section>
       )}
@@ -107,7 +107,31 @@ export function ExperimentsView({
   );
 }
 
-function ExperimentCard({ exp }: { exp: ExperimentRow }) {
+function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId: string }) {
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [desc, setDesc] = useState(exp.description);
+  const [note, setNote] = useState(exp.note ?? "");
+  const [win, setWin] = useState(exp.windowDays);
+
+  async function save() {
+    setBusy(true);
+    await fetch(`/api/workspaces/${workspaceId}/experiments/${exp.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description: desc, note, windowDays: win }),
+    }).catch(() => {});
+    setBusy(false); setEditing(false); router.refresh();
+  }
+
+  async function remove() {
+    setBusy(true);
+    await fetch(`/api/workspaces/${workspaceId}/experiments/${exp.id}`, { method: "DELETE" }).catch(() => {});
+    setBusy(false); setConfirmDelete(false); router.refresh();
+  }
+
   const conf = CONFIDENCE[exp.confidenceLevel] ?? CONFIDENCE.INSUFFICIENT_DATA;
   const daysLeft = Math.max(
     0,
@@ -125,7 +149,61 @@ function ExperimentCard({ exp }: { exp: ExperimentRow }) {
         {exp.source === "MANUAL" && (
           <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10.5px] text-text-muted">يدوية</span>
         )}
+        <span className="flex-1" />
+        <button onClick={() => setEditing((v) => !v)}
+                className="rounded-lg border border-border bg-surface-raised p-1.5 text-text-muted hover:text-text-primary"
+                aria-label="تعديل التجربة">
+          <Pencil size={13} />
+        </button>
+        <button onClick={() => setConfirmDelete(true)}
+                className="rounded-lg border border-border bg-surface-raised p-1.5 text-text-muted hover:text-critical"
+                aria-label="حذف التجربة">
+          <Trash2 size={13} />
+        </button>
       </div>
+
+      {editing && (
+        <div className="mb-3 flex flex-col gap-2.5 rounded-xl border border-border bg-surface-raised p-3">
+          <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="وصف التغيير"
+                 className="rounded-lg border border-border bg-surface px-3 py-2 text-[13px] text-text-primary outline-none focus:border-accent" />
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="ملاحظة (اختياري)"
+                 className="rounded-lg border border-border bg-surface px-3 py-2 text-[13px] text-text-primary outline-none focus:border-accent" />
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11.5px] text-text-muted">نافذة القياس:</span>
+            {[3, 7, 14, 30].map((d) => (
+              <button key={d} onClick={() => setWin(d)}
+                      className={`rounded-lg border px-2.5 py-1 text-[11.5px] ${win === d ? "border-accent bg-accent/10 text-accent" : "border-border bg-surface text-text-muted"}`}>
+                {d} أيام
+              </button>
+            ))}
+          </div>
+          {win !== exp.windowDays && exp.status !== "RUNNING" && (
+            <p className="text-[11.5px] text-gap">
+              تغيير النافذة يُعيد التجربة إلى القياس، لأن النتيجة الحالية محسوبة على نافذة مختلفة.
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setEditing(false)} className="rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] text-text-muted">إلغاء</button>
+            <button onClick={save} disabled={busy} className="rounded-lg bg-accent px-3.5 py-1.5 text-[12px] font-medium text-white disabled:opacity-50">
+              {busy ? "جارٍ الحفظ..." : "حفظ"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {confirmDelete && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-critical/35 bg-critical/[0.06] p-3">
+          <span className="flex items-center gap-2 text-[12.5px] text-text-primary">
+            <AlertTriangle size={14} className="text-critical" /> حذف هذه التجربة نهائياً؟
+          </span>
+          <div className="flex gap-2">
+            <button onClick={() => setConfirmDelete(false)} className="rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] text-text-muted">إلغاء</button>
+            <button onClick={remove} disabled={busy} className="rounded-lg bg-critical px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-50">
+              {busy ? "جارٍ الحذف..." : "حذف"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {exp.campaignName && <p className="mb-2 text-[12px] text-text-muted">الحملة: {exp.campaignName}</p>}
       {exp.note && <p className="mb-2 text-[12px] italic text-text-muted">{exp.note}</p>}

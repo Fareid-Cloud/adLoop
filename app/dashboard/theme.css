@@ -22,16 +22,16 @@
      حقيقي" زي Mercury/Revealbot بدل "قالب كروت جاهز مقسوم بخطوط" */
   /* الوضع الداكن "بترولي" (teal/petrol glow) - مش أسود، أقرب لإحساس
      التيرمنال اللي بينوّر. طلب المستخدم صراحةً. */
-  --bg: #08191D;
-  --surface: #0D2529;
-  --surface-raised: #143439;
-  --border: #1D4147;
-  --border-visible: #2A5B62;
+  --bg: #0E1116;
+  --surface: #161A21;
+  --surface-raised: #1F242D;
+  --border: #2A313B;
+  --border-visible: #3A424E;
 
-  /* النص - أبيض مائل للبرودة يليق بالخلفية البترولية */
-  --text-primary: #E7F1F1;
-  --text-muted: #8AA7AA;
-  --text-faint: #547074;
+  /* النص - رمادي فاتح محايد يليق بالخلفية الكحلية الرمادية */
+  --text-primary: #E8EAED;
+  --text-muted: #9AA2AE;
+  --text-faint: #6B7480;
 
   /* الألوان الدلالية - ثابتة دائماً، مش قابلة للتخصيص (مبدأ §3 في الـ ADR) */
   --verified: #22C55E;
@@ -74,6 +74,8 @@
 [data-accent="orange"] { --accent: #FF9950; --accent-dim: #FF99501A; }
 [data-accent="sky"]    { --accent: #4FCEF0; --accent-dim: #4FCEF01A; }
 [data-accent="red"]    { --accent: #F55252; --accent-dim: #F552521A; }
+/* رمادي محايد: درجة متوسطة تُقرأ بوضوح على الخلفية الفاتحة والداكنة معاً */
+[data-accent="gray"]   { --accent: #64748B; --accent-dim: #64748B1A; }
 
 [data-mode="light"] {
   /* عمق حقيقي في الوضع الفاتح: خلفية رمادية فاتحة، الكروت بيضاء تطفو
@@ -98,17 +100,17 @@
    data-mode=dark كان بيورّث الفاتح لأن مفيش قاعدة تعيد تطبيق الغامق.
    البلوك ده بيخلّي التبديل للداكن يشتغل في أي مكان. */
 [data-mode="dark"] {
-  --bg: #08191D;
-  --surface: #0D2529;
-  --surface-raised: #143439;
-  --border: #1D4147;
-  --border-visible: #2A5B62;
-  --text-primary: #E7F1F1;
-  --text-muted: #8AA7AA;
-  --text-faint: #547074;
-  /* ظل بلمسة توهّج (glow) خفيفة بلون بترولي بدل الأسود الجاف */
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35), 0 14px 34px -14px rgba(0, 40, 44, 0.7);
-  --shadow-pop: 0 18px 50px -14px rgba(0, 45, 50, 0.85);
+  /* كحلي رمادي هادئ بدل البترولي - أقل إجهاداً للعين في الاستخدام الطويل */
+  --bg: #0E1116;
+  --surface: #161A21;
+  --surface-raised: #1F242D;
+  --border: #2A313B;
+  --border-visible: #3A424E;
+  --text-primary: #E8EAED;
+  --text-muted: #9AA2AE;
+  --text-faint: #6B7480;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.45), 0 14px 34px -14px rgba(0, 0, 0, 0.75);
+  --shadow-pop: 0 18px 50px -14px rgba(0, 0, 0, 0.85);
 }
 
 /* أداة الظل الموحّدة - بتتغيّر تلقائياً حسب الوضع (فاتح/داكن).
@@ -121,11 +123,13 @@
     var(--shadow-card);
   transition: box-shadow .22s ease, transform .22s ease;
 }
+/* عند المرور: إطار أوضح وظل أعمق قليلاً - بلا حركة رأسية.
+ * الحركة على كل بطاقة كانت مُتعِبة بصرياً مع كثرة العناصر. */
 .card-shadow:hover {
+  border-color: var(--border-visible);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.09),
-    var(--shadow-pop);
-  transform: translateY(-2px);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    var(--shadow-card);
 }
 .pop-shadow { box-shadow: var(--shadow-pop); }
 
@@ -165,8 +169,8 @@
 .kpi-card:hover {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    var(--shadow-pop);
-  transform: translateY(-3px);
+    var(--shadow-card),
+    0 0 0 1px var(--border-visible);
 }
 
 /* ==== طبقة Tailwind: تحويل المتغيرات فوق لـ utility classes ====
@@ -295,3 +299,40 @@ body {
   .print-area .print-bg-white { background: white !important; }
 }
 
+
+
+/* ==================== التفاعل الموحّد ====================
+ * قاعدة واحدة لكل عناصر التحكم في البرنامج: إطار خفيف عند المرور، وحلقة
+ * تركيز واضحة عند التنقّل بلوحة المفاتيح. بديل عن الحركات المتفرقة التي
+ * كانت تُطبَّق على كل زر فتُرهق العين مع كثرة العناصر في الصفحة.
+ * تُطبَّق تلقائياً - لا تحتاج class على كل عنصر.
+ */
+button, a, [role="button"], summary,
+input, select, textarea {
+  transition: border-color .16s ease, box-shadow .16s ease,
+              background-color .16s ease, color .16s ease;
+}
+
+/* الإطار الخفيف عند المرور - يُستثنى ما له معالجة لونية خاصة */
+button:not(:disabled):hover,
+[role="button"]:not([aria-disabled="true"]):hover {
+  box-shadow: 0 0 0 1px var(--border-visible);
+}
+
+/* حلقة التركيز: للوحة المفاتيح فقط، فلا تظهر عند النقر بالفأرة */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+/* عنصر معطّل لا يستجيب بصرياً */
+button:disabled, [aria-disabled="true"] {
+  box-shadow: none;
+  cursor: not-allowed;
+}

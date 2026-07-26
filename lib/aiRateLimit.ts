@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma";
 // إعادة معايرة عشان نضمن سقف $4/شهر إجمالي لكل مشترك عبر التلاتة ميزات
 // اللي بتستخدم Claude (راجع docs/claude-api-usage-map.md للحساب الكامل)
 // الحد اليدوي = 80 مرة شهرياً + استدعاء تلقائي واحد يومياً (Cron) = 20-30/شهر تقريباً
-const MONTHLY_LIMIT = 80;
+export const MONTHLY_LIMIT = 80;
 const HOURLY_LIMIT = 2;
 
 export interface QuotaResult {

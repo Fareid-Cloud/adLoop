@@ -5,6 +5,10 @@
 
 export interface NavChild {
   href: string;
+  /** منصة هذا العنصر - العناصر المتداخلة تظهر فقط داخل قسم منصتها */
+  platform?: string;
+  /** عنصر فرعي داخل منصة (يُزاح ويظهر عند الدخول إلى تلك المنصة فقط) */
+  nested?: boolean;
   labelAr: string;
   labelEn: string;
 }
@@ -35,12 +39,29 @@ export const NAV_GROUPS: NavGroup[] = [
         labelAr: "الحملات",
         labelEn: "Campaigns",
         iconName: "Megaphone",
+        // صفحات كل منصة تظهر مباشرةً في القائمة الجانبية عند الدخول إليها،
+        // بدل الاضطرار إلى العودة لصفحة الحملات لاختيار تحليل آخر.
         children: [
           { href: "/dashboard/campaigns", labelAr: "نظرة شاملة", labelEn: "Overview" },
-          { href: "/dashboard/campaigns/google-hub", labelAr: "جوجل", labelEn: "Google" },
-          { href: "/dashboard/campaigns/video-performance", labelAr: "أداء الفيديو", labelEn: "Video Performance" },
-          { href: "/dashboard/campaigns/meta-hub", labelAr: "ميتا", labelEn: "Meta" },
-          { href: "/dashboard/campaigns/tiktok-hub", labelAr: "تيك توك", labelEn: "TikTok" },
+
+          { href: "/dashboard/campaigns/google-hub", labelAr: "جوجل", labelEn: "Google", platform: "GOOGLE_ADS" },
+          { href: "/dashboard/campaigns/search-terms", labelAr: "مصطلحات البحث", labelEn: "Search Terms", platform: "GOOGLE_ADS", nested: true },
+          { href: "/dashboard/campaigns/quality-score", labelAr: "درجة الجودة", labelEn: "Quality Score", platform: "GOOGLE_ADS", nested: true },
+          { href: "/dashboard/campaigns/shopping", labelAr: "التسوّق", labelEn: "Shopping", platform: "GOOGLE_ADS", nested: true },
+          { href: "/dashboard/campaigns/display-placements", labelAr: "أماكن الظهور", labelEn: "Placements", platform: "GOOGLE_ADS", nested: true },
+          { href: "/dashboard/campaigns/video-performance", labelAr: "أداء الفيديو", labelEn: "Video", platform: "GOOGLE_ADS", nested: true },
+
+          { href: "/dashboard/campaigns/meta-hub", labelAr: "ميتا", labelEn: "Meta", platform: "META_ADS" },
+          { href: "/dashboard/campaigns/placements", labelAr: "فيسبوك وإنستجرام", labelEn: "FB / IG", platform: "META_ADS", nested: true },
+          { href: "/dashboard/campaigns/content-formats", labelAr: "شكل المحتوى", labelEn: "Content Formats", platform: "META_ADS", nested: true },
+          { href: "/dashboard/campaigns/catalog-ads", labelAr: "الإعلانات الديناميكية", labelEn: "Catalog Ads", platform: "META_ADS", nested: true },
+          { href: "/dashboard/campaigns/competitor-ads", labelAr: "إعلانات المنافسين", labelEn: "Competitor Ads", platform: "META_ADS", nested: true },
+          { href: "/dashboard/campaigns/learning-phase", labelAr: "فترة التعلّم", labelEn: "Learning Phase", platform: "META_ADS", nested: true },
+
+          { href: "/dashboard/campaigns/tiktok-hub", labelAr: "تيك توك", labelEn: "TikTok", platform: "TIKTOK_ADS" },
+          { href: "/dashboard/campaigns/tiktok-hook-rate", labelAr: "معدل الخطّاف", labelEn: "Hook Rate", platform: "TIKTOK_ADS", nested: true },
+          { href: "/dashboard/campaigns/tiktok-fatigue", labelAr: "تعب الفيديو", labelEn: "Video Fatigue", platform: "TIKTOK_ADS", nested: true },
+          { href: "/dashboard/campaigns/tiktok-spark-ads", labelAr: "Spark Ads", labelEn: "Spark Ads", platform: "TIKTOK_ADS", nested: true },
         ],
       },
       { href: "/dashboard/pricing", labelAr: "التسعير", labelEn: "Pricing", iconName: "Tag" },

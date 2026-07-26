@@ -21,6 +21,8 @@ import { AccountMenu } from "@/app/components/AccountMenu";
 import { TopSearch } from "@/app/components/TopSearch";
 import { LiveDataProvider } from "@/app/components/LiveData";
 import { HelpButton } from "@/app/components/HelpButton";
+import { AiCreditBadge } from "@/app/components/AiCreditBadge";
+import { MONTHLY_LIMIT } from "@/lib/aiRateLimit";
 import { SidebarNav } from "@/app/components/SidebarNav";
 // next/font/google بيحمّل ملف الخط فعلياً وقت الـ build ويربطه بمتغير CSS -
 // ده الفرق عن مجرد كتابة اسم الخط في font-family من غير ما يكون مستورد
@@ -100,10 +102,19 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         supportSlot={user ? <SupportChat name={user.name ?? ""} email={user.email} variant="sidebar" label={locale === "ar" ? "الدعم الفني" : "Support"} /> : null}
       />
 
-      <main className="flex-1 px-10 py-8">
-        <div className="mb-5 flex items-center gap-3">
+      <main className="min-w-0 flex-1">
+        {/* الهيدر ثابت أعلى الصفحة عند التمرير - كان يختفي مع النزول
+            فيضيع البحث والإشعارات وقائمة الحساب */}
+        <div className="sticky top-0 z-40 mb-5 flex items-center gap-3 border-b border-border bg-bg/85 px-10 py-4 backdrop-blur-md">
           <TopSearch locale={locale} />
           <div className="flex flex-1 items-center justify-end gap-1.5">
+          {user && (
+            <AiCreditBadge
+              remaining={Math.max(0, MONTHLY_LIMIT - (user.aiRefreshMonthlyCount ?? 0))}
+              total={MONTHLY_LIMIT}
+              locale={locale}
+            />
+          )}
           <HelpButton locale={locale} />
           <div id="tour-notification-bell"><NotificationBell /></div>
           {user && (
@@ -118,7 +129,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           )}
           </div>
         </div>
-        {children}
+        <div className="px-10 pb-10">{children}</div>
       </main>
       </div>
       {showOnboarding && <WelcomeGate locale={locale} startStep={user!.onboardingStep} />}
