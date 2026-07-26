@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const params = new URLSearchParams({
     client_id: process.env.META_LOGIN_APP_ID!,
     redirect_uri: redirectUri,
-    scope: "email,public_profile",
+    scope: "email public_profile",
     response_type: "code",
     state,
   });
