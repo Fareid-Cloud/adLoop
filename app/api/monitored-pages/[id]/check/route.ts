@@ -24,6 +24,8 @@ export async function POST(
     where: { id: id },
     data: {
       trackingDetected: result.detected,
+      detectedSystems: result.systems.map((x) => x.id),
+      adloopDetected: result.adloopDetected,
       lastCheckedAt: new Date(),
       lastError: result.error,
     },

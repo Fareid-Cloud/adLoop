@@ -929,6 +929,10 @@ model MonitoredPage {
   label         String?  // اسم يديه المستخدم للصفحة (مثلاً "صفحة هبوط الرياض")
 
   trackingDetected Boolean? // null = لسه ما اتفحصتش، true/false = نتيجة آخر فحص
+  // أي أنظمة تتبع عُثر عليها بالاسم - الفحص السابق كان يعرف بصمة AdLoop
+  // وحدها فيصنّف كل موقع عليه GTM/بيكسل كأنه بلا تتبع
+  detectedSystems  String[] @default([])
+  adloopDetected   Boolean? // وسم AdLoop تحديداً - بدونه لا يعمل ربط النقرة بالمحادثة
   lastCheckedAt DateTime?
   lastError     String?  @db.Text // لو الفحص فشل لسبب تقني (الصفحة مش متاحة مثلاً)
 
