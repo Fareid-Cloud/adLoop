@@ -72,7 +72,10 @@ export function ruleResultToActionFeedItem(
   ruleName: string,
   result: RuleEvaluationResult,
   requireApproval: boolean,
-  locale: Locale = "ar"
+  locale: Locale = "ar",
+  // الهدف الفعلي على المنصة. بدونه يبقى الاقتراح نصياً غير قابل للتنفيذ -
+  // وهو ما كان عليه الحال: القواعد تُنتج نصاً فقط ولا تنفّذ شيئاً بالموافقة.
+  target?: { platform: string; campaignId: string; campaignName?: string; action: string; changePct?: number }
 ): ActionFeedInput | null {
   if (!result.triggered) return null;
 
@@ -87,15 +90,37 @@ export function ruleResultToActionFeedItem(
     };
   }
 
+  // ترجمة فعل القاعدة إلى نوع إجراء قابل للتنفيذ فعلياً على المنصة
+  let actionType: string | undefined;
+  let actionPayload: Record<string, unknown> | undefined;
+
+  if (target) {
+    if (target.action === "PAUSE_CAMPAIGN") {
+      actionType = "PAUSE_CAMPAIGN";
+      actionPayload = { platform: target.platform, campaignId: target.campaignId };
+    } else if (target.action === "REDUCE_BUDGET_PCT" || target.action === "INCREASE_BUDGET_PCT") {
+      const signed = target.action === "REDUCE_BUDGET_PCT"
+        ? -Math.abs(target.changePct ?? 0)
+        : Math.abs(target.changePct ?? 0);
+      actionType = "CHANGE_CAMPAIGN_BUDGET";
+      actionPayload = { platform: target.platform, campaignId: target.campaignId, changePct: signed };
+    }
+    // SEND_ALERT_ONLY وPAUSE_AD وADJUST_BID_PCT: الأول تنبيه بطبيعته،
+    // والأخيران يحتاجان معرّف إعلان/مجموعة لا تملكه القاعدة على مستوى الحملة.
+  }
+
   return {
     workspaceId,
     type: "SUGGESTION",
     severity: requireApproval ? "HIGH" : "MEDIUM",
-    title: `${ruleName}: ${result.suggestedAction}`,
+    title: target?.campaignName
+      ? `${ruleName} — ${target.campaignName}: ${result.suggestedAction}`
+      : `${ruleName}: ${result.suggestedAction}`,
     description: t(locale, "actionFeed.conditionDetail", {
       value: result.currentValue ?? t(locale, "actionFeed.unavailable"),
       days: result.consecutiveDaysMatched,
     }),
+    ...(actionType ? { actionType, actionPayload } : {}),
   };
 }
 
@@ -191,6 +216,18 @@ export async function applyActionFeedItem(itemId: string) {
       await pauseTikTokAd(item.workspaceId, payload.advertiserId, payload.adId);
       break;
     }
+    // ==== إجراءات مستوى الحملة - كانت الفجوة الأكبر: قواعد الأتمتة كانت
+    // تنتج اقتراحات نصية لا تحمل actionType، فلا تنفّذ شيئاً حتى بالموافقة.
+    case "PAUSE_CAMPAIGN": {
+      const { pauseCampaignOnPlatform } = await import("@/lib/platformCampaignActions");
+      await pauseCampaignOnPlatform(item.workspaceId, payload.platform, payload.campaignId);
+      break;
+    }
+    case "CHANGE_CAMPAIGN_BUDGET": {
+      const { changeCampaignBudgetOnPlatform } = await import("@/lib/platformCampaignActions");
+      await changeCampaignBudgetOnPlatform(item.workspaceId, payload.platform, payload.campaignId, payload.changePct);
+      break;
+    }
     default:
       throw new Error(`نوع إجراء غير معروف: ${item.actionType}`);
   }
@@ -199,6 +236,35 @@ export async function applyActionFeedItem(itemId: string) {
     where: { id: itemId },
     data: { status: "APPLIED", resolvedAt: new Date() },
   });
+
+  // كل تنفيذ حقيقي يُسجَّل تلقائياً كتجربة في المعمل، لتُقاس نتيجته بعد
+  // اكتمال النافذة. المستخدم لا ينشئ شيئاً بنفسه - هذا هو جوهر "الحلقة"
+  // في AdLoop: قرار ← تنفيذ ← قياس أثره الفعلي.
+  try {
+    const { recordExperiment } = await import("@/lib/experimentEngine");
+    const CHANGE_TYPE: Record<string, any> = {
+      PAUSE_CAMPAIGN: "PAUSE",
+      PAUSE_AD_GOOGLE: "PAUSE",
+      PAUSE_AD_META: "PAUSE",
+      PAUSE_AD_TIKTOK: "PAUSE",
+      CHANGE_CAMPAIGN_BUDGET: "BUDGET",
+      SET_BID_STRATEGY_GOOGLE: "BID_STRATEGY",
+      SET_BID_STRATEGY_META: "BID_STRATEGY",
+      SET_BID_STRATEGY_TIKTOK: "BID_STRATEGY",
+    };
+    await recordExperiment({
+      workspaceId: item.workspaceId,
+      changeType: CHANGE_TYPE[item.actionType ?? ""] ?? "OTHER",
+      description: item.title,
+      campaignId: payload.campaignId ?? null,
+      platform: payload.platform ?? null,
+      sourceActionId: item.id,
+      source: "AUTO",
+    });
+  } catch (err) {
+    // تسجيل التجربة مساعد، لا يجوز أن يُفشل تنفيذاً نجح فعلاً على المنصة
+    console.error("تعذّر تسجيل التجربة بعد تنفيذ القرار:", err);
+  }
 }
 
 export async function dismissActionFeedItem(itemId: string) {

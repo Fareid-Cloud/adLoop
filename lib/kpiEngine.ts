@@ -44,6 +44,7 @@ export interface KpiResult {
   value: number;
   changePct: number | null;
   series: number[]; // سلسلة يومية للرسم الصغير
+  sources: string[]; // المنصات التي غذّت هذا الرقم فعلياً
 }
 
 interface Totals {
@@ -84,6 +85,17 @@ function sum(rows: any[]): Totals {
   );
 }
 
+/**
+ * المنصات التي ساهمت فعلاً ببيانات في الفترة - تُعرض كشعارات صغيرة داخل
+ * البطاقة لتوضيح مصدر الرقم. مبنية على البيانات الموجودة لا على ما هو
+ * "مربوط" نظرياً: منصة مربوطة بلا بيانات لا تظهر.
+ */
+function sourcesOf(rows: { platform?: string }[]): string[] {
+  const set = new Set<string>();
+  for (const r of rows) if (r.platform) set.add(r.platform);
+  return [...set];
+}
+
 export async function computeKpis(
   workspaceId: string,
   keys: KpiKey[],
@@ -99,7 +111,7 @@ export async function computeKpis(
   const [current, previous] = await Promise.all([
     prisma.metricSnapshot.findMany({
       where: { ...where, date: { gte: start } },
-      select: { date: true, cost: true, clicks: true, impressions: true, rawConversions: true, verifiedConversions: true, revenue: true },
+      select: { date: true, platform: true, cost: true, clicks: true, impressions: true, rawConversions: true, verifiedConversions: true, revenue: true },
       orderBy: { date: "asc" },
     }),
     prisma.metricSnapshot.findMany({
@@ -118,6 +130,7 @@ export async function computeKpis(
   }
   const dayKeys = [...byDay.keys()].sort();
 
+  const sources = sourcesOf(current);
   const curTotals = sum(current);
   const prevTotals = sum(previous);
 
@@ -126,6 +139,6 @@ export async function computeKpis(
     const prev = computeOne(key, prevTotals);
     const changePct = prev > 0 ? Math.round(((value - prev) / prev) * 1000) / 10 : null;
     const series = dayKeys.map((d) => computeOne(key, sum(byDay.get(d)!)));
-    return { key, value: Math.round(value * 100) / 100, changePct, series };
+    return { key, value: Math.round(value * 100) / 100, changePct, series, sources };
   });
 }

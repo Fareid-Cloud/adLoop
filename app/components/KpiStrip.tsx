@@ -7,6 +7,7 @@
 import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, SlidersHorizontal, TrendingUp, TrendingDown, Check } from "lucide-react";
 import { KPI_DEFS, type KpiKey, type KpiResult } from "@/lib/kpiEngine";
+import { PlatformLogo } from "@/app/components/PlatformLogo";
 
 const MIN_KPIS = 4;
 const MAX_KPIS = 10;
@@ -140,7 +141,21 @@ export function KpiStrip({
 
               <div className="mb-1.5 flex items-center gap-1.5">
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
-                <span className="truncate text-[12.5px] text-text-muted">{ar ? def.labelAr : def.labelEn}</span>
+                <span className="min-w-0 flex-1 truncate text-[12.5px] text-text-muted">{ar ? def.labelAr : def.labelEn}</span>
+                {/* مصدر البيانات: شعارات صغيرة متداخلة قليلاً - تعريف فوري
+                    بمصدر الرقم دون أن تسرق مساحة من الرقم نفسه */}
+                {r.sources.length > 0 && (
+                  <span
+                    className="flex shrink-0 items-center rounded-full border border-border bg-surface px-1 py-0.5"
+                    title={ar ? "مصدر البيانات" : "Data source"}
+                  >
+                    {r.sources.map((p, i) => (
+                      <span key={p} className="flex items-center justify-center rounded-full bg-surface" style={{ marginInlineStart: i === 0 ? 0 : -4, zIndex: r.sources.length - i }}>
+                        <PlatformLogo platform={p} size={12} />
+                      </span>
+                    ))}
+                  </span>
+                )}
               </div>
               <div className="font-mono text-[24px] font-semibold leading-none text-text-primary">
                 {fmt(r.value, def.format, currency)}

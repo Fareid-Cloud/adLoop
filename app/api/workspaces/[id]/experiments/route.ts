@@ -1,8 +1,19 @@
 // app/api/workspaces/[id]/experiments/route.ts
+//
+// إنشاء تجربة يدوية. التجارب التلقائية تُنشأ من applyActionFeedItem مباشرة
+// عند تنفيذ أي قرار حقيقي - لا تمرّ من هنا.
+//
+// النسخة السابقة كانت تلتقط "القيمة قبل" لمؤشر واحد فقط بحساب مبسّط (وكان
+// CTR فيه يعيد عدد النقرات لا النسبة). القياس الآن مركزي في experimentEngine
+// ويشمل عدة مؤشرات، ويُجرى بعد اكتمال النافذة على الجانبين معاً.
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { recordExperiment, EXPERIMENT_METRICS } from "@/lib/experimentEngine";
+
+const ALLOWED_TYPES = ["BUDGET", "AD_COPY", "LANDING_PAGE", "TARGETING", "BID_STRATEGY", "PAUSE", "OTHER"];
+const ALLOWED_METRICS: string[] = EXPERIMENT_METRICS.map((m) => m.key);
 
 export async function GET(
   req: NextRequest,
@@ -38,59 +49,46 @@ export async function POST(
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const { changeType, description, relatedCampaignId, measuredMetric } = await req.json();
+  const body = await req.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: "invalid body" }, { status: 400 });
 
-  if (!changeType || !description) {
-    return NextResponse.json({ error: "نوع التعديل والوصف مطلوبين" }, { status: 400 });
+  if (typeof body.description !== "string" || !body.description.trim()) {
+    return NextResponse.json({ error: "وصف التغيير مطلوب." }, { status: 400 });
+  }
+  if (!ALLOWED_TYPES.includes(body.changeType)) {
+    return NextResponse.json({ error: "نوع التغيير غير معروف." }, { status: 400 });
   }
 
-  // نلتقط "القيمة قبل التعديل" تلقائياً - متوسط المقياس المختار لآخر 7 أيام
-  // قبل لحظة التسجيل، عشان نقدر نقيس الأثر الحقيقي بعدين
-  let beforeMetricValue: number | null = null;
-  if (measuredMetric) {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const trackedMetrics = Array.isArray(body.trackedMetrics)
+    ? body.trackedMetrics.filter((m: unknown) => typeof m === "string" && ALLOWED_METRICS.includes(m))
+    : [];
+  if (trackedMetrics.length === 0) {
+    return NextResponse.json({ error: "اختر مؤشراً واحداً على الأقل للمقارنة." }, { status: 400 });
+  }
 
-    const where: any = { workspaceId: id, date: { gte: sevenDaysAgo } };
-    if (relatedCampaignId) where.campaignId = relatedCampaignId;
+  const windowDays = [3, 7, 14, 30].includes(Number(body.windowDays)) ? Number(body.windowDays) : 7;
 
-    const agg = await prisma.metricSnapshot.aggregate({
-      where,
-      _sum: { cost: true, verifiedConversions: true, rawConversions: true, clicks: true },
+  // الحملة - إن حُدِّدت - يجب أن تكون مرتبطة بمساحة العمل هذه فعلاً
+  let campaignId: string | null = null;
+  if (typeof body.campaignId === "string" && body.campaignId) {
+    const link = await prisma.campaignLink.findFirst({
+      where: { workspaceId: id, externalCampaignId: body.campaignId },
     });
-
-    beforeMetricValue = computeMetricFromAgg(measuredMetric, agg._sum);
+    if (!link) return NextResponse.json({ error: "الحملة غير مرتبطة بمساحة العمل." }, { status: 400 });
+    campaignId = body.campaignId;
   }
 
-  const log = await prisma.experimentLog.create({
-    data: {
-      workspaceId: id,
-      changeType,
-      description,
-      relatedCampaignId: relatedCampaignId || null,
-      measuredMetric: measuredMetric || null,
-      beforeMetricValue,
-      confidenceLevel: "INSUFFICIENT_DATA",
-    },
+  const experiment = await recordExperiment({
+    workspaceId: id,
+    changeType: body.changeType,
+    description: body.description.trim().slice(0, 300),
+    note: typeof body.note === "string" ? body.note.trim().slice(0, 500) || null : null,
+    campaignId,
+    platform: typeof body.platform === "string" ? body.platform : null,
+    trackedMetrics: trackedMetrics as any,
+    windowDays,
+    source: "MANUAL",
   });
 
-  return NextResponse.json({ log }, { status: 201 });
-}
-
-function computeMetricFromAgg(
-  metric: string,
-  sums: { cost: number | null; verifiedConversions: number | null; rawConversions: number | null; clicks: number | null }
-): number {
-  const cost = sums.cost ?? 0;
-  const verified = sums.verifiedConversions ?? 0;
-  const raw = sums.rawConversions ?? 0;
-  const clicks = sums.clicks ?? 0;
-
-  switch (metric) {
-    case "cpl_verified": return verified > 0 ? Math.round((cost / verified) * 100) / 100 : 0;
-    case "cpl_raw": return raw > 0 ? Math.round((cost / raw) * 100) / 100 : 0;
-    case "verified_conversions": return verified;
-    case "ctr": return clicks; // مبسّطة - محتاجة impressions أيضاً لحساب CTR فعلي دقيق
-    default: return 0;
-  }
+  return NextResponse.json({ experiment }, { status: 201 });
 }

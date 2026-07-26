@@ -28,13 +28,15 @@ export interface SetupProgress {
 }
 
 export async function getSetupProgress(workspaceId: string, userId: string): Promise<SetupProgress> {
-  const [connections, campaignCount, snapshotCount, verifiedAgg, valueConfig, appliedActions] = await Promise.all([
+  const [connections, campaignCount, snapshotCount, verifiedAgg, valueConfig, appliedActions, storeCount, productCount] = await Promise.all([
     prisma.connectedPlatform.count({ where: { userId } }),
     prisma.campaignLink.count({ where: { workspaceId } }),
     prisma.metricSnapshot.count({ where: { workspaceId } }),
     prisma.metricSnapshot.aggregate({ where: { workspaceId }, _sum: { verifiedConversions: true } }),
     prisma.conversionValueConfig.findUnique({ where: { workspaceId }, select: { workspaceId: true } }),
     prisma.actionFeedItem.count({ where: { workspaceId, status: "APPLIED" } }),
+    prisma.ecommerceConnection.count({ where: { workspaceId, active: true } }),
+    prisma.product.count({ where: { workspaceId } }),
   ]);
 
   const steps: SetupStep[] = [
@@ -92,6 +94,19 @@ export async function getSetupProgress(workspaceId: string, userId: string): Pro
       ctaHref: "/dashboard/settings?tab=workspace",
       ctaAr: "ضبط القيمة",
       ctaEn: "Set value",
+    },
+    {
+      id: "store",
+      titleAr: "اربط متجرك الإلكتروني",
+      titleEn: "Connect your online store",
+      descAr: "سلة أو شوبيفاي أو زد أو ووكومرس أو إيزي أوردرز — لتصل الطلبات والمرتجعات والمخزون تلقائياً.",
+      descEn: "Salla, Shopify, Zid, WooCommerce or EasyOrders — so orders, returns and stock arrive automatically.",
+      // خطوة اختيارية بطبيعتها: من لا يبيع منتجات لا تعنيه. تُعتبر
+      // مكتملة أيضاً لمن لا يستخدم منتجات إطلاقاً حتى لا تعلق القائمة.
+      done: storeCount > 0 || productCount === 0,
+      ctaHref: "/dashboard/settings?tab=integrations",
+      ctaAr: "ربط المتجر",
+      ctaEn: "Connect store",
     },
     {
       id: "action",

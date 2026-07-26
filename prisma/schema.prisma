@@ -232,6 +232,8 @@ model Workspace {
   // كل نظام فرعي له مفتاح مستقل، عشان أي حد يقدر يوقف جزء معين مؤقتاً
   // من غير ما يأثر على الباقي (مثال: يوقف الأتمتة بس، ويسيب التشخيص شغال)
   enableAIInsights          Boolean @default(true)
+  // إيقاف الحملات تلقائياً عند نفاد مخزون المنتج المرتبط بها
+  pauseAdsOnOutOfStock Boolean @default(false)
   enableAutomationRules     Boolean @default(true)
   enableDailyDiagnostics    Boolean @default(true)
   enablePricingHealthChecks Boolean @default(true)
@@ -265,6 +267,7 @@ model Workspace {
   experimentLogs  ExperimentLog[]
   ctaClickEvents  CtaClickEvent[]
   products        Product[]
+  ecommerceConnections EcommerceConnection[]
   creativeSnapshots CreativeSnapshot[]
   monitoredPages    MonitoredPage[]
   searchTermSnapshots SearchTermSnapshot[]
@@ -412,6 +415,8 @@ enum Platform {
   SALLA
   SHOPIFY
   EASY_ORDERS
+  ZID
+  WOOCOMMERCE
   MANUAL_UPLOAD
 }
 
@@ -543,6 +548,7 @@ model AutomationRule {
   lastExecutedAt   DateTime?           // آخر مرة اتنفذ فيها إجراء - لحساب الـ cooldown
 
   // نطاق التطبيق
+  platform      Platform? // null = كل المنصات؛ أو منصة بعينها
   appliesTo     RuleScope @default(ALL_CAMPAIGNS)
   specificCampaignIds String[] @default([])
 
@@ -571,12 +577,54 @@ model RuleExecution {
 }
 
 enum RuleMetric {
-  CPL_VERIFIED        // تكلفة العميل الحقيقي المتحقق منه
-  INFLATION_RATE       // نسبة تضخيم المنصة مقارنة بالحقيقة
-  TRUE_ROAS            // العائد الحقيقي بعد كل التكاليف (إيكومرس)
+  // ==== طبقة الحقيقة (جوهر المنتج) ====
+  CPL_VERIFIED          // تكلفة العميل الحقيقي المتحقق منه
+  CPL_REPORTED          // تكلفة العميل كما تعلنها المنصة
+  INFLATION_RATE        // نسبة تضخيم المنصة مقارنة بالحقيقة
+  VERIFICATION_RATE     // نسبة التحويلات التي تم التحقق منها فعلاً
   UNATTRIBUTED_RATE     // نسبة المحادثات المجهولة المصدر
-  RESPONSE_TIME_MINUTES // سرعة رد الفريق الحقيقية (بعد استبعاد الردود الأوتوماتيك)
-  RTO_RATE              // نسبة المرتجعات (إيكومرس)
+  VERIFIED_CONVERSIONS  // عدد التحويلات المحقّقة
+
+  // ==== التكلفة والكفاءة ====
+  SPEND                 // إجمالي الإنفاق
+  CPC                   // تكلفة النقرة
+  CPM                   // تكلفة الألف ظهور
+  CTR                   // نسبة النقر
+  CONVERSION_RATE       // نسبة التحويل من النقرة
+
+  // ==== الربحية ====
+  TRUE_ROAS             // العائد الحقيقي بعد كل التكاليف (إيكومرس)
+  REPORTED_ROAS         // العائد كما تعلنه المنصة
+  PROFIT_MARGIN_PCT     // هامش الربح الفعلي
+  BREAK_EVEN_DISTANCE   // بُعد العائد عن نقطة التعادل
+
+  // ==== الإبداع والتعب ====
+  FREQUENCY             // متوسط تكرار ظهور الإعلان للشخص
+  CTR_DECLINE_PCT       // نسبة انحدار CTR مقارنة ببدايته
+  CREATIVE_AGE_DAYS     // عمر الإعلان بالأيام
+
+  // ==== الجودة والترافيك ====
+  BOUNCE_SIGNAL_PCT     // نسبة النقرات بلا أي تفاعل لاحق
+  SUSPICIOUS_TRAFFIC_PCT // نسبة الترافيك المشبوه المكتشف
+  QUALITY_SCORE         // درجة الجودة (جوجل)
+  DISAPPROVED_ADS_COUNT // عدد الإعلانات المرفوضة
+
+  // ==== الميزانية والوتيرة ====
+  BUDGET_UTILIZATION_PCT // نسبة استهلاك الميزانية اليومية
+  IMPRESSION_SHARE_LOST_BUDGET // حصة الظهور المفقودة بسبب الميزانية
+
+  // ==== التشغيل ====
+  RESPONSE_TIME_MINUTES // سرعة رد الفريق الحقيقية
+  LEARNING_PHASE_DAYS   // عدد أيام بقاء الحملة في فترة التعلّم
+
+  // ==== الإيكومرس ====
+  RTO_RATE              // نسبة المرتجعات
+  AOV                   // متوسط قيمة الطلب
+  CATALOG_SPEND_NO_SALES // إنفاق على كتالوج بلا مبيعات
+  STOCK_REMAINING       // الكمية المتبقية من المنتج
+  STOCK_DAYS_LEFT       // الأيام المتبقية قبل النفاد بمعدل البيع الحالي
+  OUT_OF_STOCK_COUNT    // عدد المنتجات المنتهية في مساحة العمل
+  STOCK_COVER_RATIO     // نسبة تغطية المخزون مقابل وتيرة الإعلان
 }
 
 enum RuleOperator {
@@ -586,9 +634,11 @@ enum RuleOperator {
 
 enum RuleAction {
   PAUSE_CAMPAIGN
+  PAUSE_AD              // إيقاف الإعلان الفردي دون الحملة كلها
   REDUCE_BUDGET_PCT
   INCREASE_BUDGET_PCT
-  SEND_ALERT_ONLY // مجرد تنبيه، من غير أي تنفيذ فعلي
+  ADJUST_BID_PCT        // تعديل المزايدة بنسبة
+  SEND_ALERT_ONLY       // مجرد تنبيه، من غير أي تنفيذ فعلي
 }
 
 enum RuleScope {
@@ -736,6 +786,21 @@ model ExperimentLog {
   // مستوى الثقة في النتيجة - بيتحدد تلقائي بناءً على حجم العينة المتاحة
   confidenceLevel ExperimentConfidence @default(INSUFFICIENT_DATA)
 
+  // ==== قياس متعدد المؤشرات ====
+  // النسخة الأولى كانت تقيس مؤشراً واحداً فقط. القرار الواحد قد يحسّن
+  // مؤشراً ويضرّ آخر - القياس بمؤشر واحد يخفي ذلك تماماً.
+  trackedMetrics String[] @default([])  // مفاتيح المؤشرات المطلوب قياسها
+  metricResults  Json?                   // { key: { before, after, changePct } }
+
+  // ==== مصدر التجربة ومسارها ====
+  source         ExperimentSource @default(AUTO) // تلقائية عند تنفيذ قرار، أو يدوية
+  status         ExperimentStatus @default(RUNNING)
+  platform       Platform?
+  note           String?  // ملاحظة المستخدم (يدوية)
+  windowDays     Int      @default(7) // نافذة القياس قبل/بعد
+  measuredAt     DateTime?
+  sourceActionId String?  // بند القرار الذي أنشأ التجربة، إن وُجد
+
   createdAt      DateTime @default(now())
 
   @@index([workspaceId, changedAt])
@@ -747,6 +812,8 @@ enum ExperimentChangeType {
   LANDING_PAGE
   TARGETING
   BID_STRATEGY
+  PAUSE
+  AUTOMATION_RULE
   OTHER
 }
 
@@ -1447,6 +1514,13 @@ model Product {
   paymentGatewayFeePct Float @default(2.85)
   paymentGatewayFixedFee Float @default(3)
 
+  // ==== المخزون - أساس قواعد "أوقف الإعلان قبل نفاد الرصيد" ====
+  // يُحدَّث تلقائياً من منصة الإيكومرس المربوطة عند توفّرها، أو يدوياً.
+  stockQuantity     Int?     // null = غير متتبَّع (لا تُطبَّق قواعد المخزون)
+  lowStockThreshold Int      @default(10) // "قرب يخلص" - يُضبط لكل منتج
+  stockUpdatedAt    DateTime?
+  stockSource       String?  // "SALLA" | "SHOPIFY" | "MANUAL"
+
   cogsLastUpdatedAt DateTime @default(now()) // لفحص "التكلفة قديمة" في diagnoseMarginIssue
   createdAt     DateTime @default(now())
   saleEvents    ProductSaleEvent[]
@@ -1501,4 +1575,38 @@ model SupportMessage {
   createdAt   DateTime      @default(now())
 
   @@index([threadId])
+}
+
+enum ExperimentSource {
+  AUTO   // أُنشئت تلقائياً عند تنفيذ قرار أو قاعدة أتمتة
+  MANUAL // أنشأها المستخدم بنفسه
+}
+
+enum ExperimentStatus {
+  RUNNING   // نافذة القياس لم تكتمل بعد
+  MEASURED  // اكتملت وتم حساب النتيجة
+  INCONCLUSIVE // اكتملت لكن البيانات غير كافية للحكم
+}
+
+/// ربط متجر إيكومرس بمساحة عمل. سرّ الويب هوك مشفّر بنفس آلية توكنات
+/// المنصات الإعلانية - لا يُخزَّن أي سرّ بنص صريح.
+model EcommerceConnection {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  platform      Platform
+  storeName     String?
+  storeUrl      String?
+  webhookSecret String?  @db.Text // مشفّر
+  active        Boolean  @default(true)
+
+  lastOrderAt   DateTime?
+  ordersReceived Int     @default(0)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([workspaceId, platform])
+  @@index([platform, active])
 }

@@ -158,16 +158,49 @@ export async function runAutomationForWorkspace(workspaceId: string, locale: Loc
       continue; // منكملش لباقي منطق الدفع العادي للقاعدة دي
     }
 
-    const feedItem = ruleResultToActionFeedItem(workspaceId, rule.name, result, rule.requireApproval, locale);
+    // نحدّد الحملات المستهدفة فعلياً: نطاق القاعدة (كل الحملات أو حملات
+    // محددة) + منصة القاعدة إن وُجدت. هذان الحقلان كانا موجودين في قاعدة
+    // البيانات لكن المحرّك كان يتجاهلهما تماماً.
+    const targetLinks = await prisma.campaignLink.findMany({
+      where: {
+        workspaceId,
+        ...(rule.platform ? { platform: rule.platform } : {}),
+        ...(rule.appliesTo === "SPECIFIC_CAMPAIGNS" && rule.specificCampaignIds.length > 0
+          ? { externalCampaignId: { in: rule.specificCampaignIds } }
+          : {}),
+      },
+      select: { externalCampaignId: true, campaignName: true, platform: true },
+    });
 
-    if (feedItem) {
-      await pushToActionFeed(feedItem);
-      if (result.triggered && !result.blockedByCooldown) {
-        await prisma.automationRule.update({
-          where: { id: rule.id },
-          data: { lastExecutedAt: new Date() },
-        });
-      }
+    const needsTarget = rule.action === "PAUSE_CAMPAIGN"
+      || rule.action === "REDUCE_BUDGET_PCT"
+      || rule.action === "INCREASE_BUDGET_PCT";
+
+    // إجراء تنفيذي بلا حملة مطابقة = لا شيء يُنفَّذ عليه
+    if (needsTarget && targetLinks.length === 0) continue;
+
+    const targets = needsTarget
+      ? targetLinks.map((l: any) => ({
+          platform: l.platform,
+          campaignId: l.externalCampaignId,
+          campaignName: l.campaignName,
+          action: rule.action,
+          changePct: rule.actionValue ?? undefined,
+        }))
+      : [undefined];
+
+    for (const target of targets) {
+      const feedItem = ruleResultToActionFeedItem(
+        workspaceId, rule.name, result, rule.requireApproval, locale, target
+      );
+      if (feedItem) await pushToActionFeed(feedItem);
+    }
+
+    if (result.triggered && !result.blockedByCooldown) {
+      await prisma.automationRule.update({
+        where: { id: rule.id },
+        data: { lastExecutedAt: new Date() },
+      });
     }
   }
 }

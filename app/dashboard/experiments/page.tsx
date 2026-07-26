@@ -1,20 +1,19 @@
 // app/dashboard/experiments/page.tsx
+//
+// المعمل: التجارب تُنشأ تلقائياً عند تنفيذ أي قرار، وتُقاس نتيجتها بعد
+// اكتمال النافذة (lib/experimentEngine.ts). الصفحة عرض فقط - لا تحسب
+// النتائج بنفسها، حتى لا يختلف رقمان لنفس التجربة بين مكانين.
 
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
-import { ExperimentsClient } from "./ExperimentsClient";
-import { computeExperimentImpact } from "@/lib/experimentsLab";
+import { ExperimentsView, type ExperimentRow } from "./ExperimentsView";
 import { estimateLearningPhaseDuration, findStabilizationDay } from "@/lib/periodComparison";
-import { getMetricLabel, MetricKey } from "@/lib/dashboardDefaults";
-
-// المقاييس اللي التحسّن فيها معناه "الرقم ينزل" (عكس بعض المقاييس التانية)
-const LOWER_IS_BETTER = new Set(["cpl_verified", "cpl_raw"]);
 
 export default async function ExperimentsPage() {
   const user = await getSessionUserFromCookies();
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -26,83 +25,58 @@ export default async function ExperimentsPage() {
     return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
   }
 
-  const logs = await prisma.experimentLog.findMany({
-    where: { workspaceId: workspace.id },
-    orderBy: { changedAt: "desc" },
-  });
+  const [logs, campaignLinks] = await Promise.all([
+    prisma.experimentLog.findMany({
+      where: { workspaceId: workspace.id },
+      orderBy: { changedAt: "desc" },
+      take: 100,
+    }),
+    prisma.campaignLink.findMany({
+      where: { workspaceId: workspace.id },
+      select: { externalCampaignId: true, campaignName: true, platform: true },
+    }),
+  ]);
 
-  const experiments = await Promise.all(
-    logs.map(async (log: any) => {
-      const daysSinceChange = Math.floor((Date.now() - log.changedAt.getTime()) / 86400000);
-
-      if (!log.measuredMetric || log.beforeMetricValue === null) {
-        return {
-          id: log.id,
-          changeType: log.changeType,
-          description: log.description,
-          changedAt: log.changedAt.toISOString(),
-          confidenceLevel: "INSUFFICIENT_DATA" as const,
-          headline: "لا يوجد مقياس محدد لقياس الأثر — سجّل تعديلاً جديداً واختر مقياساً.",
-        };
-      }
-
-      const where: any = { workspaceId: workspace.id, date: { gte: log.changedAt } };
-      if (log.relatedCampaignId) where.campaignId = log.relatedCampaignId;
-
-      const agg = await prisma.metricSnapshot.aggregate({
-        where,
-        _sum: { cost: true, verifiedConversions: true, rawConversions: true },
-      });
-
-      const afterValue = computeMetricFromAgg(log.measuredMetric, agg._sum);
-
-      const impact = computeExperimentImpact(
-        log.beforeMetricValue,
-        afterValue,
-        LOWER_IS_BETTER.has(log.measuredMetric),
-        {
-          daysSinceChange,
-          verifiedConversionsSinceChange: agg._sum.verifiedConversions ?? 0,
-        },
-        getMetricLabel(log.measuredMetric as MetricKey, "ar"),
-        "ar"
-      );
-
-      return {
-        id: log.id,
-        changeType: log.changeType,
-        description: log.description,
-        changedAt: log.changedAt.toISOString(),
-        confidenceLevel: impact.confidence,
-        headline: impact.headline,
-      };
-    })
+  const nameByCampaign = new Map(
+    campaignLinks.map((c: any) => [c.externalCampaignId, c.campaignName])
   );
 
-  // درجة استقرار الأداء بعد تغييرات الميزانية - مبنية على تاريخ الحساب
-  // ده نفسه (لو متاح)، مش رقم عام واحد لكل الحسابات
-  const budgetLogs = logs.filter((l: any) => l.changeType === "BUDGET" && l.measuredMetric);
+  const experiments: ExperimentRow[] = logs.map((log: any) => ({
+    id: log.id,
+    changeType: log.changeType,
+    description: log.description,
+    changedAt: log.changedAt.toISOString(),
+    platform: log.platform ?? null,
+    campaignName: log.relatedCampaignId ? nameByCampaign.get(log.relatedCampaignId) ?? null : null,
+    source: log.source,
+    status: log.status,
+    confidenceLevel: log.confidenceLevel,
+    windowDays: log.windowDays ?? 7,
+    note: log.note ?? null,
+    trackedMetrics: log.trackedMetrics ?? [],
+    metricResults: (log.metricResults as any) ?? null,
+  }));
+
+  // مدة استقرار الأداء بعد تعديلات الميزانية - من تاريخ هذا الحساب تحديداً
+  const budgetLogs = logs.filter((l: any) => l.changeType === "BUDGET");
   const stabilizationSamples: Array<{ daysToStabilize: number }> = [];
 
   for (const log of budgetLogs) {
-    const dailySnapshots = await prisma.metricSnapshot.findMany({
+    const snapshots = await prisma.metricSnapshot.findMany({
       where: { workspaceId: workspace.id, date: { gte: log.changedAt } },
       orderBy: { date: "asc" },
+      select: { date: true, cost: true, verifiedConversions: true },
     });
-    if (dailySnapshots.length < 5) continue; // مش كفاية بيانات نحكم بيها على التجربة دي
+    if (snapshots.length < 5) continue;
 
     const byDate = new Map<string, number>();
-    for (const s of dailySnapshots) {
+    for (const s of snapshots) {
       const key = s.date.toISOString().slice(0, 10);
-      const existing = byDate.get(key) ?? 0;
-      const value = computeMetricFromAgg(log.measuredMetric!, {
-        cost: s.cost, verifiedConversions: s.verifiedConversions, rawConversions: s.rawConversions,
-      });
-      byDate.set(key, existing + value);
+      const cpl = (s.verifiedConversions ?? 0) > 0 ? s.cost / s.verifiedConversions : 0;
+      byDate.set(key, (byDate.get(key) ?? 0) + cpl);
     }
 
-    const dailyValues = Array.from(byDate.values());
-    const stabilizedAt = findStabilizationDay(dailyValues);
+    const stabilizedAt = findStabilizationDay(Array.from(byDate.values()));
     if (stabilizedAt !== null) stabilizationSamples.push({ daysToStabilize: stabilizedAt });
   }
 
@@ -111,36 +85,28 @@ export default async function ExperimentsPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">التجارب</h1>
+      <h1 className="mb-5 text-[26px] font-semibold text-text-primary">المعمل</h1>
 
-      <div className="mb-6 rounded-2xl bg-surface p-4">
-        <div className="mb-1 text-sm text-text-primary">
-          يستقر الأداء عادةً بعد تعديل الميزانية خلال {learningPhase.estimatedDays} يوم تقريباً
+      <div className="card-shadow mb-5 rounded-2xl border border-border bg-surface p-4">
+        <div className="mb-1 text-[13.5px] text-text-primary">
+          يستقر الأداء عادةً بعد تعديل الميزانية خلال {learningPhase.estimatedDays} يوماً تقريباً
         </div>
-        <p className="text-xs text-text-faint">
+        <p className="text-[12px] text-text-faint">
           {learningPhase.basis === "account_history"
             ? `مبني على تاريخ حسابك تحديداً (${learningPhase.sampleSize} تعديل سابق)`
-            : "معيار صناعي عام - لا يتوفر بعد تاريخ كافٍ من حسابك تحديداً (يلزم 3 تعديلات ميزانية على الأقل مسجّلة)"}
+            : "معيار عام — لا يتوفر بعد تاريخ كافٍ من حسابك (يلزم 3 تعديلات ميزانية مسجّلة على الأقل)"}
         </p>
       </div>
 
-      <ExperimentsClient workspaceId={workspace.id} experiments={experiments} />
+      <ExperimentsView
+        workspaceId={workspace.id}
+        experiments={experiments}
+        campaigns={campaignLinks.map((c: any) => ({
+          id: c.externalCampaignId,
+          name: c.campaignName,
+          platform: c.platform,
+        }))}
+      />
     </div>
   );
-}
-
-function computeMetricFromAgg(
-  metric: string,
-  sums: { cost: number | null; verifiedConversions: number | null; rawConversions: number | null }
-): number {
-  const cost = sums.cost ?? 0;
-  const verified = sums.verifiedConversions ?? 0;
-  const raw = sums.rawConversions ?? 0;
-
-  switch (metric) {
-    case "cpl_verified": return verified > 0 ? Math.round((cost / verified) * 100) / 100 : 0;
-    case "cpl_raw": return raw > 0 ? Math.round((cost / raw) * 100) / 100 : 0;
-    case "verified_conversions": return verified;
-    default: return 0;
-  }
 }

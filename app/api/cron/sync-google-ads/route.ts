@@ -24,6 +24,8 @@ import { checkAttributionPathAlertForWorkspace } from "@/lib/attributionPathAler
 import { checkSubscriptionExpiryForWorkspace } from "@/lib/subscriptionAlerts";
 import { checkScaleKillDecisionsForWorkspace } from "@/lib/scaleKillAlerts";
 import { checkPricingHealthAlertsForWorkspace } from "@/lib/pricingHealth";
+import { checkStockGuardForWorkspace } from "@/lib/stockGuard";
+import { measurePendingExperiments } from "@/lib/experimentEngine";
 import { syncTikTokAdsForWorkspace, syncTikTokVideoMetricsForWorkspace, syncTikTokWeeklyEngagementForWorkspace, checkTikTokAlertsForWorkspace, syncTikTokBidCapForWorkspace, syncTikTokLearningPhaseForWorkspace, syncTikTokLookalikeComparisonForWorkspace, syncTikTokSparkAdsCommentsForWorkspace, syncTikTokLeadFormsForWorkspace, syncTikTokCreativesForWorkspace, checkTikTokBidStrategyProgressionForWorkspace } from "@/lib/syncTikTokAds";
 import { checkMetaBidStrategyAlertsForWorkspace } from "@/lib/metaBidStrategyAudit";
 import { fetchAndStoreExchangeRate } from "@/lib/marketContext";
@@ -146,6 +148,8 @@ export async function GET(req: NextRequest) {
       // فحص التسعير لم يعد هنا - يعمل الآن لكل مساحة عندها منتجات، بمعزل
       // عن المنصات الإعلانية (انظر الحلقة المستقلة بعد هذه الحلقة).
       await runAutomationForWorkspace(workspaceId);
+      // قياس التجارب التي اكتملت نافذتها - نتيجة كل قرار نُفِّذ فعلاً
+      await measurePendingExperiments(workspaceId);
       results.push({ workspaceId, status: "ok" });
     } catch (err) {
       console.error(`فشلت المعالجة اليومية للـ Workspace ${workspaceId}:`, err);
@@ -170,6 +174,9 @@ export async function GET(req: NextRequest) {
   for (const { workspaceId } of pricingWorkspaces) {
     try {
       await checkPricingHealthAlertsForWorkspace(workspaceId);
+      // حارس المخزون: نفس النطاق (مساحات لها منتجات) - الإنفاق على منتج
+      // نافد خسارة كاملة، فالفحص يومي مع فحص التسعير لا منفصلاً عنه.
+      await checkStockGuardForWorkspace(workspaceId);
       pricingChecked++;
     } catch (err) {
       console.error(`فشل فحص التسعير للـ Workspace ${workspaceId}:`, err);
