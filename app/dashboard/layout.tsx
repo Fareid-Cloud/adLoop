@@ -17,6 +17,8 @@ import { NotificationBell } from "@/app/components/NotificationBell";
 import { NotificationToast } from "@/app/components/NotificationToast";
 import { WelcomeGate } from "@/app/components/WelcomeGate";
 import { AccountMenu } from "@/app/components/AccountMenu";
+import { TopSearch } from "@/app/components/TopSearch";
+import { HelpButton } from "@/app/components/HelpButton";
 import { SidebarNav } from "@/app/components/SidebarNav";
 // next/font/google بيحمّل ملف الخط فعلياً وقت الـ build ويربطه بمتغير CSS -
 // ده الفرق عن مجرد كتابة اسم الخط في font-family من غير ما يكون مستورد
@@ -85,7 +87,10 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <SidebarNav locale={locale} />
 
       <main className="flex-1 px-10 py-8">
-        <div className="mb-4 flex items-center justify-end gap-3">
+        <div className="mb-5 flex items-center gap-3">
+          <TopSearch locale={locale} />
+          <div className="flex flex-1 items-center justify-end gap-1.5">
+          <HelpButton locale={locale} />
           <div id="tour-notification-bell"><NotificationBell /></div>
           {user && (
             <AccountMenu
@@ -96,6 +101,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               isOwner={user.isAdmin || user.email === process.env.OWNER_EMAIL}
             />
           )}
+          </div>
         </div>
         {children}
       </main>
