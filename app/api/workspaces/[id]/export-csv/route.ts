@@ -51,10 +51,16 @@ export async function GET(
   const csvContent =
     "\uFEFF" + [headers, ...rows].map((row) => row.map(escapeCsvCell).join(",")).join("\n");
 
+  // هيدرات HTTP لا تقبل حروفاً غير ASCII - اسم مساحة عمل عربي كان يجعل
+  // الهيدر غير صالح ويسقط الطلب بخطأ 500 (سبب صفحة الخطأ عند التصدير).
+  // الحل القياسي: اسم ASCII آمن + النسخة الأصلية عبر filename* (RFC 5987).
+  const asciiName = workspace.name.replace(/[^\x20-\x7E]/g, "").replace(/["\\]/g, "").trim() || "workspace";
+  const utf8Name = encodeURIComponent(`adloop-export-${workspace.name}.csv`);
+
   return new NextResponse(csvContent, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="adloop-export-${workspace.name}.csv"`,
+      "Content-Disposition": `attachment; filename="adloop-export-${asciiName}.csv"; filename*=UTF-8''${utf8Name}`,
     },
   });
 }

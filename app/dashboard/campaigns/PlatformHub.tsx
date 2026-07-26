@@ -8,7 +8,8 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
-import { getPlatformStatus } from "@/lib/connectionState";
+import { getConnectStates } from "@/lib/connectionState";
+import { ConnectSinglePlatform } from "@/app/components/ConnectPlatforms";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { getWorkspaceCreativePerformances } from "@/lib/creativeAnalysis";
 
@@ -50,8 +51,9 @@ export async function PlatformHub({
   });
 
   if (links.length === 0) {
-    // تشخيص دقيق: هل الحساب غير مربوط أصلاً، أم مربوط ولم تُختر حملات؟
-    const status = await getPlatformStatus(workspace.id, user.id, platform);
+    // كارت ربط المنصة نفسها هنا مباشرة - مش "روح للإعدادات"
+    const states = await getConnectStates(workspace.id, user.id);
+    const state = states.find((s) => s.platform === platform) ?? { platform, connected: false, campaignCount: 0 };
     return (
       <div className="mx-auto max-w-4xl">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
@@ -59,15 +61,7 @@ export async function PlatformHub({
           <PlatformLogo platform={platform} size={24} />
           {platformLabel}
         </h1>
-        <EmptyState
-          title={status.title}
-          description={status.description}
-          action={
-            <a href={status.ctaHref} className="inline-block rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white no-underline">
-              {status.ctaLabel}
-            </a>
-          }
-        />
+        <ConnectSinglePlatform state={state} />
       </div>
     );
   }

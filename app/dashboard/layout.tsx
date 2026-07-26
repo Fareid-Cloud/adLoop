@@ -101,7 +101,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             <AccountMenu
               name={user.name}
               email={user.email}
-              avatarUrl={user.avatarUrl ?? null}
+              avatarUrl={user.avatarImageUrl ?? user.avatarUrl ?? null}
+              avatarIcon={user.avatarIcon ?? null}
               locale={locale}
               isOwner={user.isAdmin || user.email === process.env.OWNER_EMAIL}
             />

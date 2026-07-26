@@ -2,18 +2,23 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Settings, LogOut, CreditCard, Shield } from "lucide-react";
+import { ChevronDown, Settings, LogOut, CreditCard, Shield, Bot, Cpu, Sparkles, Terminal, Brain, Zap } from "lucide-react";
+
+// نفس مفاتيح avatarIcon المحفوظة في قاعدة البيانات
+const AVATAR_ICONS: Record<string, typeof Bot> = { bot: Bot, cpu: Cpu, sparkles: Sparkles, terminal: Terminal, brain: Brain, zap: Zap };
 
 export function AccountMenu({
   name,
   email,
   avatarUrl,
+  avatarIcon,
   locale,
   isOwner = false,
 }: {
   name: string | null;
   email: string;
   avatarUrl: string | null;
+  avatarIcon?: string | null;
   locale: "ar" | "en";
   isOwner?: boolean;
 }) {
@@ -38,6 +43,7 @@ export function AccountMenu({
 
   const display = name ?? email;
   const initial = display[0]?.toUpperCase() ?? "?";
+  const AvatarIcon = avatarIcon ? AVATAR_ICONS[avatarIcon] : null;
 
   return (
     <div ref={ref} className="relative">
@@ -48,8 +54,8 @@ export function AccountMenu({
         {avatarUrl ? (
           <img src={avatarUrl} alt={display} className="h-7 w-7 rounded-full object-cover" />
         ) : (
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-xs font-medium text-accent">
-            {initial}
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-accent">
+            {AvatarIcon ? <AvatarIcon size={15} /> : <span className="text-xs font-medium">{initial}</span>}
           </div>
         )}
         <span className="max-w-[120px] truncate text-[13px] text-text-muted">{display}</span>

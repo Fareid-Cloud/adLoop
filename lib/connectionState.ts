@@ -24,6 +24,23 @@ const PLATFORM_LABEL: Record<string, string> = {
   SNAPCHAT_ADS: "Snapchat Ads",
 };
 
+// حالة الربط لكل المنصات المدعومة - تُستخدم لعرض كروت الربط في الداشبورد
+export async function getConnectStates(workspaceId: string, userId: string) {
+  const platforms = ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"];
+  const [connections, links] = await Promise.all([
+    prisma.connectedPlatform.findMany({ where: { userId }, select: { platform: true } }),
+    prisma.campaignLink.groupBy({ by: ["platform"], where: { workspaceId }, _count: { _all: true } }),
+  ]);
+  const connectedSet = new Set(connections.map((c: any) => c.platform));
+  const countByPlatform = new Map(links.map((l: any) => [l.platform, l._count._all]));
+
+  return platforms.map((p) => ({
+    platform: p,
+    connected: connectedSet.has(p),
+    campaignCount: countByPlatform.get(p) ?? 0,
+  }));
+}
+
 export async function getPlatformStatus(
   workspaceId: string,
   userId: string,

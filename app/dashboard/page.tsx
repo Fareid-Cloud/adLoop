@@ -14,7 +14,8 @@ import { PlatformDonut } from "@/app/components/PlatformDonut";
 import { TrendChart } from "@/app/components/TrendChart";
 import { MetricsExplorer } from "@/app/components/MetricsExplorer";
 import { computeHealthScore } from "@/lib/healthScore";
-import { getPlatformStatus } from "@/lib/connectionState";
+import { getConnectStates } from "@/lib/connectionState";
+import { ConnectPlatforms } from "@/app/components/ConnectPlatforms";
 import { computeMetrics, comparePlatforms } from "@/lib/metricsEngine";
 import { compareMetric } from "@/lib/periodComparison";
 import { Megaphone, ShieldCheck, Wallet, Target, Activity } from "lucide-react";
@@ -171,15 +172,8 @@ export default async function GlancePage() {
   }
   const trendData = Array.from(trendByDate.entries()).map(([date, v]) => ({ date, ...v }));
 
-  // حالة الربط للرسالة الفارغة - نعرض حالة أول منصة متصلة (أو Google كافتراضي)
-  // عشان المستخدم يعرف بالظبط الخطوة الناقصة بدل رسالة عامة مضلّلة
-  const glanceStatus = hasAnyData
-    ? { title: "", description: "", ctaHref: "", ctaLabel: "" }
-    : await (async () => {
-        const connected = await prisma.connectedPlatform.findMany({ where: { userId: user.id } });
-        const first = connected.find((c: any) => AD_PLATFORMS.includes(c.platform))?.platform ?? "GOOGLE_ADS";
-        return getPlatformStatus(workspace.id, user.id, first);
-      })();
+  // كروت الربط - تظهر في الداشبورد مباشرة (بدل "روح للإعدادات")
+  const connectStates = await getConnectStates(workspace.id, user.id);
 
   const health = computeHealthScore({ tracking: null, landing: null, ads: null, audience: null, creatives: null });
   const firstName = user.name?.split(" ")[0] ?? user.email.split("@")[0];
@@ -199,17 +193,10 @@ export default async function GlancePage() {
         </div>
       </div>
 
-      {!hasAnyData ? (
-        <EmptyState
-          title={glanceStatus.title}
-          description={glanceStatus.description}
-          action={
-            <a href={glanceStatus.ctaHref} className="inline-block rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white no-underline">
-              {glanceStatus.ctaLabel}
-            </a>
-          }
-        />
-      ) : (
+      {/* ربط المنصات - دائماً في المقدمة لو فيه منصة ناقصة، بلوجوها وزر مباشر */}
+      <ConnectPlatforms states={connectStates} onlyUnconnected={hasAnyData} />
+
+      {!hasAnyData ? null : (
         <>
           {/* هيرو طبقة الحقيقة - المعلن مقابل المتحقّق منه فعلاً */}
           <div className="mb-4 grid gap-3 lg:grid-cols-[1.4fr_1fr]">

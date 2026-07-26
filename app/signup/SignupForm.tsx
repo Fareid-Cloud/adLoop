@@ -6,11 +6,11 @@ import { Eye, EyeOff } from "lucide-react";
 import { t, Locale } from "@/lib/i18n/dictionary";
 import { PasswordRequirements } from "@/app/components/PasswordRequirements";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { AuthShell } from "@/app/components/AuthShell";
+import { SocialButton, FIELD as F, PRIMARY_BTN as PB } from "@/app/components/AuthControls";
 
-const FIELD =
-  "block w-full rounded-xl border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-faint outline-none transition-colors focus:border-accent";
-const PRIMARY_BTN =
-  "w-full rounded-xl bg-accent py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50";
+const FIELD = F;
+const PRIMARY_BTN = PB;
 
 const GENDERS = [{ v: "male", ar: "ذكر", en: "Male" }, { v: "female", ar: "أنثى", en: "Female" }];
 const COUNTRIES = ["السعودية", "مصر", "الإمارات", "الكويت", "قطر", "البحرين", "عُمان", "الأردن", "المغرب", "أخرى"];
@@ -88,20 +88,21 @@ export function SignupForm() {
   const L = (arTxt: string, enTxt: string) => (ar ? arTxt : enTxt);
 
   return (
-    <div dir={ar ? "rtl" : "ltr"} data-accent="blue" data-mode="light" className="flex min-h-screen items-center justify-center bg-bg px-4 py-10 font-display">
-      <div className="w-full max-w-lg rounded-2xl card-shadow border border-border bg-surface p-8">
-        <div className="mb-6 text-center">
-          <div className="text-lg font-bold tracking-tight text-text-primary">AdLoop</div>
-          <div className="mt-1 text-sm text-text-muted">{t(locale, "auth.signupTitle")}</div>
+    <AuthShell
+      wide
+      dir={ar ? "rtl" : "ltr"}
+      headline={ar ? "ابدأ بأرقام تثق فيها" : "Start with numbers you can trust"}
+      sub={ar ? "دقائق للربط، ثم ترى الفرق بين ما تقوله المنصات وما تحقّق فعلاً." : "Connect in minutes, then see the gap between reported and verified."}
+    >
+      <div className="w-full">
+        <div className="mb-7">
+          <div className="mb-6 text-[17px] font-bold tracking-tight text-text-primary">AdLoop</div>
+          <h1 className="text-[28px] font-bold tracking-tight text-text-primary">{t(locale, "auth.signupTitle")}</h1>
         </div>
 
         <div className="mb-5 grid grid-cols-2 gap-2.5">
-          <a href="/api/oauth/login-google/start" className="flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium no-underline" style={{ background: "#fff", color: "#3c4043", border: "1px solid #dadce0" }}>
-            <PlatformLogo platform="GOOGLE_ADS" size={18} /> Google
-          </a>
-          <a href="/api/oauth/login-facebook/start" className="flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium text-white no-underline" style={{ background: "#0866FF" }}>
-            <PlatformLogo platform="FACEBOOK" size={18} /> Facebook
-          </a>
+          <SocialButton href="/api/oauth/login-google/start" logo={<PlatformLogo platform="GOOGLE_ADS" size={18} />}>Google</SocialButton>
+          <SocialButton href="/api/oauth/login-facebook/start" logo={<PlatformLogo platform="FACEBOOK" size={18} />}>Facebook</SocialButton>
         </div>
 
         <div className="mb-5 flex items-center gap-3 text-xs text-text-faint">
@@ -173,6 +174,6 @@ export function SignupForm() {
           <a href="/login" className="text-accent no-underline">{t(locale, "auth.goToLogin")}</a>
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }

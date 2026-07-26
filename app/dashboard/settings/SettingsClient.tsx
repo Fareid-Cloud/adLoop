@@ -1261,13 +1261,20 @@ function ToggleRow({
   return (
     <div className="flex items-center justify-between border-b border-border py-2.5 last:border-0">
       <span className="text-sm text-text-primary">{label}</span>
+      {/* المقبض بيتموضع بـ inset-inline-start (يشتغل صح في RTL وLTR).
+          كان بيستخدم translateX بقيم سالبة فيخرج خارج المسار. */}
       <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`h-6 w-11 rounded-full transition-colors ${checked ? "bg-verified" : "bg-surface-raised"}`}
+        className={`relative h-6 w-11 shrink-0 rounded-full border transition-colors ${
+          checked ? "border-verified bg-verified" : "border-border bg-surface-raised"
+        }`}
       >
         <span
-          className="block rounded-full bg-white transition-transform"
-          style={{ height: 18, width: 18, transform: checked ? "translateX(-22px)" : "translateX(-2px)" }}
+          className="absolute top-1/2 block h-[18px] w-[18px] -translate-y-1/2 rounded-full bg-white shadow-sm transition-[inset-inline-start] duration-200"
+          style={{ insetInlineStart: checked ? 23 : 3 }}
         />
       </button>
     </div>
