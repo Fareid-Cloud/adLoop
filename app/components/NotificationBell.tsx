@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Bell, X } from "lucide-react";
+import { useLive } from "@/app/components/LiveData";
 
 interface Notification {
   id: string;
@@ -42,11 +43,10 @@ export function NotificationBell() {
     }
   }
 
-  useEffect(() => {
-    loadNotifications();
-    const interval = setInterval(loadNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  // العدّاد بييجي من المؤقّت الموحّد (LiveData). القائمة الكاملة بتتجاب
+  // عند فتح الجرس فقط - مش كل 30 ثانية زي قبل كده.
+  const live = useLive();
+  useEffect(() => setUnreadCount(live.unreadCount), [live.unreadCount]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -92,8 +92,9 @@ export function NotificationBell() {
   async function handleBellClick() {
     const nextOpen = !open;
     setOpen(nextOpen);
-    if (nextOpen && unreadCount > 0) {
-      await handleMarkAllRead();
+    if (nextOpen) {
+      await loadNotifications(); // القائمة الكاملة عند الفتح فقط
+      if (unreadCount > 0) await handleMarkAllRead();
     }
   }
 

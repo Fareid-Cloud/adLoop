@@ -213,3 +213,123 @@
       يضيف الموقع للشاشة الرئيسية كـ"تطبيق" الأول قبل ما الإشعارات تشتغل
 - [ ] اختبار: فعّل الإشعارات من الإعدادات، سيب حساب تجريبي 48 ساعة من
       غير فتح، تأكد إن الإشعار وصل فعلياً
+
+---
+
+## 🔴 17) عاجل — فشل النشر برسالة `P1001: Can't reach database server`
+
+معناها: أمر `prisma db push` (اللي بيزامن الجداول أثناء البناء) **مقدرش يوصل لقاعدة
+Neon**، فالبناء وقف قبل ما يبدأ يبني الكود أصلاً. **مش خطأ في الكود.**
+
+**اتعمل إصلاح وقائي:** أمر البناء بقى لا يفشل لو الاتصال اتعثّر (بيكمل ويطبع تحذير)،
+عشان مشكلة اتصال مؤقتة ما توقّفش النشر. لكن لازم تتأكد إن القاعدة توصل فعلاً، وإلا
+الجداول الجديدة مش هتتعمل.
+
+**افحص بالترتيب:**
+1. **Neon شغّال؟** افتح لوحة Neon وتأكد إن المشروع/الفرع (branch) لسه موجود ومش
+   محذوف. لو الحوسبة (compute) موقوفة، افتح SQL Editor ونفّذ `SELECT 1` لإيقاظها.
+2. **`DATABASE_URL` في Vercel صح؟** لازم يكون **رابط Neon المُجمَّع (pooled)** وينتهي بـ
+   `?sslmode=require`. شكله:
+   `postgresql://user:pass@ep-xxx-pooler.<region>.aws.neon.tech/neondb?sslmode=require`
+   (لو الرابط بدون `-pooler` أو بدون `sslmode=require` → غالباً ده سبب الفشل).
+3. **متغيّر البيئة موجود في بيئة Production؟** لو ضفته في Preview بس، البناء الإنتاجي
+   مش هيلاقيه.
+4. **بعد أي تعديل على المتغيّر لازم Redeploy** (المتغيرات بتتقري وقت البناء).
+5. **لو لسه بيفشل:** شغّل المزامنة من جهازك مرة واحدة (نفس `DATABASE_URL`):
+   ```
+   npx prisma db push
+   ```
+   وبعدين اعمل Redeploy عادي.
+
+---
+
+## 18) تسجيل الدخول بجوجل وفيسبوك (Social Login) — منفصل تماماً عن ربط حسابات الإعلانات
+
+مهم: ده **غير** قسم Google Ads / Meta Ads. ده الزرارين اللي في صفحة تسجيل الدخول
+والتسجيل. لو المفاتيح دي مش متضبطة، الزرارين هيظهروا لكن الضغط عليهم مش هيسجّل دخول.
+
+### 18أ) الدخول بحساب Google
+1. افتح [Google Cloud Console](https://console.cloud.google.com) ← اختر مشروعك
+   (نفس مشروع Google Ads عادي).
+2. **APIs & Services ← OAuth consent screen**: نوع External، واملأ اسم التطبيق
+   وبريد الدعم وسياسة الخصوصية (استخدم `https://<دومينك>/legal/privacy`) وشروط
+   الاستخدام (`https://<دومينك>/legal/terms`).
+3. **Credentials ← Create Credentials ← OAuth client ID ← Web application**.
+4. في **Authorized redirect URIs** ضِف بالظبط:
+   ```
+   https://<دومينك>/api/oauth/login-google/callback
+   ```
+5. انسخ القيم لمتغيرات Vercel:
+   - `GOOGLE_LOGIN_CLIENT_ID`
+   - `GOOGLE_LOGIN_CLIENT_SECRET`
+
+### 18ب) الدخول بحساب Facebook
+1. افتح [Meta for Developers](https://developers.facebook.com/apps) ← أنشئ تطبيقاً
+   (نوع Consumer أو Business).
+2. أضف منتج **Facebook Login** ← Settings.
+3. في **Valid OAuth Redirect URIs** ضِف بالظبط:
+   ```
+   https://<دومينك>/api/oauth/login-facebook/callback
+   ```
+4. في **App Review ← Permissions**: التطبيق يحتاج `email` و`public_profile` (متاحين
+   بدون مراجعة عادةً).
+5. انسخ القيم لمتغيرات Vercel:
+   - `META_LOGIN_APP_ID`
+   - `META_LOGIN_APP_SECRET`
+6. قبل النشر للعامة: حوّل التطبيق من Development إلى **Live** من أعلى اللوحة، وإلا
+   الدخول هيشتغل لحسابات المطوّرين فقط.
+
+---
+
+## 19) الجرد الكامل لمتغيرات البيئة (مستخرَج من الكود مباشرة)
+
+### إجبارية (البرنامج لا يعمل بدونها)
+| المتغيّر | الغرض |
+|---|---|
+| `DATABASE_URL` | قاعدة Neon (رابط pooled + `sslmode=require`) |
+| `JWT_SECRET` | تشفير جلسات الدخول — أي نص عشوائي طويل |
+
+### مهمة جداً عملياً
+| المتغيّر | الغرض | بدونها يحصل إيه |
+|---|---|---|
+| `OWNER_EMAIL` | بريدك — يفتح لوحة المالك `/admin` و`/admin/support` | لا تستطيع دخول لوحة المالك |
+| `TOKEN_ENCRYPTION_KEY` | تشفير توكنات المنصات (AES-256، 64 حرف hex) | ربط الحسابات الإعلانية يفشل |
+| `CRON_SECRET` | حماية المزامنة اليومية | الكرون يرفض التشغيل (لا مزامنة يومية) |
+| `APP_URL` | الرابط الأساسي لروابط الإيميل و redirect | يرجع تلقائياً لرابط Vercel (مقبول) |
+| `RESEND_API_KEY` | إرسال الإيميلات (تحقق، استعادة كلمة مرور، الدعم) | لا تصل أي رسائل بريد |
+| `NOTIFICATION_FROM_EMAIL` | اسم/بريد المُرسِل | يستخدم بريد Resend الافتراضي |
+| `SUPPORT_INBOX_EMAIL` | بريد استقبال رسائل الدعم | الافتراضي `manfareiduwk@gmail.com` |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob — **رفع صور الدعم والأفتار** | الصور المرفقة لا تُرفع ولا تظهر |
+
+### حسب الميزة (اختيارية)
+| المتغيّر | الميزة |
+|---|---|
+| `GOOGLE_ADS_CLIENT_ID` / `GOOGLE_ADS_CLIENT_SECRET` / `GOOGLE_ADS_DEVELOPER_TOKEN` | ربط Google Ads |
+| `META_APP_ID` / `META_APP_SECRET` | ربط Meta Ads |
+| `TIKTOK_APP_ID` / `TIKTOK_APP_SECRET` | ربط TikTok Ads |
+| `GOOGLE_LOGIN_CLIENT_ID` / `GOOGLE_LOGIN_CLIENT_SECRET` | الدخول بجوجل (قسم 18أ) |
+| `META_LOGIN_APP_ID` / `META_LOGIN_APP_SECRET` | الدخول بفيسبوك (قسم 18ب) |
+| `ANTHROPIC_API_KEY` | التحليلات بالذكاء الاصطناعي وفحص الموقع |
+| `TURNSTILE_SECRET_KEY` / `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | كابتشا التسجيل |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_CONTACT_EMAIL` | إشعارات الموبايل |
+| `PAYMOB_SECRET_KEY` / `PAYMOB_PUBLIC_KEY` / `PAYMOB_INTEGRATION_ID` / `PAYMOB_HMAC_SECRET` | الاشتراكات والدفع |
+| `PLAN_PRICE_STARTER_CENTS` / `PLAN_PRICE_PRO_CENTS` | أسعار الخطط |
+| `SALLA_WEBHOOK_SECRET` | ويب هوك سلة |
+| `META_WEBHOOK_VERIFY_TOKEN` / `META_MESSENGER_VERIFY_TOKEN` | ويب هوك ليدز/ماسنجر ميتا |
+| `INTERNAL_SERVICE_SECRET` | تأمين نداءات wa-conversion-tracker |
+| `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_ORG` / `SENTRY_PROJECT` | مراقبة الأخطاء |
+| `GOOGLE_PAGESPEED_API_KEY` / `SCREENSHOT_API_KEY` | فحص الموقع العميق |
+| `PUSH_INACTIVITY_THRESHOLD_HOURS` | عتبة تنبيه عدم النشاط (افتراضي 48) |
+
+---
+
+## 🔴 20) بعد ربط حساب إعلاني: خطوة إجبارية غالباً تُنسى
+
+ربط الحساب عبر OAuth **لا يكفي وحده** لظهور الأرقام. لازم بعده:
+
+1. **الإعدادات ← مساحة العمل ← اختيار الحملات** التي تريد متابعتها فعلياً
+   (نتابع الحملات المختارة فقط، لا كل حملات الحساب — قرار متعمّد لتقليل التكلفة والضجيج).
+2. انتظر أول **مزامنة يومية**، أو شغّل مزامنة فورية من نفس الصفحة.
+
+الواجهة الآن تُظهر لك الخطوة الناقصة بدقة (غير مربوط / مربوط بلا حملات / بانتظار
+المزامنة) مع زر مباشر لكل حالة.

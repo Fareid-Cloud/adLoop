@@ -25,7 +25,7 @@ function childPlatform(href: string): string | null {
   return null;
 }
 
-export function SidebarNav({ locale }: { locale: "ar" | "en" }) {
+export function SidebarNav({ locale, supportSlot }: { locale: "ar" | "en"; supportSlot?: React.ReactNode }) {
   const pathname = usePathname();
   const ar = locale === "ar";
   const [collapsed, setCollapsed] = useState(false);
@@ -165,6 +165,9 @@ export function SidebarNav({ locale }: { locale: "ar" | "en" }) {
             </div>
           ))
         )}
+
+        {/* الدعم الفني كعنصر في القائمة (بدل الزر العائم) */}
+        {supportSlot && !collapsed && <div className="border-t border-border pt-3">{supportSlot}</div>}
 
         <button
           onClick={toggleCollapse}

@@ -8,6 +8,8 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
+import { getPlatformStatus } from "@/lib/connectionState";
+import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { getWorkspaceCreativePerformances } from "@/lib/creativeAnalysis";
 
 // ألوان رسمية حقيقية (مؤكدة من مصادر العلامات التجارية) - شارة لونية
@@ -48,14 +50,24 @@ export async function PlatformHub({
   });
 
   if (links.length === 0) {
+    // تشخيص دقيق: هل الحساب غير مربوط أصلاً، أم مربوط ولم تُختر حملات؟
+    const status = await getPlatformStatus(workspace.id, user.id, platform);
     return (
       <div className="mx-auto max-w-4xl">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
         <h1 className="mb-6 flex items-center gap-2.5 text-[26px] font-semibold text-text-primary">
-          <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: PLATFORM_COLORS[platform].bg }} />
+          <PlatformLogo platform={platform} size={24} />
           {platformLabel}
         </h1>
-        <EmptyState title={`${platformLabel} غير مربوطة بعد`} description="اربط حملاتك من الإعدادات → مساحة العمل." />
+        <EmptyState
+          title={status.title}
+          description={status.description}
+          action={
+            <a href={status.ctaHref} className="inline-block rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white no-underline">
+              {status.ctaLabel}
+            </a>
+          }
+        />
       </div>
     );
   }

@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { X, Zap, TrendingUp, Lightbulb } from "lucide-react";
+import { useLive } from "@/app/components/LiveData";
 
 // صوت تنبيه بسيط عبر Web Audio API - مفيش ملف صوتي خارجي، صوت "نغمة"
 // قصيرة ولطيفة (نغمتين متتاليتين، زي معظم أنظمة الإشعارات المعروفة)
@@ -60,22 +61,17 @@ export function NotificationToast() {
   const [queue, setQueue] = useState<ToastNotification[]>([]);
   const lastCheckRef = useRef<string>(new Date().toISOString());
 
+  // العناصر الجديدة بتيجي من المؤقّت الموحّد (LiveData) بدل مؤقّت خاص كل 15 ثانية
+  const live = useLive();
   useEffect(() => {
-    async function poll() {
-      const res = await fetch(`/api/notifications?since=${encodeURIComponent(lastCheckRef.current)}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.notifications.length > 0) {
-          setQueue((prev) => [...data.notifications, ...prev]);
-          lastCheckRef.current = new Date().toISOString();
-          playNotificationSound();
-        }
-      }
-    }
-
-    const interval = setInterval(poll, 15000);
-    return () => clearInterval(interval);
-  }, []);
+    if (live.fresh.length === 0) return;
+    setQueue((prev) => {
+      const ids = new Set(prev.map((n) => n.id));
+      const incoming = live.fresh.filter((n) => !ids.has(n.id));
+      if (incoming.length > 0) playNotificationSound();
+      return [...incoming, ...prev];
+    });
+  }, [live.fresh]);
 
   function dismiss(id: string) {
     setQueue((prev) => prev.filter((n) => n.id !== id));

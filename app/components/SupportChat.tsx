@@ -5,6 +5,7 @@
 // إشعار (نقطة حمراء). المحادثة محفوظة في قاعدة البيانات عبر الأجهزة.
 import { useState, useEffect, useRef, useCallback } from "react";
 import { MessageCircle, X, Paperclip, Send } from "lucide-react";
+import { useLive } from "@/app/components/LiveData";
 
 interface Msg { id: string; fromSupport: boolean; body: string; imageUrls: string[]; createdAt: string; }
 interface Thread { id: string; subject: string; status: string; messages: Msg[]; }
@@ -12,7 +13,17 @@ interface Thread { id: string; subject: string; status: string; messages: Msg[];
 const COUNTRIES = ["السعودية", "مصر", "الإمارات", "الكويت", "قطر", "البحرين", "عُمان", "الأردن", "المغرب", "أخرى"];
 const INPUT = "w-full rounded-xl card-shadow border border-border bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-faint outline-none focus:border-accent";
 
-export function SupportChat({ name, email }: { name: string; email: string }) {
+export function SupportChat({
+  name,
+  email,
+  variant = "floating",
+  label = "الدعم الفني",
+}: {
+  name: string;
+  email: string;
+  variant?: "floating" | "sidebar";
+  label?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [thread, setThread] = useState<Thread | null>(null);
   const [unread, setUnread] = useState(0);
@@ -29,7 +40,11 @@ export function SupportChat({ name, email }: { name: string; email: string }) {
     if (res.ok) { const d = await res.json(); setThread(d.thread); setUnread(d.unread ?? 0); }
   }, []);
 
-  useEffect(() => { load(); const i = setInterval(load, 25000); return () => clearInterval(i); }, [load]);
+  // عدّاد الردود غير المقروءة من المؤقّت الموحّد (LiveData). المحادثة نفسها
+  // بتتحمّل عند فتح النافذة فقط - مش كل 25 ثانية زي قبل كده.
+  const live = useLive();
+  useEffect(() => setUnread(live.supportUnread), [live.supportUnread]);
+  useEffect(() => { if (open) load(); }, [open, load]);
 
   useEffect(() => {
     if (open && thread && unread > 0) {
@@ -64,8 +79,25 @@ export function SupportChat({ name, email }: { name: string; email: string }) {
     if (res.ok) { setReply(""); load(); }
   }
 
+  // في وضع القائمة الجانبية: الزر عنصر عادي في القائمة، ونافذة المحادثة
+  // بتفتح ثابتة فوق الشاشة (مش زر عائم دائم)
+  if (variant === "sidebar" && !open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13.5px] text-text-muted transition-colors hover:bg-surface-raised hover:text-text-primary"
+      >
+        <MessageCircle size={16} strokeWidth={1.9} className="shrink-0" />
+        <span className="truncate">{label}</span>
+        {unread > 0 && (
+          <span className="ms-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-critical px-1 text-[10px] font-bold text-white">{unread}</span>
+        )}
+      </button>
+    );
+  }
+
   return (
-    <div className="fixed bottom-6 left-6 z-50">
+    <div className={variant === "sidebar" ? "fixed bottom-6 left-6 z-50" : "fixed bottom-6 left-6 z-50"}>
       {open ? (
         <div className="flex h-[520px] w-[360px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl card-shadow border border-border bg-surface shadow-2xl">
           <div className="flex items-center justify-between border-b border-border bg-surface-raised px-4 py-3">

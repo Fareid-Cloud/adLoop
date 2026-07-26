@@ -18,6 +18,7 @@ import { NotificationToast } from "@/app/components/NotificationToast";
 import { WelcomeGate } from "@/app/components/WelcomeGate";
 import { AccountMenu } from "@/app/components/AccountMenu";
 import { TopSearch } from "@/app/components/TopSearch";
+import { LiveDataProvider } from "@/app/components/LiveData";
 import { HelpButton } from "@/app/components/HelpButton";
 import { SidebarNav } from "@/app/components/SidebarNav";
 // next/font/google بيحمّل ملف الخط فعلياً وقت الـ build ويربطه بمتغير CSS -
@@ -83,8 +84,12 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       className={`${display.variable} ${plexMono.variable} flex min-h-screen flex-col bg-bg font-display`}
     >
       {isImpersonating && <ImpersonationBanner />}
+      <LiveDataProvider>
       <div className="flex flex-1">
-      <SidebarNav locale={locale} />
+      <SidebarNav
+        locale={locale}
+        supportSlot={user ? <SupportChat name={user.name ?? ""} email={user.email} variant="sidebar" label={locale === "ar" ? "الدعم الفني" : "Support"} /> : null}
+      />
 
       <main className="flex-1 px-10 py-8">
         <div className="mb-5 flex items-center gap-3">
@@ -106,9 +111,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         {children}
       </main>
       </div>
-      {user && <SupportChat name={user.name ?? ""} email={user.email} />}
       {showOnboarding && <WelcomeGate locale={locale} startStep={user!.onboardingStep} />}
       <NotificationToast />
+      </LiveDataProvider>
     </div>
   );
 }

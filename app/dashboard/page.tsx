@@ -14,6 +14,7 @@ import { PlatformDonut } from "@/app/components/PlatformDonut";
 import { TrendChart } from "@/app/components/TrendChart";
 import { MetricsExplorer } from "@/app/components/MetricsExplorer";
 import { computeHealthScore } from "@/lib/healthScore";
+import { getPlatformStatus } from "@/lib/connectionState";
 import { computeMetrics, comparePlatforms } from "@/lib/metricsEngine";
 import { compareMetric } from "@/lib/periodComparison";
 import { Megaphone, ShieldCheck, Wallet, Target, Activity } from "lucide-react";
@@ -170,6 +171,16 @@ export default async function GlancePage() {
   }
   const trendData = Array.from(trendByDate.entries()).map(([date, v]) => ({ date, ...v }));
 
+  // حالة الربط للرسالة الفارغة - نعرض حالة أول منصة متصلة (أو Google كافتراضي)
+  // عشان المستخدم يعرف بالظبط الخطوة الناقصة بدل رسالة عامة مضلّلة
+  const glanceStatus = hasAnyData
+    ? { title: "", description: "", ctaHref: "", ctaLabel: "" }
+    : await (async () => {
+        const connected = await prisma.connectedPlatform.findMany({ where: { userId: user.id } });
+        const first = connected.find((c: any) => AD_PLATFORMS.includes(c.platform))?.platform ?? "GOOGLE_ADS";
+        return getPlatformStatus(workspace.id, user.id, first);
+      })();
+
   const health = computeHealthScore({ tracking: null, landing: null, ads: null, audience: null, creatives: null });
   const firstName = user.name?.split(" ")[0] ?? user.email.split("@")[0];
 
@@ -190,8 +201,13 @@ export default async function GlancePage() {
 
       {!hasAnyData ? (
         <EmptyState
-          title="لا توجد بيانات بعد في مساحة العمل هذه"
-          description="اربط حساب Google Ads أو منصة أخرى من الإعدادات لتبدأ رؤية الأرقام هنا."
+          title={glanceStatus.title}
+          description={glanceStatus.description}
+          action={
+            <a href={glanceStatus.ctaHref} className="inline-block rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white no-underline">
+              {glanceStatus.ctaLabel}
+            </a>
+          }
         />
       ) : (
         <>
