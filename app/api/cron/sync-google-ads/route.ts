@@ -65,9 +65,11 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // بس الـ Workspaces اللي فعلاً عندها ربط Google Ads نشتغل عليها
+  // كل مساحة عندها ربط بأي منصة إعلانية. تيك توك كانت مفقودة من القائمة
+  // رغم أن المزامنة تحتها تشملها فعلاً - أي مساحة تعمل على تيك توك وحدها
+  // لم تكن تُزامَن إطلاقاً.
   const workspaceIds = await prisma.campaignLink.findMany({
-    where: { platform: { in: ["GOOGLE_ADS", "META_ADS"] } },
+    where: { platform: { in: ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"] } },
     select: { workspaceId: true },
     distinct: ["workspaceId"],
   });
@@ -141,7 +143,8 @@ export async function GET(req: NextRequest) {
       await checkAttributionPathAlertForWorkspace(workspaceId);
       await checkSubscriptionExpiryForWorkspace(workspaceId);
       await checkScaleKillDecisionsForWorkspace(workspaceId);
-      await checkPricingHealthAlertsForWorkspace(workspaceId); // تنبيه استباقي لخطر التسعير (كان بيتحسب في الصفحة بس)
+      // فحص التسعير لم يعد هنا - يعمل الآن لكل مساحة عندها منتجات، بمعزل
+      // عن المنصات الإعلانية (انظر الحلقة المستقلة بعد هذه الحلقة).
       await runAutomationForWorkspace(workspaceId);
       results.push({ workspaceId, status: "ok" });
     } catch (err) {
@@ -151,6 +154,25 @@ export async function GET(req: NextRequest) {
         status: "failed",
         error: err instanceof Error ? err.message : "unknown error",
       });
+    }
+  }
+
+  // ===== فحص صحة التسعير - مستقل عن المنصات الإعلانية =====
+  // كان يعمل داخل الحلقة أعلاه، أي أنه لا يعمل إلا لمساحة مربوطة بحساب
+  // إعلاني. لكنه يعتمد على المنتجات وبيانات المبيعات فقط، فمساحة تبيع عبر
+  // سلة بلا حملات - أو ربطت تيك توك وحدها - لم تكن تحصل على أي تنبيه تسعير.
+  const pricingWorkspaces = await prisma.product.findMany({
+    select: { workspaceId: true },
+    distinct: ["workspaceId"],
+  });
+
+  let pricingChecked = 0;
+  for (const { workspaceId } of pricingWorkspaces) {
+    try {
+      await checkPricingHealthAlertsForWorkspace(workspaceId);
+      pricingChecked++;
+    } catch (err) {
+      console.error(`فشل فحص التسعير للـ Workspace ${workspaceId}:`, err);
     }
   }
 
@@ -169,5 +191,5 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  return NextResponse.json({ processed: results.length, results });
+  return NextResponse.json({ processed: results.length, pricingChecked, results });
 }

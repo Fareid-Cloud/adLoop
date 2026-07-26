@@ -10,6 +10,7 @@ import { getExchangeRateImpact, detectMarketWideMove, computeCampaignCplChanges 
 import { detectSuspiciousIPs } from "@/lib/qualitySignals";
 import { auditBidStrategySanity } from "@/lib/bidStrategyAudit";
 import { auditMetaBidStrategy } from "@/lib/metaBidStrategyAudit";
+import { getWorkspacePricing } from "@/lib/pricingHealth";
 import { DataConsistencyCheck } from "./DataConsistencyCheck";
 import {
   Search, Ban, Tag, TrendingDown, Gauge, DollarSign, Zap,
@@ -82,6 +83,10 @@ export default async function DiagnosticsPage() {
   const overallScore = Math.round((healthyCount / CATEGORY_ORDER.length) * 100);
 
   // ==== فحوصات النظام الإضافية - بيانات حقيقية، مش دوال معلّقة من غير استخدام ====
+
+  // مخاطر التسعير الحرجة (خسارة فعلية أو حالة حرجة) - نفس مصدر صفحة التسعير
+  const { rows: pricingRows } = await getWorkspacePricing(workspace.id, workspace.currency);
+  const pricingRisks = pricingRows.filter((r) => r.status === "CRITICAL" || r.actualLossAlert);
 
   const exchangeImpact = await getExchangeRateImpact("USD", workspace.currency);
 
@@ -168,6 +173,39 @@ export default async function DiagnosticsPage() {
         </a>
       </div>
 
+      {/* مخاطر التسعير - كانت غائبة تماماً عن هذه الصفحة رغم أنها أخطر ما
+          يمكن أن يحدث: منتج يُباع بخسارة فعلية. كانت تظهر في صفحة التسعير
+          وفي الجرس فقط، فلم يجدها المستخدم حيث توقّعها. */}
+      {pricingRisks.length > 0 && (
+        <section className="card-shadow mb-6 overflow-hidden rounded-2xl border border-critical/35 bg-surface">
+          <div className="flex items-center gap-2 border-b border-border p-4">
+            <AlertTriangle size={16} className="text-critical" />
+            <h2 className="text-[14px] font-semibold text-text-primary">مخاطر التسعير</h2>
+            <span className="rounded-full bg-critical/12 px-2 py-0.5 text-[11px] font-medium text-critical">
+              {pricingRisks.length}
+            </span>
+          </div>
+          <ul className="divide-y divide-border">
+            {pricingRisks.map((r) => (
+              <li key={r.id} className="flex items-start justify-between gap-3 p-4">
+                <div className="min-w-0">
+                  <div className="text-[13.5px] font-medium text-text-primary">{r.name}</div>
+                  <p className="mt-0.5 text-[12.5px] leading-relaxed text-text-muted">
+                    {r.actualLossAlert ?? r.message}
+                  </p>
+                </div>
+                <a
+                  href="/dashboard/pricing"
+                  className="shrink-0 rounded-xl border border-border bg-surface-raised px-3 py-1.5 text-[12px] text-text-primary no-underline"
+                >
+                  معالجة
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* درجة التشخيص الإجمالية */}
       <div className="mb-6 inline-flex items-center gap-2.5 rounded-full bg-surface py-1.5 pe-4 ps-1.5">
         <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-raised font-mono text-[11px] font-semibold text-text-muted">
@@ -191,11 +229,34 @@ export default async function DiagnosticsPage() {
             ? "text-gap"
             : "text-text-muted";
 
+          // لون دلالي حقيقي لكل حالة - يُستخدم للإطار والخلفية معاً حتى
+          // تُقرأ الحالة من الشكل قبل قراءة النص
+          const tone = !status
+            ? "var(--verified)"
+            : status.priority === "URGENT"
+            ? "var(--critical)"
+            : status.priority === "HIGH"
+            ? "var(--gap)"
+            : "var(--text-muted)";
+
           return (
-            <div key={category} className="rounded-2xl bg-surface p-4">
-              <meta.Icon size={16} className={`mb-2 ${statusColor}`} />
+            <div
+              key={category}
+              className="card-shadow relative overflow-hidden rounded-2xl border p-4"
+              style={{
+                borderColor: `color-mix(in srgb, ${tone} 28%, transparent)`,
+                background: `linear-gradient(160deg, color-mix(in srgb, ${tone} 8%, var(--surface)) 0%, var(--surface) 65%)`,
+              }}
+            >
+              <span className="absolute inset-x-0 top-0 h-[3px]" style={{ background: tone }} />
+              <span
+                className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl"
+                style={{ background: `color-mix(in srgb, ${tone} 14%, transparent)` }}
+              >
+                <meta.Icon size={16} style={{ color: tone }} />
+              </span>
               <div className="text-xs text-text-muted">{meta.label}</div>
-              <div className={`mt-1 text-xs font-medium ${statusColor}`}>
+              <div className="mt-1 text-xs font-medium" style={{ color: tone }}>
                 {status ? `${status.count} مشكلة` : "سليم"}
               </div>
             </div>

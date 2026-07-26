@@ -8,6 +8,7 @@
 // لكل صفحة في المنتج (تسجيل الدخول، التسجيل، إلخ)، مش الداشبورد بس
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/font/google";
@@ -70,6 +71,14 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         },
       }).catch(() => {});
     }
+  }
+
+  // بوابة الإعداد الإجبارية: مستخدم لم يربط أي منصة بعد يُحوَّل إلى شاشة
+  // الإعداد **قبل ظهور القائمة الجانبية وبقية البرنامج** - لأن اللوحة بلا
+  // حساب مربوط لا تعرض شيئاً ذا معنى. التخطي الصريح يُلغي التحويل نهائياً.
+  if (user && !user.onboardingDismissed) {
+    const connectionCount = await prisma.connectedPlatform.count({ where: { userId: user.id } });
+    if (connectionCount === 0) redirect("/onboarding");
   }
 
   // بوابة الترحيب بتظهر لحد ما المستخدم يخلّصها أو يتخطاها (مش مربوطة
