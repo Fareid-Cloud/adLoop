@@ -20,6 +20,8 @@ export interface DetectedSystem {
   isAdLoop: boolean;
 }
 
+import { auditPageHtml, type PageAuditResult } from "./pageAudit";
+
 export interface TrackingCheckResult {
   detected: boolean;
   /** أنظمة التتبع التي عُثر عليها فعلياً */
@@ -31,6 +33,8 @@ export interface TrackingCheckResult {
   error: string | null;
   checkedUrl: string;
   httpStatus: number | null;
+  /** فحوصات SEO والأمان وروابط المحادثة - من نفس نداء الشبكة */
+  audit: PageAuditResult | null;
 }
 
 interface SignatureDef extends DetectedSystem {
@@ -91,6 +95,7 @@ export async function checkTrackingPresence(rawUrl: string): Promise<TrackingChe
   const base: TrackingCheckResult = {
     detected: false, systems: [], adloopDetected: false,
     usesTagManager: false, error: null, checkedUrl: rawUrl, httpStatus: null,
+    audit: null,
   };
 
   // بروتوكول ناقص سبب شائع جداً لفشل الفحص بلا سبب واضح للمستخدم
@@ -128,6 +133,10 @@ export async function checkTrackingPresence(rawUrl: string): Promise<TrackingChe
     base.adloopDetected = found.some((s) => s.isAdLoop);
     base.usesTagManager = found.some((s) => s.id === "gtm");
     base.detected = found.length > 0;
+
+    // نفس ملف HTML يخدم فحوصات SEO والأمان وروابط المحادثة - لا داعي
+    // لتحميل الصفحة مرة أخرى لكل فحص
+    base.audit = auditPageHtml(html, base.checkedUrl, url);
 
     return base;
   } catch (err) {

@@ -13,7 +13,8 @@ export type CheckStatus = "PASS" | "WARNING" | "FAILED" | "UNKNOWN";
 export type CheckSeverity = "CRITICAL" | "HIGH" | "MEDIUM" | "NONE";
 
 export type CheckCategory =
-  | "tracking" | "pricing" | "ads" | "landing" | "performance" | "security" | "budget" | "quality";
+  | "tracking" | "pricing" | "ads" | "landing" | "seo"
+  | "performance" | "security" | "budget" | "quality";
 
 export interface DiagnosticCheck {
   id: string;
@@ -42,6 +43,7 @@ export const CATEGORY_META: Record<CheckCategory, { ar: string; en: string; colo
   pricing: { ar: "التسعير", en: "Pricing", color: "#EC4899" },
   ads: { ar: "الإعلانات", en: "Ads", color: "#8B5CF6" },
   landing: { ar: "صفحات الهبوط", en: "Landing pages", color: "#06B6D4" },
+  seo: { ar: "SEO", en: "SEO", color: "#A855F7" },
   performance: { ar: "الأداء", en: "Performance", color: "#F59E0B" },
   security: { ar: "الأمان", en: "Security", color: "#10B981" },
   budget: { ar: "الميزانية", en: "Budget", color: "#14B8A6" },
@@ -314,6 +316,144 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       trend: [],
       lastScanAt: p.lastCheckedAt ?? now,
       actionHref: "/dashboard/diagnostics/tracking-coverage",
+    });
+  }
+
+  // ============ SEO والأمان وروابط المحادثة ============
+  // كلها تُستخلص من نفس نداء فحص الصفحة (lib/pageAudit.ts) - لا نداء إضافي.
+  const audited = pages.filter((p: any) => p.auditResult);
+  if (audited.length > 0) {
+    const seos = audited.map((p: any) => p.auditResult.seo).filter(Boolean);
+    const secs = audited.map((p: any) => p.auditResult.security).filter(Boolean);
+    const utms = audited.map((p: any) => p.auditResult.utm).filter(Boolean);
+
+    // --- عنوان الصفحة ووصفها ---
+    const badTitle = seos.filter((s: any) => !s.title || s.titleLength < 20 || s.titleLength > 65).length;
+    push({
+      id: "seo-title",
+      titleAr: "عنوان الصفحة", titleEn: "Page title",
+      descAr: "العنوان أول ما يراه الزائر في نتائج البحث وأهم عامل نقر.",
+      descEn: "The first thing searchers see and the biggest driver of clicks.",
+      category: "seo",
+      status: badTitle === 0 ? "PASS" : badTitle === seos.length ? "FAILED" : "WARNING",
+      severity: badTitle === 0 ? "NONE" : "MEDIUM",
+      findingAr: badTitle === 0
+        ? `عناوين ${seos.length} صفحة ضمن الطول المناسب.`
+        : `${badTitle} من ${seos.length} صفحة عنوانها مفقود أو خارج النطاق المناسب (20–65 حرفاً).`,
+      trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
+    });
+
+    const badDesc = seos.filter((s: any) => !s.metaDescription || s.metaDescriptionLength < 70).length;
+    push({
+      id: "seo-description",
+      titleAr: "وصف الصفحة (Meta description)", titleEn: "Meta description",
+      descAr: "الوصف الذي يظهر تحت العنوان في نتائج البحث.",
+      descEn: "The snippet shown under your title in search results.",
+      category: "seo",
+      status: badDesc === 0 ? "PASS" : badDesc === seos.length ? "FAILED" : "WARNING",
+      severity: badDesc === 0 ? "NONE" : "MEDIUM",
+      findingAr: badDesc === 0
+        ? "كل الصفحات لديها وصف مناسب."
+        : `${badDesc} من ${seos.length} صفحة بلا وصف كافٍ.`,
+      trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
+    });
+
+    // --- منع الأرشفة: خطأ صامت يُلغي ظهورك تماماً ---
+    const noIndexed = seos.filter((s: any) => s.isNoIndex).length;
+    if (noIndexed > 0) {
+      push({
+        id: "seo-noindex",
+        titleAr: "صفحات ممنوعة من الأرشفة", titleEn: "Pages blocked from indexing",
+        descAr: "وسم noindex يمنع ظهور الصفحة في البحث نهائياً - غالباً بقايا بيئة تجريبية.",
+        descEn: "A noindex tag hides the page from search entirely — often a leftover from staging.",
+        category: "seo",
+        status: "FAILED", severity: "HIGH",
+        findingAr: `${noIndexed} صفحة تحمل وسم noindex ولن تظهر في نتائج البحث.`,
+        trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
+      });
+    }
+
+    // --- بنية العناوين والصور ---
+    const badH1 = seos.filter((s: any) => s.h1Count !== 1).length;
+    const noAlt = seos.reduce((sum: number, s: any) => sum + s.imagesMissingAlt, 0);
+    push({
+      id: "seo-structure",
+      titleAr: "بنية المحتوى", titleEn: "Content structure",
+      descAr: "عنوان رئيسي واحد لكل صفحة، ونص بديل للصور.",
+      descEn: "One main heading per page, and alt text on images.",
+      category: "seo",
+      status: badH1 === 0 && noAlt === 0 ? "PASS" : "WARNING",
+      severity: badH1 === 0 && noAlt === 0 ? "NONE" : "MEDIUM",
+      findingAr: badH1 === 0 && noAlt === 0
+        ? "بنية العناوين والصور سليمة."
+        : `${badH1} صفحة بعنوان رئيسي غير مفرد، و${noAlt} صورة بلا نص بديل.`,
+      trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
+    });
+
+    // --- الجوال ---
+    const noViewport = seos.filter((s: any) => !s.hasViewport).length;
+    push({
+      id: "seo-mobile",
+      titleAr: "التوافق مع الجوال", titleEn: "Mobile readiness",
+      descAr: "معظم زوار الإعلانات من الجوال - صفحة بلا viewport تظهر مصغّرة وغير قابلة للاستخدام.",
+      descEn: "Most ad traffic is mobile — without a viewport tag the page renders unusably small.",
+      category: "seo",
+      status: noViewport === 0 ? "PASS" : "FAILED",
+      severity: noViewport === 0 ? "NONE" : "HIGH",
+      findingAr: noViewport === 0 ? "كل الصفحات مهيّأة للجوال." : `${noViewport} صفحة بلا وسم viewport.`,
+      trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
+    });
+
+    // --- شهادة الأمان ---
+    const notHttps = secs.filter((s: any) => !s.isHttps).length;
+    const mixed = secs.reduce((sum: number, s: any) => sum + s.mixedContentCount, 0);
+    push({
+      id: "security-https",
+      titleAr: "شهادة الأمان (SSL)", titleEn: "SSL certificate",
+      descAr: "الاتصال المشفّر شرط للثقة، والمنصات تخفض جودة الإعلان بدونه.",
+      descEn: "Encrypted connections build trust; platforms downgrade ad quality without them.",
+      category: "security",
+      status: notHttps > 0 ? "FAILED" : mixed > 0 ? "WARNING" : "PASS",
+      severity: notHttps > 0 ? "CRITICAL" : mixed > 0 ? "MEDIUM" : "NONE",
+      findingAr: notHttps > 0
+        ? `${notHttps} صفحة تعمل بدون HTTPS.`
+        : mixed > 0
+        ? `الاتصال مشفّر، لكن ${mixed} مورداً يُحمَّل عبر HTTP وسيُحجب في المتصفحات.`
+        : "كل الصفحات تعمل عبر اتصال مشفّر سليم.",
+      trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
+    });
+
+    // --- روابط المحادثة: نقطة التحويل الفعلية في هذا المنتج ---
+    const convTotal = utms.reduce((s: number, u: any) => s + u.conversationLinks, 0);
+    const convTracked = utms.reduce((s: number, u: any) => s + u.conversationLinksWithTracking, 0);
+    push({
+      id: "tracking-conversation-links",
+      titleAr: "روابط المحادثة", titleEn: "Conversation links",
+      descAr: "أزرار واتساب/ماسنجر يجب أن تحمل معرّفاً يربط المحادثة بالإعلان.",
+      descEn: "WhatsApp/Messenger buttons must carry an identifier linking the chat to its ad.",
+      category: "tracking",
+      status: convTotal === 0 ? "UNKNOWN" : convTracked === convTotal ? "PASS" : convTracked > 0 ? "WARNING" : "FAILED",
+      severity: convTotal === 0 ? "NONE" : convTracked === convTotal ? "NONE" : convTracked > 0 ? "HIGH" : "CRITICAL",
+      findingAr: convTotal === 0
+        ? "لم نعثر على روابط محادثة في الصفحات المفحوصة."
+        : `${convTracked} من ${convTotal} رابط محادثة يحمل معرّف تتبع.`,
+      trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
+    });
+
+    // --- وسوم UTM ---
+    const utmLinks = utms.reduce((s: number, u: any) => s + u.linksWithUtm, 0);
+    push({
+      id: "tracking-utm",
+      titleAr: "وسوم UTM", titleEn: "UTM parameters",
+      descAr: "وسوم المصدر تسمح بتتبع مصدر الزيارة عبر الأدوات التحليلية.",
+      descEn: "Source parameters let analytics tools attribute traffic correctly.",
+      category: "tracking",
+      status: utmLinks > 0 ? "PASS" : "WARNING",
+      severity: "NONE",
+      findingAr: utmLinks > 0
+        ? `${utmLinks} رابطاً يحمل وسوم UTM.`
+        : "لم نعثر على وسوم UTM في روابط الصفحات - قد تكون مضبوطة على مستوى الحملة بدلاً من ذلك.",
+      trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
     });
   }
 

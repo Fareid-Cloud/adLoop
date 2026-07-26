@@ -933,6 +933,8 @@ model MonitoredPage {
   // وحدها فيصنّف كل موقع عليه GTM/بيكسل كأنه بلا تتبع
   detectedSystems  String[] @default([])
   adloopDetected   Boolean? // وسم AdLoop تحديداً - بدونه لا يعمل ربط النقرة بالمحادثة
+  // نتائج SEO والأمان وروابط المحادثة - تُستخلص من نفس نداء الفحص
+  auditResult      Json?
   lastCheckedAt DateTime?
   lastError     String?  @db.Text // لو الفحص فشل لسبب تقني (الصفحة مش متاحة مثلاً)
 

@@ -54,6 +54,7 @@ export async function POST(
       trackingDetected: result.detected,
       detectedSystems: result.systems.map((x) => x.id),
       adloopDetected: result.adloopDetected,
+      auditResult: result.audit as any,
       lastCheckedAt: new Date(),
       lastError: result.error,
     },
