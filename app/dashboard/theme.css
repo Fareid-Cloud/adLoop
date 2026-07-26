@@ -336,3 +336,10 @@ button:disabled, [aria-disabled="true"] {
   box-shadow: none;
   cursor: not-allowed;
 }
+
+
+/* إخفاء شريط التمرير بصرياً مع الإبقاء على إمكانية التمرير - القائمة
+ * الجانبية ثابتة، فشريط تمرير دائم بجوارها ضجيج بصري بلا فائدة، لكن
+ * إلغاء التمرير نفسه يقطع الوصول لعناصرها على الشاشات القصيرة. */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { width: 0; height: 0; display: none; }

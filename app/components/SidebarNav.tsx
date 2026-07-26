@@ -25,7 +25,15 @@ function childPlatform(href: string): string | null {
   return null;
 }
 
-export function SidebarNav({ locale, supportSlot }: { locale: "ar" | "en"; supportSlot?: React.ReactNode }) {
+export function SidebarNav({
+  locale,
+  supportSlot,
+  workspaceSlot,
+}: {
+  locale: "ar" | "en";
+  supportSlot?: React.ReactNode;
+  workspaceSlot?: React.ReactNode;
+}) {
   const pathname = usePathname();
   const ar = locale === "ar";
   const [collapsed, setCollapsed] = useState(false);
@@ -68,7 +76,7 @@ export function SidebarNav({ locale, supportSlot }: { locale: "ar" | "en"; suppo
   return (
     <aside
       // ثابت مع التمرير: القائمة نفسها لا تتحرك، والتنقّل يحدث داخلها
-      className={`sticky top-0 flex h-screen shrink-0 flex-col overflow-y-auto border-e border-border bg-surface px-3 py-5 transition-[width] duration-200 ${collapsed ? "w-[68px]" : "w-60"}`}
+      className={`no-scrollbar sticky top-0 flex h-screen shrink-0 flex-col overflow-y-auto border-e border-border bg-surface px-3 py-5 transition-[width] duration-200 ${collapsed ? "w-[68px]" : "w-60"}`}
     >
       {/* الشعار */}
       <a href="/dashboard" className={`mb-5 flex items-center gap-2 no-underline ${collapsed ? "justify-center px-0" : "px-2"}`}>
@@ -181,6 +189,9 @@ export function SidebarNav({ locale, supportSlot }: { locale: "ar" | "en"; suppo
             </div>
           ))
         )}
+
+        {/* مبدّل مساحات العمل - عنصر أساسي أسفل القائمة */}
+        {workspaceSlot && <div className="border-t border-border pt-3">{workspaceSlot}</div>}
 
         {/* الدعم الفني كعنصر في القائمة (بدل الزر العائم) */}
         {supportSlot && !collapsed && <div className="border-t border-border pt-3">{supportSlot}</div>}

@@ -134,7 +134,8 @@ export async function checkPricingHealthAlertsForWorkspace(workspaceId: string) 
   const ws = await prisma.workspace.findUnique({ where: { id: workspaceId } });
   if (!ws) return;
 
-  const { rows } = await getWorkspacePricing(workspaceId, ws.currency);
+  const currency = ws.currency;
+  const { rows } = await getWorkspacePricing(workspaceId, currency);
 
   const cooldownStart = new Date();
   cooldownStart.setDate(cooldownStart.getDate() - COOLDOWN_DAYS);
@@ -148,13 +149,21 @@ export async function checkPricingHealthAlertsForWorkspace(workspaceId: string) 
     });
     if (recent) continue;
 
+    // اقتراح قابل للتنفيذ لا مجرد تنبيه: الموافقة تُحدّث السعر في المتجر
+    // نفسه عبر واجهة المنصة، لا في قاعدتنا وحدها.
     await pushToActionFeed({
       workspaceId,
-      type: "ALERT",
+      type: r.suggestedPrice > r.currentPrice ? "SUGGESTION" : "ALERT",
       severity: r.actualLossAlert ? "URGENT" : "HIGH",
       title: `خطر تسعير — ${r.name}`,
-      description: r.actualLossAlert ?? r.message,
+      description: `${r.actualLossAlert ?? r.message} السعر المقترح ${Math.round(r.suggestedPrice)} ${currency}.`,
       linkUrl: "/dashboard/pricing",
+      ...(r.suggestedPrice > r.currentPrice
+        ? {
+            actionType: "APPLY_PRODUCT_PRICE",
+            actionPayload: { productId: r.id, newPrice: r.suggestedPrice, productName: r.name },
+          }
+        : {}),
     });
   }
 }

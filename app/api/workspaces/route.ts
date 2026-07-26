@@ -9,6 +9,15 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { computeSmartDefaults } from "@/lib/dashboardDefaults";
 
+/** حدّ مساحات العمل لكل باقة - يُفحص على الخادم لا في الواجهة وحدها،
+ *  وإلا أمكن تجاوزه بطلب مباشر. */
+const PLAN_LIMITS: Record<string, number> = {
+  free: 1, starter: 2, growth: 5, pro: 15, agency: 50,
+};
+function limitFor(plan: string | null | undefined): number {
+  return PLAN_LIMITS[(plan ?? "free").toLowerCase()] ?? PLAN_LIMITS.free;
+}
+
 export async function GET(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -18,7 +27,13 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: "asc" },
   });
 
-  return NextResponse.json({ workspaces });
+  const limit = limitFor(user.subscriptionPlan);
+  return NextResponse.json({
+    workspaces,
+    limit,
+    canAddMore: workspaces.length < limit,
+    plan: user.subscriptionPlan ?? "free",
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -29,6 +44,19 @@ export async function POST(req: NextRequest) {
 
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     return NextResponse.json({ error: "الاسم مطلوب" }, { status: 400 });
+  }
+
+  const existingCount = await prisma.workspace.count({ where: { userId: user.id } });
+  const limit = limitFor(user.subscriptionPlan);
+  if (existingCount >= limit) {
+    return NextResponse.json(
+      {
+        error: `باقتك الحالية تسمح بـ${limit === 1 ? "مساحة عمل واحدة" : `${limit} مساحات عمل`}. رقِّ باقتك لإضافة المزيد.`,
+        limitReached: true,
+        limit,
+      },
+      { status: 403 }
+    );
   }
 
   // activePlatforms فاضية وقت الإنشاء (لسه معملش ربط حسابات) - بيتحسب

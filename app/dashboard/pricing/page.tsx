@@ -41,6 +41,36 @@ export default async function PricingPage() {
     },
   });
 
+  // إحصاءات المبيعات الفعلية - تُعرض فقط عند وجود أرقام حقيقية، لا صناديق
+  // صفرية توحي بأن الميزة معطّلة
+  const thirty = new Date(); thirty.setDate(thirty.getDate() - 30);
+  const saleAgg = await prisma.productSaleEvent.groupBy({
+    by: ["productId"],
+    where: { productId: { in: productRecords.map((p: any) => p.id) }, occurredAt: { gte: thirty } },
+    _sum: { quantity: true, revenue: true },
+    _count: { _all: true },
+  });
+  const returnedAgg = await prisma.productSaleEvent.groupBy({
+    by: ["productId"],
+    where: { productId: { in: productRecords.map((p: any) => p.id) }, occurredAt: { gte: thirty }, returned: true },
+    _sum: { quantity: true },
+  });
+  const returnedByProduct = new Map(returnedAgg.map((r: any) => [r.productId, r._sum.quantity ?? 0]));
+
+  const salesStats: Record<string, { orders: number; revenue: number; aov: number; successRate: number }> = {};
+  for (const a of saleAgg) {
+    const orders = a._sum.quantity ?? 0;
+    const revenue = a._sum.revenue ?? 0;
+    const returned = returnedByProduct.get(a.productId) ?? 0;
+    if (orders === 0) continue;
+    salesStats[a.productId] = {
+      orders,
+      revenue: Math.round(revenue),
+      aov: Math.round((revenue / orders) * 100) / 100,
+      successRate: Math.round(((orders - returned) / orders) * 100),
+    };
+  }
+
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
@@ -51,7 +81,7 @@ export default async function PricingPage() {
           💡 {roasGapInsight}
         </div>
       )}
-      <PricingClient workspaceId={workspace.id} products={rows} records={productRecords} currency={workspace.currency} />
+      <PricingClient workspaceId={workspace.id} products={rows} records={productRecords} currency={workspace.currency} salesStats={salesStats} />
     </div>
   );
 }

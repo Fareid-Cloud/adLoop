@@ -25,6 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     select: {
       id: true, platform: true, storeName: true, storeUrl: true,
       active: true, lastOrderAt: true, ordersReceived: true, createdAt: true,
+      canWritePrices: true, storeIdentifier: true,
     },
   });
 
@@ -63,12 +64,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       storeName: typeof body.storeName === "string" ? body.storeName.trim().slice(0, 120) : null,
       storeUrl: typeof body.storeUrl === "string" ? body.storeUrl.trim().slice(0, 300) : null,
       webhookSecret: encryptToken(body.webhookSecret.trim()),
+      // توكن الكتابة اختياري: بدونه يعمل الاستقبال، لكن تحديث الأسعار
+      // تلقائياً في المتجر لا يعمل - نسجّل ذلك صراحةً بدل افتراضه.
+      apiToken: typeof body.apiToken === "string" && body.apiToken.trim()
+        ? encryptToken(body.apiToken.trim()) : null,
+      apiSecret: typeof body.apiSecret === "string" && body.apiSecret.trim()
+        ? encryptToken(body.apiSecret.trim()) : null,
+      storeIdentifier: typeof body.storeIdentifier === "string" ? body.storeIdentifier.trim() || null : null,
+      canWritePrices: !!(typeof body.apiToken === "string" && body.apiToken.trim()),
       active: true,
     },
     update: {
       storeName: typeof body.storeName === "string" ? body.storeName.trim().slice(0, 120) : undefined,
       storeUrl: typeof body.storeUrl === "string" ? body.storeUrl.trim().slice(0, 300) : undefined,
       webhookSecret: encryptToken(body.webhookSecret.trim()),
+      ...(typeof body.apiToken === "string" && body.apiToken.trim()
+        ? { apiToken: encryptToken(body.apiToken.trim()), canWritePrices: true } : {}),
+      ...(typeof body.apiSecret === "string" && body.apiSecret.trim()
+        ? { apiSecret: encryptToken(body.apiSecret.trim()) } : {}),
+      ...(typeof body.storeIdentifier === "string" ? { storeIdentifier: body.storeIdentifier.trim() || null } : {}),
       active: true,
     },
     select: { id: true, platform: true, storeName: true, active: true },

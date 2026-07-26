@@ -24,6 +24,7 @@ import { HelpButton } from "@/app/components/HelpButton";
 import { AiCreditBadge } from "@/app/components/AiCreditBadge";
 import { MONTHLY_LIMIT } from "@/lib/aiRateLimit";
 import { SidebarNav } from "@/app/components/SidebarNav";
+import { WorkspaceSwitcher } from "@/app/components/WorkspaceSwitcher";
 // next/font/google بيحمّل ملف الخط فعلياً وقت الـ build ويربطه بمتغير CSS -
 // ده الفرق عن مجرد كتابة اسم الخط في font-family من غير ما يكون مستورد
 // فعلياً (المشكلة اللي حصلت في المعاينة السابقة)
@@ -87,6 +88,20 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   // بعدد أيام - بوابة أولية إجبارية الظهور، لكن التخطّي متاح دائماً)
   const showOnboarding = !!user && !user.onboardingCompleted && !user.onboardingDismissed;
 
+  // مساحات العمل ومبدّلها - المساحة النشطة من الكوكي، وإلا الأقدم
+  const PLAN_LIMITS: Record<string, number> = { free: 1, starter: 2, growth: 5, pro: 15, agency: 50 };
+  const workspaceLimit = PLAN_LIMITS[(user?.subscriptionPlan ?? "free").toLowerCase()] ?? 1;
+
+  const allWorkspaces = user
+    ? await prisma.workspace.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: "asc" },
+        select: { id: true, name: true, currency: true },
+      })
+    : [];
+  const activeId = cookieStore.get("adloop_workspace")?.value;
+  const activeWorkspace = allWorkspaces.find((w) => w.id === activeId) ?? allWorkspaces[0] ?? null;
+
   return (
     <div
       dir={locale === "ar" ? "rtl" : "ltr"}
@@ -99,6 +114,17 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <div className="flex flex-1">
       <SidebarNav
         locale={locale}
+        workspaceSlot={
+          activeWorkspace ? (
+            <WorkspaceSwitcher
+              current={activeWorkspace}
+              workspaces={allWorkspaces}
+              canAddMore={allWorkspaces.length < workspaceLimit}
+              limit={workspaceLimit}
+              locale={locale}
+            />
+          ) : null
+        }
         supportSlot={user ? <SupportChat name={user.name ?? ""} email={user.email} variant="sidebar" label={locale === "ar" ? "الدعم الفني" : "Support"} /> : null}
       />
 

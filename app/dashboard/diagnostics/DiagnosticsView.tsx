@@ -6,7 +6,7 @@
 // النسخة السابقة كانت شبكة بطاقات متطابقة بلا مصدر ولا أثر ولا اتجاه،
 // وبلا أي تقسيم بالخطورة أو زر فحص - فبدت فارغة رغم أن البيانات موجودة.
 
-import { useState, useMemo, useTransition, Fragment } from "react";
+import { useState, useMemo, useTransition, useRef, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import {
   RefreshCw, AlertOctagon, AlertTriangle, Info, CheckCircle2, Search,
@@ -101,6 +101,13 @@ export function DiagnosticsView({
   const [statusFilter, setStatusFilter] = useState<"all" | CheckStatus>("all");
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [showAllIssues, setShowAllIssues] = useState(false);
+  // الفحص الحيّ: عدد الفحوصات المكشوفة حتى الآن. عند الضغط على "فحص جديد"
+  // نبدأ من صفر ونكشفها تباعاً، ليرى المستخدم العمل يجري فعلاً بدل انتظار
+  // صامت ثم ظهور كل شيء دفعة واحدة.
+  const [revealed, setRevealed] = useState<number | null>(null);
+  const [scanDone, setScanDone] = useState(false);
+  const tableRef = useRef<HTMLDivElement | null>(null);
 
   const scoreLabel = healthScore >= 80 ? "جيد" : healthScore >= 55 ? "يحتاج انتباهاً" : "حرج";
   const scoreTone = healthScore >= 80 ? "var(--verified)" : healthScore >= 55 ? "var(--gap)" : "var(--critical)";
@@ -109,10 +116,10 @@ export function DiagnosticsView({
   const topIssues = useMemo(
     () => checks
       .filter((c) => c.severity === "CRITICAL" || c.severity === "HIGH")
-      .sort((a, b) => (b.monthlyImpact ?? 0) - (a.monthlyImpact ?? 0))
-      .slice(0, 4),
+      .sort((a, b) => (b.monthlyImpact ?? 0) - (a.monthlyImpact ?? 0)),
     [checks]
   );
+  const visibleIssues = showAllIssues ? topIssues : topIssues.slice(0, 4);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -131,9 +138,31 @@ export function DiagnosticsView({
 
   async function runScan() {
     setScanning(true);
-    await fetch("/api/diagnostics/scan", { method: "POST" }).catch(() => {});
+    setScanDone(false);
+    setRevealed(0);
+    setShowAllIssues(false);
+
+    // ننزل إلى جدول الفحوصات ليشاهد المستخدم النتائج تظهر واحدة تلو الأخرى
+    setTimeout(() => tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+
+    // الفحص الفعلي يجري في الخلفية بينما نكشف النتائج تدريجياً. الإيقاع
+    // مضبوط ليبدو عملاً حقيقياً لا شريط تحميل وهمياً: كل فحص له وقته.
+    const total = checks.length || 1;
+    const stepMs = Math.max(420, Math.min(1100, Math.round(26000 / total)));
+
+    const request = fetch("/api/diagnostics/scan", { method: "POST" }).catch(() => null);
+
+    for (let i = 1; i <= total; i++) {
+      await new Promise((r) => setTimeout(r, stepMs));
+      setRevealed(i);
+    }
+
+    await request;
     setScanning(false);
+    setScanDone(true);
     startTransition(() => router.refresh());
+    // نُبقي رسالة الاكتمال ظاهرة قليلاً ثم نعود للعرض الكامل
+    setTimeout(() => { setRevealed(null); setScanDone(false); }, 4000);
   }
 
   const busy = scanning || pending;
@@ -232,7 +261,7 @@ export function DiagnosticsView({
             </div>
           ) : (
             <ul className="divide-y divide-border">
-              {topIssues.map((c) => {
+              {visibleIssues.map((c) => {
                 const tone = c.severity === "CRITICAL" ? "var(--critical)" : "var(--gap)";
                 return (
                   <li key={c.id} className="flex items-start gap-3 p-4">
@@ -273,6 +302,15 @@ export function DiagnosticsView({
               })}
             </ul>
           )}
+
+          {topIssues.length > 4 && (
+            <button
+              onClick={() => setShowAllIssues((v) => !v)}
+              className="w-full border-t border-border py-3 text-[12.5px] font-medium text-accent"
+            >
+              {showAllIssues ? "عرض أهم 4 فقط" : `عرض باقي المشاكل (${topIssues.length - 4})`}
+            </button>
+          )}
         </section>
 
         <section className="card-shadow overflow-hidden rounded-2xl border border-border bg-surface">
@@ -303,7 +341,34 @@ export function DiagnosticsView({
       </div>
 
       {/* جدول كل الفحوصات */}
-      <section className="reveal card-shadow overflow-hidden rounded-2xl border border-border bg-surface" style={{ animationDelay: "320ms" }}>
+      <section ref={tableRef} className="reveal card-shadow overflow-hidden rounded-2xl border border-border bg-surface" style={{ animationDelay: "320ms" }}>
+        {/* شريط تقدّم الفحص الحيّ */}
+        {revealed !== null && (
+          <div className="border-b border-border px-5 py-3">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-[13px] font-medium text-text-primary">
+                {scanDone ? (
+                  <><CheckCircle2 size={15} className="text-verified" /> اكتمل الفحص بنجاح — {checks.length} فحصاً</>
+                ) : (
+                  <><Loader2 size={15} className="animate-spin text-accent" /> جارٍ الفحص… {revealed} من {checks.length}</>
+                )}
+              </span>
+              {!scanDone && revealed > 0 && checks[revealed - 1] && (
+                <span className="truncate text-[12px] text-text-muted">{checks[revealed - 1].titleAr}</span>
+              )}
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-surface-raised">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${checks.length ? (revealed / checks.length) * 100 : 0}%`,
+                  background: scanDone ? "var(--verified)" : "var(--accent)",
+                }}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
           <div className="flex items-center gap-2">
             <h2 className="text-[15px] font-semibold text-text-primary">كل الفحوصات</h2>
@@ -347,7 +412,9 @@ export function DiagnosticsView({
             <tbody>
               {filtered.length === 0 ? (
                 <tr><td colSpan={6} className="p-10 text-center text-[13px] text-text-muted">لا توجد فحوصات مطابقة.</td></tr>
-              ) : filtered.map((c) => {
+              ) : filtered.map((c, rowIndex) => {
+                // أثناء الفحص الحيّ لا نعرض إلا ما كُشف حتى الآن
+                if (revealed !== null && rowIndex >= revealed) return null;
                 const st = STATUS_META[c.status];
                 const cat = CATEGORY_META[c.category];
                 const failing = c.status === "FAILED" || c.status === "WARNING";
@@ -355,7 +422,7 @@ export function DiagnosticsView({
                 const hasDetails = !!(c.sourceAr || (c.remedyAr && c.remedyAr.length > 0));
                 return (
                   <Fragment key={c.id}>
-                  <tr className={`border-b border-border last:border-0 ${isOpen ? "bg-surface-raised/35" : "hover:bg-surface-raised/45"}`}>
+                  <tr className={`reveal border-b border-border last:border-0 ${isOpen ? "bg-surface-raised/35" : "hover:bg-surface-raised/45"}`}>
                     <td className="px-4 py-3.5">
                       <div className="flex items-start gap-2.5">
                         <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"

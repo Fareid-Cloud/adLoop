@@ -91,8 +91,8 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       prisma.metricSnapshot.findMany({
         where: { workspaceId, date: { gte: since } },
         select: {
-          date: true, platform: true, cost: true, clicks: true, impressions: true,
-          rawConversions: true, verifiedConversions: true, revenue: true,
+          date: true, platform: true, campaignId: true, cost: true, clicks: true,
+          impressions: true, rawConversions: true, verifiedConversions: true, revenue: true,
         },
         orderBy: { date: "asc" },
       }),
@@ -271,6 +271,99 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
     lastScanAt: now,
     actionHref: "/dashboard/campaigns",
   });
+
+  // --- إعلان لا يعمل: ينفق صفر ولا يظهر إطلاقاً ---
+  // أخطر من ضعف الأداء: الحملة تبدو "نشطة" في القائمة بينما هي عملياً
+  // متوقفة، فتظن أن ميزانيتك تعمل وهي لا تعمل.
+  const last7 = new Date(now); last7.setDate(last7.getDate() - 7);
+  const activeByCampaign = new Map<string, { impressions: number; cost: number; platform: string }>();
+  for (const s of snapshots) {
+    if (s.date < last7) continue;
+    const key = `${s.platform}::${s.campaignId}`;
+    const cur = activeByCampaign.get(key) ?? { impressions: 0, cost: 0, platform: s.platform };
+    cur.impressions += s.impressions;
+    cur.cost += s.cost;
+    activeByCampaign.set(key, cur);
+  }
+  const silentCampaigns = [...activeByCampaign.entries()].filter(([, v]) => v.impressions === 0);
+
+  if (activeByCampaign.size > 0) {
+    push({
+      id: "ads-not-serving",
+      titleAr: "إعلانات لا تُعرض", titleEn: "Ads not serving",
+      descAr: "حملات مرتبطة لم تُسجّل أي ظهور خلال آخر سبعة أيام.",
+      descEn: "Linked campaigns with zero impressions in the last seven days.",
+      category: "ads",
+      status: silentCampaigns.length === 0 ? "PASS" : "FAILED",
+      severity: silentCampaigns.length === 0 ? "NONE" : "HIGH",
+      findingAr: silentCampaigns.length === 0
+        ? `كل الحملات المرتبطة (${activeByCampaign.size}) تُعرض بشكل طبيعي.`
+        : `${silentCampaigns.length} حملة لم تُسجّل أي ظهور خلال 7 أيام رغم أنها مرتبطة.`,
+      sourceAr: "مجموع مرات الظهور لكل حملة من لقطات الأداء، آخر 7 أيام.",
+      remedyAr: silentCampaigns.length === 0 ? undefined : [
+        "تأكد أن الحملة ليست متوقفة أو خارج جدولها الزمني في المنصة.",
+        "راجع حالة الاعتماد: إعلان مرفوض يعني صفر ظهور دون إشعار واضح.",
+        "تحقق من الميزانية اليومية وطريقة الدفع - رصيد منتهٍ يوقف العرض فوراً.",
+        "استهداف ضيق جداً قد يمنع دخول المزادات أصلاً.",
+      ],
+      trend: seriesFrom(snapshots, (r) => r.impressions),
+      lastScanAt: now,
+      actionHref: "/dashboard/campaigns",
+    });
+  }
+
+  // --- إنفاق بلا نتيجة: يظهر وينفق ولا يحقّق شيئاً ---
+  const spendingNoConv = [...activeByCampaign.entries()].filter(([key, v]) => {
+    if (v.cost <= 0) return false;
+    const rows = snapshots.filter((s) => s.date >= last7 && `${s.platform}::${s.campaignId}` === key);
+    return rows.reduce((a, r) => a + r.rawConversions, 0) === 0;
+  });
+  if (spendingNoConv.length > 0) {
+    const wasted = spendingNoConv.reduce((a, [, v]) => a + v.cost, 0);
+    push({
+      id: "ads-spend-no-result",
+      titleAr: "إنفاق بلا أي تحويل", titleEn: "Spend with no conversions",
+      descAr: "حملات تُنفق فعلياً دون أن تُسجّل تحويلاً واحداً.",
+      descEn: "Campaigns spending without recording a single conversion.",
+      category: "ads",
+      status: "FAILED", severity: "CRITICAL",
+      findingAr: `${spendingNoConv.length} حملة أنفقت ${Math.round(wasted)} ${currency} خلال 7 أيام بصفر تحويل.`,
+      monthlyImpact: Math.round((wasted / 7) * 30),
+      sourceAr: "الحملات التي cost > 0 و rawConversions = 0 خلال آخر 7 أيام.",
+      remedyAr: [
+        "تحقّق أولاً من التتبع: تحويلات غير مسجّلة تبدو كصفر تحويل.",
+        "راجع صفحة الهبوط - عدم تطابقها مع وعد الإعلان يقتل التحويل.",
+        "أوقف الحملة مؤقتاً إن تأكد أن التتبع سليم والنتيجة صفر فعلاً.",
+      ],
+      trend: seriesFrom(snapshots, (r) => r.rawConversions),
+      lastScanAt: now,
+      actionHref: "/dashboard/actions",
+    });
+  }
+
+  // --- تركّز الإنفاق: حملة واحدة تبتلع الميزانية ---
+  if (activeByCampaign.size >= 3 && monthlySpend > 0) {
+    const costs = [...activeByCampaign.values()].map((v) => v.cost).sort((a, b) => b - a);
+    const topShare = costs[0] / Math.max(costs.reduce((a, b) => a + b, 0), 1) * 100;
+    push({
+      id: "ads-spend-concentration",
+      titleAr: "تركّز الإنفاق", titleEn: "Spend concentration",
+      descAr: "اعتماد الحساب كله على حملة واحدة يجعله هشّاً أمام أي تغيّر مفاجئ.",
+      descEn: "Relying on a single campaign makes the account fragile to any sudden change.",
+      category: "ads",
+      status: topShare <= 70 ? "PASS" : "WARNING",
+      severity: topShare <= 70 ? "NONE" : "MEDIUM",
+      findingAr: `أعلى حملة تستحوذ على ${Math.round(topShare)}% من إجمالي الإنفاق.`,
+      sourceAr: "نصيب أكبر حملة من إجمالي الإنفاق خلال آخر 7 أيام.",
+      remedyAr: topShare <= 70 ? undefined : [
+        "وزّع جزءاً من الميزانية على حملة ثانية مختبَرة لتقليل المخاطرة.",
+        "توقّف حملة واحدة مهيمنة يعني توقّف نتائجك بالكامل.",
+      ],
+      trend: seriesFrom(snapshots, (r) => r.cost),
+      lastScanAt: now,
+      actionHref: "/dashboard/campaigns",
+    });
+  }
 
   const inflation = totals.raw > 0 ? ((totals.raw - totals.verified) / totals.raw) * 100 : 0;
   push({

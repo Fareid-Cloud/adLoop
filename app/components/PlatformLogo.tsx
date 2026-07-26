@@ -9,7 +9,9 @@ export type PlatformKey =
   | "SNAPCHAT_ADS" | "MICROSOFT_ADS" | "LINKEDIN_ADS" | "WHATSAPP";
 
 export function PlatformLogo({ platform, size = 18 }: { platform: string; size?: number }) {
-  const s = { width: size, height: size, display: "block" } as const;
+  // currentColor يجعل الأجزاء المحايدة تتبع لون النص، فتظل واضحة في
+  // الوضعين الفاتح والداكن بدل أسود ثابت يذوب في الخلفية الداكنة.
+  const s = { width: size, height: size, display: "block", color: "var(--text-primary)" } as const;
   switch (platform) {
     case "GOOGLE_ADS":
     case "GOOGLE":
@@ -24,9 +26,22 @@ export function PlatformLogo({ platform, size = 18 }: { platform: string; size?:
     case "META_ADS":
     case "META":
       return (
-        <svg viewBox="0 0 48 48" style={s} aria-label="Meta">
-          <defs><linearGradient id="mtg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#0064E1" /><stop offset="1" stopColor="#0082FB" /></linearGradient></defs>
-          <path fill="url(#mtg)" d="M9.5 32c-2.3 0-3.8-1.9-3.8-6 0-6.6 3.3-13 7.6-13 3 0 5.2 2.6 7.9 7 2.5-3.9 4.7-7 8-7 5.2 0 8.6 7.9 8.6 15 0 4-1.5 5.9-4 5.9-2.7 0-3.7-1.9-6.1-6-1.4-2.5-2.7-4.9-3.4-6.1-.9 1.5-2 3.5-3.4 6-2.5 4.3-3.7 6.2-6.9 6.2H9.5zm22.9-15c-1.4 0-2.9 2-4.6 4.9 1.2 2.2 2.4 4.4 3.3 5.9 1.4 2.4 1.9 2.9 2.7 2.9.9 0 1.4-.9 1.4-2.9 0-5.1-2-10.8-2.8-10.8zm-19.4 0c-.9 0-2.9 4.9-2.9 10.4 0 1.9.6 2.6 1.4 2.6.9 0 1.5-.6 2.9-3 .8-1.4 2-3.6 3.2-5.8-1.8-3-3.3-4.2-4.6-4.2z" />
+        <svg viewBox="0 0 48 48" style={s} aria-label="Meta" shapeRendering="geometricPrecision">
+          <defs>
+            <linearGradient id="mtg" x1="6" y1="34" x2="42" y2="14" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stopColor="#0064E1" />
+              <stop offset=".4" stopColor="#0064E1" />
+              <stop offset=".83" stopColor="#0082FB" />
+              <stop offset="1" stopColor="#0082FB" />
+            </linearGradient>
+          </defs>
+          {/* علامة ميتا: حلقتان متداخلتان مرسومتان كخط بسماكة موحّدة -
+              أدق من محاولة تعبئة شكل مصمت، وتظل حادة في الأحجام الصغيرة */}
+          <path
+            fill="none" stroke="url(#mtg)" strokeWidth="4.6"
+            strokeLinecap="round" strokeLinejoin="round"
+            d="M10.6 30.4c-1.9 0-2.9-1.5-2.9-4.6 0-5.6 2.9-11.6 6.6-11.6 2.6 0 4.6 2.4 7.1 6.4 1.2 1.9 2.4 4 3.6 6.1 2.4 4.2 3.6 5.9 5.9 5.9 2.2 0 3.3-1.6 3.3-5.1 0-6.1-2.6-12.4-5.9-12.4-2.8 0-5 2.7-7.4 6.5"
+          />
         </svg>
       );
     case "FACEBOOK":
@@ -47,11 +62,18 @@ export function PlatformLogo({ platform, size = 18 }: { platform: string; size?:
       );
     case "TIKTOK_ADS":
     case "TIKTOK":
+      // النوتة الأساسية بلون النص لا بالأسود الثابت: الطبقة السوداء
+      // السابقة كانت تختفي تماماً في الوضع الداكن فيبدو الشعار مشوّهاً.
+      // الإزاحة بين الطبقات صغيرة (0.9) لتبقى العلامة واضحة عند 12–16px.
       return (
-        <svg viewBox="0 0 48 48" style={s} aria-label="TikTok">
-          <path fill="#25F4EE" d="M31 4c.5 4.6 3.1 7.4 7.6 7.7v5.2c-2.6.2-4.9-.6-7.6-2.2v10.6c0 8.1-5.9 12.9-12.4 11.4-6.9-1.6-9.1-9.9-4.1-14.8 1.9-1.9 4.5-2.6 7.4-2.2v5.4c-.7-.2-1.5-.3-2.3-.1-2 .4-3.2 2.2-2.7 4.2.5 2 2.7 3 4.7 2.3 1.6-.5 2.4-1.9 2.4-3.9V4H31z" />
-          <path fill="#FE2C55" d="M33 6c.5 4.6 3.1 7.4 7.6 7.7v5.2c-2.6.2-4.9-.6-7.6-2.2v10.6c0 8.1-5.9 12.9-12.4 11.4-1.2-.3-2.3-.7-3.2-1.3 1.1.4 2.3.6 3.6.5 5.7-.5 10.4-5.2 10.4-11.9V6H33z" />
-          <path fill="#000" d="M32 5c.5 4.6 3.1 7.4 7.6 7.7v5.2c-2.6.2-4.9-.6-7.6-2.2v10.6c0 8.1-5.9 12.9-12.4 11.4-6.9-1.6-9.1-9.9-4.1-14.8 1.9-1.9 4.5-2.6 7.4-2.2v5.4c-.7-.2-1.5-.3-2.3-.1-2 .4-3.2 2.2-2.7 4.2.5 2 2.7 3 4.7 2.3 1.6-.5 2.4-1.9 2.4-3.9V5H32z" />
+        <svg viewBox="0 0 48 48" style={s} aria-label="TikTok" shapeRendering="geometricPrecision">
+          <g transform="translate(-1.1,-0.9)">
+            <path fill="#25F4EE" d="M32 5c.5 4.6 3.2 7.5 7.7 7.8v5.3c-2.6.2-5-.6-7.7-2.2v10.7c0 8.2-6 13-12.5 11.5-7-1.6-9.2-10-4.1-15 1.9-1.9 4.5-2.6 7.4-2.2v5.5c-.7-.2-1.5-.3-2.3-.1-2 .4-3.2 2.2-2.7 4.2.5 2 2.7 3 4.7 2.3 1.6-.6 2.4-1.9 2.4-4V5H32z" />
+          </g>
+          <g transform="translate(1.1,0.9)">
+            <path fill="#FE2C55" d="M32 5c.5 4.6 3.2 7.5 7.7 7.8v5.3c-2.6.2-5-.6-7.7-2.2v10.7c0 8.2-6 13-12.5 11.5-7-1.6-9.2-10-4.1-15 1.9-1.9 4.5-2.6 7.4-2.2v5.5c-.7-.2-1.5-.3-2.3-.1-2 .4-3.2 2.2-2.7 4.2.5 2 2.7 3 4.7 2.3 1.6-.6 2.4-1.9 2.4-4V5H32z" />
+          </g>
+          <path fill="currentColor" d="M32 5c.5 4.6 3.2 7.5 7.7 7.8v5.3c-2.6.2-5-.6-7.7-2.2v10.7c0 8.2-6 13-12.5 11.5-7-1.6-9.2-10-4.1-15 1.9-1.9 4.5-2.6 7.4-2.2v5.5c-.7-.2-1.5-.3-2.3-.1-2 .4-3.2 2.2-2.7 4.2.5 2 2.7 3 4.7 2.3 1.6-.6 2.4-1.9 2.4-4V5H32z" />
         </svg>
       );
     case "SNAPCHAT_ADS":

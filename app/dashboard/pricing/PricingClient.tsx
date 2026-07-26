@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ProductFocusView, type ProductRecord } from "./ProductFocusView";
+import { ProductFocusView, type ProductRecord, type SalesStats } from "./ProductFocusView";
 import { Plus, Trash2 } from "lucide-react";
 
 export interface ProductHealthRow {
@@ -23,14 +23,18 @@ export function PricingClient({
   products,
   records,
   currency,
+  salesStats,
 }: {
   workspaceId: string;
   products: ProductHealthRow[];
   records: ProductRecord[];
   currency: string;
+  salesStats: Record<string, SalesStats>;
 }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
+  // معرّف المنتج قيد التعديل - وجوده يعني أن النموذج في وضع "تعديل" لا "إضافة"
+  const [editingId, setEditingId] = useState<string | null>(null);
   // المنتج المفتوح في العرض المركّز - يُفتح تلقائياً بعد الإضافة، وعند
   // الضغط على أي منتج قائم
   const [focusedId, setFocusedId] = useState<string | null>(null);
@@ -51,7 +55,21 @@ export function PricingClient({
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    const res = await fetch(`/api/workspaces/${workspaceId}/products`, {
+    const res = editingId
+      ? await fetch(`/api/products/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: form.name,
+            sku: form.sku || null,
+            currentPrice: parseFloat(form.currentPrice) || 0,
+            cogs: parseFloat(form.cogs) || 0,
+            outboundShippingCost: parseFloat(form.outboundShippingCost) || 0,
+            rtoRatePct: parseFloat(form.rtoRatePct) || 0,
+            avgAdCostPerOrder: parseFloat(form.avgAdCostPerOrder) || 0,
+          }),
+        })
+      : await fetch(`/api/workspaces/${workspaceId}/products`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -70,7 +88,10 @@ export function PricingClient({
     setForm({ name: "", sku: "", currentPrice: "", cogs: "", outboundShippingCost: "", rtoRatePct: "", avgAdCostPerOrder: "" });
     // المنتج الجديد يُفتح فوراً في العرض المركّز بدل أن يُضاف إلى القائمة
     // دون أن يرى المستخدم أثره على ربحيته
-    if (created?.product?.id) setPendingFocusId(created.product.id);
+    // بعد التعديل نعيد فتح نفس المنتج ليرى المستخدم أثر تعديله فوراً
+    const targetId = editingId ?? created?.product?.id;
+    if (targetId) setPendingFocusId(targetId);
+    setEditingId(null);
     router.refresh();
   }
 
@@ -87,7 +108,7 @@ export function PricingClient({
           className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-xs text-white"
         >
           <Plus size={14} />
-          منتج جديد
+          {editingId ? "تعديل المنتج" : "منتج جديد"}
         </button>
       </div>
 
@@ -198,8 +219,24 @@ export function PricingClient({
         <ProductFocusView
           product={focused}
           currency={currency}
+          sales={salesStats[focused.id] ?? null}
           onClose={() => setFocusedId(null)}
-          onEdit={() => { setFocusedId(null); setShowForm(true); }}
+          onEdit={() => {
+            // نملأ النموذج بالقيم الحالية بدل تركه فارغاً - وإلا كان
+            // الحذف وإعادة الإضافة أسهل من "التعديل"
+            setForm({
+              name: focused.name,
+              sku: focused.sku ?? "",
+              currentPrice: String(focused.currentPrice),
+              cogs: String(focused.cogs),
+              outboundShippingCost: String(focused.outboundShippingCost),
+              rtoRatePct: String(focused.rtoRatePct),
+              avgAdCostPerOrder: String(focused.avgAdCostPerOrder),
+            });
+            setEditingId(focused.id);
+            setFocusedId(null);
+            setShowForm(true);
+          }}
         />
       )}
     </div>

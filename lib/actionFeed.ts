@@ -228,6 +228,20 @@ export async function applyActionFeedItem(itemId: string) {
       await changeCampaignBudgetOnPlatform(item.workspaceId, payload.platform, payload.campaignId, payload.changePct);
       break;
     }
+    // اعتماد سعر مقترح: يُحدَّث في المتجر نفسه لا عندنا فقط
+    case "APPLY_PRODUCT_PRICE": {
+      const { syncPriceToStore } = await import("@/lib/ecommerce/priceSync");
+      const { prisma: db } = await import("@/lib/prisma");
+      const sync = await syncPriceToStore(item.workspaceId, payload.productId, payload.newPrice);
+      await db.product.update({
+        where: { id: payload.productId },
+        data: { currentPrice: payload.newPrice },
+      });
+      // فشل الكتابة على المتجر ليس فشلاً كاملاً - السعر صحيح عندنا الآن،
+      // لكن يجب أن يعرف المستخدم أن متجره لم يتغيّر بعد.
+      if (!sync.ok) throw new Error(sync.reasonAr ?? "تعذّر تحديث السعر في المتجر.");
+      break;
+    }
     default:
       throw new Error(`نوع إجراء غير معروف: ${item.actionType}`);
   }
