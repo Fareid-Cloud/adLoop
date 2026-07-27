@@ -5,6 +5,8 @@
 
 import type { SetupProgress } from "@/lib/setupProgress";
 import { CampaignPickerLauncher } from "@/app/components/CampaignPickerLauncher";
+import { SyncNowButton } from "@/app/components/SyncNowButton";
+import { ConnectPlatformLauncher } from "@/app/components/ConnectPlatformLauncher";
 import { Check, ArrowLeft } from "lucide-react";
 
 export function SetupChecklist({
@@ -69,7 +71,15 @@ export function SetupChecklist({
                 )}
               </div>
 
-              {!s.done && isNext && s.id === "campaigns" && connectedPlatforms.length > 0 ? (
+              {/* كل خطوة تُنفَّذ في مكانها: لا تحويل إلى صفحة أخرى إلا حين
+                  يكون الإجراء نفسه هناك فعلاً. */}
+              {!s.done && isNext && s.id === "connect" ? (
+                <ConnectPlatformLauncher
+                  label={ar ? s.ctaAr : s.ctaEn}
+                  locale={locale}
+                  className="flex shrink-0 items-center gap-1.5 rounded-xl bg-accent px-3.5 py-2 text-[12.5px] font-medium text-white"
+                />
+              ) : !s.done && isNext && s.id === "campaigns" && connectedPlatforms.length > 0 ? (
                 <CampaignPickerLauncher
                   workspaceId={workspaceId}
                   connectedPlatforms={connectedPlatforms}
@@ -77,6 +87,14 @@ export function SetupChecklist({
                   label={ar ? s.ctaAr : s.ctaEn}
                   className="shrink-0 rounded-xl bg-accent px-3.5 py-2 text-[12.5px] font-medium text-white"
                 />
+              ) : !s.done && isNext && s.id === "data" ? (
+                <div className="w-56 shrink-0">
+                  <SyncNowButton
+                    workspaceId={workspaceId}
+                    label={ar ? s.ctaAr : s.ctaEn}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-accent px-3.5 py-2 text-[12.5px] font-medium text-white disabled:opacity-60"
+                  />
+                </div>
               ) : !s.done && isNext ? (
                 <a
                   href={s.ctaHref}

@@ -7,6 +7,10 @@
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // ملاحظة: لا نضع directUrl هنا عمداً. Prisma يرفض المخطط بالكامل إذا
+  // كان متغيّر البيئة المشار إليه غير مضبوط - أي أن إضافته "احتياطاً"
+  // كانت ستُفشل بناء كل من لم يضبط DIRECT_URL. بدلاً من ذلك يتولّى
+  // scripts/db-push-safe.mjs تمرير الاتصال المباشر عند توفّره فقط.
 }
 
 generator client {

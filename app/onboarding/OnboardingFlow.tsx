@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { Check, ArrowLeft, Loader2 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { CampaignPickerModal } from "@/app/components/CampaignPickerModal";
+import { SyncNowButton } from "@/app/components/SyncNowButton";
 
 type Platform = "GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS";
 
@@ -162,6 +163,25 @@ export function OnboardingFlow({
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* الخطوة 3 - مزامنة فورية، في مكانها لا في الإعدادات */}
+        {step1Done && step2Done && (
+          <div className="card-shadow mb-3 rounded-2xl border border-border bg-surface p-4">
+            <div className="mb-2 text-[13.5px] text-text-primary">
+              {ar ? "اسحب بياناتك الآن" : "Pull your data now"}
+            </div>
+            <p className="mb-3 text-[12.5px] leading-relaxed text-text-muted">
+              {ar
+                ? "المزامنة تعمل تلقائياً كل يوم. يمكنك تشغيلها الآن لترى أرقامك مباشرةً."
+                : "Sync runs automatically every day. Run it now to see your numbers right away."}
+            </p>
+            <SyncNowButton
+              workspaceId={workspaceId}
+              label={ar ? "مزامنة الآن" : "Sync now"}
+              className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-surface-raised px-4 py-2.5 text-[13px] font-medium text-text-primary disabled:opacity-60"
+            />
           </div>
         )}
 
