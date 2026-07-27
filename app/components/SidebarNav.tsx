@@ -7,13 +7,21 @@ import {
   FlaskConical, Bot, FileBarChart, Settings as SettingsIcon, CreditCard,
   ChevronDown, PanelLeftClose, PanelLeftOpen, Search,
 } from "lucide-react";
+import * as Icons from "lucide-react";
 import { NAV_GROUPS, type NavItem } from "@/lib/navConfig";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 
-const ICONS: Record<string, typeof LayoutDashboard> = {
-  LayoutDashboard, Megaphone, Tag, ScanSearch, Stethoscope, ListChecks,
-  FlaskConical, Bot, FileBarChart, SettingsIcon, CreditCard,
-};
+// 🔴 سبب عطل إنتاج حقيقي: كانت هذه خريطة يدوية بأحد عشر اسماً فقط. أي
+// عنصر تنقّل بأيقونة خارجها كان يُرجع undefined، فيُرمى React error #130
+// ("نوع العنصر غير صالح") — ولأن هذه القائمة تُعرض داخل layout اللوحة،
+// كان الخطأ يُسقط **كل** صفحات البرنامج دفعة واحدة، لا الأيقونة وحدها.
+//
+// الحل من شقين: القراءة من مكتبة الأيقونات كاملةً، **وبديل مضمون** عند
+// أي اسم غير معروف - فلا يمكن لخطأ إملائي في اسم أيقونة أن يُسقط التطبيق.
+function resolveIcon(name: string): typeof LayoutDashboard {
+  const found = (Icons as unknown as Record<string, typeof LayoutDashboard>)[name];
+  return found ?? Icons.Circle;
+}
 
 const COLLAPSE_STORAGE_KEY = "adloop-sidebar-collapsed";
 
@@ -121,7 +129,7 @@ export function SidebarNav({
               )}
               <div className="flex flex-col gap-0.5">
                 {group.items.map((item) => {
-                  const Icon = ICONS[item.iconName];
+                  const Icon = resolveIcon(item.iconName);
                   const active = isItemActiveOrInside(item);
                   const expanded = isExpanded(item);
                   return (

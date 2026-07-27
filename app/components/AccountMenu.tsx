@@ -43,7 +43,7 @@ export function AccountMenu({
 
   const display = name ?? email;
   const initial = display[0]?.toUpperCase() ?? "?";
-  const AvatarIcon = avatarIcon ? AVATAR_ICONS[avatarIcon] : null;
+  const AvatarIcon = avatarIcon ? (AVATAR_ICONS[avatarIcon] ?? null) : null;
 
   return (
     <div ref={ref} className="relative">

@@ -86,7 +86,9 @@ export function NotificationToast() {
   const current = queue[0];
   if (!current) return null;
 
-  const Icon = TYPE_ICON[current.type];
+  // بديل مضمون: أي نوع إشعار جديد لا يوجد في الخريطة كان سيُرجع undefined
+  // ويُسقط المكوّن بخطأ "نوع العنصر غير صالح" - نفس ما حدث في القائمة الجانبية.
+  const Icon = TYPE_ICON[current.type] ?? Zap;
 
   return (
     <div className="fixed bottom-6 left-1/2 z-50 w-full max-w-sm -translate-x-1/2 px-4">
