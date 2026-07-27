@@ -8,7 +8,6 @@
 // لكل صفحة في المنتج (تسجيل الدخول، التسجيل، إلخ)، مش الداشبورد بس
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/font/google";
@@ -62,6 +61,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     const isNewDay = !user.lastActiveAt || user.lastActiveAt.toDateString() !== new Date().toDateString();
 
     if (!user.lastActiveAt || user.lastActiveAt < halfHourAgo) {
+      try {
       void prisma.user.update({
         where: { id: user.id },
         data: {
@@ -73,16 +73,22 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             : {}),
         },
       }).catch(() => {});
+      } catch (err) {
+        console.error("[layout] تعذّر تسجيل النشاط:", err);
+      }
     }
   }
 
   // بوابة الإعداد الإجبارية: مستخدم لم يربط أي منصة بعد يُحوَّل إلى شاشة
   // الإعداد **قبل ظهور القائمة الجانبية وبقية البرنامج** - لأن اللوحة بلا
   // حساب مربوط لا تعرض شيئاً ذا معنى. التخطي الصريح يُلغي التحويل نهائياً.
-  if (user && !user.onboardingDismissed) {
-    const connectionCount = await prisma.connectedPlatform.count({ where: { userId: user.id } });
-    if (connectionCount === 0) redirect("/onboarding");
-  }
+  // ⚠️ قاعدة معمارية: هذا الملف يلفّ **كل** صفحات اللوحة. أي خطأ يُرمى هنا
+  // لا تلتقطه dashboard/error.tsx (فهي تلتقط أخطاء الأبناء لا أخطاء الـlayout)،
+  // بل يصعد إلى global-error فيُسقط التطبيق كله بشاشة "حدث خطأ غير متوقع".
+  //
+  // لذلك: **لا استعلامات حرجة ولا redirect هنا**. بوابة الإعداد الإجبارية
+  // انتقلت إلى app/dashboard/page.tsx - التحويل هناك يحقّق نفس الغرض
+  // للمستخدم الجديد (يهبط على اللوحة أولاً) دون تعريض بقية الصفحات للسقوط.
 
   // بوابة الترحيب بتظهر لحد ما المستخدم يخلّصها أو يتخطاها (مش مربوطة
   // بعدد أيام - بوابة أولية إجبارية الظهور، لكن التخطّي متاح دائماً)
@@ -92,13 +98,18 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const PLAN_LIMITS: Record<string, number> = { free: 1, starter: 2, growth: 5, pro: 15, agency: 50 };
   const workspaceLimit = PLAN_LIMITS[(user?.subscriptionPlan ?? "free").toLowerCase()] ?? 1;
 
-  const allWorkspaces = user
-    ? await prisma.workspace.findMany({
+  let allWorkspaces: Array<{ id: string; name: string; currency: string }> = [];
+  if (user) {
+    try {
+      allWorkspaces = await prisma.workspace.findMany({
         where: { userId: user.id },
         orderBy: { createdAt: "asc" },
         select: { id: true, name: true, currency: true },
-      })
-    : [];
+      });
+    } catch (err) {
+      console.error("[layout] تعذّر جلب مساحات العمل:", err);
+    }
+  }
   const activeId = cookieStore.get("adloop_workspace")?.value;
   const activeWorkspace = allWorkspaces.find((w) => w.id === activeId) ?? allWorkspaces[0] ?? null;
 

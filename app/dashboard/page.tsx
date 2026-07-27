@@ -6,6 +6,7 @@
 
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 import type { DailyTask } from "@prisma/client";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { EmptyState } from "@/app/components/ui/EmptyState";
@@ -51,6 +52,19 @@ export default async function GlancePage({
       </div>
     );
   }
+
+  // بوابة الإعداد الإجبارية - كانت في الـlayout، ونقلها إلى هنا يمنع أي
+  // فشل فيها من إسقاط كل صفحات اللوحة دفعة واحدة.
+  let needsOnboarding = false;
+  if (!user.onboardingDismissed) {
+    try {
+      const connectionCount = await prisma.connectedPlatform.count({ where: { userId: user.id } });
+      needsOnboarding = connectionCount === 0;
+    } catch (err) {
+      console.error("[glance] تعذّر فحص المنصات المرتبطة:", err);
+    }
+  }
+  if (needsOnboarding) redirect("/onboarding");
 
   const workspace = await prisma.workspace.findFirst({
     where: { userId: user.id },

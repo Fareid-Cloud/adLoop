@@ -26,6 +26,21 @@ export default function GlobalError({
         <div style={{ padding: 40, textAlign: "center", fontFamily: "sans-serif" }}>
           <h1>حدث خطأ غير متوقع</h1>
           <p style={{ color: "#666" }}>تم إبلاغ الفريق التقني تلقائياً بالمشكلة.</p>
+          {/* رمز الخطأ ورسالته: بدونهما لا توجد أي وسيلة لتشخيص عطل الإنتاج
+              دون الوصول إلى سجلات الخادم - وهو ما عطّل تحديد السبب سابقاً. */}
+          {error?.digest && (
+            <p style={{ color: "#999", fontSize: 12, fontFamily: "monospace", marginTop: 8 }}>
+              رمز الخطأ: {error.digest}
+            </p>
+          )}
+          {error?.message && (
+            <p style={{ color: "#999", fontSize: 12, marginTop: 4, maxWidth: 520, direction: "ltr" }}>
+              {String(error.message).slice(0, 300)}
+            </p>
+          )}
+          <p style={{ color: "#999", fontSize: 12, marginTop: 12 }}>
+            إن تكرّر الخطأ، افتح <code>/api/health/schema</code> لمعرفة ما إذا كانت قاعدة البيانات متأخرة عن الكود.
+          </p>
           <button onClick={reset} style={{ marginTop: 16, padding: "8px 20px" }}>
             حاول مرة أخرى
           </button>
