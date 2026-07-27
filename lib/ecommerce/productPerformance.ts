@@ -1,0 +1,221 @@
+// lib/ecommerce/productPerformance.ts
+//
+// تحليل أداء المنتجات وتحديد "المنتج الرابح".
+//
+// المشكلة التي يحلّها: من يختبر عدة منتجات معاً يحكم عادةً بعدد الطلبات
+// أو بالإيراد - وكلاهما مضلّل. المنتج الأكثر مبيعاً قد يكون الأكثر خسارة
+// إذا ابتلعته المرتجعات أو تكلفة الإعلان. الحكم هنا على **الربح الفعلي
+// المتحقق**، مع تصريح واضح بمستوى الثقة حسب حجم العينة.
+
+import { prisma } from "@/lib/prisma";
+import { calculateFullPricing } from "@/lib/pricingCalculator";
+
+export type Confidence = "RELIABLE" | "PRELIMINARY" | "INSUFFICIENT";
+
+export interface ProductPerformance {
+  id: string;
+  name: string;
+  sku: string | null;
+  currentPrice: number;
+
+  /** مبيعات فعلية خلال النافذة */
+  unitsSold: number;
+  unitsReturned: number;
+  revenue: number;
+  returnRatePct: number;
+
+  /** ربح الوحدة الواحدة بعد كل التكاليف الحقيقية */
+  profitPerUnit: number;
+  /** الربح الإجمالي المتحقق فعلاً (بعد استبعاد المرتجعات) */
+  totalProfit: number;
+  /** هامش الربح الفعلي */
+  marginPct: number;
+
+  /** سرعة البيع: وحدات في اليوم */
+  velocity: number;
+  /** أيام تبقّت في المخزون بمعدل البيع الحالي */
+  stockDaysLeft: number | null;
+  stockQuantity: number | null;
+
+  confidence: Confidence;
+  /** درجة مركّبة للترتيب - ليست معروضة، أساس اختيار الرابح فقط */
+  score: number;
+
+  /** سبب واضح لتصنيف هذا المنتج */
+  verdictAr: string;
+  verdict: "WINNER" | "PROMISING" | "WATCH" | "LOSING" | "NO_DATA";
+}
+
+export interface EcommerceOverview {
+  products: ProductPerformance[];
+  winner: ProductPerformance | null;
+  runnerUp: ProductPerformance | null;
+  losing: ProductPerformance[];
+  totals: { revenue: number; profit: number; units: number; returnRatePct: number };
+  windowDays: number;
+  hasStoreConnection: boolean;
+  storePlatform: string | null;
+  currency: string;
+}
+
+// عتبات العينة: مبنية على نفس منطق الثقة المستخدم في المعمل - قرار
+// مبني على 3 طلبات ليس قراراً، بل صدفة.
+const RELIABLE_UNITS = 25;
+const PRELIMINARY_UNITS = 8;
+
+export async function getEcommerceOverview(
+  workspaceId: string,
+  windowDays = 30
+): Promise<EcommerceOverview> {
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { currency: true },
+  });
+  const currency = workspace?.currency ?? "SAR";
+
+  const since = new Date();
+  since.setDate(since.getDate() - windowDays);
+
+  const [products, connection] = await Promise.all([
+    prisma.product.findMany({ where: { workspaceId } }),
+    prisma.ecommerceConnection.findFirst({
+      where: { workspaceId, active: true },
+      select: { platform: true },
+    }),
+  ]);
+
+  if (products.length === 0) {
+    return {
+      products: [], winner: null, runnerUp: null, losing: [],
+      totals: { revenue: 0, profit: 0, units: 0, returnRatePct: 0 },
+      windowDays, hasStoreConnection: !!connection,
+      storePlatform: connection?.platform ?? null, currency,
+    };
+  }
+
+  const events = await prisma.productSaleEvent.findMany({
+    where: { productId: { in: products.map((p: any) => p.id) }, occurredAt: { gte: since } },
+    select: { productId: true, quantity: true, revenue: true, returned: true },
+  });
+
+  const byProduct = new Map<string, { units: number; returned: number; revenue: number }>();
+  for (const e of events) {
+    const cur = byProduct.get(e.productId) ?? { units: 0, returned: 0, revenue: 0 };
+    cur.units += e.quantity;
+    cur.revenue += e.revenue;
+    if (e.returned) cur.returned += e.quantity;
+    byProduct.set(e.productId, cur);
+  }
+
+  const analyzed: ProductPerformance[] = products.map((p: any) => {
+    const sales = byProduct.get(p.id) ?? { units: 0, returned: 0, revenue: 0 };
+    const returnRatePct = sales.units > 0 ? (sales.returned / sales.units) * 100 : p.rtoRatePct;
+
+    // نستخدم نسبة المرتجعات **الفعلية** إن توفّرت بدل المُدخلة يدوياً -
+    // الرقم الحقيقي أصدق من التقدير دائماً.
+    const pricing = calculateFullPricing(p.currentPrice, {
+      cogs: p.cogs,
+      outboundShippingCost: p.outboundShippingCost,
+      returnShippingCost: p.returnShippingCost || p.outboundShippingCost,
+      packagingCost: p.packagingCost,
+      handlingCost: p.handlingCost,
+      avgAdCostPerOrder: p.avgAdCostPerOrder,
+      rtoRatePct: sales.units > 0 ? returnRatePct : p.rtoRatePct,
+      restockingLossPct: p.restockingLossPct,
+      paymentGatewayFeePct: p.paymentGatewayFeePct,
+      paymentGatewayFixedFee: p.paymentGatewayFixedFee,
+      codFeePct: p.codFeePct,
+      desiredMarginPct: p.desiredMarginPct,
+    });
+
+    const successfulUnits = Math.max(sales.units - sales.returned, 0);
+    const totalProfit = Math.round(pricing.profitAtCurrentPrice * successfulUnits * 100) / 100;
+    const velocity = Math.round((sales.units / windowDays) * 100) / 100;
+    const stockDaysLeft =
+      p.stockQuantity !== null && velocity > 0 ? Math.floor(p.stockQuantity / velocity) : null;
+
+    const confidence: Confidence =
+      sales.units >= RELIABLE_UNITS ? "RELIABLE"
+      : sales.units >= PRELIMINARY_UNITS ? "PRELIMINARY"
+      : "INSUFFICIENT";
+
+    // الدرجة: الربح الإجمالي هو الأساس، معدّلاً بمعدل المرتجعات وسرعة البيع.
+    // لا نكافئ الإيراد وحده - منتج يبيع كثيراً بخسارة يجب أن يهبط لا يرتفع.
+    const returnPenalty = 1 - Math.min(returnRatePct, 80) / 100;
+    const score = totalProfit * returnPenalty * (1 + Math.min(velocity, 10) / 20);
+
+    let verdict: ProductPerformance["verdict"];
+    let verdictAr: string;
+
+    if (sales.units === 0) {
+      verdict = "NO_DATA";
+      verdictAr = "لا توجد مبيعات مسجّلة في هذه الفترة.";
+    } else if (pricing.profitAtCurrentPrice < 0) {
+      verdict = "LOSING";
+      verdictAr = `كل وحدة مباعة تُكلّفك ${Math.abs(pricing.profitAtCurrentPrice)} ${currency}.`;
+    } else if (confidence === "INSUFFICIENT") {
+      verdict = "WATCH";
+      verdictAr = `${sales.units} وحدة فقط — عينة صغيرة، النتيجة غير حاسمة بعد.`;
+    } else if (returnRatePct > 35) {
+      verdict = "WATCH";
+      verdictAr = `يربح ظاهرياً لكن ${Math.round(returnRatePct)}% مرتجعات تلتهم العائد.`;
+    } else if (confidence === "RELIABLE") {
+      verdict = "WINNER";
+      verdictAr = `ربح مؤكد ${Math.round(totalProfit)} ${currency} من ${successfulUnits} وحدة ناجحة.`;
+    } else {
+      verdict = "PROMISING";
+      verdictAr = `مؤشر مبكر جيد — ${Math.round(totalProfit)} ${currency} ربح من ${sales.units} وحدة.`;
+    }
+
+    return {
+      id: p.id, name: p.name, sku: p.sku, currentPrice: p.currentPrice,
+      unitsSold: sales.units, unitsReturned: sales.returned,
+      revenue: Math.round(sales.revenue),
+      returnRatePct: Math.round(returnRatePct * 10) / 10,
+      profitPerUnit: pricing.profitAtCurrentPrice,
+      totalProfit,
+      marginPct: pricing.actualMarginPct,
+      velocity,
+      stockDaysLeft,
+      stockQuantity: p.stockQuantity,
+      confidence, score,
+      verdict, verdictAr,
+    };
+  });
+
+  analyzed.sort((a, b) => b.score - a.score);
+
+  // الرابح: أعلى درجة **بشرط** ثقة كافية وربح موجب. لا نتوّج منتجاً
+  // بناءً على عينة صغيرة - ذلك أسوأ من عدم الترشيح أصلاً.
+  const eligible = analyzed.filter(
+    (p) => p.totalProfit > 0 && p.confidence !== "INSUFFICIENT" && p.returnRatePct <= 35
+  );
+  const winner = eligible[0] ?? null;
+  const runnerUp = eligible[1] ?? null;
+  const losing = analyzed.filter((p) => p.verdict === "LOSING");
+
+  const totals = analyzed.reduce(
+    (a, p) => ({
+      revenue: a.revenue + p.revenue,
+      profit: a.profit + p.totalProfit,
+      units: a.units + p.unitsSold,
+      returned: a.returned + p.unitsReturned,
+    }),
+    { revenue: 0, profit: 0, units: 0, returned: 0 }
+  );
+
+  return {
+    products: analyzed,
+    winner, runnerUp, losing,
+    totals: {
+      revenue: Math.round(totals.revenue),
+      profit: Math.round(totals.profit),
+      units: totals.units,
+      returnRatePct: totals.units > 0 ? Math.round((totals.returned / totals.units) * 1000) / 10 : 0,
+    },
+    windowDays,
+    hasStoreConnection: !!connection,
+    storePlatform: connection?.platform ?? null,
+    currency,
+  };
+}
