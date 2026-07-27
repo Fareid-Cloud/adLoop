@@ -2,7 +2,7 @@
 
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { DataTable, Column } from "@/app/components/ui/DataTable";
+import { CampaignsOverview, type CampaignRow } from "./CampaignsOverview";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { CampaignsNav } from "./CampaignsNav";
 
@@ -12,19 +12,6 @@ const PLATFORM_LABELS: Record<string, string> = {
   TIKTOK_ADS: "تيك توك",
   SNAPCHAT_ADS: "سناب شات",
 };
-
-interface CampaignRow {
-  campaignId: string;
-  campaignName: string;
-  platform: string;
-  clicks: number;
-  cost: number;
-  rawConversions: number;
-  verifiedConversions: number;
-  cplRaw: number;
-  cplVerified: number;
-  inflationRatePct: number;
-}
 
 export default async function CampaignsPage() {
   const user = await getSessionUserFromCookies();
@@ -103,75 +90,25 @@ export default async function CampaignsPage() {
     };
   });
 
-  const columns: Column<CampaignRow>[] = [
-    {
-      key: "campaignName",
-      label: "الحملة",
-      render: (r) => (
-        <div>
-          <div className="font-medium">{r.campaignName}</div>
-          <div className="text-xs text-text-faint">{PLATFORM_LABELS[r.platform] ?? r.platform}</div>
-        </div>
-      ),
-      sortValue: (r) => r.campaignName,
-    },
-    {
-      key: "clicks",
-      label: "الكليكات",
-      align: "end",
-      render: (r) => <span className="font-mono">{r.clicks.toLocaleString()}</span>,
-      sortValue: (r) => r.clicks,
-    },
-    {
-      key: "cost",
-      label: "التكلفة",
-      align: "end",
-      render: (r) => <span className="font-mono">{r.cost.toLocaleString()}</span>,
-      sortValue: (r) => r.cost,
-    },
-    {
-      key: "cplRaw",
-      label: "تكلفة العميل المعلنة",
-      align: "end",
-      render: (r) => <span className="font-mono text-gap">{r.cplRaw || "—"}</span>,
-      sortValue: (r) => r.cplRaw,
-    },
-    {
-      key: "cplVerified",
-      label: "تكلفة العميل الحقيقية",
-      align: "end",
-      render: (r) => <span className="font-mono text-verified">{r.cplVerified || "—"}</span>,
-      sortValue: (r) => r.cplVerified,
-    },
-    {
-      key: "inflationRatePct",
-      label: "نسبة التضخيم",
-      align: "end",
-      render: (r) => (
-        <span className={`font-mono ${r.inflationRatePct > 40 ? "text-critical" : "text-text-muted"}`}>
-          {r.inflationRatePct}%
-        </span>
-      ),
-      sortValue: (r) => r.inflationRatePct,
-    },
-  ];
-
   return (
-    <div className="mx-auto max-w-5xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-1 text-[26px] font-semibold text-text-primary">الحملات</h1>
-      <p className="mb-6 text-xs text-text-faint">اختر منصة أو نظرة شاملة لعرض التحليل التفصيلي.</p>
+    <div className="mx-auto max-w-6xl pb-10">
+      <div className="reveal mb-6">
+        <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
+        <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">الحملات</h1>
+        <p className="mt-1 text-[13px] text-text-muted">
+          كل حملة بالرقم الذي تعلنه المنصة وبالرقم الذي تأكّد فعلاً — والفارق بينهما.
+        </p>
+      </div>
 
       <CampaignsNav />
-
 
       {rows.length === 0 ? (
         <EmptyState
           title="لا توجد حملات مربوطة بعد"
-          description="اربط حملاتك من الإعدادات → مساحة العمل."
+          description="اربط حملاتك من الرئيسية — نافذة اختيار الحملات تفتح في مكانها."
         />
       ) : (
-        <DataTable columns={columns} rows={rows} rowKey={(r) => `${r.platform}-${r.campaignId}`} />
+        <CampaignsOverview rows={rows} currency={workspace.currency} />
       )}
     </div>
   );

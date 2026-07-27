@@ -96,6 +96,7 @@ export default async function DiagnosticsPage() {
       totalMonthlyImpact={report.totalMonthlyImpact}
       currency={report.currency}
       lastScanAt={report.lastScanAt ? timeAgo(report.lastScanAt) : null}
+      locale={(user.preferredLocale as "ar" | "en") ?? "ar"}
     />
   );
 }

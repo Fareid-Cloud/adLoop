@@ -6,6 +6,8 @@
 "use client";
 
 import { Toggle } from "@/app/components/ui/Toggle";
+import { ConnectionTester } from "@/app/components/ConnectionTester";
+import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Bot, Cpu, Sparkles, Terminal, Brain, Zap, Upload, Search } from "lucide-react";
@@ -417,17 +419,18 @@ function AccountsTab({ connectedPlatforms }: { connectedPlatforms: ConnectedPlat
       {(["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"] as const).map((platform) => {
         const connection = connectedMap.get(platform);
         return (
-          <div
-            key={platform}
-            className="mb-2 flex items-center justify-between rounded-xl bg-surface-raised px-4 py-3"
-          >
-            <div>
+          <div key={platform} className="mb-2 rounded-xl bg-surface-raised px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <PlatformLogo platform={platform} size={18} />
+              <div>
               <div className="text-sm text-text-primary">{PLATFORM_LABELS[platform]}</div>
               {connection && (
                 <div className="text-xs text-text-faint">
                   متصل {connection.expiresAt ? `— ينتهي ${new Date(connection.expiresAt).toLocaleDateString("ar")}` : ""}
                 </div>
               )}
+              </div>
             </div>
             {connection ? (
               <DisconnectButton platform={platform} />
@@ -438,6 +441,14 @@ function AccountsTab({ connectedPlatforms }: { connectedPlatforms: ConnectedPlat
               >
                 اربط الحساب
               </a>
+            )}
+            </div>
+
+            {/* فحص الاتصال - يوضّح أين توقّف المسار بدل رسالة عامة */}
+            {connection && (
+              <div className="mt-3 border-t border-border pt-3">
+                <ConnectionTester platform={platform} compact />
+              </div>
             )}
           </div>
         );

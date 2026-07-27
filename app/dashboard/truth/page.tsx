@@ -114,6 +114,7 @@ export default async function TruthPage({
       currency={workspace.currency}
       days={days}
       platforms={platforms}
+      locale={(user.preferredLocale as "ar" | "en") ?? "ar"}
     />
   );
 }

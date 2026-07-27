@@ -510,7 +510,7 @@ export function estimateLearningPhase(
   if (conversionsLast7Days >= OPTIMIZATION_EVENTS_NEEDED) {
     return {
       ...base, status: "LIKELY_STABLE",
-      message: `${conversionsLast7Days} تحويل خلال آخر 7 أيام - على الأرجح خارج فترة التعلّم فعلاً.`,
+      message: `${conversionsLast7Days} تحويل خلال آخر سبعة أيام - على الأرجح خارج فترة التعلّم فعلاً.`,
     };
   }
 
@@ -518,7 +518,7 @@ export function estimateLearningPhase(
   return {
     ...base,
     status: conversionsLast7Days < OPTIMIZATION_EVENTS_NEEDED / 2 ? "LEARNING_LIMITED" : "LEARNING",
-    message: `${conversionsLast7Days} تحويل خلال آخر 7 أيام - محتاجة ${gapNeeded} تحويل إضافي في الأسبوع عشان توصل للـ${OPTIMIZATION_EVENTS_NEEDED} المطلوبين وتخرج من فترة التعلّم بثبات.`,
+    message: `${conversionsLast7Days} تحويل خلال آخر سبعة أيام - تحتاج ${gapNeeded} تحويل إضافي في الأسبوع للوصول إلى ${OPTIMIZATION_EVENTS_NEEDED} المطلوبين والخروج من فترة التعلّم بثبات.`,
   };
 }
 
@@ -679,7 +679,7 @@ export async function checkCatalogSpendAlertsForWorkspace(workspaceId: string) {
       type: "ALERT",
       severity: "MEDIUM",
       title: `${nameMap.get(c.campaignId) ?? c.campaignId}: كتالوج بيصرف من غير مبيعات`,
-      description: `صرفت ${Math.round(c.cost).toLocaleString()} على الحملة الديناميكية دي آخر 30 يوم من غير أي عملية شراء واحدة.`,
+      description: `صرفت ${Math.round(c.cost).toLocaleString()} على الحملة الديناميكية دي آخر 30 يوماً من غير أي عملية شراء واحدة.`,
       linkUrl: "/dashboard/campaigns/catalog-ads",
     });
   }

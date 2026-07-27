@@ -441,7 +441,7 @@ export async function checkTikTokAlertsForWorkspace(workspaceId: string) {
       type: "ALERT",
       severity: "MEDIUM",
       title: `${v.adName ?? v.adId}: خطّاف ضعيف`,
-      description: `${Math.round(v.hookRate * 1000) / 10}% بس من المشاهدين كملوا ثانيتين - أقل من المعيار الصحي (30%+). أول 2 ثانية من الفيديو محتاجة إعادة تصميم.`,
+      description: `${Math.round(v.hookRate * 1000) / 10}% بس من المشاهدين كملوا ثانيتين - أقل من المعيار الصحي (30%+). أول 2 ثانية من الفيديو تحتاج إعادة تصميم.`,
     });
   }
 }
@@ -484,7 +484,7 @@ export function auditTikTokBidCap(
   if (!input.bidType || input.bidType === "BID_TYPE_NO_BID") {
     return {
       ...base, status: "NOT_APPLICABLE", divergencePct: null,
-      message: "أقصى توصيل (Maximum Delivery) من غير سقف - مفيش هدف مضبوط يتفحص أصلاً.",
+      message: "أقصى توصيل (Maximum Delivery) بلا سقف — لا يوجد هدف محدد لفحصه.",
     };
   }
 
@@ -614,7 +614,7 @@ export function estimateTikTokLearningPhase(
   if (conversionsLast7Days >= TIKTOK_RESULTS_NEEDED) {
     return {
       ...base, status: "LIKELY_STABLE",
-      message: `${conversionsLast7Days} نتيجة خلال آخر 7 أيام - على الأرجح خارج فترة التعلّم فعلاً.`,
+      message: `${conversionsLast7Days} نتيجة خلال آخر سبعة أيام - على الأرجح خارج فترة التعلّم فعلاً.`,
     };
   }
 
@@ -622,7 +622,7 @@ export function estimateTikTokLearningPhase(
   return {
     ...base,
     status: conversionsLast7Days < TIKTOK_RESULTS_NEEDED / 2 ? "LEARNING_LIMITED" : "LEARNING",
-    message: `${conversionsLast7Days} نتيجة خلال آخر 7 أيام - محتاجة ${gapNeeded} نتيجة إضافية عشان توصل للـ${TIKTOK_RESULTS_NEEDED} المطلوبين وتخرج من فترة التعلّم بثبات.`,
+    message: `${conversionsLast7Days} نتيجة خلال آخر سبعة أيام - تحتاج ${gapNeeded} نتيجة إضافية للوصول إلى ${TIKTOK_RESULTS_NEEDED} المطلوبين والخروج من فترة التعلّم بثبات.`,
   };
 }
 

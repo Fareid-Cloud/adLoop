@@ -45,6 +45,23 @@ export function CampaignPickerModal({
   const [query, setQuery] = useState("");
   const [onlyActive, setOnlyActive] = useState(true);
   const [saving, setSaving] = useState(false);
+  // تشخيص الاتصال: يظهر عند الفشل ليقول أين توقّف بالضبط بدل "لا توجد حملات"
+  const [diagnosing, setDiagnosing] = useState(false);
+  const [diagnosis, setDiagnosis] = useState<{ steps: any[]; verdictAr: string } | null>(null);
+
+  async function diagnose() {
+    setDiagnosing(true);
+    setDiagnosis(null);
+    const res = await fetch("/api/oauth/test-connection", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ platform }),
+    }).catch(() => null);
+    setDiagnosing(false);
+    if (!res) return;
+    const data = await res.json().catch(() => null);
+    if (data?.steps) setDiagnosis(data);
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -195,9 +212,37 @@ export function CampaignPickerModal({
             <div className="flex flex-col items-center gap-3 py-10 text-center">
               <AlertCircle size={28} className="text-critical" />
               <p className="max-w-sm text-[13px] leading-relaxed text-text-primary">{error}</p>
-              <button onClick={load} className="rounded-xl border border-border bg-surface-raised px-4 py-2 text-[13px] text-text-primary">
-                {ar ? "إعادة المحاولة" : "Try again"}
-              </button>
+              <div className="flex gap-2">
+                <button onClick={load} className="rounded-xl border border-border bg-surface-raised px-4 py-2 text-[13px] text-text-primary">
+                  {ar ? "إعادة المحاولة" : "Try again"}
+                </button>
+                <button onClick={diagnose} disabled={diagnosing}
+                        className="rounded-xl bg-accent px-4 py-2 text-[13px] font-medium text-white disabled:opacity-50">
+                  {diagnosing ? (ar ? "جارٍ الفحص..." : "Testing...") : ar ? "فحص الاتصال" : "Test connection"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* نتيجة تشخيص الاتصال - خطوة بخطوة */}
+          {diagnosis && (
+            <div className="mx-auto mt-4 max-w-md rounded-xl border border-border bg-surface-raised p-4 text-start">
+              <p className="mb-3 text-[13px] font-medium text-text-primary">{diagnosis.verdictAr}</p>
+              <ul className="flex flex-col gap-2">
+                {diagnosis.steps.map((st: any) => (
+                  <li key={st.key} className="flex items-start gap-2">
+                    <span className="mt-0.5 shrink-0">
+                      {st.ok === true ? <Check size={13} className="text-verified" />
+                        : st.ok === false ? <AlertCircle size={13} className="text-critical" />
+                        : <span className="block h-3 w-3 rounded-full border border-border" />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[12.5px] text-text-primary">{st.labelAr}</span>
+                      {st.detailAr && <span className="block text-[11.5px] leading-relaxed text-text-muted">{st.detailAr}</span>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
@@ -206,6 +251,14 @@ export function CampaignPickerModal({
               {accounts.length === 0
                 ? ar ? "لا توجد حملات في هذا الحساب." : "No campaigns found in this account."
                 : ar ? "لا توجد حملات مطابقة للتصفية الحالية." : "No campaigns match the current filter."}
+              {accounts.length === 0 && (
+                <div className="mt-3">
+                  <button onClick={diagnose} disabled={diagnosing}
+                          className="rounded-xl bg-accent px-4 py-2 text-[12.5px] font-medium text-white disabled:opacity-50">
+                    {diagnosing ? (ar ? "جارٍ الفحص..." : "Testing...") : ar ? "فحص الاتصال" : "Test connection"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

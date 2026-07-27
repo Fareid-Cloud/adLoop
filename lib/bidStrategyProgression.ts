@@ -51,7 +51,7 @@ export async function checkBidStrategyProgressionForWorkspace(workspaceId: strin
       if (conversions >= MIN_CONVERSIONS_FOR_MAX_CONVERSIONS && campaignAgeDays >= MIN_CAMPAIGN_AGE_DAYS) {
         suggestion = {
           title: `${link.campaignName}: جاهزة للانتقال لـ Max Conversions`,
-          description: `${conversions} تحويل حقيقي آخر 30 يوم، والحملة شغالة ${campaignAgeDays} يوم - بيانات كافية للخوارزمية تبدأ تحسّن على التحويلات بدل الكليكات بس.`,
+          description: `${conversions} تحويل حقيقي آخر 30 يوماً، والحملة شغالة ${campaignAgeDays} يوم - بيانات كافية للخوارزمية تبدأ تحسّن على التحويلات بدل الكليكات بس.`,
           actionType: "SET_BID_STRATEGY_GOOGLE",
           actionPayload: { campaignId: link.externalCampaignId, newStrategy: "MAXIMIZE_CONVERSIONS" },
         };
@@ -62,7 +62,7 @@ export async function checkBidStrategyProgressionForWorkspace(workspaceId: strin
         const suggestedTargetCpa = Math.round(avgCpa * (1 + TARGET_CPA_SAFETY_MARGIN_PCT / 100));
         suggestion = {
           title: `${link.campaignName}: جاهزة لتحديد Target CPA`,
-          description: `${conversions} تحويل آخر 30 يوم بمتوسط تكلفة ${Math.round(avgCpa)} - نقترح تحديد الهدف عند ${suggestedTargetCpa} (فوق متوسطك الفعلي بـ${TARGET_CPA_SAFETY_MARGIN_PCT}% كهامش أمان، مش تحته - تحديد رقم أقل من أدائك الحالي بيخنق الحملة فوراً).`,
+          description: `${conversions} تحويل آخر 30 يوماً بمتوسط تكلفة ${Math.round(avgCpa)} - نقترح تحديد الهدف عند ${suggestedTargetCpa} (فوق متوسطك الفعلي بـ${TARGET_CPA_SAFETY_MARGIN_PCT}% كهامش أمان، مش تحته - تحديد رقم أقل من أدائك الحالي بيخنق الحملة فوراً).`,
           actionType: "SET_BID_STRATEGY_GOOGLE",
           actionPayload: { campaignId: link.externalCampaignId, newStrategy: "TARGET_CPA", targetCpaValue: suggestedTargetCpa, changePct: TARGET_CPA_SAFETY_MARGIN_PCT },
         };

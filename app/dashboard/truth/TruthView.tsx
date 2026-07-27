@@ -6,6 +6,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { ShieldCheck, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export interface PlatformTruth {
   platform: string;
@@ -53,13 +54,15 @@ function GapChart({ reported, verified }: { reported: number[]; verified: number
 }
 
 export function TruthView({
-  workspaceName, currency, days, platforms,
+  workspaceName, currency, days, platforms, locale = "ar",
 }: {
   workspaceName: string;
   currency: string;
   days: number;
   platforms: PlatformTruth[];
+  locale?: Locale;
 }) {
+  const tr = (k: string) => t(locale, ("truthPage." + k) as any);
   const router = useRouter();
   const params = useSearchParams();
 
@@ -87,10 +90,10 @@ export function TruthView({
         <div>
           <div className="mb-1 text-[13px] text-text-muted">{workspaceName}</div>
           <h1 className="flex items-center gap-2 text-[28px] font-semibold tracking-tight text-text-primary">
-            <ShieldCheck size={24} className="text-verified" /> الحقيقة
+            <ShieldCheck size={24} className="text-verified" /> {tr("title")}
           </h1>
           <p className="mt-1 max-w-xl text-[13px] leading-relaxed text-text-muted">
-            ما تعلنه كل منصة مقابل ما تأكّد فعلاً عبر محادثة أو طلب حقيقي — الفارق بينهما هو ما تدفعه بلا مقابل.
+            {tr("subtitle")}
           </p>
         </div>
         <div className="flex gap-1 rounded-xl border border-border bg-surface p-1">
@@ -99,7 +102,7 @@ export function TruthView({
                     className={`rounded-lg px-3 py-1.5 text-[12.5px] transition-colors ${
                       days === d ? "bg-accent font-medium text-white" : "text-text-muted hover:text-text-primary"
                     }`}>
-              {d} يوم
+              {d}{locale === "ar" ? " يوم" : "d"}
             </button>
           ))}
         </div>
@@ -108,8 +111,8 @@ export function TruthView({
       {active.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-12 text-center">
           <ShieldCheck size={28} className="mx-auto mb-3 text-text-faint" />
-          <p className="text-[14px] text-text-primary">لا توجد بيانات في هذه الفترة</p>
-          <p className="mt-1 text-[12.5px] text-text-muted">اربط حساباً إعلانياً واختر حملاتك لتبدأ المقارنة.</p>
+          <p className="text-[14px] text-text-primary">{tr("noData")}</p>
+          <p className="mt-1 text-[12.5px] text-text-muted">{tr("noDataSub")}</p>
         </div>
       ) : (
         <>
@@ -118,30 +121,30 @@ export function TruthView({
                    style={{ animationDelay: "80ms" }}>
             <div className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:rtl:divide-x-reverse">
               <div className="p-5">
-                <div className="text-[12px] text-text-muted">ما تعلنه المنصات</div>
+                <div className="text-[12px] text-text-muted">{tr("reportedTotal")}</div>
                 <div className="mt-1 font-mono text-[26px] font-semibold text-text-muted">{num(totals.reported)}</div>
-                <div className="mt-0.5 text-[11.5px] text-text-faint">تحويلاً مُعلناً</div>
+                <div className="mt-0.5 text-[11.5px] text-text-faint">{tr("reportedUnit")}</div>
               </div>
               <div className="p-5">
-                <div className="text-[12px] text-text-muted">ما تأكّد فعلاً</div>
+                <div className="text-[12px] text-text-muted">{tr("verifiedTotal")}</div>
                 <div className="mt-1 font-mono text-[26px] font-semibold text-verified">{num(totals.verified)}</div>
                 <div className="mt-0.5 text-[11.5px] text-text-faint">
-                  نسبة التحقّق {Math.round(overallRate)}%
+                  {tr("verificationRate")} {Math.round(overallRate)}%
                 </div>
               </div>
               <div className="p-5">
-                <div className="text-[12px] text-text-muted">إنفاق بلا نتيجة مؤكدة</div>
+                <div className="text-[12px] text-text-muted">{tr("wastedSpend")}</div>
                 <div className="mt-1 font-mono text-[26px] font-semibold text-critical">
                   {num(totals.wasted)} <span className="text-[15px]">{currency}</span>
                 </div>
-                <div className="mt-0.5 text-[11.5px] text-text-faint">خلال {days} يوماً</div>
+                <div className="mt-0.5 text-[11.5px] text-text-faint">{tr("during")} {days} {tr("days")}</div>
               </div>
             </div>
 
             {/* شريط الفجوة */}
             <div className="border-t border-border px-5 py-4">
               <div className="mb-2 flex items-center justify-between text-[11.5px] text-text-muted">
-                <span>المتحقق منه</span><span>المُعلن</span>
+                <span>{tr("verifiedLabel")}</span><span>{tr("reportedLabel")}</span>
               </div>
               <div className="h-3 overflow-hidden rounded-full bg-surface-raised">
                 <div className="h-full rounded-full bg-verified transition-all duration-700"
@@ -171,7 +174,7 @@ export function TruthView({
                       <div>
                         <div className="text-[14px] font-semibold text-text-primary">{meta.name}</div>
                         <div className="text-[11.5px] text-text-muted">
-                          {num(p.cost)} {currency} إنفاق · {num(p.clicks)} نقرة
+                          {num(p.cost)} {currency} {tr("spend")} · {num(p.clicks)} {tr("clicksUnit")}
                         </div>
                       </div>
                     </div>
@@ -179,7 +182,7 @@ export function TruthView({
                     <div className="flex items-center gap-2">
                       <span className="rounded-full px-2.5 py-1 text-[11.5px] font-medium"
                             style={{ background: `color-mix(in srgb, ${tone} 13%, transparent)`, color: tone }}>
-                        تحقّق {p.verificationRate}%
+                        {tr("verifiedShort")} {p.verificationRate}%
                       </span>
                       {change !== null && (
                         <span className="flex items-center gap-0.5 text-[11.5px] font-medium"
@@ -194,15 +197,15 @@ export function TruthView({
                   <div className="grid gap-4 p-4 md:grid-cols-[1fr_1.1fr]">
                     {/* المقارنات */}
                     <div className="flex flex-col gap-2.5">
-                      <CompareRow label="التحويلات" reported={num(p.reported)} verified={num(p.verified)} />
+                      <CompareRow label={tr("conversions")} reported={num(p.reported)} verified={num(p.verified)} />
                       <CompareRow
-                        label="تكلفة العميل"
+                        label={tr("costPerCustomer")}
                         reported={p.cplReported !== null ? `${p.cplReported} ${currency}` : "—"}
                         verified={p.cplVerified !== null ? `${p.cplVerified} ${currency}` : "—"}
                         invert
                       />
                       <div className="flex items-center justify-between rounded-xl bg-surface-raised px-3 py-2.5">
-                        <span className="text-[12px] text-text-muted">تضخيم المنصة</span>
+                        <span className="text-[12px] text-text-muted">{tr("inflation")}</span>
                         <span className="font-mono text-[13px] font-semibold"
                               style={{ color: p.inflationRate > 40 ? "var(--critical)" : "var(--text-primary)" }}>
                           {p.inflationRate}%
@@ -210,7 +213,7 @@ export function TruthView({
                       </div>
                       {p.wastedSpend > 0 && (
                         <div className="flex items-center justify-between rounded-xl border border-critical/25 bg-critical/[0.05] px-3 py-2.5">
-                          <span className="text-[12px] text-text-muted">إنفاق بلا نتيجة مؤكدة</span>
+                          <span className="text-[12px] text-text-muted">{tr("wastedSpend")}</span>
                           <span className="font-mono text-[13px] font-semibold text-critical">
                             {num(p.wastedSpend)} {currency}
                           </span>
@@ -222,10 +225,10 @@ export function TruthView({
                     <div className="rounded-xl border border-border bg-surface-raised p-3">
                       <div className="mb-2 flex items-center gap-3 text-[11px] text-text-muted">
                         <span className="flex items-center gap-1.5">
-                          <span className="h-0.5 w-4 rounded-full bg-verified" /> المتحقق
+                          <span className="h-0.5 w-4 rounded-full bg-verified" /> {tr("verifiedLegend")}
                         </span>
                         <span className="flex items-center gap-1.5">
-                          <span className="h-0.5 w-4 rounded-full bg-text-faint" style={{ opacity: .7 }} /> المُعلن
+                          <span className="h-0.5 w-4 rounded-full bg-text-faint" style={{ opacity: .7 }} /> {tr("reportedLegend")}
                         </span>
                       </div>
                       <GapChart reported={p.reportedSeries} verified={p.verifiedSeries} />

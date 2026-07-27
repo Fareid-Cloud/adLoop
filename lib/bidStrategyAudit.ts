@@ -159,19 +159,19 @@ export function estimateGoogleLearningPhase(
 
   if (threshold === null) {
     return { ...base, threshold: null, status: "NOT_APPLICABLE",
-      message: "استراتيجية المزايدة دي يدوية - مفيش فترة تعلّم تلقائية تتفحص." };
+      message: "استراتيجية المزايدة هذه يدوية - لا توجد فترة تعلّم تلقائية لفحصها." };
   }
 
   if (conversionsLast30Days >= threshold) {
     return { ...base, threshold, status: "LIKELY_STABLE",
-      message: `${conversionsLast30Days} تحويل خلال آخر 30 يوم - فوق حد ${biddingStrategyType} (${threshold}) - على الأرجح خارج فترة التعلّم.` };
+      message: `${conversionsLast30Days} تحويل خلال آخر 30 يوماً - فوق حد ${biddingStrategyType} (${threshold}) - على الأرجح خارج فترة التعلّم.` };
   }
 
   const gapNeeded = threshold - conversionsLast30Days;
   return {
     ...base, threshold,
     status: conversionsLast30Days < threshold / 2 ? "LEARNING_LIMITED" : "LEARNING",
-    message: `${conversionsLast30Days} تحويل خلال آخر 30 يوم - محتاجة ${gapNeeded} تحويل إضافي عشان توصل لحد ${biddingStrategyType} (${threshold}).`,
+    message: `${conversionsLast30Days} تحويل خلال آخر 30 يوماً - تحتاج ${gapNeeded} تحويل إضافي للوصول إلى حدّ ${biddingStrategyType} (${threshold}).`,
   };
 }
 
