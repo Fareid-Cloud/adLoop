@@ -72,35 +72,35 @@ export default async function CustomersPage() {
 
   if (vipAtRisk) {
     actions.push({
-      titleAr: `تواصل مع ${vipAtRisk.count} من كبار عملائك هذا الأسبوع`,
-      reasonAr: `متوسط إنفاق الواحد منهم ${fmtNum(vipAtRisk.avgLtv)} ${c}، ولم يطلبوا منذ أكثر من ٩٠ يوماً. فقدان واحد منهم يعادل فقدان عشرات العملاء العاديين.`,
-      impactAr: `قيمة معرَّضة للفقد: ${fmtNum(vipAtRisk.revenue)} ${c}`,
+      titleAr: tr("actVip", { count: vipAtRisk.count }),
+      reasonAr: tr("actVipReason", { ltv: `${fmtNum(vipAtRisk.avgLtv)} ${c}` }),
+      impactAr: tr("actVipImpact", { value: `${fmtNum(vipAtRisk.revenue)} ${c}` }),
       tone: "critical",
     });
   }
   if (atRisk) {
     actions.push({
-      titleAr: `حملة استرجاع لـ${atRisk.count} عميل متوقّف`,
-      reasonAr: "اشتروا أكثر من مرة ثم توقّفوا — أثبتوا أنهم يحبّون منتجك، فاسترجاعهم أرخص بكثير من جلب عميل جديد بالكامل.",
-      impactAr: `قيمة محتملة: ${fmtNum(atRisk.avgLtv * atRisk.count * 0.15)} ${c}`,
+      titleAr: tr("actWinBack", { count: atRisk.count }),
+      reasonAr: tr("actWinBackReason"),
+      impactAr: tr("actWinBackImpact", { value: `${fmtNum(atRisk.avgLtv * atRisk.count * 0.15)} ${c}` }),
       tone: "warning",
       href: "/dashboard/ecommerce/opportunities",
-      hrefLabelAr: "شوف الفرص",
+      hrefLabelAr: t(locale, "profit.seeOpportunities"),
     });
   }
   if (highReturners) {
     actions.push({
-      titleAr: `راجع ما يطلبه ${highReturners.count} من كثيري الإرجاع`,
-      reasonAr: "٤٠% من طلباتهم أو أكثر ارتدّت. غالباً السبب وصف منتج أو مقاس غير دقيق، لا سلوك عميل — والإصلاح يفيد كل عملائك.",
+      titleAr: tr("actReturners", { count: highReturners.count }),
+      reasonAr: tr("actReturnersReason"),
       tone: "critical",
       href: "/dashboard/ecommerce/products",
-      hrefLabelAr: "المنتجات",
+      hrefLabelAr: t(locale, "store.productsNav"),
     });
   }
   if (analytics.repeatPurchaseRatePct !== null && analytics.repeatPurchaseRatePct < 20) {
     actions.push({
-      titleAr: "معدّل الشراء المتكرّر منخفض",
-      reasonAr: `${analytics.repeatPurchaseRatePct}% فقط من عملائك اشتروا أكثر من مرة. أنت تدفع لجلب عميل جديد في كل عملية بيع تقريباً — وهذا أغلى نموذج ممكن.`,
+      titleAr: tr("actLowRepeat"),
+      reasonAr: tr("actLowRepeatReason", { pct: analytics.repeatPurchaseRatePct ?? 0 }),
       tone: "warning",
     });
   }

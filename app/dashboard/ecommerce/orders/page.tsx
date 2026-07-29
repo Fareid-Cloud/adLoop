@@ -83,9 +83,9 @@ export default async function OrdersPage() {
   const delayed = byKey.get("delayed");
   if (delayed && delayed.count > 0) {
     actions.push({
-      titleAr: `نفّذ ${delayed.count} طلباً متأخّراً اليوم`,
-      reasonAr: "التأخير هو السبب المباشر الأول للإلغاء والمرتجعات. كل يوم إضافي يرفع احتمال خسارة الطلب كاملاً.",
-      impactAr: `قيمة معرَّضة للخطر: ${fmtNum(delayed.value)} ${c}`,
+      titleAr: tr("actDelayed", { count: delayed.count }),
+      reasonAr: tr("actDelayedReason"),
+      impactAr: tr("atRiskValue", { value: `${fmtNum(delayed.value)} ${c}` }),
       tone: "critical",
     });
   }
@@ -95,11 +95,11 @@ export default async function OrdersPage() {
     const pct = Math.round((returned.count / quality.totalOrders) * 100);
     if (pct >= 10) {
       actions.push({
-        titleAr: `معدّل الإرجاع ${pct}% — مرتفع`,
-        reasonAr: `${fmtNum(returned.value)} ${c} عادت مرتجعة. راجع أكثر المنتجات إرجاعاً: أغلب الأسباب وصف أو مقاس، لا عيب في المنتج نفسه.`,
+        titleAr: tr("actReturnRate", { pct }),
+        reasonAr: tr("actReturnRateReason", { value: `${fmtNum(returned.value)} ${c}` }),
         tone: "critical",
         href: "/dashboard/ecommerce/products",
-        hrefLabelAr: "المنتجات",
+        hrefLabelAr: t(locale, "store.productsNav"),
       });
     }
   }
@@ -107,9 +107,9 @@ export default async function OrdersPage() {
   const risky = byKey.get("risky");
   if (risky && risky.count > 0) {
     actions.push({
-      titleAr: `راجع ${risky.count} طلباً قبل شحنه`,
-      reasonAr: "إشارات مخاطرة مجتمعة. مكالمة تأكيد واحدة قبل الشحن أرخص من شحنة ترتدّ بتكلفة ذهاب وعودة.",
-      impactAr: `قيمة معرَّضة: ${fmtNum(risky.value)} ${c}`,
+      titleAr: tr("actRisky", { count: risky.count }),
+      reasonAr: tr("actRiskyReason"),
+      impactAr: tr("atRiskValue", { value: `${fmtNum(risky.value)} ${c}` }),
       tone: "warning",
     });
   }
@@ -117,8 +117,8 @@ export default async function OrdersPage() {
   const cancelled = byKey.get("cancelled");
   if (cancelled && cancelled.count > 0) {
     actions.push({
-      titleAr: `${cancelled.count} طلب ملغى — تكلفتها إعلانية بحتة`,
-      reasonAr: "دفعت لجلب هؤلاء العملاء ولم تبع لهم شيئاً. راجع سبب الإلغاء الأشيع: غالباً سعر شحن مفاجئ عند الدفع أو مدة توصيل طويلة.",
+      titleAr: tr("actCancelled", { count: cancelled.count }),
+      reasonAr: tr("actCancelledReason"),
       tone: "warning",
     });
   }

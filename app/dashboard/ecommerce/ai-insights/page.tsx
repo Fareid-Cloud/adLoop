@@ -17,7 +17,7 @@ import { getProfitJourney, getStoreOverview } from "@/lib/ecommerce/storeIntelli
 import { getEcommerceOverview } from "@/lib/ecommerce/productPerformance";
 import { buildOpportunities } from "@/lib/ecommerce/opportunities";
 import { HelpCircle, ArrowLeft } from "lucide-react";
-import { tText, type Locale } from "@/lib/i18n/dictionary";
+import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -34,8 +34,11 @@ export default async function AiInsightsPage() {
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   const tx = (item: { key: string; vars?: Record<string, string | number> }) => tText(locale, "oppText", item);
+  const tr = (k: string, v?: Record<string, string | number>) => t(locale, `insightsPage.${k}`, v);
+  const tc = (k: string, v?: Record<string, string | number>) => t(locale, `common.${k}`, v);
+
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -43,7 +46,7 @@ export default async function AiInsightsPage() {
     orderBy: { createdAt: "asc" },
   });
   if (!workspace) {
-    return <DataGate titleAr="لا توجد مساحة عمل بعد" reasonAr="ارجع إلى «لمحة»." href="/dashboard" hrefLabelAr="إلى لمحة" />;
+    return <DataGate titleAr={tc("noWorkspace")} reasonAr={tc("noWorkspaceHint")} href="/dashboard" hrefLabelAr={tc("toHome")} />;
   }
 
   const [journey, prevJourney, overview, products, opps] = await Promise.all([
@@ -60,13 +63,13 @@ export default async function AiInsightsPage() {
     return (
       <div className="mx-auto max-w-4xl">
         <EcomHeader
-          title="تحليلات ذكية"
-          subtitle="أسئلة محدَّدة بإجابات محسوبة من أرقامك."
+          title={tr("title")}
+          subtitle={tr("subtitleShort")}
           storeName={workspace.name}
         />
         <DataGate
-          titleAr="لا توجد بيانات كافية للإجابة بعد"
-          reasonAr="الإجابات هنا محسوبة من مبيعاتك وتكاليفك الحقيقية. اربط متجرك وأضف منتجاتك ليبدأ التحليل."
+          titleAr={tr("noneTitle")}
+          reasonAr={tr("noneReason")}
         />
       </div>
     );
@@ -93,27 +96,27 @@ export default async function AiInsightsPage() {
 
     const culprit = changes[0];
     answers.push({
-      question: "لماذا انخفض الربح؟",
+      question: tr("qProfitDrop"),
       answer: culprit
-        ? `صافي ربحك تراجع ${fmtNum(Math.abs(profitDelta))} ${c} عن الفترة السابقة. أكبر بند نما هو «${culprit.label}» بنسبة ${Math.round(culprit.growth)}%.`
-        : `صافي ربحك تراجع ${fmtNum(Math.abs(profitDelta))} ${c}، والسبب انخفاض الإيراد لا ارتفاع التكاليف.`,
+        ? tr("aProfitDrop", { amount: `${fmtNum(Math.abs(profitDelta))} ${c}`, label: culprit.label, pct: Math.round(culprit.growth) })
+        : tr("aProfitDropNoCulprit", { amount: `${fmtNum(Math.abs(profitDelta))} ${c}` }),
       evidence: [
-        `صافي الربح الآن: ${fmtNum(journey.netProfit)} ${c}`,
-        `الفترة السابقة: ${fmtNum(prevPeriodProfit)} ${c}`,
-        ...(culprit ? [`«${culprit.label}» يستهلك الآن ${fmtNum(culprit.amount)} ${c}`] : []),
+        tr("evNow", { value: `${fmtNum(journey.netProfit)} ${c}` }),
+        tr("evPrev", { value: `${fmtNum(prevPeriodProfit)} ${c}` }),
+        ...(culprit ? [tr("evConsumes", { label: culprit.label, value: `${fmtNum(culprit.amount)} ${c}` })] : []),
       ],
       href: "/dashboard/ecommerce/profit",
-      hrefLabel: "افتح رحلة الربح",
+      hrefLabel: t(locale, "store.openProfit"),
       tone: "critical",
     });
   } else if (prevPeriodProfit !== 0) {
     answers.push({
-      question: "كيف يتحرّك ربحي؟",
-      answer: `صافي ربحك ارتفع ${fmtNum(profitDelta)} ${c} عن الفترة السابقة. الاتجاه إيجابي.`,
+      question: tr("qProfitMove"),
+      answer: tr("aProfitUp", { amount: `${fmtNum(profitDelta)} ${c}` }),
       evidence: [
-        `الآن: ${fmtNum(journey.netProfit)} ${c}`,
-        `السابق: ${fmtNum(prevPeriodProfit)} ${c}`,
-        `الهامش الصافي: ${journey.netMarginPct}%`,
+        tr("evNow", { value: `${fmtNum(journey.netProfit)} ${c}` }),
+        tr("evPrev", { value: `${fmtNum(prevPeriodProfit)} ${c}` }),
+        tr("evNetMargin", { pct: journey.netMarginPct ?? 0 }),
       ],
       tone: "positive",
     });
@@ -125,15 +128,15 @@ export default async function AiInsightsPage() {
     .sort((a, b) => b.totalProfit - a.totalProfit);
 
   answers.push({
-    question: "أي منتج يجب أن أوسّعه؟",
+    question: tr("qScale"),
     answer: scalable.length
-      ? `«${scalable[0].name}» — ربح ${fmtNum(scalable[0].totalProfit)} ${c} بهامش ${scalable[0].marginPct}% ومعدّل إرجاع ${scalable[0].returnRatePct}% عبر ${scalable[0].unitsSold} وحدة. أداء مُثبَت لا صدفة.`
-      : "لا يوجد منتج استوفى شروط التوسيع بعد: يلزم ربح موجب مع عيّنة كافية ومعدّل إرجاع منخفض. التوسيع بعيّنة صغيرة مضاعفة للمخاطرة لا للربح.",
+      ? tr("aScale", { name: scalable[0].name, profit: `${fmtNum(scalable[0].totalProfit)} ${c}`, margin: scalable[0].marginPct, returns: scalable[0].returnRatePct, units: scalable[0].unitsSold })
+      : tr("aScaleNone"),
     evidence: scalable.slice(0, 3).map(
-      (p) => `${p.name}: ربح ${fmtNum(p.totalProfit)} ${c} • هامش ${p.marginPct}% • ${p.unitsSold} وحدة`
+      (p) => `${p.name}: ${fmtNum(p.totalProfit)} ${c} • ${p.marginPct}% • ${p.unitsSold}`
     ),
     href: scalable.length ? "/dashboard/campaigns/creatives" : "/dashboard/ecommerce/products",
-    hrefLabel: scalable.length ? "زِد ميزانيته" : "راجع منتجاتك",
+    hrefLabel: scalable.length ? tr("aScaleCta") : tr("aScaleCtaNone"),
     tone: scalable.length ? "positive" : "neutral",
   });
 
@@ -143,34 +146,34 @@ export default async function AiInsightsPage() {
     .sort((a, b) => a.profitPerUnit * a.unitsSold - b.profitPerUnit * b.unitsSold);
 
   answers.push({
-    question: "أي منتج يخسر مالاً؟",
+    question: tr("qLosing"),
     answer: losers.length
-      ? `${losers.length} منتج يبيع تحت التعادل. أكبرها «${losers[0].name}»: يخسر ${fmtNum(Math.abs(losers[0].profitPerUnit))} ${c} في كل وحدة، وباع ${losers[0].unitsSold} وحدة — أي ${fmtNum(Math.abs(losers[0].profitPerUnit) * losers[0].unitsSold)} ${c} نزيفاً.`
-      : "لا يوجد منتج يبيع تحت التعادل. كل منتجاتك تحقّق ربحاً موجباً بعد التكاليف الكاملة.",
+      ? tr("aLosing", { count: losers.length, name: losers[0].name, perUnit: `${fmtNum(Math.abs(losers[0].profitPerUnit))} ${c}`, units: losers[0].unitsSold, total: `${fmtNum(Math.abs(losers[0].profitPerUnit) * losers[0].unitsSold)} ${c}` })
+      : tr("aLosingNone"),
     evidence: losers
       .slice(0, 3)
-      .map((p) => `${p.name}: −${fmtNum(Math.abs(p.profitPerUnit))} ${c} للوحدة × ${p.unitsSold} وحدة`),
+      .map((p) => `${p.name}: −${fmtNum(Math.abs(p.profitPerUnit))} ${c} × ${p.unitsSold}`),
     href: losers.length ? "/dashboard/ecommerce/pricing-intelligence" : undefined,
-    hrefLabel: "صحّح التسعير",
+    hrefLabel: tr("aLosingCta"),
     tone: losers.length ? "critical" : "positive",
   });
 
   // ==== ٤) ماذا أفعل اليوم؟ ====
   const top = opps.opportunities[0];
   answers.push({
-    question: "ماذا يجب أن أغيّر اليوم؟",
+    question: tr("qToday"),
     answer: top
       ? `${tx(top.title)}. ${tx(top.action)}`
-      : "لا يوجد إجراء عاجل اليوم. أرقامك ضمن المعقول، وأفضل استثمار لوقتك الآن هو توسيع ما يعمل لا إصلاح ما لا يعمل.",
+      : tr("aTodayNone"),
     evidence: top
       ? [
-          `الأثر المقدَّر: ${fmtNum(top.estimatedMonthlyProfit)} ${c} شهرياً`,
+          tr("evImpact", { value: `${fmtNum(top.estimatedMonthlyProfit)} ${c}` }),
           tx(top.confidenceReason),
           ...opps.opportunities.slice(1, 3).map((o) => `${tx(o.title)}: +${fmtNum(o.estimatedMonthlyProfit)} ${c}`),
         ]
       : [],
     href: "/dashboard/ecommerce/opportunities",
-    hrefLabel: "كل الفرص",
+    hrefLabel: tr("allOpportunities"),
     tone: top ? "warning" : "positive",
   });
 
@@ -184,14 +187,12 @@ export default async function AiInsightsPage() {
   return (
     <div className="mx-auto max-w-4xl">
       <EcomHeader
-        title="تحليلات ذكية"
-        subtitle="أسئلة محدَّدة بإجابات محسوبة من أرقامك أنت — لا تلخيص عام ولا رأي يناقض بقية الصفحات."
+        title={tr("title")}
+        subtitle={tr("subtitle")}
         storeName={workspace.name}
       />
 
-      <SectionHeading hint="كل إجابة تعرض الأرقام التي بُنيت عليها. الإجابة بلا دليل رأي لا تحليل.">
-        الأسئلة الأربعة
-      </SectionHeading>
+      <SectionHeading hint={tr("fourQuestionsHint")}>{tr("fourQuestions")}</SectionHeading>
 
       <div className="flex flex-col gap-3">
         {answers.map((a, i) => (
@@ -205,7 +206,7 @@ export default async function AiInsightsPage() {
 
             {a.evidence.length > 0 && (
               <div className="mt-3 rounded-xl border border-border bg-surface/70 p-3">
-                <div className="mb-1.5 text-[11.5px] font-medium text-text-faint">الأرقام التي بُنيت عليها</div>
+                <div className="mb-1.5 text-[11.5px] font-medium text-text-faint">{tr("evidence")}</div>
                 <ul className="flex flex-col gap-1">
                   {a.evidence.map((e, j) => (
                     <li key={j} className="text-[12px] tabular-nums text-text-muted">
@@ -230,8 +231,7 @@ export default async function AiInsightsPage() {
       </div>
 
       <p className="mt-6 text-[11.5px] leading-relaxed text-text-faint">
-        هذه الإجابات محسوبة من قاعدة بياناتك مباشرة، لا مولَّدة بنموذج لغوي — فلا تستهلك رصيد الذكاء
-        الاصطناعي، ولا تختلف نتيجتها بين تحديث وآخر ما لم تتغيّر أرقامك.
+        {tr("footnote")}
       </p>
     </div>
   );

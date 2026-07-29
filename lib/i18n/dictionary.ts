@@ -445,6 +445,7 @@ export const dictionary = {
       biggestLeak: "أكبر بند يستهلك إيرادك: {label}",
       biggestLeakReason: "يلتهم {pct}% من إيرادك ({amount}). أي خفض هنا يظهر في صافي الربح مباشرة.",
       openProfit: "افتح رحلة الربح",
+      productsNav: "المنتجات",
     },
     // ==== الأرباح ====
     profit: {
@@ -611,6 +612,16 @@ export const dictionary = {
       colLastOrder: "آخر طلب",
       anonymous: "عميل #{n}",
       healthy: "قاعدة عملائك صحّية: تكرار شراء جيد ولا شريحة معرَّضة للفقد.",
+      actVip: "تواصل مع {count} من كبار عملائك هذا الأسبوع",
+      actVipReason: "متوسط إنفاق الواحد منهم {ltv}، ولم يطلبوا منذ أكثر من ٩٠ يوماً. فقدان واحد منهم يعادل فقدان عشرات العملاء العاديين.",
+      actVipImpact: "قيمة معرَّضة للفقد: {value}",
+      actWinBack: "حملة استرجاع لـ{count} عميل متوقّف",
+      actWinBackReason: "اشتروا أكثر من مرة ثم توقّفوا — أثبتوا أنهم يحبّون منتجك، فاسترجاعهم أرخص بكثير من جلب عميل جديد بالكامل.",
+      actWinBackImpact: "قيمة محتملة: {value}",
+      actReturners: "راجع ما يطلبه {count} من كثيري الإرجاع",
+      actReturnersReason: "٤٠% من طلباتهم أو أكثر ارتدّت. غالباً السبب وصف منتج أو مقاس غير دقيق، لا سلوك عميل — والإصلاح يفيد كل عملائك.",
+      actLowRepeat: "معدّل الشراء المتكرّر منخفض",
+      actLowRepeatReason: "{pct}% فقط من عملائك اشتروا أكثر من مرة. أنت تدفع لجلب عميل جديد في كل عملية بيع تقريباً — وهذا أغلى نموذج ممكن.",
     },
     // ==== الطلبات ====
     orders: {
@@ -636,6 +647,15 @@ export const dictionary = {
       stateCancelled: "ملغى",
       stateReturned: "مرتجع",
       healthy: "جودة طلباتك جيدة: لا تأخير ولا معدّل إرجاع مقلق في هذه الفترة.",
+      actDelayed: "نفّذ {count} طلباً متأخّراً اليوم",
+      actDelayedReason: "التأخير هو السبب المباشر الأول للإلغاء والمرتجعات. كل يوم إضافي يرفع احتمال خسارة الطلب كاملاً.",
+      atRiskValue: "قيمة معرَّضة للخطر: {value}",
+      actReturnRate: "معدّل الإرجاع {pct}% — مرتفع",
+      actReturnRateReason: "{value} عادت مرتجعة. راجع أكثر المنتجات إرجاعاً: أغلب الأسباب وصف أو مقاس، لا عيب في المنتج نفسه.",
+      actRisky: "راجع {count} طلباً قبل شحنه",
+      actRiskyReason: "إشارات مخاطرة مجتمعة. مكالمة تأكيد واحدة قبل الشحن أرخص من شحنة ترتدّ بتكلفة ذهاب وعودة.",
+      actCancelled: "{count} طلب ملغى — تكلفتها إعلانية بحتة",
+      actCancelledReason: "دفعت لجلب هؤلاء العملاء ولم تبع لهم شيئاً. راجع سبب الإلغاء الأشيع: غالباً سعر شحن مفاجئ عند الدفع أو مدة توصيل طويلة.",
     },
     // ==== نصوص دلاء المخزون ====
     invText: {
@@ -1169,6 +1189,7 @@ export const dictionary = {
       biggestLeak: "Biggest drain on your revenue: {label}",
       biggestLeakReason: "It consumes {pct}% of your revenue ({amount}). Any reduction here shows up directly in net profit.",
       openProfit: "Open profit journey",
+      productsNav: "Products",
     },
     // ==== Profit ====
     profit: {
@@ -1335,6 +1356,16 @@ export const dictionary = {
       colLastOrder: "Last order",
       anonymous: "Customer #{n}",
       healthy: "Your customer base is healthy: good repeat rate and no segment at risk of leaving.",
+      actVip: "Reach out to {count} of your top customers this week",
+      actVipReason: "Each spends {ltv} on average and none has ordered in over 90 days. Losing one of them costs you what dozens of ordinary customers are worth.",
+      actVipImpact: "Value at risk: {value}",
+      actWinBack: "A win-back campaign for {count} lapsed customers",
+      actWinBackReason: "They bought more than once and then stopped — they have already shown they like your product, so bringing them back costs far less than acquiring someone new.",
+      actWinBackImpact: "Potential value: {value}",
+      actReturners: "Look at what {count} frequent returners are ordering",
+      actReturnersReason: "40% or more of their orders came back. Usually an inaccurate description or size rather than customer behaviour — and fixing it helps every customer.",
+      actLowRepeat: "Your repeat purchase rate is low",
+      actLowRepeatReason: "Only {pct}% of your customers bought more than once. You are paying to acquire someone new on nearly every sale — the most expensive model there is.",
     },
     // ==== Orders ====
     orders: {
@@ -1360,6 +1391,15 @@ export const dictionary = {
       stateCancelled: "Cancelled",
       stateReturned: "Returned",
       healthy: "Your order quality is good: no delays and no worrying return rate this period.",
+      actDelayed: "Fulfil {count} delayed orders today",
+      actDelayedReason: "Delay is the single biggest direct cause of cancellations and returns. Every extra day raises the chance of losing the order entirely.",
+      atRiskValue: "Value at risk: {value}",
+      actReturnRate: "A {pct}% return rate — high",
+      actReturnRateReason: "{value} came back. Look at your most-returned products: usually a description or sizing issue rather than a defect.",
+      actRisky: "Check {count} orders before shipping",
+      actRiskyReason: "Combined risk signals. One confirmation call before shipping costs less than a parcel that comes back with round-trip shipping.",
+      actCancelled: "{count} cancelled orders — a purely advertising cost",
+      actCancelledReason: "You paid to bring these customers in and sold them nothing. Look at the most common cause: usually a surprise shipping charge at checkout, or a long delivery window.",
     },
     // ==== Inventory bucket copy ====
     invText: {
