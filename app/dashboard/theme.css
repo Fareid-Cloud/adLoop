@@ -272,6 +272,11 @@ body {
   display: flex;
   justify-content: space-between;
   font-family: var(--font-mono);
+  /* أرقام متساوية العرض: تصطفّ رأسياً في الجداول ولا "ترقص" عند تغيّر
+     القيمة، مع أشكال أرقام كاملة الارتفاع تليق بالمبالغ المالية */
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  letter-spacing: -0.01em;
   font-size: 12px;
 }
 

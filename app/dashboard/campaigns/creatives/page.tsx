@@ -6,9 +6,12 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
-import { computeCreativePerformance, rankCreatives, classifyScaleKillWatch, CreativePerformance, getWorkspaceCreativePerformances } from "@/lib/creativeAnalysis";
+import { rankCreatives, CreativePerformance, getWorkspaceCreativePerformances } from "@/lib/creativeAnalysis";
 import { ImageQualityButton } from "./ImageQualityButton";
 import { detectCreativeFatigue } from "@/lib/aiInsights";
+import { buildAdDecisions } from "@/lib/adDecisions";
+import { AdDecisionTable } from "@/app/components/AdDecisionTable";
+import { getFrequencyByPlatform } from "@/lib/frequencyCheck";
 
 export default async function CreativesPage() {
   const user = await getSessionUserFromCookies();
@@ -64,40 +67,38 @@ export default async function CreativesPage() {
   }
 
   const ranking = rankCreatives(performances, historicalCtrByAdId);
-  const decisions = classifyScaleKillWatch(performances, daysActiveByAdId, fatiguedAdIds, workspace.profitMarginPct);
-  const actionableDecisions = decisions
-    .filter((d) => d.decision === "SCALE" || d.decision === "KILL")
-    .sort((a, b) => Math.abs(b.divergencePct) - Math.abs(a.divergencePct));
+
+  // معدّل التكرار إشارة حيّة من المنصة (ميتا نداء مباشر، تيك توك من بيانات
+  // مخزّنة). فشلها لا يجوز أن يُسقط الصفحة - القرار يبقى صالحاً بدونها،
+  // فقط دون طبقة التشبّع.
+  let frequencyByPlatform: Record<string, number> = {};
+  try {
+    frequencyByPlatform = await getFrequencyByPlatform(workspace.id);
+  } catch (err) {
+    console.error("تعذّر جلب معدّل التكرار:", err);
+  }
+
+  const adDecisions = await buildAdDecisions({
+    workspaceId: workspace.id,
+    frequencyByPlatform,
+  });
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-6xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-6 text-[26px] font-semibold text-text-primary">أداء الإعلانات الفردية</h1>
 
-      {actionableDecisions.length > 0 && (
-        <>
-          <SectionTitle>القرار — Scale ولا Kill؟</SectionTitle>
-          <p className="mb-3 text-xs text-text-faint">
-            مقارنة بمتوسط تكلفة العميل في حسابك أنت (مش معيار خارجي) - محتاجة عينة 5 تحويلات على الأقل.
-          </p>
-          <div className="mb-6 flex flex-col gap-2">
-            {actionableDecisions.map((d) => (
-              <div
-                key={d.adId}
-                className={`rounded-2xl p-4 ${d.decision === "SCALE" ? "bg-verified/10" : "bg-critical/10"}`}
-              >
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="text-sm font-medium text-text-primary">{d.adName ?? d.adId}</span>
-                  <span className={`text-xs font-semibold ${d.decision === "SCALE" ? "text-verified" : "text-critical"}`}>
-                    {d.decision === "SCALE" ? "Scale ↑" : "Kill ✕"}
-                  </span>
-                </div>
-                <p className="text-xs text-text-faint">{d.reason}</p>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+      <SectionTitle>القرار — توسيع، إبقاء، أم إيقاف؟</SectionTitle>
+      <p className="mb-3 text-xs text-text-faint">
+        كل زرّ ينفّذ فعلياً على المنصة نفسها. مقارنةً بمتوسط تكلفة العميل في حسابك أنت، لا بمعيار خارجي.
+      </p>
+      <div className="mb-8">
+        <AdDecisionTable
+          decisions={adDecisions}
+          workspaceId={workspace.id}
+          currency={workspace.currency}
+        />
+      </div>
 
       <SectionTitle>الأفضل أداءً</SectionTitle>
       <CreativeGrid items={ranking.best} accentColor="verified" />

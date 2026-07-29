@@ -105,6 +105,98 @@ export function rankCreatives(
   };
 }
 
+// ==================== أفضل إعلان وثاني أفضل إعلان ====================
+//
+// "أفضل إعلان" ليس أرخص تكلفة في الجدول. أرخص تكلفة بتحويلين محظوظين ليست
+// أفضل شيء لديك - هي أقل شيء نعرف عنه. القاعدة هنا تشترط أربعة أمور معاً
+// قبل أن يُسمّى إعلان "الأفضل":
+//   ١) عينة حقيقية (٣ تحويلات على الأقل)
+//   ٢) إنفاق يكفي للحكم (قيمة تحويل متوسط واحد على الأقل)
+//   ٣) امتداد زمني (٣ أيام مختلفة على الأقل، لا يوم حظّ واحد)
+//   ٤) ألّا يكون في حالة تعب إحصائي مؤكَّد
+// ثم يُرتَّب المؤهَّلون بتكلفة العميل، ويؤكَّد الترتيب بالعائد حين يتوفّر:
+// إعلان أرخص بعائد أضعف بكثير ليس أفضل فعلاً، بل أرخص وأفرغ.
+
+const MIN_DAYS_ACTIVE_FOR_BEST = 3;
+/** فارق أقل من ذلك بين الأول والثاني لا يُعدّ تفوّقاً حقيقياً بل تذبذباً */
+const MEANINGFUL_LEAD_PCT = 10;
+
+export interface TopCreativePick {
+  best: CreativePerformance | null;
+  runnerUp: CreativePerformance | null;
+  /** نسبة تفوّق الأول على الثاني في تكلفة العميل */
+  leadPct: number | null;
+  /** هل الفارق ذو دلالة أم أن الاثنين متعادلان عملياً */
+  isDecisiveLead: boolean;
+  /** عدد الإعلانات التي اجتازت شروط الأهلية */
+  eligibleCount: number;
+  /** سبب عدم وجود ترشيح - يُعرض بدل إظهار فراغ أو رقم مضلِّل */
+  insufficientReason: string | null;
+}
+
+export function selectTopTwoCreatives(
+  creatives: CreativePerformance[],
+  daysActiveByAdId: Map<string, number>,
+  fatiguedAdIds: Set<string>
+): TopCreativePick {
+  const empty = (reason: string): TopCreativePick => ({
+    best: null, runnerUp: null, leadPct: null, isDecisiveLead: false,
+    eligibleCount: 0, insufficientReason: reason,
+  });
+
+  if (creatives.length === 0) return empty("لا توجد بيانات على مستوى الإعلان الفردي بعد.");
+
+  const minCost = getMinCostForRanking(creatives);
+  const convsOf = (c: CreativePerformance) =>
+    c.usingVerifiedData ? c.verifiedConversions! : c.rawConversions;
+
+  const eligible = creatives.filter(
+    (c) =>
+      c.cpa > 0 &&
+      c.cost >= minCost &&
+      convsOf(c) >= MIN_CONVERSIONS_FOR_BEST &&
+      (daysActiveByAdId.get(c.adId) ?? 0) >= MIN_DAYS_ACTIVE_FOR_BEST &&
+      !fatiguedAdIds.has(c.adId)
+  );
+
+  if (eligible.length === 0) {
+    return empty(
+      `لا يوجد إعلان استوفى شروط الترشيح بعد (${MIN_CONVERSIONS_FOR_BEST} تحويلات على الأقل عبر ` +
+        `${MIN_DAYS_ACTIVE_FOR_BEST} أيام مختلفة، بإنفاق كافٍ، دون تعب إحصائي). ` +
+        `الترشيح بعينة أصغر يسمّي الحظّ نجاحاً.`
+    );
+  }
+
+  const sorted = [...eligible].sort((a, b) => {
+    // العائد كمرجّح أول حين يتوفّر للطرفين: الأرخص بعائد أضعف بكثير ليس الأفضل
+    if (a.roas !== null && b.roas !== null) {
+      const cpaGapPct = ((b.cpa - a.cpa) / Math.max(a.cpa, b.cpa)) * 100;
+      const roasGapPct = ((b.roas - a.roas) / Math.max(a.roas, b.roas, 0.0001)) * 100;
+      // فارق التكلفة طفيف بينما فارق العائد كبير ⇒ العائد يحسم
+      if (Math.abs(cpaGapPct) < MEANINGFUL_LEAD_PCT && Math.abs(roasGapPct) >= MEANINGFUL_LEAD_PCT) {
+        return b.roas - a.roas;
+      }
+    }
+    return a.cpa - b.cpa;
+  });
+
+  const best = sorted[0];
+  const runnerUp = sorted[1] ?? null;
+  const leadPct =
+    runnerUp && runnerUp.cpa > 0
+      ? Math.round(((runnerUp.cpa - best.cpa) / runnerUp.cpa) * 1000) / 10
+      : null;
+
+  return {
+    best,
+    runnerUp,
+    leadPct,
+    isDecisiveLead: leadPct !== null && leadPct >= MEANINGFUL_LEAD_PCT,
+    eligibleCount: eligible.length,
+    insufficientReason: null,
+  };
+}
+
 // ==================== Scale / Kill / Watch - الإطار الكلاسيكي ====================
 // "اعمل إسكيل لإيه، وأوقف إيه؟" - أهم سؤال بيسأله أي Performance Media
 // Buyer محترف كل يوم. مش رقم جديد مخترع - نفس معيار الـ20%/5 تحويلات

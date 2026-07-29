@@ -1,81 +1,185 @@
 // app/components/ui/MetricCard.tsx
 //
-// كل بطاقة رقم قابلة للضغط تودّي لتفاصيل أعمق في قسمها - مش مجرد اختصار
-// بصري (ده كان طلب صريح: "كل box يدوس عليه يوديك لبيانات أكتر مش مجرد
-// اختصار"). لو مفيش href، البطاقة بتتصرف عادي من غير أي إيحاء بالضغط.
+// نظام بطاقة المؤشر الموحّد لكل أقسام المنتج - القديم (خلفية ملوّنة للبطاقة
+// كاملة، أو إطار علوي ملوّن) أُلغي تماماً.
+//
+// المبدأ: البطاقة نفسها هادئة دائماً (سطح واحد، إطار رفيع، ظل خفيف)، واللون
+// محصور في مربّع الأيقونة وفي مؤشّر التغيّر فقط. السبب عملي لا جمالي: عند
+// وضع ست بطاقات متجاورة، تلوين خلفياتها كلها يجعل الصفحة تصرخ بلا أولوية،
+// فتضيع الإشارة الحقيقية. حين تهدأ البطاقات، يبرز الرقم نفسه واتجاهه.
+//
+// البطاقة تدعم أربعة أشكال سفلية تُغطّي كل صفحات المنتج، بالتركيب لا بنسخ
+// مكوّن جديد لكل صفحة:
+//   • مؤشّر تغيّر (سهم + نسبة + مدة المقارنة)
+//   • شريط نسبة + تعليق ("٤٣٪ من الإيراد")
+//   • تعليق نصّي بلهجة دلالية
+//   • رسم اتجاه صغير (sparkline)
 
 import Link from "next/link";
 import type { ReactNode, ComponentType } from "react";
-import { ChevronLeft } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, ChevronLeft, Info } from "lucide-react";
+
+export type MetricTone = "default" | "verified" | "gap" | "critical" | "accent" | "neutral";
+
+export interface MetricDelta {
+  /** النسبة أو الفرق المعروض - رقم أو نص جاهز مثل "2.7pp" */
+  value: string | number;
+  /** اتجاه السهم */
+  direction: "up" | "down";
+  /**
+   * هل هذا الاتجاه جيّد. منفصل عن direction عمداً: ارتفاع التكلفة صعود
+   * سيّئ، وانخفاض المرتجعات هبوط جيّد. ربط اللون بالاتجاه وحده يلوّن نصف
+   * المؤشّرات بالعكس تماماً.
+   */
+  positive?: boolean;
+  /** "مقارنةً بآخر ٣٠ يوماً" */
+  caption?: string;
+}
 
 interface MetricCardProps {
   label: string;
   value: string | number;
-  color?: "default" | "verified" | "gap" | "critical" | "accent";
+  /** لاحقة صغيرة بجانب الرقم: SAR، %، /100 */
+  unit?: string;
+  /** سطر صغير تحت الرقم: "منتج"، "هامش" */
+  subLabel?: string;
+  tone?: MetricTone;
+  /** اسم قديم للـ tone - مُبقى لئلّا تنكسر عشرات الاستدعاءات القائمة */
+  color?: MetricTone;
   href?: string;
-  trend?: ReactNode; // عنصر صغير اختياري (زي sparkline أو نسبة تغيّر)
-  icon?: ComponentType<{ size?: number; className?: string }>; // أيقونة صغيرة في مربع ملوّن - نفس هوية الرقم
-  // اتجاه "الشاهد" - جوهر المنتج "نتحقق بدل ما نصدّق". لو محدّدة صراحة
-  // (true/false)، بتضيف علامة ثقة بصرية فوق تلوين الرقم الموجود أصلاً -
-  // مش بديل عن اللون، إضافة له (وضوح أكتر لمن عنده عمى ألوان مثلاً)
+  icon?: ComponentType<{ size?: number; className?: string }>;
+  delta?: MetricDelta;
+  /** شريط نسبة سفلي (0-100) مع تعليقه */
+  bar?: { pct: number; caption?: string };
+  /** تعليق سفلي نصّي */
+  caption?: { text: string; tone?: "muted" | "positive" | "warning" | "negative" };
+  /** رسم اتجاه صغير أو أي عنصر إضافي */
+  trend?: ReactNode;
+  /** شرح المؤشّر عند المرور بالمؤشّر */
+  hint?: string;
+  /** علامة التحقّق - جوهر المنتج: رقم متحقّق منه مقابل رقم معلَن */
   verified?: boolean;
 }
 
-// لكل لون: نص الرقم، خلفية خفيفة (tint) للكارت كله، وخلفية أقوى شوية
-// لمربع الأيقونة. الألوان دلالية دائماً (متحقق/تحذير/خطر)، مش زخرفة
-// عشوائية - ده الفرق الجوهري عن "قوالب SaaS" الملوّنة بشكل عشوائي.
-// التدرّج خفيف عمداً (10%) - ده برنامج بيتستخدم ساعات كل يوم، مش
-// screenshot تسويقي؛ ألوان مشبّعة بالكامل هتتعب العين على المدى الطويل.
-const COLOR_STYLES: Record<NonNullable<MetricCardProps["color"]>, { text: string; cardTint: string; iconBg: string }> = {
-  default: { text: "text-text-primary", cardTint: "", iconBg: "bg-surface-raised text-text-muted" },
-  verified: { text: "text-verified", cardTint: "bg-verified/[0.06]", iconBg: "bg-verified/15 text-verified" },
-  gap: { text: "text-gap", cardTint: "bg-gap/[0.06]", iconBg: "bg-gap/15 text-gap" },
-  critical: { text: "text-critical", cardTint: "bg-critical/[0.06]", iconBg: "bg-critical/15 text-critical" },
-  accent: { text: "text-accent", cardTint: "bg-accent/[0.06]", iconBg: "bg-accent/15 text-accent" },
+const TONE_ICON: Record<MetricTone, string> = {
+  default: "bg-accent/10 text-accent",
+  neutral: "bg-surface-raised text-text-muted",
+  verified: "bg-verified/10 text-verified",
+  gap: "bg-gap/10 text-gap",
+  critical: "bg-critical/10 text-critical",
+  accent: "bg-accent/10 text-accent",
 };
 
-export function MetricCard({ label, value, color = "default", href, trend, verified, icon: Icon }: MetricCardProps) {
-  const style = COLOR_STYLES[color];
+const TONE_BAR: Record<MetricTone, string> = {
+  default: "bg-accent",
+  neutral: "bg-text-faint",
+  verified: "bg-verified",
+  gap: "bg-gap",
+  critical: "bg-critical",
+  accent: "bg-accent",
+};
+
+const CAPTION_TONE = {
+  muted: "text-text-faint",
+  positive: "text-verified",
+  warning: "text-gap",
+  negative: "text-critical",
+};
+
+export function MetricCard(props: MetricCardProps) {
+  const {
+    label, value, unit, subLabel, href, icon: Icon,
+    delta, bar, caption, trend, hint, verified,
+  } = props;
+  const tone: MetricTone = props.tone ?? props.color ?? "default";
 
   const content = (
-    <div className={`group card-shadow rounded-2xl border border-border p-5 transition-all hover:-translate-y-0.5 ${style.cardTint || "bg-surface"}`}>
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+    <div className="group card-shadow h-full rounded-2xl border border-border bg-surface p-4 transition-all hover:-translate-y-0.5 hover:ring-1 hover:ring-border">
+      {/* الرأس: أيقونة هادئة + اسم المؤشّر */}
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
           {Icon && (
-            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${style.iconBg}`}>
-              <Icon size={14} />
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${TONE_ICON[tone]}`}>
+              <Icon size={17} />
             </span>
           )}
-          <span className="text-[13px] text-text-muted">{label}</span>
+          <span className="flex min-w-0 items-center gap-1 text-[13px] font-medium text-text-muted">
+            <span className="truncate">{label}</span>
+            {hint && <Info size={11} className="shrink-0 text-text-faint" aria-label={hint} />}
+          </span>
         </div>
         {href && (
           <ChevronLeft
             size={14}
-            className="rotate-180 text-text-faint opacity-0 transition-opacity group-hover:opacity-100 rtl:rotate-0"
+            className="mt-1 shrink-0 rotate-180 text-text-faint opacity-0 transition-opacity group-hover:opacity-100 rtl:rotate-0"
           />
         )}
       </div>
-      <div
-        className={`flex items-baseline gap-1.5 font-mono text-[34px] font-medium leading-none tracking-tight ${
-          verified === false ? "border-b border-dashed border-text-faint pb-1 opacity-85" : ""
-        } ${style.text}`}
-      >
-        {value}
+
+      {/* الرقم - أرقام جدولية حتى تصطفّ رأسياً بين البطاقات ولا ترقص عند التحديث */}
+      <div className="flex items-baseline gap-1.5">
+        <span
+          className={`text-[26px] font-semibold leading-none tracking-tight tabular-nums text-text-primary ${
+            verified === false ? "border-b border-dashed border-text-faint pb-0.5 opacity-90" : ""
+          }`}
+        >
+          {value}
+        </span>
+        {unit && <span className="text-[13px] font-medium text-text-muted">{unit}</span>}
         {verified === true && (
-          <span className="text-[15px] text-verified" title="رقم متحقق منه فعلياً">✓</span>
+          <span className="text-[13px] text-verified" title="رقم متحقّق منه فعلياً">
+            ✓
+          </span>
         )}
       </div>
+
+      {subLabel && <div className="mt-1 text-[12px] text-text-faint">{subLabel}</div>}
+
+      {delta && (
+        <div className="mt-2 flex items-center gap-1 text-[12px]">
+          <DeltaMark delta={delta} />
+          {delta.caption && <span className="text-text-faint">{delta.caption}</span>}
+        </div>
+      )}
+
+      {caption && (
+        <div className={`mt-2 text-[12px] ${CAPTION_TONE[caption.tone ?? "muted"]}`}>{caption.text}</div>
+      )}
+
+      {bar && (
+        <div className="mt-3">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-raised">
+            <div
+              className={`h-full rounded-full ${TONE_BAR[tone]}`}
+              style={{ width: `${Math.min(100, Math.max(0, bar.pct))}%` }}
+            />
+          </div>
+          {bar.caption && <div className="mt-1.5 text-[12px] text-text-faint">{bar.caption}</div>}
+        </div>
+      )}
+
       {trend && <div className="mt-3">{trend}</div>}
     </div>
   );
 
   if (href) {
     return (
-      <Link href={href} className="block no-underline">
+      <Link href={href} className="block h-full no-underline">
         {content}
       </Link>
     );
   }
-
   return content;
+}
+
+function DeltaMark({ delta }: { delta: MetricDelta }) {
+  // الافتراضي: صعود = جيّد. يُقلَب صراحةً عبر positive للمؤشّرات المعكوسة
+  const good = delta.positive ?? delta.direction === "up";
+  const Arrow = delta.direction === "up" ? ArrowUpRight : ArrowDownRight;
+  return (
+    <span className={`inline-flex items-center gap-0.5 font-medium tabular-nums ${good ? "text-verified" : "text-critical"}`}>
+      <Arrow size={13} />
+      {delta.value}
+    </span>
+  );
 }

@@ -5,7 +5,11 @@
 // كل الأرقام تتبع فلتر المنصة المختار في أعلى الصفحة.
 
 import { useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, SlidersHorizontal, TrendingUp, TrendingDown, Check } from "lucide-react";
+import {
+  ChevronLeft, ChevronRight, SlidersHorizontal, ArrowUpRight, ArrowDownRight, Check,
+  Wallet, Target, ShieldCheck, Percent, UserCheck, Users, MousePointerClick, Eye,
+  Activity, Coins, AlertTriangle, TrendingUp,
+} from "lucide-react";
 import { KPI_DEFS, type KpiKey, type KpiResult } from "@/lib/kpiEngine";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 
@@ -14,6 +18,8 @@ const MAX_KPIS = 10;
 
 // لون مميز لكل مؤشر - ليس زخرفة: يجعل التعرّف على البطاقة فورياً عند
 // التمرير الأفقي، ويربط المؤشر بمعناه (تكلفة/تحقّق/وصول/عائد).
+// اللون محصور الآن في مربّع الأيقونة ورسم الاتجاه فقط - لا شريط علوي ولا
+// تدرّج على البطاقة، فتبقى الصفحة هادئة عند اصطفاف ست بطاقات أو أكثر.
 const KPI_COLORS: Record<KpiKey, string> = {
   cost: "#F59E0B",
   conversions_reported: "#8B5CF6",
@@ -29,11 +35,36 @@ const KPI_COLORS: Record<KpiKey, string> = {
   roas: "#22C55E",
 };
 
-function fmt(v: number, format: string, currency: string): string {
-  if (format === "percent") return `${v.toFixed(1)}%`;
-  if (format === "decimal") return `${v.toFixed(2)}x`;
-  if (format === "currency") return `${Math.round(v).toLocaleString("en-US")} ${currency}`;
+// أيقونة لكل مؤشر - نفس بنية بطاقة MetricCard الموحّدة، فيبقى شكل البطاقة
+// واحداً في كل أقسام المنتج بدل شكلين متجاورين
+const KPI_ICONS: Record<KpiKey, typeof Wallet> = {
+  cost: Wallet,
+  conversions_reported: Target,
+  conversions_verified: ShieldCheck,
+  verification_rate: Percent,
+  cpl_verified: UserCheck,
+  cpl_raw: Users,
+  clicks: MousePointerClick,
+  impressions: Eye,
+  ctr: Activity,
+  cpc: Coins,
+  inflation_rate: AlertTriangle,
+  roas: TrendingUp,
+};
+
+// الوحدة تُفصل عن الرقم ليأخذ الرقم الوزن البصري وتبقى الوحدة ثانوية -
+// نفس تسلسل بطاقة المؤشر الموحّدة
+function fmtValue(v: number, format: string): string {
+  if (format === "percent") return v.toFixed(1);
+  if (format === "decimal") return v.toFixed(2);
   return Math.round(v).toLocaleString("en-US");
+}
+
+function fmtUnit(format: string, currency: string): string {
+  if (format === "percent") return "%";
+  if (format === "decimal") return "x";
+  if (format === "currency") return currency;
+  return "";
 }
 
 // رسم صغير (SVG خالص - بدون مكتبة، خفيف وسريع)
@@ -127,21 +158,23 @@ export function KpiStrip({
           const up = (r.changePct ?? 0) > 0;
           const good = r.changePct === null ? true : def.lowerIsBetter ? !up : up;
           const color = KPI_COLORS[r.key];
+          const Icon = KPI_ICONS[r.key];
+          const unit = fmtUnit(def.format, currency);
           return (
             <div
               key={r.key}
-              className="kpi-card group relative min-w-[210px] flex-1 overflow-hidden rounded-2xl border p-4"
-              style={{
-                borderColor: `color-mix(in srgb, ${color} 26%, transparent)`,
-                background: `linear-gradient(160deg, color-mix(in srgb, ${color} 9%, var(--surface)) 0%, var(--surface) 62%)`,
-              }}
+              className="card-shadow group min-w-[214px] flex-1 rounded-2xl border border-border bg-surface p-4 transition-all hover:-translate-y-0.5 hover:ring-1 hover:ring-border"
             >
-              {/* شريط لوني علوي - تمييز بصري فوري عند التمرير الأفقي */}
-              <span className="absolute inset-x-0 top-0 h-[3px]" style={{ background: color }} />
-
-              <div className="mb-1.5 flex items-center gap-1.5">
-                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
-                <span className="min-w-0 flex-1 truncate text-[12.5px] text-text-muted">{ar ? def.labelAr : def.labelEn}</span>
+              <div className="mb-3 flex items-center gap-2.5">
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                  style={{ background: `color-mix(in srgb, ${color} 12%, transparent)`, color }}
+                >
+                  <Icon size={17} />
+                </span>
+                <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-text-muted">
+                  {ar ? def.labelAr : def.labelEn}
+                </span>
                 {/* مصدر البيانات: شعارات صغيرة متداخلة قليلاً - تعريف فوري
                     بمصدر الرقم دون أن تسرق مساحة من الرقم نفسه */}
                 {r.sources.length > 0 && (
@@ -157,17 +190,25 @@ export function KpiStrip({
                   </span>
                 )}
               </div>
-              <div className="font-mono text-[24px] font-semibold leading-none text-text-primary">
-                {fmt(r.value, def.format, currency)}
+
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[26px] font-semibold leading-none tracking-tight tabular-nums text-text-primary">
+                  {fmtValue(r.value, def.format)}
+                </span>
+                {unit && <span className="text-[13px] font-medium text-text-muted">{unit}</span>}
               </div>
+
               {r.changePct !== null && (
-                <div className={`mt-1.5 flex items-center gap-1 text-[11.5px] font-medium ${good ? "text-verified" : "text-critical"}`}>
-                  {up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                  {Math.abs(r.changePct)}%
-                  <span className="text-text-faint">{ar ? "عن الفترة السابقة" : "vs prev."}</span>
+                <div className="mt-2 flex items-center gap-1 text-[12px]">
+                  <span className={`inline-flex items-center gap-0.5 font-medium tabular-nums ${good ? "text-verified" : "text-critical"}`}>
+                    {up ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
+                    {Math.abs(r.changePct)}%
+                  </span>
+                  <span className="text-text-faint">{ar ? "عن الفترة السابقة" : "vs prev. period"}</span>
                 </div>
               )}
-              <div className="mt-2"><Spark data={r.series} color={color} /></div>
+
+              <div className="mt-3"><Spark data={r.series} color={color} /></div>
             </div>
           );
         })}

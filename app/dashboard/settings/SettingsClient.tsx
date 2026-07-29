@@ -63,6 +63,14 @@ interface WorkspaceData {
   notifyUrgentByEmail: boolean;
   notifyHighByEmail: boolean;
   notificationEmail: string | null;
+  // إعادة رفع التحويلات - التوكنات نفسها لا تصل هنا أبداً، فقط وجودها
+  conversionSyncEnabled: boolean;
+  conversionSyncVerifiedOnly: boolean;
+  metaPixelId: string | null;
+  googleConversionActionId: string | null;
+  tiktokPixelCode: string | null;
+  hasMetaCapiToken?: boolean;
+  hasTiktokCapiToken?: boolean;
 }
 
 interface ConnectedPlatformData {
@@ -77,6 +85,7 @@ const TABS = [
   { key: "accounts", label: "الحسابات المرتبطة" },
   { key: "workspace", label: "مساحة العمل" },
   { key: "automation", label: "التحكم والأتمتة" },
+  { key: "conversionSync", label: "إعادة رفع التحويلات" },
   { key: "danger", label: "منطقة الخطر" },
 ] as const;
 
@@ -108,6 +117,11 @@ const SEARCH_INDEX: Array<{ label: string; tab: (typeof TABS)[number]["key"] }> 
   { label: "حد خطر التسعير", tab: "automation" },
   { label: "مضاعف المرتجعات الشاذة", tab: "automation" },
   { label: "السقف الشهري لتغييرات الأتمتة", tab: "automation" },
+  { label: "تفعيل إعادة رفع التحويلات", tab: "conversionSync" },
+  { label: "معرّف بكسل ميتا Meta Pixel", tab: "conversionSync" },
+  { label: "توكن Conversions API", tab: "conversionSync" },
+  { label: "معرّف إجراء التحويل جوجل Conversion Action", tab: "conversionSync" },
+  { label: "رمز بكسل تيك توك Events API", tab: "conversionSync" },
   { label: "حذف مساحة عمل", tab: "danger" },
 ];
 
@@ -191,6 +205,13 @@ export function SettingsClient({
       )}
       {activeTab === "automation" && workspaces.length > 0 && (
         <AutomationTab
+          workspaces={workspaces}
+          activeWorkspaceId={activeWorkspaceId}
+          onSwitchWorkspace={setActiveWorkspaceId}
+        />
+      )}
+      {activeTab === "conversionSync" && workspaces.length > 0 && (
+        <ConversionSyncTab
           workspaces={workspaces}
           activeWorkspaceId={activeWorkspaceId}
           onSwitchWorkspace={setActiveWorkspaceId}
@@ -1206,6 +1227,167 @@ function DeleteAccountSection() {
 }
 
 // ==================== عناصر مشتركة ====================
+
+// ==================== إعادة رفع التحويلات للمنصات ====================
+//
+// التوكنات لا تصل هذه الواجهة أبداً - نستقبل "هل يوجد توكن" فقط، ونعرض
+// قناعاً. تركها فارغة عند الحفظ تُبقي التوكن المخزَّن كما هو، وكتابة مسافة
+// فارغة صراحةً تمسحه. بدون هذا التمييز يمحو أي حفظ عادي توكناً سليماً.
+const TOKEN_MASK = "••••••••••••••••";
+
+function ConversionSyncTab({
+  workspaces,
+  activeWorkspaceId,
+  onSwitchWorkspace,
+}: {
+  workspaces: WorkspaceData[];
+  activeWorkspaceId: string;
+  onSwitchWorkspace: (id: string) => void;
+}) {
+  const router = useRouter();
+  const workspace = workspaces.find((w) => w.id === activeWorkspaceId) ?? workspaces[0];
+
+  const [form, setForm] = useState({
+    conversionSyncEnabled: workspace.conversionSyncEnabled,
+    conversionSyncVerifiedOnly: workspace.conversionSyncVerifiedOnly,
+    metaPixelId: workspace.metaPixelId ?? "",
+    metaCapiToken: workspace.hasMetaCapiToken ? TOKEN_MASK : "",
+    googleConversionActionId: workspace.googleConversionActionId ?? "",
+    tiktokPixelCode: workspace.tiktokPixelCode ?? "",
+    tiktokCapiToken: workspace.hasTiktokCapiToken ? TOKEN_MASK : "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    setSaved(false);
+    await fetch(`/api/workspaces/${workspace.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    setSaving(false);
+    setSaved(true);
+    router.refresh();
+  }
+
+  const metaReady = !!form.metaPixelId && (!!workspace.hasMetaCapiToken || form.metaCapiToken !== "");
+  const googleReady = !!form.googleConversionActionId;
+  const tiktokReady = !!form.tiktokPixelCode && (!!workspace.hasTiktokCapiToken || form.tiktokCapiToken !== "");
+  const anyReady = metaReady || googleReady || tiktokReady;
+
+  return (
+    <SettingsSection>
+      {workspaces.length > 1 && (
+        <WorkspaceSwitcher workspaces={workspaces} active={activeWorkspaceId} onSwitch={onSwitchWorkspace} />
+      )}
+
+      <p className="mb-4 text-[13px] leading-relaxed text-text-muted">
+        كشف الفجوة يجعلك أدرى، لكنه لا يغيّر شيئاً في المزاد بذاته. خوارزمية كل منصة تتعلّم ممّا
+        تُطعمها إياه — فحين نُعيد إليها العميل الدافع فعلاً عبر الخادم، تتغيّر دالّة التحسين لديها
+        فتبحث عن أشباهه. الإرسال من الخادم لا يمرّ بحظر الكوكيز ولا قيود iOS.
+      </p>
+
+      <div className="mb-2 text-xs font-medium uppercase tracking-wider text-text-faint">التشغيل</div>
+      <ToggleRow
+        label="تفعيل إعادة رفع التحويلات"
+        checked={form.conversionSyncEnabled}
+        onChange={(v) => setForm({ ...form, conversionSyncEnabled: v })}
+      />
+      <ToggleRow
+        label="رفع التحويلات المتحقّق منها فقط"
+        checked={form.conversionSyncVerifiedOnly}
+        onChange={(v) => setForm({ ...form, conversionSyncVerifiedOnly: v })}
+      />
+      <p className="mb-5 mt-1.5 text-[12px] leading-relaxed text-text-faint">
+        إبقاؤه مفعَّلاً يرفع ما تأكّد بمصدر مستقلّ وحده — بيانات أقلّ وأنقى، وهو الخيار الصحيح في
+        الغالب. إطفاؤه يرفع كل حدث بما فيه غير المتحقّق: بيانات أكثر، وتعلُّم أقلّ دقّة.
+      </p>
+
+      {form.conversionSyncEnabled && !anyReady && (
+        <div className="mb-5 rounded-xl border border-gap/30 bg-gap/10 px-3 py-2.5 text-[12.5px] leading-relaxed text-gap">
+          التفعيل وحده لا يكفي — لن يُرفع شيء حتى تضبط بيانات منصة واحدة على الأقل أدناه.
+        </div>
+      )}
+
+      <div className="mb-2 text-xs font-medium uppercase tracking-wider text-text-faint">
+        ميتا — Conversions API
+      </div>
+      <FieldLabel>معرّف البكسل (Pixel ID)</FieldLabel>
+      <TextInput
+        value={form.metaPixelId}
+        onChange={(v) => setForm({ ...form, metaPixelId: v })}
+        placeholder="مثال: 1234567890123456"
+      />
+      <FieldLabel>توكن الوصول (Conversions API Access Token)</FieldLabel>
+      <TextInput
+        value={form.metaCapiToken}
+        onChange={(v) => setForm({ ...form, metaCapiToken: v })}
+        placeholder={workspace.hasMetaCapiToken ? "محفوظ — اتركه كما هو" : "من Events Manager ← الإعدادات"}
+      />
+
+      <div className="mb-2 text-xs font-medium uppercase tracking-wider text-text-faint">
+        جوجل — رفع التحويلات غير المتصلة
+      </div>
+      <FieldLabel>معرّف إجراء التحويل (Conversion Action ID)</FieldLabel>
+      <TextInput
+        value={form.googleConversionActionId}
+        onChange={(v) => setForm({ ...form, googleConversionActionId: v })}
+        placeholder="الرقم فقط، مثال: 987654321"
+      />
+      <p className="-mt-2 mb-4 text-[12px] leading-relaxed text-text-faint">
+        يتطلّب إجراء تحويل من نوع Webpage مع تفعيل التحويلات المُحسَّنة (Enhanced Conversions).
+        لا يحتاج توكناً منفصلاً — يستخدم ربط جوجل القائم.
+      </p>
+
+      <div className="mb-2 text-xs font-medium uppercase tracking-wider text-text-faint">
+        تيك توك — Events API
+      </div>
+      <FieldLabel>رمز البكسل (Pixel Code)</FieldLabel>
+      <TextInput
+        value={form.tiktokPixelCode}
+        onChange={(v) => setForm({ ...form, tiktokPixelCode: v })}
+        placeholder="من TikTok Events Manager"
+      />
+      <FieldLabel>توكن الأحداث (Access Token)</FieldLabel>
+      <TextInput
+        value={form.tiktokCapiToken}
+        onChange={(v) => setForm({ ...form, tiktokCapiToken: v })}
+        placeholder={workspace.hasTiktokCapiToken ? "محفوظ — اتركه كما هو" : "من إعدادات البكسل"}
+      />
+
+      <div className="mb-4 flex flex-wrap gap-1.5">
+        <ReadyChip label="ميتا" ready={metaReady} />
+        <ReadyChip label="جوجل" ready={googleReady} />
+        <ReadyChip label="تيك توك" ready={tiktokReady} />
+      </div>
+
+      <p className="mb-4 text-[12px] leading-relaxed text-text-faint">
+        التوكنات تُشفَّر قبل التخزين (AES-256-GCM) ولا تُعاد إلى المتصفح إطلاقاً. الرفع يعمل يومياً،
+        ويتخطّى أي حدث جودة مطابقته أضعف من أن تربطه المنصة بأحد — فلا نستهلك حصّتك بلا فائدة.
+        النتائج تظهر في قسم «الحقيقة».
+      </p>
+
+      <div className="flex items-center gap-3">
+        <SaveButton onClick={handleSave} saving={saving} />
+        {saved && <span className="text-[12.5px] text-verified">حُفظت التغييرات.</span>}
+      </div>
+    </SettingsSection>
+  );
+}
+
+function ReadyChip({ label, ready }: { label: string; ready: boolean }) {
+  return (
+    <span
+      className={`rounded-full px-2.5 py-1 text-[11.5px] font-medium ${
+        ready ? "bg-verified/10 text-verified" : "bg-surface-raised text-text-faint"
+      }`}
+    >
+      {label}: {ready ? "جاهزة" : "غير مضبوطة"}
+    </span>
+  );
+}
 
 function SettingsSection({ children }: { children: React.ReactNode }) {
   return <div className="rounded-2xl bg-surface p-6">{children}</div>;

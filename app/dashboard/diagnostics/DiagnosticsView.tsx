@@ -10,7 +10,7 @@ import { useState, useMemo, useTransition, useRef, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import {
   RefreshCw, AlertOctagon, AlertTriangle, Info, CheckCircle2, Search,
-  ChevronLeft, ChevronDown, Activity, Loader2,
+  ChevronLeft, ChevronDown, Activity, Loader2, Radar,
 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { CATEGORY_META, type CheckCategory, type CheckSeverity, type CheckStatus } from "@/lib/diagnosticsEngine";
@@ -106,6 +106,10 @@ export function DiagnosticsView({
   const [scanning, setScanning] = useState(false);
   const [category, setCategory] = useState<"all" | CheckCategory>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | CheckStatus>("all");
+  // فلتر الخطورة منفصل عن فلتر الحالة: الضغط على بطاقة "حرجة" كان يضبط
+  // فلتر الحالة على "الكل" فلا يفلتر شيئاً - وبطاقة "سليمة" وحدها هي التي
+  // كانت تعمل بالصدفة لأن لها حالة مقابلة.
+  const [severityFilter, setSeverityFilter] = useState<"all" | CheckSeverity>("all");
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showAllIssues, setShowAllIssues] = useState(false);
@@ -133,9 +137,10 @@ export function DiagnosticsView({
     return checks.filter((c) =>
       (category === "all" || c.category === category) &&
       (statusFilter === "all" || c.status === statusFilter) &&
+      (severityFilter === "all" || c.severity === severityFilter) &&
       (!q || c.titleAr.toLowerCase().includes(q) || c.descAr.toLowerCase().includes(q))
     );
-  }, [checks, category, statusFilter, query]);
+  }, [checks, category, statusFilter, severityFilter, query]);
 
   const categoryCounts = useMemo(() => {
     const m: Record<string, number> = { all: checks.length };
@@ -189,6 +194,15 @@ export function DiagnosticsView({
           {lastScanAt && (
             <span className="text-[12.5px] text-text-muted">{tr("lastScan")}: {lastScanAt}</span>
           )}
+          {/* الوصول إلى صفحة الصفحات المراقَبة - كان الرابط الوحيد إليها قد
+              أُزيل عند إعادة بناء هذه الصفحة، فأصبحت غير قابلة للوصول تماماً */}
+          <a
+            href="/dashboard/diagnostics/tracking-coverage"
+            className="flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2.5 text-[13px] text-text-primary no-underline"
+          >
+            <Radar size={15} className="text-text-muted" />
+            {ar ? "تغطية التتبع" : "Tracking coverage"}
+          </a>
           <button
             onClick={runScan}
             disabled={busy}
@@ -227,14 +241,33 @@ export function DiagnosticsView({
           {SEVERITY_CARDS.map((s) => {
             const n = counts[s.key];
             const active = s.key !== "passing" && n > 0;
+            const selected = s.key === "passing"
+              ? statusFilter === "PASS"
+              : severityFilter === (s.key.toUpperCase() as CheckSeverity);
             return (
               <button
                 key={s.key}
-                onClick={() => setStatusFilter(s.key === "passing" ? "PASS" : "all")}
-                className="card-shadow overflow-hidden rounded-2xl border p-4 text-start"
+                onClick={() => {
+                  if (s.key === "passing") {
+                    const on = statusFilter === "PASS";
+                    setStatusFilter(on ? "all" : "PASS");
+                    setSeverityFilter("all");
+                  } else {
+                    const sev = s.key.toUpperCase() as CheckSeverity;
+                    const on = severityFilter === sev;
+                    setSeverityFilter(on ? "all" : sev);
+                    setStatusFilter("all");
+                  }
+                  // ننزل للجدول ليرى المستخدم أثر الفلترة فوراً بدل أن
+                  // يحدث التصفية أسفل الصفحة دون أن ينتبه لها
+                  setTimeout(() => tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+                }}
+                className="card-shadow relative overflow-hidden rounded-2xl border p-4 text-start"
                 style={{
-                  borderColor: active ? `color-mix(in srgb, ${s.tone} 34%, transparent)` : "var(--border)",
-                  background: active ? `color-mix(in srgb, ${s.tone} 7%, var(--surface))` : "var(--surface)",
+                  borderColor: selected ? s.tone
+                    : active ? `color-mix(in srgb, ${s.tone} 34%, transparent)` : "var(--border)",
+                  background: active || selected ? `color-mix(in srgb, ${s.tone} 7%, var(--surface))` : "var(--surface)",
+                  boxShadow: selected ? `0 0 0 1px ${s.tone}` : undefined,
                 }}
               >
                 <s.Icon size={17} style={{ color: active || s.key === "passing" ? s.tone : "var(--text-faint)" }} />
@@ -391,6 +424,14 @@ export function DiagnosticsView({
                 <option key={k} value={k}>{ar ? CATEGORY_META[k].ar : CATEGORY_META[k].en} ({categoryCounts[k]})</option>
               ))}
             </select>
+            {(severityFilter !== "all" || statusFilter !== "all" || category !== "all") && (
+              <button
+                onClick={() => { setSeverityFilter("all"); setStatusFilter("all"); setCategory("all"); }}
+                className="rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-muted"
+              >
+                {ar ? "مسح الفلاتر" : "Clear filters"}
+              </button>
+            )}
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)}
                     className="rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-primary outline-none">
               <option value="all">{tr("allStatuses")}</option>

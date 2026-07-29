@@ -28,7 +28,16 @@ export default async function SettingsPage() {
         timezone: user.timezone,
         businessScale: user.businessScale,
       }}
-      workspaces={workspaces}
+      // تعيين صريح بدل تمرير الكائن كاملاً: مساحة العمل صارت تحمل توكنات
+      // مشفّرة (CAPI)، وتمريرها كما هي يضعها في حزمة العميل بلا داعٍ.
+      // الواجهة تحتاج معرفة **هل يوجد توكن** لا قيمته.
+      workspaces={workspaces.map((w) => ({
+        ...w,
+        metaCapiToken: undefined,
+        tiktokCapiToken: undefined,
+        hasMetaCapiToken: !!w.metaCapiToken,
+        hasTiktokCapiToken: !!w.tiktokCapiToken,
+      }))}
       connectedPlatforms={connectedPlatforms.map((c: { platform: string; connectedAt: Date; expiresAt: Date | null }) => ({
         platform: c.platform,
         connectedAt: c.connectedAt.toISOString(),

@@ -1002,7 +1002,10 @@ export async function syncTikTokCreativesForWorkspace(workspaceId: string) {
         data_level: "AUCTION_AD",
         dimensions: JSON.stringify(["ad_id", "stat_time_day"]),
         metrics: JSON.stringify([
-          "ad_name", "impressions", "clicks", "spend", "conversion", "total_purchase_value",
+          // adgroup_id يُطلب كمقياس عند data_level = AUCTION_AD (تيك توك
+          // تُعيد معرّفات الكيانات الأعلى بهذه الطريقة). مطلوب لتنفيذ Scale:
+          // الميزانية عندها على المجموعة الإعلانية لا على الإعلان الفردي.
+          "ad_name", "adgroup_id", "impressions", "clicks", "spend", "conversion", "total_purchase_value",
         ]),
         filtering: JSON.stringify([
           { field_name: "campaign_ids", filter_type: "IN", filter_value: JSON.stringify(campaignIds) },
@@ -1038,6 +1041,7 @@ export async function syncTikTokCreativesForWorkspace(workspaceId: string) {
           create: {
             workspaceId, platform: "TIKTOK_ADS", campaignId: fallbackCampaignId, adId,
             adName: m.ad_name ?? null, creativeType: "VIDEO",
+            adSetId: m.adgroup_id ? String(m.adgroup_id) : null,
             date,
             impressions: Number(m.impressions ?? 0),
             clicks: Number(m.clicks ?? 0),
@@ -1047,6 +1051,7 @@ export async function syncTikTokCreativesForWorkspace(workspaceId: string) {
           },
           update: {
             adName: m.ad_name ?? null,
+            adSetId: m.adgroup_id ? String(m.adgroup_id) : null,
             impressions: Number(m.impressions ?? 0),
             clicks: Number(m.clicks ?? 0),
             cost: Number(m.spend ?? 0),

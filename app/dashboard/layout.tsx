@@ -10,7 +10,7 @@ import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/font/google";
+import { IBM_Plex_Sans_Arabic, Inter } from "next/font/google";
 import { SupportChat } from "@/app/components/SupportChat";
 import { ImpersonationBanner } from "@/app/components/ImpersonationBanner";
 import { NotificationBell } from "@/app/components/NotificationBell";
@@ -34,9 +34,13 @@ const display = IBM_Plex_Sans_Arabic({
   display: "swap",
 });
 
-const plexMono = IBM_Plex_Mono({
+// خط الأرقام: Inter بأرقام جدولية (tabular figures) بدل خط برمجي.
+// السبب: IBM Plex Mono خط شيفرة - حروفه عريضة وميكانيكية، فتبدو المبالغ
+// المالية كأنها مخرجات طرفية لا أرقام منتج. Inter يعطي أرقاماً متساوية
+// العرض (تصطفّ رأسياً في الجداول) بمظهر تحريري نظيف.
+const numeric = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-mono-code",
   display: "swap",
 });
@@ -118,7 +122,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       dir={locale === "ar" ? "rtl" : "ltr"}
       data-accent={accent}
       data-mode={mode}
-      className={`${display.variable} ${plexMono.variable} flex min-h-screen flex-col bg-bg font-display`}
+      className={`${display.variable} ${numeric.variable} flex min-h-screen flex-col bg-bg font-display`}
     >
       {isImpersonating && <ImpersonationBanner />}
       <LiveDataProvider>
@@ -142,7 +146,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <main className="min-w-0 flex-1">
         {/* الهيدر ثابت أعلى الصفحة عند التمرير - كان يختفي مع النزول
             فيضيع البحث والإشعارات وقائمة الحساب */}
-        <div className="sticky top-0 z-40 mb-5 flex items-center gap-3 border-b border-border bg-bg/85 px-10 py-4 backdrop-blur-md">
+        {/* 🔴 لا backdrop-blur هنا: أي عنصر position:fixed داخل عنصر عليه
+            backdrop-filter يتموضع بالنسبة إليه لا إلى الشاشة، فتُقصّ اللوحات
+            المنبثقة (المساعدة، الإشعارات) على ارتفاع الهيدر. خلفية معتمة
+            تعطي نفس الفصل البصري دون كسر أي عنصر بداخله. */}
+        <div className="sticky top-0 z-40 mb-5 flex items-center gap-3 border-b border-border bg-bg px-10 py-4">
           <TopSearch locale={locale} />
           <div className="flex flex-1 items-center justify-end gap-1.5">
           {user && (

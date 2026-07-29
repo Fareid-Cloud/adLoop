@@ -143,8 +143,8 @@ export function ProductFocusView({
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/55 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="pop-shadow my-6 w-full max-w-4xl overflow-hidden rounded-2xl border border-border bg-surface">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="pop-shadow max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-surface">
         {/* الرأس */}
         <div className="flex items-start justify-between gap-3 border-b border-border p-5">
           <div className="min-w-0">
@@ -176,7 +176,7 @@ export function ProductFocusView({
           </div>
         )}
 
-        <div className="grid gap-5 p-5 lg:grid-cols-[1.7fr_1fr]">
+        <div className="grid max-h-[calc(92vh-90px)] gap-5 overflow-y-auto p-5 lg:grid-cols-[1.7fr_1fr]">
         <div>
           {/* انهيار التكلفة */}
           <h3 className="mb-3 text-[13px] font-medium text-text-muted">أين تذهب أموالك في كل طلب ناجح</h3>
@@ -221,7 +221,7 @@ export function ProductFocusView({
           </div>
 
           {/* الحصيلة: خسارة حمراء عريضة أو ربح */}
-          <div className="mb-5 rounded-2xl border p-4"
+          <div className="mb-4 rounded-2xl border p-3.5"
                style={{
                  borderColor: losing ? "color-mix(in srgb, var(--critical) 35%, transparent)" : "color-mix(in srgb, var(--verified) 35%, transparent)",
                  background: losing ? "color-mix(in srgb, var(--critical) 6%, var(--surface))" : "color-mix(in srgb, var(--verified) 6%, var(--surface))",
@@ -233,7 +233,7 @@ export function ProductFocusView({
                 </div>
                 {/* يتغيّر لحظياً مع تحريك المسطرة - المستخدم يرى ربحه قبل
                     أن يعتمد السعر، لا بعده */}
-                <div className="mt-0.5 font-mono text-[30px] font-bold leading-none text-verified">
+                <div className="mt-0.5 font-mono text-[22px] font-bold leading-tight text-verified">
                   +{money(profitAtSuggested, currency)}
                 </div>
                 <div className="mt-1 text-[11.5px] text-text-muted">
@@ -250,7 +250,7 @@ export function ProductFocusView({
               </div>
               <div className="text-end">
                 <div className="text-[12px] text-text-muted">السعر المقترح</div>
-                <div className="mt-0.5 font-mono text-[30px] font-bold leading-none text-verified">
+                <div className="mt-0.5 font-mono text-[22px] font-bold leading-tight text-verified">
                   {money(result.suggestedPrice, currency)}
                 </div>
                 <div className="mt-1 text-[11.5px] text-text-muted">
@@ -348,50 +348,51 @@ export function ProductFocusView({
               </p>
             </div>
           )}
+          {/* اعتماد السعر - في العمود الجانبي كما طُلب، فلا يحتاج المستخدم
+              التمرير إلى أسفل النافذة للوصول إلى الإجراء الأساسي */}
+          <div className="mt-auto">
+            {error && (
+              <p className="mb-2 rounded-xl border border-critical/35 bg-critical/[0.07] p-2.5 text-[12px] text-critical">
+                {error}
+              </p>
+            )}
+            {saved && storeNotice && (
+              <div className="mb-2 flex items-start gap-2 rounded-xl border border-gap/35 bg-gap/[0.07] p-2.5">
+                <AlertTriangle size={14} className="mt-0.5 shrink-0 text-gap" />
+                <p className="text-[11.5px] leading-relaxed text-text-primary">{storeNotice}</p>
+              </div>
+            )}
+            {saved && !storeNotice && storeName && (
+              <p className="mb-2 rounded-xl border border-verified/35 bg-verified/[0.07] p-2.5 text-[11.5px] text-verified">
+                تم تحديث السعر في {storeName} وفي AdLoop معاً.
+              </p>
+            )}
+
+            <button
+              onClick={applyPrice}
+              disabled={saving || saved || result.priceGap <= 0}
+              className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-3 text-[13px] font-medium text-white disabled:opacity-45 ${
+                saved ? "bg-verified" : "bg-accent"
+              }`}
+            >
+              {saved ? (
+                <>{storeNotice ? "حُفظ عندنا فقط" : "تم تحديث السعر"} <Check size={14} /></>
+              ) : saving ? (
+                "جارٍ الحفظ..."
+              ) : result.priceGap <= 0 ? (
+                "السعر الحالي كافٍ"
+              ) : (
+                <>
+                  اعتماد {money(result.suggestedPrice, currency)}
+                  <ArrowLeft size={14} className="rtl:rotate-0 ltr:rotate-180" />
+                </>
+              )}
+            </button>
+          </div>
         </aside>
         </div>
 
-        <div className="border-t border-border p-5 pt-4">
-          {error && (
-            <p className="mb-2 rounded-xl border border-critical/35 bg-critical/[0.07] p-3 text-[12.5px] text-critical">
-              {error}
-            </p>
-          )}
 
-          {/* حُفظ عندنا لكن لم يتغيّر في المتجر - فرق جوهري يجب ذكره */}
-          {saved && storeNotice && (
-            <div className="mb-2 flex items-start gap-2 rounded-xl border border-gap/35 bg-gap/[0.07] p-3">
-              <AlertTriangle size={15} className="mt-0.5 shrink-0 text-gap" />
-              <p className="text-[12.5px] leading-relaxed text-text-primary">{storeNotice}</p>
-            </div>
-          )}
-          {saved && !storeNotice && storeName && (
-            <p className="mb-2 rounded-xl border border-verified/35 bg-verified/[0.07] p-3 text-[12.5px] text-verified">
-              تم تحديث السعر في {storeName} وفي AdLoop معاً.
-            </p>
-          )}
-
-          <button
-            onClick={applyPrice}
-            disabled={saving || saved || result.priceGap <= 0}
-            className={`flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[13.5px] font-medium text-white disabled:opacity-45 ${
-              saved ? "bg-verified" : "bg-accent"
-            }`}
-          >
-            {saved ? (
-              <>{storeNotice ? "حُفظ عندنا فقط" : "تم تحديث السعر"} <Check size={15} /></>
-            ) : saving ? (
-              "جارٍ الحفظ..."
-            ) : result.priceGap <= 0 ? (
-              "السعر الحالي يحقّق هامشك المستهدف"
-            ) : (
-              <>
-                اعتماد السعر المقترح {money(result.suggestedPrice, currency)}
-                <ArrowLeft size={15} className="rtl:rotate-0 ltr:rotate-180" />
-              </>
-            )}
-          </button>
-        </div>
       </div>
     </div>
   );

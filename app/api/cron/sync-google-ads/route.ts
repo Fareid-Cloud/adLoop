@@ -49,6 +49,33 @@ export async function GET(req: NextRequest) {
 
   const startTime = Date.now();
 
+  const { startSyncRun, finishSyncRun } = await import("@/lib/integrationsStatus");
+
+  /**
+   * يشغّل مزامنة منصة ويسجّل نتيجتها. لا يُعيد رمي الخطأ عمداً: فشل منصة
+   * واحدة لا يجوز أن يوقف مزامنة الباقي - وهذا هو سلوك الكرون الأصلي،
+   * نحافظ عليه ونضيف إليه التسجيل فقط.
+   */
+  async function trackedSync(workspaceId: string, platform: string, fn: () => Promise<unknown>) {
+    const before = await prisma.metricSnapshot.count({
+      where: { workspaceId, platform: platform as never },
+    });
+    const runId = await startSyncRun(workspaceId, platform, "CRON");
+    try {
+      await fn();
+      const after = await prisma.metricSnapshot.count({
+        where: { workspaceId, platform: platform as never },
+      });
+      await finishSyncRun(runId, { ok: true, recordsWritten: Math.max(0, after - before) });
+    } catch (err) {
+      await finishSyncRun(runId, {
+        ok: false,
+        error: err instanceof Error ? err.message.slice(0, 200) : "خطأ غير معروف",
+      });
+      console.error(`فشلت مزامنة ${platform} لمساحة العمل ${workspaceId}:`, err);
+    }
+  }
+
   // فحص واحد لكل تشغيل، مش لكل Workspace - الفحص نفسه بيدوّر على كل
   // الروابط المنتهية قريباً مرة واحدة
   await checkExpiringConnections(7);
@@ -85,8 +112,12 @@ export async function GET(req: NextRequest) {
     try {
       // الترتيب مهم: المزامنة الأول (بيانات جديدة)، بعدين التشخيص (بيبني
       // على البيانات دي)، بعدين الأتمتة (بتبني على نتيجة التشخيص أحياناً)
-      await syncGoogleAdsForWorkspace(workspaceId);
-      await syncMetaAdsForWorkspace(workspaceId);
+      //
+      // المزامنة الأساسية للمنصات الثلاث تُسجَّل في SyncRun - وهي مصدر
+      // "آخر مزامنة" وصحّة التكامل وسجلّ النشاط في قسم التكاملات. تسجيل
+      // اليدوية وحدها كان سيُظهر الحساب "قديم البيانات" رغم عمل الكرون.
+      await trackedSync(workspaceId, "GOOGLE_ADS", () => syncGoogleAdsForWorkspace(workspaceId));
+      await trackedSync(workspaceId, "META_ADS", () => syncMetaAdsForWorkspace(workspaceId));
       await syncMetaAdSetsForWorkspace(workspaceId);
       await checkMetaBidStrategyAlertsForWorkspace(workspaceId);
       await syncMetaAccountHealthForWorkspace(workspaceId);
@@ -94,7 +125,7 @@ export async function GET(req: NextRequest) {
       await checkMetaLearningPhaseAlertsForWorkspace(workspaceId);
       await checkMetaBidStrategyProgressionForWorkspace(workspaceId);
       await checkCatalogSpendAlertsForWorkspace(workspaceId);
-      await syncTikTokAdsForWorkspace(workspaceId);
+      await trackedSync(workspaceId, "TIKTOK_ADS", () => syncTikTokAdsForWorkspace(workspaceId));
       await syncTikTokVideoMetricsForWorkspace(workspaceId);
       await syncTikTokSparkAdsCommentsForWorkspace(workspaceId);
       await syncTikTokLeadFormsForWorkspace(workspaceId);

@@ -12,7 +12,12 @@ import { EmptyState } from "@/app/components/ui/EmptyState";
 import { getConnectStates } from "@/lib/connectionState";
 import { ConnectSinglePlatform } from "@/app/components/ConnectPlatforms";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
-import { getWorkspaceCreativePerformances } from "@/lib/creativeAnalysis";
+import { getWorkspaceCreativePerformances, selectTopTwoCreatives } from "@/lib/creativeAnalysis";
+import { buildAdDecisions } from "@/lib/adDecisions";
+import { AdDecisionTable } from "@/app/components/AdDecisionTable";
+import { getFrequencyByPlatform } from "@/lib/frequencyCheck";
+import { BestAdPair } from "@/app/components/BestAdPair";
+import { MetricCard } from "@/app/components/ui/MetricCard";
 
 // ألوان رسمية حقيقية (مؤكدة من مصادر العلامات التجارية) - شارة لونية
 // بدل الشعار الفعلي (ملف صورة محمي بحقوق ملكية مش متاح لينا). ملاحظة:
@@ -89,7 +94,24 @@ export async function PlatformHub({
     );
   }
 
-  const { performances } = await getWorkspaceCreativePerformances(workspace.id, platform);
+  const { performances, daysActiveByAdId, fatiguedAdIds } =
+    await getWorkspaceCreativePerformances(workspace.id, platform);
+
+  const topPick = selectTopTwoCreatives(performances, daysActiveByAdId, fatiguedAdIds);
+
+  // معدّل التكرار إشارة حيّة - فشلها لا يجوز أن يُسقط الصفحة
+  let frequencyByPlatform: Record<string, number> = {};
+  try {
+    frequencyByPlatform = await getFrequencyByPlatform(workspace.id);
+  } catch (err) {
+    console.error("تعذّر جلب معدّل التكرار:", err);
+  }
+
+  const adDecisions = await buildAdDecisions({
+    workspaceId: workspace.id,
+    platform,
+    frequencyByPlatform,
+  });
 
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -102,7 +124,6 @@ export async function PlatformHub({
   const verified = totalsAgg._sum.verifiedConversions ?? 0;
   const cpa = verified > 0 ? cost / verified : null;
 
-  const sortedByCpa = performances.filter((p) => p.cpa > 0).sort((a, b) => a.cpa - b.cpa);
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -116,34 +137,51 @@ export async function PlatformHub({
         "أداء الإعلانات الفردية" في قسم "نظرة شاملة عبر المنصات".
       </p>
 
-      <div className="mb-6 grid grid-cols-3 gap-3">
-        <div className="rounded-2xl bg-surface p-4">
-          <div className="text-xs text-text-faint">الصرف (30 يوم)</div>
-          <div className="mt-1 font-mono text-xl text-text-primary">{Math.round(cost).toLocaleString()}</div>
-        </div>
-        <div className="rounded-2xl bg-surface p-4">
-          <div className="text-xs text-text-faint">تحويلات مؤكدة</div>
-          <div className="mt-1 font-mono text-xl text-verified">{verified}</div>
-        </div>
-        <div className="rounded-2xl bg-surface p-4">
-          <div className="text-xs text-text-faint">تكلفة العميل الحقيقية</div>
-          <div className="mt-1 font-mono text-xl text-text-primary">{cpa ? Math.round(cpa) : "—"}</div>
-        </div>
+      {/* بطاقات المؤشّر الموحّدة - نفس الشكل الهادئ في كل أقسام المنتج */}
+      <div className="mb-6 grid gap-3 sm:grid-cols-3">
+        <MetricCard
+          label="الإنفاق (٣٠ يوماً)"
+          value={Math.round(cost).toLocaleString("en-US")}
+          unit={workspace.currency}
+          icon={Icons.Wallet}
+          tone="accent"
+        />
+        <MetricCard
+          label="تحويلات متحقّق منها"
+          value={verified.toLocaleString("en-US")}
+          icon={Icons.ShieldCheck}
+          tone="verified"
+          verified
+        />
+        <MetricCard
+          label="تكلفة العميل الحقيقية"
+          value={cpa ? Math.round(cpa).toLocaleString("en-US") : "—"}
+          unit={cpa ? workspace.currency : undefined}
+          icon={Icons.Target}
+          tone="default"
+          caption={
+            cpa
+              ? undefined
+              : { text: "لا توجد تحويلات متحقّق منها بعد لحساب التكلفة الحقيقية.", tone: "muted" }
+          }
+        />
       </div>
 
-      {sortedByCpa.length > 0 && (
-        <>
-          <div className="mb-2 text-[13px] text-text-muted">ترتيب الإعلانات داخل {platformLabel} (الأرخص أولاً)</div>
-          <div className="mb-6 flex flex-col gap-1.5">
-            {sortedByCpa.slice(0, 10).map((p) => (
-              <div key={p.adId} className="flex items-center justify-between rounded-xl bg-surface px-3.5 py-2.5 text-[13px]">
-                <span className="text-text-primary">{p.adName ?? p.adId}</span>
-                <span className="font-mono text-text-faint">{Math.round(p.cpa)}</span>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+      <div className="mb-6">
+        <BestAdPair pick={topPick} currency={workspace.currency} scopeLabel={platformLabel} />
+      </div>
+
+      <div className="mb-2 text-[13px] font-medium text-text-muted">
+        القرار لكل إعلان داخل {platformLabel}
+      </div>
+      <div className="mb-6">
+        <AdDecisionTable
+          decisions={adDecisions}
+          workspaceId={workspace.id}
+          currency={workspace.currency}
+          showPlatform={false}
+        />
+      </div>
 
       <div className="mb-2.5 text-[13px] text-text-muted">تحليلات {platformLabel} التفصيلية</div>
       {/* أيقونة معبّرة لكل تحليل بدل سهم مكرّر لا يضيف معنى */}

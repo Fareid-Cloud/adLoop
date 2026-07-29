@@ -45,34 +45,43 @@ export async function POST(
   const results: SyncOutcome[] = [];
   const linked = new Set(links.map((l) => l.platform));
 
-  if (linked.has("GOOGLE_ADS")) {
+  const { startSyncRun, finishSyncRun } = await import("@/lib/integrationsStatus");
+
+  // كل تشغيل يُسجَّل بنتيجته - هو المصدر الوحيد لـ"آخر مزامنة" وسجلّ النشاط
+  // وصحّة التكامل في قسم التكاملات. من دونه تصبح تلك الأرقام مُختلَقة.
+  async function runSync(platform: string, fn: () => Promise<unknown>) {
+    const before = await prisma.metricSnapshot.count({ where: { workspaceId: id, platform: platform as never } });
+    const runId = await startSyncRun(id, platform, "MANUAL");
     try {
+      await fn();
+      const after = await prisma.metricSnapshot.count({ where: { workspaceId: id, platform: platform as never } });
+      await finishSyncRun(runId, { ok: true, recordsWritten: Math.max(0, after - before) });
+      results.push({ platform, ok: true });
+    } catch (err) {
+      await finishSyncRun(runId, { ok: false, error: msg(err) });
+      results.push({ platform, ok: false, error: msg(err) });
+    }
+  }
+
+  if (linked.has("GOOGLE_ADS")) {
+    await runSync("GOOGLE_ADS", async () => {
       const { syncGoogleAdsForWorkspace } = await import("@/lib/syncGoogleAds");
       await syncGoogleAdsForWorkspace(id);
-      results.push({ platform: "GOOGLE_ADS", ok: true });
-    } catch (err) {
-      results.push({ platform: "GOOGLE_ADS", ok: false, error: msg(err) });
-    }
+    });
   }
 
   if (linked.has("META_ADS")) {
-    try {
+    await runSync("META_ADS", async () => {
       const { syncMetaAdsForWorkspace } = await import("@/lib/syncMetaAds");
       await syncMetaAdsForWorkspace(id);
-      results.push({ platform: "META_ADS", ok: true });
-    } catch (err) {
-      results.push({ platform: "META_ADS", ok: false, error: msg(err) });
-    }
+    });
   }
 
   if (linked.has("TIKTOK_ADS")) {
-    try {
+    await runSync("TIKTOK_ADS", async () => {
       const { syncTikTokAdsForWorkspace } = await import("@/lib/syncTikTokAds");
       await syncTikTokAdsForWorkspace(id);
-      results.push({ platform: "TIKTOK_ADS", ok: true });
-    } catch (err) {
-      results.push({ platform: "TIKTOK_ADS", ok: false, error: msg(err) });
-    }
+    });
   }
 
   const snapshotCount = await prisma.metricSnapshot.count({ where: { workspaceId: id } });

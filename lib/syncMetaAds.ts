@@ -303,7 +303,10 @@ export async function syncMetaCreativesForWorkspace(workspaceId: string) {
       // بدل استعلام منفصل لكل إعلان - أوفر على حصة الـ API
       const adsRes = await fetch(
         `https://graph.facebook.com/${META_API_VERSION}/${link.externalCampaignId}/ads` +
-          `?fields=id,name,creative{thumbnail_url,object_story_spec}&access_token=${decryptToken(connection.accessToken)}`
+          // adset_id مطلوب لتنفيذ قرار Scale على إعلان بعينه: الميزانية عند
+          // ميتا تُضبط على المجموعة الإعلانية لا على الإعلان، فمن دون هذا
+          // المعرّف يبقى زرّ "Scale" اقتراحاً لا تنفيذاً
+          `?fields=id,name,adset_id,creative{thumbnail_url,object_story_spec}&access_token=${decryptToken(connection.accessToken)}`
       );
       const adsData = await adsRes.json();
       if (!adsRes.ok) continue;
@@ -347,6 +350,7 @@ export async function syncMetaCreativesForWorkspace(workspaceId: string) {
             create: {
               workspaceId, platform: "META_ADS", campaignId: link.externalCampaignId, adId: ad.id,
               adName: ad.name ?? null, creativeType: "IMAGE", // ميتا مبترجعش نوع مبسّط زي جوجل - IMAGE افتراضي، هيتظبط لاحقاً لو فيه فيديو
+              adSetId: ad.adset_id ? String(ad.adset_id) : null,
               headline, thumbnailUrl, date,
               impressions: Number(row.impressions ?? 0),
               clicks: Number(row.clicks ?? 0),
@@ -355,6 +359,9 @@ export async function syncMetaCreativesForWorkspace(workspaceId: string) {
               conversionsValue: purchaseValue ? Number(purchaseValue.value ?? 0) : 0,
             },
             update: {
+              // يُحدَّث في التحديث أيضاً: الصفوف المزامَنة قبل إضافة الحقل
+              // ستبقى null إلى الأبد لولا ذلك، فيُعطَّل زرّ Scale عليها بلا سبب
+              adSetId: ad.adset_id ? String(ad.adset_id) : null,
               impressions: Number(row.impressions ?? 0),
               clicks: Number(row.clicks ?? 0),
               cost: Number(row.spend ?? 0),

@@ -210,6 +210,23 @@ model Workspace {
   // كتير فوق بعض في وقت قصير. افتراضي 50% (معقول ومحافظ، قابل للتعديل)
   monthlyChangeCeilingPct Float @default(50)
 
+  // ==== إعادة رفع التحويلات للمنصات (Server-Side Conversion Sync) ====
+  // الحلقة المغلقة: نحن نعرف من العميل الدافع فعلاً، والمنصة لا تعرف.
+  // رفع الحدث المتحقّق منه إليها يحسّن استهدافها لأنها تتعلّم على عملاء
+  // حقيقيين لا على نقرات. كل توكن مشفّر بنفس آلية توكنات OAuth.
+  conversionSyncEnabled Boolean @default(false)
+  // ترفع الأحداث المتحقّق منها فقط. إطفاؤه يرفع كل حدث (بما فيه غير
+  // المتحقّق) - أكثر بيانات وأقل نقاءً، والقرار للمستخدم لا لنا.
+  conversionSyncVerifiedOnly Boolean @default(true)
+
+  metaPixelId       String?
+  metaCapiToken     String? @db.Text // مشفّر
+  // معرّف إجراء التحويل في جوجل (ConversionAction) - من دونه لا يعرف
+  // جوجل أي تحويل نرفعه، فيُرفض الطلب كاملاً
+  googleConversionActionId String?
+  tiktokPixelCode   String?
+  tiktokCapiToken   String? @db.Text // مشفّر
+
   monthlyBudgetTarget Float?
   createdAt   DateTime @default(now())
 
@@ -270,6 +287,10 @@ model Workspace {
   actionFeedItems ActionFeedItem[]
   experimentLogs  ExperimentLog[]
   ctaClickEvents  CtaClickEvent[]
+  touchpoints     Touchpoint[]
+  conversionEvents ConversionEvent[]
+  adDecisionRecords AdDecisionRecord[]
+  syncRuns        SyncRun[]
   products        Product[]
   ecommerceConnections EcommerceConnection[]
   creativeSnapshots CreativeSnapshot[]
@@ -965,6 +986,10 @@ model CreativeSnapshot {
   // (customers/{id}/adGroupAds/{adGroupId}~{adId}) - مش مستنتج من
   // adId، لازم يتخزّن منفصل. null لباقي المنصات (مفهوم مختلف عندهم)
   adGroupId     String?
+  // المجموعة الإعلانية الأمّ. الميزانية عند ميتا/تيك توك تُضبط هنا لا على
+  // الإعلان الفردي - من دون هذا المعرّف، زرّ "Scale" على إعلان بعينه لا
+  // يملك ما يزيده أصلاً، فيبقى اقتراحاً نصياً بلا تنفيذ.
+  adSetId       String?
   adName        String?
   creativeType  CreativeType
   headline      String?  @db.Text
@@ -1636,4 +1661,249 @@ model EcommerceConnection {
 
   @@unique([workspaceId, platform])
   @@index([platform, active])
+}
+
+// ==================== طبقة اللمسات (Multi-Touch Attribution) ====================
+//
+// السياق: كان النظام يعرف "نقرة واحدة" فقط (UnmatchedClick) ثم "تحوّل أو لا".
+// هذا كافٍ لإسناد آخر لمسة فحسب. رحلة العميل الحقيقية متعددة اللمسات:
+// إعلان يوتيوب ← بحث جوجل ← إعلان ميتا ← رسالة واتساب ← طلب. من دون
+// تسجيل كل لمسة، أي نموذج إسناد غير آخر-لمسة مستحيل رياضياً - لا تنقصنا
+// المعادلة، تنقصنا البيانات نفسها.
+//
+// Touchpoint = كل احتكاك مسجّل للزائر نفسه (visitorId ثابت من الطرف الأول،
+// لا كوكي طرف ثالث - لهذا لا تكسره قيود iOS/Safari).
+
+model Touchpoint {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // المعرّف الثابت للزائر عبر الزيارات كلها (كوكي طرف أول أو معرّف مُهشَّم
+  // من الهاتف/البريد عند توفّره). هو العمود الفقري لربط اللمسات ببعضها.
+  visitorId   String
+  sessionId   String?  // زيارة واحدة داخل رحلة الزائر
+
+  kind        TouchpointKind
+  channel     TouchpointChannel
+
+  platform    Platform?
+  campaignId  String?
+  adSetId     String?  // مجموعة إعلانية/مجموعة إعلانات - مطلوبة لإسناد على مستوى المجموعة
+  adId        String?
+
+  // معرّف النقرة من المنصة نفسها - أقوى إشارة إسناد على الإطلاق، ومطلوب
+  // حرفياً لرفع التحويل لاحقاً إلى جوجل (gclid) وميتا (fbclid ← fbc)
+  clickId     String?
+  source      String?  // utm_source
+  medium      String?  // utm_medium
+  campaignTag String?  // utm_campaign - الاسم النصّي لا المعرّف
+  referrer    String?  @db.Text
+  landingPath String?  @db.Text
+
+  // إشارات جانب الخادم - تُلتقط من الطلب نفسه لا من المتصفح، فلا تُحجب
+  ipAddress   String?
+  userAgent   String?  @db.Text
+
+  occurredAt  DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([workspaceId, visitorId, occurredAt])
+  @@index([workspaceId, occurredAt])
+}
+
+enum TouchpointKind {
+  AD_CLICK      // نقرة إعلان مدفوع - أقوى لمسة
+  AD_VIEW       // ظهور/مشاهدة مُسجَّلة (Engaged View) - أضعف، تُرجَّح أقل
+  SITE_VISIT    // زيارة عضوية/مباشرة
+  CRM_EVENT     // حدث من نظام العميل (رد مبيعات، اجتماع، عرض سعر)
+  MESSAGE       // رسالة واتساب/ماسنجر واردة
+}
+
+enum TouchpointChannel {
+  PAID_SEARCH
+  PAID_SOCIAL
+  PAID_VIDEO
+  ORGANIC_SEARCH
+  ORGANIC_SOCIAL
+  DIRECT
+  REFERRAL
+  EMAIL
+  CRM
+  OTHER
+}
+
+// حدث تحويل حقيقي - العملة التي تُقسَّم على اللمسات في نماذج الإسناد.
+// منفصل عن AttributionResult عمداً: ذاك سجل قرار المحرّك الاحتمالي لمحادثة
+// واحدة، وهذا الحدث التجاري نفسه (طلب/عميل دافع) بقيمته النقدية.
+
+model ConversionEvent {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  visitorId   String?
+  // معرّف الحدث لدى المصدر (رقم الطلب، معرّف المحادثة) - يمنع الازدواج
+  externalId  String
+  eventName   String   // "Purchase" | "Lead" | "QualifiedLead" | "Subscribe"
+  occurredAt  DateTime
+
+  value       Float    @default(0)
+  currency    String   @default("SAR")
+
+  // هل تحقّق فعلاً (رسالة حقيقية/طلب مؤكد) أم رقم أعلنته المنصة فقط.
+  // هذا الحقل تحديداً هو ما يجعل ما نرفعه للمنصات أنظف مما تعرفه بنفسها.
+  verified    Boolean  @default(false)
+
+  // ==== بيانات المطابقة - مُهشَّمة SHA-256 قبل التخزين، لا نصاً صريحاً ====
+  emailHash      String?
+  phoneHash      String?
+  firstNameHash  String?
+  lastNameHash   String?
+  cityHash       String?
+  countryHash    String?
+  externalUserId String?  // معرّف العميل لدى المتجر، مُهشَّم
+  clientIpAddress String?
+  clientUserAgent String? @db.Text
+  fbp            String?  // كوكي متصفح ميتا
+  fbc            String?  // fbclid مُحوَّل لصيغة ميتا الرسمية
+  gclid          String?
+  ttclid         String?
+
+  // جودة المطابقة 0-10 - الرقم الذي يحدّد فعلياً هل ستنجح المنصة في ربط
+  // الحدث بمستخدم لديها أم سيُهمَل. يُحسب من عدد وقوة المعرّفات المتاحة.
+  matchQualityScore Float?
+
+  // نسخة مجمّدة من مسار اللمسات لحظة التحويل - لأن اللمسات قد تُحذف
+  // لاحقاً بسياسة الاحتفاظ، بينما نتيجة الإسناد يجب أن تبقى قابلة للتدقيق
+  pathSnapshot Json?
+
+  createdAt   DateTime @default(now())
+  syncLogs    ConversionSyncLog[]
+
+  @@unique([workspaceId, externalId])
+  @@index([workspaceId, occurredAt])
+  @@index([workspaceId, verified, occurredAt])
+}
+
+// سجل رفع كل حدث إلى كل منصة - منفصل لأن الحدث الواحد يُرفع لأكثر من منصة
+// وقد ينجح لدى واحدة ويفشل لدى أخرى. من دون هذا الفصل، "تمت المزامنة"
+// تصبح ادّعاءً لا يمكن التحقق منه.
+
+model ConversionSyncLog {
+  id                String   @id @default(cuid())
+  workspaceId       String
+  conversionEventId String
+  conversionEvent   ConversionEvent @relation(fields: [conversionEventId], references: [id], onDelete: Cascade)
+
+  platform          Platform
+  status            ConversionSyncStatus @default(PENDING)
+  attempts          Int      @default(0)
+  errorMessage      String?  @db.Text
+  platformEventId   String?  // معرّف الحدث لدى المنصة، للتتبّع لاحقاً
+  matchQualityScore Float?   // ما أعادته المنصة فعلاً إن أعادته
+  sentAt            DateTime?
+  createdAt         DateTime @default(now())
+
+  @@unique([conversionEventId, platform])
+  @@index([workspaceId, status, createdAt])
+}
+
+enum ConversionSyncStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED    // لا يوجد معرّف مطابقة كافٍ لهذه المنصة - الرفع بلا فائدة
+}
+
+// ==================== سجل قرارات الإعلان (Scale / Hold / Pause) ====================
+//
+// السبب المعماري: القرار لا يكتمل بالتنفيذ. بعد أي زيادة ميزانية أو إيقاف،
+// يجب ألّا نقترح شيئاً جديداً على الإعلان نفسه قبل أن نرى نتيجة ما فعلناه -
+// وإلّا راكمنا تغييرات فوق بعضها ولم نعرف أيها أثّر. هذا الجدول هو البوابة
+// الزمنية (4 أيام) ومصدر التقييم البعدي معاً.
+
+model AdDecisionRecord {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  platform    Platform
+  adId        String
+  adName      String?
+  campaignId  String?
+  adSetId     String?
+
+  decision    AdDecision
+  reason      String   @db.Text  // نص القاعدة التي أنتجت القرار وقتها
+
+  appliedAt   DateTime @default(now())
+  // لا يُقيَّم القرار ولا يُقترح غيره على الإعلان نفسه قبل هذا التاريخ
+  reEvaluateAt DateTime
+
+  // القيم قبل/بعد للتغيير الفعلي على المنصة (ميزانية مثلاً)
+  previousValue Float?
+  newValue      Float?
+
+  // لقطة المقاييس قبل التنفيذ - أساس المقارنة بعد اكتمال النافذة
+  metricsBefore Json?
+  metricsAfter  Json?
+  outcome       AdDecisionOutcome @default(PENDING_EVALUATION)
+  evaluatedAt   DateTime?
+
+  createdAt   DateTime @default(now())
+
+  @@index([workspaceId, adId, appliedAt])
+  @@index([workspaceId, outcome, reEvaluateAt])
+}
+
+enum AdDecision {
+  SCALE
+  HOLD
+  PAUSE
+}
+
+enum AdDecisionOutcome {
+  PENDING_EVALUATION
+  IMPROVED
+  UNCHANGED
+  WORSENED
+  INSUFFICIENT_DATA
+}
+
+// ==================== سجل تشغيل المزامنة ====================
+//
+// لم يكن في المنتج أي أثر مكتوب لعملية مزامنة: تُشغَّل، تنجح أو تفشل، ثم
+// لا يبقى منها شيء. فتعذّر عرض "آخر مزامنة" أو سِجلّ نشاط أو صحة تكامل
+// دون اختلاق أرقام. هذا الجدول هو مصدرها جميعاً.
+
+model SyncRun {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  platform      Platform
+  status        SyncRunStatus
+  trigger       SyncTrigger   @default(CRON)
+
+  startedAt     DateTime @default(now())
+  finishedAt    DateTime?
+  durationMs    Int?
+  // عدد الصفوف المكتوبة فعلاً - يفرّق بين "نجحت ولم تجد جديداً" و"نجحت وجلبت"
+  recordsWritten Int?
+  errorMessage  String?  @db.Text
+
+  @@index([workspaceId, startedAt])
+  @@index([workspaceId, platform, startedAt])
+}
+
+enum SyncRunStatus {
+  SUCCESS
+  FAILED
+  RUNNING
+}
+
+enum SyncTrigger {
+  MANUAL
+  CRON
 }

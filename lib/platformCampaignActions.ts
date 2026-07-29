@@ -190,6 +190,87 @@ export async function changeTikTokCampaignBudget(workspaceId: string, campaignId
   return { previous: current, next };
 }
 
+// ==================== تغيير ميزانية المجموعة الإعلانية ====================
+//
+// لماذا هذا المستوى تحديداً: قرار Scale يُتَّخذ على **إعلان بعينه**، لكن
+// الميزانية لا تُضبط على الإعلان في أي من المنصات الثلاث. أقرب كيان يملك
+// ميزانية هو المجموعة الإعلانية (ميتا/تيك توك) أو الحملة (جوجل). الزيادة
+// هنا هي أدقّ تنفيذ ممكن فعلياً لقرار "زوّد هذا الإعلان".
+//
+// ⚠️ أثر جانبي حقيقي يجب أن يعرفه المستخدم: زيادة ميزانية المجموعة تفيد
+// كل إعلانات المجموعة لا الإعلان المقصود وحده. لهذا تُعرض الرسالة صراحةً
+// في الواجهة قبل التنفيذ بدل إخفائها.
+
+export async function changeMetaAdSetBudget(workspaceId: string, adSetId: string, pct: number) {
+  const connection = await getConnection(workspaceId, "META_ADS");
+  const token = decryptToken(connection.accessToken);
+
+  const readRes = await fetch(
+    `https://graph.facebook.com/${META_API_VERSION}/${adSetId}?fields=daily_budget,lifetime_budget,name&access_token=${token}`
+  );
+  const info = await readRes.json();
+  if (!readRes.ok) throw new Error(info.error?.message ?? "تعذّر قراءة ميزانية المجموعة الإعلانية");
+
+  const isDaily = !!info.daily_budget;
+  const current = Number(info.daily_budget ?? info.lifetime_budget ?? 0);
+  if (current <= 0) {
+    // الميزانية مضبوطة على مستوى الحملة (CBO) لا المجموعة - رفع صريح بدل
+    // كتابة قيمة على كيان لا يملك ميزانية أصلاً
+    throw new Error(
+      "ميزانية هذه المجموعة مضبوطة على مستوى الحملة (Advantage Campaign Budget) - عدّلها من الحملة نفسها"
+    );
+  }
+
+  const next = Math.max(1, Math.round(current * (1 + pct / 100)));
+  const res = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${adSetId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ [isDaily ? "daily_budget" : "lifetime_budget"]: next, access_token: token }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message ?? "تعذّر تعديل ميزانية المجموعة الإعلانية");
+  }
+
+  // ميتا تتعامل بأصغر وحدة للعملة (هللات/قروش) - نُعيد القيمة بالعملة نفسها
+  return { previous: current / 100, next: next / 100 };
+}
+
+export async function changeTikTokAdGroupBudget(
+  workspaceId: string,
+  advertiserId: string,
+  adGroupId: string,
+  pct: number
+) {
+  const connection = await getConnection(workspaceId, "TIKTOK_ADS");
+  const token = decryptToken(connection.accessToken);
+
+  const readRes = await fetch(
+    `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/adgroup/get/` +
+      `?advertiser_id=${advertiserId}&filtering=${encodeURIComponent(JSON.stringify({ adgroup_ids: [adGroupId] }))}`,
+    { headers: { "Access-Token": token, "Content-Type": "application/json" } }
+  );
+  const info = await readRes.json();
+  if (info.code !== 0) throw new Error(info.message ?? "تعذّر قراءة ميزانية المجموعة الإعلانية");
+
+  const current = Number(info.data?.list?.[0]?.budget ?? 0);
+  if (current <= 0) throw new Error("تعذّر قراءة ميزانية المجموعة الإعلانية الحالية");
+
+  const next = Math.max(1, Math.round(current * (1 + pct / 100) * 100) / 100);
+  const res = await fetch(
+    `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/adgroup/update/`,
+    {
+      method: "POST",
+      headers: { "Access-Token": token, "Content-Type": "application/json" },
+      body: JSON.stringify({ advertiser_id: advertiserId, adgroup_id: adGroupId, budget: next }),
+    }
+  );
+  const data = await res.json();
+  if (data.code !== 0) throw new Error(data.message ?? "تعذّر تعديل ميزانية المجموعة الإعلانية");
+
+  return { previous: current, next };
+}
+
 // ==================== موجّه موحّد ====================
 
 export async function pauseCampaignOnPlatform(workspaceId: string, platform: string, campaignId: string) {

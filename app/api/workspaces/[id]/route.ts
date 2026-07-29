@@ -30,7 +30,18 @@ const ALLOWED_FIELDS = [
   "notifyUrgentByEmail",
   "notifyHighByEmail",
   "notificationEmail",
+  // إعادة رفع التحويلات للمنصات
+  "conversionSyncEnabled",
+  "conversionSyncVerifiedOnly",
+  "metaPixelId",
+  "googleConversionActionId",
+  "tiktokPixelCode",
 ] as const;
+
+// حقول سرّية تُشفَّر قبل التخزين ولا تُعاد للواجهة أبداً. مفصولة عن
+// ALLOWED_FIELDS عمداً: مرورها في نفس الحلقة كان سيكتبها نصاً صريحاً في
+// قاعدة البيانات - نفس نوع الثغرة التي أُصلحت في توكنات OAuth.
+const ENCRYPTED_FIELDS = ["metaCapiToken", "tiktokCapiToken"] as const;
 
 export async function PATCH(
   req: NextRequest,
@@ -52,12 +63,34 @@ export async function PATCH(
     if (field in body) data[field] = body[field];
   }
 
+  // التوكنات: تُشفَّر قبل الكتابة. سلسلة فارغة تعني "امسح التوكن" لا
+  // "شفّر الفراغ" - وإلّا تعذّر على المستخدم إلغاء توكن أدخله بالخطأ.
+  for (const field of ENCRYPTED_FIELDS) {
+    if (!(field in body)) continue;
+    const raw = body[field];
+    if (typeof raw !== "string" || raw.trim() === "") {
+      data[field] = null;
+      continue;
+    }
+    // القيمة المقنّعة التي أرسلناها للواجهة تعود كما هي إن لم يعدّلها
+    // المستخدم - كتابتها ستدمّر التوكن الحقيقي، فنتجاهلها.
+    if (raw.includes("•")) continue;
+    const { encryptToken } = await import("@/lib/encryption");
+    data[field] = encryptToken(raw.trim());
+  }
+
   const updated = await prisma.workspace.update({
     where: { id: id },
     data,
   });
 
-  return NextResponse.json({ workspace: updated });
+  // لا تُعاد الحقول السرّية للواجهة إطلاقاً - حتى المشفّرة منها. إعادتها
+  // تضع النصّ المشفّر في حمولة الاستجابة وذاكرة المتصفح بلا أي داعٍ،
+  // والواجهة لا تحتاجها أصلاً (تعرض قناعاً لا القيمة).
+  const safe = { ...updated } as Record<string, unknown>;
+  for (const field of ENCRYPTED_FIELDS) delete safe[field];
+
+  return NextResponse.json({ workspace: safe });
 }
 
 export async function DELETE(

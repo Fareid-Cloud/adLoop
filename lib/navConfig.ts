@@ -68,7 +68,13 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/dashboard/pricing", labelAr: "التسعير", labelEn: "Pricing", iconName: "Tag" },
       { href: "/dashboard/ecommerce", labelAr: "التجارة الإلكترونية", labelEn: "Ecommerce", iconName: "ShoppingBag" },
       { href: "/dashboard/site-scan", labelAr: "فحص الموقع", labelEn: "Site Scan", iconName: "ScanSearch" },
-      { href: "/dashboard/diagnostics", labelAr: "التشخيص", labelEn: "Diagnostics", iconName: "Stethoscope" },
+      {
+        href: "/dashboard/diagnostics", labelAr: "التشخيص", labelEn: "Diagnostics", iconName: "Stethoscope",
+        children: [
+          { href: "/dashboard/diagnostics", labelAr: "نظرة شاملة", labelEn: "Overview" },
+          { href: "/dashboard/diagnostics/tracking-coverage", labelAr: "تغطية التتبع", labelEn: "Tracking Coverage" },
+        ],
+      },
     ],
   },
   {
@@ -83,6 +89,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: null,
     items: [
       { href: "/dashboard/reports", labelAr: "التقارير", labelEn: "Reports", iconName: "FileBarChart" },
+      { href: "/dashboard/integrations", labelAr: "التكاملات", labelEn: "Integrations", iconName: "Plug" },
       { href: "/dashboard/settings", labelAr: "الإعدادات", labelEn: "Settings", iconName: "SettingsIcon" },
       { href: "/dashboard/billing", labelAr: "الاشتراك", labelEn: "Billing", iconName: "CreditCard" },
     ],

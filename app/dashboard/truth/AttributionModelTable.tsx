@@ -1,0 +1,257 @@
+"use client";
+
+// مقارنة نماذج الإسناد الثمانية جنباً إلى جنب.
+//
+// القيمة ليست في أي نموذج بمفرده - كلٌّ منها يمثّل افتراضاً مختلفاً عمّا
+// "يصنع" التحويل، ولا يوجد نموذج صحيح مطلقاً. القيمة في **الفارق**: قناة
+// يمنحها التوزيع متعدّد اللمسات أكثر ممّا تدّعيه لنفسها هي قناة مبخوسة
+// تعمل في أول الرحلة، وخفض ميزانيتها بناءً على لوحتها وحدها خطأ شائع ومكلف.
+
+import { useState } from "react";
+import { ArrowUpRight, ArrowDownRight, Minus, Info } from "lucide-react";
+import { ATTRIBUTION_MODELS, type AttributionModelKey, type ModelComparisonRow } from "@/lib/attributionModels";
+import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { CHANNEL_LABELS } from "./TruthView";
+
+const PLATFORM_NAMES: Record<string, string> = {
+  GOOGLE_ADS: "Google Ads",
+  META_ADS: "Meta Ads",
+  TIKTOK_ADS: "TikTok Ads",
+  SNAPCHAT_ADS: "Snapchat Ads",
+};
+
+const num = (n: number) => Math.round(n).toLocaleString("en-US");
+const num1 = (n: number) => (Math.round(n * 10) / 10).toLocaleString("en-US");
+
+export function AttributionModelTable({
+  rows,
+  channelRows,
+  currency,
+  pathCoveragePct,
+  conversionsWithoutTouches,
+  unbackedClaims,
+}: {
+  rows: ModelComparisonRow[];
+  channelRows: ModelComparisonRow[];
+  currency: string;
+  pathCoveragePct: number;
+  conversionsWithoutTouches: number;
+  unbackedClaims: number;
+}) {
+  const [dimension, setDimension] = useState<"platform" | "channel">("platform");
+  const [metric, setMetric] = useState<"conversions" | "revenue">("conversions");
+
+  const data = dimension === "platform" ? rows : channelRows;
+  const label = (key: string) =>
+    dimension === "platform" ? (PLATFORM_NAMES[key] ?? key) : (CHANNEL_LABELS[key] ?? key);
+
+  const underCredited = data.filter((r) => r.verdict === "UNDER_CREDITED");
+  const overCredited = data.filter((r) => r.verdict === "OVER_CREDITED");
+
+  return (
+    <div>
+      {/* أدوات التبديل */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <Toggle
+          options={[
+            { key: "platform", label: "حسب المنصة" },
+            { key: "channel", label: "حسب القناة" },
+          ]}
+          value={dimension}
+          onChange={(v) => setDimension(v as "platform" | "channel")}
+        />
+        <Toggle
+          options={[
+            { key: "conversions", label: "التحويلات" },
+            { key: "revenue", label: "الإيراد" },
+          ]}
+          value={metric}
+          onChange={(v) => setMetric(v as "conversions" | "revenue")}
+        />
+      </div>
+
+      {/* الخلاصة قبل الجدول - الجدول يشرح، والخلاصة تُقرأ */}
+      {(underCredited.length > 0 || overCredited.length > 0) && (
+        <div className="mb-3 grid gap-2 sm:grid-cols-2">
+          {underCredited.length > 0 && (
+            <Verdict
+              tone="under"
+              title="قنوات مبخوسة الفضل"
+              body={
+                <>
+                  {underCredited.map((r) => label(r.key)).join("، ")} تُسهم في رحلات أكثر ممّا تدّعيه لنفسها.
+                  خفض ميزانيتها بناءً على لوحتها وحدها يقطع أول الرحلة ويُضعف ما بعده.
+                </>
+              }
+            />
+          )}
+          {overCredited.length > 0 && (
+            <Verdict
+              tone="over"
+              title="قنوات متضخّمة الفضل"
+              body={
+                <>
+                  {overCredited.map((r) => label(r.key)).join("، ")} تنسب لنفسها أكثر ممّا يمنحها التوزيع
+                  متعدّد اللمسات — غالباً لأنها آخر لمسة في رحلات بدأها غيرها.
+                </>
+              }
+            />
+          )}
+        </div>
+      )}
+
+      <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
+        <table className="w-full min-w-[900px] text-right text-[12.5px]">
+          <thead>
+            <tr className="border-b border-border text-text-muted">
+              <th className="sticky start-0 bg-surface px-4 py-3 text-start font-medium">
+                {dimension === "platform" ? "المنصة" : "القناة"}
+              </th>
+              {ATTRIBUTION_MODELS.map((m) => (
+                <th key={m.key} className="px-3 py-3 font-medium" title={m.descriptionAr}>
+                  <span className="flex items-center justify-end gap-1">
+                    {m.labelAr}
+                    <Info size={10} className="text-text-faint" />
+                  </span>
+                </th>
+              ))}
+              <th className="px-4 py-3 font-medium">الحكم</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((row) => (
+              <tr key={row.key} className="border-b border-border/50 last:border-0">
+                <td className="sticky start-0 bg-surface px-4 py-3">
+                  <span className="flex items-center gap-2 font-medium text-text-primary">
+                    {dimension === "platform" && <PlatformLogo platform={row.key} size={14} />}
+                    {label(row.key)}
+                  </span>
+                </td>
+                {ATTRIBUTION_MODELS.map((m) => (
+                  <td key={m.key} className="px-3 py-3 tabular-nums text-text-primary">
+                    <Cell row={row} model={m.key} metric={metric} currency={currency} />
+                  </td>
+                ))}
+                <td className="px-4 py-3">
+                  <VerdictBadge row={row} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* حدود القراءة - تُذكر مع الأرقام لا في حاشية بعيدة */}
+      <div className="mt-2 flex flex-col gap-1 text-[11.5px] leading-relaxed text-text-faint">
+        <p>
+          «ما تدّعيه المنصة» ليس نموذجاً عادلاً — هو مرآة للوحات المنصات، ووجوده للمقارنة لا للتصديق.
+          الحكم يقارن متوسّط النماذج متعدّدة اللمسات بما تدّعيه كل قناة لنفسها.
+        </p>
+        <p>
+          تغطية المسارات {pathCoveragePct}%
+          {conversionsWithoutTouches > 0 && (
+            <> — {num(conversionsWithoutTouches)} تحويلاً بلا لمسة مسجَّلة (وسم ناقص على مسار الدخول).</>
+          )}
+          {unbackedClaims > 0 && (
+            <>
+              {" "}
+              و{num(unbackedClaims)} تحويلاً ادّعته منصة ولا نملك له لمسة واحدة منها.
+            </>
+          )}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function Cell({
+  row, model, metric, currency,
+}: {
+  row: ModelComparisonRow;
+  model: AttributionModelKey;
+  metric: "conversions" | "revenue";
+  currency: string;
+}) {
+  const credit = row.byModel[model];
+  const value = metric === "conversions" ? credit.conversions : credit.revenue;
+
+  if (value <= 0) return <span className="text-text-faint">—</span>;
+
+  return (
+    <span>
+      {metric === "conversions" ? num1(value) : num(value)}
+      {metric === "revenue" && <span className="ms-1 text-[10.5px] text-text-faint">{currency}</span>}
+    </span>
+  );
+}
+
+function VerdictBadge({ row }: { row: ModelComparisonRow }) {
+  if (row.verdict === "FAIR") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md bg-surface-raised px-2 py-0.5 text-[11.5px] text-text-muted">
+        <Minus size={11} />
+        متّسق
+      </span>
+    );
+  }
+  const under = row.verdict === "UNDER_CREDITED";
+  const Arrow = under ? ArrowUpRight : ArrowDownRight;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11.5px] font-medium ${
+        under ? "bg-verified/10 text-verified" : "bg-critical/10 text-critical"
+      }`}
+      title={
+        row.creditGapPct !== null
+          ? `الفارق ${Math.abs(Math.round(row.creditGapPct))}% عن ما تدّعيه لنفسها`
+          : "تُسهم في رحلات ولا تدّعي شيئاً لنفسها"
+      }
+    >
+      <Arrow size={11} />
+      {under ? "مبخوسة" : "متضخّمة"}
+      {row.creditGapPct !== null && (
+        <span className="tabular-nums">{Math.abs(Math.round(row.creditGapPct))}%</span>
+      )}
+    </span>
+  );
+}
+
+function Verdict({ tone, title, body }: { tone: "under" | "over"; title: string; body: React.ReactNode }) {
+  const under = tone === "under";
+  return (
+    <div
+      className={`rounded-xl border p-3 ${
+        under ? "border-verified/30 bg-verified/[0.06]" : "border-critical/30 bg-critical/[0.06]"
+      }`}
+    >
+      <div className={`mb-1 text-[12.5px] font-semibold ${under ? "text-verified" : "text-critical"}`}>
+        {title}
+      </div>
+      <p className="text-[12px] leading-relaxed text-text-muted">{body}</p>
+    </div>
+  );
+}
+
+function Toggle({
+  options, value, onChange,
+}: {
+  options: Array<{ key: string; label: string }>;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1 rounded-xl border border-border bg-surface p-1">
+      {options.map((o) => (
+        <button
+          key={o.key}
+          onClick={() => onChange(o.key)}
+          className={`rounded-lg px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
+            value === o.key ? "bg-accent/10 text-accent" : "text-text-muted hover:text-text-primary"
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}

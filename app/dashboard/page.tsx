@@ -12,6 +12,7 @@ import { MetricCard } from "@/app/components/ui/MetricCard";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { SourcePerformanceTable, type SourceRow } from "@/app/components/SourcePerformanceTable";
 import { PlatformDonut } from "@/app/components/PlatformDonut";
+import { RevenueByPlatform, type RevenuePlatformRow } from "@/app/components/RevenueByPlatform";
 import { TrendChart } from "@/app/components/TrendChart";
 import { MetricsExplorer } from "@/app/components/MetricsExplorer";
 import { computeHealthScore } from "@/lib/healthScore";
@@ -92,12 +93,12 @@ export default async function GlancePage({
       prisma.metricSnapshot.groupBy({
         by: ["platform"],
         where: { workspaceId: workspace.id, date: { gte: thirtyDaysAgo } },
-        _sum: { clicks: true, verifiedConversions: true, cost: true, rawConversions: true, impressions: true },
+        _sum: { clicks: true, verifiedConversions: true, cost: true, rawConversions: true, impressions: true, revenue: true },
       }),
       prisma.metricSnapshot.groupBy({
         by: ["platform"],
         where: { workspaceId: workspace.id, date: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
-        _sum: { verifiedConversions: true, cost: true },
+        _sum: { verifiedConversions: true, cost: true, revenue: true },
       }),
       prisma.metricSnapshot.findMany({
         where: { workspaceId: workspace.id, date: { gte: fourteenDaysAgo } },
@@ -169,6 +170,28 @@ export default async function GlancePage({
       },
     };
   });
+
+  // الإيراد لكل منصة - الإيراد وحده مضلِّل، فيُعرض مع إنفاقه وعائده
+  const revenueRows: RevenuePlatformRow[] = byPlatform
+    .filter((p: any) => AD_PLATFORMS.includes(p.platform))
+    .map((p: any) => {
+      const prev: any = prevByPlatform.get(p.platform);
+      const prevRevenue = prev?.revenue ?? 0;
+      const revenue = p._sum.revenue ?? 0;
+      return {
+        platform: p.platform,
+        revenue,
+        cost: p._sum.cost ?? 0,
+        verifiedConversions: p._sum.verifiedConversions ?? 0,
+        revenueChangePct: prevRevenue > 0 ? Math.round(((revenue - prevRevenue) / prevRevenue) * 100) : null,
+      };
+    });
+
+  // نقطة التعادل الحقيقية = ١ ÷ هامش الربح. بدونها نقارن نسبياً فقط
+  const breakEvenRoas =
+    workspace.profitMarginPct && workspace.profitMarginPct > 0
+      ? Math.round((1 / (workspace.profitMarginPct / 100)) * 100) / 100
+      : null;
 
   // مقارنة المنصات (insight تلقائي) - محتاجة منصتين على الأقل بإنفاق
   const platformInsight = (() => {
@@ -310,6 +333,17 @@ export default async function GlancePage({
             <div className="mb-4">
               <SourcePerformanceTable rows={sourceRows} />
               {platformInsight && <p className="mt-2 px-1 text-[13px] text-text-muted">💡 {platformInsight}</p>}
+            </div>
+          )}
+
+          {/* الإيراد لكل منصة - مقارنة الإيراد بإنفاقه وعائده */}
+          {revenueRows.length > 0 && (
+            <div className="mb-4">
+              <RevenueByPlatform
+                rows={revenueRows}
+                currency={workspace.currency}
+                breakEvenRoas={breakEvenRoas}
+              />
             </div>
           )}
 
