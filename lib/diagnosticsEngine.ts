@@ -150,7 +150,7 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
            "تأكد أن المستخدم المرتبط يملك صلاحية القراءة على الحساب.",
            "المزامنة تعمل يومياً - البيانات الجديدة قد تحتاج دورة واحدة للظهور."],
       lastScanAt: now,
-      actionHref: "/dashboard/settings?tab=workspace",
+      actionHref: "/dashboard/integrations",
     });
   }
 
@@ -422,7 +422,7 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       findingAr: daysLeft === null ? "الاتصال سليم." : daysLeft <= 0 ? "انتهت الصلاحية - أعد الربط الآن." : `تنتهي الصلاحية خلال ${daysLeft} يوماً.`,
       trend: [],
       lastScanAt: now,
-      actionHref: "/dashboard/settings?tab=integrations",
+      actionHref: "/dashboard/integrations",
     });
   }
 

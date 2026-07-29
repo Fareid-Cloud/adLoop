@@ -69,13 +69,13 @@ export const NAV_GROUPS: NavGroup[] = [
           { href: "/dashboard/campaigns/tiktok-spark-ads", labelAr: "Spark Ads", labelEn: "Spark Ads", platform: "TIKTOK_ADS", nested: true },
         ],
       },
-      { href: "/dashboard/truth", labelAr: "الأرقام الحقيقية", labelEn: "Real Numbers", iconName: "ShieldCheck" },
+      { href: "/dashboard/truth", labelAr: "مركز الحقيقة", labelEn: "Truth Center", iconName: "ShieldCheck" },
       { href: "/dashboard/pricing", labelAr: "التسعير", labelEn: "Pricing", iconName: "Tag" },
       {
         // الترتيب يتبع طريقة تفكير صاحب المتجر لا نوع البيانات: يبدأ بالوضع
         // العام، ثم أين يذهب المال، ثم ما يبيعه، ثم كيف يسعّره، ثم ما لديه،
         // ثم من يشتري، ثم كيف تصل الطلبات، ثم ما يفعله بعد ذلك.
-        href: "/dashboard/ecommerce", labelAr: "المتجر", labelEn: "Store", iconName: "ShoppingBag",
+        href: "/dashboard/ecommerce", labelAr: "متجري الإلكتروني", labelEn: "My Store", iconName: "ShoppingBag",
         children: [
           { href: "/dashboard/ecommerce", labelAr: "ملخّص المتجر", labelEn: "Overview" },
           { href: "/dashboard/ecommerce/profit", labelAr: "الأرباح", labelEn: "Profit" },

@@ -132,7 +132,7 @@ export function EcommerceView({
           {hasStoreConnection && storePlatform ? (
             <span className="text-[12.5px] text-text-primary">{STORE_LABEL[storePlatform] ?? storePlatform} مرتبط</span>
           ) : (
-            <a href="/dashboard/settings?tab=integrations" className="text-[12.5px] text-accent no-underline">
+            <a href="/dashboard/integrations" className="text-[12.5px] text-accent no-underline">
               اربط متجرك
             </a>
           )}

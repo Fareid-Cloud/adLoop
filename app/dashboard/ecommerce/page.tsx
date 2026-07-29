@@ -15,13 +15,18 @@ import { buildOpportunities } from "@/lib/ecommerce/opportunities";
 import {
   Wallet, TrendingUp, Percent, ShoppingCart, Receipt, Repeat, RotateCcw, PackageX,
 } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
 export default async function EcommerceOverviewPage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `store.${k}`, vars);
+  const tc = (k: string, vars?: Record<string, string | number>) => t(locale, `common.${k}`, vars);
+
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -31,10 +36,10 @@ export default async function EcommerceOverviewPage() {
   if (!workspace) {
     return (
       <DataGate
-        titleAr="لا توجد مساحة عمل بعد"
-        reasonAr="ارجع إلى «لمحة» لإنشاء أول مساحة عمل."
+        titleAr={tc("noWorkspace")}
+        reasonAr={tc("noWorkspaceHint")}
         href="/dashboard"
-        hrefLabelAr="إلى لمحة"
+        hrefLabelAr={tc("toHome")}
       />
     );
   }
@@ -51,13 +56,14 @@ export default async function EcommerceOverviewPage() {
     return (
       <div className="mx-auto max-w-6xl">
         <EcomHeader
-          title="التجارة الإلكترونية"
-          subtitle="أين تربح، أين تخسر، وما القرار التالي الذي يزيد أرباح متجرك."
+          title={tr("title")}
+          subtitle={tr("subtitle")}
           storeName={workspace.name}
         />
         <DataGate
-          titleAr="اربط متجرك أولاً"
-          reasonAr="هذا القسم يقيس الربح الحقيقي بعد كل التكاليف، ويحتاج طلباتك الفعلية. بدون متجر مربوط نعرف إنفاقك الإعلاني ولا نعرف ما عاد منه."
+          titleAr={tr("connectStoreTitle")}
+          reasonAr={tr("connectStoreReason")}
+          hrefLabelAr={tr("connectStore")}
         />
       </div>
     );
@@ -67,18 +73,21 @@ export default async function EcommerceOverviewPage() {
   const actions: RecommendedAction[] = topOpps.map((o) => ({
     titleAr: o.titleAr,
     reasonAr: o.reasonAr,
-    impactAr: `أثر مقدَّر: ${fmtNum(o.estimatedMonthlyProfit)} ${c} شهرياً`,
+    impactAr: tc("estimatedImpact", { value: `${fmtNum(o.estimatedMonthlyProfit)} ${c}` }),
     href: o.actionHref,
-    hrefLabelAr: "نفّذ",
+    hrefLabelAr: tc("apply"),
     tone: o.type === "PAUSE_ADS" || o.type === "RAISE_PRICE" ? "critical" : "positive",
   }));
 
   if (journey.biggestLeak) {
     actions.push({
-      titleAr: `أكبر بند يستهلك إيرادك: ${journey.biggestLeak.labelAr}`,
-      reasonAr: `يلتهم ${journey.biggestLeak.pctOfRevenue}% من إيرادك (${fmtNum(journey.biggestLeak.amount)} ${c}). أي خفض هنا يظهر في صافي الربح مباشرة.`,
+      titleAr: tr("biggestLeak", { label: journey.biggestLeak.labelAr }),
+      reasonAr: tr("biggestLeakReason", {
+        pct: journey.biggestLeak.pctOfRevenue,
+        amount: `${fmtNum(journey.biggestLeak.amount)} ${c}`,
+      }),
       href: "/dashboard/ecommerce/profit",
-      hrefLabelAr: "افتح رحلة الربح",
+      hrefLabelAr: tr("openProfit"),
       tone: "warning",
     });
   }
@@ -86,18 +95,16 @@ export default async function EcommerceOverviewPage() {
   return (
     <div className="mx-auto max-w-6xl">
       <EcomHeader
-        title="التجارة الإلكترونية"
-        subtitle="أين تربح، أين تخسر، وما القرار التالي الذي يزيد أرباح متجرك. آخر ٣٠ يوماً."
+        title={tr("title")}
+        subtitle={`${tr("subtitle")} ${tc("lastNDays", { days: 30 })}.`}
         storeName={workspace.name}
       />
 
-      <SectionHeading hint="مؤشّرات تجارية بحتة — لا تكرار لما تراه في لوحة متجرك أو منصّات الإعلان.">
-        وضع المتجر
-      </SectionHeading>
+      <SectionHeading hint={tr("storeStatusHint")}>{tr("storeStatus")}</SectionHeading>
 
       <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          label="الإيراد"
+          label={tc("revenue")}
           value={fmtNum(overview.revenue)}
           unit={c}
           icon={Wallet}
@@ -108,13 +115,13 @@ export default async function EcommerceOverviewPage() {
                   value: `${Math.abs(overview.revenueChangePct)}%`,
                   direction: overview.revenueChangePct >= 0 ? "up" : "down",
                   positive: overview.revenueChangePct >= 0,
-                  caption: "عن الـ٣٠ يوماً السابقة",
+                  caption: tc("lastNDays", { days: 30 }),
                 }
               : undefined
           }
         />
         <MetricCard
-          label="صافي الربح"
+          label={tr("netProfit")}
           value={fmtNum(overview.netProfit)}
           unit={c}
           icon={TrendingUp}
@@ -125,18 +132,18 @@ export default async function EcommerceOverviewPage() {
                   value: `${Math.abs(overview.profitChangePct)}%`,
                   direction: overview.profitChangePct >= 0 ? "up" : "down",
                   positive: overview.profitChangePct >= 0,
-                  caption: "عن الفترة السابقة",
+                  caption: tc("lastNDays", { days: 30 }),
                 }
               : undefined
           }
           caption={
             overview.netProfit < 0
-              ? { text: "متجرك يخسر بعد احتساب كل التكاليف", tone: "negative" }
+              ? { text: tr("losingMoney"), tone: "negative" }
               : undefined
           }
         />
         <MetricCard
-          label="هامش الربح"
+          label={tr("grossMargin")}
           value={overview.grossMarginPct ?? "—"}
           unit={overview.grossMarginPct !== null ? "%" : undefined}
           icon={Percent}
@@ -151,63 +158,62 @@ export default async function EcommerceOverviewPage() {
           }
           bar={overview.grossMarginPct !== null ? { pct: Math.max(0, overview.grossMarginPct) } : undefined}
         />
-        <MetricCard label="الطلبات" value={fmtNum(overview.orders)} icon={ShoppingCart} tone="default" />
+        <MetricCard label={tr("orders")} value={fmtNum(overview.orders)} icon={ShoppingCart} tone="default" />
 
         <MetricCard
-          label="متوسط قيمة الطلب"
+          label={tr("aov")}
           value={overview.avgOrderValue !== null ? fmtNum(overview.avgOrderValue) : "—"}
           unit={overview.avgOrderValue !== null ? c : undefined}
           icon={Receipt}
           tone="default"
         />
         <MetricCard
-          label="عملاء عائدون"
+          label={tr("returningCustomers")}
           value={overview.returningCustomersPct ?? "—"}
           unit={overview.returningCustomersPct !== null ? "%" : undefined}
           icon={Repeat}
           tone="verified"
           caption={
             overview.returningCustomersPct === null
-              ? { text: "يتطلّب بيانات عملاء من المتجر", tone: "muted" }
+              ? { text: tr("needsCustomerData"), tone: "muted" }
               : undefined
           }
         />
         <MetricCard
-          label="معدّل المرتجعات"
+          label={tr("refundRate")}
           value={overview.refundRatePct}
           unit="%"
           icon={RotateCcw}
           tone={overview.refundRatePct >= 15 ? "critical" : overview.refundRatePct >= 8 ? "gap" : "verified"}
           caption={
             overview.refundRatePct >= 15
-              ? { text: "مرتفع — أغلى أنواع الخسارة", tone: "negative" }
+              ? { text: tr("refundHigh"), tone: "negative" }
               : undefined
           }
         />
         <MetricCard
-          label="منتجات مهدَّدة بالنفاد"
+          label={tr("inventoryRisk")}
           value={overview.inventoryRiskCount}
           icon={PackageX}
           tone={overview.inventoryRiskCount > 0 ? "critical" : "neutral"}
           caption={
             overview.inventoryRiskCount > 0
-              ? { text: "ستنفد خلال ١٤ يوماً بمعدّل البيع الحالي", tone: "negative" }
-              : { text: "لا خطر نفاد قريب", tone: "positive" }
+              ? { text: tr("stockRiskHint"), tone: "negative" }
+              : { text: tr("stockSafe"), tone: "positive" }
           }
         />
       </div>
 
       {!overview.hasOrderLevelData && (
         <div className="mb-8 rounded-2xl border border-gap/30 bg-gap/[0.06] p-4 text-[12.5px] leading-relaxed text-text-muted">
-          الأرقام أعلاه محسوبة من مجاميع يومية لا من طلبات مفصَّلة. تحليل العملاء وجودة الطلبات
-          يحتاجان طلبات حقيقية تصل عبر ويب هوك المتجر — تأكّد من تسجيله في لوحة متجرك.
+          {tr("aggregateOnly")}
         </div>
       )}
 
       {topOpps.length > 0 && (
         <>
-          <SectionHeading hint={`إجمالي الفرص المرصودة: ${fmtNum(opps.totalPotentialProfit)} ${c} شهرياً`}>
-            أكبر الفرص الآن
+          <SectionHeading hint={tr("totalOpportunities", { value: `${fmtNum(opps.totalPotentialProfit)} ${c}` })}>
+            {tr("topOpportunities")}
           </SectionHeading>
           <div className="mb-2 grid gap-3 lg:grid-cols-3">
             {topOpps.map((o) => (
@@ -217,7 +223,7 @@ export default async function EcommerceOverviewPage() {
                   <span className="text-[22px] font-semibold tabular-nums text-verified">
                     +{fmtNum(o.estimatedMonthlyProfit)}
                   </span>
-                  <span className="text-[12px] text-text-muted">{c} شهرياً</span>
+                  <span className="text-[12px] text-text-muted">{c} · {tr("perMonth")}</span>
                 </div>
                 <p className="mt-2 text-[12px] leading-relaxed text-text-muted">{o.reasonAr}</p>
               </div>
@@ -227,7 +233,7 @@ export default async function EcommerceOverviewPage() {
             href="/dashboard/ecommerce/opportunities"
             className="text-[12.5px] text-accent no-underline hover:underline"
           >
-            عرض كل الفرص ({opps.opportunities.length})
+            {tc("viewAll")} ({opps.opportunities.length})
           </a>
         </>
       )}

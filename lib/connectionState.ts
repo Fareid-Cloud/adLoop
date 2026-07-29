@@ -61,7 +61,7 @@ export async function getPlatformStatus(
       state: "NOT_CONNECTED",
       title: `${label} غير مربوط بعد`,
       description: `اربط حساب ${label} من الإعدادات لتبدأ مزامنة بياناتك.`,
-      ctaHref: "/dashboard/settings?tab=connections",
+      ctaHref: "/dashboard/integrations",
       ctaLabel: "ربط الحساب",
     };
   }
@@ -71,7 +71,7 @@ export async function getPlatformStatus(
       state: "NO_CAMPAIGNS",
       title: `حساب ${label} مربوط، لكن لم تختر حملات بعد`,
       description: `تم ربط حسابك بنجاح ✓ — الخطوة الأخيرة: اختر الحملات التي تريد متابعتها من الإعدادات ← مساحة العمل، وستبدأ الأرقام بالظهور بعد أول مزامنة.`,
-      ctaHref: "/dashboard/settings?tab=workspace",
+      ctaHref: "/dashboard/integrations",
       ctaLabel: "اختيار الحملات",
     };
   }
@@ -81,7 +81,7 @@ export async function getPlatformStatus(
       state: "NO_DATA_YET",
       title: "الحملات مختارة، والبيانات في الطريق",
       description: `تم ربط ${label} واختيار ${linkCount} حملة ✓ — تجري المزامنة يومياً تلقائياً، وقد تستغرق أول مرة بعض الوقت. يمكنك تشغيل مزامنة فورية من الإعدادات.`,
-      ctaHref: "/dashboard/settings?tab=workspace",
+      ctaHref: "/dashboard/integrations",
       ctaLabel: "مزامنة الآن",
     };
   }

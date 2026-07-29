@@ -29,9 +29,9 @@
   --border-visible: #3A424E;
 
   /* النص - رمادي فاتح محايد يليق بالخلفية الكحلية الرمادية */
-  --text-primary: #E8EAED;
-  --text-muted: #9AA2AE;
-  --text-faint: #6B7480;
+  --text-primary: #F1F3F6;
+  --text-muted: #B4BCC8;
+  --text-faint: #8B95A3;
 
   /* الألوان الدلالية - ثابتة دائماً، مش قابلة للتخصيص (مبدأ §3 في الـ ADR) */
   --verified: #22C55E;
@@ -55,8 +55,8 @@
   /* ظلال ناعمة ملوّنة بلمسة رمادي بارد - ده اللي بيخلّي الكروت "تطفو"
      وتبان احترافية بدل ما تبقى مربعات مسطّحة (درس من Cometly/Triple Whale).
      القيمة هنا للوضع الداكن (ظل أسود أعمق)، و[data-mode=light] بيغطيها. */
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 30px -12px rgba(0, 0, 0, 0.6);
-  --shadow-pop: 0 16px 48px -12px rgba(0, 0, 0, 0.7);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.22), 0 8px 20px -14px rgba(0, 0, 0, 0.38);
+  --shadow-pop: 0 14px 40px -14px rgba(0, 0, 0, 0.52);
 
   /* مقياس المسافات - وحدة أساسية 4px */
   --space-1: 4px;
@@ -76,6 +76,7 @@
 [data-accent="red"]    { --accent: #F55252; --accent-dim: #F552521A; }
 /* رمادي محايد: درجة متوسطة تُقرأ بوضوح على الخلفية الفاتحة والداكنة معاً */
 [data-accent="gray"]   { --accent: #64748B; --accent-dim: #64748B1A; }
+[data-accent="facebook"] { --accent: #0866FF; --accent-dim: #0866FF1A; }
 
 [data-mode="light"] {
   /* عمق حقيقي في الوضع الفاتح: خلفية رمادية فاتحة، الكروت بيضاء تطفو
@@ -86,13 +87,13 @@
   --surface-raised: #F1F3F6;
   --border: #E7EAEF;
   --border-visible: #D5DAE2;
-  --text-primary: #111827;
-  --text-muted: #6B7280;
-  --text-faint: #9AA3AF;
+  --text-primary: #0F172A;
+  --text-muted: #4B5563;
+  --text-faint: #6B7280;
   /* ظلال الوضع الفاتح: ناعمة، بلمسة رمادي بارد (مش أسود قاسي) - المفتاح
      البصري لإحساس المنتجات الكبيرة */
-  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 28px -12px rgba(16, 24, 40, 0.10);
-  --shadow-pop: 0 16px 48px -12px rgba(16, 24, 40, 0.18);
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.03), 0 8px 20px -14px rgba(16, 24, 40, 0.07);
+  --shadow-pop: 0 14px 40px -14px rgba(16, 24, 40, 0.14);
 }
 
 /* الوضع الداكن صراحةً - ضروري: القيم الغامقة على :root، لكن لمّا يكون
@@ -106,9 +107,9 @@
   --surface-raised: #1F242D;
   --border: #2A313B;
   --border-visible: #3A424E;
-  --text-primary: #E8EAED;
-  --text-muted: #9AA2AE;
-  --text-faint: #6B7480;
+  --text-primary: #F1F3F6;
+  --text-muted: #B4BCC8;
+  --text-faint: #8B95A3;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.45), 0 14px 34px -14px rgba(0, 0, 0, 0.75);
   --shadow-pop: 0 18px 50px -14px rgba(0, 0, 0, 0.85);
 }
@@ -118,18 +119,14 @@
  * ظل قريب، والتالتة ظل بعيد ناعم - التلاتة مع بعض بيعملوا العمق الحقيقي
  * بدل ظل مسطّح واحد. */
 .card-shadow {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    var(--shadow-card);
+  box-shadow: var(--shadow-card);
   transition: box-shadow .22s ease, transform .22s ease;
 }
 /* عند المرور: إطار أوضح وظل أعمق قليلاً - بلا حركة رأسية.
  * الحركة على كل بطاقة كانت مُتعِبة بصرياً مع كثرة العناصر. */
 .card-shadow:hover {
   border-color: var(--border-visible);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    var(--shadow-card);
+  box-shadow: var(--shadow-card);
 }
 .pop-shadow { box-shadow: var(--shadow-pop); }
 
@@ -222,6 +219,9 @@
 body {
   background: var(--bg);
   color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   font-family: var(--font-sans, system-ui, sans-serif);
 }
 

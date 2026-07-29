@@ -23,7 +23,19 @@ const AVATAR_ICONS = [
   { key: "zap", Icon: Zap },
 ] as const;
 
-const THEME_COLORS = ["blue", "purple", "orange", "sky", "red"] as const;
+// الرمادي يصلح للوضعين الفاتح والداكن معاً (لا يميل لأيّهما)، و"فيسبوك"
+// أزرق ميتا الرسمي #0866FF - يألفه من يقضي يومه في مدير إعلانات ميتا.
+const THEME_COLORS = ["blue", "facebook", "purple", "sky", "gray", "orange", "red"] as const;
+
+const THEME_COLOR_LABELS: Record<(typeof THEME_COLORS)[number], string> = {
+  blue: "أزرق",
+  facebook: "أزرق فيسبوك",
+  purple: "بنفسجي",
+  sky: "سماوي",
+  gray: "رمادي",
+  orange: "برتقالي",
+  red: "أحمر",
+};
 
 interface UserData {
   name: string | null;
@@ -340,6 +352,8 @@ function PreferencesTab({ user }: { user: UserData }) {
             key={c}
             onClick={() => setThemeColor(c)}
             data-accent={c}
+            title={THEME_COLOR_LABELS[c]}
+            aria-label={THEME_COLOR_LABELS[c]}
             className={`h-8 w-8 rounded-full bg-accent transition-transform ${
               themeColor === c ? "scale-110 ring-2 ring-text-primary ring-offset-2 ring-offset-bg" : ""
             }`}

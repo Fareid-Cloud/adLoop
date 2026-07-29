@@ -136,7 +136,7 @@ export const INTEGRATIONS: IntegrationDef[] = [
     category: "ECOMMERCE",
     status: "LIVE",
     valueAr: "الطلبات والإيراد والمرتجعات ومزامنة الأسعار - أدقّ مصدر تحقّق لدينا.",
-    connectPath: "/dashboard/settings?tab=ecommerce",
+    connectPath: "/dashboard/integrations",
     color: "#00C48C",
   },
   {
@@ -147,7 +147,7 @@ export const INTEGRATIONS: IntegrationDef[] = [
     category: "ECOMMERCE",
     status: "LIVE",
     valueAr: "الطلبات والإيراد ومزامنة الأسعار.",
-    connectPath: "/dashboard/settings?tab=ecommerce",
+    connectPath: "/dashboard/integrations",
     color: "#95BF47",
   },
   {
@@ -158,7 +158,7 @@ export const INTEGRATIONS: IntegrationDef[] = [
     category: "ECOMMERCE",
     status: "LIVE",
     valueAr: "الطلبات والإيراد.",
-    connectPath: "/dashboard/settings?tab=ecommerce",
+    connectPath: "/dashboard/integrations",
     color: "#5D3EBC",
   },
   {
@@ -169,7 +169,7 @@ export const INTEGRATIONS: IntegrationDef[] = [
     category: "ECOMMERCE",
     status: "LIVE",
     valueAr: "الطلبات والإيراد عبر مفتاح وسرّ API.",
-    connectPath: "/dashboard/settings?tab=ecommerce",
+    connectPath: "/dashboard/integrations",
     color: "#96588A",
   },
   {
@@ -180,7 +180,7 @@ export const INTEGRATIONS: IntegrationDef[] = [
     category: "ECOMMERCE",
     status: "LIVE",
     valueAr: "الطلبات والدفع عند الاستلام - مهمّ للسوق المصري تحديداً.",
-    connectPath: "/dashboard/settings?tab=ecommerce",
+    connectPath: "/dashboard/integrations",
     color: "#FF6B35",
   },
 
@@ -193,7 +193,7 @@ export const INTEGRATIONS: IntegrationDef[] = [
     category: "MESSAGING",
     status: "LIVE",
     valueAr: "الرسالة الحقيقية التي تحوّل «نقرة» إلى «عميل مؤكَّد».",
-    connectPath: "/dashboard/settings?tab=tracking",
+    connectPath: "/dashboard/integrations",
     color: "#25D366",
   },
   {
@@ -204,7 +204,7 @@ export const INTEGRATIONS: IntegrationDef[] = [
     category: "MESSAGING",
     status: "LIVE",
     valueAr: "محادثات Click-to-Messenger مع تمييز الضغط بالخطأ عن التواصل الحقيقي.",
-    connectPath: "/dashboard/settings?tab=tracking",
+    connectPath: "/dashboard/integrations",
     color: "#0084FF",
   },
 

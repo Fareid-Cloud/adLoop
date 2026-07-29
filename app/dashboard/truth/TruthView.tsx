@@ -497,7 +497,7 @@ export function TruthView({
               التفعيل من الإعدادات، ويحتاج معرّف البكسل وتوكن الأحداث لكل منصة.
             </p>
             <a
-              href="/dashboard/settings"
+              href="/dashboard/integrations"
               className="inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-[12.5px] font-medium text-accent no-underline transition-colors hover:bg-accent/20"
             >
               <Send size={14} />
