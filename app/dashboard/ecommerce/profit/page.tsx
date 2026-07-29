@@ -16,6 +16,7 @@ import {
 import { getProfitJourney } from "@/lib/ecommerce/storeIntelligence";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { Wallet, TrendingUp, Percent, AlertTriangle } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -28,8 +29,12 @@ export default async function ProfitPage({
   const windowDays = [7, 30, 90].includes(Number(sp.days)) ? Number(sp.days) : 30;
 
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const tr = (k: string, v?: Record<string, string | number>) => t(locale, `profit.${k}`, v);
+  const tc = (k: string, v?: Record<string, string | number>) => t(locale, `common.${k}`, v);
+
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -37,7 +42,7 @@ export default async function ProfitPage({
     orderBy: { createdAt: "asc" },
   });
   if (!workspace) {
-    return <DataGate titleAr="لا توجد مساحة عمل بعد" reasonAr="ارجع إلى «لمحة»." href="/dashboard" hrefLabelAr="إلى لمحة" />;
+    return <DataGate titleAr={tc("noWorkspace")} reasonAr={tc("noWorkspaceHint")} href="/dashboard" hrefLabelAr={tc("toHome")} />;
   }
 
   const journey = await getProfitJourney(workspace.id, windowDays);
@@ -47,13 +52,13 @@ export default async function ProfitPage({
     return (
       <div className="mx-auto max-w-5xl">
         <EcomHeader
-          title="رحلة الربح"
-          subtitle="من الإيراد إلى ما يبقى في جيبك فعلاً، بعد كل تكلفة."
+          title={tr("title")}
+          subtitle={tr("subtitle")}
           storeName={workspace.name}
         />
         <DataGate
-          titleAr="لا يوجد إيراد مسجَّل في هذه الفترة"
-          reasonAr="رحلة الربح تبدأ من الإيراد الحقيقي القادم من متجرك. اربط متجرك ليصل كل طلب فور حدوثه."
+          titleAr={tr("noRevenue")}
+          reasonAr={tr("noRevenueReason")}
         />
       </div>
     );
@@ -66,73 +71,77 @@ export default async function ProfitPage({
 
   if (journey.biggestLeak) {
     actions.push({
-      titleAr: `ركّز على «${journey.biggestLeak.labelAr}» أولاً`,
-      reasonAr: `أكبر بند يستهلك إيرادك: ${fmtNum(journey.biggestLeak.amount)} ${c} أي ${journey.biggestLeak.pctOfRevenue}% من كل ريال تبيعه. خفضه ١٠% وحده يضيف ${fmtNum(journey.biggestLeak.amount * 0.1)} ${c} لصافي ربحك.`,
+      titleAr: tr("focusFirst", { label: journey.biggestLeak.labelAr }),
+      reasonAr: tr("focusReason", {
+        amount: `${fmtNum(journey.biggestLeak.amount)} ${c}`,
+        pct: journey.biggestLeak.pctOfRevenue,
+        gain: `${fmtNum(journey.biggestLeak.amount * 0.1)} ${c}`,
+      }),
       tone: "warning",
       href: "/dashboard/ecommerce/opportunities",
-      hrefLabelAr: "شوف الفرص",
+      hrefLabelAr: tr("seeOpportunities"),
     });
   }
 
   if (journey.netMarginPct !== null && journey.netMarginPct < 0) {
     actions.push({
-      titleAr: "متجرك يخسر بعد احتساب كل التكاليف",
-      reasonAr: `الهامش الصافي ${journey.netMarginPct}%. الإيراد وحده لا يعني ربحاً — راجع تسعير منتجاتك الخاسرة قبل أي زيادة في الإنفاق الإعلاني.`,
+      titleAr: tr("losingTitle"),
+      reasonAr: tr("losingReason", { pct: journey.netMarginPct ?? 0 }),
       tone: "critical",
       href: "/dashboard/ecommerce/products",
-      hrefLabelAr: "المنتجات الخاسرة",
+      hrefLabelAr: tr("losingCta"),
     });
   } else if (journey.netMarginPct !== null && journey.netMarginPct < 10) {
     actions.push({
-      titleAr: "هامشك الصافي ضعيف",
-      reasonAr: `${journey.netMarginPct}% هامش لا يحتمل أي اضطراب: ارتفاع بسيط في تكلفة الإعلان أو موجة مرتجعات تكفي لتحويله إلى خسارة.`,
+      titleAr: tr("thinTitle"),
+      reasonAr: tr("thinReason", { pct: journey.netMarginPct ?? 0 }),
       tone: "warning",
       href: "/dashboard/ecommerce/pricing-intelligence",
-      hrefLabelAr: "فرص التسعير",
+      hrefLabelAr: tr("thinCta"),
     });
   }
 
   const adStage = journey.stages.find((s) => s.key === "advertising");
   if (adStage && adStage.pctOfRevenue >= 30) {
     actions.push({
-      titleAr: "الإنفاق الإعلاني يلتهم ثلث إيرادك أو أكثر",
-      reasonAr: `${adStage.pctOfRevenue}% من الإيراد يذهب للإعلان. أوقف الإعلانات الخاسرة بدل زيادة الميزانية — القرار لكل إعلان موجود في صفحة الإعلانات الفردية.`,
+      titleAr: tr("adHeavyTitle"),
+      reasonAr: tr("adHeavyReason", { pct: adStage.pctOfRevenue }),
       tone: "critical",
       href: "/dashboard/campaigns/creatives",
-      hrefLabelAr: "قرارات الإعلانات",
+      hrefLabelAr: tr("adHeavyCta"),
     });
   }
 
   const returnsStage = journey.stages.find((s) => s.key === "returns");
   if (returnsStage && returnsStage.pctOfRevenue >= 8) {
     actions.push({
-      titleAr: "المرتجعات مرتفعة",
-      reasonAr: `${returnsStage.pctOfRevenue}% من إيرادك يعود مرتجعاً — وهي أغلى خسارة ممكنة: دفعت الإعلان والشحن مرّتين ولم تبع شيئاً.`,
+      titleAr: tr("returnsTitle"),
+      reasonAr: tr("returnsReason", { pct: returnsStage.pctOfRevenue }),
       tone: "critical",
       href: "/dashboard/ecommerce/orders",
-      hrefLabelAr: "جودة الطلبات",
+      hrefLabelAr: tr("returnsCta"),
     });
   }
 
   return (
     <div className="mx-auto max-w-5xl">
       <EcomHeader
-        title="رحلة الربح"
-        subtitle={`من الإيراد إلى ما يبقى في جيبك فعلاً، بعد كل تكلفة. آخر ${windowDays} يوماً.`}
+        title={tr("title")}
+        subtitle={`${tr("subtitle")} ${tc("lastNDays", { days: windowDays })}.`}
         storeName={workspace.name}
       />
 
       <div className="mb-8 grid gap-3 sm:grid-cols-3">
-        <MetricCard label="الإيراد" value={fmtNum(journey.revenue)} unit={c} icon={Wallet} tone="accent" />
+        <MetricCard label={tc("revenue")} value={fmtNum(journey.revenue)} unit={c} icon={Wallet} tone="accent" />
         <MetricCard
-          label="صافي الربح"
+          label={t(locale, "store.netProfit")}
           value={fmtNum(journey.netProfit)}
           unit={c}
           icon={TrendingUp}
           tone={journey.netProfit >= 0 ? "verified" : "critical"}
         />
         <MetricCard
-          label="الهامش الصافي"
+          label={tr("netMargin")}
           value={journey.netMarginPct ?? "—"}
           unit={journey.netMarginPct !== null ? "%" : undefined}
           icon={Percent}
@@ -147,15 +156,13 @@ export default async function ProfitPage({
 
       <LimitsNote items={journey.missingCostsAr} />
 
-      <SectionHeading hint="كل بند مطروح بالترتيب، مع مصدره ونسبته من الإيراد. الشريط يوضّح الحجم النسبي لا القيمة المطلقة.">
-        أين يذهب المال
-      </SectionHeading>
+      <SectionHeading hint={tr("whereMoneyGoesHint")}>{tr("whereMoneyGoes")}</SectionHeading>
 
       <div className="card-shadow mb-2 overflow-hidden rounded-2xl border border-border bg-surface">
         {/* الإيراد كنقطة بداية */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-accent/[0.05] p-4">
           <div>
-            <div className="text-[13.5px] font-semibold text-text-primary">الإيراد</div>
+            <div className="text-[13.5px] font-semibold text-text-primary">{tc("revenue")}</div>
             <div className="mt-0.5 text-[11.5px] text-text-faint">{journey.stages[0].sourceAr}</div>
           </div>
           <div className="text-[20px] font-semibold tabular-nums text-text-primary">
@@ -170,7 +177,7 @@ export default async function ProfitPage({
                 <span className="text-[13.5px] font-medium text-text-primary">{stage.labelAr}</span>
                 {stage.isEstimate && (
                   <span className="rounded-md bg-gap/10 px-1.5 py-0.5 text-[10.5px] font-medium text-gap">
-                    مُقدَّرة
+                    {tr("estimated")}
                   </span>
                 )}
               </div>
@@ -193,7 +200,7 @@ export default async function ProfitPage({
             <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-[11.5px]">
               <span className="text-text-faint">{stage.sourceAr}</span>
               <span className="tabular-nums text-text-muted">
-                المتبقّي: {fmtNum(stage.runningTotal)} {c}
+                {tr("remaining")}: {fmtNum(stage.runningTotal)} {c}
               </span>
             </div>
           </div>
@@ -208,9 +215,9 @@ export default async function ProfitPage({
           }`}
         >
           <div>
-            <div className="text-[13.5px] font-semibold text-text-primary">صافي الربح</div>
+            <div className="text-[13.5px] font-semibold text-text-primary">{t(locale, "store.netProfit")}</div>
             <div className="mt-0.5 text-[11.5px] text-text-faint">
-              ما يبقى لك فعلاً من كل ريال بعته
+              {tr("netProfitCaption")}
             </div>
           </div>
           <div
@@ -237,7 +244,7 @@ export default async function ProfitPage({
         </div>
       )}
 
-      <RecommendedActions actions={actions} emptyAr="هوامشك صحّية ولا يوجد بند تكلفة شاذّ في هذه الفترة." />
+      <RecommendedActions actions={actions} emptyAr={tr("healthy")} />
     </div>
   );
 }

@@ -18,6 +18,7 @@ import {
   TrendingUp, Target, Layers, ArrowLeft, ArrowUpCircle, ArrowDownCircle,
   PauseCircle, PackagePlus, Boxes, Users, RotateCcw, Wallet,
 } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -36,18 +37,22 @@ const TYPE_META: Record<
   REDUCE_RETURNS: { icon: RotateCcw, labelAr: "خفض مرتجعات", tone: "text-critical bg-critical/10" },
 };
 
-const CONFIDENCE_AR = { HIGH: "ثقة عالية", MEDIUM: "ثقة متوسطة", LOW: "ثقة منخفضة" } as const;
+const CONFIDENCE_KEY = { HIGH: "confHigh", MEDIUM: "confMedium", LOW: "confLow" } as const;
 const CONFIDENCE_TONE = {
   HIGH: "bg-verified/10 text-verified",
   MEDIUM: "bg-gap/10 text-gap",
   LOW: "bg-surface-raised text-text-muted",
 } as const;
-const DIFFICULTY_AR = { EASY: "سهل", MEDIUM: "متوسط", HARD: "يحتاج جهداً" } as const;
+const DIFFICULTY_KEY = { EASY: "diffEasy", MEDIUM: "diffMedium", HARD: "diffHard" } as const;
 
 export default async function OpportunitiesPage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const tr = (k: string, v?: Record<string, string | number>) => t(locale, `opportunities.${k}`, v);
+  const tc = (k: string, v?: Record<string, string | number>) => t(locale, `common.${k}`, v);
+
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -55,7 +60,7 @@ export default async function OpportunitiesPage() {
     orderBy: { createdAt: "asc" },
   });
   if (!workspace) {
-    return <DataGate titleAr="لا توجد مساحة عمل بعد" reasonAr="ارجع إلى «لمحة»." href="/dashboard" hrefLabelAr="إلى لمحة" />;
+    return <DataGate titleAr={tc("noWorkspace")} reasonAr={tc("noWorkspaceHint")} href="/dashboard" hrefLabelAr={tc("toHome")} />;
   }
 
   const result = await buildOpportunities(workspace.id, 30);
@@ -67,37 +72,37 @@ export default async function OpportunitiesPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <EcomHeader
-        title="الفرص"
-        subtitle="كل ما يمكن فعله الآن لزيادة الربح، مرتَّباً بالأثر المالي لا بالترتيب الأبجدي."
+        title={tr("title")}
+        subtitle={tr("subtitle")}
         storeName={workspace.name}
       />
 
       {result.opportunities.length > 0 && (
         <div className="mb-8 grid gap-3 sm:grid-cols-3">
           <MetricCard
-            label="إجمالي الفرص المرصودة"
+            label={tr("totalFound")}
             value={fmtNum(result.totalPotentialProfit)}
-            unit={`${c} شهرياً`}
+            unit={`${c} · ${t(locale, "store.perMonth")}`}
             icon={Wallet}
             tone="verified"
           />
           <MetricCard
-            label="مكاسب سريعة"
+            label={tr("quickWins")}
             value={easyWins.length}
             icon={Target}
             tone="accent"
             caption={
               easyWins.length > 0
-                ? { text: `بأثر ${fmtNum(easyWins.reduce((s, o) => s + o.estimatedMonthlyProfit, 0))} ${c}`, tone: "positive" }
+                ? { text: tr("withImpact", { value: `${fmtNum(easyWins.reduce((s, o) => s + o.estimatedMonthlyProfit, 0))} ${c}` }), tone: "positive" }
                 : undefined
             }
           />
           <MetricCard
-            label="فرص عالية الثقة"
+            label={tr("highConfidence")}
             value={highConfidence.length}
             icon={TrendingUp}
             tone="verified"
-            caption={{ text: "مبنيّة على عيّنة كافية من مبيعاتك", tone: "muted" }}
+            caption={{ text: tr("highConfidenceHint"), tone: "muted" }}
           />
         </div>
       )}
@@ -106,16 +111,14 @@ export default async function OpportunitiesPage() {
 
       {result.opportunities.length === 0 ? (
         <DataGate
-          titleAr="لا توجد فرص مرصودة الآن"
-          reasonAr="إمّا أن أرقامك ضمن المعقول فعلاً، وإمّا أن البيانات لا تكفي لرصد فرصة بثقة. راجع «ما لا نراه بعد» أعلاه إن ظهر."
+          titleAr={tr("noneTitle")}
+          reasonAr={tr("noneReason")}
           href="/dashboard/ecommerce/products"
-          hrefLabelAr="راجع منتجاتك"
+          hrefLabelAr={tr("noneCta")}
         />
       ) : (
         <>
-          <SectionHeading hint="الترتيب بالأثر المالي، والثقة تفصل بين المتقاربين. الفرصة التي لا نستطيع تقدير أثرها بالمال لا تُعرض هنا إطلاقاً.">
-            {result.opportunities.length} فرصة
-          </SectionHeading>
+          <SectionHeading hint={tr("listHint")}>{tr("countLabel", { count: result.opportunities.length })}</SectionHeading>
 
           <div className="flex flex-col gap-3">
             {result.opportunities.map((o) => {
@@ -146,13 +149,13 @@ export default async function OpportunitiesPage() {
                       <div className="text-[22px] font-semibold leading-none tabular-nums text-verified">
                         +{fmtNum(o.estimatedMonthlyProfit)}
                       </div>
-                      <div className="mt-1 text-[11.5px] text-text-muted">{c} شهرياً</div>
+                      <div className="mt-1 text-[11.5px] text-text-muted">{c} · {t(locale, "store.perMonth")}</div>
                     </div>
                   </div>
 
                   {/* الإجراء المحدَّد - لا نصيحة عامة */}
                   <div className="mt-3 rounded-xl border border-border bg-surface-2/50 p-3">
-                    <div className="mb-1 text-[11.5px] font-medium text-text-faint">ماذا تفعل بالضبط</div>
+                    <div className="mb-1 text-[11.5px] font-medium text-text-faint">{tr("whatToDo")}</div>
                     <p className="text-[12.5px] leading-relaxed text-text-primary">{o.actionAr}</p>
                   </div>
 
@@ -162,14 +165,14 @@ export default async function OpportunitiesPage() {
                         className={`rounded-md px-2 py-0.5 text-[11.5px] font-medium ${CONFIDENCE_TONE[o.confidence]}`}
                         title={o.confidenceReasonAr}
                       >
-                        {CONFIDENCE_AR[o.confidence]}
+                        {tr(CONFIDENCE_KEY[o.confidence])}
                       </span>
                       <span className="rounded-md bg-surface-raised px-2 py-0.5 text-[11.5px] text-text-muted">
-                        {DIFFICULTY_AR[o.difficulty]}
+                        {tr(DIFFICULTY_KEY[o.difficulty])}
                       </span>
                       {o.oneClick && (
                         <span className="rounded-md bg-accent/10 px-2 py-0.5 text-[11.5px] font-medium text-accent">
-                          تنفيذ بضغطة
+                          {tr("oneClick")}
                         </span>
                       )}
                     </div>
@@ -179,7 +182,7 @@ export default async function OpportunitiesPage() {
                         href={o.actionHref}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-[12.5px] font-medium text-accent no-underline transition-colors hover:bg-accent/20"
                       >
-                        نفّذ
+                        {tc("apply")}
                         <ArrowLeft size={13} />
                       </Link>
                     )}
