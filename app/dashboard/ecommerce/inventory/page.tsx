@@ -13,13 +13,18 @@ import {
 import { getInventoryAnalysis } from "@/lib/ecommerce/inventoryIntelligence";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { Boxes, Snowflake, PackageX } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
 export default async function InventoryPage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const tr = (k: string, v?: Record<string, string | number>) => t(locale, `inventory.${k}`, v);
+  const tc = (k: string, v?: Record<string, string | number>) => t(locale, `common.${k}`, v);
+
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -27,7 +32,7 @@ export default async function InventoryPage() {
     orderBy: { createdAt: "asc" },
   });
   if (!workspace) {
-    return <DataGate titleAr="لا توجد مساحة عمل بعد" reasonAr="ارجع إلى «لمحة»." href="/dashboard" hrefLabelAr="إلى لمحة" />;
+    return <DataGate titleAr={tc("noWorkspace")} reasonAr={tc("noWorkspaceHint")} href="/dashboard" hrefLabelAr={tc("toHome")} />;
   }
 
   const analysis = await getInventoryAnalysis(workspace.id, 30);
@@ -37,15 +42,15 @@ export default async function InventoryPage() {
     return (
       <div className="mx-auto max-w-5xl">
         <EcomHeader
-          title="المخزون"
-          subtitle="أين ينام رأس مالك، وأي منتج على وشك النفاد."
+          title={tr("title")}
+          subtitle={tr("subtitle")}
           storeName={workspace.name}
         />
         <DataGate
-          titleAr="لا يوجد منتج متتبَّع المخزون"
-          reasonAr={`${analysis.untrackedProducts} منتج بلا رصيد مسجَّل. يصل الرصيد تلقائياً من متجرك المربوط، أو يُضبط يدوياً من صفحة التسعير.`}
+          titleAr={tr("noneTitle")}
+          reasonAr={tr("noneReason", { count: analysis.untrackedProducts })}
           href="/dashboard/pricing"
-          hrefLabelAr="اضبط المنتجات"
+          hrefLabelAr={tr("noneCta")}
         />
       </div>
     );
@@ -58,72 +63,70 @@ export default async function InventoryPage() {
 
   if (outOfStock) {
     actions.push({
-      titleAr: `أوقف إعلانات ${outOfStock.items.length} منتج نفد رصيدها`,
-      reasonAr: "كل ريال ينفق على منتج لا يمكن تسليمه هو خسارة كاملة — لا تحويل ممكن أصلاً.",
+      titleAr: tr("actPause", { count: outOfStock.items.length }),
+      reasonAr: tr("actPauseReason"),
       tone: "critical",
       href: "/dashboard/automation",
-      hrefLabelAr: "قاعدة المخزون",
+      hrefLabelAr: tr("actPauseCta"),
     });
   }
   if (runningOut) {
     actions.push({
-      titleAr: `أعد طلب ${runningOut.items.length} منتج قبل نفادها`,
-      reasonAr: `أقربها «${runningOut.items[0].name}» يكفي ${runningOut.items[0].daysLeft} يوماً فقط بمعدّل بيعه الحالي.`,
+      titleAr: tr("actRestock", { count: runningOut.items.length }),
+      reasonAr: tr("actRestockReason", { name: runningOut.items[0].name, days: runningOut.items[0].daysLeft ?? 0 }),
       tone: "warning",
     });
   }
   if (dead && dead.capitalImpact > 0) {
     actions.push({
-      titleAr: `حرّر ${fmtNum(dead.capitalImpact)} ${c} من مخزون متوقّف`,
-      reasonAr: `${analysis.deadCapitalPct}% من قيمة مخزونك مجمَّدة في بضاعة لم تتحرّك منذ ٩٠ يوماً. باقة أو تخفيض يسترد جزءاً منها.`,
+      titleAr: tr("actFree", { amount: `${fmtNum(dead.capitalImpact)} ${c}` }),
+      reasonAr: tr("actFreeReason", { pct: analysis.deadCapitalPct }),
       tone: "warning",
       href: "/dashboard/ecommerce/opportunities",
-      hrefLabelAr: "شوف الفرص",
+      hrefLabelAr: t(locale, "profit.seeOpportunities"),
     });
   }
 
   return (
     <div className="mx-auto max-w-5xl">
       <EcomHeader
-        title="المخزون"
-        subtitle={`أين ينام رأس مالك، وأي منتج على وشك النفاد. مبنيّ على مبيعات آخر ${analysis.windowDays} يوماً.`}
+        title={tr("title")}
+        subtitle={tr("subtitleWindow", { days: analysis.windowDays })}
         storeName={workspace.name}
       />
 
       <div className="mb-8 grid gap-3 sm:grid-cols-3">
         <MetricCard
-          label="رأس المال في المخزون"
+          label={tr("capitalTied")}
           value={fmtNum(analysis.totalCapitalTied)}
           unit={c}
           icon={Boxes}
           tone="accent"
-          caption={{ text: "بالتكلفة لا بسعر البيع — هذا ما خرج من جيبك فعلاً", tone: "muted" }}
+          caption={{ text: tr("capitalTiedHint"), tone: "muted" }}
         />
         <MetricCard
-          label="رأس مال مجمَّد"
+          label={tr("deadCapital")}
           value={analysis.deadCapitalPct}
           unit="%"
           icon={Snowflake}
           tone={analysis.deadCapitalPct >= 25 ? "critical" : analysis.deadCapitalPct >= 10 ? "gap" : "verified"}
           bar={{ pct: analysis.deadCapitalPct }}
-          caption={{ text: "في بضاعة لم تتحرّك منذ ٩٠ يوماً", tone: "muted" }}
+          caption={{ text: tr("deadCapitalHint"), tone: "muted" }}
         />
         <MetricCard
-          label="منتجات بلا تتبّع"
+          label={tr("untracked")}
           value={analysis.untrackedProducts}
           icon={PackageX}
           tone={analysis.untrackedProducts > 0 ? "gap" : "neutral"}
           caption={
             analysis.untrackedProducts > 0
-              ? { text: "لا يمكن رصد نفادها ولا رأس المال فيها", tone: "warning" }
-              : { text: "كل المنتجات متتبَّعة", tone: "positive" }
+              ? { text: tr("untrackedWarn"), tone: "warning" }
+              : { text: tr("allTracked"), tone: "positive" }
           }
         />
       </div>
 
-      <SectionHeading hint="كل دلو له إجراء مقابل. الدلو الفارغ لا يُعرض إطلاقاً.">
-        دلاء القرار
-      </SectionHeading>
+      <SectionHeading hint={tr("bucketsHint")}>{tr("buckets")}</SectionHeading>
 
       {analysis.buckets.map((bucket) => (
         <DecisionBucket
@@ -136,7 +139,7 @@ export default async function InventoryPage() {
           tone={bucket.tone}
         >
           <DataTable
-            headers={["المنتج", "الرصيد", "بيع/يوم", "يكفي", "آخر بيع", "رأس المال"]}
+            headers={[tc("product"), tr("colStock"), tr("colVelocity"), tr("colDaysLeft"), tr("colLastSale"), tr("colCapital")]}
             minWidth={640}
           >
             {bucket.items.slice(0, 12).map((item) => (
@@ -150,14 +153,14 @@ export default async function InventoryPage() {
                 <Td className="tabular-nums">
                   {item.daysLeft !== null ? (
                     <span className={item.daysLeft <= 14 ? "font-semibold text-critical" : "text-text-primary"}>
-                      {item.daysLeft} يوم
+                      {tr("daysUnit", { n: item.daysLeft })}
                     </span>
                   ) : (
-                    <span className="text-text-faint">لا يُباع</span>
+                    <span className="text-text-faint">{tr("notSelling")}</span>
                   )}
                 </Td>
                 <Td className="tabular-nums text-text-muted">
-                  {item.daysSinceLastSale !== null ? `منذ ${item.daysSinceLastSale} يوماً` : "لم يُبَع"}
+                  {item.daysSinceLastSale !== null ? tr("sinceDays", { n: item.daysSinceLastSale }) : tr("neverSold")}
                 </Td>
                 <Td className="tabular-nums text-text-primary">{fmtNum(item.capitalTied)}</Td>
               </Tr>
@@ -165,13 +168,13 @@ export default async function InventoryPage() {
           </DataTable>
           {bucket.items.length > 12 && (
             <div className="border-t border-border px-4 py-2 text-[11.5px] text-text-faint">
-              و{bucket.items.length - 12} منتجاً آخر في هذا الدلو.
+              {tr("andMore", { n: bucket.items.length - 12 })}
             </div>
           )}
         </DecisionBucket>
       ))}
 
-      <RecommendedActions actions={actions} emptyAr="مخزونك متوازن: لا نفاد قريب ولا رأس مال مجمَّد بنسبة مقلقة." />
+      <RecommendedActions actions={actions} emptyAr={tr("healthy")} />
     </div>
   );
 }

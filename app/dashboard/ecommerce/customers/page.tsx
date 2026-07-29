@@ -16,6 +16,7 @@ import {
 import { getCustomerAnalytics } from "@/lib/ecommerce/storeIntelligence";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { Users, Repeat, Wallet, Crown } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -28,8 +29,12 @@ const TONE_DOT = {
 
 export default async function CustomersPage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const tr = (k: string, v?: Record<string, string | number>) => t(locale, `customers.${k}`, v);
+  const tc = (k: string, v?: Record<string, string | number>) => t(locale, `common.${k}`, v);
+
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -37,7 +42,7 @@ export default async function CustomersPage() {
     orderBy: { createdAt: "asc" },
   });
   if (!workspace) {
-    return <DataGate titleAr="لا توجد مساحة عمل بعد" reasonAr="ارجع إلى «لمحة»." href="/dashboard" hrefLabelAr="إلى لمحة" />;
+    return <DataGate titleAr={tc("noWorkspace")} reasonAr={tc("noWorkspaceHint")} href="/dashboard" hrefLabelAr={tc("toHome")} />;
   }
 
   const analytics = await getCustomerAnalytics(workspace.id);
@@ -47,13 +52,13 @@ export default async function CustomersPage() {
     return (
       <div className="mx-auto max-w-5xl">
         <EcomHeader
-          title="العملاء"
-          subtitle="من يستحق أن تنفق عليه أكثر، ومن على وشك أن يختفي."
+          title={tr("title")}
+          subtitle={tr("subtitle")}
           storeName={workspace.name}
         />
         <DataGate
-          titleAr="لا توجد بيانات عملاء بعد"
-          reasonAr="تُبنى هذه الصفحة من الطلبات الواصلة عبر ويب هوك متجرك. اربط متجرك ليصل كل طلب ببيانات عميله، فنبدأ في قياس تكرار الشراء وقيمة العميل."
+          titleAr={tr("noneTitle")}
+          reasonAr={tr("noneReason")}
         />
       </div>
     );
@@ -102,15 +107,15 @@ export default async function CustomersPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <EcomHeader
-        title="العملاء"
-        subtitle="من يستحق أن تنفق عليه أكثر، ومن على وشك أن يختفي. تحليل سلوك لا قوائم اتصال."
+        title={tr("title")}
+        subtitle={tr("subtitle")}
         storeName={workspace.name}
       />
 
       <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="إجمالي العملاء" value={fmtNum(analytics.totalCustomers)} icon={Users} tone="accent" />
+        <MetricCard label={tr("total")} value={fmtNum(analytics.totalCustomers)} icon={Users} tone="accent" />
         <MetricCard
-          label="معدّل الشراء المتكرّر"
+          label={tr("repeatRate")}
           value={analytics.repeatPurchaseRatePct ?? "—"}
           unit="%"
           icon={Repeat}
@@ -121,26 +126,24 @@ export default async function CustomersPage() {
           bar={{ pct: analytics.repeatPurchaseRatePct ?? 0 }}
         />
         <MetricCard
-          label="متوسط قيمة العميل"
+          label={tr("avgLtv")}
           value={analytics.avgLtv !== null ? fmtNum(analytics.avgLtv) : "—"}
           unit={c}
           icon={Wallet}
           tone="default"
-          caption={{ text: "إجمالي ما أنفقه العميل الواحد لديك", tone: "muted" }}
+          caption={{ text: tr("avgLtvHint"), tone: "muted" }}
         />
         <MetricCard
-          label="العميل العائد يساوي"
+          label={tr("repeatMultiple")}
           value={analytics.repeatCustomerValueMultiple ?? "—"}
           unit={analytics.repeatCustomerValueMultiple !== null ? "×" : undefined}
           icon={Crown}
           tone="verified"
-          caption={{ text: "مقابل العميل لمرة واحدة — أقوى حجّة للاستثمار في الاحتفاظ", tone: "muted" }}
+          caption={{ text: tr("repeatMultipleHint"), tone: "muted" }}
         />
       </div>
 
-      <SectionHeading hint="كل شريحة معها ما يُفعل بها. الشريحة بلا إجراء رقم لا قرار.">
-        الشرائح
-      </SectionHeading>
+      <SectionHeading hint={tr("segmentsHint")}>{tr("segments")}</SectionHeading>
 
       <div className="mb-8 flex flex-col gap-2.5">
         {analytics.segments.map((s) => (
@@ -162,7 +165,7 @@ export default async function CustomersPage() {
                   {fmtNum(s.revenue)} <span className="text-[11px] font-normal text-text-muted">{c}</span>
                 </div>
                 <div className="mt-0.5 text-[11.5px] text-text-faint">
-                  متوسط {fmtNum(s.avgLtv)} للعميل
+                  {tr("avgPerCustomer", { value: fmtNum(s.avgLtv) })}
                 </div>
               </div>
             </div>
@@ -170,17 +173,15 @@ export default async function CustomersPage() {
         ))}
       </div>
 
-      <SectionHeading hint="مرتَّبون بإجمالي الإنفاق. لا تُعرض بيانات تعريف - البريد والهاتف مُهشَّمان في قاعدة البيانات أصلاً.">
-        أعلى العملاء إنفاقاً
-      </SectionHeading>
+      <SectionHeading hint={tr("topSpendersHint")}>{tr("topSpenders")}</SectionHeading>
 
       <div className="card-shadow overflow-hidden rounded-2xl border border-border bg-surface">
-        <DataTable headers={["العميل", "المدينة", "الطلبات", "إجمالي الإنفاق", "معدّل الإرجاع", "آخر طلب"]}>
+        <DataTable headers={[tr("colCustomer"), tr("colCity"), tr("colOrders"), tr("colSpent"), tr("colReturnRate"), tr("colLastOrder")]}>
           {analytics.topCustomers.map((cust, i) => (
             <Tr key={cust.id}>
               <Td>
                 <span className="font-medium text-text-primary">
-                  {cust.displayName ?? `عميل #${i + 1}`}
+                  {cust.displayName ?? tr("anonymous", { n: i + 1 })}
                 </span>
               </Td>
               <Td className="text-text-muted">{cust.city ?? "—"}</Td>
@@ -199,7 +200,7 @@ export default async function CustomersPage() {
         </DataTable>
       </div>
 
-      <RecommendedActions actions={actions} emptyAr="قاعدة عملائك صحّية: تكرار شراء جيد ولا شريحة معرَّضة للفقد." />
+      <RecommendedActions actions={actions} emptyAr={tr("healthy")} />
     </div>
   );
 }

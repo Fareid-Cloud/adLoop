@@ -14,14 +14,15 @@ import {
 } from "../_components/EcomPrimitives";
 import { getOrderQuality } from "@/lib/ecommerce/storeIntelligence";
 import { ShieldAlert } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
-const STATE_AR: Record<string, { label: string; className: string }> = {
-  PLACED: { label: "قيد التنفيذ", className: "bg-surface-raised text-text-muted" },
-  FULFILLED: { label: "مُنفَّذ", className: "bg-verified/10 text-verified" },
-  CANCELLED: { label: "ملغى", className: "bg-gap/10 text-gap" },
-  RETURNED: { label: "مرتجع", className: "bg-critical/10 text-critical" },
+const STATE_META: Record<string, { key: string; className: string }> = {
+  PLACED: { key: "statePlaced", className: "bg-surface-raised text-text-muted" },
+  FULFILLED: { key: "stateFulfilled", className: "bg-verified/10 text-verified" },
+  CANCELLED: { key: "stateCancelled", className: "bg-gap/10 text-gap" },
+  RETURNED: { key: "stateReturned", className: "bg-critical/10 text-critical" },
 };
 
 const TONE_STYLE = {
@@ -40,8 +41,12 @@ const TONE_TEXT = {
 
 export default async function OrdersPage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const tr = (k: string, v?: Record<string, string | number>) => t(locale, `orders.${k}`, v);
+  const tc = (k: string, v?: Record<string, string | number>) => t(locale, `common.${k}`, v);
+
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -49,7 +54,7 @@ export default async function OrdersPage() {
     orderBy: { createdAt: "asc" },
   });
   if (!workspace) {
-    return <DataGate titleAr="لا توجد مساحة عمل بعد" reasonAr="ارجع إلى «لمحة»." href="/dashboard" hrefLabelAr="إلى لمحة" />;
+    return <DataGate titleAr={tc("noWorkspace")} reasonAr={tc("noWorkspaceHint")} href="/dashboard" hrefLabelAr={tc("toHome")} />;
   }
 
   const quality = await getOrderQuality(workspace.id, 30);
@@ -59,13 +64,13 @@ export default async function OrdersPage() {
     return (
       <div className="mx-auto max-w-5xl">
         <EcomHeader
-          title="الطلبات"
-          subtitle="أي طلبات تكلّفك مالاً دون أن تُنتج بيعاً، ولماذا."
+          title={tr("title")}
+          subtitle={tr("subtitle")}
           storeName={workspace.name}
         />
         <DataGate
-          titleAr="لا توجد طلبات مسجَّلة بعد"
-          reasonAr="تصل الطلبات عبر ويب هوك متجرك فور حدوثها. تأكّد من تسجيل الويب هوك في لوحة المتجر ليبدأ التحليل."
+          titleAr={tr("noneTitle")}
+          reasonAr={tr("noneReason")}
         />
       </div>
     );
@@ -120,14 +125,12 @@ export default async function OrdersPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <EcomHeader
-        title="الطلبات"
-        subtitle="أي طلبات تكلّفك مالاً دون أن تُنتج بيعاً، ولماذا. آخر ٣٠ يوماً."
+        title={tr("title")}
+        subtitle={`${tr("subtitle")} ${tc("lastNDays", { days: 30 })}.`}
         storeName={workspace.name}
       />
 
-      <SectionHeading hint={`من إجمالي ${fmtNum(quality.totalOrders)} طلباً في الفترة. مرتَّبة بالأثر المالي لا بالعدد.`}>
-        جودة الطلبات
-      </SectionHeading>
+      <SectionHeading hint={tr("qualityHint", { total: fmtNum(quality.totalOrders) })}>{tr("quality")}</SectionHeading>
 
       <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {quality.buckets.map((b) => (
@@ -144,14 +147,12 @@ export default async function OrdersPage() {
         ))}
       </div>
 
-      <SectionHeading hint="أحدث ٤٠ طلباً. درجة المخاطرة ترجيح من أنماط معروفة، لا كشف احتيال — مرّر المؤشّر لترى أسبابها.">
-        أحدث الطلبات
-      </SectionHeading>
+      <SectionHeading hint={tr("recentHint")}>{tr("recent")}</SectionHeading>
 
       <div className="card-shadow overflow-hidden rounded-2xl border border-border bg-surface">
-        <DataTable headers={["الطلب", "العميل", "التاريخ", "القيمة", "الحالة", "الدفع", "مخاطرة"]}>
+        <DataTable headers={[tr("colOrder"), tr("colCustomer"), tr("colDate"), tr("colValue"), tr("colState"), tr("colPayment"), tr("colRisk")]}>
           {quality.recent.map((o) => {
-            const state = STATE_AR[o.state] ?? STATE_AR.PLACED;
+            const state = STATE_META[o.state] ?? STATE_META.PLACED;
             const risky = (o.fraudRiskScore ?? 0) >= 50;
             return (
               <Tr key={o.id}>
@@ -163,14 +164,14 @@ export default async function OrdersPage() {
                 <Td className="tabular-nums font-medium text-text-primary">{fmtNum(o.total)}</Td>
                 <Td>
                   <span className={`rounded-md px-2 py-0.5 text-[11.5px] font-medium ${state.className}`}>
-                    {state.label}
+                    {tr(state.key)}
                   </span>
                 </Td>
                 <Td className="text-text-muted">
                   {o.isCod ? (
-                    <span className="text-gap">عند الاستلام</span>
+                    <span className="text-gap">{tr("cod")}</span>
                   ) : (
-                    <span>مدفوع</span>
+                    <span>{tr("paid")}</span>
                   )}
                 </Td>
                 <Td>
@@ -194,7 +195,7 @@ export default async function OrdersPage() {
         </DataTable>
       </div>
 
-      <RecommendedActions actions={actions} emptyAr="جودة طلباتك جيدة: لا تأخير ولا معدّل إرجاع مقلق في هذه الفترة." />
+      <RecommendedActions actions={actions} emptyAr={tr("healthy")} />
     </div>
   );
 }
