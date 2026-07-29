@@ -98,7 +98,7 @@ export default async function ReportsPage({
             صافي ربح بهامش {journey.netMarginPct ?? 0}%
             {journey.biggestLeak && (
               <>
-                . أكبر بند مستهلك للإيراد هو {journey.biggestLeak.labelAr} بنسبة{" "}
+                . أكبر بند مستهلك للإيراد هو {tText(locale, "stageText", journey.biggestLeak.label)} بنسبة{" "}
                 {journey.biggestLeak.pctOfRevenue}%
               </>
             )}
@@ -147,7 +147,7 @@ export default async function ReportsPage({
           <DataTable headers={["البند", "المبلغ", "% من الإيراد", "المتبقّي"]} minWidth={420}>
             {journey.stages.map((s) => (
               <Tr key={s.key}>
-                <Td className="font-medium text-text-primary">{s.labelAr}</Td>
+                <Td className="font-medium text-text-primary">{tText(locale, "stageText", s.label)}</Td>
                 <Td className={`tabular-nums ${s.amount < 0 ? "text-critical" : "text-text-primary"}`}>
                   {s.amount < 0 ? "−" : ""}
                   {fmtNum(Math.abs(s.amount))}

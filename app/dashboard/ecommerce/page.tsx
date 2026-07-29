@@ -82,7 +82,7 @@ export default async function EcommerceOverviewPage() {
 
   if (journey.biggestLeak) {
     actions.push({
-      titleAr: tr("biggestLeak", { label: journey.biggestLeak.labelAr }),
+      titleAr: tr("biggestLeak", { label: tText(locale, "stageText", journey.biggestLeak.label) }),
       reasonAr: tr("biggestLeakReason", {
         pct: journey.biggestLeak.pctOfRevenue,
         amount: `${fmtNum(journey.biggestLeak.amount)} ${c}`,

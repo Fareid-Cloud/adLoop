@@ -41,7 +41,7 @@ export interface StoreOverview {
 
 export interface ProfitStage {
   key: string;
-  labelAr: string;
+  label: LocalizedText;
   /** موجب للإيراد، سالب لكل تكلفة - الإشارة تحمل المعنى */
   amount: number;
   /** نسبة هذه المرحلة من الإيراد */
@@ -49,7 +49,7 @@ export interface ProfitStage {
   /** ما تبقّى بعد هذه المرحلة */
   runningTotal: number;
   /** من أين جاء الرقم - الشفافية تسبق الثقة */
-  sourceAr: string;
+  source: LocalizedText;
   /** هل الرقم مقدَّر لا مقروء */
   isEstimate: boolean;
 }
@@ -60,7 +60,7 @@ export interface ProfitJourney {
   netProfit: number;
   netMarginPct: number | null;
   /** أكبر بند تكلفة - نقطة التدخّل الأولى */
-  biggestLeak: { labelAr: string; amount: number; pctOfRevenue: number } | null;
+  biggestLeak: { label: LocalizedText; amount: number; pctOfRevenue: number } | null;
   /** تكاليف لم نستطع قراءتها، تُذكر صراحةً لأن غيابها يضخّم الربح */
   missingCostsAr: string[];
   currency: string;
@@ -159,37 +159,37 @@ export async function getProfitJourney(workspaceId: string, windowDays = 30): Pr
   const costStages: Array<Omit<ProfitStage, "runningTotal" | "pctOfRevenue">> = [
     {
       key: "cogs",
-      labelAr: "تكلفة البضاعة",
+      label: { key: "cogs.label" },
       amount: -cogs,
-      sourceAr: "تكلفة كل منتج × الكميات المباعة",
+      source: { key: "cogs.source" },
       isEstimate: false,
     },
     {
       key: "shipping",
-      labelAr: "الشحن",
+      label: { key: "shipping.label" },
       amount: -shipping,
-      sourceAr: shippingIsEstimate ? "مُقدَّرة من إعدادات المنتجات" : "من الطلبات نفسها",
+      source: { key: shippingIsEstimate ? "shipping.sourceEstimate" : "shipping.sourceReal" },
       isEstimate: shippingIsEstimate,
     },
     {
       key: "advertising",
-      labelAr: "الإنفاق الإعلاني",
+      label: { key: "advertising.label" },
       amount: -advertising,
-      sourceAr: "إنفاق المنصات المربوطة فعلياً",
+      source: { key: "advertising.source" },
       isEstimate: false,
     },
     {
       key: "fees",
-      labelAr: "الرسوم والتشغيل",
+      label: { key: "fees.label" },
       amount: -fees,
-      sourceAr: "بوابة الدفع + الدفع عند الاستلام + التغليف والمناولة",
+      source: { key: "fees.source" },
       isEstimate: false,
     },
     {
       key: "returns",
-      labelAr: "المرتجعات",
+      label: { key: "returns.label" },
       amount: -returns,
-      sourceAr: "قيمة الطلبات المرتجعة + شحن الإرجاع + الفاقد",
+      source: { key: "returns.source" },
       isEstimate: false,
     },
   ];
@@ -198,11 +198,11 @@ export async function getProfitJourney(workspaceId: string, windowDays = 30): Pr
   let running = revenue;
   stages.push({
     key: "revenue",
-    labelAr: "الإيراد",
+    label: { key: "revenue.label" },
     amount: revenue,
     pctOfRevenue: 100,
     runningTotal: revenue,
-    sourceAr: usedSnapshots ? "مجاميع يومية (لا توجد طلبات مفصَّلة بعد)" : "الطلبات الحقيقية",
+    source: { key: usedSnapshots ? "revenue.sourceSnapshots" : "revenue.sourceOrders" },
     isEstimate: usedSnapshots,
   });
 
@@ -227,7 +227,7 @@ export async function getProfitJourney(workspaceId: string, windowDays = 30): Pr
     biggestLeak:
       biggest && biggest.amount < 0
         ? {
-            labelAr: biggest.labelAr,
+            label: biggest.label,
             amount: Math.round(Math.abs(biggest.amount)),
             pctOfRevenue: revenue > 0 ? round1((Math.abs(biggest.amount) / revenue) * 100) : 0,
           }

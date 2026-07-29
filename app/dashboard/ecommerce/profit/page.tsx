@@ -16,7 +16,7 @@ import {
 import { getProfitJourney } from "@/lib/ecommerce/storeIntelligence";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { Wallet, TrendingUp, Percent, AlertTriangle } from "lucide-react";
-import { t, type Locale } from "@/lib/i18n/dictionary";
+import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +32,7 @@ export default async function ProfitPage({
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `profit.${k}`, v);
   const tc = (k: string, v?: Record<string, string | number>) => t(locale, `common.${k}`, v);
+  const tx = (i: { key: string; vars?: Record<string, string | number> }) => tText(locale, "stageText", i);
 
   if (!user) {
     return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
@@ -71,7 +72,7 @@ export default async function ProfitPage({
 
   if (journey.biggestLeak) {
     actions.push({
-      titleAr: tr("focusFirst", { label: journey.biggestLeak.labelAr }),
+      titleAr: tr("focusFirst", { label: tx(journey.biggestLeak.label) }),
       reasonAr: tr("focusReason", {
         amount: `${fmtNum(journey.biggestLeak.amount)} ${c}`,
         pct: journey.biggestLeak.pctOfRevenue,
@@ -163,7 +164,7 @@ export default async function ProfitPage({
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-accent/[0.05] p-4">
           <div>
             <div className="text-[13.5px] font-semibold text-text-primary">{tc("revenue")}</div>
-            <div className="mt-0.5 text-[11.5px] text-text-faint">{journey.stages[0].sourceAr}</div>
+            <div className="mt-0.5 text-[11.5px] text-text-faint">{tx(journey.stages[0].source)}</div>
           </div>
           <div className="text-[20px] font-semibold tabular-nums text-text-primary">
             {fmtNum(journey.revenue)} <span className="text-[12px] font-normal text-text-muted">{c}</span>
@@ -174,7 +175,7 @@ export default async function ProfitPage({
           <div key={stage.key} className="border-b border-border/60 p-4 last:border-0">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div className="flex items-center gap-2">
-                <span className="text-[13.5px] font-medium text-text-primary">{stage.labelAr}</span>
+                <span className="text-[13.5px] font-medium text-text-primary">{tx(stage.label)}</span>
                 {stage.isEstimate && (
                   <span className="rounded-md bg-gap/10 px-1.5 py-0.5 text-[10.5px] font-medium text-gap">
                     {tr("estimated")}
@@ -198,7 +199,7 @@ export default async function ProfitPage({
             </div>
 
             <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-[11.5px]">
-              <span className="text-text-faint">{stage.sourceAr}</span>
+              <span className="text-text-faint">{tx(stage.source)}</span>
               <span className="tabular-nums text-text-muted">
                 {tr("remaining")}: {fmtNum(stage.runningTotal)} {c}
               </span>
@@ -234,7 +235,7 @@ export default async function ProfitPage({
         <div className="mb-2 flex items-start gap-2 rounded-2xl border border-border bg-surface p-4">
           <AlertTriangle size={15} className="mt-0.5 shrink-0 text-gap" />
           <p className="text-[12.5px] leading-relaxed text-text-muted">
-            أكبر بند يستهلك إيرادك هو <span className="font-semibold text-text-primary">{journey.biggestLeak.labelAr}</span>{" "}
+            أكبر بند يستهلك إيرادك هو <span className="font-semibold text-text-primary">{tx(journey.biggestLeak.label)}</span>{" "}
             بـ{journey.biggestLeak.pctOfRevenue}% من كل ريال تبيعه. خفضه ١٠% يضيف{" "}
             <span className="font-semibold text-verified">
               {fmtNum(journey.biggestLeak.amount * 0.1)} {c}

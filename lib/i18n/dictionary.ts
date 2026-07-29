@@ -551,6 +551,15 @@ export const dictionary = {
         action: "راجع ما يطلبونه: غالباً مشكلة وصف منتج أو مقاس، لا مشكلة عميل.",
       },
     },
+    // ==== مراحل رحلة الربح ====
+    stageText: {
+      revenue: { label: "الإيراد", sourceOrders: "الطلبات الحقيقية", sourceSnapshots: "مجاميع يومية (لا توجد طلبات مفصَّلة بعد)" },
+      cogs: { label: "تكلفة البضاعة", source: "تكلفة كل منتج × الكميات المباعة" },
+      shipping: { label: "الشحن", sourceReal: "من الطلبات نفسها", sourceEstimate: "مُقدَّرة من إعدادات المنتجات" },
+      advertising: { label: "الإنفاق الإعلاني", source: "إنفاق المنصات المربوطة فعلياً" },
+      fees: { label: "الرسوم والتشغيل", source: "بوابة الدفع + الدفع عند الاستلام + التغليف والمناولة" },
+      returns: { label: "المرتجعات", source: "قيمة الطلبات المرتجعة + شحن الإرجاع + الفاقد" },
+    },
   },
   en: {
     auth: {
@@ -1095,6 +1104,15 @@ export const dictionary = {
         description: "40% or more of their orders came back.",
         action: "Look at what they order: usually a description or sizing problem, not a customer problem.",
       },
+    },
+    // ==== Profit journey stages ====
+    stageText: {
+      revenue: { label: "Revenue", sourceOrders: "Real orders", sourceSnapshots: "Daily totals (no itemised orders yet)" },
+      cogs: { label: "Cost of goods", source: "Each product's cost x units sold" },
+      shipping: { label: "Shipping", sourceReal: "From the orders themselves", sourceEstimate: "Estimated from product settings" },
+      advertising: { label: "Ad spend", source: "Actual spend from connected platforms" },
+      fees: { label: "Fees and handling", source: "Payment gateway + cash on delivery + packaging and handling" },
+      returns: { label: "Returns", source: "Returned order value + return shipping + write-off" },
     },
   },
 } as const;

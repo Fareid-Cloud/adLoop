@@ -86,7 +86,7 @@ export default async function AiInsightsPage() {
         const prev = prevJourney.stages.find((x) => x.key === s.key);
         const prevAmount = prev ? Math.abs(prev.amount) - Math.abs(s.amount) : 0;
         const growth = prevAmount > 0 ? ((Math.abs(s.amount) - prevAmount) / prevAmount) * 100 : 0;
-        return { label: s.labelAr, growth, amount: Math.abs(s.amount) };
+        return { label: tText(locale, "stageText", s.label), growth, amount: Math.abs(s.amount) };
       })
       .filter((x) => x.growth > 0)
       .sort((a, b) => b.growth - a.growth);
