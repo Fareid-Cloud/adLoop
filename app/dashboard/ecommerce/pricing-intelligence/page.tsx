@@ -18,13 +18,18 @@ import {
 import { getEcommerceOverview } from "@/lib/ecommerce/productPerformance";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { ArrowUpCircle, ArrowDownCircle, Percent, Wallet, ArrowLeft } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
 export default async function PricingIntelligencePage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const tr = (k: string, v?: Record<string, string | number>) => t(locale, `pricingIntel.${k}`, v);
+  const tc = (k: string, v?: Record<string, string | number>) => t(locale, `common.${k}`, v);
+
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -32,7 +37,7 @@ export default async function PricingIntelligencePage() {
     orderBy: { createdAt: "asc" },
   });
   if (!workspace) {
-    return <DataGate titleAr="لا توجد مساحة عمل بعد" reasonAr="ارجع إلى «لمحة»." href="/dashboard" hrefLabelAr="إلى لمحة" />;
+    return <DataGate titleAr={tc("noWorkspace")} reasonAr={tc("noWorkspaceHint")} href="/dashboard" hrefLabelAr={tc("toHome")} />;
   }
 
   const overview = await getEcommerceOverview(workspace.id, 30);
@@ -42,15 +47,15 @@ export default async function PricingIntelligencePage() {
     return (
       <div className="mx-auto max-w-5xl">
         <EcomHeader
-          title="ذكاء التسعير"
-          subtitle="أين السعر خاطئ أصلاً، وبكم."
+          title={tr("title")}
+          subtitle={tr("subtitleShort")}
           storeName={workspace.name}
         />
         <DataGate
-          titleAr="لم تُضف أي منتج بعد"
-          reasonAr="ذكاء التسعير يحتاج تكلفة كل منتج (بضاعة، شحن، رسوم) ليعرف نقطة التعادل الحقيقية. أضف منتجاتك من صفحة التسعير."
+          titleAr={tr("noneTitle")}
+          reasonAr={tr("noneReason")}
           href="/dashboard/pricing"
-          hrefLabelAr="صفحة التسعير"
+          hrefLabelAr={tr("noneCta")}
         />
       </div>
     );
@@ -85,27 +90,27 @@ export default async function PricingIntelligencePage() {
   const actions: RecommendedAction[] = [];
   if (raiseOps.length > 0) {
     actions.push({
-      titleAr: `صحّح سعر ${raiseOps.length} منتج تحت التعادل`,
-      reasonAr: `تبيع بخسارة مؤكَّدة بعد كل التكاليف. أكبرها «${raiseOps[0].name}» ينزف ${fmtNum(raiseOps[0].monthlyGain)} ${c} شهرياً.`,
-      impactAr: `توقّف نزيف ${fmtNum(totalLeak)} ${c} شهرياً`,
+      titleAr: tr("actFix", { count: raiseOps.length }),
+      reasonAr: tr("actFixReason", { name: raiseOps[0].name, amount: `${fmtNum(raiseOps[0].monthlyGain)} ${c}` }),
+      impactAr: tr("actFixImpact", { amount: `${fmtNum(totalLeak)} ${c}` }),
       tone: "critical",
       href: "/dashboard/pricing",
-      hrefLabelAr: "عدّل الأسعار",
+      hrefLabelAr: tr("actFixCta"),
     });
   }
   if (lowerOps.length > 0) {
     actions.push({
-      titleAr: `اختبر خفض سعر ${lowerOps.length} منتج بطيء البيع`,
-      reasonAr: `هامشها مرتفع (${Math.round(lowerOps[0].marginPct)}%+) ومبيعاتها ضعيفة — السعر قد يكون العائق. جرّب على منتج واحد أولاً وقِس ٤ أسابيع.`,
+      titleAr: tr("actTest", { count: lowerOps.length }),
+      reasonAr: tr("actTestReason", { pct: Math.round(lowerOps[0].marginPct) }),
       tone: "warning",
       href: "/dashboard/pricing",
-      hrefLabelAr: "صفحة التسعير",
+      hrefLabelAr: tr("noneCta"),
     });
   }
   if (avgMargin < 15 && overview.products.length > 0) {
     actions.push({
-      titleAr: "متوسط هامشك ضعيف عبر الكتالوج",
-      reasonAr: `${Math.round(avgMargin)}% متوسط الهامش. هذا لا يحتمل ارتفاع تكلفة إعلان ولا موجة مرتجعات — راجع تسعيرك ككل لا منتجاً منتجاً.`,
+      titleAr: tr("actWeak"),
+      reasonAr: tr("actWeakReason", { pct: Math.round(avgMargin) }),
       tone: "warning",
     });
   }
@@ -113,32 +118,32 @@ export default async function PricingIntelligencePage() {
   return (
     <div className="mx-auto max-w-5xl">
       <EcomHeader
-        title="ذكاء التسعير"
-        subtitle="أين السعر خاطئ أصلاً، وبكم. مبنيّ على تكلفتك الحقيقية الكاملة لا على تخمين السوق."
+        title={tr("title")}
+        subtitle={tr("subtitle")}
         storeName={workspace.name}
       />
 
       <div className="mb-8 grid gap-3 sm:grid-cols-3">
         <MetricCard
-          label="فرص رفع السعر"
+          label={tr("raiseOps")}
           value={raiseOps.length}
           icon={ArrowUpCircle}
           tone={raiseOps.length > 0 ? "critical" : "verified"}
           caption={
             raiseOps.length > 0
-              ? { text: `نزيف ${fmtNum(totalLeak)} ${c} شهرياً`, tone: "negative" }
-              : { text: "لا منتج يبيع تحت التعادل", tone: "positive" }
+              ? { text: tr("raiseOpsBleed", { amount: `${fmtNum(totalLeak)} ${c}` }), tone: "negative" }
+              : { text: tr("raiseOpsNone"), tone: "positive" }
           }
         />
         <MetricCard
-          label="فرص خفض السعر"
+          label={tr("lowerOps")}
           value={lowerOps.length}
           icon={ArrowDownCircle}
           tone={lowerOps.length > 0 ? "gap" : "neutral"}
-          caption={{ text: "هامش مرتفع ومبيعات بطيئة", tone: "muted" }}
+          caption={{ text: tr("lowerOpsHint"), tone: "muted" }}
         />
         <MetricCard
-          label="متوسط الهامش"
+          label={tr("avgMargin")}
           value={Math.round(avgMargin)}
           unit="%"
           icon={Percent}
@@ -149,19 +154,17 @@ export default async function PricingIntelligencePage() {
 
       <LimitsNote
         items={[
-          "لا نملك أسعار المنافسين — مقارنة السوق تحتاج مصدر بيانات خارجياً غير مربوط بعد.",
-          "مرونة السعر (كم تنخفض المبيعات عند كل ١٠% رفع) تحتاج تجربة سعرين على المنتج نفسه وقياس النتيجة. المعمل يقيس ذلك حين تنفّذ تغييراً.",
+          tr("limitNoCompetitors"),
+          tr("limitElasticity"),
         ]}
       />
 
       {raiseOps.length > 0 && (
         <>
-          <SectionHeading hint="هذه ليست توصية بالرفع — هي خسارة مؤكَّدة محسوبة. كل وحدة تُباع منها تكلّفك مالاً.">
-            تبيع تحت التعادل
-          </SectionHeading>
+          <SectionHeading hint={tr("belowBreakEvenHint")}>{tr("belowBreakEven")}</SectionHeading>
           <div className="card-shadow mb-8 overflow-hidden rounded-2xl border border-critical/30 bg-surface">
             <DataTable
-              headers={["المنتج", "السعر الحالي", "خسارة الوحدة", "بيع ٣٠ يوماً", "النزيف الشهري", "الرفع المطلوب"]}
+              headers={[tc("product"), tr("colCurrentPrice"), tr("colUnitLoss"), tr("colSold30", { days: 30 }), tr("colMonthlyBleed"), tr("colNeededRaise")]}
             >
               {raiseOps.slice(0, 15).map((p) => (
                 <Tr key={p.id}>
@@ -180,7 +183,7 @@ export default async function PricingIntelligencePage() {
                       +{Math.ceil(p.neededPct)}%
                     </span>
                     <div className="text-[11px] text-text-faint">
-                      إلى {fmtNum(p.currentPrice + p.neededIncrease)}
+                      {tr("toPrice", { price: fmtNum(p.currentPrice + p.neededIncrease) })}
                     </div>
                   </Td>
                 </Tr>
@@ -191,7 +194,7 @@ export default async function PricingIntelligencePage() {
                 href="/dashboard/pricing"
                 className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-accent no-underline hover:underline"
               >
-                عدّل الأسعار في صفحة التسعير
+                {tr("editPrices")}
                 <ArrowLeft size={13} />
               </Link>
             </div>
@@ -201,11 +204,9 @@ export default async function PricingIntelligencePage() {
 
       {lowerOps.length > 0 && (
         <>
-          <SectionHeading hint="هامش مرتفع مع بيع بطيء قد يعني أن السعر يمنع الشراء. اختبار لا قرار — جرّب منتجاً واحداً وقِس.">
-            مرشَّحة لاختبار خفض السعر
-          </SectionHeading>
+          <SectionHeading hint={tr("testLowerHint")}>{tr("testLower")}</SectionHeading>
           <div className="card-shadow mb-8 overflow-hidden rounded-2xl border border-border bg-surface">
-            <DataTable headers={["المنتج", "السعر", "الهامش", "بيع/يوم", "ربح الوحدة", "هامش بعد خفض ١٠%"]}>
+            <DataTable headers={[tc("product"), tc("price"), tc("margin"), tr("colVelocity"), tr("colUnitProfit"), tr("colMarginAfter")]}>
               {lowerOps.slice(0, 10).map((p) => {
                 const newPrice = p.currentPrice * 0.9;
                 const newProfit = p.profitPerUnit - p.currentPrice * 0.1;
@@ -223,7 +224,7 @@ export default async function PricingIntelligencePage() {
                       <span className={newMargin >= 15 ? "text-verified" : "text-gap"}>
                         {Math.round(newMargin)}%
                       </span>
-                      <div className="text-[11px] text-text-faint">بسعر {fmtNum(newPrice)}</div>
+                      <div className="text-[11px] text-text-faint">{tr("atPrice", { price: fmtNum(newPrice) })}</div>
                     </Td>
                   </Tr>
                 );
@@ -233,7 +234,7 @@ export default async function PricingIntelligencePage() {
         </>
       )}
 
-      <RecommendedActions actions={actions} emptyAr="تسعيرك سليم: لا منتج يبيع تحت التعادل، ومتوسط هامشك صحّي." />
+      <RecommendedActions actions={actions} emptyAr={tr("healthy")} />
     </div>
   );
 }
