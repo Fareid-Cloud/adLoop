@@ -24,17 +24,17 @@ export const dynamic = "force-dynamic";
 
 const TYPE_META: Record<
   Opportunity["type"],
-  { icon: typeof TrendingUp; labelAr: string; tone: string }
+  { icon: typeof TrendingUp; labelKey: string; tone: string }
 > = {
-  RAISE_PRICE: { icon: ArrowUpCircle, labelAr: "رفع سعر", tone: "text-gap bg-gap/10" },
-  LOWER_PRICE: { icon: ArrowDownCircle, labelAr: "خفض سعر", tone: "text-accent bg-accent/10" },
-  PAUSE_ADS: { icon: PauseCircle, labelAr: "إيقاف إعلان", tone: "text-critical bg-critical/10" },
-  INCREASE_BUDGET: { icon: TrendingUp, labelAr: "زيادة ميزانية", tone: "text-verified bg-verified/10" },
-  RESTOCK: { icon: PackagePlus, labelAr: "إعادة طلب", tone: "text-critical bg-critical/10" },
-  BUNDLE: { icon: Boxes, labelAr: "باقة", tone: "text-accent bg-accent/10" },
-  CROSS_SELL: { icon: Layers, labelAr: "بيع متقاطع", tone: "text-accent bg-accent/10" },
-  WIN_BACK: { icon: Users, labelAr: "استرجاع عملاء", tone: "text-gap bg-gap/10" },
-  REDUCE_RETURNS: { icon: RotateCcw, labelAr: "خفض مرتجعات", tone: "text-critical bg-critical/10" },
+  RAISE_PRICE: { icon: ArrowUpCircle, labelKey: "typeRaisePrice", tone: "text-gap bg-gap/10" },
+  LOWER_PRICE: { icon: ArrowDownCircle, labelKey: "typeLowerPrice", tone: "text-accent bg-accent/10" },
+  PAUSE_ADS: { icon: PauseCircle, labelKey: "typePauseAds", tone: "text-critical bg-critical/10" },
+  INCREASE_BUDGET: { icon: TrendingUp, labelKey: "typeIncreaseBudget", tone: "text-verified bg-verified/10" },
+  RESTOCK: { icon: PackagePlus, labelKey: "typeRestock", tone: "text-critical bg-critical/10" },
+  BUNDLE: { icon: Boxes, labelKey: "typeBundle", tone: "text-accent bg-accent/10" },
+  CROSS_SELL: { icon: Layers, labelKey: "typeCrossSell", tone: "text-accent bg-accent/10" },
+  WIN_BACK: { icon: Users, labelKey: "typeWinBack", tone: "text-gap bg-gap/10" },
+  REDUCE_RETURNS: { icon: RotateCcw, labelKey: "typeReduceReturns", tone: "text-critical bg-critical/10" },
 };
 
 const CONFIDENCE_KEY = { HIGH: "confHigh", MEDIUM: "confMedium", LOW: "confLow" } as const;
@@ -139,7 +139,7 @@ export default async function OpportunitiesPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="text-[14px] font-semibold text-text-primary">{tx(o.title)}</h3>
                           <span className="rounded-md bg-surface-raised px-1.5 py-0.5 text-[11px] text-text-muted">
-                            {meta.labelAr}
+                            {tr(meta.labelKey)}
                           </span>
                         </div>
                         <p className="mt-1.5 text-[12.5px] leading-relaxed text-text-muted">{tx(o.reason)}</p>

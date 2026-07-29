@@ -11,6 +11,7 @@
 // تنتهي بقرار لم تؤدِّ غرضها.
 
 import Link from "next/link";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 import type { ReactNode } from "react";
 import { ArrowLeft, Lightbulb, AlertTriangle, Info, TrendingUp } from "lucide-react";
 
@@ -70,21 +71,24 @@ export interface RecommendedAction {
 
 export function RecommendedActions({
   actions,
-  emptyAr = "لا توجد إجراءات مقترحة الآن — الأرقام في هذه الصفحة ضمن المعقول.",
+  emptyAr,
+  locale = "ar",
 }: {
   actions: RecommendedAction[];
   emptyAr?: string;
+  locale?: Locale;
 }) {
+  const fallbackEmpty = emptyAr ?? t(locale, "common.noActions");
   return (
     <section className="mt-10 border-t border-border pt-6">
       <div className="mb-3 flex items-center gap-2">
         <Lightbulb size={16} className="text-accent" />
-        <h2 className="text-[15px] font-semibold text-text-primary">الإجراءات المقترحة</h2>
+        <h2 className="text-[15px] font-semibold text-text-primary">{t(locale, "common.recommendedActions")}</h2>
       </div>
 
       {actions.length === 0 ? (
         <p className="rounded-2xl border border-border bg-surface p-4 text-[12.5px] text-text-muted">
-          {emptyAr}
+          {fallbackEmpty}
         </p>
       ) : (
         <div className="flex flex-col gap-2.5">
@@ -108,7 +112,7 @@ export function RecommendedActions({
                   href={a.href}
                   className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-3 py-2 text-[12.5px] font-medium text-text-primary no-underline transition-colors hover:bg-surface-3"
                 >
-                  {a.hrefLabelAr ?? "افتح"}
+                  {a.hrefLabelAr ?? t(locale, "common.open")}
                   <ArrowLeft size={13} />
                 </Link>
               )}
@@ -137,13 +141,16 @@ export function DataGate({
   titleAr,
   reasonAr,
   href = "/dashboard/integrations",
-  hrefLabelAr = "اربط متجرك",
+  hrefLabelAr,
+  locale = "ar",
 }: {
   titleAr: string;
   reasonAr: string;
   href?: string;
   hrefLabelAr?: string;
+  locale?: Locale;
 }) {
+  const cta = hrefLabelAr ?? t(locale, "store.connectStore");
   return (
     <div className="card-shadow rounded-2xl border border-border bg-surface p-6 text-center">
       <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-surface-raised">
@@ -155,7 +162,7 @@ export function DataGate({
         href={href}
         className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3.5 py-2 text-[12.5px] font-medium text-accent no-underline transition-colors hover:bg-accent/20"
       >
-        {hrefLabelAr}
+        {cta}
         <ArrowLeft size={13} />
       </Link>
     </div>
@@ -164,18 +171,18 @@ export function DataGate({
 
 // ==================== تنبيه حدود البيانات ====================
 
-export function LimitsNote({ items }: { items: string[] }) {
+export function LimitsNote({ items, locale = "ar" }: { items: string[]; locale?: Locale }) {
   if (items.length === 0) return null;
   return (
     <div className="mb-6 rounded-2xl border border-gap/30 bg-gap/[0.06] p-4">
       <div className="mb-1.5 flex items-center gap-1.5 text-[12.5px] font-semibold text-gap">
         <AlertTriangle size={14} />
-        ما لا نراه بعد
+        {t(locale, "common.blindSpots")}
       </div>
       <ul className="flex flex-col gap-1">
-        {items.map((t, i) => (
+        {items.map((item, i) => (
           <li key={i} className="text-[12px] leading-relaxed text-text-muted">
-            • {t}
+            • {item}
           </li>
         ))}
       </ul>

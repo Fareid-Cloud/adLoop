@@ -93,29 +93,22 @@ export default async function ReportsPage({
         <section className="mb-6">
           <h3 className="mb-2 text-[14px] font-semibold text-text-primary">{tr("summary")}</h3>
           <p className="text-[13px] leading-relaxed text-text-muted">
-            حقّق المتجر إيراداً قدره{" "}
-            <span className="font-semibold text-text-primary">{fmtNum(journey.revenue)} {c}</span>، وبقي منه{" "}
-            <span className={`font-semibold ${journey.netProfit >= 0 ? "text-verified" : "text-critical"}`}>
-              {fmtNum(journey.netProfit)} {c}
-            </span>{" "}
-            صافي ربح بهامش {journey.netMarginPct ?? 0}%
-            {journey.biggestLeak && (
-              <>
-                . أكبر بند مستهلك للإيراد هو {tText(locale, "stageText", journey.biggestLeak.label)} بنسبة{" "}
-                {journey.biggestLeak.pctOfRevenue}%
-              </>
-            )}
+            {tr("summaryLine", {
+              revenue: `${fmtNum(journey.revenue)} ${c}`,
+              profit: `${fmtNum(journey.netProfit)} ${c}`,
+              margin: journey.netMarginPct ?? 0,
+            })}
+            {journey.biggestLeak &&
+              tr("summaryLeak", {
+                label: tText(locale, "stageText", journey.biggestLeak.label),
+                pct: journey.biggestLeak.pctOfRevenue,
+              })}
             .
-            {opps.opportunities.length > 0 && (
-              <>
-                {" "}
-                رُصدت {opps.opportunities.length} فرصة بأثر مقدَّر{" "}
-                <span className="font-semibold text-verified">
-                  {fmtNum(opps.totalPotentialProfit)} {c}
-                </span>{" "}
-                شهرياً.
-              </>
-            )}
+            {opps.opportunities.length > 0 &&
+              tr("summaryOpps", {
+                count: opps.opportunities.length,
+                amount: `${fmtNum(opps.totalPotentialProfit)} ${c}`,
+              })}
           </p>
         </section>
 

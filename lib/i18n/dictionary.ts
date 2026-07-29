@@ -416,6 +416,7 @@ export const dictionary = {
       margin: "الهامش",
       price: "السعر",
       none: "—",
+      storeName: "المتجر",
     },
     // ==== متجري الإلكتروني ====
     store: {
@@ -543,6 +544,15 @@ export const dictionary = {
       diffEasy: "سهل",
       diffMedium: "متوسط",
       diffHard: "يحتاج جهداً",
+      typeRaisePrice: "رفع سعر",
+      typeLowerPrice: "خفض سعر",
+      typePauseAds: "إيقاف إعلان",
+      typeIncreaseBudget: "زيادة ميزانية",
+      typeRestock: "إعادة طلب",
+      typeBundle: "باقة",
+      typeCrossSell: "بيع متقاطع",
+      typeWinBack: "استرجاع عملاء",
+      typeReduceReturns: "خفض مرتجعات",
     },
     // ==== نصوص محرّك الفرص - يُرجع المحرّك مفاتيح، وتُصاغ الجملة هنا ====
     oppText: {
@@ -1204,6 +1214,7 @@ export const dictionary = {
       margin: "Margin",
       price: "Price",
       none: "—",
+      storeName: "المتجر",
     },
     // ==== My Store ====
     store: {
@@ -1331,6 +1342,15 @@ export const dictionary = {
       diffEasy: "Easy",
       diffMedium: "Moderate",
       diffHard: "Takes effort",
+      typeRaisePrice: "Raise price",
+      typeLowerPrice: "Lower price",
+      typePauseAds: "Pause ads",
+      typeIncreaseBudget: "Raise budget",
+      typeRestock: "Reorder",
+      typeBundle: "Bundle",
+      typeCrossSell: "Cross-sell",
+      typeWinBack: "Win back",
+      typeReduceReturns: "Cut returns",
     },
     // ==== Opportunity engine copy - the engine returns keys, phrasing lives here ====
     oppText: {
