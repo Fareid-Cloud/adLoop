@@ -14,6 +14,8 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
+import { MetricCard } from "@/app/components/ui/MetricCard";
+import { Target, GitBranch } from "lucide-react";
 
 const PLATFORM_LABELS: Record<string, string> = {
   GOOGLE_ADS: "جوجل",
@@ -98,15 +100,30 @@ export default async function AttributionPathPage() {
         فالصورة دي محدودة بالتفاعلات اللي مرّت عبر أداة التتبع الخاصة بنا فقط.
       </p>
 
-      <div className="mb-6 grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-surface p-4 text-center">
-          <div className="font-mono text-2xl text-text-primary">{100 - multiTouchPct}%</div>
-          <div className="text-xs text-text-faint">منصة واحدة قبل التحويل</div>
-        </div>
-        <div className="rounded-2xl bg-surface p-4 text-center">
-          <div className="font-mono text-2xl text-verified">{multiTouchPct}%</div>
-          <div className="text-xs text-text-faint">أكتر من منصة قبل التحويل</div>
-        </div>
+      <div className="mb-6 grid gap-3 sm:grid-cols-2">
+        <MetricCard
+          label="منصّة واحدة قبل التحويل"
+          value={100 - multiTouchPct}
+          unit="%"
+          icon={Target}
+          tone="neutral"
+          bar={{ pct: 100 - multiTouchPct }}
+        />
+        <MetricCard
+          label="أكثر من منصّة قبل التحويل"
+          value={multiTouchPct}
+          unit="%"
+          icon={GitBranch}
+          tone="verified"
+          bar={{ pct: multiTouchPct }}
+          caption={{
+            text:
+              multiTouchPct > 0
+                ? "لا يمكن لأي لوحة منصّة منفردة أن ترى هذه الرحلات كاملة"
+                : "لم تُرصد رحلة عابرة للمنصّات في هذه الفترة",
+            tone: multiTouchPct > 0 ? "warning" : "muted",
+          }}
+        />
       </div>
 
       {topPaths.length > 0 && (

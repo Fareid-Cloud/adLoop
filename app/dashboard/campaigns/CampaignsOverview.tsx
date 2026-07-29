@@ -7,6 +7,7 @@
 import { useState, useMemo } from "react";
 import { Search, TrendingDown, AlertOctagon, CheckCircle2, Wallet, ChevronLeft } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { MetricCard } from "@/app/components/ui/MetricCard";
 
 export interface CampaignRow {
   campaignId: string;
@@ -83,29 +84,49 @@ export function CampaignsOverview({
     );
   }, [enriched, query, platform, state]);
 
-  const summaryCards = [
-    { key: "spend", labelAr: "إجمالي الإنفاق", value: `${num(totals.cost)} ${currency}`, Icon: Wallet, tone: "var(--accent)" },
-    { key: "verified", labelAr: "تحويلات محقّقة", value: `${num(totals.verified)} / ${num(totals.reported)}`, Icon: CheckCircle2, tone: "var(--verified)" },
-    { key: "wasted", labelAr: "إنفاق بلا نتيجة مؤكدة", value: `${num(totals.wasted)} ${currency}`, Icon: TrendingDown, tone: "var(--critical)" },
-    { key: "critical", labelAr: "حملات تحتاج تدخّلاً", value: String(counts.critical + counts.watch), Icon: AlertOctagon, tone: "var(--gap)" },
-  ];
+  // بطاقات المؤشّر الموحّدة - نفس نظام البطاقة في كل أقسام المنتج
+  const verificationPct = totals.reported > 0 ? Math.round((totals.verified / totals.reported) * 100) : 0;
+  const wastedPct = totals.cost > 0 ? Math.round((totals.wasted / totals.cost) * 100) : 0;
 
   return (
     <div>
       {/* الحصيلة */}
-      <div className="reveal mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4" style={{ animationDelay: "60ms" }}>
-        {summaryCards.map((c) => (
-          <div key={c.key} className="card-shadow overflow-hidden rounded-2xl border p-4"
-               style={{
-                 borderColor: `color-mix(in srgb, ${c.tone} 26%, transparent)`,
-                 background: `linear-gradient(160deg, color-mix(in srgb, ${c.tone} 7%, var(--surface)) 0%, var(--surface) 62%)`,
-               }}>
-            <span className="absolute inset-x-0 top-0 h-[3px]" style={{ background: c.tone }} />
-            <c.Icon size={16} style={{ color: c.tone }} />
-            <div className="mt-2 font-mono text-[20px] font-bold leading-none text-text-primary">{c.value}</div>
-            <div className="mt-1 text-[11.5px] text-text-muted">{c.labelAr}</div>
-          </div>
-        ))}
+      <div className="reveal mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" style={{ animationDelay: "60ms" }}>
+        <MetricCard
+          label="إجمالي الإنفاق"
+          value={num(totals.cost)}
+          unit={currency}
+          icon={Wallet}
+          tone="accent"
+        />
+        <MetricCard
+          label="تحويلات متحقّقة"
+          value={num(totals.verified)}
+          icon={CheckCircle2}
+          tone="verified"
+          verified
+          caption={{ text: `من ${num(totals.reported)} معلَنة (${verificationPct}%)`, tone: "muted" }}
+          bar={{ pct: verificationPct }}
+        />
+        <MetricCard
+          label="إنفاق بلا نتيجة مؤكّدة"
+          value={num(totals.wasted)}
+          unit={currency}
+          icon={TrendingDown}
+          tone="critical"
+          caption={{ text: `${wastedPct}% من إنفاقك`, tone: "negative" }}
+        />
+        <MetricCard
+          label="حملات تحتاج تدخّلاً"
+          value={counts.critical + counts.watch}
+          icon={AlertOctagon}
+          tone={counts.critical > 0 ? "critical" : counts.watch > 0 ? "gap" : "neutral"}
+          caption={
+            counts.critical > 0
+              ? { text: `${counts.critical} حرجة و${counts.watch} تحت المراقبة`, tone: "negative" }
+              : { text: "لا حملة حرجة الآن", tone: "positive" }
+          }
+        />
       </div>
 
       {/* الجدول */}

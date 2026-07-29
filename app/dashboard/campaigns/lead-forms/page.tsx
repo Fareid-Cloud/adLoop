@@ -8,6 +8,8 @@ import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { countGenuineLeads } from "@/lib/messengerLeadQuality";
+import { MetricCard } from "@/app/components/ui/MetricCard";
+import { MessageCircle, MousePointerClick, Clock } from "lucide-react";
 
 export default async function LeadFormsPage() {
   const user = await getSessionUserFromCookies();
@@ -99,19 +101,27 @@ export default async function LeadFormsPage() {
       {messengerBreakdown && (
         <>
           <div className="mb-2 mt-8 text-[13px] text-text-muted">جودة محادثات ماسنجر (آخر 30 يوم)</div>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-2xl bg-verified/[0.06] p-4 text-center">
-              <div className="font-mono text-2xl text-verified">{messengerBreakdown.genuineCount}</div>
-              <div className="mt-1 text-xs text-text-faint">تواصل حقيقي</div>
-            </div>
-            <div className="rounded-2xl bg-critical/[0.06] p-4 text-center">
-              <div className="font-mono text-2xl text-critical">{messengerBreakdown.likelyAccidentalCount}</div>
-              <div className="mt-1 text-xs text-text-faint">ضغطة بالخطأ (الأرجح)</div>
-            </div>
-            <div className="rounded-2xl bg-surface p-4 text-center">
-              <div className="font-mono text-2xl text-text-muted">{messengerBreakdown.pendingCount}</div>
-              <div className="mt-1 text-xs text-text-faint">ما زالت تحتاج وقتاً للتقييم</div>
-            </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <MetricCard
+              label="تواصل حقيقي"
+              value={messengerBreakdown.genuineCount}
+              icon={MessageCircle}
+              tone="verified"
+              verified
+            />
+            <MetricCard
+              label="ضغطة بالخطأ (الأرجح)"
+              value={messengerBreakdown.likelyAccidentalCount}
+              icon={MousePointerClick}
+              tone="critical"
+              caption={{ text: "تُحتسب تحويلاً لدى المنصّة ولم تُنتج عميلاً", tone: "negative" }}
+            />
+            <MetricCard
+              label="تحتاج وقتاً للتقييم"
+              value={messengerBreakdown.pendingCount}
+              icon={Clock}
+              tone="neutral"
+            />
           </div>
         </>
       )}

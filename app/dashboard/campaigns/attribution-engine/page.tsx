@@ -8,6 +8,8 @@ import { prisma } from "@/lib/prisma";
 import { getAttributionSummaryForWorkspace } from "@/lib/attributionSummary";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { TrackingAccuracyGauge } from "@/app/components/ui/TrackingAccuracyGauge";
+import { MetricCard } from "@/app/components/ui/MetricCard";
+import { ShieldCheck, GitBranch } from "lucide-react";
 
 const PLATFORM_LABELS: Record<string, string> = {
   GOOGLE_ADS: "جوجل",
@@ -60,15 +62,23 @@ export default async function AttributionEnginePage() {
             <TrackingAccuracyGauge verified={summary.verifiedCount} raw={total} />
           </div>
 
-          <div className="mb-4 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-surface p-4 text-center">
-              <div className="font-mono text-2xl text-verified">{summary.verifiedCount}</div>
-              <div className="text-xs text-text-faint">مؤكدة بكود مباشر</div>
-            </div>
-            <div className="rounded-2xl bg-surface p-4 text-center">
-              <div className="font-mono text-2xl text-gap">{summary.modeledCount}</div>
-              <div className="text-xs text-text-faint">مُنسّبة احتمالياً ({modeledPct}%)</div>
-            </div>
+          <div className="mb-4 grid gap-3 sm:grid-cols-2">
+            <MetricCard
+              label="مؤكّدة بكود مباشر"
+              value={summary.verifiedCount}
+              icon={ShieldCheck}
+              tone="verified"
+              verified
+              caption={{ text: "الكود نفسه هو الدليل — يقين لا ترجيح", tone: "positive" }}
+            />
+            <MetricCard
+              label="مُنسّبة احتمالياً"
+              value={summary.modeledCount}
+              icon={GitBranch}
+              tone="gap"
+              verified={false}
+              bar={{ pct: modeledPct, caption: `${modeledPct}% من إجمالي المحادثات` }}
+            />
           </div>
 
           <div className="rounded-2xl bg-surface p-4">

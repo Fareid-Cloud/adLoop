@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { UserActions } from "./UserActions";
+import { MetricCard } from "@/app/components/ui/MetricCard";
+import { Users, Building2, Plug, AlertTriangle } from "lucide-react";
 
 const AT_RISK_DAYS = 14; // مفيش دخول من أسبوعين = مؤشر خطر، مش قرار نهائي
 
@@ -50,14 +52,20 @@ export default async function AdminDashboard() {
       <h1 className="mb-6 text-2xl font-semibold text-text-primary">نظرة عامة على المنصة</h1>
 
       {/* ملخص سريع */}
-      <div className="mb-6 grid grid-cols-4 gap-3">
-        <StatCard label="إجمالي المشتركين" value={users.length} />
-        <StatCard label="مساحات العمل" value={workspaces.length} />
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="إجمالي المشتركين" value={users.length} icon={Users} />
+        <StatCard label="مساحات العمل" value={workspaces.length} icon={Building2} />
         <StatCard
           label="حسابات مربوطة"
           value={connectedPlatforms.reduce((s: number, p: any) => s + p._count, 0)}
+          icon={Plug}
         />
-        <StatCard label="عملاء في خطر" value={atRiskUsers.length} critical={atRiskUsers.length > 0} />
+        <StatCard
+          label="عملاء في خطر"
+          value={atRiskUsers.length}
+          critical={atRiskUsers.length > 0}
+          icon={AlertTriangle}
+        />
       </div>
 
       <div className="mb-6 rounded-2xl bg-gap/10 p-4 text-xs text-gap">
@@ -179,12 +187,26 @@ export default async function AdminDashboard() {
   );
 }
 
-function StatCard({ label, value, critical }: { label: string; value: number; critical?: boolean }) {
+// غلاف رفيع حول بطاقة المؤشّر الموحّدة - لوحة المالك تتبع نظام التصميم
+// نفسه بدل نسخة مبسّطة تتباعد عنه
+function StatCard({
+  label,
+  value,
+  critical,
+  icon,
+}: {
+  label: string;
+  value: number;
+  critical?: boolean;
+  icon: typeof Users;
+}) {
   return (
-    <div className="rounded-2xl bg-surface p-4 text-center">
-      <div className={`font-mono text-2xl ${critical ? "text-critical" : "text-text-primary"}`}>{value}</div>
-      <div className="text-xs text-text-faint">{label}</div>
-    </div>
+    <MetricCard
+      label={label}
+      value={value.toLocaleString("en-US")}
+      icon={icon}
+      tone={critical ? "critical" : "accent"}
+    />
   );
 }
 

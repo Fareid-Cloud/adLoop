@@ -59,6 +59,14 @@ interface MetricCardProps {
   hint?: string;
   /** علامة التحقّق - جوهر المنتج: رقم متحقّق منه مقابل رقم معلَن */
   verified?: boolean;
+  /**
+   * بطاقة تفاعلية (فلتر مثلاً). تُمرَّر من مكوّن عميل فقط - المكوّنات
+   * الخادمة لا تمرّر دوالّ. وجودها هنا يمنع نسخة بصرية ثانية للبطاقة
+   * في الصفحات التفاعلية، وهو ما كان يحدث فعلاً في صفحة التشخيص.
+   */
+  onClick?: () => void;
+  /** حالة الاختيار - تُبرز البطاقة بحلقة لونية بدل تغيير شكلها */
+  selected?: boolean;
 }
 
 const TONE_ICON: Record<MetricTone, string> = {
@@ -89,12 +97,16 @@ const CAPTION_TONE = {
 export function MetricCard(props: MetricCardProps) {
   const {
     label, value, unit, subLabel, href, icon: Icon,
-    delta, bar, caption, trend, hint, verified,
+    delta, bar, caption, trend, hint, verified, onClick, selected,
   } = props;
   const tone: MetricTone = props.tone ?? props.color ?? "default";
 
   const content = (
-    <div className="group card-shadow h-full rounded-2xl border border-border bg-surface p-4 transition-all hover:-translate-y-0.5 hover:ring-1 hover:ring-border">
+    <div
+      className={`group card-shadow h-full rounded-2xl border bg-surface p-4 text-start transition-all hover:-translate-y-0.5 hover:ring-1 hover:ring-border ${
+        selected ? `${SELECTED_RING[tone]} ring-1` : "border-border"
+      }`}
+    >
       {/* الرأس: أيقونة هادئة + اسم المؤشّر */}
       <div className="mb-3 flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2.5">
@@ -162,6 +174,19 @@ export function MetricCard(props: MetricCardProps) {
     </div>
   );
 
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={selected}
+        className="block h-full w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-2xl"
+      >
+        {content}
+      </button>
+    );
+  }
+
   if (href) {
     return (
       <Link href={href} className="block h-full no-underline">
@@ -171,6 +196,17 @@ export function MetricCard(props: MetricCardProps) {
   }
   return content;
 }
+
+// حلقة الاختيار بلون المؤشّر نفسه - تمييز الحالة بلا تغيير بنية البطاقة،
+// فلا "تقفز" الشبكة عند التبديل بين الفلاتر
+const SELECTED_RING: Record<MetricTone, string> = {
+  default: "border-accent ring-accent/40",
+  neutral: "border-text-muted ring-text-muted/30",
+  verified: "border-verified ring-verified/40",
+  gap: "border-gap ring-gap/40",
+  critical: "border-critical ring-critical/40",
+  accent: "border-accent ring-accent/40",
+};
 
 function DeltaMark({ delta }: { delta: MetricDelta }) {
   // الافتراضي: صعود = جيّد. يُقلَب صراحةً عبر positive للمؤشّرات المعكوسة

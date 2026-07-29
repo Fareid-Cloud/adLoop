@@ -13,6 +13,7 @@ import {
   ChevronLeft, ChevronDown, Activity, Loader2, Radar,
 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { MetricCard, type MetricTone } from "@/app/components/ui/MetricCard";
 import { CATEGORY_META, type CheckCategory, type CheckSeverity, type CheckStatus } from "@/lib/diagnosticsEngine";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
@@ -45,12 +46,14 @@ const STATUS_KEY: Record<CheckStatus, string> = {
   PASS: "statusPass", WARNING: "statusWarning", FAILED: "statusFailed", UNKNOWN: "statusUnknown",
 };
 
+// نبرة كل بطاقة من نظام البطاقة الموحّد بدل ألوان مكتوبة يدوياً - فيبقى
+// التلوين دلالياً واحداً عبر المنتج كله
 const SEVERITY_CARDS = [
-  { key: "critical", Icon: AlertOctagon, tone: "var(--critical)" },
-  { key: "high", Icon: AlertTriangle, tone: "var(--gap)" },
-  { key: "medium", Icon: Info, tone: "#F59E0B" },
-  { key: "passing", Icon: CheckCircle2, tone: "var(--verified)" },
-] as const;
+  { key: "critical", Icon: AlertOctagon, tone: "critical" },
+  { key: "high", Icon: AlertTriangle, tone: "gap" },
+  { key: "medium", Icon: Info, tone: "accent" },
+  { key: "passing", Icon: CheckCircle2, tone: "verified" },
+] as const satisfies ReadonlyArray<{ key: string; Icon: typeof AlertOctagon; tone: MetricTone }>;
 
 function Spark({ data, tone }: { data: number[]; tone: string }) {
   if (data.length < 2) return <span className="text-[11px] text-text-faint">—</span>;
@@ -237,16 +240,27 @@ export function DiagnosticsView({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {/* بطاقات فلترة تفاعلية بنفس نظام البطاقة الموحّد - كانت نسخة بصرية
+            ثانية مكتوبة يدوياً، فصارت تنحرف عن باقي المنتج مع كل تعديل */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {SEVERITY_CARDS.map((s) => {
             const n = counts[s.key];
-            const active = s.key !== "passing" && n > 0;
             const selected = s.key === "passing"
               ? statusFilter === "PASS"
               : severityFilter === (s.key.toUpperCase() as CheckSeverity);
             return (
-              <button
+              <MetricCard
                 key={s.key}
+                label={tr(s.key)}
+                value={n}
+                icon={s.Icon}
+                // العدد صفر لا يستحق تلويناً تحذيرياً - لا مشكلة أصلاً
+                tone={n > 0 || s.key === "passing" ? s.tone : "neutral"}
+                selected={selected}
+                caption={{
+                  text: tr(s.key + "Sub"),
+                  tone: s.key === "passing" ? "positive" : n > 0 ? "warning" : "muted",
+                }}
                 onClick={() => {
                   if (s.key === "passing") {
                     const on = statusFilter === "PASS";
@@ -262,22 +276,7 @@ export function DiagnosticsView({
                   // يحدث التصفية أسفل الصفحة دون أن ينتبه لها
                   setTimeout(() => tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
                 }}
-                className="card-shadow relative overflow-hidden rounded-2xl border p-4 text-start"
-                style={{
-                  borderColor: selected ? s.tone
-                    : active ? `color-mix(in srgb, ${s.tone} 34%, transparent)` : "var(--border)",
-                  background: active || selected ? `color-mix(in srgb, ${s.tone} 7%, var(--surface))` : "var(--surface)",
-                  boxShadow: selected ? `0 0 0 1px ${s.tone}` : undefined,
-                }}
-              >
-                <s.Icon size={17} style={{ color: active || s.key === "passing" ? s.tone : "var(--text-faint)" }} />
-                <div className="mt-2 font-mono text-[26px] font-bold leading-none"
-                     style={{ color: active || s.key === "passing" ? s.tone : "var(--text-primary)" }}>
-                  {n}
-                </div>
-                <div className="mt-1 text-[12px] font-medium text-text-primary">{tr(s.key)}</div>
-                <div className="text-[11px] text-text-muted">{tr(s.key + "Sub")}</div>
-              </button>
+              />
             );
           })}
         </div>

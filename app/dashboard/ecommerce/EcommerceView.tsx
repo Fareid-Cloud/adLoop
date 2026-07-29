@@ -12,6 +12,7 @@ import {
   AlertOctagon, Store, Boxes, ChevronLeft,
 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { MetricCard, type MetricTone } from "@/app/components/ui/MetricCard";
 
 export interface ProductRow {
   id: string;
@@ -80,11 +81,38 @@ export function EcommerceView({
     );
   }, [products, query, verdict]);
 
-  const cards = [
-    { key: "revenue", ar: "الإيراد", value: `${num(totals.revenue)} ${currency}`, Icon: Wallet, tone: "var(--accent)" },
-    { key: "profit", ar: "الربح الفعلي", value: `${num(totals.profit)} ${currency}`, Icon: Trophy, tone: totals.profit >= 0 ? "var(--verified)" : "var(--critical)" },
-    { key: "units", ar: "الوحدات المباعة", value: num(totals.units), Icon: Package, tone: "#8B5CF6" },
-    { key: "returns", ar: "نسبة المرتجعات", value: `${totals.returnRatePct}%`, Icon: RotateCcw, tone: totals.returnRatePct > 25 ? "var(--critical)" : "var(--gap)" },
+  // بطاقات المؤشّر الموحّدة - نفس الشكل الهادئ في كل أقسام المنتج
+  const cards: Array<{
+    key: string;
+    label: string;
+    value: string;
+    unit?: string;
+    Icon: typeof Wallet;
+    tone: MetricTone;
+    caption?: { text: string; tone: "muted" | "positive" | "warning" | "negative" };
+  }> = [
+    { key: "revenue", label: "الإيراد", value: num(totals.revenue), unit: currency, Icon: Wallet, tone: "accent" },
+    {
+      key: "profit",
+      label: "الربح الفعلي",
+      value: num(totals.profit),
+      unit: currency,
+      Icon: Trophy,
+      tone: totals.profit >= 0 ? "verified" : "critical",
+      caption:
+        totals.profit < 0
+          ? { text: "خسارة بعد المرتجعات والشحن والإعلان", tone: "negative" }
+          : undefined,
+    },
+    { key: "units", label: "الوحدات المباعة", value: num(totals.units), Icon: Package, tone: "default" },
+    {
+      key: "returns",
+      label: "نسبة المرتجعات",
+      value: String(totals.returnRatePct),
+      unit: "%",
+      Icon: RotateCcw,
+      tone: totals.returnRatePct > 25 ? "critical" : totals.returnRatePct > 12 ? "gap" : "verified",
+    },
   ];
 
   return (
@@ -123,18 +151,17 @@ export function EcommerceView({
       )}
 
       {/* الحصيلة */}
-      <div className="reveal mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4" style={{ animationDelay: "60ms" }}>
+      <div className="reveal mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" style={{ animationDelay: "60ms" }}>
         {cards.map((c) => (
-          <div key={c.key} className="card-shadow relative overflow-hidden rounded-2xl border p-4"
-               style={{
-                 borderColor: `color-mix(in srgb, ${c.tone} 26%, transparent)`,
-                 background: `linear-gradient(160deg, color-mix(in srgb, ${c.tone} 7%, var(--surface)) 0%, var(--surface) 62%)`,
-               }}>
-            <span className="absolute inset-x-0 top-0 h-[3px]" style={{ background: c.tone }} />
-            <c.Icon size={16} style={{ color: c.tone }} />
-            <div className="mt-2 font-mono text-[20px] font-bold leading-none text-text-primary">{c.value}</div>
-            <div className="mt-1 text-[11.5px] text-text-muted">{c.ar}</div>
-          </div>
+          <MetricCard
+            key={c.key}
+            label={c.label}
+            value={c.value}
+            unit={c.unit}
+            icon={c.Icon}
+            tone={c.tone}
+            caption={c.caption}
+          />
         ))}
       </div>
 

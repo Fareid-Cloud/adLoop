@@ -6,6 +6,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import { MetricCard } from "@/app/components/ui/MetricCard";
+import { Wallet, Users } from "lucide-react";
 
 export default async function PublicReportPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -40,17 +42,21 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
         <div className="mb-1 text-[13px] text-text-muted">تقرير أداء</div>
         <h1 className="mb-6 text-[26px] font-semibold text-text-primary">{workspace.name}</h1>
 
-        <div className="mb-6 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-surface p-5">
-            <div className="mb-2 text-xs text-text-muted">إجمالي الإنفاق (30 يوم)</div>
-            <div className="font-mono text-2xl text-text-primary">
-              {totals.cost.toLocaleString()} {workspace.currency}
-            </div>
-          </div>
-          <div className="rounded-2xl bg-surface p-5">
-            <div className="mb-2 text-xs text-text-muted">تكلفة العميل الحقيقية</div>
-            <div className="font-mono text-2xl text-verified">{cplVerified}</div>
-          </div>
+        <div className="mb-6 grid gap-3 sm:grid-cols-2">
+          <MetricCard
+            label="إجمالي الإنفاق (٣٠ يوماً)"
+            value={Math.round(totals.cost).toLocaleString("en-US")}
+            unit={workspace.currency}
+            icon={Wallet}
+            tone="accent"
+          />
+          <MetricCard
+            label="تكلفة العميل الحقيقية"
+            value={cplVerified}
+            icon={Users}
+            tone="verified"
+            verified
+          />
         </div>
 
         <div className="rounded-2xl bg-surface p-5">
