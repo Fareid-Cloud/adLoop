@@ -13,7 +13,7 @@ import {
 import { getInventoryAnalysis } from "@/lib/ecommerce/inventoryIntelligence";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { Boxes, Snowflake, PackageX } from "lucide-react";
-import { t, type Locale } from "@/lib/i18n/dictionary";
+import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +22,7 @@ export default async function InventoryPage() {
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `inventory.${k}`, v);
   const tc = (k: string, v?: Record<string, string | number>) => t(locale, `common.${k}`, v);
+  const tx = (i: { key: string; vars?: Record<string, string | number> }) => tText(locale, "invText", i);
 
   if (!user) {
     return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
@@ -131,9 +132,9 @@ export default async function InventoryPage() {
       {analysis.buckets.map((bucket) => (
         <DecisionBucket
           key={bucket.key}
-          labelAr={bucket.labelAr}
-          descriptionAr={bucket.descriptionAr}
-          actionAr={bucket.actionAr}
+          labelAr={tx(bucket.label)}
+          descriptionAr={tx(bucket.description)}
+          actionAr={tx(bucket.action)}
           count={bucket.items.length}
           valueAr={bucket.capitalImpact > 0 ? `${fmtNum(bucket.capitalImpact)} ${c}` : undefined}
           tone={bucket.tone}

@@ -14,7 +14,7 @@ import {
 } from "../_components/EcomPrimitives";
 import { getOrderQuality } from "@/lib/ecommerce/storeIntelligence";
 import { ShieldAlert } from "lucide-react";
-import { t, type Locale } from "@/lib/i18n/dictionary";
+import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +44,7 @@ export default async function OrdersPage() {
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `orders.${k}`, v);
   const tc = (k: string, v?: Record<string, string | number>) => t(locale, `common.${k}`, v);
+  const tx = (i: { key: string; vars?: Record<string, string | number> }) => tText(locale, "ordText", i);
 
   if (!user) {
     return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
@@ -136,13 +137,13 @@ export default async function OrdersPage() {
         {quality.buckets.map((b) => (
           <div key={b.key} className={`card-shadow rounded-2xl border p-4 ${TONE_STYLE[b.tone]}`}>
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-[13px] font-medium text-text-primary">{b.labelAr}</span>
+              <span className="text-[13px] font-medium text-text-primary">{tx(b.label)}</span>
               <span className={`text-[22px] font-semibold tabular-nums ${TONE_TEXT[b.tone]}`}>{b.count}</span>
             </div>
             <div className="mt-1 text-[12px] tabular-nums text-text-muted">
               {fmtNum(b.value)} {c}
             </div>
-            <p className="mt-2 text-[11.5px] leading-relaxed text-text-muted">{b.descriptionAr}</p>
+            <p className="mt-2 text-[11.5px] leading-relaxed text-text-muted">{tx(b.description)}</p>
           </div>
         ))}
       </div>

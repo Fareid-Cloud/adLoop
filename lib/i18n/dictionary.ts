@@ -467,6 +467,90 @@ export const dictionary = {
       stateReturned: "مرتجع",
       healthy: "جودة طلباتك جيدة: لا تأخير ولا معدّل إرجاع مقلق في هذه الفترة.",
     },
+    // ==== نصوص دلاء المخزون ====
+    invText: {
+      runningOut: {
+        label: "على وشك النفاد",
+        description: "سينفد خلال {days} يوماً أو أقلّ بمعدّل البيع الحالي.",
+        action: "أعد الطلب الآن، أو أوقف إعلانه قبل أن تدفع على منتج لا تستطيع تسليمه.",
+      },
+      outOfStock: {
+        label: "نفد بالفعل",
+        description: "رصيده صفر — أي إعلان يعمل عليه الآن ينفق بلا مقابل ممكن.",
+        action: "أوقف إعلاناته فوراً حتى يعود الرصيد.",
+      },
+      dead: {
+        label: "مخزون متوقّف",
+        description: "لم يُبَع منه شيء منذ {days} يوماً أو أكثر — رأس مال مجمّد.",
+        action: "تخفيض أو باقة مع منتج رائج. استرداد جزء من المال أفضل من تجميده كاملاً.",
+      },
+      slow: {
+        label: "بطيء الحركة",
+        description: "آخر بيع منذ {days} يوماً أو أكثر — في طريقه ليصبح مخزوناً متوقّفاً.",
+        action: "تدخّل الآن بينما الطلب عليه ما زال موجوداً: راجع السعر أو الصور أو وصف المنتج.",
+      },
+      best: {
+        label: "الأسرع بيعاً",
+        description: "أعلى معدّل بيع يومي في متجرك.",
+        action: "تأكّد أن رصيدها يكفي قبل زيادة ميزانية إعلاناتها — النفاد وسط حملة يهدر الإنفاق كلّه.",
+      },
+    },
+    // ==== نصوص دلاء الطلبات ====
+    ordText: {
+      cancelled: {
+        label: "طلبات ملغاة",
+        description: "لم تُشحن أصلاً — تكلفتها إعلانية بحتة: دفعت لجلب العميل ولم تبع شيئاً.",
+      },
+      returned: {
+        label: "طلبات مرتجعة",
+        description: "أغلى من الإلغاء: دفعت الشحن مرتين وقد لا تعود البضاعة قابلة للبيع.",
+      },
+      delayed: {
+        label: "طلبات متأخّرة",
+        description: "مضى عليها أكثر من {days} أيام دون تنفيذ — أهمّ سبب مباشر للإلغاء والمرتجعات.",
+      },
+      highValue: {
+        label: "طلبات مرتفعة القيمة",
+        description: "ضعف متوسط طلبات متجرك أو أكثر — تستحق متابعة تنفيذ خاصة.",
+      },
+      risky: {
+        label: "تستحق مراجعة قبل الشحن",
+        description: "إشارات مخاطرة مجتمعة (دفع عند الاستلام، قيمة شاذّة، تاريخ إرجاع). ترجيح من أنماط معروفة، لا كشف احتيال.",
+      },
+    },
+    // ==== نصوص شرائح العملاء ====
+    segText: {
+      vip: {
+        label: "كبار العملاء",
+        description: "أعلى {pct}% إنفاقاً في متجرك.",
+        action: "خصّهم بعرض مبكّر أو شحن مجاني — تكلفة الاحتفاظ بهم أقلّ بكثير من جلب بدائلهم.",
+      },
+      vipAtRisk: {
+        label: "كبار عملاء على وشك الفقد",
+        description: "لم يطلبوا منذ أكثر من {days} يوماً.",
+        action: "تواصل معهم هذا الأسبوع. فقدان عميل من هذه الشريحة يعادل فقدان عشرات العملاء العاديين.",
+      },
+      atRisk: {
+        label: "عملاء معرَّضون للفقد",
+        description: "اشتروا أكثر من مرة ثم توقّفوا منذ {days} يوماً.",
+        action: "حملة استرجاع موجَّهة لهم أرخص من إعلان يجلب عميلاً جديداً بالكامل.",
+      },
+      repeat: {
+        label: "عملاء متكرّرون",
+        description: "اشتروا أكثر من مرة — دليل أن المنتج والخدمة يعملان.",
+        action: "ادرس ما اشتروه أولاً: هو منتج الدخول الحقيقي لمتجرك، ويستحق أكبر ميزانية.",
+      },
+      single: {
+        label: "عملاء لمرة واحدة",
+        description: "اشتروا مرة ولم يعودوا بعد.",
+        action: "رسالة متابعة بعد أسبوعين من الطلب الأول هي أرخص طريقة لتحويلهم إلى متكرّرين.",
+      },
+      highReturners: {
+        label: "كثيرو الإرجاع",
+        description: "٤٠% من طلباتهم أو أكثر ارتدّت.",
+        action: "راجع ما يطلبونه: غالباً مشكلة وصف منتج أو مقاس، لا مشكلة عميل.",
+      },
+    },
   },
   en: {
     auth: {
@@ -927,6 +1011,90 @@ export const dictionary = {
       stateCancelled: "Cancelled",
       stateReturned: "Returned",
       healthy: "Your order quality is good: no delays and no worrying return rate this period.",
+    },
+    // ==== Inventory bucket copy ====
+    invText: {
+      runningOut: {
+        label: "Running out",
+        description: "Will be gone within {days} days at the current sales rate.",
+        action: "Reorder now, or pause its ads before you pay for something you cannot deliver.",
+      },
+      outOfStock: {
+        label: "Already out",
+        description: "Stock is zero — any ad running on it right now spends with no possible return.",
+        action: "Pause its ads immediately until stock is back.",
+      },
+      dead: {
+        label: "Stalled stock",
+        description: "Nothing sold in {days} days or more — frozen capital.",
+        action: "Discount it or bundle it with a strong seller. Recovering part of the money beats freezing all of it.",
+      },
+      slow: {
+        label: "Slow moving",
+        description: "Last sold {days} days ago or more — on its way to becoming stalled stock.",
+        action: "Step in while demand still exists: review the price, the photos, or the description.",
+      },
+      best: {
+        label: "Fastest selling",
+        description: "The highest daily sales rate in your store.",
+        action: "Check stock covers it before raising ad budgets — running out mid-campaign wastes the whole spend.",
+      },
+    },
+    // ==== Order bucket copy ====
+    ordText: {
+      cancelled: {
+        label: "Cancelled orders",
+        description: "Never shipped — the cost is purely advertising: you paid to bring the customer and sold nothing.",
+      },
+      returned: {
+        label: "Returned orders",
+        description: "Costlier than a cancellation: you paid shipping twice and the goods may not be resellable.",
+      },
+      delayed: {
+        label: "Delayed orders",
+        description: "More than {days} days old and still unfulfilled — the single biggest cause of cancellations and returns.",
+      },
+      highValue: {
+        label: "High-value orders",
+        description: "Twice your store's average order or more — worth watching through fulfilment.",
+      },
+      risky: {
+        label: "Worth checking before shipping",
+        description: "Combined risk signals (cash on delivery, outlier value, return history). Weighted from known patterns, not fraud detection.",
+      },
+    },
+    // ==== Customer segment copy ====
+    segText: {
+      vip: {
+        label: "Top customers",
+        description: "The top {pct}% by spend in your store.",
+        action: "Give them early access or free shipping — keeping them costs far less than replacing them.",
+      },
+      vipAtRisk: {
+        label: "Top customers at risk",
+        description: "No order in more than {days} days.",
+        action: "Reach out this week. Losing one from this group costs you what dozens of ordinary customers are worth.",
+      },
+      atRisk: {
+        label: "Customers at risk",
+        description: "Bought more than once, then stopped {days} days ago.",
+        action: "A targeted win-back campaign costs less than an ad that acquires a customer from scratch.",
+      },
+      repeat: {
+        label: "Repeat customers",
+        description: "Bought more than once — proof the product and the service work.",
+        action: "Look at what they bought first: that is your real entry product, and it deserves the biggest budget.",
+      },
+      single: {
+        label: "One-time customers",
+        description: "Bought once and have not come back.",
+        action: "A follow-up two weeks after the first order is the cheapest way to turn them into repeat buyers.",
+      },
+      highReturners: {
+        label: "Frequent returners",
+        description: "40% or more of their orders came back.",
+        action: "Look at what they order: usually a description or sizing problem, not a customer problem.",
+      },
     },
   },
 } as const;

@@ -24,11 +24,14 @@ export interface InventoryItem {
   daysSinceLastSale: number | null;
 }
 
+import type { LocalizedText } from "./opportunities";
+
 export interface InventoryBucket {
   key: string;
-  labelAr: string;
-  descriptionAr: string;
-  actionAr: string;
+  /** مفاتيح لا جُمل - الصياغة في القاموس، فتتبع لغة الواجهة */
+  label: LocalizedText;
+  description: LocalizedText;
+  action: LocalizedText;
   tone: "critical" | "warning" | "positive" | "neutral";
   items: InventoryItem[];
   /** الأثر المالي المرتبط بهذا الدلو */
@@ -149,45 +152,45 @@ export async function getInventoryAnalysis(
   const allBuckets: InventoryBucket[] = [
     {
       key: "runningOut",
-      labelAr: "على وشك النفاد",
-      descriptionAr: `سينفد خلال ${RUNNING_OUT_DAYS} يوماً أو أقلّ بمعدّل البيع الحالي.`,
-      actionAr: "أعد الطلب الآن، أو أوقف إعلانه قبل أن تدفع على منتج لا تستطيع تسليمه.",
+      label: { key: "runningOut.label" },
+      description: { key: "runningOut.description", vars: { days: RUNNING_OUT_DAYS } },
+      action: { key: "runningOut.action" },
       tone: "critical",
       items: runningOut.sort((a, b) => (a.daysLeft ?? 0) - (b.daysLeft ?? 0)),
       capitalImpact: cap(runningOut),
     },
     {
       key: "outOfStock",
-      labelAr: "نفد بالفعل",
-      descriptionAr: "رصيده صفر — أي إعلان يعمل عليه الآن ينفق بلا مقابل ممكن.",
-      actionAr: "أوقف إعلاناته فوراً حتى يعود الرصيد.",
+      label: { key: "outOfStock.label" },
+      description: { key: "outOfStock.description" },
+      action: { key: "outOfStock.action" },
       tone: "critical",
       items: outOfStock,
       capitalImpact: 0,
     },
     {
       key: "dead",
-      labelAr: "مخزون ميّت",
-      descriptionAr: `لم يُبَع منه شيء منذ ${DEAD_STOCK_DAYS} يوماً أو أكثر — رأس مال مجمّد.`,
-      actionAr: "تخفيض أو باقة مع منتج رائج. استرداد جزء من المال أفضل من تجميده كاملاً.",
+      label: { key: "dead.label" },
+      description: { key: "dead.description", vars: { days: DEAD_STOCK_DAYS } },
+      action: { key: "dead.action" },
       tone: "warning",
       items: dead.sort((a, b) => b.capitalTied - a.capitalTied),
       capitalImpact: cap(dead),
     },
     {
       key: "slow",
-      labelAr: "بطيء الحركة",
-      descriptionAr: `آخر بيع منذ ${SLOW_MOVING_DAYS} يوماً أو أكثر — في طريقه ليصبح مخزوناً ميّتاً.`,
-      actionAr: "تدخّل الآن بينما الطلب عليه ما زال موجوداً: راجع السعر أو الصور أو وصف المنتج.",
+      label: { key: "slow.label" },
+      description: { key: "slow.description", vars: { days: SLOW_MOVING_DAYS } },
+      action: { key: "slow.action" },
       tone: "warning",
       items: slow.sort((a, b) => b.capitalTied - a.capitalTied),
       capitalImpact: cap(slow),
     },
     {
       key: "best",
-      labelAr: "الأسرع بيعاً",
-      descriptionAr: "أعلى معدّل بيع يومي في متجرك.",
-      actionAr: "تأكّد أن رصيدها يكفي قبل زيادة ميزانية إعلاناتها — النفاد وسط حملة يهدر الإنفاق كلّه.",
+      label: { key: "best.label" },
+      description: { key: "best.description" },
+      action: { key: "best.action" },
       tone: "positive",
       items: best,
       capitalImpact: cap(best),

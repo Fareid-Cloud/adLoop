@@ -11,6 +11,7 @@
 // البيانات نقول ذلك بدل إخراج صفر يبدو نتيجةً.
 
 import { prisma } from "@/lib/prisma";
+import type { LocalizedText } from "./opportunities";
 
 const AD_PLATFORMS = ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS", "SNAPCHAT_ADS"] as const;
 
@@ -315,8 +316,8 @@ export async function getStoreOverview(workspaceId: string, windowDays = 30): Pr
 
 export interface OrderQualityBucket {
   key: string;
-  labelAr: string;
-  descriptionAr: string;
+  label: LocalizedText;
+  description: LocalizedText;
   count: number;
   value: number;
   /** الأثر المالي - ما يكلّفه هذا الدلو فعلاً */
@@ -381,8 +382,8 @@ export async function getOrderQuality(workspaceId: string, windowDays = 30): Pro
   const buckets: OrderQualityBucket[] = [
     {
       key: "cancelled",
-      labelAr: "طلبات ملغاة",
-      descriptionAr: "لم تُشحن أصلاً — تكلفتها إعلانية بحتة: دفعت لجلب العميل ولم تبع شيئاً.",
+      label: { key: "cancelled.label" },
+      description: { key: "cancelled.description" },
       count: cancelled.length,
       value: Math.round(sum(cancelled)),
       costImpact: Math.round(sum(cancelled)),
@@ -390,8 +391,8 @@ export async function getOrderQuality(workspaceId: string, windowDays = 30): Pro
     },
     {
       key: "returned",
-      labelAr: "طلبات مرتجعة",
-      descriptionAr: "أغلى من الإلغاء: دفعت الشحن مرتين وقد لا تعود البضاعة قابلة للبيع.",
+      label: { key: "returned.label" },
+      description: { key: "returned.description" },
       count: returnedOrders.length,
       value: Math.round(sum(returnedOrders)),
       costImpact: Math.round(sum(returnedOrders)),
@@ -399,8 +400,8 @@ export async function getOrderQuality(workspaceId: string, windowDays = 30): Pro
     },
     {
       key: "delayed",
-      labelAr: "طلبات متأخّرة",
-      descriptionAr: `مضى عليها أكثر من ${DELAYED_AFTER_DAYS} أيام دون تنفيذ — أهمّ سبب مباشر للإلغاء والمرتجعات.`,
+      label: { key: "delayed.label" },
+      description: { key: "delayed.description", vars: { days: DELAYED_AFTER_DAYS } },
       count: delayed.length,
       value: Math.round(sum(delayed)),
       costImpact: Math.round(sum(delayed)),
@@ -408,8 +409,8 @@ export async function getOrderQuality(workspaceId: string, windowDays = 30): Pro
     },
     {
       key: "highValue",
-      labelAr: "طلبات مرتفعة القيمة",
-      descriptionAr: "ضعف متوسط طلبات متجرك أو أكثر — تستحق متابعة تنفيذ خاصة.",
+      label: { key: "highValue.label" },
+      description: { key: "highValue.description" },
       count: highValue.length,
       value: Math.round(sum(highValue)),
       costImpact: 0,
@@ -417,9 +418,8 @@ export async function getOrderQuality(workspaceId: string, windowDays = 30): Pro
     },
     {
       key: "risky",
-      labelAr: "تستحق مراجعة قبل الشحن",
-      descriptionAr:
-        "إشارات مخاطرة مجتمعة (دفع عند الاستلام، قيمة شاذّة، تاريخ إرجاع). ترجيح من أنماط معروفة، لا كشف احتيال.",
+      label: { key: "risky.label" },
+      description: { key: "risky.description" },
       count: risky.length,
       value: Math.round(sum(risky)),
       costImpact: Math.round(sum(risky)),
@@ -450,13 +450,13 @@ export async function getOrderQuality(workspaceId: string, windowDays = 30): Pro
 
 export interface CustomerSegment {
   key: string;
-  labelAr: string;
-  descriptionAr: string;
+  label: LocalizedText;
+  description: LocalizedText;
   count: number;
   revenue: number;
   avgLtv: number;
   tone: "positive" | "warning" | "critical" | "neutral";
-  actionAr: string;
+  action: LocalizedText;
 }
 
 export interface CustomerAnalytics {
@@ -532,35 +532,33 @@ export async function getCustomerAnalytics(workspaceId: string): Promise<Custome
 
   const seg = (
     key: string,
-    labelAr: string,
-    descriptionAr: string,
+    label: LocalizedText,
+    description: LocalizedText,
     list: typeof customers,
     tone: CustomerSegment["tone"],
-    actionAr: string
+    action: LocalizedText
   ): CustomerSegment => ({
     key,
-    labelAr,
-    descriptionAr,
+    label,
+    description,
     count: list.length,
     revenue: Math.round(list.reduce((s, c) => s + c.totalSpent, 0)),
     avgLtv: list.length > 0 ? Math.round(list.reduce((s, c) => s + c.totalSpent, 0) / list.length) : 0,
     tone,
-    actionAr,
+    action,
   });
 
   const segments: CustomerSegment[] = [
-    seg("vip", "كبار العملاء", `أعلى ${Math.round(VIP_TOP_PERCENT * 100)}% إنفاقاً في متجرك.`, vips, "positive",
-      "خصّهم بعرض مبكّر أو شحن مجاني — تكلفة الاحتفاظ بهم أقلّ بكثير من جلب بدائلهم."),
-    seg("vipAtRisk", "كبار عملاء على وشك الفقد", `لم يطلبوا منذ أكثر من ${CHURN_RISK_DAYS} يوماً.`, vipAtRisk, "critical",
-      "تواصل معهم هذا الأسبوع. فقدان عميل من هذه الشريحة يعادل فقدان عشرات العملاء العاديين."),
-    seg("atRisk", "عملاء معرَّضون للفقد", `اشتروا أكثر من مرة ثم توقّفوا منذ ${CHURN_RISK_DAYS} يوماً.`, atRisk, "warning",
-      "حملة استرجاع موجَّهة لهم أرخص من إعلان يجلب عميلاً جديداً بالكامل."),
-    seg("repeat", "عملاء متكرّرون", "اشتروا أكثر من مرة — دليل أن المنتج والخدمة يعملان.", repeat, "positive",
-      "ادرس ما اشتروه أولاً: هو منتج الدخول الحقيقي لمتجرك، ويستحق أكبر ميزانية."),
-    seg("single", "عملاء لمرة واحدة", "اشتروا مرة ولم يعودوا بعد.", single, "neutral",
-      "رسالة متابعة بعد أسبوعين من الطلب الأول هي أرخص طريقة لتحويلهم إلى متكرّرين."),
-    seg("highReturners", "كثيرو الإرجاع", "٤٠% من طلباتهم أو أكثر ارتدّت.", highReturners, "critical",
-      "راجع ما يطلبونه: غالباً مشكلة وصف منتج أو مقاس، لا مشكلة عميل."),
+    seg("vip", { key: "vip.label" }, { key: "vip.description", vars: { pct: Math.round(VIP_TOP_PERCENT * 100) } },
+      vips, "positive", { key: "vip.action" }),
+    seg("vipAtRisk", { key: "vipAtRisk.label" }, { key: "vipAtRisk.description", vars: { days: CHURN_RISK_DAYS } },
+      vipAtRisk, "critical", { key: "vipAtRisk.action" }),
+    seg("atRisk", { key: "atRisk.label" }, { key: "atRisk.description", vars: { days: CHURN_RISK_DAYS } },
+      atRisk, "warning", { key: "atRisk.action" }),
+    seg("repeat", { key: "repeat.label" }, { key: "repeat.description" }, repeat, "positive", { key: "repeat.action" }),
+    seg("single", { key: "single.label" }, { key: "single.description" }, single, "neutral", { key: "single.action" }),
+    seg("highReturners", { key: "highReturners.label" }, { key: "highReturners.description" },
+      highReturners, "critical", { key: "highReturners.action" }),
   ].filter((s) => s.count > 0);
 
   return {

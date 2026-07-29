@@ -16,7 +16,7 @@ import {
 import { getCustomerAnalytics } from "@/lib/ecommerce/storeIntelligence";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { Users, Repeat, Wallet, Crown } from "lucide-react";
-import { t, type Locale } from "@/lib/i18n/dictionary";
+import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +32,7 @@ export default async function CustomersPage() {
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `customers.${k}`, v);
   const tc = (k: string, v?: Record<string, string | number>) => t(locale, `common.${k}`, v);
+  const tx = (i: { key: string; vars?: Record<string, string | number> }) => tText(locale, "segText", i);
 
   if (!user) {
     return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
@@ -152,13 +153,13 @@ export default async function CustomersPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className={`h-2 w-2 shrink-0 rounded-full ${TONE_DOT[s.tone]}`} />
-                  <h3 className="text-[13.5px] font-semibold text-text-primary">{s.labelAr}</h3>
+                  <h3 className="text-[13.5px] font-semibold text-text-primary">{tx(s.label)}</h3>
                   <span className="rounded-md bg-surface-raised px-1.5 py-0.5 text-[11.5px] font-medium tabular-nums text-text-muted">
                     {s.count}
                   </span>
                 </div>
-                <p className="mt-1 text-[12px] leading-relaxed text-text-muted">{s.descriptionAr}</p>
-                <p className="mt-1.5 text-[12px] leading-relaxed text-accent">{s.actionAr}</p>
+                <p className="mt-1 text-[12px] leading-relaxed text-text-muted">{tx(s.description)}</p>
+                <p className="mt-1.5 text-[12px] leading-relaxed text-accent">{tx(s.action)}</p>
               </div>
               <div className="shrink-0 text-end">
                 <div className="text-[16px] font-semibold tabular-nums text-text-primary">
