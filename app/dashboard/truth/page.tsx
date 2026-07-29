@@ -48,6 +48,7 @@ export default async function TruthPage({
       workspaceName={workspace.name}
       currency={workspace.currency}
       snapshot={snapshot}
+      locale={(user.preferredLocale as "ar" | "en") ?? "ar"}
     />
   );
 }

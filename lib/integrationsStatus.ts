@@ -48,6 +48,15 @@ export interface ActiveIntegration {
   recentRuns: SyncRunSummary[];
   /** عدد الصفوف المكتوبة خلال آخر ٧ أيام - دليل أن التكامل حيّ لا مجرد متصل */
   recordsLast7Days: number;
+  /**
+   * نسبة الصحة 0-100 محسوبة من نجاح عمليات المزامنة فعلياً، لا تقدير.
+   * تُخصم منها عقوبات صريحة: توكن منتهٍ، أو بيانات قديمة، أو صفر حملات
+   * مختارة. رقم بلا مصدر محسوب أسوأ من غياب الرقم.
+   */
+  healthPct: number;
+  /** عدد الحملات/الويب هوك المرتبطة - يظهر تحت عدد الحسابات */
+  entityCount: number;
+  entityLabelKey: "campaigns" | "webhooks";
 }
 
 export interface IntegrationsOverview {
@@ -55,8 +64,13 @@ export interface IntegrationsOverview {
   healthyCount: number;
   needsAttentionCount: number;
   lastSyncAt: Date | null;
+  /** نسبة نجاح كل عمليات المزامنة عبر التكاملات - null إن لم تُشغَّل أي عملية */
+  successRatePct: number | null;
+  totalAccounts: number;
   active: ActiveIntegration[];
   available: IntegrationDef[];
+  /** ما كان مربوطاً وانقطع - يستحق تبويباً خاصاً لأنه فقدان لا فرصة */
+  disconnected: IntegrationDef[];
   recentActivity: SyncRunSummary[];
 }
 
@@ -152,6 +166,15 @@ export async function getIntegrationsOverview(
       category: def.category,
       color: def.color,
       accountCount: uniqueAccounts.length,
+      entityCount: accounts.length,
+      entityLabelKey: "campaigns",
+      healthPct: computeHealthPct({
+        runs: platformRuns,
+        expiresAt: conn.expiresAt,
+        lastSuccessAt: lastSuccess?.startedAt ?? null,
+        accountCount: uniqueAccounts.length,
+        now,
+      }),
       accountNames: uniqueAccounts.map((a) => a.externalAccountId),
       connectedAt: conn.connectedAt,
       expiresAt: conn.expiresAt,
@@ -188,6 +211,17 @@ export async function getIntegrationsOverview(
           ? `آخر طلب وصل ${relativeAr(store.lastOrderAt, now)}.`
           : `لم يصل طلب منذ ${relativeAr(store.lastOrderAt, now)} - قد يكون الويب هوك توقّف.`;
 
+    // المتجر لا يُزامَن دورياً، فصحّته تُقاس بحداثة آخر طلب وصل
+    const storeHealthPct = !store.active
+      ? 0
+      : !store.lastOrderAt
+        ? 40
+        : hoursSince(store.lastOrderAt, now) <= 24 * 7
+          ? 100
+          : hoursSince(store.lastOrderAt, now) <= 24 * 14
+            ? 80
+            : 55;
+
     active.push({
       key: def.key,
       platform: store.platform,
@@ -196,6 +230,9 @@ export async function getIntegrationsOverview(
       category: def.category,
       color: def.color,
       accountCount: 1,
+      entityCount: store.ordersReceived,
+      entityLabelKey: "webhooks",
+      healthPct: storeHealthPct,
       accountNames: [store.storeName ?? store.storeUrl ?? def.name],
       connectedAt: store.createdAt,
       expiresAt: null,
@@ -212,7 +249,17 @@ export async function getIntegrationsOverview(
   }
 
   const connectedKeys = new Set(active.map((a) => a.key));
-  const available = INTEGRATIONS.filter((i) => !connectedKeys.has(i.key));
+  // "متاح" = مبنيّ ولم يُربط. "منقطع" = كان مربوطاً وتعطّل - فقدان لا فرصة،
+  // فيستحق تبويباً منفصلاً بدل خلطه بما لم يُجرَّب أصلاً.
+  const available = INTEGRATIONS.filter((i) => !connectedKeys.has(i.key) && i.status === "LIVE");
+  const soon = INTEGRATIONS.filter((i) => !connectedKeys.has(i.key) && i.status === "SOON");
+  const disconnected = active.filter((a) => a.health === "BROKEN");
+
+  const finishedRuns = runs.filter((r) => r.status !== "RUNNING");
+  const successRatePct =
+    finishedRuns.length > 0
+      ? Math.round((finishedRuns.filter((r) => r.status === "SUCCESS").length / finishedRuns.length) * 1000) / 10
+      : null;
 
   const lastSyncTimes = active.map((a) => a.lastSyncAt).filter((d): d is Date => !!d);
 
@@ -221,10 +268,54 @@ export async function getIntegrationsOverview(
     healthyCount: active.filter((a) => a.health === "HEALTHY").length,
     needsAttentionCount: active.filter((a) => a.health !== "HEALTHY").length,
     lastSyncAt: lastSyncTimes.length > 0 ? new Date(Math.max(...lastSyncTimes.map((d) => d.getTime()))) : null,
+    successRatePct,
+    totalAccounts: active.reduce((sum, a) => sum + a.accountCount, 0),
     active: active.sort((a, b) => healthRank(a.health) - healthRank(b.health)),
-    available,
+    available: [...available, ...soon],
+    disconnected: disconnected.map((d) => INTEGRATIONS.find((i) => i.key === d.key)!).filter(Boolean),
     recentActivity: runs.slice(0, 20) as SyncRunSummary[],
   };
+}
+
+/**
+ * نسبة الصحة من مصدر محسوب لا من تقدير: أساسها نجاح عمليات المزامنة
+ * الفعلية، وتُخصم منها عقوبات صريحة لكل سبب يعطّل التدفّق. حين لا توجد
+ * عمليات بعد نبدأ من ٧٥ لا من ١٠٠ - "لم يُختبر" ليس "سليم".
+ */
+function computeHealthPct(input: {
+  runs: SyncRunSummary[];
+  expiresAt: Date | null;
+  lastSuccessAt: Date | null;
+  accountCount: number;
+  now: Date;
+}): number {
+  const { runs, expiresAt, lastSuccessAt, accountCount, now } = input;
+
+  let base: number;
+  const finished = runs.filter((r) => r.status !== "RUNNING");
+  if (finished.length === 0) {
+    base = 75; // لم يُختبر بعد
+  } else {
+    const ok = finished.filter((r) => r.status === "SUCCESS").length;
+    base = (ok / finished.length) * 100;
+  }
+
+  if (expiresAt && expiresAt <= now) base -= 60;
+  else if (expiresAt) {
+    const days = Math.ceil((expiresAt.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
+    if (days <= TOKEN_WARNING_DAYS) base -= 15;
+  }
+
+  if (accountCount === 0) base -= 25;
+
+  if (lastSuccessAt) {
+    const hours = hoursSince(lastSuccessAt, now);
+    if (hours > STALE_SYNC_HOURS) base -= 20;
+  } else if (finished.length > 0) {
+    base -= 30;
+  }
+
+  return Math.max(0, Math.min(100, Math.round(base)));
 }
 
 function assessHealth(input: {

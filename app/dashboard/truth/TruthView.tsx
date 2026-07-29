@@ -18,6 +18,7 @@ import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { AttributionModelTable } from "./AttributionModelTable";
 import type { TruthSnapshot } from "@/lib/truthKpis";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const PLATFORM_META: Record<string, { name: string; color: string }> = {
   GOOGLE_ADS: { name: "Google Ads", color: "#4285F4" },
@@ -50,11 +51,14 @@ export function TruthView({
   workspaceName,
   currency,
   snapshot,
+  locale = "ar",
 }: {
   workspaceName: string;
   currency: string;
   snapshot: TruthSnapshot;
+  locale?: Locale;
 }) {
+  const tr = (k: string, v?: Record<string, string | number>) => t(locale, `truthPage.${k}`, v);
   const router = useRouter();
   const params = useSearchParams();
   const { totals, previousTotals, platforms, journey, sync } = snapshot;
@@ -73,7 +77,7 @@ export function TruthView({
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <h1 className="flex items-center gap-2.5 text-[26px] font-semibold text-text-primary">
           <ShieldCheck size={24} className="text-verified" />
-          الحقيقة
+          {tr("heading")}
         </h1>
         <div className="flex items-center gap-1 rounded-xl border border-border bg-surface p-1">
           {[7, 30, 90].map((d) => (
@@ -86,37 +90,36 @@ export function TruthView({
                   : "text-text-muted hover:text-text-primary"
               }`}
             >
-              {d} يوماً
+              {t(locale, "common.lastNDays", { days: d })}
             </button>
           ))}
         </div>
       </div>
       <p className="mb-6 max-w-3xl text-[13px] leading-relaxed text-text-muted">
-        الفارق بين ما تُعلنه المنصات وما تحقّق فعلاً. كل رقم هنا مبنيّ على تحويل تأكّد بمصدر مستقلّ
-        (رسالة حقيقية، طلب مؤكَّد) لا على ما ادّعته المنصة لنفسها.
+        {tr("lead")}
       </p>
 
       {/* ============ ١) شبكة المؤشّرات ============ */}
-      <SectionTitle icon={Gauge}>مؤشّرات الحقيقة</SectionTitle>
+      <SectionTitle icon={Gauge}>{tr("kpis")}</SectionTitle>
       <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          label="تحويلات معلَنة"
+          label={tr("reportedCard")}
           value={num(totals.reported)}
           icon={Target}
           tone="neutral"
           verified={false}
-          caption={{ text: "ما تقوله لوحات المنصات", tone: "muted" }}
+          caption={{ text: tr("reportedCardHint"), tone: "muted" }}
         />
         <MetricCard
-          label="تحويلات متحقّق منها"
+          label={tr("verifiedCard")}
           value={num(totals.verified)}
           icon={ShieldCheck}
           tone="verified"
           verified
-          caption={{ text: "ما تأكّد بمصدر مستقلّ", tone: "positive" }}
+          caption={{ text: tr("verifiedCardHint"), tone: "positive" }}
         />
         <MetricCard
-          label="نسبة التحقّق"
+          label={tr("verificationRate")}
           value={totals.verificationRatePct}
           unit="%"
           icon={Percent}
@@ -124,33 +127,33 @@ export function TruthView({
           delta={
             totals.verificationChangePp !== null
               ? {
-                  value: `${Math.abs(totals.verificationChangePp)} نقطة`,
+                  value: tr("points", { n: Math.abs(totals.verificationChangePp) }),
                   direction: totals.verificationChangePp >= 0 ? "up" : "down",
                   positive: totals.verificationChangePp >= 0,
-                  caption: "عن الفترة السابقة",
+                  caption: tr("vsPrev"),
                 }
               : undefined
           }
           bar={{ pct: totals.verificationRatePct }}
         />
         <MetricCard
-          label="نسبة التضخّم"
+          label={tr("inflationCard")}
           value={totals.inflationRatePct}
           unit="%"
           icon={AlertTriangle}
           tone={totals.inflationRatePct >= 50 ? "critical" : "gap"}
-          caption={{ text: "من الأرقام المعلَنة لم يتأكّد", tone: "warning" }}
+          caption={{ text: tr("inflationCardHint"), tone: "warning" }}
         />
 
         <MetricCard
-          label="الإنفاق الكلّي"
+          label={tr("totalSpend")}
           value={num(totals.cost)}
           unit={currency}
           icon={Wallet}
           tone="accent"
         />
         <MetricCard
-          label="إنفاق بلا تحويل مؤكَّد"
+          label={tr("wastedSpend")}
           value={num(totals.wastedSpend)}
           unit={currency}
           icon={AlertTriangle}
@@ -165,13 +168,10 @@ export function TruthView({
                 }
               : undefined
           }
-          caption={{
-            text: `${pctOf(totals.wastedSpend, totals.cost)}% من إنفاقك`,
-            tone: "negative",
-          }}
+          caption={{ text: tr("wastedHint", { pct: pctOf(totals.wastedSpend, totals.cost) }), tone: "negative" }}
         />
         <MetricCard
-          label="تكلفة العميل المعلَنة"
+          label={tr("cpaReported")}
           value={totals.cpaReported !== null ? num(totals.cpaReported) : "—"}
           unit={totals.cpaReported !== null ? currency : undefined}
           icon={Users}
@@ -179,7 +179,7 @@ export function TruthView({
           verified={false}
         />
         <MetricCard
-          label="تكلفة العميل الحقيقية"
+          label={tr("cpaVerified")}
           value={totals.cpaVerified !== null ? num(totals.cpaVerified) : "—"}
           unit={totals.cpaVerified !== null ? currency : undefined}
           icon={Users}
@@ -187,13 +187,13 @@ export function TruthView({
           verified
           caption={
             totals.cpaGapAmount !== null
-              ? { text: `أغلى بـ${num(totals.cpaGapAmount)} ${currency} عن الرقم المعلَن`, tone: "negative" }
-              : { text: "لا توجد تحويلات متحقّق منها بعد", tone: "muted" }
+              ? { text: tr("cpaGap", { amount: `${num(totals.cpaGapAmount)} ${currency}` }), tone: "negative" }
+              : { text: tr("noVerifiedYet"), tone: "muted" }
           }
         />
 
         <MetricCard
-          label="العائد المعلَن"
+          label={tr("roasReported")}
           value={totals.roasReported !== null ? `${totals.roasReported}` : "—"}
           unit={totals.roasReported !== null ? "x" : undefined}
           icon={TrendingUp}
@@ -201,12 +201,12 @@ export function TruthView({
           verified={false}
           caption={
             totals.roasReported === null
-              ? { text: "يتطلّب ربط متجر لقراءة الإيراد", tone: "muted" }
+              ? { text: tr("roasNeedsStore"), tone: "muted" }
               : undefined
           }
         />
         <MetricCard
-          label="العائد المتحقّق"
+          label={tr("roasVerified")}
           value={totals.roasVerified !== null ? `${totals.roasVerified}` : "—"}
           unit={totals.roasVerified !== null ? "x" : undefined}
           icon={TrendingUp}
@@ -214,36 +214,30 @@ export function TruthView({
           verified
         />
         <MetricCard
-          label="رحلات متعددة اللمسات"
+          label={tr("multiTouch")}
           value={journey.multiTouchRatePct}
           unit="%"
           icon={GitBranch}
           tone="accent"
-          caption={{
-            text: `متوسط ${journey.avgTouchesPerConversion} لمسة قبل التحويل`,
-            tone: "muted",
-          }}
+          caption={{ text: tr("multiTouchHint", { n: journey.avgTouchesPerConversion }), tone: "muted" }}
         />
         <MetricCard
-          label="رحلات عبر أكثر من منصة"
+          label={tr("crossPlatform")}
           value={journey.crossPlatformRatePct}
           unit="%"
           icon={Layers}
           tone="gap"
           caption={{
-            text:
-              journey.crossPlatformPaths > 0
-                ? "لا يمكن لأي لوحة منصة منفردة أن تراها كاملة"
-                : "لا توجد رحلات عابرة للمنصات في هذه الفترة",
+            text: journey.crossPlatformPaths > 0 ? tr("crossPlatformWarn") : tr("crossPlatformNone"),
             tone: journey.crossPlatformPaths > 0 ? "warning" : "muted",
           }}
         />
       </div>
 
       {/* ============ ٢) مقارنة المنصات ============ */}
-      <SectionTitle icon={Radar}>الفجوة لكل منصة</SectionTitle>
+      <SectionTitle icon={Radar}>{tr("gapPerPlatform")}</SectionTitle>
       {active.length === 0 ? (
-        <EmptyNote>لا توجد بيانات في هذه الفترة. اربط حساباً إعلانياً أو وسّع المدة.</EmptyNote>
+        <EmptyNote>{tr("gapEmpty")}</EmptyNote>
       ) : (
         <>
           <div className="mb-3 grid gap-3 lg:grid-cols-2">
@@ -265,14 +259,14 @@ export function TruthView({
                             : "bg-critical/10 text-critical"
                       }`}
                     >
-                      {p.verificationRatePct}% تحقّق
+                      {tr("verifiedPct", { pct: p.verificationRatePct })}
                     </span>
                   </div>
 
                   {/* شريط المقارنة المباشر - المعلَن كامل العرض، والمتحقّق جزء منه */}
                   <div className="mb-1 flex items-center justify-between text-[12px] text-text-faint">
-                    <span>معلَن {num(p.reported)}</span>
-                    <span className="text-verified">متحقّق {num(p.verified)}</span>
+                    <span>{tr("reportedShort", { n: num(p.reported) })}</span>
+                    <span className="text-verified">{tr("verifiedShortN", { n: num(p.verified) })}</span>
                   </div>
                   <div className="relative h-2 w-full overflow-hidden rounded-full bg-surface-raised">
                     <div className="absolute inset-y-0 start-0 rounded-full bg-text-faint/30" style={{ width: "100%" }} />
@@ -283,18 +277,18 @@ export function TruthView({
                   </div>
 
                   <div className="mt-3 grid grid-cols-4 gap-2 border-t border-border pt-3 text-[12px]">
-                    <MiniStat label="الإنفاق" value={num(p.cost)} />
+                    <MiniStat label={tr("colSpend")} value={num(p.cost)} />
                     <MiniStat
-                      label="تكلفة حقيقية"
+                      label={tr("colRealCpa")}
                       value={p.cpaVerified !== null ? num(p.cpaVerified) : "—"}
                       hint={
                         p.cpaUnderstatementPct !== null
-                          ? `أعلى بـ${p.cpaUnderstatementPct}% عن المعلَن`
+                          ? tr("higherBy", { pct: p.cpaUnderstatementPct })
                           : undefined
                       }
                     />
-                    <MiniStat label="العائد" value={p.roasVerified !== null ? `${p.roasVerified}x` : "—"} />
-                    <MiniStat label="بلا تأكيد" value={num(p.wastedSpend)} negative />
+                    <MiniStat label={tr("colRoas")} value={p.roasVerified !== null ? `${p.roasVerified}x` : "—"} />
+                    <MiniStat label={tr("colUnconfirmed")} value={num(p.wastedSpend)} negative />
                   </div>
 
                   <div className="mt-2">
@@ -305,22 +299,18 @@ export function TruthView({
             })}
           </div>
           <p className="mb-8 text-[12px] text-text-faint">
-            الخطّ المتقطّع: ما أعلنته المنصة. الخطّ المتّصل: ما تأكّد فعلاً. المسافة بينهما هي ما تدفع ثمنه بلا مقابل مؤكَّد.
+            {tr("chartLegend")}
           </p>
         </>
       )}
 
       {/* ============ ٣) نماذج الإسناد ============ */}
-      <SectionTitle icon={GitBranch}>من يستحق الفضل؟ — ثمانية نماذج جنباً إلى جنب</SectionTitle>
+      <SectionTitle icon={GitBranch}>{tr("modelsHeading")}</SectionTitle>
       {!snapshot.hasTouchpointData ? (
         <EmptyNote>
-          لم تُسجَّل لمسات بعد، فلا يمكن حساب أي نموذج إسناد غير «آخر لمسة». المقارنة بين النماذج تتطلّب
-          معرفة الرحلة كاملة لا نقطتها الأخيرة — يبدأ التقاطها فور تركيب وسم AdLoop على صفحاتك.
+          {tr("modelsEmpty")}
           {snapshot.totalTrackedConversions > 0 && (
-            <>
-              {" "}
-              لدينا {num(snapshot.totalTrackedConversions)} تحويلاً مسجَّلاً في هذه الفترة، لكن بلا لمسات مرتبطة به.
-            </>
+            <> {tr("modelsEmptyCount", { n: num(snapshot.totalTrackedConversions) })}</>
           )}
         </EmptyNote>
       ) : (
@@ -339,43 +329,38 @@ export function TruthView({
       {/* ============ ٣ب) المحرّك الاحتمالي - طبقة مكمّلة لا بديلة ============ */}
       {(snapshot.probabilistic.verifiedCount > 0 || snapshot.probabilistic.modeledCount > 0) && (
         <>
-          <SectionTitle icon={Radar}>المحادثات التي وصلت بلا كود مطابق</SectionTitle>
+          <SectionTitle icon={Radar}>{tr("probHeading")}</SectionTitle>
           <div className="mb-3 card-shadow rounded-2xl border border-border bg-surface p-4">
             <p className="mb-3 text-[12.5px] leading-relaxed text-text-muted">
-              طبقة مستقلّة عن نماذج الإسناد أعلاه وتكمّلها: تلك تسأل «من يستحقّ الفضل في الرحلة؟»،
-              وهذه تسأل سؤالاً أضيق — «هذه محادثة وصلت بلا كود إطلاقاً، من أي منصة جاءت على الأرجح؟»
-              (تطابق هاتف، ثم قرب زمني بتلاشٍ، ثم نمط ساعة، ثم نسبة أساس). المؤكَّد لا يُخلط بالمُرجَّح.
+              {tr("probLead")}
             </p>
 
             <div className="mb-3 grid gap-3 sm:grid-cols-3">
               <MetricCard
-                label="مؤكّدة بكود"
+                label={tr("probVerified")}
                 value={num(snapshot.probabilistic.verifiedCount)}
                 icon={ShieldCheck}
                 tone="verified"
                 verified
-                caption={{ text: "الكود نفسه هو الدليل — يقين لا ترجيح", tone: "positive" }}
+                caption={{ text: tr("probVerifiedHint"), tone: "positive" }}
               />
               <MetricCard
-                label="مُنسّبة احتمالياً"
+                label={tr("probModeled")}
                 value={num(snapshot.probabilistic.modeledCount)}
                 icon={GitBranch}
                 tone="gap"
                 verified={false}
-                caption={{ text: "أفضل تقدير متاح، لا حقيقة مؤكَّدة", tone: "warning" }}
+                caption={{ text: tr("probModeledHint"), tone: "warning" }}
               />
               <MetricCard
-                label="نسبة ما احتاج ترجيحاً"
+                label={tr("probShare")}
                 value={snapshot.probabilistic.modeledSharePct}
                 unit="%"
                 icon={Percent}
                 tone={snapshot.probabilistic.modeledSharePct > 40 ? "critical" : "default"}
                 bar={{ pct: snapshot.probabilistic.modeledSharePct }}
                 caption={{
-                  text:
-                    snapshot.probabilistic.modeledSharePct > 40
-                      ? "مرتفعة — أغلب العملاء يمسحون نصّ الرسالة الجاهز قبل الإرسال"
-                      : "ضمن المعقول",
+                  text: snapshot.probabilistic.modeledSharePct > 40 ? tr("probShareHigh") : tr("probShareOk"),
                   tone: snapshot.probabilistic.modeledSharePct > 40 ? "negative" : "muted",
                 }}
               />
@@ -384,7 +369,7 @@ export function TruthView({
             {snapshot.probabilistic.byPlatform.length > 0 && (
               <div>
                 <div className="mb-2 text-[12.5px] font-medium text-text-muted">
-                  توزيع الترجيح على المنصات
+                  {tr("probDist")}
                 </div>
                 <div className="flex flex-col gap-2">
                   {snapshot.probabilistic.byPlatform.map((row) => {
@@ -412,8 +397,7 @@ export function TruthView({
             )}
           </div>
           <p className="mb-8 text-[12px] leading-relaxed text-text-faint">
-            الأرقام كسرية عمداً: المحادثة الواحدة تُوزَّع على أكثر من منصة بنسب احتمالية بدل إسنادها
-            كاملةً لواحدة بثقة لا نملكها.
+            {tr("probNote")}
           </p>
         </>
       )}
@@ -421,31 +405,31 @@ export function TruthView({
       {/* ============ ٤) الرحلة ============ */}
       {journey.totalPaths > 0 && (
         <>
-          <SectionTitle icon={Clock}>شكل الرحلة</SectionTitle>
+          <SectionTitle icon={Clock}>{tr("journeyHeading")}</SectionTitle>
           <div className="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricCard label="رحلات مكتملة" value={num(journey.totalPaths)} icon={GitBranch} tone="accent" />
+            <MetricCard label={tr("journeyPaths")} value={num(journey.totalPaths)} icon={GitBranch} tone="accent" />
             <MetricCard
-              label="متوسط اللمسات"
+              label={tr("journeyAvgTouches")}
               value={journey.avgTouchesPerConversion}
               icon={Layers}
               tone="default"
-              subLabel="لمسة لكل تحويل"
+              subLabel={tr("journeyAvgTouchesSub")}
             />
             <MetricCard
-              label="متوسط مدّة القرار"
+              label={tr("journeyDuration")}
               value={journey.avgDaysToConvert}
-              unit="يوم"
+              unit={t(locale, "inventory.daysUnit", { n: "" }).trim()}
               icon={Clock}
               tone="default"
-              subLabel="من أول لمسة حتى الشراء"
+              subLabel={tr("journeyDurationSub")}
             />
             <MetricCard
-              label="رحلات بلمسة واحدة"
+              label={tr("journeySingle")}
               value={journey.singleTouchPaths}
               icon={Target}
               tone="neutral"
               caption={{
-                text: `${100 - journey.multiTouchRatePct}% من الرحلات`,
+                text: tr("journeySinglePct", { pct: 100 - journey.multiTouchRatePct }),
                 tone: "muted",
               }}
             />
@@ -453,7 +437,7 @@ export function TruthView({
 
           {journey.topSequences.length > 0 && (
             <div className="mb-8 card-shadow rounded-2xl border border-border bg-surface p-4">
-              <div className="mb-3 text-[13px] font-medium text-text-muted">أكثر المسارات تكراراً</div>
+              <div className="mb-3 text-[13px] font-medium text-text-muted">{tr("topSequences")}</div>
               <div className="flex flex-col gap-2">
                 {journey.topSequences.map((s, i) => (
                   <div key={i} className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2 last:border-0 last:pb-0">
@@ -468,7 +452,7 @@ export function TruthView({
                       ))}
                     </div>
                     <div className="flex items-center gap-3 text-[12px] tabular-nums">
-                      <span className="text-text-muted">{s.count} رحلة</span>
+                      <span className="text-text-muted">{tr("pathsUnit", { n: s.count })}</span>
                       {s.revenue > 0 && (
                         <span className="font-medium text-verified">
                           {num(s.revenue)} {currency}
@@ -484,32 +468,30 @@ export function TruthView({
       )}
 
       {/* ============ ٥) إعادة الرفع ============ */}
-      <SectionTitle icon={Send}>إعادة رفع التحويلات للمنصات</SectionTitle>
+      <SectionTitle icon={Send}>{tr("syncHeading")}</SectionTitle>
       <div className="card-shadow rounded-2xl border border-border bg-surface p-4">
         {!sync.enabled ? (
           <div>
             <p className="mb-2 text-[13px] leading-relaxed text-text-primary">
-              كشف الفجوة يجعلك أدرى، لكنه لا يغيّر شيئاً في المزاد بذاته.
+              {tr("syncPitch1")}
             </p>
             <p className="mb-3 text-[12.5px] leading-relaxed text-text-muted">
-              خوارزمية كل منصة تتعلّم ممّا تُطعمها إياه. حين ترى نقرات ورسائل عابرة فقط، تجلب المزيد منها.
-              وحين نُعيد إليها العميل الدافع فعلاً عبر الخادم، تتغيّر دالّة التحسين لديها فتبحث عن أشباهه.
-              التفعيل من الإعدادات، ويحتاج معرّف البكسل وتوكن الأحداث لكل منصة.
+              {tr("syncPitch2")}
             </p>
             <a
               href="/dashboard/integrations"
               className="inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-[12.5px] font-medium text-accent no-underline transition-colors hover:bg-accent/20"
             >
               <Send size={14} />
-              تفعيل إعادة الرفع
+              {tr("syncEnable")}
             </a>
           </div>
         ) : (
           <>
             <div className="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <MetricCard label="أحداث مرفوعة" value={num(sync.sentEvents)} icon={Send} tone="verified" />
+              <MetricCard label={tr("syncSent")} value={num(sync.sentEvents)} icon={Send} tone="verified" />
               <MetricCard
-                label="متوسط جودة المطابقة"
+                label={tr("syncQuality")}
                 value={sync.avgMatchQuality !== null ? sync.avgMatchQuality : "—"}
                 unit={sync.avgMatchQuality !== null ? "/10" : undefined}
                 icon={Gauge}
@@ -521,18 +503,18 @@ export function TruthView({
                 bar={sync.avgMatchQuality !== null ? { pct: sync.avgMatchQuality * 10 } : undefined}
               />
               <MetricCard
-                label="تخطّي (مطابقة ضعيفة)"
+                label={tr("syncSkipped")}
                 value={num(sync.skippedEvents)}
                 icon={AlertTriangle}
                 tone="gap"
               />
-              <MetricCard label="فشل الرفع" value={num(sync.failedEvents)} icon={AlertTriangle} tone="critical" />
+              <MetricCard label={tr("syncFailed")} value={num(sync.failedEvents)} icon={AlertTriangle} tone="critical" />
             </div>
 
             <div className="flex flex-wrap items-center gap-2 text-[12px] text-text-muted">
-              <span>المنصات المفعَّلة:</span>
+              <span>{tr("syncPlatforms")}</span>
               {sync.configuredPlatforms.length === 0 ? (
-                <span className="text-gap">لا توجد منصة مضبوطة بالكامل بعد.</span>
+                <span className="text-gap">{tr("syncNoPlatforms")}</span>
               ) : (
                 sync.configuredPlatforms.map((p) => (
                   <span key={p} className="flex items-center gap-1 rounded-md bg-surface-raised px-2 py-0.5">
@@ -545,7 +527,7 @@ export function TruthView({
 
             {sync.topSkipReason && (
               <p className="mt-2 text-[12px] leading-relaxed text-text-faint">
-                أكثر أسباب التخطّي تكراراً: {sync.topSkipReason}
+                {tr("syncTopSkip", { reason: sync.topSkipReason })}
               </p>
             )}
           </>
