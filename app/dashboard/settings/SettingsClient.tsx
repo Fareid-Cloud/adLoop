@@ -8,11 +8,22 @@
 import { Toggle } from "@/app/components/ui/Toggle";
 import { ConnectionTester } from "@/app/components/ConnectionTester";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { Bot, Cpu, Sparkles, Terminal, Brain, Zap, Upload, Search } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
 import { PushNotificationToggle } from "@/app/components/PushNotificationToggle";
+import { t, type Locale } from "@/lib/i18n/dictionary";
+
+// سياق اللغة بدل تمريرها كخاصية عبر أربعة عشر مكوّناً فرعياً. الملف واحد
+// وشجرته كلها في العميل، فالسياق هنا أنظف وأقل عرضة للخطأ من تمرير
+// خاصية تُنسى في مكوّن واحد فيبقى نصّه بلغة واحدة دون أن يلاحظ أحد.
+const SettingsLocaleContext = createContext<Locale>("ar");
+
+function useT() {
+  const locale = useContext(SettingsLocaleContext);
+  return (k: string, vars?: Record<string, string | number>) => t(locale, `settings.${k}`, vars);
+}
 
 const AVATAR_ICONS = [
   { key: "bot", Icon: Bot },
@@ -92,49 +103,49 @@ interface ConnectedPlatformData {
 }
 
 const TABS = [
-  { key: "profile", label: "الملف الشخصي" },
-  { key: "preferences", label: "التفضيلات" },
-  { key: "accounts", label: "الحسابات المرتبطة" },
-  { key: "workspace", label: "مساحة العمل" },
-  { key: "automation", label: "التحكم والأتمتة" },
-  { key: "conversionSync", label: "إعادة رفع التحويلات" },
-  { key: "danger", label: "منطقة الخطر" },
+  { key: "profile", labelKey: "tabProfile" },
+  { key: "preferences", labelKey: "tabPreferences" },
+  { key: "accounts", labelKey: "tabAccounts" },
+  { key: "workspace", labelKey: "tabWorkspace" },
+  { key: "automation", labelKey: "tabAutomation" },
+  { key: "conversionSync", labelKey: "tabConversionSync" },
+  { key: "danger", labelKey: "tabDanger" },
 ] as const;
 
 // فهرس بحث حقيقي - كل سطر هنا بيمثّل حقل فعلاً موجود في إحدى التبويبات
 // فوق، مش أسماء وهمية. لو ضفت حقل جديد لأي تبويب، لازم يتضاف هنا أيضاً
 // عشان البحث يفضل دقيق ومطابق للواقع.
-const SEARCH_INDEX: Array<{ label: string; tab: (typeof TABS)[number]["key"] }> = [
-  { label: "الاسم", tab: "profile" },
-  { label: "الصورة الشخصية", tab: "profile" },
-  { label: "اللغة", tab: "preferences" },
-  { label: "الوضع الداكن الفاتح", tab: "preferences" },
-  { label: "اللون الأساسي", tab: "preferences" },
-  { label: "المنطقة الزمنية", tab: "preferences" },
-  { label: "ربط Google Ads", tab: "accounts" },
-  { label: "ربط Meta Ads", tab: "accounts" },
-  { label: "اسم مساحة العمل", tab: "workspace" },
-  { label: "العملة", tab: "workspace" },
-  { label: "السوق المستهدف", tab: "workspace" },
-  { label: "الحملات المرتبطة", tab: "workspace" },
-  { label: "تحليلات الذكاء الاصطناعي", tab: "automation" },
-  { label: "قواعد الأتمتة", tab: "automation" },
-  { label: "التشخيص اليومي", tab: "automation" },
-  { label: "فحص صحة التسعير", tab: "automation" },
-  { label: "المحادثات المجهولة Modeled Attribution", tab: "automation" },
-  { label: "حد سرعة الرد", tab: "automation" },
-  { label: "حد تكرار الإعلان تعب الكرياتيف", tab: "automation" },
-  { label: "حد انخفاض CTR", tab: "automation" },
-  { label: "حد تحذير التسعير", tab: "automation" },
-  { label: "حد خطر التسعير", tab: "automation" },
-  { label: "مضاعف المرتجعات الشاذة", tab: "automation" },
-  { label: "السقف الشهري لتغييرات الأتمتة", tab: "automation" },
-  { label: "تفعيل إعادة رفع التحويلات", tab: "conversionSync" },
-  { label: "معرّف بكسل ميتا Meta Pixel", tab: "conversionSync" },
-  { label: "توكن Conversions API", tab: "conversionSync" },
-  { label: "معرّف إجراء التحويل جوجل Conversion Action", tab: "conversionSync" },
-  { label: "رمز بكسل تيك توك Events API", tab: "conversionSync" },
-  { label: "حذف مساحة عمل", tab: "danger" },
+const SEARCH_INDEX: Array<{ labelKey: string; tab: (typeof TABS)[number]["key"] }> = [
+  { labelKey: "idxName", tab: "profile" },
+  { labelKey: "idxAvatar", tab: "profile" },
+  { labelKey: "idxLanguage", tab: "preferences" },
+  { labelKey: "idxMode", tab: "preferences" },
+  { labelKey: "idxAccent", tab: "preferences" },
+  { labelKey: "idxTimezone", tab: "preferences" },
+  { labelKey: "idxGoogle", tab: "accounts" },
+  { labelKey: "idxMeta", tab: "accounts" },
+  { labelKey: "idxWorkspaceName", tab: "workspace" },
+  { labelKey: "idxCurrency", tab: "workspace" },
+  { labelKey: "idxMarket", tab: "workspace" },
+  { labelKey: "idxCampaigns", tab: "workspace" },
+  { labelKey: "idxAi", tab: "automation" },
+  { labelKey: "idxRules", tab: "automation" },
+  { labelKey: "idxDaily", tab: "automation" },
+  { labelKey: "idxPricingHealth", tab: "automation" },
+  { labelKey: "idxModeled", tab: "automation" },
+  { labelKey: "idxResponse", tab: "automation" },
+  { labelKey: "idxFatigue", tab: "automation" },
+  { labelKey: "idxCtr", tab: "automation" },
+  { labelKey: "idxPriceWarn", tab: "automation" },
+  { labelKey: "idxPriceCrit", tab: "automation" },
+  { labelKey: "idxRto", tab: "automation" },
+  { labelKey: "idxCeiling", tab: "automation" },
+  { labelKey: "idxSyncEnable", tab: "conversionSync" },
+  { labelKey: "idxMetaPixel", tab: "conversionSync" },
+  { labelKey: "idxCapiToken", tab: "conversionSync" },
+  { labelKey: "idxGoogleAction", tab: "conversionSync" },
+  { labelKey: "idxTiktokPixel", tab: "conversionSync" },
+  { labelKey: "idxDeleteWorkspace", tab: "danger" },
 ];
 
 export function SettingsClient({
@@ -150,38 +161,44 @@ export function SettingsClient({
   const [activeWorkspaceId, setActiveWorkspaceId] = useState(workspaces[0]?.id ?? "");
   const [searchQuery, setSearchQuery] = useState("");
 
+  const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
+  const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `settings.${k}`, vars);
+
+  // البحث يطابق النص المعروض بلغة الواجهة لا المفتاح - المستخدم يكتب ما يرى
   const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    const q = searchQuery.trim();
-    return SEARCH_INDEX.filter((item) => item.label.includes(q));
-  }, [searchQuery]);
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [];
+    return SEARCH_INDEX.filter((item) => tr(item.labelKey).toLowerCase().includes(q));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, locale]);
 
   return (
+    <SettingsLocaleContext.Provider value={locale}>
     <div className="mx-auto max-w-4xl">
-      <h1 className="mb-4 text-[26px] font-semibold text-text-primary">الإعدادات</h1>
+      <h1 className="mb-4 text-[26px] font-semibold text-text-primary">{tr("title")}</h1>
 
       <div className="relative mb-4">
         <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-text-faint" />
         <input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="ابحث في الإعدادات..."
+          placeholder={tr("searchPlaceholder")}
           className="w-full rounded-xl bg-surface py-2 ps-9 pe-3 text-sm text-text-primary outline-none"
         />
         {searchResults.length > 0 && (
           <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl bg-surface-raised shadow-lg">
             {searchResults.map((r) => (
               <button
-                key={r.label}
+                key={r.labelKey}
                 onClick={() => {
                   setActiveTab(r.tab);
                   setSearchQuery("");
                 }}
                 className="block w-full px-4 py-2.5 text-start text-sm text-text-primary hover:bg-surface"
               >
-                {r.label}
+                {tr(r.labelKey)}
                 <span className="ms-2 text-xs text-text-faint">
-                  في {TABS.find((t) => t.key === r.tab)?.label}
+                  {tr("inTab", { tab: tr(TABS.find((x) => x.key === r.tab)?.labelKey ?? "") })}
                 </span>
               </button>
             ))}
@@ -200,7 +217,7 @@ export function SettingsClient({
                 : "text-text-muted hover:text-text-primary"
             }`}
           >
-            {tab.label}
+            {tr(tab.labelKey)}
           </button>
         ))}
       </div>
@@ -236,6 +253,7 @@ export function SettingsClient({
         </>
       )}
     </div>
+    </SettingsLocaleContext.Provider>
   );
 }
 
