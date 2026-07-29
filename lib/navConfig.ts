@@ -66,7 +66,24 @@ export const NAV_GROUPS: NavGroup[] = [
       },
       { href: "/dashboard/truth", labelAr: "الحقيقة", labelEn: "Truth", iconName: "ShieldCheck" },
       { href: "/dashboard/pricing", labelAr: "التسعير", labelEn: "Pricing", iconName: "Tag" },
-      { href: "/dashboard/ecommerce", labelAr: "التجارة الإلكترونية", labelEn: "Ecommerce", iconName: "ShoppingBag" },
+      {
+        // الترتيب يتبع طريقة تفكير صاحب المتجر لا نوع البيانات: يبدأ بالوضع
+        // العام، ثم أين يذهب المال، ثم ما يبيعه، ثم كيف يسعّره، ثم ما لديه،
+        // ثم من يشتري، ثم كيف تصل الطلبات، ثم ما يفعله بعد ذلك.
+        href: "/dashboard/ecommerce", labelAr: "التجارة الإلكترونية", labelEn: "Ecommerce", iconName: "ShoppingBag",
+        children: [
+          { href: "/dashboard/ecommerce", labelAr: "نظرة تنفيذية", labelEn: "Overview" },
+          { href: "/dashboard/ecommerce/profit", labelAr: "رحلة الربح", labelEn: "Profit" },
+          { href: "/dashboard/ecommerce/products", labelAr: "المنتجات", labelEn: "Products" },
+          { href: "/dashboard/ecommerce/pricing-intelligence", labelAr: "ذكاء التسعير", labelEn: "Pricing Intelligence" },
+          { href: "/dashboard/ecommerce/inventory", labelAr: "المخزون", labelEn: "Inventory" },
+          { href: "/dashboard/ecommerce/customers", labelAr: "العملاء", labelEn: "Customers" },
+          { href: "/dashboard/ecommerce/orders", labelAr: "الطلبات", labelEn: "Orders" },
+          { href: "/dashboard/ecommerce/opportunities", labelAr: "الفرص", labelEn: "Opportunities" },
+          { href: "/dashboard/ecommerce/ai-insights", labelAr: "تحليلات ذكية", labelEn: "AI Insights" },
+          { href: "/dashboard/ecommerce/reports", labelAr: "التقارير", labelEn: "Reports" },
+        ],
+      },
       { href: "/dashboard/site-scan", labelAr: "فحص الموقع", labelEn: "Site Scan", iconName: "ScanSearch" },
       {
         href: "/dashboard/diagnostics", labelAr: "التشخيص", labelEn: "Diagnostics", iconName: "Stethoscope",

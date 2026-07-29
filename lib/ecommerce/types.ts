@@ -16,6 +16,18 @@ export interface NormalizedOrderItem {
   unitCost?: number | null;
 }
 
+/** بيانات العميل كما ترسلها المنصة. تُهشَّم قبل التخزين - لا يُحفظ بريد
+ *  ولا هاتف صريح في أي مكان. تحليل العملاء يحتاج سلوكهم لا هويتهم. */
+export interface NormalizedCustomer {
+  externalId?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  /** الاسم الأول فقط يُحتفَظ به للعرض */
+  firstName?: string | null;
+  city?: string | null;
+  country?: string | null;
+}
+
 export interface NormalizedOrder {
   platform: EcommercePlatform;
   /** معرّف الطلب لدى المنصة - أساس منع التكرار */
@@ -30,6 +42,29 @@ export interface NormalizedOrder {
   status?: string | null;
   isReturned: boolean;
   items: NormalizedOrderItem[];
+  customer?: NormalizedCustomer | null;
+  /** طريقة الدفع كما ترسلها المنصة - أساس رصد الدفع عند الاستلام */
+  paymentMethod?: string | null;
+  fulfilledAt?: Date | null;
+}
+
+/** الحالات التي تعني إلغاءً صريحاً (لا إرجاعاً بعد الاستلام). التفريق مهم:
+ *  الإلغاء يعني أن الطلب لم يُشحن أصلاً، والإرجاع يعني تكلفة شحن مدفوعة
+ *  مرتين - أثرهما المالي مختلف تماماً. */
+const CANCELLED_STATUSES = ["cancel", "canceled", "cancelled", "void", "ملغي", "ملغى", "إلغاء"];
+
+export function isCancelledStatus(status: unknown): boolean {
+  if (typeof status !== "string") return false;
+  const s = status.toLowerCase().trim();
+  return CANCELLED_STATUSES.some((r) => s.includes(r));
+}
+
+const COD_HINTS = ["cod", "cash", "cash_on_delivery", "cashondelivery", "الدفع عند الاستلام", "نقدا", "نقداً"];
+
+export function isCashOnDelivery(method: unknown): boolean {
+  if (typeof method !== "string") return false;
+  const s = method.toLowerCase().trim();
+  return COD_HINTS.some((h) => s.includes(h));
 }
 
 /** تحديث مخزون قادم من المنصة (حدث منفصل عن الطلبات). */

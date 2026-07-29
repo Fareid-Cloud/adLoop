@@ -54,6 +54,15 @@ function parseSalla(body: any): NormalizedOrder | null {
     status: pick(order, "status.name", "status") ?? null,
     isReturned: isReturnedStatus(pick(order, "status.name", "status")),
     items,
+    customer: {
+      externalId: pick(order, "customer.id") ? String(pick(order, "customer.id")) : null,
+      email: pick(order, "customer.email") ?? null,
+      phone: pick(order, "customer.mobile", "customer.phone") ?? null,
+      firstName: pick(order, "customer.first_name", "customer.name") ?? null,
+      city: pick(order, "shipping.address.city", "customer.city") ?? null,
+      country: pick(order, "shipping.address.country", "customer.country") ?? null,
+    },
+    paymentMethod: pick(order, "payment.method", "payment_method") ?? null,
   };
 }
 
@@ -89,6 +98,19 @@ function parseShopify(body: any): NormalizedOrder | null {
     status: body.financial_status ?? null,
     isReturned: cancelled || refunded,
     items,
+    customer: {
+      externalId: body.customer?.id ? String(body.customer.id) : null,
+      email: pick(body, "customer.email", "email") ?? null,
+      phone: pick(body, "customer.phone", "phone", "shipping_address.phone") ?? null,
+      firstName: pick(body, "customer.first_name", "shipping_address.first_name") ?? null,
+      city: pick(body, "shipping_address.city") ?? null,
+      country: pick(body, "shipping_address.country") ?? null,
+    },
+    // شوبيفاي ترسل مصفوفة أسماء بوابات الدفع
+    paymentMethod: Array.isArray(body.payment_gateway_names)
+      ? body.payment_gateway_names.join(", ")
+      : (body.gateway ?? null),
+    fulfilledAt: body.closed_at ? new Date(body.closed_at) : null,
   };
 }
 
@@ -117,6 +139,16 @@ function parseWooCommerce(body: any): NormalizedOrder | null {
     status: body.status ?? null,
     isReturned: isReturnedStatus(body.status),
     items,
+    customer: {
+      externalId: body.customer_id ? String(body.customer_id) : null,
+      email: pick(body, "billing.email") ?? null,
+      phone: pick(body, "billing.phone") ?? null,
+      firstName: pick(body, "billing.first_name") ?? null,
+      city: pick(body, "shipping.city", "billing.city") ?? null,
+      country: pick(body, "shipping.country", "billing.country") ?? null,
+    },
+    paymentMethod: pick(body, "payment_method_title", "payment_method") ?? null,
+    fulfilledAt: body.date_completed ? new Date(body.date_completed) : null,
   };
 }
 
@@ -146,6 +178,16 @@ function parseEasyOrders(body: any): NormalizedOrder | null {
     status: order.status ?? null,
     isReturned: isReturnedStatus(order.status),
     items,
+    customer: {
+      externalId: pick(order, "customer.id") ? String(pick(order, "customer.id")) : null,
+      email: pick(order, "customer.email", "email") ?? null,
+      phone: pick(order, "customer.phone", "phone") ?? null,
+      firstName: pick(order, "customer.full_name", "full_name", "name") ?? null,
+      city: pick(order, "government", "city") ?? null,
+      country: pick(order, "country") ?? null,
+    },
+    // إيزي أوردرز سوق مصري في الأساس، والدفع عند الاستلام هو الغالب فيه
+    paymentMethod: pick(order, "payment_method", "payment.method") ?? null,
   };
 }
 
@@ -178,6 +220,15 @@ function parseZid(body: any): NormalizedOrder | null {
     status: pick(order, "order_status.name", "status.name", "status") ?? null,
     isReturned: isReturnedStatus(pick(order, "order_status.name", "status.name", "status")),
     items,
+    customer: {
+      externalId: pick(order, "customer.id") ? String(pick(order, "customer.id")) : null,
+      email: pick(order, "customer.email", "email") ?? null,
+      phone: pick(order, "customer.mobile", "customer.phone") ?? null,
+      firstName: pick(order, "customer.name", "customer.first_name") ?? null,
+      city: pick(order, "shipping.address.city", "customer.city") ?? null,
+      country: pick(order, "shipping.address.country", "customer.country") ?? null,
+    },
+    paymentMethod: pick(order, "payment_method", "payment.method") ?? null,
   };
 }
 

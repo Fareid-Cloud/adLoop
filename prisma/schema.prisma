@@ -291,6 +291,8 @@ model Workspace {
   conversionEvents ConversionEvent[]
   adDecisionRecords AdDecisionRecord[]
   syncRuns        SyncRun[]
+  customers       Customer[]
+  orders          Order[]
   products        Product[]
   ecommerceConnections EcommerceConnection[]
   creativeSnapshots CreativeSnapshot[]
@@ -1582,12 +1584,19 @@ model ProductSaleEvent {
   productId   String
   product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  // ربط السطر بالطلب الأب. بدونه لا نعرف "كم منتجاً في الطلب الواحد"
+  // ولا نستطيع تحليل السلة أو ربط المنتج بالعميل - وهي أساس فرص
+  // البيع المتقاطع والباقات
+  orderId     String?
+  order       Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
   quantity    Int
   revenue     Float    // إجمالي قيمة السطر ده في الطلب (مش سعر الوحدة × الكمية بالضرورة لو فيه خصم)
   returned    Boolean  @default(false)
   occurredAt  DateTime
 
   @@index([productId, occurredAt])
+  @@index([orderId])
 }
 
 // ==================== دعم العملاء (شات مبني على الإيميل) ====================
@@ -1906,4 +1915,92 @@ enum SyncRunStatus {
 enum SyncTrigger {
   MANUAL
   CRON
+}
+
+// ==================== العملاء والطلبات ====================
+//
+// لم يكن في المنتج جدول عميل ولا طلب إطلاقاً: كل ما نعرفه كان مجاميع
+// يومية (MetricSnapshot) وأسطر بيع بلا طلب أب (ProductSaleEvent). هذا
+// يكفي لقياس الربح، ولا يكفي إطلاقاً للإجابة عن "من يشتري مرة ثانية؟"
+// أو "أي الطلبات تُلغى؟" - وهما سؤالان يقرّران أين يذهب المال.
+//
+// الخصوصية: لا يُخزَّن بريد ولا هاتف صريح. نُهشِّمهما SHA-256 لاستخدامهما
+// كمُعرِّف ربط فقط، ونحتفظ بالاسم الأول ومقتطف مقنَّع للعرض. تحليل العملاء
+// لا يحتاج معرفة هويتهم، يحتاج معرفة سلوكهم.
+
+model Customer {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  platform    Platform
+  externalCustomerId String?
+
+  emailHash   String?
+  phoneHash   String?
+  /// الاسم الأول فقط - كافٍ للعرض، وغير كافٍ للتعريف
+  displayName String?
+  city        String?
+  country     String?
+
+  firstOrderAt DateTime?
+  lastOrderAt  DateTime?
+  ordersCount  Int   @default(0)
+  totalSpent   Float @default(0)
+  /// ما ارتدّ فعلاً - العميل كثير الطلبات كثير المرتجعات ليس عميلاً جيداً
+  totalReturned Float @default(0)
+  returnedOrdersCount Int @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  orders      Order[]
+
+  @@unique([workspaceId, platform, externalCustomerId])
+  @@index([workspaceId, lastOrderAt])
+  @@index([workspaceId, emailHash])
+}
+
+model Order {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  platform    Platform
+  externalOrderId String
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  orderedAt   DateTime
+  total       Float
+  shippingCost Float   @default(0)
+  currency    String?
+
+  /// الحالة الخام كما ترسلها المنصة - نحتفظ بها للتدقيق لا للمنطق
+  rawStatus   String?
+  state       OrderState @default(PLACED)
+  isReturned  Boolean  @default(false)
+  itemCount   Int      @default(0)
+
+  fulfilledAt DateTime?
+  /// الدفع عند الاستلام أهمّ إشارة مخاطرة في السوق العربي
+  paymentMethod String?
+  isCod       Boolean  @default(false)
+
+  /// 0-100، محسوبة من إشارات حقيقية لا من نموذج مُدرَّب - يُشرح مصدرها في الواجهة
+  fraudRiskScore Float?
+  fraudRiskReasons String[] @default([])
+
+  createdAt   DateTime @default(now())
+  saleEvents  ProductSaleEvent[]
+
+  @@unique([workspaceId, platform, externalOrderId])
+  @@index([workspaceId, orderedAt])
+  @@index([workspaceId, state, orderedAt])
+}
+
+enum OrderState {
+  PLACED
+  FULFILLED
+  CANCELLED
+  RETURNED
 }
