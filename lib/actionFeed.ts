@@ -61,6 +61,9 @@ export async function pushToActionFeed(item: ActionFeedInput) {
         workspaceName: workspace.name,
         title: item.title,
         description: item.description,
+        // الدالة تدعم اللغتين، لكن هذا المستدعي لم يكن يمرّر التفضيل -
+        // فيصل الإيميل بالعربية لمن اختار الإنجليزية في الواجهة
+        locale: (owner.preferredLocale as "ar" | "en") ?? "ar",
       });
     }
   }

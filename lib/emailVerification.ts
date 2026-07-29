@@ -37,9 +37,9 @@ export async function sendVerificationEmail(params: {
       subject: isAr ? "تأكيد بريدك الإلكتروني - AdLoop" : "Verify your email - AdLoop",
       html: `
         <div dir="${isAr ? "rtl" : "ltr"}" style="font-family: sans-serif; padding: 20px;">
-          <h2 style="color: #171C27;">${isAr ? "أهلاً بيك في AdLoop" : "Welcome to AdLoop"}</h2>
+          <h2 style="color: #171C27;">${isAr ? "أهلاً بك في AdLoop" : "Welcome to AdLoop"}</h2>
           <p style="color: #5C6478;">
-            ${isAr ? "اضغط على الرابط ده عشان تأكد بريدك الإلكتروني:" : "Click the link below to verify your email:"}
+            ${isAr ? "اضغط على الرابط التالي لتأكيد بريدك الإلكتروني:" : "Click the link below to verify your email:"}
           </p>
           <a href="${verifyUrl}" style="display: inline-block; background: #4C8DFF; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; margin: 12px 0;">
             ${isAr ? "تأكيد البريد الإلكتروني" : "Verify Email"}
