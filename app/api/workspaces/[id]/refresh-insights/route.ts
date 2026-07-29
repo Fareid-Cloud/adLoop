@@ -75,7 +75,7 @@ export async function POST(
     return NextResponse.json({
       whatsWorking: [],
       whatsLeaking: [],
-      nextAction: locale === "ar" ? "لسه مفيش بيانات كافية آخر 7 أيام - اربط حملاتك وسيب البيانات تتراكم." : "Not enough data in the last 7 days yet - link your campaigns and let data accumulate.",
+      nextAction: locale === "ar" ? "لا توجد بيانات كافية خلال آخر ٧ أيام — اربط حملاتك ودع البيانات تتراكم." : "Not enough data in the last 7 days yet - link your campaigns and let data accumulate.",
     });
   }
 

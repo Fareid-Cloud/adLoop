@@ -67,7 +67,7 @@ export default async function SearchTermsPage() {
       </p>
 
       {wasteful.length === 0 ? (
-        <EmptyState title="لا يوجد هدر واضح حالياً" description="كل مصطلحات البحث اللي صرفت عليها جابت نتيجة." />
+        <EmptyState title="لا يوجد هدر واضح حالياً" description="كل عبارات البحث التي أنفقت عليها حقّقت نتيجة." />
       ) : (
         <div className="flex flex-col gap-1">
           {wasteful.map((t) => (

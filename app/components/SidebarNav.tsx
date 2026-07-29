@@ -124,8 +124,10 @@ export function SidebarNav({
         ) : (
           NAV_GROUPS.map((group, i) => (
             <div key={i}>
-              {group.label && !collapsed && (
-                <div className="mb-1.5 px-2 text-[11px] font-medium uppercase tracking-wider text-text-faint">{group.label}</div>
+              {(ar ? group.labelAr : group.labelEn) && !collapsed && (
+                <div className="mb-1.5 px-2 text-[11px] font-medium uppercase tracking-wider text-text-faint">
+                  {ar ? group.labelAr : group.labelEn}
+                </div>
               )}
               <div className="flex flex-col gap-0.5">
                 {group.items.map((item) => {

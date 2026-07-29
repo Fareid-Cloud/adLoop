@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   const { allowed } = await checkRateLimit(ip, "login", 10, 15);
   if (!allowed) {
-    return NextResponse.json({ error: "محاولات دخول كتير من نفس الجهاز - حاول تاني بعد شوية" }, { status: 429 });
+    return NextResponse.json({ error: "محاولات دخول كثيرة من الجهاز نفسه — حاول مرة أخرى بعد قليل" }, { status: 429 });
   }
   const rawBody = await req.json();
   const validation = validateOrError(loginSchema, rawBody);
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       {
         error:
           locale === "ar"
-            ? `الحساب مقفول مؤقتاً بسبب محاولات دخول فاشلة كتير - حاول تاني بعد ${minutesLeft} دقيقة`
+            ? `الحساب مُقفَل مؤقتاً بسبب محاولات دخول فاشلة متكرّرة — حاول مرة أخرى بعد ${minutesLeft} دقيقة`
             : `Account temporarily locked due to too many failed attempts - try again in ${minutesLeft} minute(s)`,
       },
       { status: 429 }

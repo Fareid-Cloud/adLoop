@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   const captchaValid = await verifyTurnstileToken(turnstileToken, remoteIp);
   if (!captchaValid) {
     return NextResponse.json(
-      { error: locale === "ar" ? "فشل التحقق من الكابتشا، حاول تاني" : "CAPTCHA verification failed, please try again" },
+      { error: locale === "ar" ? "فشل التحقّق من الكابتشا، حاول مرة أخرى" : "CAPTCHA verification failed, please try again" },
       { status: 400 }
     );
   }

@@ -32,7 +32,7 @@ export default async function SiteScanPage() {
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">فحص الموقع</h1>
       <p className="mb-6 text-xs text-text-faint">
         فحص عميق مترابط: تقني + بصري بالذكاء الاصطناعي + أداء حقيقي (Google
-        PageSpeed) + مقارنة منافسين، مبني على تحليل مركّب مش نتائج منعزلة.
+        PageSpeed) + مقارنة منافسين، مبنيّ على تحليل مركّب لا على نتائج منعزلة.
       </p>
       <DeepScanClient
         workspaceId={workspace.id}

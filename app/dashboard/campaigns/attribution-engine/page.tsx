@@ -47,8 +47,8 @@ export default async function AttributionEnginePage() {
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">محرك الإسناد الذكي</h1>
       <p className="mb-6 text-xs text-text-faint">
-        لما رسالة واتساب توصل من غير كود تتبع واضح، النظام بيحاول ينسبها لأقرب منصة بناءً على
-        التوقيت وتطابق رقم الهاتف - مش تخمين عشوائي، توزيع احتمالي مبني على إشارات حقيقية.
+        حين تصل رسالة واتساب بلا كود تتبّع واضح، يحاول النظام إسنادها إلى أقرب منصّة بناءً على
+        التوقيت وتطابق رقم الهاتف — لا تخمين عشوائي، بل توزيع احتمالي مبنيّ على إشارات حقيقية.
       </p>
 
       {total === 0 ? (

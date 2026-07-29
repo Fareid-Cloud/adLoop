@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   const { allowed } = await checkRateLimit(ip, "mfa-verify", 5, 10);
   if (!allowed) {
-    return NextResponse.json({ error: "محاولات كتير - حاول تاني بعد شوية" }, { status: 429 });
+    return NextResponse.json({ error: "محاولات كثيرة — حاول مرة أخرى بعد قليل" }, { status: 429 });
   }
   const rawBody = await req.json();
   const validation = validateOrError(schema, rawBody);
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   const userId = verifyMfaPendingToken(pendingToken);
   if (!userId) {
-    return NextResponse.json({ error: "انتهت صلاحية الجلسة المؤقتة - سجّل دخول تاني" }, { status: 401 });
+    return NextResponse.json({ error: "انتهت صلاحية الجلسة المؤقتة — سجّل الدخول مرة أخرى" }, { status: 401 });
   }
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   // منع إعادة الاستخدام (Replay): نفس الكود لو نجح قبل كده، مرفوض تاني
   // حتى لو لسه صالح داخل نافذة الوقت (30-90 ثانية تقريباً)
   if (user.mfaLastUsedCode === code) {
-    return NextResponse.json({ error: "الكود ده اتستخدم قبل كده - استنى كود جديد" }, { status: 401 });
+    return NextResponse.json({ error: "هذا الرمز مُستخدَم من قبل — انتظر رمزاً جديداً" }, { status: 401 });
   }
 
   await prisma.user.update({ where: { id: user.id }, data: { mfaLastUsedCode: code } });

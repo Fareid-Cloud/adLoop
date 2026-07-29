@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   // اتنازل عن جلسته (اختراق مثلاً)، ده كان هيسمح بتصعيد إضافي أو إخفاء
   // الأثر عن طريق "لبس" هوية أدمن تاني
   if (targetUser.isAdmin) {
-    return NextResponse.json({ error: "مينفعش تتقمّص حساب أدمن تاني" }, { status: 403 });
+    return NextResponse.json({ error: "لا يمكن انتحال حساب مسؤول آخر" }, { status: 403 });
   }
 
   await logAdminAction({

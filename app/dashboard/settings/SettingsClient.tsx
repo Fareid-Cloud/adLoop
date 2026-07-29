@@ -572,7 +572,7 @@ function WorkspaceTab({
 
       <FieldLabel>سقف التغيير الشهري لاستراتيجية المزايدة (%)</FieldLabel>
       <p className="mb-2 text-xs text-text-faint">
-        حد أقصى لمجموع نسب تغيير المزايدة اللي المنتج ممكن ينفّذها على نفس الإعلان/الحملة في الشهر
+        حدّ أقصى لمجموع نسب تغيير المزايدة التي يمكن تنفيذها على الإعلان أو الحملة نفسها خلال الشهر
         الواحد - حاجز أمان يمنع تراكم تغييرات آلية متتالية من غير سقف.
       </p>
       <input
@@ -611,7 +611,7 @@ function WorkspaceTab({
 
       <FieldLabel>الحملات المرتبطة</FieldLabel>
       <p className="mb-2 text-xs text-text-faint">
-        اختار الحملات اللي تتبع مساحة العمل دي من الحسابات المرتبطة.
+        اختر الحملات التابعة لمساحة العمل هذه من الحسابات المرتبطة.
       </p>
       <CampaignPicker workspaceId={workspace.id} />
 
@@ -1121,7 +1121,7 @@ function DangerZoneTab({ workspaces }: { workspaces: WorkspaceData[] }) {
       <div className="rounded-xl bg-critical/10 p-4">
         <div className="mb-2 text-sm font-medium text-critical">حذف مساحة عمل</div>
         <p className="mb-3 text-xs text-text-muted">
-          هذا الإجراء نهائي — كل البيانات المرتبطة (الحملات، المهام، التقارير) هتتمسح ومينفعش ترجع تاني.
+          هذا الإجراء نهائي — ستُحذف كل البيانات المرتبطة (الحملات والمهام والتقارير) ولا يمكن استرجاعها.
         </p>
         <select
           value={targetId}

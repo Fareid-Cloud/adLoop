@@ -61,7 +61,7 @@ export default async function SeasonalTrendPage() {
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">اتجاه التكلفة الشهري</h1>
       <p className="mb-6 text-xs text-text-faint">
         ملاحظة صادقة: تنبؤ موسمي حقيقي محتاج بيانات تاريخية متعددة السنين معندناش.
-        هذا مقارنة فعلية للشهر الحالي بالشهر اللي فات (نفس عدد الأيام) - إشارة واقعية على الاتجاه، مش تنبؤ.
+        مقارنة فعلية بين الشهر الحالي والشهر الماضي (بعدد الأيام نفسه) — إشارة واقعية على الاتجاه لا تنبؤ.
       </p>
 
       {!hasComparison ? (
@@ -75,11 +75,11 @@ export default async function SeasonalTrendPage() {
             {changePct! > 0 ? "+" : ""}{changePct}%
           </div>
           <div className="mt-1 text-sm text-text-muted">
-            تكلفة العميل {changePct! > 0 ? "أعلى" : "أقل"} من نفس الفترة الشهر اللي فات
+            تكلفة العميل {changePct! > 0 ? "أعلى" : "أقل"} من الفترة نفسها الشهر الماضي
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-text-faint">
             <div>الشهر الحالي: {Math.round(thisCpa!).toLocaleString()}</div>
-            <div>الشهر اللي فات: {Math.round(lastCpa!).toLocaleString()}</div>
+            <div>الشهر الماضي: {Math.round(lastCpa!).toLocaleString()}</div>
           </div>
         </div>
       )}

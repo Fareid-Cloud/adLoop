@@ -22,17 +22,22 @@ export interface NavItem {
 }
 
 export interface NavGroup {
-  label: string | null;
+  /** عنوان المجموعة - ثنائي اللغة مثل بقية العناصر. كان نصاً عربياً
+   *  واحداً، فيظهر بالعربية حتى في الواجهة الإنجليزية */
+  labelAr: string | null;
+  labelEn: string | null;
   items: NavItem[];
 }
 
 export const NAV_GROUPS: NavGroup[] = [
   {
-    label: null,
-    items: [{ href: "/dashboard", labelAr: "لمحة", labelEn: "Glance", iconName: "LayoutDashboard" }],
+    labelAr: null,
+    labelEn: null,
+    items: [{ href: "/dashboard", labelAr: "الرئيسية", labelEn: "Home", iconName: "LayoutDashboard" }],
   },
   {
-    label: "التحليل",
+    labelAr: "التحليل",
+    labelEn: "Analyze",
     items: [
       {
         href: "/dashboard/campaigns",
@@ -42,73 +47,75 @@ export const NAV_GROUPS: NavGroup[] = [
         // صفحات كل منصة تظهر مباشرةً في القائمة الجانبية عند الدخول إليها،
         // بدل الاضطرار إلى العودة لصفحة الحملات لاختيار تحليل آخر.
         children: [
-          { href: "/dashboard/campaigns", labelAr: "نظرة شاملة", labelEn: "Overview" },
+          { href: "/dashboard/campaigns", labelAr: "ملخّص الأداء", labelEn: "Overview" },
 
           { href: "/dashboard/campaigns/google-hub", labelAr: "جوجل", labelEn: "Google", platform: "GOOGLE_ADS" },
-          { href: "/dashboard/campaigns/search-terms", labelAr: "مصطلحات البحث", labelEn: "Search Terms", platform: "GOOGLE_ADS", nested: true },
-          { href: "/dashboard/campaigns/quality-score", labelAr: "درجة الجودة", labelEn: "Quality Score", platform: "GOOGLE_ADS", nested: true },
+          { href: "/dashboard/campaigns/search-terms", labelAr: "عبارات البحث", labelEn: "Search Terms", platform: "GOOGLE_ADS", nested: true },
+          { href: "/dashboard/campaigns/quality-score", labelAr: "نقاط الجودة", labelEn: "Quality Score", platform: "GOOGLE_ADS", nested: true },
           { href: "/dashboard/campaigns/shopping", labelAr: "التسوّق", labelEn: "Shopping", platform: "GOOGLE_ADS", nested: true },
-          { href: "/dashboard/campaigns/display-placements", labelAr: "أماكن الظهور", labelEn: "Placements", platform: "GOOGLE_ADS", nested: true },
+          { href: "/dashboard/campaigns/display-placements", labelAr: "مواضع الإعلان", labelEn: "Placements", platform: "GOOGLE_ADS", nested: true },
           { href: "/dashboard/campaigns/video-performance", labelAr: "أداء الفيديو", labelEn: "Video", platform: "GOOGLE_ADS", nested: true },
 
           { href: "/dashboard/campaigns/meta-hub", labelAr: "ميتا", labelEn: "Meta", platform: "META_ADS" },
-          { href: "/dashboard/campaigns/placements", labelAr: "فيسبوك وإنستجرام", labelEn: "FB / IG", platform: "META_ADS", nested: true },
-          { href: "/dashboard/campaigns/content-formats", labelAr: "شكل المحتوى", labelEn: "Content Formats", platform: "META_ADS", nested: true },
-          { href: "/dashboard/campaigns/catalog-ads", labelAr: "الإعلانات الديناميكية", labelEn: "Catalog Ads", platform: "META_ADS", nested: true },
+          { href: "/dashboard/campaigns/placements", labelAr: "فيسبوك وإنستغرام", labelEn: "FB / IG", platform: "META_ADS", nested: true },
+          { href: "/dashboard/campaigns/content-formats", labelAr: "أنواع الإعلانات", labelEn: "Ad Formats", platform: "META_ADS", nested: true },
+          { href: "/dashboard/campaigns/catalog-ads", labelAr: "إعلانات الكتالوج", labelEn: "Catalog Ads", platform: "META_ADS", nested: true },
           { href: "/dashboard/campaigns/competitor-ads", labelAr: "إعلانات المنافسين", labelEn: "Competitor Ads", platform: "META_ADS", nested: true },
-          { href: "/dashboard/campaigns/learning-phase", labelAr: "فترة التعلّم", labelEn: "Learning Phase", platform: "META_ADS", nested: true },
+          { href: "/dashboard/campaigns/learning-phase", labelAr: "مرحلة التعلّم", labelEn: "Learning Phase", platform: "META_ADS", nested: true },
 
           { href: "/dashboard/campaigns/tiktok-hub", labelAr: "تيك توك", labelEn: "TikTok", platform: "TIKTOK_ADS" },
-          { href: "/dashboard/campaigns/tiktok-hook-rate", labelAr: "معدل الخطّاف", labelEn: "Hook Rate", platform: "TIKTOK_ADS", nested: true },
-          { href: "/dashboard/campaigns/tiktok-fatigue", labelAr: "تعب الفيديو", labelEn: "Video Fatigue", platform: "TIKTOK_ADS", nested: true },
+          { href: "/dashboard/campaigns/tiktok-hook-rate", labelAr: "نسبة الجذب", labelEn: "Hook Rate", platform: "TIKTOK_ADS", nested: true },
+          { href: "/dashboard/campaigns/tiktok-fatigue", labelAr: "إجهاد الإعلان", labelEn: "Ad Fatigue", platform: "TIKTOK_ADS", nested: true },
           { href: "/dashboard/campaigns/tiktok-spark-ads", labelAr: "Spark Ads", labelEn: "Spark Ads", platform: "TIKTOK_ADS", nested: true },
         ],
       },
-      { href: "/dashboard/truth", labelAr: "الحقيقة", labelEn: "Truth", iconName: "ShieldCheck" },
+      { href: "/dashboard/truth", labelAr: "الأرقام الحقيقية", labelEn: "Real Numbers", iconName: "ShieldCheck" },
       { href: "/dashboard/pricing", labelAr: "التسعير", labelEn: "Pricing", iconName: "Tag" },
       {
         // الترتيب يتبع طريقة تفكير صاحب المتجر لا نوع البيانات: يبدأ بالوضع
         // العام، ثم أين يذهب المال، ثم ما يبيعه، ثم كيف يسعّره، ثم ما لديه،
         // ثم من يشتري، ثم كيف تصل الطلبات، ثم ما يفعله بعد ذلك.
-        href: "/dashboard/ecommerce", labelAr: "التجارة الإلكترونية", labelEn: "Ecommerce", iconName: "ShoppingBag",
+        href: "/dashboard/ecommerce", labelAr: "المتجر", labelEn: "Store", iconName: "ShoppingBag",
         children: [
-          { href: "/dashboard/ecommerce", labelAr: "نظرة تنفيذية", labelEn: "Overview" },
-          { href: "/dashboard/ecommerce/profit", labelAr: "رحلة الربح", labelEn: "Profit" },
+          { href: "/dashboard/ecommerce", labelAr: "ملخّص المتجر", labelEn: "Overview" },
+          { href: "/dashboard/ecommerce/profit", labelAr: "الأرباح", labelEn: "Profit" },
           { href: "/dashboard/ecommerce/products", labelAr: "المنتجات", labelEn: "Products" },
-          { href: "/dashboard/ecommerce/pricing-intelligence", labelAr: "ذكاء التسعير", labelEn: "Pricing Intelligence" },
+          { href: "/dashboard/ecommerce/pricing-intelligence", labelAr: "فرص التسعير", labelEn: "Pricing" },
           { href: "/dashboard/ecommerce/inventory", labelAr: "المخزون", labelEn: "Inventory" },
           { href: "/dashboard/ecommerce/customers", labelAr: "العملاء", labelEn: "Customers" },
           { href: "/dashboard/ecommerce/orders", labelAr: "الطلبات", labelEn: "Orders" },
-          { href: "/dashboard/ecommerce/opportunities", labelAr: "الفرص", labelEn: "Opportunities" },
-          { href: "/dashboard/ecommerce/ai-insights", labelAr: "تحليلات ذكية", labelEn: "AI Insights" },
+          { href: "/dashboard/ecommerce/opportunities", labelAr: "فرص النمو", labelEn: "Opportunities" },
+          { href: "/dashboard/ecommerce/ai-insights", labelAr: "رؤى وتوصيات", labelEn: "Insights" },
           { href: "/dashboard/ecommerce/reports", labelAr: "التقارير", labelEn: "Reports" },
         ],
       },
       { href: "/dashboard/site-scan", labelAr: "فحص الموقع", labelEn: "Site Scan", iconName: "ScanSearch" },
       {
-        href: "/dashboard/diagnostics", labelAr: "التشخيص", labelEn: "Diagnostics", iconName: "Stethoscope",
+        href: "/dashboard/diagnostics", labelAr: "صحة الحساب", labelEn: "Account Health", iconName: "Stethoscope",
         children: [
-          { href: "/dashboard/diagnostics", labelAr: "نظرة شاملة", labelEn: "Overview" },
-          { href: "/dashboard/diagnostics/tracking-coverage", labelAr: "تغطية التتبع", labelEn: "Tracking Coverage" },
+          { href: "/dashboard/diagnostics", labelAr: "ملخّص الأداء", labelEn: "Overview" },
+          { href: "/dashboard/diagnostics/tracking-coverage", labelAr: "تغطية التتبّع", labelEn: "Tracking Coverage" },
         ],
       },
     ],
   },
   {
-    label: "التنفيذ",
+    labelAr: "التنفيذ",
+    labelEn: "Act",
     items: [
       { href: "/dashboard/actions", labelAr: "القرارات", labelEn: "Actions", iconName: "ListChecks" },
-      { href: "/dashboard/experiments", labelAr: "التجارب", labelEn: "Experiments", iconName: "FlaskConical" },
-      { href: "/dashboard/automation", labelAr: "التشغيل الذكي", labelEn: "Autopilot", iconName: "Bot" },
+      { href: "/dashboard/experiments", labelAr: "الاختبارات", labelEn: "Experiments", iconName: "FlaskConical" },
+      { href: "/dashboard/automation", labelAr: "الأتمتة", labelEn: "Automation", iconName: "Bot" },
     ],
   },
   {
-    label: null,
+    labelAr: null,
+    labelEn: null,
     items: [
       { href: "/dashboard/reports", labelAr: "التقارير", labelEn: "Reports", iconName: "FileBarChart" },
-      { href: "/dashboard/integrations", labelAr: "التكاملات", labelEn: "Integrations", iconName: "Plug" },
+      { href: "/dashboard/integrations", labelAr: "الربط", labelEn: "Connections", iconName: "Plug" },
       { href: "/dashboard/settings", labelAr: "الإعدادات", labelEn: "Settings", iconName: "SettingsIcon" },
-      { href: "/dashboard/billing", labelAr: "الاشتراك", labelEn: "Billing", iconName: "CreditCard" },
+      { href: "/dashboard/billing", labelAr: "الاشتراك والفواتير", labelEn: "Billing", iconName: "CreditCard" },
     ],
   },
 ];

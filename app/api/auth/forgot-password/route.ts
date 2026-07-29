@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
             <div dir="${isAr ? "rtl" : "ltr"}" style="font-family: sans-serif; padding: 20px;">
               <h2 style="color: #171C27;">${isAr ? "إعادة تعيين كلمة المرور" : "Reset your password"}</h2>
               <p style="color: #5C6478;">
-                ${isAr ? "اضغط على الرابط ده خلال ساعة عشان تعيد تعيين كلمة المرور:" : "Click the link below within one hour to reset your password:"}
+                ${isAr ? "اضغط على الرابط التالي خلال ساعة لإعادة تعيين كلمة المرور:" : "Click the link below within one hour to reset your password:"}
               </p>
               <a href="${resetUrl}" style="display: inline-block; background: #4C8DFF; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none;">
                 ${isAr ? "إعادة تعيين كلمة المرور" : "Reset Password"}

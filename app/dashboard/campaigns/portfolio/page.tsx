@@ -71,7 +71,7 @@ export default async function PortfolioPage() {
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">توزيع المحفظة</h1>
       <p className="mb-6 text-xs text-text-faint">
-        اقتراح إعادة توزيع الميزانية اليومية التقديرية بين الحملات بناءً على الكفاءة النسبية آخر 7 أيام - مش تنفيذ تلقائي، اقتراح بس.
+        اقتراح إعادة توزيع الميزانية اليومية التقديرية بين الحملات بناءً على الكفاءة النسبية خلال آخر ٧ أيام — اقتراح لا تنفيذ تلقائي.
       </p>
 
       <div className="flex flex-col gap-2">

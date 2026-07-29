@@ -69,7 +69,7 @@ export default async function LeadFormsPage() {
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">فورم المنصات الداخلي مقابل فورم موقعك</h1>
       <p className="mb-6 text-xs text-text-faint">
         عدد الليدز من كل مصدر آخر 30 يوم. ملاحظة: "الجودة" الفعلية (هل تحوّلوا لعملاء حقيقيين)
-        محتاجة ربط يدوي بنتائج فريق المبيعات - العدد هنا بس، مش نسبة التحويل النهائية.
+        تتطلّب ربطاً يدوياً بنتائج فريق المبيعات — هذا العدد فقط، لا نسبة التحويل النهائية.
       </p>
 
       {!hasAnyData ? (

@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     const message =
       quota.reason === "monthly_exhausted"
         ? "وصلت للحد الأقصى الشهري لفحص جودة الصور."
-        : `وصلت للحد الساعي - جرّب تاني بعد ${quota.retryAfterMinutes} دقيقة.`;
+        : `بلغت الحدّ المسموح في الساعة — حاول بعد ${quota.retryAfterMinutes} دقيقة.`;
     return NextResponse.json({ error: message }, { status: 429 });
   }
 

@@ -39,7 +39,7 @@ export function PushNotificationToggle() {
   }
 
   if (status === "unsupported") {
-    return <p className="text-xs text-text-faint">متصفحك مش بيدعم إشعارات الموبايل حالياً.</p>;
+    return <p className="text-xs text-text-faint">متصفّحك لا يدعم إشعارات الجوال حالياً.</p>;
   }
 
   if (status === "granted") {

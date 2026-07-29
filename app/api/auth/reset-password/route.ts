@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   const { allowed } = await checkRateLimit(ip, "reset-password", 5, 15);
   if (!allowed) {
-    return NextResponse.json({ error: "محاولات كتير - حاول تاني بعد شوية" }, { status: 429 });
+    return NextResponse.json({ error: "محاولات كثيرة — حاول مرة أخرى بعد قليل" }, { status: 429 });
   }
 
   const rawBody = await req.json();

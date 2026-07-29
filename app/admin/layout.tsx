@@ -25,7 +25,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             <span className="rounded-full bg-critical/15 px-3 py-1 text-xs font-medium text-critical">
               لوحة المالك
             </span>
-            <span className="text-xs text-text-faint">مش جزء من واجهة العميل العادية</span>
+            <span className="text-xs text-text-faint">ليست جزءاً من واجهة العميل</span>
           </div>
           <div className="flex items-center gap-4 text-xs">
             <a href="/admin" className="text-text-muted no-underline hover:text-text-primary">المستخدمون</a>

@@ -69,7 +69,7 @@ export default async function AdminDashboard() {
       </div>
 
       <div className="mb-6 rounded-2xl bg-gap/10 p-4 text-xs text-gap">
-        <strong>ملاحظة صريحة:</strong> بيانات الفلوس/الاشتراكات مش موجودة هنا
+        <strong>ملاحظة صريحة:</strong> بيانات الاشتراكات والمدفوعات غير متاحة هنا
         لأن نظام الدفع نفسه غير مبني بعد (مسجّل في README.md كفجوة MVP حرجة).
         كل حاجة تانية هنا (المشتركين، الحسابات، الاستهلاك، المشاكل) بيانات حقيقية.
       </div>

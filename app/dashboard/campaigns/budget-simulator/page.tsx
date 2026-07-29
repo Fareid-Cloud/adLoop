@@ -70,7 +70,7 @@ export default async function BudgetSimulatorPage() {
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">محاكاة نقل الميزانية</h1>
       <p className="mb-6 text-xs text-text-faint">
-        بناءً على تكلفة العميل الحقيقية الفعلية لكل منصة آخر 30 يوم - مش المُعلنة. المحاكاة تفترض
+        بناءً على تكلفة العميل الحقيقية الفعلية لكل منصة خلال آخر ٣٠ يوماً لا المُعلنة. تفترض المحاكاة
         استمرار نفس الأداء الحالي، وهذا افتراض قد لا يصمد عند زيادة الميزانية بشكل كبير جداً.
       </p>
 

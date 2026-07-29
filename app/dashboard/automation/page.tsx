@@ -39,7 +39,7 @@ export default async function AutomationPage() {
 
       {!workspace.enableAutomationRules && (
         <div className="mb-4 rounded-2xl bg-gap/10 p-4 text-xs text-gap">
-          الأتمتة متوقفة من الإعدادات لمساحة العمل دي - القواعد هتفضل مسجّلة بس مش هتتنفذ.
+          الأتمتة متوقّفة من إعدادات مساحة العمل هذه — ستبقى القواعد مسجَّلة لكنها لن تُنفَّذ.
         </div>
       )}
 

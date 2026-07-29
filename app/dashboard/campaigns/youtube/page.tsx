@@ -48,7 +48,7 @@ export default async function YoutubePage() {
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">أداء حملات يوتيوب</h1>
       <p className="mb-6 text-xs text-text-faint">
-        نسبة المشاهدة الكاملة والتفاعل، مش الكليكات - مقياس النجاح مختلف عن حملات البحث.
+        نسبة المشاهدة الكاملة والتفاعل لا النقرات — مقياس النجاح هنا مختلف عن حملات البحث.
         ملاحظة: الأرقام هنا مشاهدات مدفوعة فقط (العضوية غير متاحة عبر الواجهة البرمجية).
       </p>
 

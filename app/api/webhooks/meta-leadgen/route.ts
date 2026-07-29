@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
         : null;
 
       if (!link) {
-        console.warn(`لقينا ليد ميتا (${leadgen_id}) بس مش قادرين نربطه بأي Workspace معروف`);
+        console.warn(`وصل عميل محتمل من ميتا (${leadgen_id}) وتعذّر ربطه بأي مساحة عمل معروفة`);
         continue;
       }
 

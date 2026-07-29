@@ -30,7 +30,7 @@ export default async function TrackingCoveragePage() {
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">تغطية التتبع</h1>
       <p className="mb-6 text-xs text-text-faint">
-        بنتأكد إن كود التتبع فعلاً موجود على كل صفحة هبوط بتستخدمها، مش بنفترض.
+        نتحقّق فعلياً من وجود كود التتبّع على كل صفحة هبوط تستخدمها، ولا نفترض ذلك.
       </p>
 
       <TrackingCoverageClient

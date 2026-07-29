@@ -109,7 +109,7 @@ export default async function VideoPerformancePage() {
 
       {missingPlatforms.length > 0 && (
         <p className="mt-4 text-xs text-text-faint">
-          ملاحظة صادقة: {missingPlatforms.map((p) => PLATFORM_LABELS[p]).join("، ")} مش بتتزامن بيانات
+          ملاحظة صادقة: {missingPlatforms.map((p) => PLATFORM_LABELS[p]).join("، ")} لا تُزامَن بياناتها
           فيديو للصفحة دي حالياً - محتاجة بناء إضافي منفصل لكل منصة.
         </p>
       )}

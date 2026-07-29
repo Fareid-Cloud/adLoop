@@ -59,7 +59,7 @@ export function CreateWorkspaceForm() {
 
     if (!workspaceRes.ok) {
       const data = await workspaceRes.json();
-      setError(data.error ?? "حصل خطأ، حاول تاني");
+      setError(data.error ?? "حدث خطأ، حاول مرة أخرى");
       return;
     }
 

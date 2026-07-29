@@ -96,8 +96,8 @@ export default async function AttributionPathPage() {
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">مسار العميل عبر المنصات</h1>
       <p className="mb-6 text-xs text-text-faint">
-        مبني على تتبعنا الفعلي للكليكات، مش تخمين - جوجل وميتا ما بيشاركوش بيانات عميل مع بعض،
-        فالصورة دي محدودة بالتفاعلات اللي مرّت عبر أداة التتبع الخاصة بنا فقط.
+        مبنيّ على تتبّعنا الفعلي للنقرات لا على تخمين. جوجل وميتا لا تتبادلان بيانات العملاء،
+        فهذه الصورة محدودة بالتفاعلات التي مرّت عبر أداة التتبّع الخاصة بنا وحدها.
       </p>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2">

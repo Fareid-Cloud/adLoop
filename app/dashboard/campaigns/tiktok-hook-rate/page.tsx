@@ -38,7 +38,7 @@ export default async function TikTokHookRatePage() {
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">معدل الخطّاف والإكمال</h1>
       <p className="mb-6 text-xs text-text-faint">
-        نسبة الأشخاص اللي كملوا مشاهدة ثانيتين (خطّاف قوي)، 6 ثواني (مشاهدة متفاعلة فعلياً - تيك توك
+        نسبة من أكملوا مشاهدة ثانيتين (خطّاف قوي)، 6 ثواني (مشاهدة متفاعلة فعلياً - تيك توك
         نفسها بتحتسبها كتحويل مُسند حتى من غير كليك)، ونسبة الإكمال الكامل. معيار: خطّاف قوي فوق 30%.
       </p>
 

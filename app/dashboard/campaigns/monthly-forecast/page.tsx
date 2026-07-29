@@ -67,7 +67,7 @@ export default async function MonthlyForecastPage() {
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">التوقّع الشهري</h1>
       <p className="mb-6 text-xs text-text-faint">
-        بناءً على معدل صرفك الفعلي حتى الآن هذا الشهر - مش تنبؤ ذكي، حساب مباشر لاستمرار نفس الوتيرة.
+        بناءً على معدل صرفك الفعلي حتى الآن هذا الشهر - ليس تنبؤاً ذكياً بل حساب مباشر لاستمرار الوتيرة نفسها.
       </p>
 
       <div className="mb-4 rounded-2xl bg-surface p-5 text-center">
