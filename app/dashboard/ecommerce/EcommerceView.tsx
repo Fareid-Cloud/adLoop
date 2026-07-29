@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { MetricCard, type MetricTone } from "@/app/components/ui/MetricCard";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export interface ProductRow {
   id: string;
@@ -34,18 +35,18 @@ export interface ProductRow {
   verdictAr: string;
 }
 
-const VERDICT_META: Record<string, { ar: string; tone: string }> = {
-  WINNER: { ar: "رابح", tone: "var(--verified)" },
-  PROMISING: { ar: "واعد", tone: "#22C55E" },
-  WATCH: { ar: "قيد المراقبة", tone: "var(--gap)" },
-  LOSING: { ar: "خاسر", tone: "var(--critical)" },
-  NO_DATA: { ar: "بلا مبيعات", tone: "var(--text-muted)" },
+const VERDICT_META: Record<string, { key: string; tone: string }> = {
+  WINNER: { key: "verdictWinner", tone: "var(--verified)" },
+  PROMISING: { key: "verdictPromising", tone: "#22C55E" },
+  WATCH: { key: "verdictWatch", tone: "var(--gap)" },
+  LOSING: { key: "verdictLosing", tone: "var(--critical)" },
+  NO_DATA: { key: "verdictNoData", tone: "var(--text-muted)" },
 };
 
-const CONFIDENCE_AR: Record<string, string> = {
-  RELIABLE: "نتيجة موثوقة",
-  PRELIMINARY: "مؤشر أولي",
-  INSUFFICIENT: "عينة غير كافية",
+const CONFIDENCE_KEY: Record<string, string> = {
+  RELIABLE: "confReliable",
+  PRELIMINARY: "confPreliminary",
+  INSUFFICIENT: "confInsufficient",
 };
 
 const STORE_LABEL: Record<string, string> = {
@@ -57,7 +58,7 @@ const num = (n: number) => Math.round(n).toLocaleString("en-US");
 
 export function EcommerceView({
   workspaceName, products, winner, runnerUp, losing, totals,
-  windowDays, hasStoreConnection, storePlatform, currency,
+  windowDays, hasStoreConnection, storePlatform, currency, locale = "ar",
 }: {
   workspaceName: string;
   products: ProductRow[];
@@ -69,7 +70,9 @@ export function EcommerceView({
   hasStoreConnection: boolean;
   storePlatform: string | null;
   currency: string;
+  locale?: Locale;
 }) {
+  const tr = (k: string, v?: Record<string, string | number>) => t(locale, `productsPage.${k}`, v);
   const [query, setQuery] = useState("");
   const [verdict, setVerdict] = useState<"all" | string>("all");
 
@@ -91,23 +94,23 @@ export function EcommerceView({
     tone: MetricTone;
     caption?: { text: string; tone: "muted" | "positive" | "warning" | "negative" };
   }> = [
-    { key: "revenue", label: "الإيراد", value: num(totals.revenue), unit: currency, Icon: Wallet, tone: "accent" },
+    { key: "revenue", label: t(locale, "common.revenue"), value: num(totals.revenue), unit: currency, Icon: Wallet, tone: "accent" },
     {
       key: "profit",
-      label: "الربح الفعلي",
+      label: tr("realProfit"),
       value: num(totals.profit),
       unit: currency,
       Icon: Trophy,
       tone: totals.profit >= 0 ? "verified" : "critical",
       caption:
         totals.profit < 0
-          ? { text: "خسارة بعد المرتجعات والشحن والإعلان", tone: "negative" }
+          ? { text: tr("profitLossNote"), tone: "negative" }
           : undefined,
     },
-    { key: "units", label: "الوحدات المباعة", value: num(totals.units), Icon: Package, tone: "default" },
+    { key: "units", label: tr("unitsSold"), value: num(totals.units), Icon: Package, tone: "default" },
     {
       key: "returns",
-      label: "نسبة المرتجعات",
+      label: tr("returnRate"),
       value: String(totals.returnRatePct),
       unit: "%",
       Icon: RotateCcw,
@@ -120,20 +123,19 @@ export function EcommerceView({
       <div className="reveal mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="mb-1 text-[13px] text-text-muted">{workspaceName}</div>
-          <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">التجارة الإلكترونية</h1>
+          <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">{tr("title")}</h1>
           <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-text-muted">
-            الحكم هنا على الربح المتحقق بعد المرتجعات والشحن والإعلان — لا على الإيراد.
-            المنتج الأكثر مبيعاً قد يكون الأكثر خسارة.
+            {tr("subtitle")}
           </p>
         </div>
 
         <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2">
           <Store size={14} className={hasStoreConnection ? "text-verified" : "text-text-faint"} />
           {hasStoreConnection && storePlatform ? (
-            <span className="text-[12.5px] text-text-primary">{STORE_LABEL[storePlatform] ?? storePlatform} مرتبط</span>
+            <span className="text-[12.5px] text-text-primary">{tr("storeLinked", { store: STORE_LABEL[storePlatform] ?? storePlatform })}</span>
           ) : (
             <a href="/dashboard/integrations" className="text-[12.5px] text-accent no-underline">
-              اربط متجرك
+              {tr("connectStore")}
             </a>
           )}
         </div>
@@ -144,8 +146,7 @@ export function EcommerceView({
         <div className="reveal card-shadow mb-5 flex items-start gap-2.5 rounded-2xl border border-gap/35 bg-gap/[0.06] p-4">
           <AlertOctagon size={16} className="mt-0.5 shrink-0 text-gap" />
           <p className="text-[12.5px] leading-relaxed text-text-primary">
-            لا يوجد متجر مرتبط، فالأرقام هنا مبنية على ما أدخلته يدوياً فقط.
-            اربط متجرك لتصل الطلبات والمرتجعات والمخزون تلقائياً، فتصبح النتائج مبنية على مبيعات حقيقية.
+            {tr("noStoreWarn")}
           </p>
         </div>
       )}
@@ -170,7 +171,7 @@ export function EcommerceView({
                style={{ animationDelay: "150ms" }}>
         <div className="flex items-center gap-2 border-b border-border p-4">
           <Trophy size={16} className="text-verified" />
-          <h2 className="text-[14px] font-semibold text-text-primary">المنتج الرابح</h2>
+          <h2 className="text-[14px] font-semibold text-text-primary">{tr("winner")}</h2>
         </div>
 
         {winner ? (
@@ -180,30 +181,30 @@ export function EcommerceView({
                 <div className="mb-1 flex flex-wrap items-center gap-2">
                   <span className="text-[17px] font-semibold text-text-primary">{winner.name}</span>
                   <span className="rounded-full bg-verified/12 px-2 py-0.5 text-[11px] font-medium text-verified">
-                    {CONFIDENCE_AR[winner.confidence]}
+                    {tr(CONFIDENCE_KEY[winner.confidence])}
                   </span>
                 </div>
                 <p className="text-[13px] leading-relaxed text-text-muted">{winner.verdictAr}</p>
 
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Stat label="ربح الوحدة" value={`${winner.profitPerUnit} ${currency}`} tone="var(--verified)" />
-                  <Stat label="هامش الربح" value={`${winner.marginPct}%`} />
-                  <Stat label="سرعة البيع" value={`${winner.velocity}/يوم`} />
-                  <Stat label="المرتجعات" value={`${winner.returnRatePct}%`}
+                  <Stat label={tr("unitProfit")} value={`${winner.profitPerUnit} ${currency}`} tone="var(--verified)" />
+                  <Stat label={t(locale, "common.margin")} value={`${winner.marginPct}%`} />
+                  <Stat label={tr("velocity")} value={tr("perDay", { n: winner.velocity })} />
+                  <Stat label={tr("returns")} value={`${winner.returnRatePct}%`}
                         tone={winner.returnRatePct > 25 ? "var(--gap)" : undefined} />
                   {winner.stockDaysLeft !== null && (
-                    <Stat label="المخزون يكفي" value={`${winner.stockDaysLeft} يوماً`}
+                    <Stat label={tr("stockCovers")} value={tr("daysN", { n: winner.stockDaysLeft ?? 0 })}
                           tone={winner.stockDaysLeft <= 7 ? "var(--critical)" : undefined} />
                   )}
                 </div>
               </div>
 
               <div className="shrink-0 rounded-2xl border border-verified/30 bg-verified/[0.06] px-5 py-4 text-center">
-                <div className="text-[11.5px] text-text-muted">الربح المتحقق</div>
+                <div className="text-[11.5px] text-text-muted">{tr("achievedProfit")}</div>
                 <div className="mt-1 font-mono text-[26px] font-bold leading-none text-verified">
                   {num(winner.totalProfit)}
                 </div>
-                <div className="mt-0.5 text-[11px] text-text-muted">{currency} / {windowDays} يوماً</div>
+                <div className="mt-0.5 text-[11px] text-text-muted">{tr("perWindow", { currency, days: windowDays })}</div>
               </div>
             </div>
 
@@ -218,7 +219,7 @@ export function EcommerceView({
         ) : (
           <div className="p-8 text-center">
             <Trophy size={26} className="mx-auto mb-2 text-text-faint" />
-            <p className="text-[13.5px] text-text-primary">لا يمكن ترشيح منتج رابح بعد</p>
+            <p className="text-[13.5px] text-text-primary">{tr("noWinner")}</p>
             <p className="mx-auto mt-1 max-w-md text-[12.5px] leading-relaxed text-text-muted">
               الترشيح يتطلب ربحاً موجباً وعينة كافية (25 وحدة على الأقل) ونسبة مرتجعات معقولة.
               ترشيح منتج بناءً على عينة صغيرة أسوأ من عدم الترشيح.
@@ -233,7 +234,7 @@ export function EcommerceView({
                  style={{ animationDelay: "220ms" }}>
           <div className="flex items-center gap-2 border-b border-border p-4">
             <TrendingDown size={16} className="text-critical" />
-            <h2 className="text-[14px] font-semibold text-text-primary">منتجات تُباع بخسارة</h2>
+            <h2 className="text-[14px] font-semibold text-text-primary">{tr("losingProducts")}</h2>
             <span className="rounded-full bg-critical/12 px-2 py-0.5 font-mono text-[11px] font-medium text-critical">
               {losing.length}
             </span>
@@ -251,7 +252,7 @@ export function EcommerceView({
                   </span>
                   <a href="/dashboard/pricing"
                      className="flex items-center gap-1 rounded-xl border border-border bg-surface-raised px-3 py-1.5 text-[12px] text-text-primary no-underline">
-                    معالجة التسعير
+                    {tr("fixPricing")}
                     <ChevronLeft size={12} className="rtl:rotate-0 ltr:rotate-180" />
                   </a>
                 </div>
@@ -267,7 +268,7 @@ export function EcommerceView({
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
           <div className="flex items-center gap-2">
             <Boxes size={15} className="text-text-muted" />
-            <h2 className="text-[15px] font-semibold text-text-primary">كل المنتجات</h2>
+            <h2 className="text-[15px] font-semibold text-text-primary">{tr("allProducts")}</h2>
             <span className="rounded-full bg-surface-raised px-2 py-0.5 font-mono text-[11.5px] text-text-muted">
               {filtered.length}
             </span>
@@ -275,14 +276,14 @@ export function EcommerceView({
           <div className="flex flex-wrap items-center gap-2">
             <select value={verdict} onChange={(e) => setVerdict(e.target.value)}
                     className="rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-primary outline-none">
-              <option value="all">كل الحالات</option>
+              <option value="all">{tr("allStates")}</option>
               {Object.entries(VERDICT_META).map(([k, v]) => (
-                <option key={k} value={k}>{v.ar}</option>
+                <option key={k} value={k}>{tr(v.key)}</option>
               ))}
             </select>
             <div className="relative">
               <Search size={14} className="absolute top-1/2 -translate-y-1/2 text-text-faint" style={{ insetInlineStart: 10 }} />
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ابحث بالاسم أو SKU"
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tr("searchPlaceholder")}
                      className="w-44 rounded-xl border border-border bg-surface-raised py-2 text-[12.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
                      style={{ paddingInlineStart: 30, paddingInlineEnd: 10 }} />
             </div>
@@ -314,7 +315,7 @@ export function EcommerceView({
                             style={{ background: `color-mix(in srgb, ${v.tone} 13%, transparent)`, color: v.tone }}>
                         {p.verdict === "WINNER" && <Trophy size={10} />}
                         <span className="h-1.5 w-1.5 rounded-full" style={{ background: v.tone }} />
-                        {v.ar}
+                        {tr(v.key)}
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3.5 font-mono text-[12.5px] text-text-primary">
@@ -340,13 +341,13 @@ export function EcommerceView({
                     </td>
                     <td className="whitespace-nowrap px-4 py-3.5">
                       {p.stockQuantity === null ? (
-                        <span className="text-[11.5px] text-text-faint">غير متتبَّع</span>
+                        <span className="text-[11.5px] text-text-faint">{tr("untracked")}</span>
                       ) : (
                         <span className="font-mono text-[12.5px]"
                               style={{ color: (p.stockDaysLeft ?? 99) <= 7 ? "var(--critical)" : "var(--text-primary)" }}>
                           {num(p.stockQuantity)}
                           {p.stockDaysLeft !== null && (
-                            <span className="ms-1 text-[11px] text-text-muted">({p.stockDaysLeft}ي)</span>
+                            <span className="ms-1 text-[11px] text-text-muted">({tr("daysShort", { n: p.stockDaysLeft ?? 0 })})</span>
                           )}
                         </span>
                       )}
