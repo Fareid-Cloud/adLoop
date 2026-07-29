@@ -29,6 +29,7 @@ import { computeMetrics, comparePlatforms } from "@/lib/metricsEngine";
 import { compareMetric } from "@/lib/periodComparison";
 import { Megaphone, ShieldCheck, Wallet, Target, Activity } from "lucide-react";
 import { TrackingAccuracyGauge } from "@/app/components/ui/TrackingAccuracyGauge";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 import { ReportedVsActualBars } from "@/app/components/ui/ReportedVsActualBars";
 
 const AD_PLATFORMS = ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS", "SNAPCHAT_ADS"];
@@ -46,10 +47,13 @@ export default async function GlancePage({
   const platformFilter = sp.platform && AD_PLATFORMS.includes(sp.platform) ? sp.platform : "";
   const days = [7, 30, 90].includes(Number(sp.days)) ? Number(sp.days) : 30;
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const tr = (k: string, v?: Record<string, string | number>) => t(locale, `home.${k}`, v);
+
   if (!user) {
     return (
       <div className="py-20 text-center text-text-muted">
-        انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.
+        {t("ar", "common.sessionExpired")}
       </div>
     );
   }
@@ -240,13 +244,13 @@ export default async function GlancePage({
     <div className="mx-auto max-w-5xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">أهلاً، {firstName}</h1>
+        <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">{tr("greeting", { name: firstName })}</h1>
         <div className="inline-flex items-center gap-2.5 rounded-full card-shadow border border-border bg-surface py-1.5 pe-4 ps-1.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-raised font-mono text-[11px] font-semibold text-text-muted">
             {health.overallScore || "—"}
           </div>
           <span className="text-xs text-text-muted">
-            درجة الصحة — {health.isComplete ? "مكتملة" : "بانتظار ربط الحسابات"}
+            {tr("healthScore", { state: health.isComplete ? tr("healthComplete") : tr("healthPending") })}
           </span>
         </div>
       </div>
@@ -277,26 +281,26 @@ export default async function GlancePage({
           {/* هيرو طبقة الحقيقة - المعلن مقابل المتحقّق منه فعلاً */}
           <div className="mb-4 grid gap-3 lg:grid-cols-[1.4fr_1fr]">
             <div className="rounded-2xl card-shadow border border-border bg-surface p-6">
-              <div className="mb-4 text-[13px] font-medium text-text-muted">الحقيقة مقابل ما تقوله المنصات</div>
+              <div className="mb-4 text-[13px] font-medium text-text-muted">{tr("truthHero")}</div>
               <div className="flex flex-wrap items-end gap-8">
                 <div>
-                  <div className="mb-1 text-xs text-text-faint">تحويلات معلنة (حسب المنصات)</div>
+                  <div className="mb-1 text-xs text-text-faint">{tr("reportedByPlatforms")}</div>
                   <div className="border-b border-dashed border-text-faint pb-1 font-mono text-[38px] font-medium leading-none text-text-muted">
                     {fmt(totalRaw)}
                   </div>
                 </div>
                 <div>
-                  <div className="mb-1 text-xs text-text-faint">متحقّق منها فعلياً</div>
+                  <div className="mb-1 text-xs text-text-faint">{tr("actuallyVerified")}</div>
                   <div className="flex items-baseline gap-2 font-mono text-[38px] font-medium leading-none text-verified">
                     {fmt(totalVerified)}
-                    <span className="text-lg text-verified" title="رقم متحقق منه">✓</span>
+                    <span className="text-lg text-verified" title={tr("verifiedTooltip")}>✓</span>
                   </div>
                 </div>
               </div>
               {inflationPct > 0 && (
                 <div className="mt-5 inline-flex items-center gap-2 rounded-lg bg-gap/10 px-3 py-2 text-[13px] text-gap">
                   <Megaphone size={15} />
-                  المنصات تبالغ في التحويلات بنسبة {inflationPct}% مقارنةً بالمتحقّق منه فعلياً.
+                  {tr("inflationLine", { pct: inflationPct })}ً.
                 </div>
               )}
             </div>
@@ -308,10 +312,10 @@ export default async function GlancePage({
 
           {/* صف مؤشرات الأداء الرئيسية */}
           <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <MetricCard label="الإنفاق (آخر 30 يوم)" value={fmt(totalCost)} icon={Wallet} href="/dashboard/campaigns" />
-            <MetricCard label="تحويلات محقّقة" value={fmt(totalVerified)} color="verified" verified icon={ShieldCheck} href="/dashboard/campaigns" />
+            <MetricCard label={tr("spendLast30")} value={fmt(totalCost)} icon={Wallet} href="/dashboard/campaigns" />
+            <MetricCard label={tr("verifiedConversions")} value={fmt(totalVerified)} color="verified" verified icon={ShieldCheck} href="/dashboard/campaigns" />
             <MetricCard
-              label="تكلفة العميل الحقيقية"
+              label={tr("realCpa")}
               value={cplVerified}
               color="verified"
               verified
@@ -320,12 +324,12 @@ export default async function GlancePage({
               trend={
                 cplVerifiedComparison?.changePct != null ? (
                   <span className={`text-xs ${cplVerifiedComparison.changePct < 0 ? "text-verified" : "text-critical"}`}>
-                    {cplVerifiedComparison.changePct < 0 ? "▼" : "▲"} {Math.abs(cplVerifiedComparison.changePct)}% عن الفترة السابقة
+                    {cplVerifiedComparison.changePct < 0 ? "▼" : "▲"} {Math.abs(cplVerifiedComparison.changePct)}% {tr("vsPrevPeriod")}
                   </span>
                 ) : undefined
               }
             />
-            <MetricCard label="دقة التتبع" value={`${trackingAccuracy}%`} color="accent" icon={Activity} href="/dashboard/diagnostics" />
+            <MetricCard label={tr("trackingAccuracy")} value={`${trackingAccuracy}%`} color="accent" icon={Activity} href="/dashboard/diagnostics" />
           </div>
 
           {/* جدول الأداء حسب المصدر */}
@@ -352,7 +356,7 @@ export default async function GlancePage({
             <PlatformDonut data={sourceRows.map((r) => ({ platform: r.platform, value: r.verifiedConversions }))} />
             {trendData.length > 1 && (
               <div className="rounded-2xl card-shadow border border-border bg-surface p-6">
-                <div className="mb-3 text-[13px] text-text-muted">اتجاه آخر 14 يوماً</div>
+                <div className="mb-3 text-[13px] text-text-muted">{tr("trend14")}</div>
                 <TrendChart data={trendData} />
               </div>
             )}
@@ -363,9 +367,9 @@ export default async function GlancePage({
       {urgentActionItems.length > 0 && (
         <div className="mb-6 mt-6">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-[13px] text-text-muted">أهم القرارات المعلّقة</span>
+            <span className="text-[13px] text-text-muted">{tr("pendingDecisions")}</span>
             <a href="/dashboard/actions" className="text-xs text-accent no-underline">
-              عرض الكل ←
+              {tr("viewAllArrow")}
             </a>
           </div>
           <div className="flex flex-col gap-1">
@@ -383,9 +387,9 @@ export default async function GlancePage({
         </div>
       )}
 
-      <div className="mb-2 mt-6 text-[13px] text-text-muted">مهام اليوم</div>
+      <div className="mb-2 mt-6 text-[13px] text-text-muted">{tr("todayTasks")}</div>
       {todaysTasks.length === 0 ? (
-        <div className="py-3 text-sm text-text-faint">لا توجد مهام لليوم بعد.</div>
+        <div className="py-3 text-sm text-text-faint">{tr("noTasks")}</div>
       ) : (
         <div className="flex flex-col gap-1">
           {todaysTasks.map((task: DailyTask) => (
