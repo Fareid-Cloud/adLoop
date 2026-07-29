@@ -17,6 +17,7 @@ import { getProfitJourney, getStoreOverview } from "@/lib/ecommerce/storeIntelli
 import { getEcommerceOverview } from "@/lib/ecommerce/productPerformance";
 import { buildOpportunities } from "@/lib/ecommerce/opportunities";
 import { HelpCircle, ArrowLeft } from "lucide-react";
+import { tText, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,8 @@ interface Answer {
 
 export default async function AiInsightsPage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const tx = (item: { key: string; vars?: Record<string, string | number> }) => tText(locale, "oppText", item);
   if (!user) {
     return <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>;
   }
@@ -157,13 +160,13 @@ export default async function AiInsightsPage() {
   answers.push({
     question: "ماذا يجب أن أغيّر اليوم؟",
     answer: top
-      ? `${top.titleAr}. ${top.actionAr}`
+      ? `${tx(top.title)}. ${tx(top.action)}`
       : "لا يوجد إجراء عاجل اليوم. أرقامك ضمن المعقول، وأفضل استثمار لوقتك الآن هو توسيع ما يعمل لا إصلاح ما لا يعمل.",
     evidence: top
       ? [
           `الأثر المقدَّر: ${fmtNum(top.estimatedMonthlyProfit)} ${c} شهرياً`,
-          top.confidenceReasonAr,
-          ...opps.opportunities.slice(1, 3).map((o) => `${o.titleAr}: +${fmtNum(o.estimatedMonthlyProfit)} ${c}`),
+          tx(top.confidenceReason),
+          ...opps.opportunities.slice(1, 3).map((o) => `${tx(o.title)}: +${fmtNum(o.estimatedMonthlyProfit)} ${c}`),
         ]
       : [],
     href: "/dashboard/ecommerce/opportunities",

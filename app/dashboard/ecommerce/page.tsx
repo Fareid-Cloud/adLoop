@@ -15,7 +15,7 @@ import { buildOpportunities } from "@/lib/ecommerce/opportunities";
 import {
   Wallet, TrendingUp, Percent, ShoppingCart, Receipt, Repeat, RotateCcw, PackageX,
 } from "lucide-react";
-import { t, type Locale } from "@/lib/i18n/dictionary";
+import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +24,7 @@ export default async function EcommerceOverviewPage() {
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `store.${k}`, vars);
   const tc = (k: string, vars?: Record<string, string | number>) => t(locale, `common.${k}`, vars);
+  const tx = (item: { key: string; vars?: Record<string, string | number> }) => tText(locale, "oppText", item);
 
   if (!user) {
     return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
@@ -71,8 +72,8 @@ export default async function EcommerceOverviewPage() {
 
   const topOpps = opps.opportunities.slice(0, 3);
   const actions: RecommendedAction[] = topOpps.map((o) => ({
-    titleAr: o.titleAr,
-    reasonAr: o.reasonAr,
+    titleAr: tx(o.title),
+    reasonAr: tx(o.reason),
     impactAr: tc("estimatedImpact", { value: `${fmtNum(o.estimatedMonthlyProfit)} ${c}` }),
     href: o.actionHref,
     hrefLabelAr: tc("apply"),
@@ -218,14 +219,14 @@ export default async function EcommerceOverviewPage() {
           <div className="mb-2 grid gap-3 lg:grid-cols-3">
             {topOpps.map((o) => (
               <div key={o.id} className="card-shadow rounded-2xl border border-border bg-surface p-4">
-                <div className="text-[13px] font-medium text-text-primary">{o.titleAr}</div>
+                <div className="text-[13px] font-medium text-text-primary">{tx(o.title)}</div>
                 <div className="mt-2 flex items-baseline gap-1.5">
                   <span className="text-[22px] font-semibold tabular-nums text-verified">
                     +{fmtNum(o.estimatedMonthlyProfit)}
                   </span>
                   <span className="text-[12px] text-text-muted">{c} · {tr("perMonth")}</span>
                 </div>
-                <p className="mt-2 text-[12px] leading-relaxed text-text-muted">{o.reasonAr}</p>
+                <p className="mt-2 text-[12px] leading-relaxed text-text-muted">{tx(o.reason)}</p>
               </div>
             ))}
           </div>

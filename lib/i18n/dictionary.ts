@@ -329,6 +329,57 @@ export const dictionary = {
       diffMedium: "متوسط",
       diffHard: "يحتاج جهداً",
     },
+    // ==== نصوص محرّك الفرص - يُرجع المحرّك مفاتيح، وتُصاغ الجملة هنا ====
+    oppText: {
+      sampleBased: "مبنيّة على {units} وحدة مباعة فعلاً خلال {days} يوماً.",
+      raisePrice: {
+        title: "ارفع سعر «{name}»",
+        reason: "يخسر {perUnit} في كل وحدة بعد كل التكاليف، وباع {units} وحدة خلال {days} يوماً — أي نزيف {monthly} شهرياً.",
+        actionDoable: "ارفع السعر {pct}% على الأقل (من {from} إلى {to}) للوصول إلى التعادل.",
+        actionTooHigh: "الرفع المطلوب ({pct}%) كبير على السوق غالباً — الأجدى إيقاف إعلانه أو خفض تكلفته.",
+      },
+      scale: {
+        title: "وسّع «{name}»",
+        reason: "ربح {profit} بهامش {margin}% ومعدّل إرجاع {returns}% عبر {units} وحدة — أداء مُثبَت لا صدفة.",
+        action: "زِد ميزانية إعلاناته ٢٠% كحدّ أقصى، وانتظر ٤ أيام قبل أي زيادة تالية.",
+        confidence: "الأداء الحالي مؤكَّد، لكن استمراره عند ميزانية أعلى ليس مضموناً — الجمهور قد يتشبّع. التقدير متحفّظ عمداً.",
+      },
+      pauseOos: {
+        title: "أوقف إعلانات {count} منتج نفد رصيدها",
+        reason: "{names} رصيدها صفر، وأي إنفاق إعلاني عليها الآن بلا مقابل ممكن.",
+        action: "أوقف إعلاناتها حتى يعود الرصيد، أو فعّل قاعدة المخزون لتتولّى ذلك تلقائياً.",
+        confidence: "الهدر مقدَّر بنصيب هذه المنتجات من الكتالوج، لأن الإنفاق الإعلاني غير موزَّع على مستوى المنتج.",
+      },
+      restock: {
+        title: "أعد طلب «{name}»",
+        reason: "يبيع {velocity} وحدة يومياً ورصيده يكفي {days} يوماً فقط. النفاد يعني توقّف ربح مؤكَّد.",
+        action: "اطلب ما يكفي {units} وحدة على الأقل (تغطية ٤٥ يوماً).",
+        confidence: "معدّل بيع محسوب من مبيعات فعلية خلال {days} يوماً.",
+      },
+      bundle: {
+        title: "حرّر {amount} من مخزون متوقّف",
+        reason: "{count} منتج لم يُبَع منه شيء منذ ٩٠ يوماً أو أكثر، ورأس مالك مجمَّد فيه ({pct}% من قيمة مخزونك).",
+        action: "اربطها في باقة مع منتجك الأسرع بيعاً بخصم محدود. استرداد جزء أفضل من تجميد الكلّ.",
+        confidence: "التقدير يفترض استرداد نصف رأس المال المجمَّد — نسبة النجاح تعتمد على العرض نفسه ولا يمكن حسابها مسبقاً.",
+      },
+      winBack: {
+        title: "استرجع {count} عميلاً توقّفوا عن الشراء",
+        reason: "اشتروا أكثر من مرة ثم توقّفوا، ومتوسط قيمة العميل لديك {ltv}. استرجاعهم أرخص بكثير من جلب عملاء جدد بالكامل.",
+        action: "حملة موجَّهة لهم بعرض محدود المدة، أو رسالة متابعة شخصية من المتجر.",
+        confidence: "التقدير يفترض استجابة ١٥% — معدّل شائع لحملات الاسترجاع، لكنه لم يُقَس على متجرك بعد.",
+      },
+      reduceReturns: {
+        title: "اخفض معدّل المرتجعات",
+        reason: "المرتجعات تلتهم {pct}% من إيرادك — وهي أغلى أنواع الخسارة لأنك دفعت الإعلان والشحن مرّتين ولم تبع شيئاً.",
+        action: "ابدأ بالمنتجات الأعلى إرجاعاً: راجع دقّة الوصف والمقاسات وجودة الصور. أغلب المرتجعات سببها توقّع مختلف لا عيب.",
+        confidence: "التقدير يفترض خفض الثلث — هدف واقعي لتحسينات الوصف، وغير مضمون.",
+      },
+      blind: {
+        noStore: "لا يوجد متجر مربوط — بلا طلبات حقيقية لا يمكن حساب ربح ولا مرتجعات ولا عملاء.",
+        untracked: "{count} منتج بلا تتبّع مخزون — لا يمكن رصد نفادها ولا رأس المال المجمَّد فيها.",
+        noCustomers: "لا توجد بيانات عملاء بعد — فرص الاسترجاع والبيع المتكرّر غير مرئية.",
+      },
+    },
   },
   en: {
     auth: {
@@ -652,6 +703,57 @@ export const dictionary = {
       diffMedium: "Moderate",
       diffHard: "Takes effort",
     },
+    // ==== Opportunity engine copy - the engine returns keys, phrasing lives here ====
+    oppText: {
+      sampleBased: "Based on {units} units actually sold over {days} days.",
+      raisePrice: {
+        title: "Raise the price of {name}",
+        reason: "It loses {perUnit} on every unit after all costs, and sold {units} units in {days} days — bleeding {monthly} a month.",
+        actionDoable: "Raise the price by at least {pct}% (from {from} to {to}) to reach break-even.",
+        actionTooHigh: "The increase needed ({pct}%) is likely too steep for the market — pausing its ads or cutting its cost is the better move.",
+      },
+      scale: {
+        title: "Scale {name}",
+        reason: "Made {profit} at a {margin}% margin with a {returns}% return rate across {units} units — proven, not luck.",
+        action: "Raise its ad budget by 20% at most, then wait 4 days before increasing again.",
+        confidence: "Current performance is solid, but holding at a higher budget is not guaranteed — the audience may saturate. The estimate is deliberately conservative.",
+      },
+      pauseOos: {
+        title: "Pause ads for {count} out-of-stock products",
+        reason: "{names} are at zero stock, so any ad spend on them right now buys nothing you can deliver.",
+        action: "Pause their ads until stock returns, or turn on the inventory rule to handle it automatically.",
+        confidence: "Waste is estimated from these products' share of the catalogue, because ad spend is not broken down per product.",
+      },
+      restock: {
+        title: "Reorder {name}",
+        reason: "It sells {velocity} units a day and stock covers only {days} more days. Running out means proven profit simply stops.",
+        action: "Order at least {units} units (45 days of cover).",
+        confidence: "Sales rate calculated from actual sales over {days} days.",
+      },
+      bundle: {
+        title: "Free up {amount} of stalled stock",
+        reason: "{count} products have not sold in 90 days or more, freezing your capital ({pct}% of your stock value).",
+        action: "Bundle them with your fastest seller at a limited discount. Recovering part beats freezing all of it.",
+        confidence: "The estimate assumes recovering half the frozen capital — success depends on the offer itself and cannot be calculated in advance.",
+      },
+      winBack: {
+        title: "Win back {count} customers who stopped buying",
+        reason: "They bought more than once and then stopped, and your average customer is worth {ltv}. Winning them back costs far less than acquiring new ones.",
+        action: "A targeted campaign with a time-limited offer, or a personal follow-up from the store.",
+        confidence: "The estimate assumes a 15% response — common for win-back campaigns, but not yet measured on your store.",
+      },
+      reduceReturns: {
+        title: "Bring your return rate down",
+        reason: "Returns consume {pct}% of your revenue — the most expensive loss there is, because you paid for the ad and shipped twice and sold nothing.",
+        action: "Start with your most-returned products: check description accuracy, sizing, and photo quality. Most returns come from a mismatched expectation, not a defect.",
+        confidence: "The estimate assumes a one-third reduction — realistic for description fixes, and not guaranteed.",
+      },
+      blind: {
+        noStore: "No store connected — without real orders there is no profit, no returns, and no customers to measure.",
+        untracked: "{count} products have no stock tracking — their stockouts and frozen capital are invisible to us.",
+        noCustomers: "No customer data yet — win-back and repeat-purchase opportunities are invisible.",
+      },
+    },
   },
 } as const;
 
@@ -689,4 +791,20 @@ export function t(
 export function detectLocale(acceptLanguageHeader: string | null): Locale {
   if (!acceptLanguageHeader) return "ar";
   return acceptLanguageHeader.toLowerCase().startsWith("en") ? "en" : "ar";
+}
+
+/**
+ * يصوغ نصاً أرجعه محرّك تحليلي على شكل مفتاح + متغيّرات.
+ *
+ * المفتاح الخاص "raw" يمرّر النص كما هو - يلزم للحالات التي يكون فيها
+ * النص قادماً من مصدر لا يملك مفتاحاً (رسالة خطأ من منصّة خارجية مثلاً).
+ * وجوده صريح أفضل من تسريب نصوص جاهزة عبر بقية المسار بصمت.
+ */
+export function tText(
+  locale: Locale,
+  prefix: string,
+  item: { key: string; vars?: Record<string, string | number> }
+): string {
+  if (item.key === "raw") return String(item.vars?.text ?? "");
+  return t(locale, `${prefix}.${item.key}`, item.vars);
 }

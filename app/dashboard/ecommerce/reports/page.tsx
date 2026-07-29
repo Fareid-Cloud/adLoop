@@ -14,6 +14,7 @@ import { getProfitJourney, getStoreOverview, getCustomerAnalytics } from "@/lib/
 import { getEcommerceOverview } from "@/lib/ecommerce/productPerformance";
 import { buildOpportunities } from "@/lib/ecommerce/opportunities";
 import { PrintButton } from "./PrintButton";
+import { tText, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,8 @@ export default async function ReportsPage({
   const windowDays = [7, 30, 90].includes(Number(sp.days)) ? Number(sp.days) : 30;
 
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const tx = (item: { key: string; vars?: Record<string, string | number> }) => tText(locale, "oppText", item);
   if (!user) {
     return <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>;
   }
@@ -183,7 +186,7 @@ export default async function ReportsPage({
             <ol className="flex list-inside list-decimal flex-col gap-2">
               {opps.opportunities.slice(0, 5).map((o) => (
                 <li key={o.id} className="text-[12.5px] leading-relaxed text-text-muted">
-                  <span className="font-medium text-text-primary">{o.titleAr}</span> — {o.actionAr}{" "}
+                  <span className="font-medium text-text-primary">{tx(o.title)}</span> — {tx(o.action)}{" "}
                   <span className="font-semibold text-verified">
                     (+{fmtNum(o.estimatedMonthlyProfit)} {c} شهرياً)
                   </span>

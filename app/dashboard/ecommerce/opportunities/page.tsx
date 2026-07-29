@@ -18,7 +18,7 @@ import {
   TrendingUp, Target, Layers, ArrowLeft, ArrowUpCircle, ArrowDownCircle,
   PauseCircle, PackagePlus, Boxes, Users, RotateCcw, Wallet,
 } from "lucide-react";
-import { t, type Locale } from "@/lib/i18n/dictionary";
+import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +50,7 @@ export default async function OpportunitiesPage() {
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `opportunities.${k}`, v);
   const tc = (k: string, v?: Record<string, string | number>) => t(locale, `common.${k}`, v);
+  const tx = (item: { key: string; vars?: Record<string, string | number> }) => tText(locale, "oppText", item);
 
   if (!user) {
     return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
@@ -107,7 +108,7 @@ export default async function OpportunitiesPage() {
         </div>
       )}
 
-      <LimitsNote items={result.blindSpotsAr} />
+      <LimitsNote items={result.blindSpots.map(tx)} />
 
       {result.opportunities.length === 0 ? (
         <DataGate
@@ -136,12 +137,12 @@ export default async function OpportunitiesPage() {
                       </span>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-[14px] font-semibold text-text-primary">{o.titleAr}</h3>
+                          <h3 className="text-[14px] font-semibold text-text-primary">{tx(o.title)}</h3>
                           <span className="rounded-md bg-surface-raised px-1.5 py-0.5 text-[11px] text-text-muted">
                             {meta.labelAr}
                           </span>
                         </div>
-                        <p className="mt-1.5 text-[12.5px] leading-relaxed text-text-muted">{o.reasonAr}</p>
+                        <p className="mt-1.5 text-[12.5px] leading-relaxed text-text-muted">{tx(o.reason)}</p>
                       </div>
                     </div>
 
@@ -156,14 +157,14 @@ export default async function OpportunitiesPage() {
                   {/* الإجراء المحدَّد - لا نصيحة عامة */}
                   <div className="mt-3 rounded-xl border border-border bg-surface-2/50 p-3">
                     <div className="mb-1 text-[11.5px] font-medium text-text-faint">{tr("whatToDo")}</div>
-                    <p className="text-[12.5px] leading-relaxed text-text-primary">{o.actionAr}</p>
+                    <p className="text-[12.5px] leading-relaxed text-text-primary">{tx(o.action)}</p>
                   </div>
 
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className={`rounded-md px-2 py-0.5 text-[11.5px] font-medium ${CONFIDENCE_TONE[o.confidence]}`}
-                        title={o.confidenceReasonAr}
+                        title={tx(o.confidenceReason)}
                       >
                         {tr(CONFIDENCE_KEY[o.confidence])}
                       </span>
@@ -190,7 +191,7 @@ export default async function OpportunitiesPage() {
 
                   {/* سبب درجة الثقة معروض دائماً - درجة بلا تفسير لا قيمة لها */}
                   <p className="mt-2 text-[11.5px] leading-relaxed text-text-faint">
-                    {o.confidenceReasonAr}
+                    {tx(o.confidenceReason)}
                   </p>
                 </article>
               );

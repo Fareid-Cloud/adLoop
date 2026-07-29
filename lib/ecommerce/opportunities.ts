@@ -33,19 +33,30 @@ export type OpportunityType =
 export type Confidence = "HIGH" | "MEDIUM" | "LOW";
 export type Difficulty = "EASY" | "MEDIUM" | "HARD";
 
+/**
+ * نص قابل للترجمة: مفتاح في القاموس مع متغيّراته، لا جملة مكتملة بلغة
+ * واحدة. المحرّك يحسب الأرقام ويقرّر المعنى، والواجهة تصوغ الجملة باللغة
+ * المطلوبة. قبل ذلك كان المحرّك يُرجع عربية جاهزة، فتبقى الجُمل التحليلية
+ * عربية حتى بعد تبديل الواجهة كاملةً إلى الإنجليزية.
+ */
+export interface LocalizedText {
+  key: string;
+  vars?: Record<string, string | number>;
+}
+
 export interface Opportunity {
   id: string;
   type: OpportunityType;
-  titleAr: string;
+  title: LocalizedText;
   /** لماذا هذه فرصة - السبب بالأرقام لا بالوصف */
-  reasonAr: string;
+  reason: LocalizedText;
   /** ماذا يفعل المستخدم بالضبط */
-  actionAr: string;
+  action: LocalizedText;
   /** الربح الشهري المقدَّر من التنفيذ */
   estimatedMonthlyProfit: number;
   confidence: Confidence;
   /** ما يجعل الثقة بهذا المستوى - لا درجة بلا تفسير */
-  confidenceReasonAr: string;
+  confidenceReason: LocalizedText;
   difficulty: Difficulty;
   /** المنتج/العميل المرتبط، إن وُجد */
   entityId?: string;
@@ -62,7 +73,7 @@ export interface OpportunitiesResult {
   currency: string;
   hasData: boolean;
   /** ما يمنعنا من رؤية فرص أكثر - نقول للمستخدم كيف يوسّع الرؤية */
-  blindSpotsAr: string[];
+  blindSpots: LocalizedText[];
 }
 
 const CONFIDENCE_RANK: Record<Confidence, number> = { HIGH: 3, MEDIUM: 2, LOW: 1 };
@@ -81,7 +92,7 @@ export async function buildOpportunities(
 
   const currency = workspace?.currency ?? "SAR";
   const opportunities: Opportunity[] = [];
-  const blindSpots: string[] = [];
+  const blindSpots: LocalizedText[] = [];
   const monthlyFactor = 30 / windowDays;
 
   // ==== ١) منتجات تخسر: رفع السعر أو إيقاف الإعلان ====
@@ -99,17 +110,30 @@ export async function buildOpportunities(
     opportunities.push({
       id: `raise-${p.id}`,
       type: "RAISE_PRICE",
-      titleAr: `ارفع سعر «${p.name}»`,
-      reasonAr:
-        `يخسر ${fmt(Math.abs(p.profitPerUnit))} ${currency} في كل وحدة بعد كل التكاليف، ` +
-        `وباع ${p.unitsSold} وحدة خلال ${windowDays} يوماً — أي نزيف ${fmt(monthlyLoss)} ${currency} شهرياً.`,
-      actionAr:
+      title: { key: "raisePrice.title", vars: { name: p.name } },
+      reason: {
+        key: "raisePrice.reason",
+        vars: {
+          perUnit: `${fmt(Math.abs(p.profitPerUnit))} ${currency}`,
+          units: p.unitsSold,
+          days: windowDays,
+          monthly: `${fmt(monthlyLoss)} ${currency}`,
+        },
+      },
+      action:
         increasePct <= 25
-          ? `ارفع السعر ${Math.ceil(increasePct)}% على الأقل (من ${fmt(p.currentPrice)} إلى ${fmt(p.currentPrice + neededIncrease)} ${currency}) للوصول إلى التعادل.`
-          : `الرفع المطلوب (${Math.ceil(increasePct)}%) كبير على السوق غالباً — الأجدى إيقاف إعلانه أو خفض تكلفته.`,
+          ? {
+              key: "raisePrice.actionDoable",
+              vars: {
+                pct: Math.ceil(increasePct),
+                from: fmt(p.currentPrice),
+                to: `${fmt(p.currentPrice + neededIncrease)} ${currency}`,
+              },
+            }
+          : { key: "raisePrice.actionTooHigh", vars: { pct: Math.ceil(increasePct) } },
       estimatedMonthlyProfit: Math.round(monthlyLoss),
       confidence: p.confidence === "RELIABLE" ? "HIGH" : p.confidence === "PRELIMINARY" ? "MEDIUM" : "LOW",
-      confidenceReasonAr: `مبنيّة على ${p.unitsSold} وحدة مباعة فعلاً خلال ${windowDays} يوماً.`,
+      confidenceReason: { key: "sampleBased", vars: { units: p.unitsSold, days: windowDays } },
       difficulty: "EASY",
       entityId: p.id,
       entityName: p.name,
@@ -133,15 +157,20 @@ export async function buildOpportunities(
     opportunities.push({
       id: `scale-${p.id}`,
       type: "INCREASE_BUDGET",
-      titleAr: `وسّع «${p.name}»`,
-      reasonAr:
-        `ربح ${fmt(p.totalProfit)} ${currency} بهامش ${p.marginPct}% ومعدّل إرجاع ${p.returnRatePct}% ` +
-        `عبر ${p.unitsSold} وحدة — أداء مُثبَت لا صدفة.`,
-      actionAr: "زِد ميزانية إعلاناته ٢٠% كحدّ أقصى، وانتظر ٤ أيام قبل أي زيادة تالية.",
+      title: { key: "scale.title", vars: { name: p.name } },
+      reason: {
+        key: "scale.reason",
+        vars: {
+          profit: `${fmt(p.totalProfit)} ${currency}`,
+          margin: p.marginPct,
+          returns: p.returnRatePct,
+          units: p.unitsSold,
+        },
+      },
+      action: { key: "scale.action" },
       estimatedMonthlyProfit: Math.round(upside),
       confidence: "MEDIUM",
-      confidenceReasonAr:
-        "الأداء الحالي مؤكَّد، لكن استمراره عند ميزانية أعلى ليس مضموناً — الجمهور قد يتشبّع. التقدير متحفّظ عمداً.",
+      confidenceReason: { key: "scale.confidence" },
       difficulty: "EASY",
       entityId: p.id,
       entityName: p.name,
@@ -163,16 +192,18 @@ export async function buildOpportunities(
       opportunities.push({
         id: "pause-oos",
         type: "PAUSE_ADS",
-        titleAr: `أوقف إعلانات ${outOfStock.items.length} منتج نفد رصيدها`,
-        reasonAr:
-          `${outOfStock.items.map((i) => i.name).slice(0, 3).join("، ")}` +
-          `${outOfStock.items.length > 3 ? ` و${outOfStock.items.length - 3} غيرها` : ""} رصيدها صفر، ` +
-          `وأي إنفاق إعلاني عليها الآن بلا مقابل ممكن.`,
-        actionAr: "أوقف إعلاناتها حتى يعود الرصيد، أو فعّل قاعدة المخزون لتتولّى ذلك تلقائياً.",
+        title: { key: "pauseOos.title", vars: { count: outOfStock.items.length } },
+        reason: {
+          key: "pauseOos.reason",
+          vars: {
+            names: outOfStock.items.map((i) => i.name).slice(0, 3).join("، "),
+            more: outOfStock.items.length > 3 ? outOfStock.items.length - 3 : 0,
+          },
+        },
+        action: { key: "pauseOos.action" },
         estimatedMonthlyProfit: Math.round(monthlyWaste),
         confidence: "MEDIUM",
-        confidenceReasonAr:
-          "الهدر مقدَّر بنصيب هذه المنتجات من الكتالوج، لأن الإنفاق الإعلاني غير موزَّع على مستوى المنتج.",
+        confidenceReason: { key: "pauseOos.confidence" },
         difficulty: "EASY",
         actionHref: "/dashboard/automation",
         oneClick: false,
@@ -192,14 +223,12 @@ export async function buildOpportunities(
       opportunities.push({
         id: `restock-${top.id}`,
         type: "RESTOCK",
-        titleAr: `أعد طلب «${top.name}»`,
-        reasonAr:
-          `يبيع ${top.velocity} وحدة يومياً ورصيده يكفي ${top.daysLeft} يوماً فقط. ` +
-          `النفاد يعني توقّف ربح مؤكَّد.`,
-        actionAr: `اطلب ما يكفي ${Math.ceil(top.velocity * 45)} وحدة على الأقل (تغطية ٤٥ يوماً).`,
+        title: { key: "restock.title", vars: { name: top.name } },
+        reason: { key: "restock.reason", vars: { velocity: top.velocity, days: top.daysLeft ?? 0 } },
+        action: { key: "restock.action", vars: { units: Math.ceil(top.velocity * 45) } },
         estimatedMonthlyProfit: Math.round(lost),
         confidence: "HIGH",
-        confidenceReasonAr: `معدّل بيع محسوب من مبيعات فعلية خلال ${windowDays} يوماً.`,
+        confidenceReason: { key: "restock.confidence", vars: { days: windowDays } },
         difficulty: "MEDIUM",
         entityId: top.id,
         entityName: top.name,
@@ -215,16 +244,13 @@ export async function buildOpportunities(
     opportunities.push({
       id: "bundle-dead",
       type: "BUNDLE",
-      titleAr: `حرّر ${fmt(dead.capitalImpact)} ${currency} من مخزون متوقّف`,
-      reasonAr:
-        `${dead.items.length} منتج لم يُبَع منه شيء منذ ٩٠ يوماً أو أكثر، ورأس مالك مجمَّد فيه ` +
-        `(${inventory.deadCapitalPct}% من قيمة مخزونك).`,
-      actionAr: "اربطها في باقة مع منتجك الأسرع بيعاً بخصم محدود. استرداد جزء أفضل من تجميد الكلّ.",
+      title: { key: "bundle.title", vars: { amount: `${fmt(dead.capitalImpact)} ${currency}` } },
+      reason: { key: "bundle.reason", vars: { count: dead.items.length, pct: inventory.deadCapitalPct } },
+      action: { key: "bundle.action" },
       // افتراض متحفّظ صريح: استرداد نصف رأس المال المجمّد
       estimatedMonthlyProfit: Math.round(dead.capitalImpact * 0.5),
       confidence: "LOW",
-      confidenceReasonAr:
-        "التقدير يفترض استرداد نصف رأس المال المجمَّد — نسبة النجاح تعتمد على العرض نفسه ولا يمكن حسابها مسبقاً.",
+      confidenceReason: { key: "bundle.confidence" },
       difficulty: "MEDIUM",
       actionHref: "/dashboard/ecommerce/inventory",
       oneClick: false,
@@ -240,15 +266,12 @@ export async function buildOpportunities(
       opportunities.push({
         id: "winback",
         type: "WIN_BACK",
-        titleAr: `استرجع ${atRisk.count} عميلاً توقّفوا عن الشراء`,
-        reasonAr:
-          `اشتروا أكثر من مرة ثم توقّفوا، ومتوسط قيمة العميل لديك ${fmt(customers.avgLtv)} ${currency}. ` +
-          `استرجاعهم أرخص بكثير من جلب عملاء جدد بالكامل.`,
-        actionAr: "حملة موجَّهة لهم بعرض محدود المدة، أو رسالة متابعة شخصية من المتجر.",
+        title: { key: "winBack.title", vars: { count: atRisk.count } },
+        reason: { key: "winBack.reason", vars: { ltv: `${fmt(customers.avgLtv)} ${currency}` } },
+        action: { key: "winBack.action" },
         estimatedMonthlyProfit: Math.round(recovered),
         confidence: "LOW",
-        confidenceReasonAr:
-          "التقدير يفترض استجابة ١٥% — معدّل شائع لحملات الاسترجاع، لكنه لم يُقَس على متجرك بعد.",
+        confidenceReason: { key: "winBack.confidence" },
         difficulty: "MEDIUM",
         actionHref: "/dashboard/ecommerce/customers",
         oneClick: false,
@@ -264,15 +287,12 @@ export async function buildOpportunities(
     opportunities.push({
       id: "reduce-returns",
       type: "REDUCE_RETURNS",
-      titleAr: "اخفض معدّل المرتجعات",
-      reasonAr:
-        `المرتجعات تلتهم ${returnsStage.pctOfRevenue}% من إيرادك — وهي أغلى أنواع الخسارة ` +
-        `لأنك دفعت الإعلان والشحن مرّتين ولم تبع شيئاً.`,
-      actionAr:
-        "ابدأ بالمنتجات الأعلى إرجاعاً: راجع دقّة الوصف والمقاسات وجودة الصور. أغلب المرتجعات سببها توقّع مختلف لا عيب.",
+      title: { key: "reduceReturns.title" },
+      reason: { key: "reduceReturns.reason", vars: { pct: returnsStage.pctOfRevenue } },
+      action: { key: "reduceReturns.action" },
       estimatedMonthlyProfit: Math.round(saving),
       confidence: "MEDIUM",
-      confidenceReasonAr: "التقدير يفترض خفض الثلث — هدف واقعي لتحسينات الوصف، وغير مضمون.",
+      confidenceReason: { key: "reduceReturns.confidence" },
       difficulty: "HARD",
       actionHref: "/dashboard/ecommerce/products",
       oneClick: false,
@@ -281,17 +301,16 @@ export async function buildOpportunities(
 
   // ==== نقاط عمياء - ما يمنعنا من رؤية فرص أكثر ====
   if (!overview.hasStoreConnection) {
-    blindSpots.push("لا يوجد متجر مربوط — بلا طلبات حقيقية لا يمكن حساب ربح ولا مرتجعات ولا عملاء.");
+    blindSpots.push({ key: "blind.noStore" });
   }
   if (inventory.untrackedProducts > 0) {
-    blindSpots.push(
-      `${inventory.untrackedProducts} منتج بلا تتبّع مخزون — لا يمكن رصد نفادها ولا رأس المال المجمَّد فيها.`
-    );
+    blindSpots.push({ key: "blind.untracked", vars: { count: inventory.untrackedProducts } });
   }
   if (!customers.hasData) {
-    blindSpots.push("لا توجد بيانات عملاء بعد — فرص الاسترجاع والبيع المتكرّر غير مرئية.");
+    blindSpots.push({ key: "blind.noCustomers" });
   }
-  if (journey.missingCostsAr.length > 0) blindSpots.push(...journey.missingCostsAr);
+  // تكاليف غير مقروءة: نص جاهز من محرّك الربح، يُمرَّر بمفتاح شفّاف
+  for (const m of journey.missingCostsAr) blindSpots.push({ key: "raw", vars: { text: m } });
 
   // الترتيب: الأثر المالي أولاً، والثقة تفصل بين المتقاربين. عرض فرصة
   // ضخمة منخفضة الثقة فوق فرصة مؤكَّدة أصغر يُفقد الثقة في القائمة كلها.
@@ -306,7 +325,7 @@ export async function buildOpportunities(
     totalPotentialProfit: opportunities.reduce((s, o) => s + o.estimatedMonthlyProfit, 0),
     currency,
     hasData: opportunities.length > 0,
-    blindSpotsAr: blindSpots,
+    blindSpots,
   };
 }
 
