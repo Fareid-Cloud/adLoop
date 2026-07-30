@@ -31,6 +31,8 @@ import { Megaphone, ShieldCheck, Wallet, Target, Activity } from "lucide-react";
 import { TrackingAccuracyGauge } from "@/app/components/ui/TrackingAccuracyGauge";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { ReportedVsActualBars } from "@/app/components/ui/ReportedVsActualBars";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams, toDateBounds, daysBetween } from "@/lib/dateRange";
 
 const AD_PLATFORMS = ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS", "SNAPCHAT_ADS"];
 
@@ -41,11 +43,15 @@ function fmt(n: number): string {
 export default async function GlancePage({
   searchParams,
 }: {
-  searchParams: Promise<{ platform?: string; days?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
-  const platformFilter = sp.platform && AD_PLATFORMS.includes(sp.platform) ? sp.platform : "";
-  const days = [7, 30, 90].includes(Number(sp.days)) ? Number(sp.days) : 30;
+  const platformParam = Array.isArray(sp.platform) ? sp.platform[0] : sp.platform;
+  const platformFilter = platformParam && AD_PLATFORMS.includes(platformParam) ? platformParam : "";
+  // الفترة صارت اختياراً حراً بدل ثلاثة أزرار ثابتة (٧/٣٠/٩٠)
+  const period = periodFromParams(sp);
+  const bounds = toDateBounds(period.range);
+  const days = daysBetween(period.range.from, period.range.to);
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `home.${k}`, v);
@@ -78,11 +84,9 @@ export default async function GlancePage({
 
   if (!workspace) {
     const { CreateWorkspaceForm } = await import("./CreateWorkspaceForm");
-    return <CreateWorkspaceForm />;
+    return <CreateWorkspaceForm locale={locale} />;
   }
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const fourteenDaysAgo = new Date();
   fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
   const sixtyDaysAgo = new Date();
@@ -91,17 +95,17 @@ export default async function GlancePage({
   const [totalsAgg, byPlatform, byPlatformPrev, dailySnapshots, todaysTasks, urgentActionItems, valueConfig, previousPeriodAgg] =
     await Promise.all([
       prisma.metricSnapshot.aggregate({
-        where: { workspaceId: workspace.id, date: { gte: thirtyDaysAgo } },
+        where: { workspaceId: workspace.id, date: bounds },
         _sum: { clicks: true, cost: true, rawConversions: true, verifiedConversions: true },
       }),
       prisma.metricSnapshot.groupBy({
         by: ["platform"],
-        where: { workspaceId: workspace.id, date: { gte: thirtyDaysAgo } },
+        where: { workspaceId: workspace.id, date: bounds },
         _sum: { clicks: true, verifiedConversions: true, cost: true, rawConversions: true, impressions: true, revenue: true },
       }),
       prisma.metricSnapshot.groupBy({
         by: ["platform"],
-        where: { workspaceId: workspace.id, date: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
+        where: { workspaceId: workspace.id, date: { gte: sixtyDaysAgo, lt: bounds.gte } },
         _sum: { verifiedConversions: true, cost: true, revenue: true },
       }),
       prisma.metricSnapshot.findMany({
@@ -125,7 +129,7 @@ export default async function GlancePage({
       }),
       prisma.conversionValueConfig.findUnique({ where: { workspaceId: workspace.id } }),
       prisma.metricSnapshot.aggregate({
-        where: { workspaceId: workspace.id, date: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
+        where: { workspaceId: workspace.id, date: { gte: sixtyDaysAgo, lt: bounds.gte } },
         _sum: { cost: true, rawConversions: true, verifiedConversions: true },
       }),
     ]);
@@ -245,6 +249,7 @@ export default async function GlancePage({
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">{tr("greeting", { name: firstName })}</h1>
+        <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <div className="inline-flex items-center gap-2.5 rounded-full card-shadow border border-border bg-surface py-1.5 pe-4 ps-1.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-raised font-mono text-[11px] font-semibold text-text-muted">
             {health.overallScore || "—"}
@@ -271,7 +276,7 @@ export default async function GlancePage({
       {/* ربط المنصات - دائماً في المقدمة لو فيه منصة ناقصة، بلوجوها وزر مباشر */}
       <ConnectPlatforms states={connectStates} onlyUnconnected={hasAnyData} />
 
-      {hasAnyData && <PlatformSwitcher platform={platformFilter} days={days} locale="ar" />}
+      {hasAnyData && <PlatformSwitcher platform={platformFilter} days={days} locale={locale} />}
 
       {!hasAnyData ? null : (
         <>
@@ -407,7 +412,7 @@ export default async function GlancePage({
 
       {hasAnyData && (
         <div className="mt-6">
-          <MetricsExplorer workspaceId={workspace.id} />
+          <MetricsExplorer workspaceId={workspace.id} locale={locale} />
         </div>
       )}
     </div>

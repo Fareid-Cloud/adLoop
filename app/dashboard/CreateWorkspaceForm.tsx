@@ -1,31 +1,33 @@
 // app/dashboard/CreateWorkspaceForm.tsx
 //
-// أول حاجة أي مستخدم جديد هيشوفها - من غيرها مفيش أي طريقة يبدأ بيها.
-// بتسأل أيضاً "بتدير كام عميل؟" مرة واحدة بس (على مستوى الحساب، مش لكل
-// Workspace) - بتتحفظ في الملف الشخصي، ومفيدة لتخصيص الافتراضيات لاحقاً.
+// أوّل ما يراه أي مستخدم جديد - بدونها لا سبيل للبدء أصلاً. تسأل أيضاً
+// "كم عميلاً تدير؟" مرّة واحدة فقط (على مستوى الحساب لا لكل مساحة عمل)
+// - تُحفظ في الملف الشخصي، وتفيد في تخصيص الافتراضيات لاحقاً.
 
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const VERTICALS = [
-  { value: "ecommerce", label: "تجارة إلكترونية" },
-  { value: "recruitment", label: "توظيف" },
-  { value: "clinic", label: "عيادة / خدمات طبية" },
-  { value: "real_estate", label: "عقارات" },
-  { value: "b2b", label: "B2B / خدمات احترافية" },
+  { value: "ecommerce", key: "vEcommerce" },
+  { value: "recruitment", key: "vRecruitment" },
+  { value: "clinic", key: "vClinic" },
+  { value: "real_estate", key: "vRealEstate" },
+  { value: "b2b", key: "vB2b" },
 ];
 
 const BUSINESS_SCALES = [
-  { value: "solo", label: "بيزنس شخصي (عميل واحد بس)" },
-  { value: "1_5", label: "1 - 5 عملاء" },
-  { value: "5_20", label: "5 - 20 عميل" },
-  { value: "20_50", label: "20 - 50 عميل" },
-  { value: "50_plus", label: "أكتر من 50 عميل" },
+  { value: "solo", key: "sSolo" },
+  { value: "1_5", key: "s1_5" },
+  { value: "5_20", key: "s5_20" },
+  { value: "20_50", key: "s20_50" },
+  { value: "50_plus", key: "s50_plus" },
 ];
 
-export function CreateWorkspaceForm() {
+export function CreateWorkspaceForm({ locale = "ar" }: { locale?: Locale }) {
+  const tr = (k: string) => t(locale, `newWorkspace.${k}`);
   const router = useRouter();
   const [name, setName] = useState("");
   const [vertical, setVertical] = useState("");
@@ -44,8 +46,8 @@ export function CreateWorkspaceForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, industryVertical: vertical || null }),
       }),
-      // بيتحفظ مرة واحدة بس على مستوى الحساب - مش هيتسأل تاني مع أي
-      // Workspace جديد يتعمل بعد كده
+      // يُحفظ مرّة واحدة على مستوى الحساب - لا يُسأل عنه مجدّداً مع أي
+      // مساحة عمل جديدة تُنشأ بعد ذلك
       businessScale
         ? fetch("/api/user/profile", {
             method: "PATCH",
@@ -59,25 +61,24 @@ export function CreateWorkspaceForm() {
 
     if (!workspaceRes.ok) {
       const data = await workspaceRes.json();
-      setError(data.error ?? "حدث خطأ، حاول مرة أخرى");
+      setError(data.error ?? tr("genericError"));
       return;
     }
 
-    router.refresh(); // يعيد تحميل الصفحة كـ Server Component عشان يجيب الـ Workspace الجديد
+    router.refresh(); // يعيد تحميل الصفحة كمكوّن خادم كي يجلب مساحة العمل الجديدة
   }
 
   return (
     <div className="mx-auto mt-20 max-w-md rounded-2xl bg-surface p-7">
-      <h1 className="mb-1.5 text-xl font-semibold text-text-primary">ابدأ بإنشاء مساحة عمل</h1>
+      <h1 className="mb-1.5 text-xl font-semibold text-text-primary">{tr("title")}</h1>
       <p className="mb-5 text-sm text-text-muted">
-        تمثّل مساحة العمل عميلاً أو مشروعاً واحداً (مثل «adLoop»)، ويمكنك إنشاء
-        أكثر من واحدة لاحقاً.
+        {tr("intro")}
       </p>
 
       <form onSubmit={handleSubmit}>
         <input
           type="text"
-          placeholder="اسم مساحة العمل (مثال: adLoop)"
+          placeholder={tr("namePlaceholder")}
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
@@ -89,10 +90,10 @@ export function CreateWorkspaceForm() {
           onChange={(e) => setVertical(e.target.value)}
           className="mb-3 block w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
         >
-          <option value="">المجال (اختياري - بيحدد المقاييس الافتراضية)</option>
+          <option value="">{tr("verticalPlaceholder")}</option>
           {VERTICALS.map((v) => (
             <option key={v.value} value={v.value}>
-              {v.label}
+              {tr(v.key)}
             </option>
           ))}
         </select>
@@ -102,10 +103,10 @@ export function CreateWorkspaceForm() {
           onChange={(e) => setBusinessScale(e.target.value)}
           className="mb-4 block w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
         >
-          <option value="">بتدير كام عميل؟ (اختياري)</option>
+          <option value="">{tr("scalePlaceholder")}</option>
           {BUSINESS_SCALES.map((s) => (
             <option key={s.value} value={s.value}>
-              {s.label}
+              {tr(s.key)}
             </option>
           ))}
         </select>
@@ -117,7 +118,7 @@ export function CreateWorkspaceForm() {
           disabled={loading}
           className="w-full rounded-xl bg-accent py-2.5 text-sm font-semibold text-white disabled:opacity-50"
         >
-          {loading ? "جارٍ الإنشاء..." : "إنشاء مساحة العمل"}
+          {loading ? tr("creating") : tr("create")}
         </button>
       </form>
     </div>

@@ -1,7 +1,7 @@
 // app/dashboard/settings/SettingsClient.tsx
 //
-// إعدادات شاملة - كل نظام في المنتج له تحكم صريح هنا (تشغيل/إيقاف +
-// عتبات قابلة للتعديل)، مش أرقام مقفولة جوه الكود بعد النهاردة.
+// إعدادات شاملة - لكل نظام في المنتج تحكّم صريح هنا (تشغيل/إيقاف +
+// عتبات قابلة للتعديل)، لا أرقاماً مثبّتة داخل الكود.
 
 "use client";
 
@@ -38,14 +38,14 @@ const AVATAR_ICONS = [
 // أزرق ميتا الرسمي #0866FF - يألفه من يقضي يومه في مدير إعلانات ميتا.
 const THEME_COLORS = ["blue", "facebook", "purple", "sky", "gray", "orange", "red"] as const;
 
-const THEME_COLOR_LABELS: Record<(typeof THEME_COLORS)[number], string> = {
-  blue: "أزرق",
-  facebook: "أزرق فيسبوك",
-  purple: "بنفسجي",
-  sky: "سماوي",
-  gray: "رمادي",
-  orange: "برتقالي",
-  red: "أحمر",
+const THEME_COLOR_KEYS: Record<(typeof THEME_COLORS)[number], string> = {
+  blue: "colorBlue",
+  facebook: "colorFacebook",
+  purple: "colorPurple",
+  sky: "colorSky",
+  gray: "colorGray",
+  orange: "colorOrange",
+  red: "colorRed",
 };
 
 interface UserData {
@@ -112,9 +112,9 @@ const TABS = [
   { key: "danger", labelKey: "tabDanger" },
 ] as const;
 
-// فهرس بحث حقيقي - كل سطر هنا بيمثّل حقل فعلاً موجود في إحدى التبويبات
-// فوق، مش أسماء وهمية. لو ضفت حقل جديد لأي تبويب، لازم يتضاف هنا أيضاً
-// عشان البحث يفضل دقيق ومطابق للواقع.
+// فهرس بحث حقيقي - كل سطر هنا يمثّل حقلاً موجوداً فعلاً في أحد التبويبات
+// أعلاه، لا أسماء وهمية. أي حقل جديد يُضاف إلى تبويب يجب أن يُضاف هنا
+// أيضاً كي يبقى البحث دقيقاً ومطابقاً للواقع.
 const SEARCH_INDEX: Array<{ labelKey: string; tab: (typeof TABS)[number]["key"] }> = [
   { labelKey: "idxName", tab: "profile" },
   { labelKey: "idxAvatar", tab: "profile" },
@@ -260,6 +260,7 @@ export function SettingsClient({
 // ==================== الملف الشخصي ====================
 
 function ProfileTab({ user }: { user: UserData }) {
+  const tr = useT();
   const router = useRouter();
   const [name, setName] = useState(user.name ?? "");
   const [avatarIcon, setAvatarIcon] = useState(user.avatarIcon ?? "bot");
@@ -269,8 +270,8 @@ function ProfileTab({ user }: { user: UserData }) {
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    // نحول الصورة لـ base64 ونخزنها مباشرة - مقبول لحجم صورة شخصية صغيرة،
-    // من غير ما نحتاج نضيف خدمة تخزين ملفات منفصلة (S3 مثلاً) لحاجة بسيطة كده
+    // نحوّل الصورة إلى base64 ونخزّنها مباشرة - مقبول لحجم صورة شخصية صغيرة،
+    // دون الحاجة إلى خدمة تخزين ملفات منفصلة (S3 مثلاً) لغرض بهذه البساطة
     const reader = new FileReader();
     reader.onload = () => setAvatarImageUrl(reader.result as string);
     reader.readAsDataURL(file);
@@ -289,10 +290,10 @@ function ProfileTab({ user }: { user: UserData }) {
 
   return (
     <SettingsSection>
-      <FieldLabel>الاسم</FieldLabel>
-      <TextInput value={name} onChange={setName} placeholder="اسمك" />
+      <FieldLabel>{tr("idxName")}</FieldLabel>
+      <TextInput value={name} onChange={setName} placeholder={tr("namePlaceholder")} />
 
-      <FieldLabel>الصورة الشخصية</FieldLabel>
+      <FieldLabel>{tr("idxAvatar")}</FieldLabel>
       <div className="mb-2 flex flex-wrap gap-2">
         {AVATAR_ICONS.map(({ key, Icon }) => (
           <button
@@ -319,7 +320,7 @@ function ProfileTab({ user }: { user: UserData }) {
           <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
         </label>
       </div>
-      <p className="mb-4 text-xs text-text-faint">اختار أيقونة جاهزة، أو ارفع صورتك الشخصية.</p>
+      <p className="mb-4 text-xs text-text-faint">{tr("avatarHint")}</p>
 
       <SaveButton onClick={handleSave} saving={saving} />
     </SettingsSection>
@@ -329,6 +330,7 @@ function ProfileTab({ user }: { user: UserData }) {
 // ==================== التفضيلات ====================
 
 function PreferencesTab({ user }: { user: UserData }) {
+  const tr = useT();
   const router = useRouter();
   const [locale, setLocale] = useState(user.preferredLocale);
   const [themeColor, setThemeColor] = useState(user.themeColor);
@@ -349,29 +351,29 @@ function PreferencesTab({ user }: { user: UserData }) {
 
   return (
     <SettingsSection>
-      <FieldLabel>اللغة</FieldLabel>
+      <FieldLabel>{tr("idxLanguage")}</FieldLabel>
       <ToggleGroup
-        options={[{ value: "ar", label: "العربية" }, { value: "en", label: "English" }]}
+        options={[{ value: "ar", label: tr("langArabic") }, { value: "en", label: "English" }]}
         value={locale}
         onChange={setLocale}
       />
 
-      <FieldLabel>الوضع</FieldLabel>
+      <FieldLabel>{tr("mode")}</FieldLabel>
       <ToggleGroup
-        options={[{ value: "dark", label: "داكن" }, { value: "light", label: "فاتح" }]}
+        options={[{ value: "dark", label: tr("modeDark") }, { value: "light", label: tr("modeLight") }]}
         value={themeMode}
         onChange={setThemeMode}
       />
 
-      <FieldLabel>اللون الأساسي</FieldLabel>
+      <FieldLabel>{tr("idxAccent")}</FieldLabel>
       <div className="mb-4 flex gap-2">
         {THEME_COLORS.map((c) => (
           <button
             key={c}
             onClick={() => setThemeColor(c)}
             data-accent={c}
-            title={THEME_COLOR_LABELS[c]}
-            aria-label={THEME_COLOR_LABELS[c]}
+            title={tr(THEME_COLOR_KEYS[c])}
+            aria-label={tr(THEME_COLOR_KEYS[c])}
             className={`h-8 w-8 rounded-full bg-accent transition-transform ${
               themeColor === c ? "scale-110 ring-2 ring-text-primary ring-offset-2 ring-offset-bg" : ""
             }`}
@@ -379,20 +381,34 @@ function PreferencesTab({ user }: { user: UserData }) {
         ))}
       </div>
 
-      <FieldLabel>المنطقة الزمنية</FieldLabel>
+      <FieldLabel>{tr("idxTimezone")}</FieldLabel>
       <select
         value={timezone}
         onChange={(e) => setTimezone(e.target.value)}
         className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
       >
-        <option value="Asia/Riyadh">الرياض (GMT+3)</option>
-        <option value="Africa/Cairo">القاهرة (GMT+2)</option>
-        <option value="Asia/Dubai">دبي (GMT+4)</option>
-        <option value="Asia/Kuwait">الكويت (GMT+3)</option>
+        {/* مجموعات بدل قائمة مسطّحة: القائمة صارت أطول من أن تُمسح بالعين */}
+        <optgroup label={tr("tzGroupGulf")}>
+          <option value="Asia/Riyadh">{tr("tzRiyadh")}</option>
+          <option value="Africa/Cairo">{tr("tzCairo")}</option>
+          <option value="Asia/Dubai">{tr("tzDubai")}</option>
+          <option value="Asia/Kuwait">{tr("tzKuwait")}</option>
+          <option value="Europe/Istanbul">{tr("tzIstanbul")}</option>
+        </optgroup>
+        <optgroup label={tr("tzGroupEurope")}>
+          <option value="Europe/London">{tr("tzLondon")}</option>
+          <option value="Europe/Paris">{tr("tzParis")}</option>
+          <option value="Europe/Berlin">{tr("tzBerlin")}</option>
+        </optgroup>
+        <optgroup label={tr("tzGroupAmericas")}>
+          <option value="America/New_York">{tr("tzNewYork")}</option>
+          <option value="America/Chicago">{tr("tzChicago")}</option>
+          <option value="America/Los_Angeles">{tr("tzLosAngeles")}</option>
+        </optgroup>
       </select>
 
-      <FieldLabel>الجولة التعريفية</FieldLabel>
-      <p className="mb-2 text-xs text-text-faint">يمكنك إعادة الجولة التعريفية في أي وقت.</p>
+      <FieldLabel>{tr("tour")}</FieldLabel>
+      <p className="mb-2 text-xs text-text-faint">{tr("tourHint")}</p>
       <button
         onClick={async () => {
           await fetch("/api/onboarding/progress", {
@@ -404,7 +420,7 @@ function PreferencesTab({ user }: { user: UserData }) {
         }}
         className="mb-4 rounded-full bg-surface-raised px-3.5 py-1.5 text-xs text-text-primary"
       >
-        إعادة الجولة التعريفية
+        {tr("tourRestart")}
       </button>
 
       <SaveButton onClick={handleSave} saving={saving} />
@@ -421,6 +437,7 @@ const PLATFORM_LABELS: Record<string, string> = {
 };
 
 function DisconnectButton({ platform }: { platform: string }) {
+  const tr = useT();
   const router = useRouter();
   const [disconnecting, setDisconnecting] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -439,16 +456,16 @@ function DisconnectButton({ platform }: { platform: string }) {
   if (confirming) {
     return (
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-critical">متأكد؟</span>
+        <span className="text-xs text-critical">{tr("sure")}</span>
         <button
           onClick={handleDisconnect}
           disabled={disconnecting}
           className="rounded-full bg-critical px-3 py-1 text-xs text-white"
         >
-          {disconnecting ? "جارٍ الفصل..." : "افصل"}
+          {disconnecting ? tr("disconnecting") : tr("disconnect")}
         </button>
         <button onClick={() => setConfirming(false)} className="text-xs text-text-faint">
-          إلغاء
+          {tr("cancel")}
         </button>
       </div>
     );
@@ -456,15 +473,16 @@ function DisconnectButton({ platform }: { platform: string }) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="rounded-full bg-verified/15 px-3 py-1 text-xs text-verified">متصل</span>
+      <span className="rounded-full bg-verified/15 px-3 py-1 text-xs text-verified">{tr("connected")}</span>
       <button onClick={() => setConfirming(true)} className="text-xs text-text-faint hover:text-critical">
-        فصل الحساب
+        {tr("disconnectAccount")}
       </button>
     </div>
   );
 }
 
 function AccountsTab({ connectedPlatforms }: { connectedPlatforms: ConnectedPlatformData[] }) {
+  const tr = useT();
   const connectedMap = new Map(connectedPlatforms.map((c) => [c.platform, c]));
 
   return (
@@ -480,7 +498,7 @@ function AccountsTab({ connectedPlatforms }: { connectedPlatforms: ConnectedPlat
               <div className="text-sm text-text-primary">{PLATFORM_LABELS[platform]}</div>
               {connection && (
                 <div className="text-xs text-text-faint">
-                  متصل {connection.expiresAt ? `— ينتهي ${new Date(connection.expiresAt).toLocaleDateString("ar")}` : ""}
+                  {connection.expiresAt ? tr("connectedExpires", { date: new Date(connection.expiresAt).toLocaleDateString() }) : tr("connected")}
                 </div>
               )}
               </div>
@@ -492,7 +510,7 @@ function AccountsTab({ connectedPlatforms }: { connectedPlatforms: ConnectedPlat
                 href={`/api/oauth/${platform === "GOOGLE_ADS" ? "google-ads" : platform === "META_ADS" ? "meta" : "tiktok"}/start`}
                 className="rounded-full bg-accent px-4 py-1.5 text-xs text-white no-underline"
               >
-                اربط الحساب
+                {tr("connectAccount")}
               </a>
             )}
             </div>
@@ -521,6 +539,7 @@ function WorkspaceTab({
   activeWorkspaceId: string;
   onSwitchWorkspace: (id: string) => void;
 }) {
+  const tr = useT();
   const router = useRouter();
   const workspace = workspaces.find((w) => w.id === activeWorkspaceId) ?? workspaces[0];
   const [name, setName] = useState(workspace.name);
@@ -558,39 +577,43 @@ function WorkspaceTab({
         <WorkspaceSwitcher workspaces={workspaces} active={activeWorkspaceId} onSwitch={onSwitchWorkspace} />
       )}
 
-      <FieldLabel>اسم مساحة العمل</FieldLabel>
-      <TextInput value={name} onChange={setName} placeholder="اسم العميل أو المشروع" />
+      <FieldLabel>{tr("idxWorkspaceName")}</FieldLabel>
+      <TextInput value={name} onChange={setName} placeholder={tr("wsNamePlaceholder")} />
 
-      <FieldLabel>العملة</FieldLabel>
+      <FieldLabel>{tr("idxCurrency")}</FieldLabel>
       <select
         value={currency}
         onChange={(e) => setCurrency(e.target.value)}
         className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
       >
-        <option value="SAR">ريال سعودي (SAR)</option>
-        <option value="EGP">جنيه مصري (EGP)</option>
-        <option value="AED">درهم إماراتي (AED)</option>
-        <option value="KWD">دينار كويتي (KWD)</option>
-        <option value="USD">دولار أمريكي (USD)</option>
+        <option value="SAR">{tr("curSar")}</option>
+        <option value="EGP">{tr("curEgp")}</option>
+        <option value="AED">{tr("curAed")}</option>
+        <option value="KWD">{tr("curKwd")}</option>
+        <option value="QAR">{tr("curQar")}</option>
+        <option value="OMR">{tr("curOmr")}</option>
+        <option value="BHD">{tr("curBhd")}</option>
+        <option value="USD">{tr("curUsd")}</option>
+        <option value="EUR">{tr("curEur")}</option>
+        <option value="GBP">{tr("curGbp")}</option>
       </select>
 
-      <FieldLabel>السوق المستهدف</FieldLabel>
+      <FieldLabel>{tr("idxMarket")}</FieldLabel>
       <select
         value={targetLocation}
         onChange={(e) => setTargetLocation(e.target.value)}
         className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
       >
-        <option value="">غير محدد</option>
-        <option value="SA">السعودية</option>
-        <option value="EG">مصر</option>
-        <option value="AE">الإمارات</option>
-        <option value="KW">الكويت</option>
+        <option value="">{tr("marketNone")}</option>
+        <option value="SA">{tr("marketSa")}</option>
+        <option value="EG">{tr("marketEg")}</option>
+        <option value="AE">{tr("marketAe")}</option>
+        <option value="KW">{tr("marketKw")}</option>
       </select>
 
-      <FieldLabel>هامش الربح التقريبي (%)</FieldLabel>
+      <FieldLabel>{tr("profitMargin")}</FieldLabel>
       <p className="mb-2 text-xs text-text-faint">
-        اختياري — إذا حُدِّد، يُستخدم لحساب "نقطة تعادل ROAS" الحقيقية الخاصة بك (= 100 ÷ الهامش) في قرارات
-        Scale/Kill، بدل مقارنة نسبية بمتوسط حسابك بس.
+        {tr("profitMarginHint")}
       </p>
       <input
         type="number"
@@ -598,14 +621,13 @@ function WorkspaceTab({
         max="99"
         value={profitMarginPct}
         onChange={(e) => setProfitMarginPct(e.target.value)}
-        placeholder="مثال: 30"
+        placeholder={tr("egPlaceholder", { value: 30 })}
         className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
       />
 
-      <FieldLabel>سقف التغيير الشهري لاستراتيجية المزايدة (%)</FieldLabel>
+      <FieldLabel>{tr("bidCeiling")}</FieldLabel>
       <p className="mb-2 text-xs text-text-faint">
-        حدّ أقصى لمجموع نسب تغيير المزايدة التي يمكن تنفيذها على الإعلان أو الحملة نفسها خلال الشهر
-        الواحد - حاجز أمان يمنع تراكم تغييرات آلية متتالية من غير سقف.
+        {tr("bidCeilingHint")}
       </p>
       <input
         type="number"
@@ -616,34 +638,34 @@ function WorkspaceTab({
         className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
       />
 
-      <FieldLabel>معرف صفحة فيسبوك (Page ID)</FieldLabel>
+      <FieldLabel>{tr("fbPageId")}</FieldLabel>
       <p className="mb-2 text-xs text-text-faint">
-        اختياري — مطلوب فقط إذا أردت تفعيل التحقق الحقيقي من جودة ليدز ماسنجر (تمييز الضغطة الخاطئة عن التواصل الحقيقي).
+        {tr("fbPageIdHint")}
       </p>
       <input
         type="text"
         value={facebookPageId}
         onChange={(e) => setFacebookPageId(e.target.value)}
-        placeholder="مثال: 123456789012345"
+        placeholder={tr("egPlaceholder", { value: "123456789012345" })}
         className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
       />
 
-      <div className="mb-2 mt-2 text-xs font-medium uppercase tracking-wider text-text-faint">التنبيهات</div>
+      <div className="mb-2 mt-2 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("alerts")}</div>
       <p className="mb-2 text-xs text-text-faint">
-        التنبيهات دائماً موجودة داخل النظام (القرارات/التشخيص) - دي بس بتتحكم في هل توصل إيميل أيضاً.
+        {tr("alertsHint")}
       </p>
-      <ToggleRow label="إيميل للتنبيهات العاجلة" checked={notifyUrgentByEmail} onChange={setNotifyUrgentByEmail} />
-      <ToggleRow label="إيميل للتنبيهات المهمة" checked={notifyHighByEmail} onChange={setNotifyHighByEmail} />
+      <ToggleRow label={tr("emailUrgent")} checked={notifyUrgentByEmail} onChange={setNotifyUrgentByEmail} />
+      <ToggleRow label={tr("emailHigh")} checked={notifyHighByEmail} onChange={setNotifyHighByEmail} />
 
-      <div className="mb-2 mt-4 text-xs text-text-faint">إشعارات مباشرة على الموبايل حتى لو التطبيق مقفول</div>
+      <div className="mb-2 mt-4 text-xs text-text-faint">{tr("pushHint")}</div>
       <div className="mb-4"><PushNotificationToggle /></div>
 
-      <FieldLabel>إيميل التنبيهات (اختياري - افتراضياً إيميل حسابك)</FieldLabel>
+      <FieldLabel>{tr("alertEmail")}</FieldLabel>
       <TextInput value={notificationEmail} onChange={setNotificationEmail} placeholder="you@example.com" />
 
-      <FieldLabel>الحملات المرتبطة</FieldLabel>
+      <FieldLabel>{tr("idxCampaigns")}</FieldLabel>
       <p className="mb-2 text-xs text-text-faint">
-        اختر الحملات التابعة لمساحة العمل هذه من الحسابات المرتبطة.
+        {tr("linkedCampaignsHint")}
       </p>
       <CampaignPicker workspaceId={workspace.id} />
 
@@ -655,9 +677,10 @@ function WorkspaceTab({
 }
 
 function CampaignPicker({ workspaceId }: { workspaceId: string }) {
-  // إصلاح باگ أساسي: كان الكومبوننت مقفول على GOOGLE_ADS فقط من الأول -
-  // يعني ميتا وتيك توك محدش كان يقدر يربط حملاتهم من الواجهة خالص، حتى
-  // لو كل المزامنة والتحليل مبني على افتراض وجود CampaignLink ليهم
+  const tr = useT();
+  // إصلاح خلل أساسي: كان المكوّن مقصوراً على GOOGLE_ADS منذ البداية -
+  // أي أن ميتا وتيك توك لم يكن أحد يستطيع ربط حملاتهما من الواجهة إطلاقاً،
+  // رغم أن كل المزامنة والتحليل مبنيان على افتراض وجود CampaignLink لهما
   const [platform, setPlatform] = useState<"GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS">("GOOGLE_ADS");
   const [loading, setLoading] = useState(false);
   const [accounts, setAccounts] = useState<
@@ -668,15 +691,15 @@ function CampaignPicker({ workspaceId }: { workspaceId: string }) {
   const [saved, setSaved] = useState(false);
 
   const PLATFORM_TABS: Array<{ value: typeof platform; label: string }> = [
-    { value: "GOOGLE_ADS", label: "جوجل" },
-    { value: "META_ADS", label: "ميتا" },
-    { value: "TIKTOK_ADS", label: "تيك توك" },
+    { value: "GOOGLE_ADS", label: tr("platGoogle") },
+    { value: "META_ADS", label: tr("platMeta") },
+    { value: "TIKTOK_ADS", label: tr("platTiktok") },
   ];
 
   function switchPlatform(next: typeof platform) {
     setPlatform(next);
-    // بنصفّر الحالة عند تغيير المنصة - قائمة حملات منصة تانية خالص، مش
-    // منطقي نسيب الاختيار القديم أو نعرض بيانات المنصة القديمة بالغلط
+    // نصفّر الحالة عند تغيير المنصة - القائمة تخصّ منصة أخرى تماماً، فلا
+    // معنى لإبقاء الاختيار السابق أو عرض بيانات المنصة القديمة خطأً
     setAccounts([]);
     setSelected(new Set());
     setSaved(false);
@@ -734,7 +757,7 @@ function CampaignPicker({ workspaceId }: { workspaceId: string }) {
           disabled={loading}
           className="rounded-full bg-surface-raised px-4 py-1.5 text-xs text-text-primary"
         >
-          {loading ? "جارٍ التحميل..." : "تحميل الحملات المتاحة"}
+          {loading ? tr("loadingCampaigns") : tr("loadCampaigns")}
         </button>
       ) : (
         <CampaignPickerList
@@ -768,6 +791,7 @@ function CampaignPickerList({
   saved: boolean;
   saveCampaigns: () => void;
 }) {
+  const tr = useT();
   const totalCount = accounts.reduce((s, a) => s + a.campaigns.length, 0);
   const activeCount = accounts.reduce((s, a) => s + a.campaigns.filter((c) => c.recentlyActive).length, 0);
 
@@ -775,14 +799,14 @@ function CampaignPickerList({
     <div>
       <div className="mb-3 flex items-center justify-between">
         <p className="text-xs text-text-faint">
-          {showAll ? `عرض كل الحملات (${totalCount})` : `الحملات النشطة آخر 10 أيام (${activeCount})`}
+          {showAll ? tr("showAllCampaigns", { n: totalCount }) : tr("activeLast10", { n: activeCount })}
         </p>
         {totalCount > activeCount && (
           <button
             onClick={() => setShowAll((s) => !s)}
             className="text-xs text-accent"
           >
-            {showAll ? "إخفاء القديمة" : `عرض كل الحملات (${totalCount - activeCount} إضافية)`}
+            {showAll ? tr("hideOld") : tr("showMore", { n: totalCount - activeCount })}
           </button>
         )}
       </div>
@@ -807,17 +831,17 @@ function CampaignPickerList({
                   }}
                 />
                 {c.name}
-                {!c.recentlyActive && <span className="text-xs text-text-faint">(غير نشطة مؤخراً)</span>}
+                {!c.recentlyActive && <span className="text-xs text-text-faint">{tr("notRecentlyActive")}</span>}
               </label>
             ))}
           </div>
         );
       })}
       <button onClick={saveCampaigns} className="mt-2 rounded-full bg-accent px-4 py-1.5 text-xs text-white">
-        {saved ? "تم الحفظ ✓" : "احفظ الاختيار"}
+        {saved ? tr("savedTick") : tr("saveSelection")}
       </button>
       <p className="mt-2 text-xs text-text-faint">
-        هيتم سحب كامل التاريخ المتاح للحملات المختارة تلقائياً في الخلفية.
+        {tr("historyNote")}
       </p>
     </div>
   );
@@ -861,6 +885,7 @@ function AutomationTab({
   onSwitchWorkspace: (id: string) => void;
 }) {
   const router = useRouter();
+  const tr = useT();
   const workspace = workspaces.find((w) => w.id === activeWorkspaceId) ?? workspaces[0];
 
   const [form, setForm] = useState({
@@ -898,57 +923,57 @@ function AutomationTab({
         <WorkspaceSwitcher workspaces={workspaces} active={activeWorkspaceId} onSwitch={onSwitchWorkspace} />
       )}
 
-      <div className="mb-2 text-xs font-medium uppercase tracking-wider text-text-faint">مفاتيح التشغيل</div>
+      <div className="mb-2 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("switches")}</div>
       <ToggleRow
-        label="تحليلات الذكاء الاصطناعي"
+        label={tr("swAi")}
         checked={form.enableAIInsights}
         onChange={(v) => setForm({ ...form, enableAIInsights: v })}
       />
       <ToggleRow
-        label="قواعد الأتمتة (التشغيل الذكي)"
+        label={tr("swRules")}
         checked={form.enableAutomationRules}
         onChange={(v) => setForm({ ...form, enableAutomationRules: v })}
       />
       <ToggleRow
-        label="التشخيص اليومي"
+        label={tr("swDaily")}
         checked={form.enableDailyDiagnostics}
         onChange={(v) => setForm({ ...form, enableDailyDiagnostics: v })}
       />
       <ToggleRow
-        label="فحص صحة التسعير"
+        label={tr("swPricing")}
         checked={form.enablePricingHealthChecks}
         onChange={(v) => setForm({ ...form, enablePricingHealthChecks: v })}
       />
       <ToggleRow
-        label="تضمين المحادثات المجهولة (Modeled Attribution)"
+        label={tr("swModeled")}
         checked={form.useModeledAttribution}
         onChange={(v) => setForm({ ...form, useModeledAttribution: v })}
       />
 
-      <div className="mb-2 mt-5 text-xs font-medium uppercase tracking-wider text-text-faint">العتبات</div>
+      <div className="mb-2 mt-5 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("thresholdsHead")}</div>
       <NumberRow
-        label="حد سرعة الرد (دقيقة)"
+        label={tr("thResponse")}
         value={form.responseTimeThresholdMinutes}
         onChange={(v) => setForm({ ...form, responseTimeThresholdMinutes: v })}
       />
       <NumberRow
-        label="حد تكرار الإعلان (تعب الكرياتيف)"
+        label={tr("thFatigue")}
         value={form.adFatigueFrequencyThreshold}
         step={0.1}
         onChange={(v) => setForm({ ...form, adFatigueFrequencyThreshold: v })}
       />
       <NumberRow
-        label="حد اعتبار محادثة ماسنجر ضغطة بالخطأ (دقيقة)"
+        label={tr("thMessenger")}
         value={form.messengerInactivityThresholdMinutes}
         onChange={(v) => setForm({ ...form, messengerInactivityThresholdMinutes: v })}
       />
 
-      <div className="mb-2 mt-5 text-xs font-medium uppercase tracking-wider text-text-faint">مصدر التحويل الأساسي</div>
+      <div className="mb-2 mt-5 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("primarySourceHead")}</div>
       <div className="flex gap-2">
         {[
-          { value: "WHATSAPP", label: "واتساب" },
-          { value: "MESSENGER", label: "ماسنجر" },
-          { value: "LEAD_FORM", label: "فورم" },
+          { value: "WHATSAPP", label: tr("srcWhatsapp") },
+          { value: "MESSENGER", label: tr("srcMessenger") },
+          { value: "LEAD_FORM", label: tr("srcLeadForm") },
         ].map((opt) => (
           <button
             key={opt.value}
@@ -965,28 +990,28 @@ function AutomationTab({
         ))}
       </div>
       <NumberRow
-        label="حد انخفاض CTR (%)"
+        label={tr("thCtr")}
         value={form.ctrDropThresholdPct}
         onChange={(v) => setForm({ ...form, ctrDropThresholdPct: v })}
       />
       <NumberRow
-        label="حد تحذير التسعير (%)"
+        label={tr("thPriceWarn")}
         value={form.pricingWarningThresholdPct}
         onChange={(v) => setForm({ ...form, pricingWarningThresholdPct: v })}
       />
       <NumberRow
-        label="حد خطر التسعير (%)"
+        label={tr("thPriceCrit")}
         value={form.pricingCriticalThresholdPct}
         onChange={(v) => setForm({ ...form, pricingCriticalThresholdPct: v })}
       />
       <NumberRow
-        label="مضاعف المرتجعات الشاذة"
+        label={tr("thRto")}
         value={form.rtoAnomalyMultiplier}
         step={0.1}
         onChange={(v) => setForm({ ...form, rtoAnomalyMultiplier: v })}
       />
       <NumberRow
-        label="السقف الشهري لتغييرات الأتمتة (%)"
+        label={tr("thCeiling")}
         value={form.automationMonthlyBudgetChangeCeilingPct}
         onChange={(v) => setForm({ ...form, automationMonthlyBudgetChangeCeilingPct: v })}
       />
@@ -999,6 +1024,7 @@ function AutomationTab({
 }
 
 function MfaSection() {
+  const tr = useT();
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [setupData, setSetupData] = useState<{ secret: string; qrCodeDataUrl: string } | null>(null);
   const [code, setCode] = useState("");
@@ -1064,9 +1090,9 @@ function MfaSection() {
 
   return (
     <div className="mb-4 rounded-xl bg-surface p-4">
-      <div className="mb-2 text-sm font-medium text-text-primary">التحقق بخطوتين (MFA)</div>
+      <div className="mb-2 text-sm font-medium text-text-primary">{tr("mfaTitle")}</div>
       <p className="mb-3 text-xs text-text-muted">
-        طبقة حماية إضافية — حتى لو عرف أحدٌ كلمة سرك، لن يستطيع الدخول دون رمز من تطبيق المصادقة الخاص بك.
+        {tr("mfaHint")}
       </p>
 
       {enabled ? (
@@ -1075,11 +1101,11 @@ function MfaSection() {
             onClick={() => setShowDisableConfirm(true)}
             className="rounded-full bg-surface-raised px-4 py-1.5 text-xs text-text-muted"
           >
-            إلغاء تفعيل التحقق بخطوتين
+            {tr("mfaDisable")}
           </button>
         ) : (
           <div>
-            <p className="mb-2 text-xs text-text-faint">أدخل كلمة المرور للتأكيد:</p>
+            <p className="mb-2 text-xs text-text-faint">{tr("mfaPasswordConfirm")}</p>
             <input
               type="password"
               value={password}
@@ -1092,7 +1118,7 @@ function MfaSection() {
               disabled={loading}
               className="rounded-full bg-critical px-4 py-1.5 text-xs text-white disabled:opacity-50"
             >
-              تأكيد الإلغاء
+              {tr("mfaConfirmDisable")}
             </button>
           </div>
         )
@@ -1100,7 +1126,7 @@ function MfaSection() {
         <form onSubmit={confirmSetup}>
           <img src={setupData.qrCodeDataUrl} alt="QR Code" className="mb-2 h-40 w-40 rounded-xl bg-white p-2" />
           <p className="mb-2 text-xs text-text-faint">
-            امسح الكود بتطبيق Google Authenticator أو مشابه، وأدخل الكود المكوّن من 6 أرقام:
+            {tr("mfaScanHint")}
           </p>
           <input
             type="text"
@@ -1117,7 +1143,7 @@ function MfaSection() {
             disabled={loading}
             className="rounded-full bg-accent px-4 py-1.5 text-xs text-white disabled:opacity-50"
           >
-            {loading ? "جارٍ التأكيد..." : "تفعيل"}
+            {loading ? tr("mfaVerifying") : tr("mfaEnable")}
           </button>
         </form>
       ) : (
@@ -1126,7 +1152,7 @@ function MfaSection() {
           disabled={loading}
           className="rounded-full bg-accent px-4 py-1.5 text-xs text-white disabled:opacity-50"
         >
-          {loading ? "جارٍ التحميل..." : "فعّل التحقق بخطوتين"}
+          {loading ? tr("mfaLoading") : tr("mfaTurnOn")}
         </button>
       )}
     </div>
@@ -1136,6 +1162,7 @@ function MfaSection() {
 // ==================== منطقة الخطر ====================
 
 function DangerZoneTab({ workspaces }: { workspaces: WorkspaceData[] }) {
+  const tr = useT();
   const router = useRouter();
   const [confirmText, setConfirmText] = useState("");
   const [targetId, setTargetId] = useState(workspaces[0]?.id ?? "");
@@ -1151,9 +1178,9 @@ function DangerZoneTab({ workspaces }: { workspaces: WorkspaceData[] }) {
   return (
     <SettingsSection>
       <div className="rounded-xl bg-critical/10 p-4">
-        <div className="mb-2 text-sm font-medium text-critical">حذف مساحة عمل</div>
+        <div className="mb-2 text-sm font-medium text-critical">{tr("dzDeleteWorkspace")}</div>
         <p className="mb-3 text-xs text-text-muted">
-          هذا الإجراء نهائي — ستُحذف كل البيانات المرتبطة (الحملات والمهام والتقارير) ولا يمكن استرجاعها.
+          {tr("dzDeleteWorkspaceHint")}
         </p>
         <select
           value={targetId}
@@ -1166,27 +1193,27 @@ function DangerZoneTab({ workspaces }: { workspaces: WorkspaceData[] }) {
             </option>
           ))}
         </select>
-        <p className="mb-2 text-xs text-text-faint">اكتب اسم مساحة العمل ({target?.name}) للتأكيد:</p>
+        <p className="mb-2 text-xs text-text-faint">{tr("dzTypeName", { name: target?.name ?? "" })}</p>
         <TextInput value={confirmText} onChange={setConfirmText} placeholder={target?.name ?? ""} />
         <button
           onClick={handleDelete}
           disabled={confirmText !== target?.name}
           className="mt-2 rounded-full bg-critical px-4 py-1.5 text-xs text-white disabled:opacity-40"
         >
-          احذف نهائياً
+          {tr("dzDeleteForever")}
         </button>
       </div>
 
       <div className="mt-4 rounded-xl bg-surface p-4">
-        <div className="mb-2 text-sm font-medium text-text-primary">تصدير بياناتي</div>
+        <div className="mb-2 text-sm font-medium text-text-primary">{tr("dzExport")}</div>
         <p className="mb-3 text-xs text-text-muted">
-          نسخة كاملة من بياناتك بصيغة JSON قابلة للقراءة والنقل.
+          {tr("dzExportHint")}
         </p>
         <a
           href="/api/account/export-data"
           className="inline-block rounded-full bg-surface-raised px-4 py-1.5 text-xs text-text-primary no-underline"
         >
-          تحميل بياناتي
+          {tr("dzDownload")}
         </a>
       </div>
 
@@ -1196,6 +1223,7 @@ function DangerZoneTab({ workspaces }: { workspaces: WorkspaceData[] }) {
 }
 
 function DeleteAccountSection() {
+  const tr = useT();
   const [password, setPassword] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
@@ -1211,26 +1239,26 @@ function DeleteAccountSection() {
       window.location.href = "/login";
     } else {
       const data = await res.json();
-      setError(data.error ?? "حصل خطأ");
+      setError(data.error ?? tr("genericError"));
     }
   }
 
   return (
     <div className="mt-4 rounded-xl bg-critical/10 p-4">
-      <div className="mb-2 text-sm font-medium text-critical">حذف الحساب نهائياً</div>
+      <div className="mb-2 text-sm font-medium text-critical">{tr("dzDeleteAccount")}</div>
       <p className="mb-3 text-xs text-text-muted">
-        سيُحذف حسابك وكل مساحات العمل والبيانات المرتبطة به بالكامل. إجراء نهائي لا رجعة فيه.
+        {tr("dzDeleteAccountHint")}
       </p>
       {!confirming ? (
         <button
           onClick={() => setConfirming(true)}
           className="rounded-full bg-critical px-4 py-1.5 text-xs text-white"
         >
-          احذف حسابي
+          {tr("dzDeleteMine")}
         </button>
       ) : (
         <div>
-          <p className="mb-2 text-xs text-text-faint">أدخل كلمة المرور للتأكيد:</p>
+          <p className="mb-2 text-xs text-text-faint">{tr("mfaPasswordConfirm")}</p>
           <input
             type="password"
             value={password}
@@ -1243,13 +1271,13 @@ function DeleteAccountSection() {
               onClick={handleDeleteAccount}
               className="rounded-full bg-critical px-4 py-1.5 text-xs text-white"
             >
-              تأكيد الحذف النهائي
+              {tr("dzConfirmDelete")}
             </button>
             <button
               onClick={() => setConfirming(false)}
               className="rounded-full bg-surface-raised px-4 py-1.5 text-xs text-text-muted"
             >
-              إلغاء
+              {tr("cancel")}
             </button>
           </div>
         </div>
@@ -1276,6 +1304,7 @@ function ConversionSyncTab({
   activeWorkspaceId: string;
   onSwitchWorkspace: (id: string) => void;
 }) {
+  const tr = useT();
   const router = useRouter();
   const workspace = workspaces.find((w) => w.id === activeWorkspaceId) ?? workspaces[0];
 
@@ -1316,107 +1345,102 @@ function ConversionSyncTab({
       )}
 
       <p className="mb-4 text-[13px] leading-relaxed text-text-muted">
-        كشف الفجوة يجعلك أدرى، لكنه لا يغيّر شيئاً في المزاد بذاته. خوارزمية كل منصة تتعلّم ممّا
-        تُطعمها إياه — فحين نُعيد إليها العميل الدافع فعلاً عبر الخادم، تتغيّر دالّة التحسين لديها
-        فتبحث عن أشباهه. الإرسال من الخادم لا يمرّ بحظر الكوكيز ولا قيود iOS.
+        {tr("csWhy")}
       </p>
 
-      <div className="mb-2 text-xs font-medium uppercase tracking-wider text-text-faint">التشغيل</div>
+      <div className="mb-2 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("csRunning")}</div>
       <ToggleRow
-        label="تفعيل إعادة رفع التحويلات"
+        label={tr("csEnable")}
         checked={form.conversionSyncEnabled}
         onChange={(v) => setForm({ ...form, conversionSyncEnabled: v })}
       />
       <ToggleRow
-        label="رفع التحويلات المتحقّق منها فقط"
+        label={tr("csVerifiedOnly")}
         checked={form.conversionSyncVerifiedOnly}
         onChange={(v) => setForm({ ...form, conversionSyncVerifiedOnly: v })}
       />
       <p className="mb-5 mt-1.5 text-[12px] leading-relaxed text-text-faint">
-        إبقاؤه مفعَّلاً يرفع ما تأكّد بمصدر مستقلّ وحده — بيانات أقلّ وأنقى، وهو الخيار الصحيح في
-        الغالب. إطفاؤه يرفع كل حدث بما فيه غير المتحقّق: بيانات أكثر، وتعلُّم أقلّ دقّة.
+        {tr("csVerifiedOnlyHint")}
       </p>
 
       {form.conversionSyncEnabled && !anyReady && (
         <div className="mb-5 rounded-xl border border-gap/30 bg-gap/10 px-3 py-2.5 text-[12.5px] leading-relaxed text-gap">
-          التفعيل وحده لا يكفي — لن يُرفع شيء حتى تضبط بيانات منصة واحدة على الأقل أدناه.
+          {tr("csNoPlatformWarn")}
         </div>
       )}
 
       <div className="mb-2 text-xs font-medium uppercase tracking-wider text-text-faint">
-        ميتا — Conversions API
+        {tr("csMetaHead")}
       </div>
-      <FieldLabel>معرّف البكسل (Pixel ID)</FieldLabel>
+      <FieldLabel>{tr("csPixelId")}</FieldLabel>
       <TextInput
         value={form.metaPixelId}
         onChange={(v) => setForm({ ...form, metaPixelId: v })}
-        placeholder="مثال: 1234567890123456"
+        placeholder={tr("egPlaceholder", { value: "1234567890123456" })}
       />
-      <FieldLabel>توكن الوصول (Conversions API Access Token)</FieldLabel>
+      <FieldLabel>{tr("csMetaToken")}</FieldLabel>
       <TextInput
         value={form.metaCapiToken}
         onChange={(v) => setForm({ ...form, metaCapiToken: v })}
-        placeholder={workspace.hasMetaCapiToken ? "محفوظ — اتركه كما هو" : "من Events Manager ← الإعدادات"}
+        placeholder={workspace.hasMetaCapiToken ? tr("csTokenSaved") : tr("csMetaTokenPlaceholder")}
       />
 
       <div className="mb-2 text-xs font-medium uppercase tracking-wider text-text-faint">
-        جوجل — رفع التحويلات غير المتصلة
+        {tr("csGoogleHead")}
       </div>
-      <FieldLabel>معرّف إجراء التحويل (Conversion Action ID)</FieldLabel>
+      <FieldLabel>{tr("csConversionActionId")}</FieldLabel>
       <TextInput
         value={form.googleConversionActionId}
         onChange={(v) => setForm({ ...form, googleConversionActionId: v })}
-        placeholder="الرقم فقط، مثال: 987654321"
+        placeholder={tr("csGoogleIdPlaceholder")}
       />
       <p className="-mt-2 mb-4 text-[12px] leading-relaxed text-text-faint">
-        يتطلّب إجراء تحويل من نوع Webpage مع تفعيل التحويلات المُحسَّنة (Enhanced Conversions).
-        لا يحتاج توكناً منفصلاً — يستخدم ربط جوجل القائم.
+        {tr("csGoogleHint")}
       </p>
 
       <div className="mb-2 text-xs font-medium uppercase tracking-wider text-text-faint">
-        تيك توك — Events API
+        {tr("csTiktokHead")}
       </div>
-      <FieldLabel>رمز البكسل (Pixel Code)</FieldLabel>
+      <FieldLabel>{tr("csPixelCode")}</FieldLabel>
       <TextInput
         value={form.tiktokPixelCode}
         onChange={(v) => setForm({ ...form, tiktokPixelCode: v })}
-        placeholder="من TikTok Events Manager"
+        placeholder={tr("csTiktokCodePlaceholder")}
       />
-      <FieldLabel>توكن الأحداث (Access Token)</FieldLabel>
+      <FieldLabel>{tr("csEventsToken")}</FieldLabel>
       <TextInput
         value={form.tiktokCapiToken}
         onChange={(v) => setForm({ ...form, tiktokCapiToken: v })}
-        placeholder={workspace.hasTiktokCapiToken ? "محفوظ — اتركه كما هو" : "من إعدادات البكسل"}
+        placeholder={workspace.hasTiktokCapiToken ? tr("csTokenSaved") : tr("csTiktokTokenPlaceholder")}
       />
 
       <div className="mb-4 flex flex-wrap gap-1.5">
-        <ReadyChip label="ميتا" ready={metaReady} />
-        <ReadyChip label="جوجل" ready={googleReady} />
-        <ReadyChip label="تيك توك" ready={tiktokReady} />
+        <ReadyChip label={tr("platMeta")} ready={metaReady} />
+        <ReadyChip label={tr("platGoogle")} ready={googleReady} />
+        <ReadyChip label={tr("platTiktok")} ready={tiktokReady} />
       </div>
 
       <p className="mb-4 text-[12px] leading-relaxed text-text-faint">
-        التوكنات تُشفَّر قبل التخزين (AES-256-GCM) ولا تُعاد إلى المتصفح إطلاقاً. الرفع يعمل يومياً،
-        ويتخطّى أي حدث جودة مطابقته أضعف من أن تربطه المنصة بأحد — فلا نستهلك حصّتك بلا فائدة.
-        النتائج تظهر في قسم «الحقيقة».
+        {tr("csSafety")}
       </p>
 
       <div className="flex items-center gap-3">
         <SaveButton onClick={handleSave} saving={saving} />
-        {saved && <span className="text-[12.5px] text-verified">حُفظت التغييرات.</span>}
+        {saved && <span className="text-[12.5px] text-verified">{tr("csSavedNote")}</span>}
       </div>
     </SettingsSection>
   );
 }
 
 function ReadyChip({ label, ready }: { label: string; ready: boolean }) {
+  const tr = useT();
   return (
     <span
       className={`rounded-full px-2.5 py-1 text-[11.5px] font-medium ${
         ready ? "bg-verified/10 text-verified" : "bg-surface-raised text-text-faint"
       }`}
     >
-      {label}: {ready ? "جاهزة" : "غير مضبوطة"}
+      {label}: {ready ? tr("chipReady") : tr("chipNotSet")}
     </span>
   );
 }
@@ -1518,13 +1542,14 @@ function NumberRow({
 }
 
 function SaveButton({ onClick, saving }: { onClick: () => void; saving: boolean }) {
+  const tr = useT();
   return (
     <button
       onClick={onClick}
       disabled={saving}
       className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
     >
-      {saving ? "جارٍ الحفظ..." : "حفظ التغييرات"}
+      {saving ? tr("savingShort") : tr("saveChanges")}
     </button>
   );
 }

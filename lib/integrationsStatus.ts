@@ -11,6 +11,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { INTEGRATIONS, type IntegrationDef } from "@/lib/integrationsCatalog";
+import type { LocalizedText } from "@/lib/ecommerce/opportunities";
 
 export type IntegrationHealth = "HEALTHY" | "NEEDS_ATTENTION" | "BROKEN";
 
@@ -33,6 +34,7 @@ export interface ActiveIntegration {
   nameAr: string;
   category: string;
   color: string;
+  logoKey: string;
   /** عدد الحسابات/المتاجر المرتبطة */
   accountCount: number;
   accountNames: string[];
@@ -41,10 +43,13 @@ export interface ActiveIntegration {
   lastSyncAt: Date | null;
   lastSyncStatus: string | null;
   health: IntegrationHealth;
-  /** سبب الحالة بلغة المستخدم - لا شارة بلا تفسير */
-  healthReason: string;
-  /** الصلاحيات الفعلية التي يمنحها هذا الربط */
-  permissions: string[];
+  /**
+   * سبب الحالة كمفتاح ترجمة لا كنصّ جاهز - المحرّك يعمل في الخادم ولا
+   * يعرف لغة الواجهة، فإرجاع جملة مكتملة يقفل اللغة عند لحظة الحساب.
+   */
+  healthReason: LocalizedText;
+  /** الصلاحيات الفعلية التي يمنحها هذا الربط - مفاتيح لا نصوص */
+  permissionKeys: string[];
   recentRuns: SyncRunSummary[];
   /** عدد الصفوف المكتوبة خلال آخر ٧ أيام - دليل أن التكامل حيّ لا مجرد متصل */
   recordsLast7Days: number;
@@ -69,6 +74,8 @@ export interface IntegrationsOverview {
   totalAccounts: number;
   active: ActiveIntegration[];
   available: IntegrationDef[];
+  /** مبنيّ ولم يُربط بعد مقابل غير مبنيّ - فصلهما يمنع ادّعاء تكامل غير موجود */
+  soon: IntegrationDef[];
   /** ما كان مربوطاً وانقطع - يستحق تبويباً خاصاً لأنه فقدان لا فرصة */
   disconnected: IntegrationDef[];
   recentActivity: SyncRunSummary[];
@@ -76,30 +83,12 @@ export interface IntegrationsOverview {
 
 /** ما يمنحه كل ربط فعلياً - مكتوب لا مُخمَّن */
 const PERMISSIONS: Record<string, string[]> = {
-  GOOGLE_ADS: [
-    "قراءة الحملات والمجموعات والإعلانات",
-    "قراءة مصطلحات البحث ودرجة الجودة",
-    "تعديل الميزانية واستراتيجية المزايدة",
-    "إيقاف الإعلانات والحملات",
-    "رفع التحويلات غير المتصلة",
-  ],
-  META_ADS: [
-    "قراءة الحملات والمجموعات والإعلانات",
-    "قراءة تفصيل الأماكن ومعدّل التكرار",
-    "تعديل ميزانية المجموعات الإعلانية",
-    "إيقاف الإعلانات والحملات",
-    "رفع الأحداث عبر Conversions API",
-  ],
-  TIKTOK_ADS: [
-    "قراءة الحملات والمجموعات والإعلانات",
-    "قراءة تفاعل Spark Ads",
-    "تعديل ميزانية المجموعات الإعلانية",
-    "إيقاف الإعلانات والحملات",
-    "رفع الأحداث عبر Events API",
-  ],
+  GOOGLE_ADS: ["permReadCampaigns", "permReadSearchTerms", "permEditBudgetBid", "permPauseAds", "permUploadOffline"],
+  META_ADS: ["permReadCampaigns", "permReadPlacements", "permEditAdsetBudget", "permPauseAds", "permUploadCapi"],
+  TIKTOK_ADS: ["permReadCampaigns", "permReadSpark", "permEditAdsetBudget", "permPauseAds", "permUploadEvents"],
 };
 
-const ECOMMERCE_PERMISSIONS = ["استقبال الطلبات فور حدوثها", "قراءة الإيراد والمرتجعات"];
+const ECOMMERCE_PERMISSIONS = ["permReceiveOrders", "permReadRevenue"];
 
 /** بعد هذه المدة تُعدّ البيانات قديمة - المزامنة يومية، فيومان تأخّر إشارة حقيقية */
 const STALE_SYNC_HOURS = 48;
@@ -165,6 +154,7 @@ export async function getIntegrationsOverview(
       nameAr: def.nameAr,
       category: def.category,
       color: def.color,
+      logoKey: def.logoKey,
       accountCount: uniqueAccounts.length,
       entityCount: accounts.length,
       entityLabelKey: "campaigns",
@@ -182,7 +172,7 @@ export async function getIntegrationsOverview(
       lastSyncStatus: lastRun?.status ?? null,
       health,
       healthReason: reason,
-      permissions: PERMISSIONS[conn.platform] ?? [],
+      permissionKeys: PERMISSIONS[conn.platform] ?? [],
       recentRuns: platformRuns.slice(0, 10),
       recordsLast7Days: platformRuns
         .filter((r) => r.startedAt >= sevenDaysAgo)
@@ -203,13 +193,13 @@ export async function getIntegrationsOverview(
         ? "HEALTHY"
         : "NEEDS_ATTENTION";
 
-    const reason = !store.active
-      ? "الربط معطَّل."
+    const reason: LocalizedText = !store.active
+      ? { key: "hrStoreDisabled" }
       : !store.lastOrderAt
-        ? "لم يصل أي طلب بعد - تأكّد من تسجيل الويب هوك في لوحة المتجر."
+        ? { key: "hrStoreNoOrders" }
         : health === "HEALTHY"
-          ? `آخر طلب وصل ${relativeAr(store.lastOrderAt, now)}.`
-          : `لم يصل طلب منذ ${relativeAr(store.lastOrderAt, now)} - قد يكون الويب هوك توقّف.`;
+          ? { key: "hrStoreLastOrder", vars: { since: hoursSince(store.lastOrderAt, now) } }
+          : { key: "hrStoreStale", vars: { since: hoursSince(store.lastOrderAt, now) } };
 
     // المتجر لا يُزامَن دورياً، فصحّته تُقاس بحداثة آخر طلب وصل
     const storeHealthPct = !store.active
@@ -229,6 +219,7 @@ export async function getIntegrationsOverview(
       nameAr: def.nameAr,
       category: def.category,
       color: def.color,
+      logoKey: def.logoKey,
       accountCount: 1,
       entityCount: store.ordersReceived,
       entityLabelKey: "webhooks",
@@ -240,9 +231,9 @@ export async function getIntegrationsOverview(
       lastSyncStatus: store.active ? "SUCCESS" : "FAILED",
       health,
       healthReason: reason,
-      permissions: store.canWritePrices
-        ? [...ECOMMERCE_PERMISSIONS, "تحديث أسعار المنتجات في المتجر"]
-        : [...ECOMMERCE_PERMISSIONS, "قراءة فقط - التوكن لا يسمح بتحديث الأسعار"],
+      permissionKeys: store.canWritePrices
+        ? [...ECOMMERCE_PERMISSIONS, "permWritePrices"]
+        : [...ECOMMERCE_PERMISSIONS, "permReadOnlyPrices"],
       recentRuns: [],
       recordsLast7Days: store.ordersReceived,
     });
@@ -271,7 +262,8 @@ export async function getIntegrationsOverview(
     successRatePct,
     totalAccounts: active.reduce((sum, a) => sum + a.accountCount, 0),
     active: active.sort((a, b) => healthRank(a.health) - healthRank(b.health)),
-    available: [...available, ...soon],
+    available,
+    soon,
     disconnected: disconnected.map((d) => INTEGRATIONS.find((i) => i.key === d.key)!).filter(Boolean),
     recentActivity: runs.slice(0, 20) as SyncRunSummary[],
   };
@@ -325,40 +317,40 @@ function assessHealth(input: {
   lastRunError: string | null;
   lastSuccessAt: Date | null;
   accountCount: number;
-}): { health: IntegrationHealth; reason: string } {
+}): { health: IntegrationHealth; reason: LocalizedText } {
   const { now, expiresAt, lastRunStatus, lastRunError, lastSuccessAt, accountCount } = input;
 
   if (expiresAt && expiresAt <= now) {
-    return { health: "BROKEN", reason: "انتهت صلاحية الربط - أعد الموافقة لاستئناف تدفّق البيانات." };
+    return { health: "BROKEN", reason: { key: "hrExpired" } };
   }
 
   if (lastRunStatus === "FAILED") {
     return {
       health: "BROKEN",
       reason: lastRunError
-        ? `آخر مزامنة فشلت: ${truncate(lastRunError, 120)}`
-        : "آخر مزامنة فشلت - التدفّق متوقّف الآن.",
+        ? { key: "hrFailedWithError", vars: { error: truncate(lastRunError, 120) } }
+        : { key: "hrFailed" },
     };
   }
 
   if (accountCount === 0) {
     return {
       health: "NEEDS_ATTENTION",
-      reason: "الحساب مربوط لكن لم تُختَر أي حملة بعد - لا شيء يُزامَن.",
+      reason: { key: "hrNoCampaigns" },
     };
   }
 
   if (expiresAt) {
     const days = Math.ceil((expiresAt.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
     if (days <= TOKEN_WARNING_DAYS) {
-      return { health: "NEEDS_ATTENTION", reason: `صلاحية الربط تنتهي خلال ${days} يوم - جدّدها قبل توقّف التدفّق.` };
+      return { health: "NEEDS_ATTENTION", reason: { key: "hrExpiringSoon", vars: { days } } };
     }
   }
 
   if (!lastSuccessAt) {
     return {
       health: "NEEDS_ATTENTION",
-      reason: "لم تُسجَّل مزامنة ناجحة بعد - شغّل مزامنة يدوية للتحقّق من الربط.",
+      reason: { key: "hrNoSuccessYet" },
     };
   }
 
@@ -366,11 +358,11 @@ function assessHealth(input: {
   if (hours > STALE_SYNC_HOURS) {
     return {
       health: "NEEDS_ATTENTION",
-      reason: `آخر مزامنة ناجحة ${relativeAr(lastSuccessAt, now)} - أقدم من المتوقّع (المزامنة يومية).`,
+      reason: { key: "hrStaleSync", vars: { since: hoursSince(lastSuccessAt, now) } },
     };
   }
 
-  return { health: "HEALTHY", reason: `آخر مزامنة ناجحة ${relativeAr(lastSuccessAt, now)}.` };
+  return { health: "HEALTHY", reason: { key: "hrLastSuccess", vars: { since: hoursSince(lastSuccessAt, now) } } };
 }
 
 function healthRank(h: IntegrationHealth): number {
@@ -383,31 +375,6 @@ function hoursSince(d: Date, now: Date): number {
 
 function truncate(s: string, max: number): string {
   return s.length <= max ? s : `${s.slice(0, max)}…`;
-}
-
-/** صياغة عربية سليمة للزمن النسبي - لا "منذ 1 أيام" */
-export function relativeAr(date: Date, now: Date = new Date()): string {
-  const seconds = Math.max(0, Math.floor((now.getTime() - date.getTime()) / 1000));
-  if (seconds < 60) return "الآن";
-
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `منذ ${plural(minutes, "دقيقة", "دقيقتين", "دقائق")}`;
-
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `منذ ${plural(hours, "ساعة", "ساعتين", "ساعات")}`;
-
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `منذ ${plural(days, "يوم", "يومين", "أيام")}`;
-
-  const months = Math.floor(days / 30);
-  return `منذ ${plural(months, "شهر", "شهرين", "أشهر")}`;
-}
-
-function plural(n: number, one: string, two: string, many: string): string {
-  if (n === 1) return one;
-  if (n === 2) return two;
-  if (n <= 10) return `${n} ${many}`;
-  return `${n} ${one}`;
 }
 
 // ==================== تسجيل تشغيل المزامنة ====================

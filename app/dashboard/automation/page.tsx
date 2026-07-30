@@ -5,11 +5,13 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { ActiveRulesList } from "./ActiveRulesList";
 import { RuleCatalogBrowser } from "./RuleCatalogBrowser";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export default async function AutomationPage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -18,7 +20,7 @@ export default async function AutomationPage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
   const [rules, campaignLinks] = await Promise.all([
@@ -35,16 +37,17 @@ export default async function AutomationPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-6 text-[26px] font-semibold text-text-primary">التشغيل الذكي</h1>
+      <h1 className="mb-6 text-[26px] font-semibold text-text-primary">{t(locale, "autoPage.title")}</h1>
 
       {!workspace.enableAutomationRules && (
         <div className="mb-4 rounded-2xl bg-gap/10 p-4 text-xs text-gap">
-          الأتمتة متوقّفة من إعدادات مساحة العمل هذه — ستبقى القواعد مسجَّلة لكنها لن تُنفَّذ.
+          {t(locale, "autoPage.disabledNote")}
         </div>
       )}
 
       {/* القواعد المفعّلة: تشغيل/إيقاف، تعديل، حذف */}
       <ActiveRulesList
+        locale={locale}
         workspaceId={workspace.id}
         campaigns={campaignLinks.map((c: any) => ({
           id: c.externalCampaignId, name: c.campaignName, platform: c.platform,
@@ -61,11 +64,12 @@ export default async function AutomationPage() {
 
       {/* كتالوج القرارات: منصة ← فئة ← قرار ← نطاق الحملات */}
       <section className="mt-10">
-        <h2 className="mb-1 text-[18px] font-semibold text-text-primary">أضف قراراً جديداً</h2>
+        <h2 className="mb-1 text-[18px] font-semibold text-text-primary">{t(locale, "autoPage.addNew")}</h2>
         <p className="mb-4 text-[13px] text-text-muted">
-          اختر المنصة ثم الفئة، وحدّد العتبة ونطاق الحملات التي تُطبَّق عليها القاعدة.
+          {t(locale, "autoPage.addNewHint")}
         </p>
         <RuleCatalogBrowser
+          locale={locale}
           workspaceId={workspace.id}
           currency={workspace.currency}
           campaigns={campaignLinks.map((c: any) => ({

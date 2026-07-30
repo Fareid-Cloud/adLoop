@@ -1,8 +1,8 @@
 import { getAppUrl } from "@/lib/appUrl";
 // app/api/oauth/google-ads/start/route.ts
 //
-// المستخدم بيدوس "اربط حساب Google Ads" في الإعدادات، وده بيودّيه هنا،
-// وده بيحوّله لصفحة موافقة جوجل الرسمية.
+// يضغط المستخدم "اربط Google Ads" في صفحة ربط المنصات فيصل إلى هنا،
+// ومن هنا يُحوَّل إلى صفحة الموافقة الرسمية لدى جوجل.
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";

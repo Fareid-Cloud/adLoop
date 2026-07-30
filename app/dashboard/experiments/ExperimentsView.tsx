@@ -1,14 +1,15 @@
 "use client";
 
-// عرض المعمل: التجارب تُنشأ تلقائياً عند تنفيذ أي قرار، وتُقاس نتيجتها بعد
-// اكتمال النافذة. الإضافة اليدوية ميزة إضافية لتجربة تغيير أجريته خارج
+// عرض الاختبارات: تُنشأ تلقائياً عند تنفيذ أي قرار، وتُقاس نتيجتها بعد
+// اكتمال النافذة. الإضافة اليدوية ميزة إضافية لتسجيل تغيير أجريته خارج
 // المنتج (نص إعلان، صفحة هبوط، استهداف).
 
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Beaker, Plus, TrendingUp, TrendingDown, Minus, X, Check, Clock, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { EXPERIMENT_METRICS } from "@/lib/experimentMetrics";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 interface MetricResult { before: number; after: number; changePct: number | null }
 
@@ -28,25 +29,51 @@ export interface ExperimentRow {
   metricResults: Record<string, MetricResult> | null;
 }
 
-const CHANGE_TYPE_LABEL: Record<string, string> = {
-  BUDGET: "ميزانية", AD_COPY: "نص إعلان", LANDING_PAGE: "صفحة هبوط",
-  TARGETING: "استهداف", BID_STRATEGY: "استراتيجية مزايدة", CREATIVE: "تصميم إعلاني",
-  PAUSE: "إيقاف", AUTOMATION_RULE: "قاعدة أتمتة", OTHER: "أخرى",
+// سياق اللغة بدل تمريرها عبر ثلاثة مكوّنات متداخلة - نفس نمط الإعدادات.
+const LabLocaleContext = createContext<Locale>("ar");
+function useT() {
+  const locale = useContext(LabLocaleContext);
+  return (k: string, vars?: Record<string, string | number>) => t(locale, `lab.${k}`, vars);
+}
+function useLocale() {
+  return useContext(LabLocaleContext);
+}
+
+const CHANGE_TYPE_KEYS: Record<string, string> = {
+  BUDGET: "typeBudget", AD_COPY: "typeAdCopy", LANDING_PAGE: "typeLanding",
+  TARGETING: "typeTargeting", BID_STRATEGY: "typeBid", CREATIVE: "typeCreative",
+  PAUSE: "typePause", AUTOMATION_RULE: "typeRule", OTHER: "typeOther",
 };
 
-const CONFIDENCE: Record<string, { label: string; tone: string }> = {
-  RELIABLE: { label: "نتيجة موثوقة", tone: "var(--verified)" },
-  PRELIMINARY: { label: "مؤشر أولي", tone: "var(--gap)" },
-  INSUFFICIENT_DATA: { label: "بيانات غير كافية", tone: "var(--text-muted)" },
+const CONFIDENCE_TONE: Record<string, { key: string; tone: string }> = {
+  RELIABLE: { key: "confReliable", tone: "var(--verified)" },
+  PRELIMINARY: { key: "confPreliminary", tone: "var(--gap)" },
+  INSUFFICIENT_DATA: { key: "confInsufficient", tone: "var(--text-muted)" },
 };
 
 export function ExperimentsView({
+  workspaceId, experiments, campaigns, locale = "ar",
+}: {
+  workspaceId: string;
+  experiments: ExperimentRow[];
+  campaigns: { id: string; name: string; platform: string }[];
+  locale?: Locale;
+}) {
+  return (
+    <LabLocaleContext.Provider value={locale}>
+      <ExperimentsBody workspaceId={workspaceId} experiments={experiments} campaigns={campaigns} />
+    </LabLocaleContext.Provider>
+  );
+}
+
+function ExperimentsBody({
   workspaceId, experiments, campaigns,
 }: {
   workspaceId: string;
   experiments: ExperimentRow[];
   campaigns: { id: string; name: string; platform: string }[];
 }) {
+  const tr = useT();
   const [adding, setAdding] = useState(false);
   const running = experiments.filter((e) => e.status === "RUNNING");
   const done = experiments.filter((e) => e.status !== "RUNNING");
@@ -57,15 +84,11 @@ export function ExperimentsView({
         <div className="flex items-start gap-3">
           <Beaker size={18} className="mt-0.5 shrink-0 text-accent" />
           <div className="flex-1">
-            <h2 className="mb-1 text-[14px] font-semibold text-text-primary">كيف يعمل المعمل</h2>
-            <p className="text-[12.5px] leading-relaxed text-text-muted">
-              كل قرار تنفّذه — بموافقتك أو عبر قاعدة أتمتة — يُسجَّل هنا تلقائياً.
-              بعد اكتمال نافذة القياس نقارن أداء الفترة التالية للتغيير بالفترة
-              السابقة له مباشرة، بنفس الطول وعلى نفس الحملة، ونعرض الفرق لكل مؤشر.
-            </p>
+            <h2 className="mb-1 text-[14px] font-semibold text-text-primary">{tr("howItWorks")}</h2>
+            <p className="text-[12.5px] leading-relaxed text-text-muted">{tr("howItWorksBody")}</p>
           </div>
           <button onClick={() => setAdding(true)} className="flex shrink-0 items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-primary">
-            <Plus size={14} /> تجربة يدوية
+            <Plus size={14} /> {tr("manualBtn")}
           </button>
         </div>
       </div>
@@ -73,17 +96,15 @@ export function ExperimentsView({
       {experiments.length === 0 && (
         <div className="rounded-2xl border border-dashed border-border p-10 text-center">
           <Beaker size={26} className="mx-auto mb-3 text-text-faint" />
-          <p className="text-[13.5px] text-text-primary">لا توجد تجارب بعد</p>
-          <p className="mt-1 text-[12.5px] text-text-muted">
-            ستظهر أول تجربة تلقائياً بمجرد تنفيذ أول قرار من صفحة القرارات.
-          </p>
+          <p className="text-[13.5px] text-text-primary">{tr("noneTitle")}</p>
+          <p className="mt-1 text-[12.5px] text-text-muted">{tr("noneBody")}</p>
         </div>
       )}
 
       {running.length > 0 && (
         <section className="mb-6">
           <h3 className="mb-2 flex items-center gap-1.5 text-[13px] font-medium text-text-muted">
-            <Clock size={13} /> قيد القياس ({running.length})
+            <Clock size={13} /> {tr("measuring", { n: running.length })}
           </h3>
           <div className="flex flex-col gap-2">
             {running.map((e) => <ExperimentCard key={e.id} exp={e} workspaceId={workspaceId} />)}
@@ -93,7 +114,7 @@ export function ExperimentsView({
 
       {done.length > 0 && (
         <section>
-          <h3 className="mb-2 text-[13px] font-medium text-text-muted">نتائج ({done.length})</h3>
+          <h3 className="mb-2 text-[13px] font-medium text-text-muted">{tr("results", { n: done.length })}</h3>
           <div className="flex flex-col gap-2">
             {done.map((e) => <ExperimentCard key={e.id} exp={e} workspaceId={workspaceId} />)}
           </div>
@@ -108,6 +129,8 @@ export function ExperimentsView({
 }
 
 function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId: string }) {
+  const tr = useT();
+  const locale = useLocale();
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -132,7 +155,7 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
     setBusy(false); setConfirmDelete(false); router.refresh();
   }
 
-  const conf = CONFIDENCE[exp.confidenceLevel] ?? CONFIDENCE.INSUFFICIENT_DATA;
+  const conf = CONFIDENCE_TONE[exp.confidenceLevel] ?? CONFIDENCE_TONE.INSUFFICIENT_DATA;
   const daysLeft = Math.max(
     0,
     exp.windowDays - Math.floor((Date.now() - new Date(exp.changedAt).getTime()) / 86400000)
@@ -144,48 +167,46 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
         {exp.platform && <PlatformLogo platform={exp.platform} size={15} />}
         <span className="text-[13.5px] font-medium text-text-primary">{exp.description}</span>
         <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10.5px] text-text-muted">
-          {CHANGE_TYPE_LABEL[exp.changeType] ?? exp.changeType}
+          {CHANGE_TYPE_KEYS[exp.changeType] ? tr(CHANGE_TYPE_KEYS[exp.changeType]) : exp.changeType}
         </span>
         {exp.source === "MANUAL" && (
-          <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10.5px] text-text-muted">يدوية</span>
+          <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10.5px] text-text-muted">{tr("manualTag")}</span>
         )}
         <span className="flex-1" />
         <button onClick={() => setEditing((v) => !v)}
                 className="rounded-lg border border-border bg-surface-raised p-1.5 text-text-muted hover:text-text-primary"
-                aria-label="تعديل التجربة">
+                aria-label={tr("editAria")}>
           <Pencil size={13} />
         </button>
         <button onClick={() => setConfirmDelete(true)}
                 className="rounded-lg border border-border bg-surface-raised p-1.5 text-text-muted hover:text-critical"
-                aria-label="حذف التجربة">
+                aria-label={tr("deleteAria")}>
           <Trash2 size={13} />
         </button>
       </div>
 
       {editing && (
         <div className="mb-3 flex flex-col gap-2.5 rounded-xl border border-border bg-surface-raised p-3">
-          <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="وصف التغيير"
+          <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={tr("descPlaceholder")}
                  className="rounded-lg border border-border bg-surface px-3 py-2 text-[13px] text-text-primary outline-none focus:border-accent" />
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="ملاحظة (اختياري)"
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder={tr("notePlaceholder")}
                  className="rounded-lg border border-border bg-surface px-3 py-2 text-[13px] text-text-primary outline-none focus:border-accent" />
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11.5px] text-text-muted">نافذة القياس:</span>
+            <span className="text-[11.5px] text-text-muted">{tr("window")}</span>
             {[3, 7, 14, 30].map((d) => (
               <button key={d} onClick={() => setWin(d)}
                       className={`rounded-lg border px-2.5 py-1 text-[11.5px] ${win === d ? "border-accent bg-accent/10 text-accent" : "border-border bg-surface text-text-muted"}`}>
-                {d} أيام
+                {tr("daysN", { n: d })}
               </button>
             ))}
           </div>
           {win !== exp.windowDays && exp.status !== "RUNNING" && (
-            <p className="text-[11.5px] text-gap">
-              تغيير النافذة يُعيد التجربة إلى القياس، لأن النتيجة الحالية محسوبة على نافذة مختلفة.
-            </p>
+            <p className="text-[11.5px] text-gap">{tr("windowWarn")}</p>
           )}
           <div className="flex justify-end gap-2">
-            <button onClick={() => setEditing(false)} className="rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] text-text-muted">إلغاء</button>
+            <button onClick={() => setEditing(false)} className="rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] text-text-muted">{tr("cancel")}</button>
             <button onClick={save} disabled={busy} className="rounded-lg bg-accent px-3.5 py-1.5 text-[12px] font-medium text-white disabled:opacity-50">
-              {busy ? "جارٍ الحفظ..." : "حفظ"}
+              {busy ? tr("saving") : tr("save")}
             </button>
           </div>
         </div>
@@ -194,28 +215,26 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
       {confirmDelete && (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-critical/35 bg-critical/[0.06] p-3">
           <span className="flex items-center gap-2 text-[12.5px] text-text-primary">
-            <AlertTriangle size={14} className="text-critical" /> حذف هذه التجربة نهائياً؟
+            <AlertTriangle size={14} className="text-critical" /> {tr("confirmDelete")}
           </span>
           <div className="flex gap-2">
-            <button onClick={() => setConfirmDelete(false)} className="rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] text-text-muted">إلغاء</button>
+            <button onClick={() => setConfirmDelete(false)} className="rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] text-text-muted">{tr("cancel")}</button>
             <button onClick={remove} disabled={busy} className="rounded-lg bg-critical px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-50">
-              {busy ? "جارٍ الحذف..." : "حذف"}
+              {busy ? tr("deleting") : tr("del")}
             </button>
           </div>
         </div>
       )}
 
-      {exp.campaignName && <p className="mb-2 text-[12px] text-text-muted">الحملة: {exp.campaignName}</p>}
+      {exp.campaignName && <p className="mb-2 text-[12px] text-text-muted">{tr("campaign", { name: exp.campaignName })}</p>}
       {exp.note && <p className="mb-2 text-[12px] italic text-text-muted">{exp.note}</p>}
 
       {exp.status === "RUNNING" ? (
         <p className="text-[12.5px] text-text-muted">
-          {daysLeft > 0 ? `النتيجة بعد ${daysLeft} يوم` : "النتيجة قيد الحساب"} — نافذة {exp.windowDays} أيام
+          {daysLeft > 0 ? tr("resultAfter", { n: daysLeft }) : tr("resultComputing")} — {tr("windowN", { n: exp.windowDays })}
         </p>
       ) : exp.status === "INCONCLUSIVE" || !exp.metricResults ? (
-        <p className="text-[12.5px] text-text-muted">
-          لا توجد بيانات كافية على أحد جانبي التغيير للحكم على الأثر.
-        </p>
+        <p className="text-[12.5px] text-text-muted">{tr("notEnough")}</p>
       ) : (
         <>
           <div className="mb-2 flex flex-wrap gap-2">
@@ -228,7 +247,7 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
               const tone = good === null ? "var(--text-muted)" : good ? "var(--verified)" : "var(--critical)";
               return (
                 <div key={k} className="rounded-xl border border-border bg-surface-raised px-3 py-2">
-                  <div className="text-[11px] text-text-muted">{def?.labelAr ?? k}</div>
+                  <div className="text-[11px] text-text-muted">{(locale === "en" ? def?.labelEn : def?.labelAr) ?? k}</div>
                   <div className="mt-0.5 flex items-center gap-1.5">
                     <span className="font-mono text-[13px] text-text-primary">{r.before} → {r.after}</span>
                     {pct !== null && (
@@ -244,7 +263,7 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium"
                 style={{ background: `color-mix(in srgb, ${conf.tone} 14%, transparent)`, color: conf.tone }}>
-            {conf.label}
+            {tr(conf.key)}
           </span>
         </>
       )}
@@ -259,6 +278,8 @@ function ManualExperimentModal({
   campaigns: { id: string; name: string; platform: string }[];
   onClose: () => void;
 }) {
+  const tr = useT();
+  const locale = useLocale();
   const router = useRouter();
   const [changeType, setChangeType] = useState("AD_COPY");
   const [campaignId, setCampaignId] = useState("");
@@ -270,8 +291,8 @@ function ManualExperimentModal({
   const [error, setError] = useState<string | null>(null);
 
   async function save() {
-    if (!description.trim()) { setError("اكتب وصفاً للتغيير الذي أجريته."); return; }
-    if (metrics.length === 0) { setError("اختر مؤشراً واحداً على الأقل للمقارنة."); return; }
+    if (!description.trim()) { setError(tr("errNoDesc")); return; }
+    if (metrics.length === 0) { setError(tr("errNoMetric")); return; }
     setSaving(true);
     setError(null);
     const campaign = campaigns.find((c) => c.id === campaignId);
@@ -286,7 +307,7 @@ function ManualExperimentModal({
     });
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
-      setError(d.error ?? "تعذّر حفظ التجربة.");
+      setError(d.error ?? tr("errSave"));
       setSaving(false);
       return;
     }
@@ -298,47 +319,47 @@ function ManualExperimentModal({
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="pop-shadow flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-surface">
         <div className="flex items-center justify-between border-b border-border p-5">
-          <h2 className="text-[15px] font-semibold text-text-primary">تسجيل تجربة يدوية</h2>
+          <h2 className="text-[15px] font-semibold text-text-primary">{tr("manualTitle")}</h2>
           <button onClick={onClose} className="rounded-lg p-1.5 text-text-muted hover:bg-surface-raised"><X size={17} /></button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5">
-          <label className="mb-1.5 block text-[12.5px] text-text-muted">نوع التغيير</label>
+          <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("changeType")}</label>
           <select value={changeType} onChange={(e) => setChangeType(e.target.value)}
                   className="mb-4 w-full rounded-xl border border-border bg-surface-raised px-3 py-2 text-[13.5px] text-text-primary outline-none focus:border-accent">
-            {Object.entries(CHANGE_TYPE_LABEL).filter(([k]) => k !== "AUTOMATION_RULE").map(([k, v]) => (
-              <option key={k} value={k}>{v}</option>
+            {Object.entries(CHANGE_TYPE_KEYS).filter(([k]) => k !== "AUTOMATION_RULE").map(([k, key]) => (
+              <option key={k} value={k}>{tr(key)}</option>
             ))}
           </select>
 
-          <label className="mb-1.5 block text-[12.5px] text-text-muted">الحملة (اختياري — بدونها نقيس على مستوى مساحة العمل)</label>
+          <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("campaignOptional")}</label>
           <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
                   className="mb-4 w-full rounded-xl border border-border bg-surface-raised px-3 py-2 text-[13.5px] text-text-primary outline-none focus:border-accent">
-            <option value="">كل الحملات</option>
+            <option value="">{tr("allCampaigns")}</option>
             {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
 
-          <label className="mb-1.5 block text-[12.5px] text-text-muted">وصف التغيير</label>
+          <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("changeDesc")}</label>
           <input value={description} onChange={(e) => setDescription(e.target.value)}
-                 placeholder="مثال: تغيير العنوان الرئيسي في صفحة الهبوط"
+                 placeholder={tr("changeDescPlaceholder")}
                  className="mb-4 w-full rounded-xl border border-border bg-surface-raised px-3 py-2 text-[13.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent" />
 
-          <label className="mb-1.5 block text-[12.5px] text-text-muted">ملاحظة (اختياري)</label>
+          <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("noteOptional")}</label>
           <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2}
                     className="mb-4 w-full resize-none rounded-xl border border-border bg-surface-raised px-3 py-2 text-[13.5px] text-text-primary outline-none focus:border-accent" />
 
-          <label className="mb-1.5 block text-[12.5px] text-text-muted">نافذة القياس</label>
+          <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("windowLabel")}</label>
           <div className="mb-4 flex gap-2">
             {[3, 7, 14, 30].map((d) => (
               <button key={d} onClick={() => setWindowDays(d)}
                       className={`flex-1 rounded-xl border px-3 py-2 text-[12.5px] ${windowDays === d ? "border-accent bg-accent/10 text-accent" : "border-border bg-surface-raised text-text-muted"}`}>
-                {d} أيام
+                {tr("daysN", { n: d })}
               </button>
             ))}
           </div>
 
           <label className="mb-1.5 block text-[12.5px] text-text-muted">
-            المؤشرات المقارَنة ({metrics.length} مختار)
+            {tr("metricsCompared", { n: metrics.length })}
           </label>
           <div className="flex flex-wrap gap-1.5">
             {EXPERIMENT_METRICS.map((m) => {
@@ -347,7 +368,7 @@ function ManualExperimentModal({
                 <button key={m.key}
                         onClick={() => setMetrics((p) => on ? p.filter((x) => x !== m.key) : [...p, m.key])}
                         className={`flex items-center gap-1 rounded-full border px-2.5 py-1.5 text-[12px] ${on ? "border-accent bg-accent/10 text-accent" : "border-border bg-surface-raised text-text-muted"}`}>
-                  {on && <Check size={11} />}{m.labelAr}
+                  {on && <Check size={11} />}{locale === "en" ? m.labelEn : m.labelAr}
                 </button>
               );
             })}
@@ -357,9 +378,9 @@ function ManualExperimentModal({
         </div>
 
         <div className="flex justify-end gap-2 border-t border-border p-4">
-          <button onClick={onClose} className="rounded-xl border border-border bg-surface-raised px-4 py-2 text-[13px] text-text-muted">إلغاء</button>
+          <button onClick={onClose} className="rounded-xl border border-border bg-surface-raised px-4 py-2 text-[13px] text-text-muted">{tr("cancel")}</button>
           <button onClick={save} disabled={saving} className="rounded-xl bg-accent px-5 py-2 text-[13px] font-medium text-white disabled:opacity-50">
-            {saving ? "جارٍ الحفظ..." : "بدء القياس"}
+            {saving ? tr("saving") : tr("startMeasuring")}
           </button>
         </div>
       </div>

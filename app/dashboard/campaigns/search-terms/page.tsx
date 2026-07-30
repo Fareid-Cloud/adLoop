@@ -4,9 +4,20 @@ import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { findWastefulSearchTerms } from "@/lib/searchTermAnalysis";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams, toDateBounds } from "@/lib/dateRange";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
-export default async function SearchTermsPage() {
+export default async function SearchTermsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const period = periodFromParams(await searchParams);
+  const bounds = toDateBounds(period.range);
+
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
     return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
   }
@@ -27,11 +38,9 @@ export default async function SearchTermsPage() {
     data: { lastSearchTermsReviewAt: new Date() },
   });
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const snapshots = await prisma.searchTermSnapshot.findMany({
-    where: { workspaceId: workspace.id, date: { gte: thirtyDaysAgo } },
+    where: { workspaceId: workspace.id, date: bounds },
   });
 
   if (snapshots.length === 0) {
@@ -39,6 +48,7 @@ export default async function SearchTermsPage() {
       <div className="mx-auto max-w-3xl">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
         <h1 className="mb-6 text-[26px] font-semibold text-text-primary">مصطلحات البحث المهدرة</h1>
+        <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <EmptyState title="لا توجد بيانات مصطلحات بحث بعد" description="تتحدّث تلقائياً مع المزامنة اليومية." />
       </div>
     );

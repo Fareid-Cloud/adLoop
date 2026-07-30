@@ -1,19 +1,21 @@
 // app/dashboard/experiments/page.tsx
 //
-// المعمل: التجارب تُنشأ تلقائياً عند تنفيذ أي قرار، وتُقاس نتيجتها بعد
+// الاختبارات: تُنشأ تلقائياً عند تنفيذ أي قرار، وتُقاس نتيجتها بعد
 // اكتمال النافذة (lib/experimentEngine.ts). الصفحة عرض فقط - لا تحسب
-// النتائج بنفسها، حتى لا يختلف رقمان لنفس التجربة بين مكانين.
+// النتائج بنفسها، حتى لا يختلف رقمان لنفس الاختبار بين مكانين.
 
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { ExperimentsView, type ExperimentRow } from "./ExperimentsView";
 import { estimateLearningPhaseDuration, findStabilizationDay } from "@/lib/periodComparison";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export default async function ExperimentsPage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -22,7 +24,7 @@ export default async function ExperimentsPage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
   const [logs, campaignLinks] = await Promise.all([
@@ -85,22 +87,23 @@ export default async function ExperimentsPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-5 text-[26px] font-semibold text-text-primary">المعمل</h1>
+      <h1 className="mb-5 text-[26px] font-semibold text-text-primary">{t(locale, "lab.pageTitle")}</h1>
 
       <div className="card-shadow mb-5 rounded-2xl border border-border bg-surface p-4">
         <div className="mb-1 text-[13.5px] text-text-primary">
-          يستقر الأداء عادةً بعد تعديل الميزانية خلال {learningPhase.estimatedDays} يوماً تقريباً
+          {t(locale, "lab.stabilizeLine", { n: learningPhase.estimatedDays })}
         </div>
         <p className="text-[12px] text-text-faint">
           {learningPhase.basis === "account_history"
-            ? `مبني على تاريخ حسابك تحديداً (${learningPhase.sampleSize} تعديل سابق)`
-            : "معيار عام — لا يتوفر بعد تاريخ كافٍ من حسابك (يلزم 3 تعديلات ميزانية مسجّلة على الأقل)"}
+            ? t(locale, "lab.stabilizeFromHistory", { n: learningPhase.sampleSize })
+            : t(locale, "lab.stabilizeGeneric")}
         </p>
       </div>
 
       <ExperimentsView
         workspaceId={workspace.id}
         experiments={experiments}
+        locale={locale}
         campaigns={campaignLinks.map((c: any) => ({
           id: c.externalCampaignId,
           name: c.campaignName,

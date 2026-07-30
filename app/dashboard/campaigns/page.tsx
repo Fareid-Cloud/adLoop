@@ -5,18 +5,23 @@ import { prisma } from "@/lib/prisma";
 import { CampaignsOverview, type CampaignRow } from "./CampaignsOverview";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { CampaignsNav } from "./CampaignsNav";
+import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams, toDateBounds } from "@/lib/dateRange";
 
-const PLATFORM_LABELS: Record<string, string> = {
-  GOOGLE_ADS: "جوجل",
-  META_ADS: "ميتا",
-  TIKTOK_ADS: "تيك توك",
-  SNAPCHAT_ADS: "سناب شات",
-};
 
-export default async function CampaignsPage() {
+export default async function CampaignsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const period = periodFromParams(await searchParams);
+  const bounds = toDateBounds(period.range);
+
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -27,20 +32,18 @@ export default async function CampaignsPage() {
   if (!workspace) {
     return (
       <EmptyState
-        title="لا توجد مساحة عمل بعد"
-        description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل."
+        title={t(locale, "common.noWorkspace")}
+        description={t(locale, "common.noWorkspaceHint")}
       />
     );
   }
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const [campaignLinks, aggregates] = await Promise.all([
     prisma.campaignLink.findMany({ where: { workspaceId: workspace.id } }),
     prisma.metricSnapshot.groupBy({
       by: ["platform", "campaignId"],
-      where: { workspaceId: workspace.id, date: { gte: thirtyDaysAgo } },
+      where: { workspaceId: workspace.id, date: bounds },
       _sum: { clicks: true, cost: true, rawConversions: true, verifiedConversions: true },
     }),
   ]);
@@ -94,21 +97,22 @@ export default async function CampaignsPage() {
     <div className="mx-auto max-w-6xl pb-10">
       <div className="reveal mb-6">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">الحملات</h1>
+        <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">{t(locale, "campPages.title")}</h1>
+        <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <p className="mt-1 text-[13px] text-text-muted">
-          كل حملة بالرقم الذي تعلنه المنصة وبالرقم الذي تأكّد فعلاً — والفارق بينهما.
+          {t(locale, "campPages.subtitle")}
         </p>
       </div>
 
-      <CampaignsNav />
+      <CampaignsNav locale={locale} />
 
       {rows.length === 0 ? (
         <EmptyState
-          title="لا توجد حملات مربوطة بعد"
-          description="اربط حملاتك من الرئيسية — نافذة اختيار الحملات تفتح في مكانها."
+          title={t(locale, "campPages.noneTitle")}
+          description={t(locale, "campPages.noneBody")}
         />
       ) : (
-        <CampaignsOverview rows={rows} currency={workspace.currency} />
+        <CampaignsOverview rows={rows} currency={workspace.currency} locale={locale} />
       )}
     </div>
   );

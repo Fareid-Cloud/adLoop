@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { RULE_TEMPLATES } from "@/lib/automationRuleDefinitions";
+import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 
 export interface RuleRow {
   id: string;
@@ -20,25 +21,12 @@ export interface RuleRow {
   requireApproval: boolean;
 }
 
-const METRIC_LABELS: Record<string, string> = {
-  CPL_VERIFIED: "تكلفة العميل الحقيقية",
-  INFLATION_RATE: "نسبة التضخيم",
-  TRUE_ROAS: "العائد الحقيقي",
-  UNATTRIBUTED_RATE: "نسبة المحادثات المجهولة",
-  RESPONSE_TIME_MINUTES: "سرعة الرد",
-  RTO_RATE: "نسبة المرتجعات",
-};
 
-const ACTION_LABELS: Record<string, string> = {
-  PAUSE_CAMPAIGN: "إيقاف الحملة",
-  REDUCE_BUDGET_PCT: "تقليل الميزانية",
-  INCREASE_BUDGET_PCT: "زيادة الميزانية",
-  SEND_ALERT_ONLY: "تنبيه فقط",
-};
 
 const TEMPLATES = RULE_TEMPLATES;
 
-export function AutomationClient({ workspaceId, rules }: { workspaceId: string; rules: RuleRow[] }) {
+export function AutomationClient({ workspaceId, rules, locale = "ar" }: { workspaceId: string; rules: RuleRow[]; locale?: Locale }) {
+  const tr = (k: string) => t(locale, `autoRules.${k}`);
   const router = useRouter();
   const [showTemplates, setShowTemplates] = useState(false);
 
@@ -69,7 +57,7 @@ export function AutomationClient({ workspaceId, rules }: { workspaceId: string; 
           className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-xs text-white"
         >
           <Plus size={14} />
-          قاعدة جديدة
+          {tr("newRule")}
         </button>
       </div>
 
@@ -83,7 +71,7 @@ export function AutomationClient({ workspaceId, rules }: { workspaceId: string; 
             >
               <div className="mb-1 text-sm text-text-primary">{t.name}</div>
               <div className="text-xs text-text-faint">
-                {METRIC_LABELS[t.metric]} {t.operator === "GREATER_THAN" ? ">" : "<"} {t.threshold}
+                {tr(`m${t.metric}`)} {t.operator === "GREATER_THAN" ? ">" : "<"} {t.threshold}
               </div>
             </button>
           ))}
@@ -92,7 +80,7 @@ export function AutomationClient({ workspaceId, rules }: { workspaceId: string; 
 
       {rules.length === 0 ? (
         <div className="rounded-card border border-dashed border-border bg-surface px-8 py-12 text-center text-text-muted">
-          لا توجد قواعد أتمتة بعد — ابدأ بقالب جاهز
+          {tr("noneYet")}
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -102,17 +90,17 @@ export function AutomationClient({ workspaceId, rules }: { workspaceId: string; 
                 <div>
                   <div className="text-sm text-text-primary">{rule.name}</div>
                   <div className="mt-1 text-xs text-text-faint">
-                    {METRIC_LABELS[rule.metric]} {rule.operator === "GREATER_THAN" ? ">" : "<"} {rule.threshold}
+                    {tr(`m${rule.metric}`)} {rule.operator === "GREATER_THAN" ? ">" : "<"} {rule.threshold}
                     {" → "}
-                    {ACTION_LABELS[rule.action]}
+                    {tr(`a${rule.action}`)}
                     {rule.actionValue ? ` ${rule.actionValue}%` : ""}
-                    {rule.requireApproval && " (يحتاج موافقة)"}
+                    {rule.requireApproval && tr("approvalSuffix")}
                   </div>
                 </div>
                 <Toggle
                   checked={rule.enabled}
                   onChange={(v) => toggleRule(rule.id, v)}
-                  label="تفعيل القاعدة"
+                  label={tr("enableRule")}
                 />
               </div>
             </div>

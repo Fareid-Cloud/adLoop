@@ -1,33 +1,38 @@
 // app/dashboard/campaigns/attribution-path/page.tsx
 //
-// "العميل شاف إعلان على إنستجرام وبعدين اشترى من جوجل - مين ياخد الفضل؟"
-// - مفيش API واحدة بتجاوب على السؤال ده (جوجل وميتا مبيشاركوش بيانات
-// عميل مع بعض)، لكن عندنا بيانات حقيقية جمعناها احنا: CtaClickEvent
-// بتسجل كل كليك من أي منصة لنفس الجلسة، SessionConversion بتسجل التحويل
-// الفعلي. الصفحة دي بتوضح "أنهي منصات لمست نفس الجلسة قبل ما تتحول" -
-// صورة واقعية مبنية على تتبعنا احنا، مش افتراض.
+// "رأى العميل إعلاناً على إنستجرام ثم اشترى من جوجل - لمن يُنسب الفضل؟"
+// لا توجد API واحدة تجيب عن هذا السؤال (جوجل وميتا لا تتبادلان بيانات
+// العملاء)، لكن لدينا بيانات حقيقية جمعناها بأنفسنا: CtaClickEvent يسجّل
+// كل نقرة من أي منصة لنفس الجلسة، وSessionConversion يسجّل التحويل الفعلي.
+// هذه الصفحة تُظهر "أي المنصات لمست الجلسة نفسها قبل أن تتحوّل" - صورة
+// واقعية مبنية على تتبّعنا نحن، لا على افتراض.
 //
-// ملاحظة أمانة مهمة: ده بيغطي بس التفاعلات اللي مرّت عبر أداة التتبع
-// بتاعتنا (كليكات واتساب/اتصال/فورم) - مش بيشمل مشاهدة إعلان من غير
-// كليك (زي مشاهدة ريلز بدون تفاعل)، لأن ده مش بيترصد أصلاً عند حد.
+// ملاحظة أمانة مهمة: هذا يغطّي التفاعلات التي مرّت عبر أداة التتبّع
+// الخاصة بنا وحدها (نقرات واتساب/اتصال/نموذج) - ولا يشمل مشاهدة إعلان
+// دون نقرة (كمشاهدة ريلز بلا تفاعل)، فذلك لا يُرصد عند أحد أصلاً.
 
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { Target, GitBranch } from "lucide-react";
+import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams, toDateBounds } from "@/lib/dateRange";
 
-const PLATFORM_LABELS: Record<string, string> = {
-  GOOGLE_ADS: "جوجل",
-  META_ADS: "ميتا",
-  TIKTOK_ADS: "تيك توك",
-  SNAPCHAT_ADS: "سناب شات",
-};
 
-export default async function AttributionPathPage() {
+export default async function AttributionPathPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const period = periodFromParams(await searchParams);
+  const bounds = toDateBounds(period.range);
+
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -36,22 +41,21 @@ export default async function AttributionPathPage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const conversions = await prisma.sessionConversion.findMany({
-    where: { workspaceId: workspace.id, convertedAt: { gte: thirtyDaysAgo } },
+    where: { workspaceId: workspace.id, convertedAt: { gte: bounds.gte } },
     take: 500,
   });
 
   if (conversions.length === 0) {
     return (
       <div className="mx-auto max-w-2xl">
-        <h1 className="mb-2 text-[26px] font-semibold text-text-primary">مسار العميل عبر المنصات</h1>
-        <EmptyState title="لا توجد تحويلات بعد" description="تُبنى الصورة تلقائياً كل ما تحويلات حقيقية تحصل." />
+        <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.pathTitle")}</h1>
+        <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
+        <EmptyState title={t(locale, "campPages.pathNoneTitle")} description={t(locale, "campPages.pathNoneBody")} />
       </div>
     );
   }
@@ -94,15 +98,12 @@ export default async function AttributionPathPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">مسار العميل عبر المنصات</h1>
-      <p className="mb-6 text-xs text-text-faint">
-        مبنيّ على تتبّعنا الفعلي للنقرات لا على تخمين. جوجل وميتا لا تتبادلان بيانات العملاء،
-        فهذه الصورة محدودة بالتفاعلات التي مرّت عبر أداة التتبّع الخاصة بنا وحدها.
-      </p>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.pathTitle")}</h1>
+      <p className="mb-6 text-xs text-text-faint">{t(locale, "campPages.pathIntro")}</p>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2">
         <MetricCard
-          label="منصّة واحدة قبل التحويل"
+          label={t(locale, "campPages.pathSingle")}
           value={100 - multiTouchPct}
           unit="%"
           icon={Target}
@@ -110,7 +111,7 @@ export default async function AttributionPathPage() {
           bar={{ pct: 100 - multiTouchPct }}
         />
         <MetricCard
-          label="أكثر من منصّة قبل التحويل"
+          label={t(locale, "campPages.pathMulti")}
           value={multiTouchPct}
           unit="%"
           icon={GitBranch}
@@ -119,8 +120,8 @@ export default async function AttributionPathPage() {
           caption={{
             text:
               multiTouchPct > 0
-                ? "لا يمكن لأي لوحة منصّة منفردة أن ترى هذه الرحلات كاملة"
-                : "لم تُرصد رحلة عابرة للمنصّات في هذه الفترة",
+                ? t(locale, "campPages.pathMultiCaption")
+                : t(locale, "campPages.pathNoMulti"),
             tone: multiTouchPct > 0 ? "warning" : "muted",
           }}
         />
@@ -128,14 +129,14 @@ export default async function AttributionPathPage() {
 
       {topPaths.length > 0 && (
         <div>
-          <div className="mb-2 text-sm font-semibold text-text-primary">أكتر المسارات المتعددة تكراراً</div>
+          <div className="mb-2 text-sm font-semibold text-text-primary">{t(locale, "campPages.pathTopTitle")}</div>
           <div className="flex flex-col gap-2">
             {topPaths.map(([path, count]) => (
               <div key={path} className="flex items-center justify-between rounded-2xl bg-surface p-4">
                 <span className="text-sm text-text-primary">
-                  {path.split(" ← ").map((p) => PLATFORM_LABELS[p] ?? p).join(" ← ")}
+                  {path.split(" ← ").map((p) => platformLabel(locale, p)).join(" ← ")}
                 </span>
-                <span className="font-mono text-sm text-verified">{count} تحويل</span>
+                <span className="font-mono text-sm text-verified">{t(locale, "campPages.pathConversions", { n: count })}</span>
               </div>
             ))}
           </div>

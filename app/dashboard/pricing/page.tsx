@@ -8,9 +8,20 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { PricingClient } from "./PricingClient";
 import { getWorkspacePricing } from "@/lib/pricingHealth";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams, toDateBounds } from "@/lib/dateRange";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
-export default async function PricingPage() {
+export default async function PricingPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const period = periodFromParams(await searchParams);
+  const bounds = toDateBounds(period.range);
+
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
     return <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>;
   }
@@ -75,6 +86,7 @@ export default async function PricingPage() {
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-6 text-[26px] font-semibold text-text-primary">التسعير</h1>
+      <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
 
       {roasGapInsight && (
         <div className="mb-4 rounded-2xl card-shadow border border-border bg-surface p-4 text-[13px] text-text-muted">

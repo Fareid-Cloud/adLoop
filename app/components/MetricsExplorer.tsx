@@ -1,39 +1,41 @@
 // app/components/MetricsExplorer.tsx
 //
-// زي صفحة Overview في Google Ads بالظبط: تختار فترة زمنية حرة + لحد 6
-// مقاييس مع بعض، وبيظهرلك منحنى أداء يومي لكل واحد فيهم. منفصل عن الرسم
-// الثابت (آخر 14 يوم) اللي في أعلى صفحة "لمحة" - ده استكشاف حر بالكامل.
+// نظير صفحة Overview في Google Ads: تختار فترة زمنية حرّة وحتى ستّة
+// مؤشّرات معاً، فيظهر منحنى أداء يومي لكل منها. منفصل عن الرسم الثابت
+// (آخر ١٤ يوماً) أعلى الصفحة الرئيسية - هذا استكشاف حرّ بالكامل.
 
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const METRIC_OPTIONS = [
-  { key: "impressions", label: "الظهور", color: "#4C8DFF" },
-  { key: "clicks", label: "الكليكات", color: "#A585FF" },
-  // دلالية (مرتبطة بمعنى حقيقي في المنتج) - بتشاور على متغيرات الثيم
-  // نفسها بدل تكرار قيمة hex ثابتة، عشان تفضل متزامنة لو الثيم اتغيّر
-  { key: "cost", label: "التكلفة", color: "var(--gap)" },
-  { key: "raw_conversions", label: "التحويلات المعلنة", color: "var(--gap)" },
-  { key: "verified_conversions", label: "التحويلات الحقيقية", color: "var(--verified)" },
-  { key: "ctr", label: "نسبة النقر CTR", color: "#4FCEF0" },
-  { key: "cpc", label: "تكلفة الكليك", color: "var(--critical)" },
-  { key: "cpl_raw", label: "تكلفة العميل المعلنة", color: "var(--gap)" },
-  { key: "cpl_verified", label: "تكلفة العميل الحقيقية", color: "var(--verified)" },
-  { key: "inflation_rate", label: "نسبة التضخيم", color: "var(--critical)" },
+  { key: "impressions", labelKey: "impressions", color: "#4C8DFF" },
+  { key: "clicks", labelKey: "clicks", color: "#A585FF" },
+  // دلالية (مرتبطة بمعنى حقيقي في المنتج) - تشير إلى متغيّرات الثيم
+  // نفسها بدل تكرار قيمة hex ثابتة، كي تبقى متزامنة إن تغيّر الثيم
+  { key: "cost", labelKey: "cost", color: "var(--gap)" },
+  { key: "raw_conversions", labelKey: "rawConversions", color: "var(--gap)" },
+  { key: "verified_conversions", labelKey: "verifiedConversions", color: "var(--verified)" },
+  { key: "ctr", labelKey: "ctr", color: "#4FCEF0" },
+  { key: "cpc", labelKey: "cpc", color: "var(--critical)" },
+  { key: "cpl_raw", labelKey: "cplRaw", color: "var(--gap)" },
+  { key: "cpl_verified", labelKey: "cplVerified", color: "var(--verified)" },
+  { key: "inflation_rate", labelKey: "inflationRate", color: "var(--critical)" },
 ] as const;
 
 const RANGE_PRESETS = [
-  { label: "7 أيام", days: 7 },
-  { label: "14 يوم", days: 14 },
-  { label: "30 يوم", days: 30 },
-  { label: "90 يوم", days: 90 },
+  { days: 7 },
+  { days: 14 },
+  { days: 30 },
+  { days: 90 },
 ];
 
 const MAX_METRICS = 6;
 
-export function MetricsExplorer({ workspaceId }: { workspaceId: string }) {
+export function MetricsExplorer({ workspaceId, locale = "ar" }: { workspaceId: string; locale?: Locale }) {
+  const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `explorer.${k}`, vars);
   const [rangeDays, setRangeDays] = useState(30);
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(["cpl_verified", "verified_conversions"]);
   const [series, setSeries] = useState<Record<string, string | number>[]>([]);
@@ -71,7 +73,7 @@ export function MetricsExplorer({ workspaceId }: { workspaceId: string }) {
   function toggleMetric(key: string) {
     setSelectedMetrics((prev) => {
       if (prev.includes(key)) return prev.filter((m) => m !== key);
-      if (prev.length >= MAX_METRICS) return prev; // الحد الأقصى 6 - مبنتجاهلش الضغطة، بس منزودش
+      if (prev.length >= MAX_METRICS) return prev; // الحدّ الأقصى ستّة - لا نتجاهل الضغطة، لكن لا نزيد
       return [...prev, key];
     });
   }
@@ -79,7 +81,7 @@ export function MetricsExplorer({ workspaceId }: { workspaceId: string }) {
   return (
     <div className="rounded-2xl bg-surface p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <span className="text-[13px] text-text-muted">استكشاف الأداء عبر الزمن</span>
+        <span className="text-[13px] text-text-muted">{tr("title")}</span>
         <div className="flex gap-1">
           {RANGE_PRESETS.map((preset) => (
             <button
@@ -89,7 +91,7 @@ export function MetricsExplorer({ workspaceId }: { workspaceId: string }) {
                 rangeDays === preset.days ? "bg-accent text-white" : "bg-surface-raised text-text-muted"
               }`}
             >
-              {preset.label}
+              {tr("rangeDays", { n: preset.days })}
             </button>
           ))}
         </div>
@@ -109,20 +111,20 @@ export function MetricsExplorer({ workspaceId }: { workspaceId: string }) {
               }`}
               style={isSelected ? { backgroundColor: m.color } : undefined}
             >
-              {m.label}
+              {tr(m.labelKey)}
             </button>
           );
         })}
       </div>
       <p className="mb-4 text-xs text-text-faint">
-        {selectedMetrics.length}/{MAX_METRICS} مقاييس مختارة
+        {tr("selectedCount", { n: selectedMetrics.length, max: MAX_METRICS })}
       </p>
 
       {loading ? (
-        <div className="flex h-[220px] items-center justify-center text-xs text-text-faint">جارٍ التحميل...</div>
+        <div className="flex h-[220px] items-center justify-center text-xs text-text-faint">{tr("loading")}</div>
       ) : series.length === 0 ? (
         <div className="flex h-[220px] items-center justify-center text-xs text-text-faint">
-          لا توجد بيانات كافية للفترة والمقاييس المختارة
+          {tr("noData")}
         </div>
       ) : (
         <div className="h-[260px] w-full">
@@ -146,7 +148,7 @@ export function MetricsExplorer({ workspaceId }: { workspaceId: string }) {
                     key={key}
                     type="monotone"
                     dataKey={key}
-                    name={meta.label}
+                    name={tr(meta.labelKey)}
                     stroke={meta.color}
                     strokeWidth={2}
                     dot={false}

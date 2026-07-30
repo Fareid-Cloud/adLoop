@@ -18,6 +18,7 @@ import { AdDecisionTable } from "@/app/components/AdDecisionTable";
 import { getFrequencyByPlatform } from "@/lib/frequencyCheck";
 import { BestAdPair } from "@/app/components/BestAdPair";
 import { MetricCard } from "@/app/components/ui/MetricCard";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 // ألوان رسمية حقيقية (مؤكدة من مصادر العلامات التجارية) - شارة لونية
 // بدل الشعار الفعلي (ملف صورة محمي بحقوق ملكية مش متاح لينا). ملاحظة:
@@ -61,6 +62,7 @@ export async function PlatformHub({
   deepDiveLinks: Array<{ href: string; label: string }>;
 }) {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
     return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
   }
@@ -176,6 +178,7 @@ export async function PlatformHub({
       </div>
       <div className="mb-6">
         <AdDecisionTable
+          locale={locale}
           decisions={adDecisions}
           workspaceId={workspace.id}
           currency={workspace.currency}

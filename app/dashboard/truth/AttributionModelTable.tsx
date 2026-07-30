@@ -12,6 +12,7 @@ import { ArrowUpRight, ArrowDownRight, Minus, Info } from "lucide-react";
 import { ATTRIBUTION_MODELS, type AttributionModelKey, type ModelComparisonRow } from "@/lib/attributionModels";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { CHANNEL_LABELS } from "./TruthView";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const PLATFORM_NAMES: Record<string, string> = {
   GOOGLE_ADS: "Google Ads",
@@ -30,6 +31,7 @@ export function AttributionModelTable({
   pathCoveragePct,
   conversionsWithoutTouches,
   unbackedClaims,
+  locale = "ar",
 }: {
   rows: ModelComparisonRow[];
   channelRows: ModelComparisonRow[];
@@ -37,7 +39,9 @@ export function AttributionModelTable({
   pathCoveragePct: number;
   conversionsWithoutTouches: number;
   unbackedClaims: number;
+  locale?: Locale;
 }) {
+  const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `campPages.${k}`, vars);
   const [dimension, setDimension] = useState<"platform" | "channel">("platform");
   const [metric, setMetric] = useState<"conversions" | "revenue">("conversions");
 
@@ -54,16 +58,16 @@ export function AttributionModelTable({
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Toggle
           options={[
-            { key: "platform", label: "حسب المنصة" },
-            { key: "channel", label: "حسب القناة" },
+            { key: "platform", label: tr("amtByPlatform") },
+            { key: "channel", label: tr("amtByChannel") },
           ]}
           value={dimension}
           onChange={(v) => setDimension(v as "platform" | "channel")}
         />
         <Toggle
           options={[
-            { key: "conversions", label: "التحويلات" },
-            { key: "revenue", label: "الإيراد" },
+            { key: "conversions", label: tr("amtConversions") },
+            { key: "revenue", label: tr("amtRevenue") },
           ]}
           value={metric}
           onChange={(v) => setMetric(v as "conversions" | "revenue")}
@@ -76,11 +80,10 @@ export function AttributionModelTable({
           {underCredited.length > 0 && (
             <Verdict
               tone="under"
-              title="قنوات مبخوسة الفضل"
+              title={tr("amtUnderTitle")}
               body={
                 <>
-                  {underCredited.map((r) => label(r.key)).join("، ")} تُسهم في رحلات أكثر ممّا تدّعيه لنفسها.
-                  خفض ميزانيتها بناءً على لوحتها وحدها يقطع أول الرحلة ويُضعف ما بعده.
+                  {tr("amtUnderBody", { names: underCredited.map((r) => label(r.key)).join(locale === "en" ? ", " : "، ") })}
                 </>
               }
             />
@@ -88,11 +91,10 @@ export function AttributionModelTable({
           {overCredited.length > 0 && (
             <Verdict
               tone="over"
-              title="قنوات متضخّمة الفضل"
+              title={tr("amtOverTitle")}
               body={
                 <>
-                  {overCredited.map((r) => label(r.key)).join("، ")} تنسب لنفسها أكثر ممّا يمنحها التوزيع
-                  متعدّد اللمسات — غالباً لأنها آخر لمسة في رحلات بدأها غيرها.
+                  {tr("amtOverBody", { names: overCredited.map((r) => label(r.key)).join(locale === "en" ? ", " : "، ") })}
                 </>
               }
             />
@@ -101,21 +103,21 @@ export function AttributionModelTable({
       )}
 
       <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
-        <table className="w-full min-w-[900px] text-right text-[12.5px]">
+        <table className="w-full min-w-[900px] text-start text-[12.5px]">
           <thead>
             <tr className="border-b border-border text-text-muted">
               <th className="sticky start-0 bg-surface px-4 py-3 text-start font-medium">
-                {dimension === "platform" ? "المنصة" : "القناة"}
+                {dimension === "platform" ? tr("amtColPlatform") : tr("amtColChannel")}
               </th>
               {ATTRIBUTION_MODELS.map((m) => (
-                <th key={m.key} className="px-3 py-3 font-medium" title={m.descriptionAr}>
+                <th key={m.key} className="px-3 py-3 font-medium" title={locale === "en" ? m.descriptionEn : m.descriptionAr}>
                   <span className="flex items-center justify-end gap-1">
-                    {m.labelAr}
+                    {locale === "en" ? m.labelEn : m.labelAr}
                     <Info size={10} className="text-text-faint" />
                   </span>
                 </th>
               ))}
-              <th className="px-4 py-3 font-medium">الحكم</th>
+              <th className="px-4 py-3 font-medium">{tr("amtColVerdict")}</th>
             </tr>
           </thead>
           <tbody>
@@ -133,7 +135,7 @@ export function AttributionModelTable({
                   </td>
                 ))}
                 <td className="px-4 py-3">
-                  <VerdictBadge row={row} />
+                  <VerdictBadge row={row} locale={locale} />
                 </td>
               </tr>
             ))}
@@ -144,18 +146,17 @@ export function AttributionModelTable({
       {/* حدود القراءة - تُذكر مع الأرقام لا في حاشية بعيدة */}
       <div className="mt-2 flex flex-col gap-1 text-[11.5px] leading-relaxed text-text-faint">
         <p>
-          «ما تدّعيه المنصة» ليس نموذجاً عادلاً — هو مرآة للوحات المنصات، ووجوده للمقارنة لا للتصديق.
-          الحكم يقارن متوسّط النماذج متعدّدة اللمسات بما تدّعيه كل قناة لنفسها.
+          {tr("amtCaveat")}
         </p>
         <p>
-          تغطية المسارات {pathCoveragePct}%
+          {tr("amtCoverage", { pct: pathCoveragePct })}
           {conversionsWithoutTouches > 0 && (
-            <> — {num(conversionsWithoutTouches)} تحويلاً بلا لمسة مسجَّلة (وسم ناقص على مسار الدخول).</>
+            <>{tr("amtMissingTouches", { n: num(conversionsWithoutTouches) })}</>
           )}
           {unbackedClaims > 0 && (
             <>
               {" "}
-              و{num(unbackedClaims)} تحويلاً ادّعته منصة ولا نملك له لمسة واحدة منها.
+              {tr("amtUnbacked", { n: num(unbackedClaims) })}
             </>
           )}
         </p>
@@ -185,12 +186,13 @@ function Cell({
   );
 }
 
-function VerdictBadge({ row }: { row: ModelComparisonRow }) {
+function VerdictBadge({ row, locale }: { row: ModelComparisonRow; locale: Locale }) {
+  const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `campPages.${k}`, vars);
   if (row.verdict === "FAIR") {
     return (
       <span className="inline-flex items-center gap-1 rounded-md bg-surface-raised px-2 py-0.5 text-[11.5px] text-text-muted">
         <Minus size={11} />
-        متّسق
+        {tr("amtFair")}
       </span>
     );
   }
@@ -203,12 +205,12 @@ function VerdictBadge({ row }: { row: ModelComparisonRow }) {
       }`}
       title={
         row.creditGapPct !== null
-          ? `الفارق ${Math.abs(Math.round(row.creditGapPct))}% عن ما تدّعيه لنفسها`
-          : "تُسهم في رحلات ولا تدّعي شيئاً لنفسها"
+          ? tr("amtGapTitle", { pct: Math.abs(Math.round(row.creditGapPct)) })
+          : tr("amtNoClaimTitle")
       }
     >
       <Arrow size={11} />
-      {under ? "مبخوسة" : "متضخّمة"}
+      {under ? tr("amtUnder") : tr("amtOver")}
       {row.creditGapPct !== null && (
         <span className="tabular-nums">{Math.abs(Math.round(row.creditGapPct))}%</span>
       )}

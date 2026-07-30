@@ -9,29 +9,26 @@
 import { AdDecisionCell } from "@/app/components/AdDecisionCell";
 import type { AdDecisionView } from "@/lib/adDecisions";
 import { TrendingUp, PauseCircle, MinusCircle } from "lucide-react";
+import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 
-const PLATFORM_LABEL: Record<string, string> = {
-  GOOGLE_ADS: "جوجل",
-  META_ADS: "ميتا",
-  TIKTOK_ADS: "تيك توك",
-  SNAPCHAT_ADS: "سناب شات",
-};
 
 export function AdDecisionTable({
   decisions,
   workspaceId,
   currency,
   showPlatform = true,
+  locale = "ar",
 }: {
   decisions: AdDecisionView[];
   workspaceId: string;
   currency: string;
   showPlatform?: boolean;
+  locale?: Locale;
 }) {
   if (decisions.length === 0) {
     return (
       <p className="rounded-xl border border-border bg-surface p-4 text-xs text-text-muted">
-        لا توجد بيانات كافية على مستوى الإعلان بعد. تتحدّث تلقائياً مع المزامنة اليومية.
+        {t(locale, "adDecision.empty")}
       </p>
     );
   }
@@ -45,25 +42,25 @@ export function AdDecisionTable({
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <Summary icon={TrendingUp} count={counts.SCALE} label="يستحق التوسيع" tone="success" />
-        <Summary icon={PauseCircle} count={counts.PAUSE} label="يستحق الإيقاف" tone="danger" />
-        <Summary icon={MinusCircle} count={counts.HOLD} label="تحت المراقبة" tone="muted" />
+        <Summary icon={TrendingUp} count={counts.SCALE} label={t(locale, "adDecision.scale")} tone="success" />
+        <Summary icon={PauseCircle} count={counts.PAUSE} label={t(locale, "adDecision.pause")} tone="danger" />
+        <Summary icon={MinusCircle} count={counts.HOLD} label={t(locale, "adDecision.hold")} tone="muted" />
       </div>
 
       {/* الجدول يمرّر أفقياً داخل حاويته - لا يدفع الصفحة كلها للتمرير */}
       <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
-        <table className="w-full min-w-[860px] text-right text-sm">
+        <table className="w-full min-w-[860px] text-start text-sm">
           <thead>
             <tr className="border-b border-border text-xs text-text-muted">
-              <th className="px-4 py-3 font-medium">الإعلان</th>
-              {showPlatform && <th className="px-4 py-3 font-medium">المنصة</th>}
-              <th className="px-4 py-3 font-medium">تكلفة العميل</th>
-              <th className="px-4 py-3 font-medium">مقابل المتوسط</th>
-              <th className="px-4 py-3 font-medium">العائد</th>
-              <th className="px-4 py-3 font-medium">الإنفاق</th>
-              <th className="px-4 py-3 font-medium">التحويلات</th>
-              <th className="px-4 py-3 font-medium">أيام</th>
-              <th className="px-4 py-3 font-medium">القرار</th>
+              <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colAd")}</th>
+              {showPlatform && <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colPlatform")}</th>}
+              <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colCpa")}</th>
+              <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colVsAvg")}</th>
+              <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colRoas")}</th>
+              <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colSpend")}</th>
+              <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colConversions")}</th>
+              <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colDays")}</th>
+              <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colDecision")}</th>
             </tr>
           </thead>
           <tbody>
@@ -78,7 +75,7 @@ export function AdDecisionTable({
 
                 {showPlatform && (
                   <td className="px-4 py-3 text-xs text-text-muted">
-                    {PLATFORM_LABEL[d.platform] ?? d.platform}
+                    {platformLabel(locale, d.platform)}
                   </td>
                 )}
 
@@ -89,7 +86,7 @@ export function AdDecisionTable({
                 <td className="px-4 py-3">
                   <DivergenceBadge pct={d.signals.divergencePct} />
                   <div className="mt-0.5 text-[11px] text-text-muted">
-                    المتوسط {fmt(d.signals.accountAvgCpa)}
+                    {t(locale, "adDecision.avgIs", { value: fmt(d.signals.accountAvgCpa) })}
                   </div>
                 </td>
 
@@ -97,13 +94,13 @@ export function AdDecisionTable({
                   {d.signals.roas !== null ? (
                     <span className="text-text-primary">{d.signals.roas}x</span>
                   ) : (
-                    <span className="text-text-muted" title="هذه المنصة لا تُرجع قيمة تحويل على مستوى الإعلان الفردي">
+                    <span className="text-text-muted" title={t(locale, "adDecision.noRoasTitle")}>
                       —
                     </span>
                   )}
                   {d.signals.frequency !== null && (
                     <div className="mt-0.5 text-[11px] text-text-muted">
-                      تكرار {d.signals.frequency.toFixed(1)}
+                      {t(locale, "adDecision.frequency", { value: d.signals.frequency.toFixed(1) })}
                     </div>
                   )}
                 </td>
@@ -137,9 +134,7 @@ export function AdDecisionTable({
       </div>
 
       <p className="mt-2 text-[11px] leading-relaxed text-text-muted">
-        القرار مبنيّ على تكلفة العميل مقابل متوسط حسابك، والعائد مقابل نقطة التعادل الحقيقية لهامش ربحك،
-        وحجم العينة وعدد الأيام والتعب الإحصائي ومعدّل التكرار. بعد تنفيذ أي قرار، لا يُقترح غيره على
-        الإعلان نفسه قبل ٤ أيام حتى تُقاس نتيجته أولاً.
+        {t(locale, "adDecision.basis")}
       </p>
     </div>
   );

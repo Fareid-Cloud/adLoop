@@ -316,6 +316,7 @@ export function TruthView({
       ) : (
         <div className="mb-8">
           <AttributionModelTable
+            locale={locale}
             rows={snapshot.modelRows}
             channelRows={snapshot.channelRows}
             currency={currency}

@@ -279,6 +279,7 @@ model Workspace {
 
   campaignLinks   CampaignLink[]
   uploadedSheets  UploadedSheet[]
+  savedReportViews SavedReportView[]
   metricSnapshots MetricSnapshot[]
   conversionValueConfig ConversionValueConfig?
   automationRules AutomationRule[]
@@ -387,6 +388,25 @@ model MetricSnapshot {
 
   @@unique([workspaceId, platform, campaignId, date, placementBreakdown, placementDetail])
   @@index([workspaceId, date])
+}
+
+/// عرض تقرير محفوظ - يحفظ *إعدادات* التقرير لا نتيجته.
+/// النتيجة تُحسب عند كل فتح من بيانات اليوم، وإلا صار التقرير صورة قديمة
+/// تُتّخذ عليها قرارات جديدة. هذا هو الفرق بين تقرير حيّ وتقرير ميّت.
+model SavedReportView {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId       String
+  name         String
+  /// إعدادات كاملة: المصدر، الفترة، المؤشّرات، الأبعاد، المرشّحات، نوع المقارنة
+  config       Json
+  isFavorite   Boolean  @default(false)
+  lastOpenedAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([workspaceId, userId])
 }
 
 // بيانات مرفوعة يدوي (Excel) - بتتخزن بنفس شكل MetricSnapshot تقريباً

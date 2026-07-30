@@ -12,9 +12,20 @@ import { detectCreativeFatigue } from "@/lib/aiInsights";
 import { buildAdDecisions } from "@/lib/adDecisions";
 import { AdDecisionTable } from "@/app/components/AdDecisionTable";
 import { getFrequencyByPlatform } from "@/lib/frequencyCheck";
+import { t, type Locale } from "@/lib/i18n/dictionary";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams, toDateBounds } from "@/lib/dateRange";
 
-export default async function CreativesPage() {
+export default async function CreativesPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const period = periodFromParams(await searchParams);
+  const bounds = toDateBounds(period.range);
+
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
     return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
   }
@@ -35,10 +46,8 @@ export default async function CreativesPage() {
   // إشارة تعب مكمّلة لـrankCreatives (اللي بتعتمد على نسبة النقر) -
   // هنا بتعتمد على تكلفة العميل الحقيقية، ممكن تلتقط تعب متأخر عن
   // النقر (الإعلان لسه بيتنقّط عليه، لكن العملاء اللي بييجوا بقوا أغلى)
-  const thirtyDaysAgoForFatigue = new Date();
-  thirtyDaysAgoForFatigue.setDate(thirtyDaysAgoForFatigue.getDate() - 30);
   const dailySnapshotsForFatigue = await prisma.creativeSnapshot.findMany({
-    where: { workspaceId: workspace.id, date: { gte: thirtyDaysAgoForFatigue } },
+    where: { workspaceId: workspace.id, date: bounds },
     select: { adId: true, date: true, cost: true, verifiedConversions: true },
   });
   const dailyCplByAdId = new Map<string, { date: string; value: number }[]>();
@@ -58,6 +67,7 @@ export default async function CreativesPage() {
       <div className="mx-auto max-w-4xl">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
         <h1 className="mb-6 text-[26px] font-semibold text-text-primary">أداء الإعلانات الفردية</h1>
+        <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <EmptyState
           title="لا توجد بيانات على مستوى الإعلان بعد"
           description="بتتحدث تلقائياً مع المزامنة اليومية بعد ربط الحملات."
@@ -94,6 +104,7 @@ export default async function CreativesPage() {
       </p>
       <div className="mb-8">
         <AdDecisionTable
+          locale={locale}
           decisions={adDecisions}
           workspaceId={workspace.id}
           currency={workspace.currency}

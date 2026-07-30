@@ -6,7 +6,9 @@
 
 export type PlatformKey =
   | "GOOGLE_ADS" | "META_ADS" | "FACEBOOK" | "INSTAGRAM" | "TIKTOK_ADS"
-  | "SNAPCHAT_ADS" | "MICROSOFT_ADS" | "LINKEDIN_ADS" | "WHATSAPP";
+  | "SNAPCHAT_ADS" | "MICROSOFT_ADS" | "LINKEDIN_ADS" | "WHATSAPP"
+  | "MESSENGER" | "X_ADS" | "SHOPIFY" | "SALLA" | "ZID" | "WOOCOMMERCE"
+  | "EASY_ORDERS" | "GA4" | "CLARITY" | "BOSTA" | "ARAMEX" | "MYLERZ" | "SMSA";
 
 export function PlatformLogo({ platform, size = 18 }: { platform: string; size?: number }) {
   // currentColor يجعل الأجزاء المحايدة تتبع لون النص، فتظل واضحة في
@@ -25,22 +27,24 @@ export function PlatformLogo({ platform, size = 18 }: { platform: string; size?:
       );
     case "META_ADS":
     case "META":
+      // العلامة رُسمت سابقاً كخطّ مفتوح فبدت مقطوعة عند كل الأحجام. هذه
+      // حلقة لانهاية مغلقة فعلاً (تنتهي حيث تبدأ) بتدرّج ميتا الأزرق.
       return (
         <svg viewBox="0 0 48 48" style={s} aria-label="Meta" shapeRendering="geometricPrecision">
           <defs>
-            <linearGradient id="mtg" x1="6" y1="34" x2="42" y2="14" gradientUnits="userSpaceOnUse">
+            <linearGradient id="adloop-meta" x1="6" y1="34" x2="42" y2="14" gradientUnits="userSpaceOnUse">
               <stop offset="0" stopColor="#0064E1" />
-              <stop offset=".4" stopColor="#0064E1" />
-              <stop offset=".83" stopColor="#0082FB" />
-              <stop offset="1" stopColor="#0082FB" />
+              <stop offset=".55" stopColor="#0080FB" />
+              <stop offset="1" stopColor="#00A4FF" />
             </linearGradient>
           </defs>
-          {/* علامة ميتا: حلقتان متداخلتان مرسومتان كخط بسماكة موحّدة -
-              أدق من محاولة تعبئة شكل مصمت، وتظل حادة في الأحجام الصغيرة */}
           <path
-            fill="none" stroke="url(#mtg)" strokeWidth="4.6"
-            strokeLinecap="round" strokeLinejoin="round"
-            d="M10.6 30.4c-1.9 0-2.9-1.5-2.9-4.6 0-5.6 2.9-11.6 6.6-11.6 2.6 0 4.6 2.4 7.1 6.4 1.2 1.9 2.4 4 3.6 6.1 2.4 4.2 3.6 5.9 5.9 5.9 2.2 0 3.3-1.6 3.3-5.1 0-6.1-2.6-12.4-5.9-12.4-2.8 0-5 2.7-7.4 6.5"
+            fill="none"
+            stroke="url(#adloop-meta)"
+            strokeWidth="4.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M24 24c-3.7-6.7-7.2-9.4-11-8.2-3.6 1.2-5.6 5-5.6 8.9s2 7.3 5.4 7.3c3.6 0 6.1-3.1 11.2-12 5.1-8.9 7.6-12 11.2-12 3.4 0 5.4 3.4 5.4 7.3s-2 7.7-5.6 8.9c-3.8 1.2-7.3-1.5-11-8.2z"
           />
         </svg>
       );
@@ -109,9 +113,106 @@ export function PlatformLogo({ platform, size = 18 }: { platform: string; size?:
           <path fill="#fff" d="M24 12c-6.6 0-12 5.4-12 12 0 2.1.6 4.2 1.6 6L12 36l6.2-1.6c1.7 1 3.7 1.5 5.8 1.5 6.6 0 12-5.4 12-12s-5.4-11.9-12-11.9zm7 16.9c-.3.8-1.7 1.6-2.4 1.7-.6.1-1.4.1-2.3-.1-.5-.2-1.2-.4-2.1-.8-3.7-1.6-6.1-5.3-6.3-5.6-.2-.3-1.5-2-1.5-3.8s.9-2.7 1.3-3.1c.3-.4.7-.5 1-.5h.7c.2 0 .5-.1.8.6l1.1 2.7c.1.2.2.5 0 .7l-.4.6c-.2.2-.4.5-.2.9.2.4.9 1.5 2 2.4 1.4 1.2 2.5 1.6 2.9 1.8.3.1.5.1.7-.1.2-.2.8-.9 1-1.2.2-.3.4-.3.7-.2l2.6 1.2c.3.2.5.2.6.4.1.2.1.7-.2 1.4z" />
         </svg>
       );
-    default:
+    case "MESSENGER":
       return (
-        <span style={{ ...s, borderRadius: 4, background: "#64748B", display: "inline-block" }} />
+        <svg viewBox="0 0 48 48" style={s} aria-label="Messenger">
+          <defs>
+            <linearGradient id="adloop-msgr" x1="12" y1="42" x2="36" y2="8" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stopColor="#0099FF" />
+              <stop offset=".6" stopColor="#A033FF" />
+              <stop offset="1" stopColor="#FF5280" />
+            </linearGradient>
+          </defs>
+          <path fill="url(#adloop-msgr)" d="M24 4C12.7 4 4 12.3 4 23.5c0 6.4 2.9 12 7.4 15.7V46l6.8-3.7c1.8.5 3.7.8 5.8.8 11.3 0 20-8.3 20-19.6S35.3 4 24 4z" />
+          <path fill="#fff" d="M12 29.4l9.7-10.3 5 5.2 8.9-5.2-9.7 10.3-5-5.2-8.9 5.2z" />
+        </svg>
       );
+    case "X_ADS":
+    case "X":
+      return (
+        <svg viewBox="0 0 48 48" style={s} aria-label="X">
+          <rect x="3" y="3" width="42" height="42" rx="10" fill="currentColor" />
+          <path fill="var(--surface)" d="M31.6 12h4.3l-9.4 10.8L37.5 36h-8.6l-6.8-8.5L14.4 36H10l10-11.5L9.2 12h8.8l6.1 7.8L31.6 12zm-1.5 21.4h2.4L17.9 14.4h-2.6l14.8 19z" />
+        </svg>
+      );
+    case "SHOPIFY":
+      return (
+        <svg viewBox="0 0 48 48" style={s} aria-label="Shopify">
+          <path fill="#95BF47" d="M31.7 9.7c-.2-.1-.5-.1-.7 0l-2 .6c-.5-1.7-1.5-3.3-3.3-3.3h-.3C24.7 6.1 23.9 6 23 6c-3.4 0-5.9 3.2-6.8 7l-2.7.8c-.9.3-.9.3-1 1.1L10 39.6 30 43l9.5-2.1-7.8-31.2zM23 8.6h.3c-.6 1-1.1 2.5-1.4 4.5l-3.2 1c.8-2.9 2.4-5.5 4.3-5.5z" />
+          <path fill="#5E8E3E" d="M31 9.7 30 42.9l9.5-2.1-7.8-31.1c-.2-.1-.5-.1-.7 0z" />
+          <path fill="#fff" d="M26.7 20.4l-1.2 3.5s-1.1-.6-2.4-.6c-1.9 0-2 1.2-2 1.5 0 1.7 4.4 2.3 4.4 6.2 0 3.1-1.9 5-4.6 5-3.2 0-4.9-2-4.9-2l.9-2.9s1.7 1.5 3.1 1.5c.9 0 1.3-.7 1.3-1.3 0-2.2-3.6-2.3-3.6-5.9 0-3 2.2-5.9 6.5-5.9 1.8 0 2.5.5 2.5.5z" />
+        </svg>
+      );
+    case "WOOCOMMERCE":
+      return (
+        <svg viewBox="0 0 48 48" style={s} aria-label="WooCommerce">
+          <rect x="2" y="10" width="44" height="24" rx="6" fill="#96588A" />
+          <path fill="#fff" d="M9.5 17.5c.6 0 1 .4 1.1 1l1 6.3 2.2-5.3c.2-.5.5-.8 1-.8s.8.3 1 .8l2.2 5.3 1-6.3c.1-.6.5-1 1.1-1 .7 0 1.2.6 1.1 1.3l-1.6 9c-.1.6-.6 1.1-1.2 1.1s-1-.3-1.2-.9l-2.4-5.6-2.4 5.6c-.2.6-.6.9-1.2.9s-1.1-.5-1.2-1.1l-1.6-9c-.1-.7.4-1.3 1.1-1.3zm18.6 0c2.9 0 4.9 2 4.9 5s-2 5-4.9 5-4.9-2-4.9-5 2-5 4.9-5zm0 2.5c-1.3 0-2.2 1-2.2 2.5s.9 2.5 2.2 2.5 2.2-1 2.2-2.5-.9-2.5-2.2-2.5zm10.3-2.5c2.9 0 4.9 2 4.9 5s-2 5-4.9 5-4.9-2-4.9-5 2-5 4.9-5zm0 2.5c-1.3 0-2.2 1-2.2 2.5s.9 2.5 2.2 2.5 2.2-1 2.2-2.5-.9-2.5-2.2-2.5z" />
+          <path fill="#96588A" d="M18 33l-4 6 1-6z" />
+        </svg>
+      );
+    case "GA4":
+    case "GOOGLE_ANALYTICS":
+      return (
+        <svg viewBox="0 0 48 48" style={s} aria-label="Google Analytics">
+          <rect x="30" y="6" width="10" height="36" rx="5" fill="#F9AB00" />
+          <rect x="19" y="18" width="10" height="24" rx="5" fill="#E37400" />
+          <circle cx="13" cy="37" r="5" fill="#E37400" />
+        </svg>
+      );
+    case "CLARITY":
+      return (
+        <svg viewBox="0 0 48 48" style={s} aria-label="Microsoft Clarity">
+          <circle cx="24" cy="24" r="20" fill="none" stroke="#0078D4" strokeWidth="4" />
+          <circle cx="24" cy="24" r="8" fill="#0078D4" />
+        </svg>
+      );
+    // العلامات الإقليمية: حرف مميّز داخل مربّع بلون العلامة الرسمي. لا
+    // نخترع شعاراً غير حقيقي، ولا نترك مربّعاً رمادياً بلا هوية.
+    case "SALLA":
+      return <Letter mark="س" bg="#00C48C" size={size} label="Salla" />;
+    case "ZID":
+      return <Letter mark="ز" bg="#5D3EBC" size={size} label="Zid" />;
+    case "EASY_ORDERS":
+      return <Letter mark="E" bg="#FF6B35" size={size} label="Easy Orders" />;
+    case "BOSTA":
+      return <Letter mark="B" bg="#E30613" size={size} label="Bosta" />;
+    case "ARAMEX":
+      return <Letter mark="A" bg="#E4002B" size={size} label="Aramex" />;
+    case "MYLERZ":
+      return <Letter mark="M" bg="#00A9E0" size={size} label="Mylerz" />;
+    case "SMSA":
+      return <Letter mark="S" bg="#003D7C" size={size} label="SMSA" />;
+    default:
+      return <Letter mark="?" bg="#64748B" size={size} label={platform} />;
   }
+}
+
+/**
+ * شارة حرفية لعلامة لا نملك رسمها الرسمي. أوضح من مربّع رمادي بلا معنى،
+ * وأصدق من اختراع شعار ليس شعار الشركة.
+ */
+function Letter({ mark, bg, size, label }: { mark: string; bg: string; size: number; label: string }) {
+  return (
+    <span
+      aria-label={label}
+      title={label}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: Math.round(size * 0.26),
+        background: bg,
+        color: "#fff",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: Math.round(size * 0.55),
+        fontWeight: 700,
+        lineHeight: 1,
+        flexShrink: 0,
+      }}
+    >
+      {mark}
+    </span>
+  );
 }

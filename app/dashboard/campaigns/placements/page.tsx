@@ -6,6 +6,9 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams, toDateBounds } from "@/lib/dateRange";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const PLACEMENT_LABELS: Record<string, string> = {
   FACEBOOK: "فيسبوك",
@@ -36,8 +39,16 @@ interface Row {
   cpl: number | null;
 }
 
-export default async function PlacementsPage() {
+export default async function PlacementsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const period = periodFromParams(await searchParams);
+  const bounds = toDateBounds(period.range);
+
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
     return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
   }
@@ -51,12 +62,10 @@ export default async function PlacementsPage() {
     return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
   }
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const rawRows = await prisma.metricSnapshot.groupBy({
     by: ["placementBreakdown", "placementDetail"],
-    where: { workspaceId: workspace.id, platform: "META_ADS", date: { gte: thirtyDaysAgo } },
+    where: { workspaceId: workspace.id, platform: "META_ADS", date: bounds },
     _sum: { impressions: true, clicks: true, cost: true, rawConversions: true },
   });
 
@@ -94,6 +103,7 @@ export default async function PlacementsPage() {
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">فيسبوك مقابل إنستجرام والأماكن التفصيلية</h1>
+      <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">
         نفس الحملة، مقسّمة حسب المنصة والمكان الفعلي (فيد/ستوري/ريلز) — لتعرف بالضبط أين يأتي أرخص عميل.
       </p>

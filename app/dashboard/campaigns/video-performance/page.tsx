@@ -8,6 +8,9 @@ import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { computeVideoMetrics, compareVideoPerformance } from "@/lib/videoMetrics";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams, toDateBounds } from "@/lib/dateRange";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const PLATFORM_LABELS: Record<string, string> = {
   GOOGLE_ADS: "جوجل (يوتيوب)",
@@ -16,8 +19,16 @@ const PLATFORM_LABELS: Record<string, string> = {
   SNAPCHAT_ADS: "سناب شات",
 };
 
-export default async function VideoPerformancePage() {
+export default async function VideoPerformancePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const period = periodFromParams(await searchParams);
+  const bounds = toDateBounds(period.range);
+
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
     return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
   }
@@ -30,12 +41,10 @@ export default async function VideoPerformancePage() {
     return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
   }
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const byPlatform = await prisma.metricSnapshot.groupBy({
     by: ["platform"],
-    where: { workspaceId: workspace.id, date: { gte: thirtyDaysAgo }, videoViews: { gt: 0 } },
+    where: { workspaceId: workspace.id, date: bounds, videoViews: { gt: 0 } },
     _sum: { impressions: true, cost: true, videoViews: true, videoThruPlays: true },
   });
 
@@ -44,6 +53,7 @@ export default async function VideoPerformancePage() {
       <div className="mx-auto max-w-4xl">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
         <h1 className="mb-6 text-[26px] font-semibold text-text-primary">أداء الفيديو عبر المنصات</h1>
+        <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <EmptyState
           title="لا توجد بيانات فيديو بعد"
           description="محتاج كامبينز فيديو حقيقية (يوتيوب حالياً) شغالة آخر 30 يوم."

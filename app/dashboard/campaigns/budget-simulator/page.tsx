@@ -1,23 +1,29 @@
 // app/dashboard/campaigns/budget-simulator/page.tsx
 //
-// "محاكاة نقل ميزانية من منصة تانية لتيك توك؟" - بنستخدم تكلفة العميل
-// الحقيقية الفعلية لكل منصة (مش المُعلنة)، ونحاكي: لو نقلت مبلغ معين،
-// كام عميل حقيقي إضافي/أقل متوقّع تحصل عليه.
+// "ماذا لو نقلنا ميزانية من منصة إلى أخرى؟" - نستخدم تكلفة العميل
+// الحقيقية الفعلية لكل منصة (لا المُعلنة)، ونحاكي: لو نُقل مبلغ معيّن،
+// كم عميلاً حقيقياً إضافياً أو أقلّ يُتوقّع الحصول عليه.
 
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
+import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams, toDateBounds } from "@/lib/dateRange";
 
-const PLATFORM_LABELS: Record<string, string> = {
-  GOOGLE_ADS: "جوجل",
-  META_ADS: "ميتا",
-  TIKTOK_ADS: "تيك توك",
-};
 
-export default async function BudgetSimulatorPage() {
+export default async function BudgetSimulatorPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const period = periodFromParams(await searchParams);
+  const bounds = toDateBounds(period.range);
+
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -26,15 +32,13 @@ export default async function BudgetSimulatorPage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const byPlatform = await prisma.metricSnapshot.groupBy({
     by: ["platform"],
-    where: { workspaceId: workspace.id, date: { gte: thirtyDaysAgo } },
+    where: { workspaceId: workspace.id, date: bounds },
     _sum: { cost: true, verifiedConversions: true },
   });
 
@@ -56,10 +60,10 @@ export default async function BudgetSimulatorPage() {
         cpa: conv > 0 ? cost / conv : null,
       };
     })
-    // type predicate صريح - عشان TypeScript يتتبّع فعلياً إن الفلتر ده
-    // بيشيل القيم null، مش بس وقت التشغيل. من غيره، النوع المُستنتج
-    // بيفضل `number | null` حتى بعد الفلترة، وده اللي كان بيسبب خطأ
-    // البناء (قسمة على قيمة ممكن تكون null نظرياً حسب الأنواع)
+    // type predicate صريح - كي يتتبّع TypeScript فعلياً أن هذا الفلتر
+    // يزيل القيم null، لا وقت التشغيل وحده. بدونه يبقى النوع المستنتَج
+    // `number | null` حتى بعد الفلترة، وهو ما كان يسبّب خطأ البناء
+    // (قسمة على قيمة قد تكون null نظرياً بحسب الأنواع)
     .filter((p: PlatformCpa): p is PlatformCpa & { cpa: number } => p.cpa !== null)
     .sort((a: PlatformCpa & { cpa: number }, b: PlatformCpa & { cpa: number }) => a.cpa - b.cpa);
 
@@ -68,24 +72,22 @@ export default async function BudgetSimulatorPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">محاكاة نقل الميزانية</h1>
-      <p className="mb-6 text-xs text-text-faint">
-        بناءً على تكلفة العميل الحقيقية الفعلية لكل منصة خلال آخر ٣٠ يوماً لا المُعلنة. تفترض المحاكاة
-        استمرار نفس الأداء الحالي، وهذا افتراض قد لا يصمد عند زيادة الميزانية بشكل كبير جداً.
-      </p>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.simTitle")}</h1>
+      <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
+      <p className="mb-6 text-xs text-text-faint">{t(locale, "campPages.simIntro")}</p>
 
       {platforms.length < 2 ? (
         <EmptyState
-          title="محتاجة منصتين على الأقل ببيانات تحويل حقيقية"
-          description="اربط أكثر من منصة واترك البيانات تتراكم لتصبح المحاكاة ممكنة."
+          title={t(locale, "campPages.simNeedTwoTitle")}
+          description={t(locale, "campPages.simNeedTwoBody")}
         />
       ) : (
         <div className="flex flex-col gap-3">
           <div className="rounded-2xl bg-surface p-4">
-            <div className="mb-2 text-sm font-semibold text-text-primary">تكلفة العميل الحقيقية الحالية</div>
+            <div className="mb-2 text-sm font-semibold text-text-primary">{t(locale, "campPages.simCurrentCpa")}</div>
             {platforms.map((p: any) => (
               <div key={p.platform} className="flex items-center justify-between py-1 text-xs text-text-faint">
-                <span>{PLATFORM_LABELS[p.platform] ?? p.platform}</span>
+                <span>{platformLabel(locale, p.platform)}</span>
                 <span className="font-mono text-verified">{Math.round(p.cpa)}</span>
               </div>
             ))}
@@ -93,7 +95,7 @@ export default async function BudgetSimulatorPage() {
 
           <div className="rounded-2xl bg-gap/10 p-4">
             <div className="mb-2 text-sm font-semibold text-text-primary">
-              لو نقلت {SIMULATION_AMOUNT.toLocaleString()} من الأغلى للأرخص
+              {t(locale, "campPages.simIfMoved", { amount: SIMULATION_AMOUNT.toLocaleString() })}
             </div>
             {(() => {
               const cheapest = platforms[0];
@@ -106,10 +108,14 @@ export default async function BudgetSimulatorPage() {
 
               return (
                 <p className="text-xs text-text-muted">
-                  نقل {SIMULATION_AMOUNT.toLocaleString()} من {PLATFORM_LABELS[mostExpensive.platform]} لـ{PLATFORM_LABELS[cheapest.platform]}:
-                  متوقّع تخسر ~{Math.round(lostCustomers * 10) / 10} عميل من {PLATFORM_LABELS[mostExpensive.platform]}،
-                  وتكسب ~{Math.round(gainedCustomers * 10) / 10} عميل من {PLATFORM_LABELS[cheapest.platform]} -
-                  فرق صافي {netDiff > 0 ? "+" : ""}{netDiff} عميل.
+                  {t(locale, "campPages.simSentence", {
+                    amount: SIMULATION_AMOUNT.toLocaleString(),
+                    from: platformLabel(locale, mostExpensive.platform),
+                    to: platformLabel(locale, cheapest.platform),
+                    lost: Math.round(lostCustomers * 10) / 10,
+                    gained: Math.round(gainedCustomers * 10) / 10,
+                    net: `${netDiff > 0 ? "+" : ""}${netDiff}`,
+                  })}
                 </p>
               );
             })()}

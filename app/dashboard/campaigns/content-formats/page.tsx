@@ -7,6 +7,9 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams, toDateBounds } from "@/lib/dateRange";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const FORMAT_LABELS: Record<string, string> = {
   REELS: "ريلز",
@@ -18,8 +21,16 @@ const FORMAT_LABELS: Record<string, string> = {
   RIGHT_HAND_COLUMN: "العمود الجانبي",
 };
 
-export default async function ContentFormatsPage() {
+export default async function ContentFormatsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const period = periodFromParams(await searchParams);
+  const bounds = toDateBounds(period.range);
+
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
     return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
   }
@@ -33,8 +44,6 @@ export default async function ContentFormatsPage() {
     return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
   }
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const rows = await prisma.metricSnapshot.groupBy({
     by: ["placementDetail"],
@@ -42,7 +51,7 @@ export default async function ContentFormatsPage() {
       workspaceId: workspace.id,
       platform: "META_ADS",
       placementDetail: { not: "ALL" },
-      date: { gte: thirtyDaysAgo },
+      date: bounds,
     },
     _sum: { impressions: true, clicks: true, cost: true, rawConversions: true },
   });
@@ -65,6 +74,7 @@ export default async function ContentFormatsPage() {
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">أداء شكل المحتوى</h1>
+      <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">
         ريلز مقابل ستوري مقابل الفيد العادي - أي شكل فعلاً يجلب عملاء أرخص لنفس الميزانية.
       </p>

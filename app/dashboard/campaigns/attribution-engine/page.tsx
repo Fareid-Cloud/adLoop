@@ -1,7 +1,7 @@
 // app/dashboard/campaigns/attribution-engine/page.tsx
 //
-// شفافية كاملة على محرك الإسناد - كام محادثة اتأكدت بكود مباشر (VERIFIED)،
-// وكام احتاجت توزيع احتمالي ذكي (MODELED)، وكيف اتوزعوا على المنصات.
+// شفافية كاملة على محرّك الإسناد - كم محادثة تأكّدت برمز مباشر (VERIFIED)،
+// وكم احتاجت توزيعاً احتمالياً (MODELED)، وكيف توزّعت على المنصات.
 
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -10,18 +10,23 @@ import { EmptyState } from "@/app/components/ui/EmptyState";
 import { TrackingAccuracyGauge } from "@/app/components/ui/TrackingAccuracyGauge";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { ShieldCheck, GitBranch } from "lucide-react";
+import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams, toDateBounds } from "@/lib/dateRange";
 
-const PLATFORM_LABELS: Record<string, string> = {
-  GOOGLE_ADS: "جوجل",
-  META_ADS: "ميتا",
-  TIKTOK_ADS: "تيك توك",
-  SNAPCHAT_ADS: "سناب شات",
-};
 
-export default async function AttributionEnginePage() {
+export default async function AttributionEnginePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const period = periodFromParams(await searchParams);
+  const bounds = toDateBounds(period.range);
+
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -30,13 +35,11 @@ export default async function AttributionEnginePage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const summary = await getAttributionSummaryForWorkspace(workspace.id, thirtyDaysAgo, new Date());
+  const summary = await getAttributionSummaryForWorkspace(workspace.id, bounds.gte, new Date());
   const total = summary.verifiedCount + summary.modeledCount;
   const modeledPct = total > 0 ? Math.round((summary.modeledCount / total) * 100) : 0;
 
@@ -45,16 +48,14 @@ export default async function AttributionEnginePage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">محرك الإسناد الذكي</h1>
-      <p className="mb-6 text-xs text-text-faint">
-        حين تصل رسالة واتساب بلا كود تتبّع واضح، يحاول النظام إسنادها إلى أقرب منصّة بناءً على
-        التوقيت وتطابق رقم الهاتف — لا تخمين عشوائي، بل توزيع احتمالي مبنيّ على إشارات حقيقية.
-      </p>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.attrTitle")}</h1>
+      <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
+      <p className="mb-6 text-xs text-text-faint">{t(locale, "campPages.attrIntro")}</p>
 
       {total === 0 ? (
         <EmptyState
-          title="لا توجد بيانات إسناد بعد"
-          description="تُبنى تلقائياً مع كل محادثة واتساب جديدة بعد ربط الحملات."
+          title={t(locale, "campPages.attrNoneTitle")}
+          description={t(locale, "campPages.attrNoneBody")}
         />
       ) : (
         <>
@@ -64,28 +65,28 @@ export default async function AttributionEnginePage() {
 
           <div className="mb-4 grid gap-3 sm:grid-cols-2">
             <MetricCard
-              label="مؤكّدة بكود مباشر"
+              label={t(locale, "campPages.attrVerified")}
               value={summary.verifiedCount}
               icon={ShieldCheck}
               tone="verified"
               verified
-              caption={{ text: "الكود نفسه هو الدليل — يقين لا ترجيح", tone: "positive" }}
+              caption={{ text: t(locale, "campPages.attrVerifiedCaption"), tone: "positive" }}
             />
             <MetricCard
-              label="مُنسّبة احتمالياً"
+              label={t(locale, "campPages.attrModeled")}
               value={summary.modeledCount}
               icon={GitBranch}
               tone="gap"
               verified={false}
-              bar={{ pct: modeledPct, caption: `${modeledPct}% من إجمالي المحادثات` }}
+              bar={{ pct: modeledPct, caption: t(locale, "campPages.attrModeledBar", { pct: modeledPct }) }}
             />
           </div>
 
           <div className="rounded-2xl bg-surface p-4">
-            <div className="mb-2 text-sm font-semibold text-text-primary">التوزيع الإجمالي على المنصات</div>
+            <div className="mb-2 text-sm font-semibold text-text-primary">{t(locale, "campPages.attrByPlatform")}</div>
             {platforms.map(([platform, count]) => (
               <div key={platform} className="flex items-center justify-between py-1 text-xs text-text-faint">
-                <span>{PLATFORM_LABELS[platform] ?? platform}</span>
+                <span>{platformLabel(locale, platform)}</span>
                 <span className="font-mono text-verified">{Math.round(count * 10) / 10}</span>
               </div>
             ))}

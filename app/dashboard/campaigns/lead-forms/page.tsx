@@ -10,9 +10,20 @@ import { EmptyState } from "@/app/components/ui/EmptyState";
 import { countGenuineLeads } from "@/lib/messengerLeadQuality";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { MessageCircle, MousePointerClick, Clock } from "lucide-react";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams, toDateBounds } from "@/lib/dateRange";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
-export default async function LeadFormsPage() {
+export default async function LeadFormsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const period = periodFromParams(await searchParams);
+  const bounds = toDateBounds(period.range);
+
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
     return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
   }
@@ -26,20 +37,18 @@ export default async function LeadFormsPage() {
     return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
   }
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const [byPlatform, websiteFormCount, messengerConversations] = await Promise.all([
     prisma.leadFormSubmission.groupBy({
       by: ["platform"],
-      where: { workspaceId: workspace.id, submittedAt: { gte: thirtyDaysAgo } },
+      where: { workspaceId: workspace.id, submittedAt: { gte: bounds.gte } },
       _count: true,
     }),
     prisma.ctaClickEvent.count({
-      where: { workspaceId: workspace.id, ctaType: "FORM", clickedAt: { gte: thirtyDaysAgo } },
+      where: { workspaceId: workspace.id, ctaType: "FORM", clickedAt: { gte: bounds.gte } },
     }),
     prisma.messengerConversation.findMany({
-      where: { workspaceId: workspace.id, firstMessageAt: { gte: thirtyDaysAgo } },
+      where: { workspaceId: workspace.id, firstMessageAt: { gte: bounds.gte } },
     }),
   ]);
 
@@ -67,6 +76,7 @@ export default async function LeadFormsPage() {
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">فورم المنصات الداخلي مقابل فورم موقعك</h1>
+      <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">
         عدد الليدز من كل مصدر آخر 30 يوم. ملاحظة: "الجودة" الفعلية (هل تحوّلوا لعملاء حقيقيين)
         تتطلّب ربطاً يدوياً بنتائج فريق المبيعات — هذا العدد فقط، لا نسبة التحويل النهائية.

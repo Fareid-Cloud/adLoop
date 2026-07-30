@@ -10,22 +10,16 @@ import {
   RULE_CATEGORIES, templatesFor, countByCategory,
   type RulePlatform, type RuleCategoryId, type RuleTemplate,
 } from "@/lib/automationCatalog";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
-const PLATFORM_TABS: { id: RulePlatform | null; label: string; color: string }[] = [
-  { id: null, label: "كل المنصات", color: "var(--accent)" },
+// أسماء المنصات التجارية تبقى كما هي في اللغتين؛ "كل المنصات" وحدها تُترجَم.
+const PLATFORM_TABS: { id: RulePlatform | null; label?: string; color: string }[] = [
+  { id: null, color: "var(--accent)" },
   { id: "GOOGLE_ADS", label: "Google Ads", color: "#4285F4" },
   { id: "META_ADS", label: "Meta Ads", color: "#0866FF" },
   { id: "TIKTOK_ADS", label: "TikTok Ads", color: "#FE2C55" },
 ];
 
-const ACTION_LABEL: Record<string, string> = {
-  PAUSE_CAMPAIGN: "إيقاف الحملة",
-  PAUSE_AD: "إيقاف الإعلان",
-  REDUCE_BUDGET_PCT: "خفض الميزانية",
-  INCREASE_BUDGET_PCT: "زيادة الميزانية",
-  ADJUST_BID_PCT: "تعديل المزايدة",
-  SEND_ALERT_ONLY: "تنبيه فقط",
-};
 
 const ACTION_TONE: Record<string, string> = {
   PAUSE_CAMPAIGN: "var(--critical)",
@@ -37,18 +31,21 @@ const ACTION_TONE: Record<string, string> = {
 };
 
 const UNIT_SUFFIX: Record<string, string> = {
-  currency: "", percent: "%", number: "", days: " يوم", minutes: " دقيقة", ratio: "x",
+  currency: "", percent: "%", number: "", days: "days", minutes: "minutes", ratio: "x",
 };
 
 export function RuleCatalogBrowser({
   workspaceId,
   campaigns,
   currency,
+  locale = "ar",
 }: {
   workspaceId: string;
   campaigns: { id: string; name: string; platform: string }[];
   currency: string;
+  locale?: Locale;
 }) {
+  const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `autoRules.${k}`, vars);
   const [platform, setPlatform] = useState<RulePlatform | null>(null);
   const [category, setCategory] = useState<RuleCategoryId>("truth");
   const [chosen, setChosen] = useState<RuleTemplate | null>(null);
@@ -60,19 +57,19 @@ export function RuleCatalogBrowser({
     <div>
       {/* المنصة */}
       <div className="mb-4 flex flex-wrap gap-1.5">
-        {PLATFORM_TABS.map((t) => {
-          const active = platform === t.id;
+        {PLATFORM_TABS.map((tab) => {
+          const active = platform === tab.id;
           return (
             <button
-              key={t.id ?? "all"}
-              onClick={() => setPlatform(t.id)}
+              key={tab.id ?? "all"}
+              onClick={() => setPlatform(tab.id)}
               className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[13px] font-medium transition-colors ${
                 active ? "border-transparent text-white" : "border-border bg-surface text-text-muted hover:text-text-primary"
               }`}
-              style={active ? { background: t.color } : undefined}
+              style={active ? { background: tab.color } : undefined}
             >
-              {t.id ? <PlatformLogo platform={t.id} size={15} /> : <Icons.Layers size={14} />}
-              {t.label}
+              {tab.id ? <PlatformLogo platform={tab.id} size={15} /> : <Icons.Layers size={14} />}
+              {tab.label ?? tr("allPlatforms")}
             </button>
           );
         })}
@@ -112,29 +109,29 @@ export function RuleCatalogBrowser({
             {RULE_CATEGORIES.find((c) => c.id === category)?.descAr}
           </p>
           <div className="flex flex-col gap-2">
-            {list.map((t) => (
+            {list.map((tpl) => (
               <button
-                key={t.id}
-                onClick={() => setChosen(t)}
+                key={tpl.id}
+                onClick={() => setChosen(tpl)}
                 className="card-shadow flex items-start gap-3 rounded-2xl border border-border bg-surface p-4 text-start hover:border-accent"
               >
-                <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full" style={{ background: ACTION_TONE[t.action] }} />
+                <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full" style={{ background: ACTION_TONE[tpl.action] }} />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13.5px] font-medium text-text-primary">{t.nameAr}</span>
-                  <span className="mt-0.5 block text-[12.5px] leading-relaxed text-text-muted">{t.descAr}</span>
+                  <span className="block text-[13.5px] font-medium text-text-primary">{locale === "en" ? tpl.nameEn : tpl.nameAr}</span>
+                  <span className="mt-0.5 block text-[12.5px] leading-relaxed text-text-muted">{locale === "en" ? tpl.descEn : tpl.descAr}</span>
                   <span className="mt-2 flex flex-wrap items-center gap-1.5">
-                    <span className="rounded-full px-2 py-0.5 text-[10.5px] font-medium" style={{ background: `color-mix(in srgb, ${ACTION_TONE[t.action]} 14%, transparent)`, color: ACTION_TONE[t.action] }}>
-                      {ACTION_LABEL[t.action]}{t.actionValue ? ` ${Math.abs(t.actionValue)}%` : ""}
+                    <span className="rounded-full px-2 py-0.5 text-[10.5px] font-medium" style={{ background: `color-mix(in srgb, ${ACTION_TONE[tpl.action]} 14%, transparent)`, color: ACTION_TONE[tpl.action] }}>
+                      {tr(`a${tpl.action}`)}{tpl.actionValue ? ` ${Math.abs(tpl.actionValue)}%` : ""}
                     </span>
                     <span className="rounded-full bg-surface-raised px-2 py-0.5 font-mono text-[10.5px] text-text-muted">
-                      {t.operator === "GREATER_THAN" ? "أكبر من" : "أقل من"} {t.threshold}{UNIT_SUFFIX[t.unit] || (t.unit === "currency" ? ` ${currency}` : "")}
+                      {tpl.operator === "GREATER_THAN" ? tr("greaterThan") : tr("lessThan")} {tpl.threshold}{UNIT_SUFFIX[tpl.unit] || (tpl.unit === "currency" ? ` ${currency}` : "")}
                     </span>
                     <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10.5px] text-text-muted">
-                      {t.consecutiveDays} أيام متتالية
+                      {tr("consecutiveDays", { n: tpl.consecutiveDays })}
                     </span>
-                    {t.platforms.length < 3 && (
+                    {tpl.platforms.length < 3 && (
                       <span className="flex items-center gap-1 rounded-full bg-surface-raised px-2 py-0.5 text-[10.5px] text-text-muted">
-                        {t.platforms.map((p) => <PlatformLogo key={p} platform={p} size={11} />)}
+                        {tpl.platforms.map((p) => <PlatformLogo key={p} platform={p} size={11} />)}
                       </span>
                     )}
                   </span>
@@ -148,6 +145,7 @@ export function RuleCatalogBrowser({
 
       {chosen && (
         <RuleConfigModal
+          locale={locale}
           workspaceId={workspaceId}
           template={chosen}
           platform={platform}
@@ -162,15 +160,17 @@ export function RuleCatalogBrowser({
 
 // ============ نافذة الضبط: العتبة + نطاق الحملات ============
 function RuleConfigModal({
-  workspaceId, template, platform, campaigns, currency, onClose,
+  workspaceId, template, platform, campaigns, currency, locale, onClose,
 }: {
   workspaceId: string;
   template: RuleTemplate;
   platform: RulePlatform | null;
   campaigns: { id: string; name: string; platform: string }[];
   currency: string;
+  locale: Locale;
   onClose: () => void;
 }) {
+  const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `autoRules.${k}`, vars);
   const [threshold, setThreshold] = useState(template.threshold);
   const [days, setDays] = useState(template.consecutiveDays);
   const [actionValue, setActionValue] = useState(template.actionValue ?? 0);
@@ -193,7 +193,7 @@ function RuleConfigModal({
 
   async function save() {
     if (scope === "SPECIFIC_CAMPAIGNS" && picked.size === 0) {
-      setError("اختر حملة واحدة على الأقل، أو طبّق القاعدة على كل الحملات.");
+      setError(tr("errPickCampaign"));
       return;
     }
     setSaving(true);
@@ -202,7 +202,7 @@ function RuleConfigModal({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: template.nameAr,
+        name: locale === "en" ? template.nameEn : template.nameAr,
         templateId: template.id,
         metric: template.metric,
         operator: template.operator,
@@ -221,7 +221,7 @@ function RuleConfigModal({
     });
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
-      setError(d.error ?? "تعذّر حفظ القاعدة.");
+      setError(d.error ?? tr("errSave"));
       setSaving(false);
       return;
     }
@@ -240,7 +240,7 @@ function RuleConfigModal({
         <div className="flex-1 overflow-y-auto p-5">
           {/* العتبة */}
           <label className="mb-1.5 block text-[12.5px] text-text-muted">
-            الشرط: {template.operator === "GREATER_THAN" ? "أكبر من" : "أقل من"}
+            {tr("conditionIs", { op: template.operator === "GREATER_THAN" ? tr("greaterThan") : tr("lessThan") })}
           </label>
           <div className="mb-4 flex items-center gap-2">
             <input
@@ -255,7 +255,7 @@ function RuleConfigModal({
           </div>
 
           {/* الأيام */}
-          <label className="mb-1.5 block text-[12.5px] text-text-muted">عدد الأيام المتتالية قبل التنفيذ</label>
+          <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("daysBeforeApply")}</label>
           <input
             type="number" min={1} max={30} value={days}
             onChange={(e) => setDays(Number(e.target.value))}
@@ -266,7 +266,7 @@ function RuleConfigModal({
           {template.actionValue !== undefined && (
             <>
               <label className="mb-1.5 block text-[12.5px] text-text-muted">
-                {ACTION_LABEL[template.action]} بنسبة (%)
+                {tr("actionByPct", { action: tr(`a${template.action}`) })}
               </label>
               <input
                 type="number" value={actionValue}
@@ -277,7 +277,7 @@ function RuleConfigModal({
           )}
 
           {/* المنصة - قبل النطاق مباشرة */}
-          <label className="mb-1.5 block text-[12.5px] text-text-muted">المنصة</label>
+          <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("platform")}</label>
           <div className="mb-4 flex flex-wrap gap-2">
             <button
               onClick={() => { setRulePlatform(null); setPicked(new Set()); }}
@@ -285,7 +285,7 @@ function RuleConfigModal({
                 rulePlatform === null ? "border-accent bg-accent/10 text-accent" : "border-border bg-surface-raised text-text-muted"
               }`}
             >
-              <Icons.Layers size={14} /> كل المنصات
+              <Icons.Layers size={14} /> {tr("allPlatforms")}
             </button>
             {template.platforms.map((p) => (
               <button
@@ -302,9 +302,9 @@ function RuleConfigModal({
           </div>
 
           {/* نطاق الحملات */}
-          <label className="mb-1.5 block text-[12.5px] text-text-muted">نطاق التطبيق</label>
+          <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("scope")}</label>
           <div className="mb-3 flex gap-2">
-            {([["ALL_CAMPAIGNS", "كل الحملات"], ["SPECIFIC_CAMPAIGNS", "حملات محددة"]] as const).map(([v, l]) => (
+            {([["ALL_CAMPAIGNS", tr("allCampaigns")], ["SPECIFIC_CAMPAIGNS", tr("specificCampaigns")]] as const).map(([v, l]) => (
               <button
                 key={v}
                 onClick={() => setScope(v)}
@@ -320,7 +320,7 @@ function RuleConfigModal({
           {scope === "SPECIFIC_CAMPAIGNS" && (
             <div className="mb-4 max-h-52 overflow-y-auto rounded-xl border border-border p-2">
               {eligible.length === 0 ? (
-                <p className="p-3 text-center text-[12.5px] text-text-muted">لا توجد حملات مرتبطة لهذه المنصة بعد.</p>
+                <p className="p-3 text-center text-[12.5px] text-text-muted">{tr("noCampaignsForPlatform")}</p>
               ) : (
                 eligible.map((c) => {
                   const on = picked.has(c.id);
@@ -350,9 +350,9 @@ function RuleConfigModal({
           <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-border bg-surface-raised p-3">
             <input type="checkbox" checked={requireApproval} onChange={(e) => setRequireApproval(e.target.checked)} className="mt-0.5" />
             <span>
-              <span className="block text-[12.5px] font-medium text-text-primary">اطلب موافقتي قبل التنفيذ</span>
+              <span className="block text-[12.5px] font-medium text-text-primary">{tr("askApprovalBefore")}</span>
               <span className="mt-0.5 block text-[11.5px] leading-relaxed text-text-muted">
-                عند إلغاء التحديد، ينفّذ النظام الإجراء تلقائياً على حسابك الإعلاني دون سؤالك.
+                {tr("askApprovalHint")}
               </span>
             </span>
           </label>
@@ -361,9 +361,9 @@ function RuleConfigModal({
         </div>
 
         <div className="flex justify-end gap-2 border-t border-border p-4">
-          <button onClick={onClose} className="rounded-xl border border-border bg-surface-raised px-4 py-2 text-[13px] text-text-muted">إلغاء</button>
+          <button onClick={onClose} className="rounded-xl border border-border bg-surface-raised px-4 py-2 text-[13px] text-text-muted">{tr("cancel")}</button>
           <button onClick={save} disabled={saving} className="rounded-xl bg-accent px-5 py-2 text-[13px] font-medium text-white disabled:opacity-50">
-            {saving ? "جارٍ الحفظ..." : "تفعيل القاعدة"}
+            {saving ? tr("saving") : tr("activateRule")}
           </button>
         </div>
       </div>
