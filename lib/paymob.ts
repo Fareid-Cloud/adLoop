@@ -12,6 +12,8 @@ export interface CreateIntentionParams {
   userId: string;
   userEmail: string;
   planLabel: string;
+  /** معرّف نيّة الدفع عندنا - يعود في الويب هوك فنطابق الدفع بنيّة بعينها */
+  intentId: string;
 }
 
 export interface PaymobIntentionResponse {
@@ -40,7 +42,7 @@ export async function createPaymentIntention(params: CreateIntentionParams): Pro
         apartment: "NA", floor: "NA", street: "NA", building: "NA",
         city: "Cairo", state: "NA", country: "EG",
       },
-      extras: { userId: params.userId, planLabel: params.planLabel },
+      extras: { userId: params.userId, planLabel: params.planLabel, intentId: params.intentId },
     }),
   });
 

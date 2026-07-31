@@ -16,6 +16,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { markEventAsProcessed } from "@/lib/webhookSecurity";
 import { pushToActionFeed } from "@/lib/actionFeed";
+import { fulfillPaymentIntent } from "@/lib/billing";
 
 const HMAC_FIELD_ORDER = [
   "amount_cents", "created_at", "currency", "error_occured",
@@ -65,34 +66,38 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
-  const userId = transaction.order?.extras?.userId ?? transaction.extras?.userId;
-  const planLabel = transaction.order?.extras?.planLabel ?? transaction.extras?.planLabel ?? null;
+  const extras = transaction.order?.extras ?? transaction.extras ?? {};
+  const userId = extras.userId;
+  const intentId = extras.intentId;
   if (!userId) return NextResponse.json({ received: true });
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return NextResponse.json({ received: true });
 
-  const nextPeriodEnd = new Date();
-  nextPeriodEnd.setMonth(nextPeriodEnd.getMonth() + 1);
+  // الإتمام كلّه في محرّك واحد: انتقال ذرّي للحالة، ثم أثر واحد لا يتكرّر.
+  // بدون `intentId` لا نستطيع الجزم بما اشتراه، فنسجّل ولا نخمّن - منح
+  // اشتراك بناءً على تخمين أسوأ من عدم منحه.
+  if (!intentId) {
+    console.error("Paymob webhook بلا intentId - لا يمكن تحديد ما اشتُري", transaction.id);
+    return NextResponse.json({ received: true, unmatched: true });
+  }
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      subscriptionStatus: "ACTIVE",
-      subscriptionPlan: planLabel,
-      currentPeriodEnd: nextPeriodEnd,
-      cancelAtPeriodEnd: false,
-    },
-  });
+  const result = await fulfillPaymentIntent(String(intentId), String(transaction.id));
+  if (!result.ok || result.alreadyDone) return NextResponse.json({ received: true });
 
   const workspace = await prisma.workspace.findFirst({ where: { userId } });
   if (workspace) {
+    const ar = (user.preferredLocale ?? "ar") === "ar";
     await pushToActionFeed({
       workspaceId: workspace.id,
       type: "ACCOUNT",
       severity: "LOW",
-      title: "تم تفعيل الاشتراك بنجاح",
-      description: "اشتراكك شغال الآن - كل الميزات متاحة.",
+      title: result.kind === "CREDITS"
+        ? ar ? `أُضيف ${result.credits} كريدت إلى رصيدك` : `${result.credits} credits added to your balance`
+        : ar ? "تم تفعيل اشتراكك" : "Your subscription is active",
+      description: result.kind === "CREDITS"
+        ? ar ? "الرصيد المشترى لا ينتهي بنهاية الشهر." : "Purchased credits do not expire at month end."
+        : ar ? "كل ميزات باقتك متاحة الآن." : "Every feature in your plan is available now.",
       linkUrl: "/dashboard/billing",
     });
   }

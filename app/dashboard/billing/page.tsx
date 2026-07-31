@@ -1,50 +1,55 @@
 // app/dashboard/billing/page.tsx
 //
-// صفحة الاشتراك بتاعة AdLoop نفسها - مختلفة تماماً عن "pricing" (اللي
-// دي فحص تسعير منتجات العميل، لبس مش لينا). الحالة كلها من قاعدة
-// بياناتنا (مصدرها الحقيقي webhook Paymob)، مش استعلام مباشر لـPaymob
-// وقت كل زيارة - أسرع وأقل عرضة لحدود معدل الطلبات.
+// الاشتراك والباقة. الحالة كلّها من قاعدتنا (مصدرها الحقيقي ويب هوك
+// Paymob) لا باستعلام مباشر عند كل زيارة - أسرع وأقلّ عرضة لحدود المعدّل.
+//
+// **رصيد الكريدت المعروض = مخصّص الباقة المتبقّي + المشترى.** الأوّل
+// يتجدّد شهرياً والثاني يبقى، وخلطهما في رقم واحد يُخفي أيّهما ينفد أوّلاً.
 
 import { getSessionUserFromCookies } from "@/lib/auth";
-import { BillingClient } from "./BillingClient";
+import { prisma } from "@/lib/prisma";
+import { PlansClient } from "./PlansClient";
+import { billingCurrencyFor, PLAN_BY_KEY, type PlanKey } from "@/lib/plans";
+import { getMonthlyAiUsage } from "@/lib/aiRateLimit";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  NONE: { label: "لا يوجد اشتراك", color: "text-text-faint" },
-  TRIALING: { label: "فترة تجربة", color: "text-gap" },
-  ACTIVE: { label: "نشط", color: "text-verified" },
-  PAST_DUE: { label: "فشل الدفع - محتاج تحديث", color: "text-critical" },
-  CANCELED: { label: "ملغي", color: "text-text-faint" },
-};
+export const dynamic = "force-dynamic";
 
-export default async function BillingPage() {
+export default async function BillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
-  const status = STATUS_LABELS[user.subscriptionStatus] ?? STATUS_LABELS.NONE;
+  const workspace = await prisma.workspace.findFirst({
+    where: { userId: user.id },
+    orderBy: { createdAt: "asc" },
+    select: { currency: true },
+  });
+
+  const planKey = (user.subscriptionStatus === "ACTIVE" ? user.subscriptionPlan : null) as PlanKey | null;
+  const plan = PLAN_BY_KEY.get(planKey ?? "free") ?? PLAN_BY_KEY.get("free")!;
+
+  const used = await getMonthlyAiUsage(user.id);
+  const allowance = plan.limits.aiCredits;
+  const purchased = user.aiCreditsPurchased ?? 0;
+  const left = Math.max(0, allowance - used) + purchased;
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-[26px] font-semibold text-text-primary">الاشتراك</h1>
-
-      <div className="mb-6 rounded-2xl bg-surface p-5">
-        <div className="mb-1 text-xs text-text-faint">حالة الاشتراك</div>
-        <div className={`text-lg font-medium ${status.color}`}>{status.label}</div>
-        {user.subscriptionPlan && (
-          <div className="mt-1 text-sm text-text-muted">الخطة: {user.subscriptionPlan}</div>
-        )}
-        {user.currentPeriodEnd && (
-          <div className="mt-1 text-xs text-text-faint">
-            {user.cancelAtPeriodEnd ? "هيتوقف يوم" : "التجديد الجاي يوم"}{" "}
-            {new Date(user.currentPeriodEnd).toLocaleDateString("ar")}
-          </div>
-        )}
-      </div>
-
-      <BillingClient
-        hasActiveSubscription={user.subscriptionStatus === "ACTIVE" || user.subscriptionStatus === "PAST_DUE"}
-      />
-    </div>
+    <PlansClient
+      locale={locale}
+      currency={billingCurrencyFor(workspace?.currency ?? "USD")}
+      currentPlan={planKey ?? "free"}
+      creditsLeft={left}
+      creditsAllowance={allowance + purchased}
+      openCreditsOnLoad={sp.credits === "1"}
+    />
   );
 }

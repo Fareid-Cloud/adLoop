@@ -10,6 +10,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { X, Search, Check, AlertCircle, Loader2 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { t } from "@/lib/i18n/dictionary";
 
 type Platform = "GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS";
 
@@ -47,7 +48,11 @@ export function CampaignPickerModal({
   const [saving, setSaving] = useState(false);
   // تشخيص الاتصال: يظهر عند الفشل ليقول أين توقّف بالضبط بدل "لا توجد حملات"
   const [diagnosing, setDiagnosing] = useState(false);
-  const [diagnosis, setDiagnosis] = useState<{ steps: any[]; verdictAr: string } | null>(null);
+  const [diagnosis, setDiagnosis] = useState<{
+    steps: Array<{ key: string; labelKey: string; ok: boolean | null; detailKey?: string; detailVars?: Record<string, string | number> }>;
+    verdictKey: string;
+    verdictVars?: Record<string, string | number>;
+  } | null>(null);
 
   async function diagnose() {
     setDiagnosing(true);
@@ -227,7 +232,7 @@ export function CampaignPickerModal({
           {/* نتيجة تشخيص الاتصال - خطوة بخطوة */}
           {diagnosis && (
             <div className="mx-auto mt-4 max-w-md rounded-xl border border-border bg-surface-raised p-4 text-start">
-              <p className="mb-3 text-[13px] font-medium text-text-primary">{diagnosis.verdictAr}</p>
+              <p className="mb-3 text-[13px] font-medium text-text-primary">{t(locale, `connTest.${diagnosis.verdictKey}`, diagnosis.verdictVars)}</p>
               <ul className="flex flex-col gap-2">
                 {diagnosis.steps.map((st: any) => (
                   <li key={st.key} className="flex items-start gap-2">
@@ -237,8 +242,8 @@ export function CampaignPickerModal({
                         : <span className="block h-3 w-3 rounded-full border border-border" />}
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-[12.5px] text-text-primary">{st.labelAr}</span>
-                      {st.detailAr && <span className="block text-[11.5px] leading-relaxed text-text-muted">{st.detailAr}</span>}
+                      <span className="block text-[12.5px] text-text-primary">{t(locale, `connTest.${st.labelKey}`)}</span>
+                      {st.detailKey && <span className="block text-[11.5px] leading-relaxed text-text-muted">{t(locale, `connTest.${st.detailKey}`, st.detailVars)}</span>}
                     </span>
                   </li>
                 ))}

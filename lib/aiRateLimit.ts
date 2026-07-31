@@ -179,3 +179,25 @@ export async function checkAndConsumeSiteScanQuota(userId: string): Promise<Quot
 
   return { allowed: true, remainingThisMonth: SITE_SCAN_MONTHLY_LIMIT - (monthlyCount + 1) };
 }
+
+/**
+ * الاستهلاك الشهري الحالي - للعرض في صفحة الاشتراك لا للتحكّم.
+ *
+ * يُعيد صفراً بعد بداية شهر جديد حتى قبل أن يستدعي المستخدم شيئاً: العدّاد
+ * لا يُصفَّر إلا عند أوّل استهلاك فعلي، فقراءته الخام تعرض رقم الشهر
+ * الماضي على من لم يستخدم شيئاً بعد.
+ */
+export async function getMonthlyAiUsage(userId: string): Promise<number> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { aiRefreshMonthlyCount: true, aiRefreshMonthlyReset: true },
+  });
+  if (!user) return 0;
+
+  const now = new Date();
+  const reset = user.aiRefreshMonthlyReset;
+  if (reset && (reset.getMonth() !== now.getMonth() || reset.getFullYear() !== now.getFullYear())) {
+    return 0;
+  }
+  return user.aiRefreshMonthlyCount ?? 0;
+}

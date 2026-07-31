@@ -1,38 +1,58 @@
 // app/api/billing/checkout/route.ts
 //
-// بننشئ "نية دفع" عند Paymob، ونرجّع رابط صفحة الدفع المستضافة عندها.
-// نفس مبدأ الأمان اللي طبّقناه مع Stripe: العميل بيبعت "مفتاح خطة"
-// بسيط (starter/pro)، والمبلغ الحقيقي بيتحدد في السيرفر بس.
+// بدء الدفع. **المبلغ يُشتقّ في الخادم** من مفتاح الباقة الواصل - لا
+// يُستقبل من العميل إطلاقاً، وإلا اشترى أحدهم باقة الوكالات بجنيه.
+//
+// كل ما يخصّ منع الشحن المزدوج في `lib/billing.ts` - هنا التحقّق فقط.
 
 import { NextRequest, NextResponse } from "next/server";
-import { createPaymentIntention, getUnifiedCheckoutUrl } from "@/lib/paymob";
+import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
-
-const PLAN_PRICES_CENTS: Record<string, number> = {
-  starter: Number(process.env.PLAN_PRICE_STARTER_CENTS ?? 0),
-  pro: Number(process.env.PLAN_PRICE_PRO_CENTS ?? 0),
-};
-
-const PLAN_LABELS: Record<string, string> = {
-  starter: "Starter",
-  pro: "Pro",
-};
+import { startSubscriptionCheckout, startCreditsCheckout } from "@/lib/billing";
+import { billingCurrencyFor, PLAN_BY_KEY, type BillingCycle, type PlanKey } from "@/lib/plans";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { plan } = await req.json();
-  const amountCents = PLAN_PRICES_CENTS[plan];
-  if (!amountCents) return NextResponse.json({ error: "خطة غير معروفة" }, { status: 400 });
+  // بدء الدفع ينشئ سجلّاً وينادي بوّابة خارجية - معدّل مرتفع منه إمّا
+  // ضغط عصبي متكرّر أو إساءة، وكلاهما يستحقّ الحدّ.
+  const { allowed } = await checkRateLimit(getClientIp(req), `checkout:${user.id}`, 10, 5);
+  if (!allowed) return NextResponse.json({ error: "too many requests" }, { status: 429 });
 
-  const intention = await createPaymentIntention({
-    amountCents,
-    currency: "EGP",
+  const body = await req.json().catch(() => null);
+
+  // العملة من مساحة عمل المستخدم لا من العميل - وإلا اختار الأرخص
+  const workspace = await prisma.workspace.findFirst({
+    where: { userId: user.id },
+    orderBy: { createdAt: "asc" },
+    select: { currency: true },
+  });
+  const currency = billingCurrencyFor(workspace?.currency ?? "USD");
+
+  if (body?.mode === "credits") {
+    const result = await startCreditsCheckout({
+      userId: user.id,
+      userEmail: user.email,
+      currency,
+      credits: Number(body?.credits),
+    });
+    return NextResponse.json(result, { status: result.ok ? 200 : 400 });
+  }
+
+  const planKey = String(body?.plan ?? "") as PlanKey;
+  if (!PLAN_BY_KEY.has(planKey) || planKey === "free") {
+    return NextResponse.json({ ok: false, errorKey: "errUnknownPlan" }, { status: 400 });
+  }
+  const cycle: BillingCycle = body?.cycle === "yearly" ? "yearly" : "monthly";
+
+  const result = await startSubscriptionCheckout({
     userId: user.id,
     userEmail: user.email,
-    planLabel: PLAN_LABELS[plan],
+    currency,
+    planKey,
+    cycle,
   });
-
-  return NextResponse.json({ url: getUnifiedCheckoutUrl(intention.clientSecret) });
+  return NextResponse.json(result, { status: result.ok ? 200 : 400 });
 }

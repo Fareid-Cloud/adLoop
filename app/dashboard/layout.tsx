@@ -24,6 +24,8 @@ import { AiCreditBadge } from "@/app/components/AiCreditBadge";
 import { MONTHLY_LIMIT } from "@/lib/aiRateLimit";
 import { SidebarNav } from "@/app/components/SidebarNav";
 import { WorkspaceSwitcher } from "@/app/components/WorkspaceSwitcher";
+import { getEntitlements } from "@/lib/entitlements";
+import { TrialBar } from "@/app/components/TrialBar";
 // next/font/google بيحمّل ملف الخط فعلياً وقت الـ build ويربطه بمتغير CSS -
 // ده الفرق عن مجرد كتابة اسم الخط في font-family من غير ما يكون مستورد
 // فعلياً (المشكلة اللي حصلت في المعاينة السابقة)
@@ -99,8 +101,10 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const showOnboarding = !!user && !user.onboardingCompleted && !user.onboardingDismissed;
 
   // مساحات العمل ومبدّلها - المساحة النشطة من الكوكي، وإلا الأقدم
-  const PLAN_LIMITS: Record<string, number> = { free: 1, starter: 2, growth: 5, pro: 15, agency: 50 };
-  const workspaceLimit = PLAN_LIMITS[(user?.subscriptionPlan ?? "free").toLowerCase()] ?? 1;
+  // مصدر حقيقة واحد للحدود: الجدول المحلّي السابق كان يحمل باقة `growth`
+  // لا وجود لها ويمنح `pro` خمس عشرة مساحة بينما الكتالوج يمنحها ثلاثاً.
+  const entitlements = user ? await getEntitlements(user.id) : null;
+  const workspaceLimit = entitlements?.limits.workspaces ?? 1;
 
   let allWorkspaces: Array<{ id: string; name: string; currency: string }> = [];
   if (user) {
@@ -203,6 +207,17 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         <div className="px-10 pb-10">{children}</div>
       </main>
       </div>
+      {entitlements && (
+        <div className="px-10 pt-4">
+          <TrialBar
+            state={entitlements.state}
+            trialDaysLeft={entitlements.trialDaysLeft}
+            planKey={entitlements.planKey}
+            locale={locale}
+          />
+        </div>
+      )}
+
       {showOnboarding && activeWorkspace && onboardingState && (
         <WelcomeGate
           locale={locale}

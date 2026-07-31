@@ -11,11 +11,16 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { decryptToken } from "@/lib/encryption";
 
+/**
+ * خطوة فحص. **مفاتيح لا نصوص:** المحرّك يعمل في الخادم ولا يعرف لغة
+ * الواجهة، فإرجاع جملة مكتملة يقفل اللغة عند لحظة الحساب.
+ */
 interface Step {
   key: string;
-  labelAr: string;
+  labelKey: string;
   ok: boolean | null; // null = لم يُنفَّذ لأن ما قبله فشل
-  detailAr?: string;
+  detailKey?: string;
+  detailVars?: Record<string, string | number>;
 }
 
 export async function POST(req: NextRequest) {
@@ -25,7 +30,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const platform = body?.platform;
   if (!["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"].includes(platform)) {
-    return NextResponse.json({ error: "منصة غير معروفة." }, { status: 400 });
+    return NextResponse.json({ errorKey: "unknownPlatform" }, { status: 400 });
   }
 
   const steps: Step[] = [];
@@ -37,24 +42,22 @@ export async function POST(req: NextRequest) {
   });
 
   if (!connection) {
-    add({ key: "linked", labelAr: "الحساب مربوط", ok: false, detailAr: "لم يُربط هذا الحساب بعد. اضغط «ربط» لبدء الموافقة." });
-    return NextResponse.json({ steps, verdictAr: "الحساب غير مربوط." });
+    add({ key: "linked", labelKey: "sLinked", ok: false, detailKey: "dNotLinked" });
+    return NextResponse.json({ steps, verdictKey: "vNotLinked" });
   }
-  add({ key: "linked", labelAr: "الحساب مربوط", ok: true });
+  add({ key: "linked", labelKey: "sLinked", ok: true });
 
   // 2) توكن التجديد موجود؟ (جوجل وحدها تحتاجه للوصول طويل الأمد)
   if (platform === "GOOGLE_ADS") {
     if (!connection.refreshToken) {
-      add({ key: "token", labelAr: "صلاحية الوصول سارية", ok: false,
-        detailAr: "لا يوجد توكن تجديد. أعد الربط مع الموافقة على كل الصلاحيات المطلوبة." });
-      return NextResponse.json({ steps, verdictAr: "صلاحية الوصول ناقصة - أعد الربط." });
+      add({ key: "token", labelKey: "sToken", ok: false, detailKey: "dNoRefresh" });
+      return NextResponse.json({ steps, verdictKey: "vTokenMissing" });
     }
-    add({ key: "token", labelAr: "صلاحية الوصول سارية", ok: true });
+    add({ key: "token", labelKey: "sToken", ok: true });
   } else {
     const expired = connection.expiresAt && connection.expiresAt < new Date();
-    add({ key: "token", labelAr: "صلاحية الوصول سارية", ok: !expired,
-      detailAr: expired ? "انتهت صلاحية التوكن. أعد ربط الحساب." : undefined });
-    if (expired) return NextResponse.json({ steps, verdictAr: "انتهت صلاحية الربط - أعد الربط." });
+    add({ key: "token", labelKey: "sToken", ok: !expired, detailKey: expired ? "dExpired" : undefined });
+    if (expired) return NextResponse.json({ steps, verdictKey: "vTokenExpired" });
   }
 
   // 3) متغيّرات البيئة المطلوبة موجودة؟ سبب صامت شائع جداً
@@ -65,11 +68,10 @@ export async function POST(req: NextRequest) {
     }
   }
   if (missingEnv.length > 0) {
-    add({ key: "config", labelAr: "إعدادات الخادم مكتملة", ok: false,
-      detailAr: `متغيّرات مفقودة في الخادم: ${missingEnv.join("، ")}. هذه إعدادات تخصّنا نحن لا حسابك.` });
-    return NextResponse.json({ steps, verdictAr: "إعداد ناقص من جهتنا - تواصل مع الدعم." });
+    add({ key: "config", labelKey: "sConfig", ok: false, detailKey: "dMissingEnv", detailVars: { vars: missingEnv.join(", ") } });
+    return NextResponse.json({ steps, verdictKey: "vServerConfig" });
   }
-  add({ key: "config", labelAr: "إعدادات الخادم مكتملة", ok: true });
+  add({ key: "config", labelKey: "sConfig", ok: true });
 
   // 4) هل نصل إلى الحسابات فعلياً؟
   try {
@@ -84,12 +86,11 @@ export async function POST(req: NextRequest) {
       const accessible = await client.listAccessibleCustomers(refreshToken);
       const ids = (accessible.resource_names ?? []).map((r: string) => r.split("/")[1]);
 
-      add({ key: "accounts", labelAr: "الوصول إلى الحسابات", ok: ids.length > 0,
-        detailAr: ids.length > 0
-          ? `${ids.length} حساباً متاحاً.`
-          : "التوكن سليم لكنه لا يملك صلاحية على أي حساب إعلاني. تأكد أنك ربطت الحساب الذي يملك الحملات." });
+      add({ key: "accounts", labelKey: "sAccounts", ok: ids.length > 0,
+        detailKey: ids.length > 0 ? "dAccountsFound" : "dNoAccountAccess",
+        detailVars: ids.length > 0 ? { n: ids.length } : undefined });
 
-      if (ids.length === 0) return NextResponse.json({ steps, verdictAr: "لا توجد حسابات إعلانية متاحة لهذا التوكن." });
+      if (ids.length === 0) return NextResponse.json({ steps, verdictKey: "vNoAccounts" });
 
       // 5) هل يوجد حملات فعلاً؟
       let campaignCount = 0;
@@ -102,22 +103,18 @@ export async function POST(req: NextRequest) {
           );
           campaignCount += rows.length;
         } catch (e: any) {
-          firstError = firstError ?? (e?.errors?.[0]?.message ?? e?.message ?? "غير معروف");
+          firstError = firstError ?? (e?.errors?.[0]?.message ?? e?.message ?? null);
         }
       }
 
-      add({ key: "campaigns", labelAr: "قراءة الحملات", ok: campaignCount > 0,
-        detailAr: campaignCount > 0
-          ? `${campaignCount} حملة متاحة للاختيار.`
-          : firstError
-          ? `تعذّرت قراءة الحملات: ${firstError}`
-          : "الحسابات متاحة لكن لا توجد بها حملات (غير محذوفة)." });
+      add({ key: "campaigns", labelKey: "sCampaigns", ok: campaignCount > 0,
+        detailKey: campaignCount > 0 ? "dCampaignsFound" : firstError ? "dCampaignsFailed" : "dNoCampaigns",
+        detailVars: campaignCount > 0 ? { n: campaignCount } : firstError ? { error: firstError } : undefined });
 
       return NextResponse.json({
         steps,
-        verdictAr: campaignCount > 0
-          ? `الاتصال سليم — ${campaignCount} حملة جاهزة للاختيار.`
-          : "الاتصال سليم لكن لم نجد حملات.",
+        verdictKey: campaignCount > 0 ? "vHealthy" : "vHealthyNoCampaigns",
+        verdictVars: campaignCount > 0 ? { n: campaignCount } : undefined,
       });
     }
 
@@ -126,9 +123,10 @@ export async function POST(req: NextRequest) {
       const res = await fetch(`https://graph.facebook.com/v25.0/me/adaccounts?fields=name&access_token=${token}`);
       const data = await res.json();
       const n = (data.data ?? []).length;
-      add({ key: "accounts", labelAr: "الوصول إلى الحسابات", ok: res.ok && n > 0,
-        detailAr: !res.ok ? data.error?.message ?? "تعذّر الوصول" : n > 0 ? `${n} حساباً متاحاً.` : "لا توجد حسابات إعلانية متاحة." });
-      return NextResponse.json({ steps, verdictAr: res.ok && n > 0 ? "الاتصال سليم." : "تعذّر الوصول إلى حسابات ميتا." });
+      add({ key: "accounts", labelKey: "sAccounts", ok: res.ok && n > 0,
+        detailKey: !res.ok ? "dCampaignsFailed" : n > 0 ? "dAccountsFound" : "dNoAccounts",
+        detailVars: !res.ok ? { error: data.error?.message ?? "" } : n > 0 ? { n } : undefined });
+      return NextResponse.json({ steps, verdictKey: res.ok && n > 0 ? "vOk" : "vMetaFailed" });
     }
 
     // تيك توك
@@ -138,12 +136,13 @@ export async function POST(req: NextRequest) {
     );
     const data = await res.json();
     const n = (data.data?.list ?? []).length;
-    add({ key: "accounts", labelAr: "الوصول إلى الحسابات", ok: data.code === 0 && n > 0,
-      detailAr: data.code !== 0 ? data.message ?? "تعذّر الوصول" : `${n} حساباً متاحاً.` });
-    return NextResponse.json({ steps, verdictAr: data.code === 0 && n > 0 ? "الاتصال سليم." : "تعذّر الوصول إلى حسابات تيك توك." });
+    add({ key: "accounts", labelKey: "sAccounts", ok: data.code === 0 && n > 0,
+      detailKey: data.code !== 0 ? "dCampaignsFailed" : "dAccountsFound",
+      detailVars: data.code !== 0 ? { error: data.message ?? "" } : { n } });
+    return NextResponse.json({ steps, verdictKey: data.code === 0 && n > 0 ? "vOk" : "vTiktokFailed" });
   } catch (err: any) {
-    const detail = err?.errors?.[0]?.message ?? err?.message ?? "خطأ غير معروف";
-    add({ key: "accounts", labelAr: "الوصول إلى الحسابات", ok: false, detailAr: detail });
-    return NextResponse.json({ steps, verdictAr: `فشل الاتصال: ${detail}` });
+    const detail = err?.errors?.[0]?.message ?? err?.message ?? "";
+    add({ key: "accounts", labelKey: "sAccounts", ok: false, detailKey: "dCampaignsFailed", detailVars: { error: detail } });
+    return NextResponse.json({ steps, verdictKey: "vFailed", verdictVars: { error: detail } });
   }
 }

@@ -98,6 +98,10 @@ model User {
   savedCardToken       String?  // توكن الكارت المحفوظ - يُستخدم لتحصيل التجديد الشهري تلقائياً
   subscriptionStatus   SubscriptionStatus @default(NONE)
   subscriptionPlan     String?  // "starter" | "pro" | إلخ - اسم الخطة، مش الـ price id
+  /// رصيد كريدت الذكاء الاصطناعي المشترى - منفصل عن مخصّص الباقة
+  /// الشهري. المخصّص يتجدّد، والمشترى يبقى حتى يُستهلك.
+  aiCreditsPurchased Int @default(0)
+  paymentIntents PaymentIntent[]
   currentPeriodEnd     DateTime?
   // مبدأ عام بغض النظر عن مزوّد الدفع: لما مستخدم يلغي، منقفلش الوصول
   // فوراً - بنسيبه شغال لحد نهاية الفترة اللي دفعها فعلاً، ده أعدل تجربة
@@ -461,6 +465,57 @@ model CompetitorAd {
   updatedAt    DateTime @updatedAt
 
   @@index([workspaceId, competitorId])
+}
+
+enum PaymentIntentKind {
+  SUBSCRIPTION
+  CREDITS
+}
+
+enum PaymentIntentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+}
+
+/// نية دفع. **هذا الجدول هو الحماية من الشحن المزدوج.**
+///
+/// بدونه كانت كل ضغطة على "اشترك" تُنشئ نية جديدة عند Paymob - فمن يضغط
+/// مرّتين، أو يعود بزرّ المتصفّح، يحصل على رابطَي دفع صالحين معاً.
+///
+/// الآن: نيّة معلّقة حديثة لنفس المستخدم ونفس الطلب تُعاد كما هي بدل
+/// إنشاء غيرها. والتفعيل يبقى من الويب هوك وحده - صفحة النجاح تُفتح
+/// بلا دفع، فبناء الاشتراك عليها ثغرة لا اختصار.
+model PaymentIntent {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  kind          PaymentIntentKind
+  /// للاشتراك: مفتاح الباقة. للكريدت: null
+  planKey       String?
+  cycle         String?  // monthly | yearly
+  /// للكريدت: العدد المشترى. للاشتراك: null
+  credits       Int?
+
+  amountCents   Int
+  currency      String
+  /// معرّف النيّة لدى Paymob - للمطابقة عند وصول الويب هوك
+  paymobIntentionId String?
+  checkoutUrl   String?  @db.Text
+
+  status        PaymentIntentStatus @default(PENDING)
+  /// معرّف المعاملة عند Paymob بعد الدفع - دليل السداد لا تخميننا
+  transactionId String?
+  failureReason String?
+  paidAt        DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([paymobIntentionId])
 }
 
 // بيانات مرفوعة يدوي (Excel) - بتتخزن بنفس شكل MetricSnapshot تقريباً

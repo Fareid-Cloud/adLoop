@@ -8,15 +8,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { computeSmartDefaults } from "@/lib/dashboardDefaults";
+import { checkWorkspaceLimit, getEntitlements } from "@/lib/entitlements";
 
-/** حدّ مساحات العمل لكل باقة - يُفحص على الخادم لا في الواجهة وحدها،
- *  وإلا أمكن تجاوزه بطلب مباشر. */
-const PLAN_LIMITS: Record<string, number> = {
-  free: 1, starter: 2, growth: 5, pro: 15, agency: 50,
-};
-function limitFor(plan: string | null | undefined): number {
-  return PLAN_LIMITS[(plan ?? "free").toLowerCase()] ?? PLAN_LIMITS.free;
-}
+// الحدود من `lib/entitlements` حصراً. كان هنا جدول ثالث مستقلّ فيه باقة
+// `growth` لا وجود لها - ثلاثة جداول للحدود يعني أن اثنين منها يكذبان.
 
 export async function GET(req: NextRequest) {
   const user = await getSessionUser(req);
@@ -27,11 +22,12 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: "asc" },
   });
 
-  const limit = limitFor(user.subscriptionPlan);
+  const ent = await getEntitlements(user.id);
+  const limit = ent.limits.workspaces;
   return NextResponse.json({
     workspaces,
     limit,
-    canAddMore: workspaces.length < limit,
+    canAddMore: limit === -1 || workspaces.length < limit,
     plan: user.subscriptionPlan ?? "free",
   });
 }
@@ -46,9 +42,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "الاسم مطلوب" }, { status: 400 });
   }
 
-  const existingCount = await prisma.workspace.count({ where: { userId: user.id } });
-  const limit = limitFor(user.subscriptionPlan);
-  if (existingCount >= limit) {
+  const check = await checkWorkspaceLimit(user.id);
+  const existingCount = check.current;
+  const limit = check.limit;
+  if (!check.allowed) {
     return NextResponse.json(
       {
         error: `باقتك الحالية تسمح بـ${limit === 1 ? "مساحة عمل واحدة" : `${limit} مساحات عمل`}. رقِّ باقتك لإضافة المزيد.`,

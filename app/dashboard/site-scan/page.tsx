@@ -4,9 +4,11 @@ import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { DeepScanClient } from "./DeepScanClient";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export default async function SiteScanPage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
     return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
   }
@@ -35,6 +37,7 @@ export default async function SiteScanPage() {
         PageSpeed) + مقارنة منافسين، مبنيّ على تحليل مركّب لا على نتائج منعزلة.
       </p>
       <DeepScanClient
+        locale={locale}
         workspaceId={workspace.id}
         pastScans={pastScans.map((s: { id: string; url: string; overallScore: number | null; scannedAt: Date }) => ({
           id: s.id,

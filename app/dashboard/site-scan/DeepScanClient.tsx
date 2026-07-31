@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Search, Plus, X, Loader2, Printer } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 interface ScanRecord {
   id: string;
@@ -24,7 +25,8 @@ interface PastScan {
   scannedAt: string;
 }
 
-export function DeepScanClient({ workspaceId, pastScans }: { workspaceId: string; pastScans: PastScan[] }) {
+export function DeepScanClient({ workspaceId, pastScans, locale = "ar" }: { workspaceId: string; pastScans: PastScan[]; locale?: Locale }) {
+  const tr = (k: string, v?: Record<string, string | number>) => t(locale, `deepScan.${k}`, v);
   const [url, setUrl] = useState("");
   const [suggestedUrls, setSuggestedUrls] = useState<string[]>([]);
   const [competitorUrls, setCompetitorUrls] = useState<string[]>([]);
@@ -116,13 +118,13 @@ export function DeepScanClient({ workspaceId, pastScans }: { workspaceId: string
         </datalist>
         {suggestedUrls.length > 0 && (
           <p className="mb-3 text-[10px] text-text-faint">
-            مقترحة تلقائياً من روابط إعلاناتك الفعلية (Final URLs) - تقدر تعدّلها بحرية
+            {tr("suggestedHint")}
           </p>
         )}
         {suggestedUrls.length === 0 && <div className="mb-3" />}
 
         <div className="mb-3">
-          <div className="mb-1.5 text-xs text-text-faint">منافسين للمقارنة (اختياري، لحد 2)</div>
+          <div className="mb-1.5 text-xs text-text-faint">{tr("competitorsLabel")}</div>
           {competitorUrls.map((c, i) => (
             <div key={i} className="mb-1.5 flex items-center gap-2">
               <span className="flex-1 truncate text-xs text-text-muted">{c}</span>
@@ -139,7 +141,7 @@ export function DeepScanClient({ workspaceId, pastScans }: { workspaceId: string
             <div className="flex gap-2">
               <input
                 type="url"
-                placeholder="رابط منافس"
+                placeholder={tr("competitorPlaceholder")}
                 value={newCompetitor}
                 onChange={(e) => setNewCompetitor(e.target.value)}
                 className="flex-1 rounded-xl bg-surface-raised px-3 py-2 text-xs text-text-primary outline-none"
@@ -155,7 +157,7 @@ export function DeepScanClient({ workspaceId, pastScans }: { workspaceId: string
                 className="flex items-center gap-1 rounded-xl bg-surface-raised px-3 text-xs text-text-muted"
               >
                 <Plus size={13} />
-                إضافة
+                {tr("add")}
               </button>
             </div>
           )}
@@ -169,12 +171,12 @@ export function DeepScanClient({ workspaceId, pastScans }: { workspaceId: string
           {isRunning ? (
             <>
               <Loader2 size={15} className="animate-spin" />
-              جارٍ الفحص العميق... (ممكن ياخد دقيقة تقريباً)
+              {tr("scanning")}
             </>
           ) : (
             <>
               <Search size={15} />
-              ابدأ الفحص العميق
+              {tr("startScan")}
             </>
           )}
         </button>
@@ -182,7 +184,7 @@ export function DeepScanClient({ workspaceId, pastScans }: { workspaceId: string
 
       {pastScans.length > 0 && !scan && (
         <div className="mb-4">
-          <div className="mb-2 text-xs text-text-faint">فحوصات سابقة</div>
+          <div className="mb-2 text-xs text-text-faint">{tr("pastScans")}</div>
           <div className="flex flex-col gap-1">
             {pastScans.map((p) => (
               <button
@@ -203,18 +205,19 @@ export function DeepScanClient({ workspaceId, pastScans }: { workspaceId: string
 
       {scan?.status === "FAILED" && (
         <div className="mb-4 rounded-2xl bg-critical/10 p-4 text-sm text-critical">
-          فشل الفحص: {scan.errorMessage}
+          {tr("scanFailed", { error: scan.errorMessage ?? "" })}
         </div>
       )}
 
       {scan?.status === "COMPLETED" && scan.fullReport && (
-        <ScanResults report={scan.fullReport} scores={scan} scanId={scanId!} />
+        <ScanResults report={scan.fullReport} scores={scan} scanId={scanId!} locale={locale} />
       )}
     </div>
   );
 }
 
-function ScanResults({ report, scores, scanId }: { report: any; scores: ScanRecord; scanId: string }) {
+function ScanResults({ report, scores, scanId, locale }: { report: any; scores: ScanRecord; scanId: string; locale: Locale }) {
+  const tr = (k: string, v?: Record<string, string | number>) => t(locale, `deepScan.${k}`, v);
   const { primary, synthesis, competitorComparison } = report;
 
   return (
@@ -227,37 +230,37 @@ function ScanResults({ report, scores, scanId }: { report: any; scores: ScanReco
           className="flex items-center gap-1.5 rounded-full bg-surface px-4 py-1.5 text-xs text-text-muted no-underline hover:text-text-primary"
         >
           <Printer size={13} />
-          تقرير قابل للطباعة
+          {tr("printable")}
         </a>
       </div>
 
       {/* الدرجات العامة */}
       <div className="grid grid-cols-4 gap-2">
-        <ScoreCard label="الإجمالي" score={scores.overallScore} large />
-        <ScoreCard label="SEO تقني" score={scores.technicalSEOScore} />
-        <ScoreCard label="ثقة الدومين" score={scores.domainTrustScore} />
-        <ScoreCard label="الأداء" score={scores.performanceScore} />
+        <ScoreCard label={tr("overall")} score={scores.overallScore} large />
+        <ScoreCard label={tr("technicalSeo")} score={scores.technicalSEOScore} />
+        <ScoreCard label={tr("domainTrust")} score={scores.domainTrustScore} />
+        <ScoreCard label={tr("performance")} score={scores.performanceScore} />
       </div>
 
       {/* الملخص التنفيذي */}
       <div className="rounded-2xl bg-accent-dim p-4 text-sm text-text-primary">
-        <strong className="text-accent">الملخص التنفيذي: </strong>
+        <strong className="text-accent">{tr("execSummary")}</strong>
         {synthesis.executiveSummary}
       </div>
 
       {/* Core Web Vitals - أداء حقيقي من PageSpeed */}
       {primary.performance && (
         <div className="rounded-2xl bg-surface p-4">
-          <div className="mb-3 text-sm font-medium text-text-primary">مؤشرات الأداء الأساسية (Core Web Vitals)</div>
+          <div className="mb-3 text-sm font-medium text-text-primary">{tr("coreVitals")}</div>
           <div className="grid grid-cols-4 gap-2 text-center">
-            <VitalStat label="LCP" value={primary.performance.coreWebVitals.lcp} unit="ث" good={2.5} />
+            <VitalStat label="LCP" value={primary.performance.coreWebVitals.lcp} unit={tr("unitSec")} good={2.5} />
             <VitalStat label="CLS" value={primary.performance.coreWebVitals.cls} unit="" good={0.1} />
-            <VitalStat label="FCP" value={primary.performance.coreWebVitals.fcp} unit="ث" good={1.8} />
-            <VitalStat label="TBT" value={primary.performance.coreWebVitals.tbt} unit="مث" good={200} />
+            <VitalStat label="FCP" value={primary.performance.coreWebVitals.fcp} unit={tr("unitSec")} good={1.8} />
+            <VitalStat label="TBT" value={primary.performance.coreWebVitals.tbt} unit={tr("unitMs")} good={200} />
           </div>
           {primary.performance.topOpportunities.length > 0 && (
             <div className="mt-3">
-              <div className="mb-1 text-xs text-text-faint">أهم فرص التحسين (من Lighthouse مباشرة):</div>
+              <div className="mb-1 text-xs text-text-faint">{tr("topOpportunities")}</div>
               {primary.performance.topOpportunities.map((op: string, i: number) => (
                 <p key={i} className="text-xs text-text-muted">• {op}</p>
               ))}
@@ -268,7 +271,7 @@ function ScanResults({ report, scores, scanId }: { report: any; scores: ScanReco
 
       {/* مشاكل مركّبة */}
       {synthesis.compoundingIssues.length > 0 && (
-        <Section title="مشاكل مركّبة">
+        <Section title={tr("compoundIssues")}>
           {synthesis.compoundingIssues.map((issue: any, i: number) => (
             <div
               key={i}
@@ -285,11 +288,11 @@ function ScanResults({ report, scores, scanId }: { report: any; scores: ScanReco
 
       {/* الأسباب الجذرية */}
       {synthesis.rootCauses.length > 0 && (
-        <Section title="الأسباب الجذرية">
+        <Section title={tr("rootCauses")}>
           {synthesis.rootCauses.map((rc: any, i: number) => (
             <div key={i} className="mb-2 rounded-xl bg-surface-raised p-3 text-xs">
               <strong className="text-text-primary">{rc.rootCause}</strong>
-              <p className="text-text-faint">يظهر في: {rc.manifestsIn.join("، ")}</p>
+              <p className="text-text-faint">{tr("appearsIn", { list: rc.manifestsIn.join(locale === "en" ? ", " : "، ") })}</p>
               <p className="mt-1 text-text-muted">{rc.explanation}</p>
             </div>
           ))}
@@ -297,7 +300,7 @@ function ScanResults({ report, scores, scanId }: { report: any; scores: ScanReco
       )}
 
       {/* خارطة طريق مرتّبة */}
-      <Section title="خارطة طريق الإصلاح المرتّبة">
+      <Section title={tr("roadmap")}>
         {synthesis.prioritizedRoadmap
           .sort((a: any, b: any) => a.rank - b.rank)
           .map((action: any) => (
@@ -315,7 +318,7 @@ function ScanResults({ report, scores, scanId }: { report: any; scores: ScanReco
 
       {/* مقارنة المنافسين */}
       {competitorComparison && (
-        <Section title="مقارنة بالمنافسين">
+        <Section title={tr("competitorCompare")}>
           <p className="text-sm text-text-primary">{competitorComparison}</p>
           <div className="mt-2 grid grid-cols-2 gap-2">
             {report.competitors.map((c: any, i: number) => (
@@ -330,7 +333,7 @@ function ScanResults({ report, scores, scanId }: { report: any; scores: ScanReco
 
       {report.failedCompetitors?.length > 0 && (
         <div className="rounded-2xl bg-gap/10 p-3 text-xs text-gap">
-          تعذّر فحص: {report.failedCompetitors.join("، ")} — الرابط ممكن يكون غير متاح أو محمي.
+          {tr("failedCompetitors", { list: report.failedCompetitors.join(locale === "en" ? ", " : "، ") })}
         </div>
       )}
     </div>

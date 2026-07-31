@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { checkAutomationRuleLimit } from "@/lib/entitlements";
 
 export async function GET(
   req: NextRequest,
@@ -70,6 +71,20 @@ export async function POST(
     : [];
   if (appliesTo === "SPECIFIC_CAMPAIGNS" && campaignIds.length === 0) {
     return NextResponse.json({ error: "اختر حملة واحدة على الأقل عند تحديد النطاق." }, { status: 400 });
+  }
+
+  // الحدّ يُفحص على الخادم: الواجهة تخفي الزرّ، لكن طلباً مباشراً يتجاوزها
+  const limitCheck = await checkAutomationRuleLimit(user.id, id);
+  if (!limitCheck.allowed) {
+    return NextResponse.json(
+      {
+        error: "limit reached",
+        limitKey: "reachedRules",
+        limit: limitCheck.limit,
+        suggestedPlan: limitCheck.suggestedPlan,
+      },
+      { status: 403 }
+    );
   }
 
   const rule = await prisma.automationRule.create({
