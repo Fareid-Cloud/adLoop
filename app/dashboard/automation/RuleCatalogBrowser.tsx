@@ -15,7 +15,7 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 // أسماء المنصات التجارية تبقى كما هي في اللغتين؛ "كل المنصات" وحدها تُترجَم.
 const PLATFORM_TABS: { id: RulePlatform | null; label?: string; color: string }[] = [
   { id: null, color: "var(--accent)" },
-  { id: "GOOGLE_ADS", label: "Google Ads", color: "#4285F4" },
+  { id: "GOOGLE_ADS", label: "Google Ads", color: "#1A73E8" },
   { id: "META_ADS", label: "Meta Ads", color: "#0866FF" },
   { id: "TIKTOK_ADS", label: "TikTok Ads", color: "#FE2C55" },
 ];

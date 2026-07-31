@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ProductFocusView, type ProductRecord, type SalesStats } from "./ProductFocusView";
 import { Plus, Trash2 } from "lucide-react";
+import { type Locale } from "@/lib/i18n/dictionary";
 
 export interface ProductHealthRow {
   id: string;
@@ -24,11 +25,13 @@ export function PricingClient({
   records,
   currency,
   salesStats,
+  locale = "ar",
 }: {
   workspaceId: string;
   products: ProductHealthRow[];
   records: ProductRecord[];
   currency: string;
+  locale?: Locale;
   salesStats: Record<string, SalesStats>;
 }) {
   const router = useRouter();
@@ -217,6 +220,7 @@ export function PricingClient({
 
       {focused && (
         <ProductFocusView
+          locale={locale}
           product={focused}
           currency={currency}
           sales={salesStats[focused.id] ?? null}

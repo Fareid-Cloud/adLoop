@@ -99,7 +99,7 @@ export default async function PricingPage({
       )}
       <ProductCostsPanel workspaceId={workspace.id} missingCount={missingCogsCount} locale={locale} />
 
-      <PricingClient workspaceId={workspace.id} products={rows} records={productRecords} currency={workspace.currency} salesStats={salesStats} />
+      <PricingClient locale={locale} workspaceId={workspace.id} products={rows} records={productRecords} currency={workspace.currency} salesStats={salesStats} />
     </div>
   );
 }

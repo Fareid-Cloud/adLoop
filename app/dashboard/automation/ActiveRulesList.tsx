@@ -32,7 +32,7 @@ export interface RuleRow {
 // ألوان العلامات الرسمية - نفس القيم المستخدمة في بقيّة المنتج، فتُقرأ
 // المنصة من لونها قبل قراءة اسمها.
 const PLATFORM_TINT: Record<string, string> = {
-  GOOGLE_ADS: "#4285F4",
+  GOOGLE_ADS: "#1A73E8",
   META_ADS: "#0866FF",
   TIKTOK_ADS: "#FE2C55",
 };

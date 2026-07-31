@@ -15,7 +15,7 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 type AdPlatform = "GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS";
 
 export const PLATFORM_CONNECT: Record<string, { label: string; color: string; start: string }> = {
-  GOOGLE_ADS: { label: "Google Ads", color: "#4285F4", start: "/api/oauth/google-ads/start" },
+  GOOGLE_ADS: { label: "Google Ads", color: "#1A73E8", start: "/api/oauth/google-ads/start" },
   META_ADS: { label: "Meta Ads", color: "#0866FF", start: "/api/oauth/meta/start" },
   TIKTOK_ADS: { label: "TikTok Ads", color: "#FE2C55", start: "/api/oauth/tiktok/start" },
 };

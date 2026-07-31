@@ -109,13 +109,15 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    labelAr: null,
-    labelEn: null,
+    // مجموعة بعنوان بدل مجموعة بلا اسم: أربعة عناصر إدارية معلّقة في
+    // آخر القائمة بلا ترويسة تبدو بقايا لا قسماً.
+    labelAr: "الإدارة",
+    labelEn: "Manage",
     items: [
       { href: "/dashboard/reports", labelAr: "التقارير", labelEn: "Reports", iconName: "FileBarChart" },
       { href: "/dashboard/integrations", labelAr: "ربط المنصات", labelEn: "Integrations", iconName: "Plug" },
+      { href: "/dashboard/billing", labelAr: "الاشتراك والباقة", labelEn: "Billing & Plan", iconName: "CreditCard" },
       { href: "/dashboard/settings", labelAr: "الإعدادات", labelEn: "Settings", iconName: "SettingsIcon" },
-      { href: "/dashboard/billing", labelAr: "الاشتراك والفواتير", labelEn: "Billing", iconName: "CreditCard" },
     ],
   },
 ];

@@ -22,7 +22,7 @@ const SECTIONS: Array<{ labelKey?: string; labelRaw?: string; color?: string; li
   },
   {
     labelRaw: "Google",
-    color: "#4285F4",
+    color: "#1A73E8",
     links: [
       { href: "/dashboard/campaigns/google-hub", key: "googleHub" },
       { href: "/dashboard/campaigns/quality-score", key: "qualityScore" },

@@ -14,7 +14,7 @@ import { SyncNowButton } from "@/app/components/SyncNowButton";
 type Platform = "GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS";
 
 const PLATFORMS: { id: Platform; label: string; start: string; color: string }[] = [
-  { id: "GOOGLE_ADS", label: "Google Ads", start: "/api/oauth/google-ads/start", color: "#4285F4" },
+  { id: "GOOGLE_ADS", label: "Google Ads", start: "/api/oauth/google-ads/start", color: "#1A73E8" },
   { id: "META_ADS", label: "Meta Ads", start: "/api/oauth/meta/start", color: "#0866FF" },
   { id: "TIKTOK_ADS", label: "TikTok Ads", start: "/api/oauth/tiktok/start", color: "#FE2C55" },
 ];

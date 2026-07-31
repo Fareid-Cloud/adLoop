@@ -18,7 +18,8 @@ import { MetricsExplorer } from "@/app/components/MetricsExplorer";
 import { computeHealthScore } from "@/lib/healthScore";
 import { getConnectStates } from "@/lib/connectionState";
 import { ConnectPlatforms } from "@/app/components/ConnectPlatforms";
-import { SetupChecklist } from "@/app/components/SetupChecklist";
+import { SetupProgressPanel, RecentActivityPanel, ConnectedPlatformsPanel } from "./HomePanels";
+import { getRecentActivity, getPlatformCards } from "@/lib/homeActivity";
 import { getSetupProgress } from "@/lib/setupProgress";
 import { PostConnectCampaignPrompt } from "@/app/components/PostConnectCampaignPrompt";
 import { Suspense } from "react";
@@ -236,6 +237,10 @@ export default async function GlancePage({
 
   // تقدّم الإعداد الحقيقي - كل خطوة تكتمل بالإنجاز الفعلي لا بالضغط
   const setup = await getSetupProgress(workspace.id, user.id);
+  const [activityRows, platformCards] = await Promise.all([
+    getRecentActivity(workspace.id, locale),
+    getPlatformCards(workspace.id, user.id),
+  ]);
 
   // كل المؤشرات تُحسب مرة واحدة (استعلام واحد) - العميل يعرض ما اختاره فقط،
   // فتغيير الاختيار فوري بلا طلب جديد. تتبع فلتر المنصة والمدة المختارين.
@@ -265,16 +270,26 @@ export default async function GlancePage({
         <PostConnectCampaignPrompt workspaceId={workspace.id} locale="ar" />
       </Suspense>
 
-      {/* خطوات الإعداد الحقيقية - تختفي وحدها عند اكتمالها كلها */}
-      <SetupChecklist
-        progress={setup}
-        workspaceId={workspace.id}
-        connectedPlatforms={connectStates.filter((s) => s.connected).map((s) => s.platform) as Array<"GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS">}
-        locale="ar"
-      />
+      {/* الإعداد والنشاط جنباً إلى جنب: القائمة الطويلة السابقة كانت تدفع
+          كل نتيجة أسفل الطيّة، فيقف من أدّى ثلاث خطوات أمام صفحة تبدو
+          فارغة رغم أن بياناته وصلت فعلاً. */}
+      {!setup.allDone && (
+        <div className="mb-4 grid gap-3 lg:grid-cols-2">
+          <SetupProgressPanel
+            progress={setup}
+            locale={locale}
+            ctaHref={setup.nextStep?.ctaHref ?? "/dashboard/integrations"}
+          />
+          <RecentActivityPanel rows={activityRows} locale={locale} />
+        </div>
+      )}
 
-      {/* ربط المنصات - دائماً في المقدمة لو فيه منصة ناقصة، بلوجوها وزر مباشر */}
-      <ConnectPlatforms states={connectStates} workspaceId={workspace.id} locale={locale} onlyUnconnected={hasAnyData} />
+      <div className="mb-4">
+        <ConnectedPlatformsPanel cards={platformCards} locale={locale} />
+      </div>
+
+      {/* ربط ما لم يُربط بعد - يظهر فقط حين ينقص شيء فعلاً */}
+      <ConnectPlatforms states={connectStates} workspaceId={workspace.id} locale={locale} onlyUnconnected />
 
       {hasAnyData && <PlatformSwitcher platform={platformFilter} days={days} locale={locale} />}
 
@@ -336,6 +351,12 @@ export default async function GlancePage({
             />
             <MetricCard label={tr("trackingAccuracy")} value={`${trackingAccuracy}%`} color="accent" icon={Activity} href="/dashboard/diagnostics" />
           </div>
+
+          {setup.allDone && (
+            <div className="mb-4">
+              <RecentActivityPanel rows={activityRows} locale={locale} />
+            </div>
+          )}
 
           {/* جدول الأداء حسب المصدر */}
           {sourceRows.length > 0 && (

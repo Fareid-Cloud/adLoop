@@ -16,7 +16,34 @@ export function PlatformLogo({ platform, size = 18 }: { platform: string; size?:
   const s = { width: size, height: size, display: "block", color: "var(--text-primary)" } as const;
   switch (platform) {
     case "GOOGLE_ADS":
+      // علامة Google Ads نفسها لا علامة Google: عمودان مائلان يلتقيان
+      // كقمّة، ودائرة عند القاعدة. استخدام الـG الملوّنة كان يوحي بأن
+      // الربط مع بحث جوجل لا مع منصّة الإعلانات.
+      return (
+        <svg viewBox="0 0 48 48" style={s} aria-label="Google Ads" shapeRendering="geometricPrecision">
+          <defs>
+            <clipPath id="adloop-gads-clip">
+              <path d="M0 0h48v48H0z" />
+            </clipPath>
+          </defs>
+          <g clipPath="url(#adloop-gads-clip)">
+            {/* العمود الأصفر - الذراع اليمنى */}
+            <rect
+              x="26.4" y="4.6" width="10.6" height="34.4" rx="5.3"
+              fill="#FBBC04" transform="rotate(30 31.7 21.8)"
+            />
+            {/* العمود الأزرق - الذراع اليسرى، أزرق واجهة Google Ads */}
+            <rect
+              x="11" y="4.6" width="10.6" height="34.4" rx="5.3"
+              fill="#1A73E8" transform="rotate(-30 16.3 21.8)"
+            />
+            {/* الدائرة الخضراء عند القاعدة */}
+            <circle cx="12.6" cy="36.2" r="6.2" fill="#34A853" />
+          </g>
+        </svg>
+      );
     case "GOOGLE":
+      // بحث جوجل - علامة مختلفة عن Google Ads عمداً
       return (
         <svg viewBox="0 0 48 48" style={s} aria-label="Google">
           <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z" />

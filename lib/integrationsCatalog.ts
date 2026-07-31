@@ -89,7 +89,7 @@ export const INTEGRATIONS: IntegrationDef[] = [
     valueAr: "الحملات والمصطلحات والإعلانات الفردية، ورفع التحويلات المتحقّقة إليها.",
     valueEn: "Campaigns, search terms and individual ads — plus uploading verified conversions back to it.",
     connectPath: "/api/oauth/google-ads/start",
-    color: "#4285F4",
+    color: "#1A73E8",
   },
   {
     key: "meta_ads",

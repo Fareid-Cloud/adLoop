@@ -78,7 +78,7 @@ export function AccountMenu({
             href="/dashboard/billing"
             className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-text-primary no-underline transition-colors hover:bg-surface"
           >
-            <CreditCard size={15} /> {ar ? "الاشتراك والفوترة" : "Billing"}
+            <CreditCard size={15} /> {ar ? "الاشتراك والباقة" : "Billing & Plan"}
           </a>
           {isOwner && (
             <a

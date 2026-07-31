@@ -280,6 +280,7 @@ model Workspace {
   campaignLinks   CampaignLink[]
   uploadedSheets  UploadedSheet[]
   savedReportViews SavedReportView[]
+  competitors      Competitor[]
   metricSnapshots MetricSnapshot[]
   conversionValueConfig ConversionValueConfig?
   automationRules AutomationRule[]
@@ -407,6 +408,59 @@ model SavedReportView {
   updatedAt    DateTime @updatedAt
 
   @@index([workspaceId, userId])
+}
+
+/// منافس تتابعه. الـAPI الرسمي لمكتبة إعلانات ميتا يُرجع الإعلانات
+/// التجارية لدول الاتحاد الأوروبي وبريطانيا فقط (قيد الـDSA) - مصر
+/// والخليج خارج التغطية، فلا سبيل آلياً. البديل هنا ليس تخزيناً فحسب:
+/// نشتقّ ما لا تعرضه المكتبة نفسها - مدّة بقاء كل إعلان.
+model Competitor {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  name        String
+  /// رابط صفحتهم أو مكتبة إعلاناتهم - للفتح السريع عند البحث عن جديد
+  pageUrl     String?
+  country     String   @default("EG")
+  notes       String?  @db.Text
+
+  ads         CompetitorAd[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([workspaceId])
+}
+
+/// إعلان رصدته لمنافس. `firstSeenAt`/`lastSeenAt` هما جوهر القيمة:
+/// الإعلان الذي يُبقيه المنافس شهوراً هو إعلانه الرابح - وهذه إشارة لا
+/// تعرضها مكتبة الإعلانات لأنها لا تحتفظ بتاريخ رصدك أنت.
+model CompetitorAd {
+  id           String   @id @default(cuid())
+  competitorId String
+  competitor   Competitor @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+  workspaceId  String
+
+  platform     String   @default("META_ADS")
+  format       String   @default("IMAGE") // IMAGE | VIDEO | CAROUSEL | TEXT
+  headline     String?
+  body         String?  @db.Text
+  ctaLabel     String?
+  landingUrl   String?
+  /// صورة الإعلان كـdata URI أو رابط - نفس نهج الصورة الشخصية
+  imageUrl     String?  @db.Text
+  sourceUrl    String?  @db.Text
+
+  firstSeenAt  DateTime @default(now())
+  lastSeenAt   DateTime @default(now())
+  /// يُطفأ يدوياً عند ملاحظة توقّفه - عندها تتجمّد مدّة البقاء
+  stillRunning Boolean  @default(true)
+
+  tags         String[] @default([])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([workspaceId, competitorId])
 }
 
 // بيانات مرفوعة يدوي (Excel) - بتتخزن بنفس شكل MetricSnapshot تقريباً

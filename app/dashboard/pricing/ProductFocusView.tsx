@@ -15,6 +15,7 @@ import {
   ShoppingBag, Wallet, CheckCircle2, Clock, Sparkles, Info,
 } from "lucide-react";
 import { calculateFullPricing, type FullPricingInputs } from "@/lib/pricingCalculator";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 /** إحصاءات مبيعات حقيقية - تُعرض فقط عند وجودها فعلاً */
 export interface SalesStats {
@@ -67,14 +68,16 @@ const money = (n: number, c: string) =>
   `${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${c}`;
 
 export function ProductFocusView({
-  product, currency, sales, onClose, onEdit,
+  product, currency, sales, onClose, onEdit, locale = "ar",
 }: {
   product: ProductRecord;
   currency: string;
   sales?: SalesStats | null;
   onClose: () => void;
   onEdit: () => void;
+  locale?: Locale;
 }) {
+  const tr = (k: string, v?: Record<string, string | number>) => t(locale, `focus.${k}`, v);
   const router = useRouter();
   const [margin, setMargin] = useState(product.desiredMarginPct);
   const [saving, setSaving] = useState(false);
@@ -125,7 +128,7 @@ export function ProductFocusView({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "تعذّر حفظ السعر الجديد.");
+        setError(data.error ?? tr("errSave"));
         setSaving(false);
         return;
       }
@@ -137,7 +140,7 @@ export function ProductFocusView({
       // نُبقي النافذة مفتوحة عند وجود ملاحظة عن المتجر ليقرأها المستخدم
       if (data.storeUpdated) setTimeout(() => onClose(), 1100);
     } catch {
-      setError("تعذّر الاتصال بالخادم.");
+      setError(tr("errNetwork"));
       setSaving(false);
     }
   }
@@ -150,13 +153,13 @@ export function ProductFocusView({
           <div className="min-w-0">
             <h2 className="truncate text-[17px] font-semibold text-text-primary">{product.name}</h2>
             <p className="mt-0.5 text-[12.5px] text-text-muted">
-              {product.sku ? `SKU: ${product.sku} · ` : ""}السعر الحالي {money(product.currentPrice, currency)}
-              {product.stockQuantity !== null ? ` · المخزون ${product.stockQuantity}` : ""}
+              {product.sku ? `SKU: ${product.sku} · ` : ""}{tr("currentPrice", { price: money(product.currentPrice, currency) })}
+              {product.stockQuantity !== null ? tr("stock", { n: product.stockQuantity }) : ""}
             </p>
           </div>
           <div className="flex shrink-0 gap-1.5">
             <button onClick={onEdit} className="flex items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-primary">
-              <Pencil size={13} /> تعديل
+              <Pencil size={13} /> {tr("edit")}
             </button>
             <button onClick={onClose} className="rounded-lg p-2 text-text-muted hover:bg-surface-raised"><X size={17} /></button>
           </div>
@@ -167,10 +170,13 @@ export function ProductFocusView({
           <div className="flex items-start gap-2.5 border-b border-critical/30 bg-critical/[0.07] p-4">
             <AlertTriangle size={18} className="mt-0.5 shrink-0 animate-pulse-attention text-critical" />
             <div>
-              <p className="text-[13.5px] font-bold text-critical">هذا المنتج يُباع بخسارة</p>
+              <p className="text-[13.5px] font-bold text-critical">{tr("losingTitle")}</p>
               <p className="mt-0.5 text-[12.5px] leading-relaxed text-text-muted">
-                كل عملية بيع بالسعر الحالي تُكلّفك {money(Math.abs(result.profitAtCurrentPrice), currency)}.
-                رفع السعر إلى {money(result.suggestedPrice, currency)} يعيد الربحية عند هامش {margin}%.
+                {tr("losingBody", {
+                  loss: money(Math.abs(result.profitAtCurrentPrice), currency),
+                  suggested: money(result.suggestedPrice, currency),
+                  margin,
+                })}
               </p>
             </div>
           </div>
@@ -179,7 +185,7 @@ export function ProductFocusView({
         <div className="grid max-h-[calc(92vh-90px)] gap-5 overflow-y-auto p-5 lg:grid-cols-[1.7fr_1fr]">
         <div>
           {/* انهيار التكلفة */}
-          <h3 className="mb-3 text-[13px] font-medium text-text-muted">أين تذهب أموالك في كل طلب ناجح</h3>
+          <h3 className="mb-3 text-[13px] font-medium text-text-muted">{tr("breakdownTitle")}</h3>
           <div className="mb-4 flex flex-col gap-2">
             {result.lines.map((line) => (
               <div key={line.key}>
@@ -188,7 +194,7 @@ export function ProductFocusView({
                     {(() => { const I = LINE_ICON[line.key] ?? Package; return <I size={14} className="shrink-0 text-text-muted" />; })()}
                     {line.labelAr}
                     {line.key === result.largestCostKey && (
-                      <span className="ms-1.5 rounded-full bg-gap/12 px-1.5 py-0.5 text-[10px] font-medium text-gap">الأكبر</span>
+                      <span className="ms-1.5 rounded-full bg-gap/12 px-1.5 py-0.5 text-[10px] font-medium text-gap">{tr("biggest")}</span>
                     )}
                   </span>
                   <span className="shrink-0 font-mono text-[13px] text-text-primary">{money(line.amount, currency)}</span>
@@ -204,19 +210,19 @@ export function ProductFocusView({
           {/* التكلفة الحقيقية وسعر التعادل */}
           <div className="mb-4 grid grid-cols-2 gap-3">
             <div className="rounded-xl border border-border bg-surface-raised p-3">
-              <div className="text-[11.5px] text-text-muted">التكلفة الحقيقية للطلب</div>
+              <div className="text-[11.5px] text-text-muted">{tr("trueCost")}</div>
               <div className="mt-1 font-mono text-[18px] font-semibold text-text-primary">
                 {money(result.trueCostPerOrder, currency)}
               </div>
             </div>
             <div className="rounded-xl border border-border bg-surface-raised p-3">
               <div className="flex items-center gap-1 text-[11.5px] text-text-muted">
-                سعر التعادل <Info size={11} />
+                {tr("breakEvenPrice")} <Info size={11} />
               </div>
               <div className="mt-1 font-mono text-[18px] font-semibold text-text-primary">
                 {money(result.breakEvenPrice, currency)}
               </div>
-              <div className="mt-0.5 text-[10.5px] text-text-faint">تحته خسارة مؤكدة</div>
+              <div className="mt-0.5 text-[10.5px] text-text-faint">{tr("breakEvenHint")}</div>
             </div>
           </div>
 
@@ -229,7 +235,7 @@ export function ProductFocusView({
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <div className="text-[12px] text-text-muted">
-                  الربح لكل طلب عند السعر المقترح
+                  {tr("profitAtSuggested")}
                 </div>
                 {/* يتغيّر لحظياً مع تحريك المسطرة - المستخدم يرى ربحه قبل
                     أن يعتمد السعر، لا بعده */}
@@ -237,24 +243,24 @@ export function ProductFocusView({
                   +{money(profitAtSuggested, currency)}
                 </div>
                 <div className="mt-1 text-[11.5px] text-text-muted">
-                  هامش الربح {margin}%
+                  {tr("marginIs", { margin })}
                 </div>
                 <div className="mt-2 border-t border-border pt-2 text-[11.5px]"
                      style={{ color: losing ? "var(--critical)" : "var(--text-muted)" }}>
-                  {losing ? "بالسعر الحالي" : "بالسعر الحالي"}:{" "}
+                  {tr("atCurrentPrice")}:{" "}
                   <span className="font-mono font-semibold">
                     {losing ? "−" : "+"}{money(Math.abs(result.profitAtCurrentPrice), currency)}
                   </span>{" "}
-                  (هامش {result.actualMarginPct}%)
+                  {tr("actualMargin", { pct: result.actualMarginPct })}
                 </div>
               </div>
               <div className="text-end">
-                <div className="text-[12px] text-text-muted">السعر المقترح</div>
+                <div className="text-[12px] text-text-muted">{tr("suggestedPrice")}</div>
                 <div className="mt-0.5 font-mono text-[22px] font-bold leading-tight text-verified">
                   {money(result.suggestedPrice, currency)}
                 </div>
                 <div className="mt-1 text-[11.5px] text-text-muted">
-                  {result.priceGap > 0 ? `+${money(result.priceGap, currency)} (${result.priceGapPct}%)` : "السعر الحالي كافٍ"}
+                  {result.priceGap > 0 ? `+${money(result.priceGap, currency)} (${result.priceGapPct}%)` : tr("currentEnough")}
                 </div>
               </div>
             </div>
@@ -263,7 +269,7 @@ export function ProductFocusView({
           {/* شريط هامش الربح */}
           <div className="mb-4">
             <div className="mb-2 flex items-center justify-between">
-              <label className="text-[13px] text-text-primary">هامش الربح المستهدف</label>
+              <label className="text-[13px] text-text-primary">{tr("marginSlider")}</label>
               <span className="font-mono text-[15px] font-semibold text-accent">{margin}%</span>
             </div>
             <input
@@ -272,7 +278,7 @@ export function ProductFocusView({
               className="w-full accent-[var(--accent)]"
             />
             <div className="mt-1 flex justify-between text-[10.5px] text-text-faint">
-              <span>0% (تعادل)</span><span>70%</span>
+              <span>{tr("sliderMin")}</span><span>{tr("sliderMax")}</span>
             </div>
           </div>
 
@@ -285,14 +291,14 @@ export function ProductFocusView({
           {sales && (
             <div className="rounded-2xl border border-border bg-surface-raised p-4">
               <div className="mb-3 flex items-center gap-1.5 text-[13px] font-medium text-text-primary">
-                <TrendingUp size={14} className="text-accent" /> نظرة سريعة
+                <TrendingUp size={14} className="text-accent" /> {tr("quickLook")}
               </div>
               <div className="flex flex-col gap-2.5">
                 {[
-                  { Icon: ShoppingBag, label: "الطلبات الناجحة", value: `${sales.orders.toLocaleString("en-US")} طلب`, tone: "var(--accent)" },
-                  { Icon: Wallet, label: "متوسط قيمة الطلب", value: money(sales.aov, currency), tone: "var(--gap)" },
-                  { Icon: CheckCircle2, label: "معدل النجاح", value: `${sales.successRate}%`, tone: "var(--verified)" },
-                  { Icon: Clock, label: "نافذة القياس", value: "آخر 30 يوماً", tone: "var(--text-muted)" },
+                  { Icon: ShoppingBag, label: tr("successOrders"), value: tr("nOrders", { n: sales.orders.toLocaleString("en-US") }), tone: "var(--accent)" },
+                  { Icon: Wallet, label: tr("aov"), value: money(sales.aov, currency), tone: "var(--gap)" },
+                  { Icon: CheckCircle2, label: tr("successRate"), value: `${sales.successRate}%`, tone: "var(--verified)" },
+                  { Icon: Clock, label: tr("window"), value: tr("last30"), tone: "var(--text-muted)" },
                 ].map((row) => (
                   <div key={row.label} className="flex items-center gap-2.5">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
@@ -313,22 +319,22 @@ export function ProductFocusView({
           {result.priceGap > 0 && (
             <div className="rounded-2xl border border-verified/30 bg-verified/[0.05] p-4">
               <div className="mb-1 flex items-center gap-1.5 text-[13px] font-medium text-text-primary">
-                <Sparkles size={14} className="text-verified" /> تأثير السعر المقترح
+                <Sparkles size={14} className="text-verified" /> {tr("impactTitle")}
               </div>
-              <p className="mb-3 text-[11.5px] text-text-muted">إذا اعتمدت السعر المقترح الآن</p>
+              <p className="mb-3 text-[11.5px] text-text-muted">{tr("impactHint")}</p>
               <div className="flex flex-col gap-2">
                 <ImpactRow
-                  label="الربح الإضافي لكل طلب"
+                  label={tr("extraPerOrder")}
                   value={`+${money(profitAtSuggested - result.profitAtCurrentPrice, currency)}`}
                 />
                 {sales && (
                   <ImpactRow
-                    label="الربح الإضافي شهرياً"
+                    label={tr("extraMonthly")}
                     value={`+${money((profitAtSuggested - result.profitAtCurrentPrice) * sales.orders, currency)}`}
                   />
                 )}
                 <ImpactRow
-                  label="تحسّن هامش الربح"
+                  label={tr("marginImprove")}
                   value={`+${Math.round((margin - result.actualMarginPct) * 10) / 10}%`}
                 />
               </div>
@@ -339,12 +345,11 @@ export function ProductFocusView({
           {result.rtoBreakEvenPct !== null && (
             <div className="rounded-2xl border border-border bg-surface-raised p-4">
               <div className="mb-1.5 flex items-center gap-1.5 text-[13px] font-medium text-text-primary">
-                <RotateCcw size={14} className="text-text-muted" /> حساسية المرتجعات
+                <RotateCcw size={14} className="text-text-muted" /> {tr("rtoTitle")}
               </div>
               <p className="text-[12px] leading-relaxed text-text-muted">
-                يبقى هذا المنتج رابحاً بالسعر الحالي حتى نسبة مرتجعات{" "}
-                <span className="font-mono font-semibold text-text-primary">{result.rtoBreakEvenPct}%</span>
-                {product.rtoRatePct > 0 && ` — نسبتك الحالية ${product.rtoRatePct}%`}.
+                {tr("rtoBody", { pct: result.rtoBreakEvenPct })}
+                {product.rtoRatePct > 0 && tr("rtoYours", { pct: product.rtoRatePct })}.
               </p>
             </div>
           )}
@@ -364,7 +369,7 @@ export function ProductFocusView({
             )}
             {saved && !storeNotice && storeName && (
               <p className="mb-2 rounded-xl border border-verified/35 bg-verified/[0.07] p-2.5 text-[11.5px] text-verified">
-                تم تحديث السعر في {storeName} وفي AdLoop معاً.
+                {tr("storeUpdated", { store: storeName })}
               </p>
             )}
 
@@ -376,14 +381,14 @@ export function ProductFocusView({
               }`}
             >
               {saved ? (
-                <>{storeNotice ? "حُفظ عندنا فقط" : "تم تحديث السعر"} <Check size={14} /></>
+                <>{storeNotice ? tr("savedLocalOnly") : tr("priceUpdated")} <Check size={14} /></>
               ) : saving ? (
-                "جارٍ الحفظ..."
+                tr("saving")
               ) : result.priceGap <= 0 ? (
-                "السعر الحالي كافٍ"
+                tr("currentEnough")
               ) : (
                 <>
-                  اعتماد {money(result.suggestedPrice, currency)}
+                  {tr("approve", { price: money(result.suggestedPrice, currency) })}
                   <ArrowLeft size={14} className="rtl:rotate-0 ltr:rotate-180" />
                 </>
               )}
