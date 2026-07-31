@@ -4,6 +4,16 @@
 // قاعدة البيانات (حساب مربوط، حملات مختارة، بيانات وصلت، تتبع يعمل...).
 // هذا بديل "الجولة" التي كان يُضغط فيها Next دون إنجاز شيء - هنا لا تكتمل
 // الخطوة إلا بالفعل الحقيقي.
+//
+// قاعدتان تحكمان هذا الملف:
+//
+// ١) **لا خطوة تُحيل إلى الإعدادات.** الإعدادات مكان يذهب إليه من يريد
+//    الضبط بمزاجه، لا محطة إجبارية في طريق الإعداد. كل خطوة تُنفَّذ في
+//    مكانها أو في الصفحة التي تخصّها فعلاً.
+//
+// ٢) **"وصلت بيانات" ليست "نجحت المزامنة".** حساب جديد قد يُزامَن بنجاح
+//    ويُرجع صفر صفوف لأن حملاته لم تُنتج أرقاماً بعد. ربط اكتمال الخطوة
+//    بوجود صفوف كان يُعلّق المستخدم إلى ما لا نهاية على خطوة نفّذها فعلاً.
 
 import { prisma } from "@/lib/prisma";
 
@@ -28,10 +38,11 @@ export interface SetupProgress {
 }
 
 export async function getSetupProgress(workspaceId: string, userId: string): Promise<SetupProgress> {
-  const [connections, campaignCount, snapshotCount, verifiedAgg, valueConfig, appliedActions, storeCount, productCount] = await Promise.all([
+  const [connections, campaignCount, snapshotCount, syncedOk, verifiedAgg, valueConfig, appliedActions, storeCount, productCount] = await Promise.all([
     prisma.connectedPlatform.count({ where: { userId } }),
     prisma.campaignLink.count({ where: { workspaceId } }),
     prisma.metricSnapshot.count({ where: { workspaceId } }),
+    prisma.syncRun.count({ where: { workspaceId, status: "SUCCESS" } }),
     prisma.metricSnapshot.aggregate({ where: { workspaceId }, _sum: { verifiedConversions: true } }),
     prisma.conversionValueConfig.findUnique({ where: { workspaceId }, select: { workspaceId: true } }),
     prisma.actionFeedItem.count({ where: { workspaceId, status: "APPLIED" } }),
@@ -58,18 +69,21 @@ export async function getSetupProgress(workspaceId: string, userId: string): Pro
       descAr: "نتابع الحملات التي تختارها فقط — أوضح وأقل ضجيجاً.",
       descEn: "We track only the campaigns you pick — clearer and less noise.",
       done: campaignCount > 0,
-      ctaHref: "/dashboard/settings?tab=workspace",
+      ctaHref: "/dashboard/integrations",
       ctaAr: "اختيار الحملات",
       ctaEn: "Select campaigns",
     },
     {
       id: "data",
-      titleAr: "استقبل أول بيانات",
-      titleEn: "Receive your first data",
-      descAr: "تجري المزامنة يومياً تلقائياً. بعدها تظهر أرقامك في اللوحة.",
-      descEn: "Sync runs daily automatically. Your numbers appear right after.",
-      done: snapshotCount > 0,
-      ctaHref: "/dashboard/settings?tab=workspace",
+      titleAr: "شغّل أول مزامنة",
+      titleEn: "Run your first sync",
+      descAr: "تجري المزامنة يومياً تلقائياً. شغّلها الآن لترى أرقامك فوراً.",
+      descEn: "Sync runs daily automatically. Run it now to see your numbers straight away.",
+      // تكتمل بنجاح المزامنة لا بوصول صفوف: حساب جديد قد يُزامَن بنجاح
+      // ويُرجع صفراً لأن حملاته لم تُنتج أرقاماً بعد، وربطها بالصفوف كان
+      // يُبقي المستخدم عالقاً على خطوة أدّاها بالفعل.
+      done: snapshotCount > 0 || syncedOk > 0,
+      ctaHref: "/dashboard/integrations",
       ctaAr: "مزامنة الآن",
       ctaEn: "Sync now",
     },
@@ -91,7 +105,7 @@ export async function getSetupProgress(workspaceId: string, userId: string): Pro
       descAr: "متوسط قيمة العميل ونسبة التحويل — أساس حساب الربحية والقرارات.",
       descEn: "Average customer value and close rate — the basis for profitability decisions.",
       done: !!valueConfig,
-      ctaHref: "/dashboard/settings?tab=workspace",
+      ctaHref: "/dashboard/diagnostics",
       ctaAr: "ضبط القيمة",
       ctaEn: "Set value",
     },
@@ -104,7 +118,7 @@ export async function getSetupProgress(workspaceId: string, userId: string): Pro
       // خطوة اختيارية بطبيعتها: من لا يبيع منتجات لا تعنيه. تُعتبر
       // مكتملة أيضاً لمن لا يستخدم منتجات إطلاقاً حتى لا تعلق القائمة.
       done: storeCount > 0 || productCount === 0,
-      ctaHref: "/dashboard/settings?tab=integrations",
+      ctaHref: "/dashboard/integrations",
       ctaAr: "ربط المتجر",
       ctaEn: "Connect store",
     },

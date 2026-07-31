@@ -11,7 +11,7 @@
 import { useState } from "react";
 import {
   X, CircleDot, Activity, Clock, Users, Megaphone, ShoppingBag,
-  Database, RefreshCw, Radio, CalendarDays, KeyRound, ChevronLeft, ChevronRight,
+  Database, RefreshCw, Radio, CalendarDays, KeyRound, ChevronLeft, ChevronRight, Plus,
 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import type { ActiveIntegration } from "@/lib/integrationsStatus";
@@ -30,6 +30,7 @@ export function IntegrationDrawer({
   onDisconnect: () => void;
   onManageCampaigns: () => void;
 }) {
+  const onAddAccount = onManageCampaigns;
   const tr = (k: string, vars?: Record<string, string | number>) =>
     t(locale, `integrations.${k}`, vars);
   const rel = (d: Date | string | null) => relativeFromDate(locale, d);
@@ -160,17 +161,42 @@ export function IntegrationDrawer({
         )}
 
         {tab === "accounts" && (
-          <ul className="flex flex-col gap-1.5">
-            {integration.accountNames.length === 0 ? (
-              <li className="text-[12.5px] text-text-muted">{tr("hrNoCampaigns")}</li>
-            ) : (
-              integration.accountNames.map((n) => (
-                <li key={n} className="rounded-xl bg-surface-raised/70 px-3 py-2 font-mono text-[12px] text-text-primary">
-                  {n}
-                </li>
-              ))
+          <div>
+            <ul className="mb-3 flex flex-col gap-1.5">
+              {integration.accounts.length === 0 ? (
+                <li className="text-[12.5px] text-text-muted">{tr("hrNoCampaigns")}</li>
+              ) : (
+                integration.accounts.map((a) => (
+                  <li key={a.id} className="flex items-center justify-between gap-2 rounded-xl bg-surface-raised/70 px-3 py-2">
+                    <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-text-primary" title={a.label}>
+                      {a.label}
+                    </span>
+                    {!isStore && (
+                      <span className="shrink-0 text-[11px] text-text-faint">
+                        {a.campaignCount > 0 ? tr("accountCampaigns", { n: a.campaignCount }) : tr("accountNoCampaigns")}
+                      </span>
+                    )}
+                  </li>
+                ))
+              )}
+            </ul>
+
+            {/* حسابات متعدّدة تحت ربط واحد: MCC في جوجل وBusiness في ميتا
+                يعرضان عدّة حسابات إعلانية بنفس التفويض - فإضافة حساب هي
+                اختيار حملات منه، لا تفويض جديد. */}
+            {!isStore && (
+              <>
+                <button
+                  onClick={onAddAccount}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-surface-raised py-2.5 text-[12.5px] font-medium text-text-primary"
+                >
+                  <Plus size={14} /> {tr("addAccount")}
+                </button>
+                <p className="mt-2 text-[11px] leading-relaxed text-text-faint">{tr("addAccountHint")}</p>
+                <p className="mt-1 text-[11px] leading-relaxed text-text-faint">{tr("reconnectDifferent")}</p>
+              </>
             )}
-          </ul>
+          </div>
         )}
 
         {tab === "permissions" && (

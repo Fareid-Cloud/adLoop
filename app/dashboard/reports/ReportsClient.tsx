@@ -8,7 +8,7 @@
 // البناء من أربع خطوات صريحة (المصدر ← المؤشّرات ← التفصيل ← التصفية)
 // لا لأن الترتيب جميل، بل لأن كل خطوة تُضيّق ما بعدها فعلاً.
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   BarChart3, Target, ShieldCheck, Image as ImageIcon, ShoppingCart, CalendarRange,
@@ -33,6 +33,7 @@ export interface SavedView {
     range: DateRange;
     compareMode: CompareMode;
     platforms: string[];
+    campaigns?: string[];
   };
 }
 
@@ -66,11 +67,18 @@ const DIMENSIONS: Dimension[] = ["none", "platform", "campaign", "day", "week", 
 const SOURCES: DataSource[] = ["REPORTED", "VERIFIED", "BOTH"];
 const GROUPS = ["core", "efficiency", "truth", "ecommerce"] as const;
 
+export interface CampaignOption {
+  id: string;
+  name: string;
+  platform: string;
+}
+
 export function ReportsClient({
   locale = "ar",
   workspaceId,
   currency,
   platforms,
+  campaigns,
   savedViews,
   initial,
   result,
@@ -79,6 +87,7 @@ export function ReportsClient({
   workspaceId: string;
   currency: string;
   platforms: string[];
+  campaigns: CampaignOption[];
   savedViews: SavedView[];
   initial: {
     source: DataSource;
@@ -89,31 +98,40 @@ export function ReportsClient({
     compare: DateRange | null;
     compareMode: CompareMode;
     selectedPlatforms: string[];
+    selectedCampaigns: string[];
   };
   result: ReportResult | null;
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `reports.${k}`, v);
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const resultRef = useRef<HTMLDivElement>(null);
 
   const [source, setSource] = useState<DataSource>(initial.source);
   const [dimension, setDimension] = useState<Dimension>(initial.dimension);
   const [metrics, setMetrics] = useState<MetricKey[]>(initial.metrics);
   const [selPlatforms, setSelPlatforms] = useState<string[]>(initial.selectedPlatforms);
+  const [selCampaigns, setSelCampaigns] = useState<string[]>(initial.selectedCampaigns);
+  const [campaignQuery, setCampaignQuery] = useState("");
   const [showAllMetrics, setShowAllMetrics] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
 
-  function run(next?: Partial<{ source: DataSource; dimension: Dimension; metrics: MetricKey[]; platforms: string[] }>) {
+  function run(next?: Partial<{ source: DataSource; dimension: Dimension; metrics: MetricKey[]; platforms: string[]; campaigns: string[] }>) {
     const q = new URLSearchParams(window.location.search);
     q.set("src", next?.source ?? source);
     q.set("dim", next?.dimension ?? dimension);
     q.set("m", (next?.metrics ?? metrics).join(","));
     const pf = next?.platforms ?? selPlatforms;
-    if (pf.length) q.set("pf", pf.join(","));
-    else q.delete("pf");
+    if (pf.length) q.set("pf", pf.join(",")); else q.delete("pf");
+    const cg = next?.campaigns ?? selCampaigns;
+    if (cg.length) q.set("cg", cg.join(",")); else q.delete("cg");
     q.set("run", "1");
-    startTransition(() => router.push(`/dashboard/reports?${q.toString()}`));
+    startTransition(() => {
+      router.push(`/dashboard/reports?${q.toString()}`);
+      // النتيجة تحت البنّاء بكثير: بلا تمرير إليها يبدو الزرّ كأنه لم يفعل شيئاً
+      requestAnimationFrame(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    });
   }
 
   function applyPreset(p: Preset) {
@@ -127,6 +145,19 @@ export function ReportsClient({
     () => (showAllMetrics ? METRICS : METRICS.filter((m) => m.common)),
     [showAllMetrics]
   );
+
+  const visibleCampaigns = useMemo(() => {
+    const q = campaignQuery.trim().toLowerCase();
+    const list = selPlatforms.length ? campaigns.filter((c) => selPlatforms.includes(c.platform)) : campaigns;
+    return (q ? list.filter((c) => c.name.toLowerCase().includes(q)) : list).slice(0, 60);
+  }, [campaigns, campaignQuery, selPlatforms]);
+
+  // نتيجة فارغة بعد طلب صريح: يجب أن تُقال بوضوح لا أن تُترك للمستخدم
+  // يستنتج أن الزرّ لم يعمل.
+  const [emptyNotice, setEmptyNotice] = useState(false);
+  useEffect(() => {
+    if (result && result.rows.length === 0) setEmptyNotice(true);
+  }, [result]);
 
   return (
     <div className="mx-auto max-w-[1400px] pb-12">
@@ -259,7 +290,11 @@ export function ReportsClient({
               </Step>
 
               <Step n={4} label={tr("stepFilters")}>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="mb-1 text-[11px] text-text-faint">{tr("pickPlatforms")}</div>
+                <div className="mb-3 flex flex-wrap gap-1.5">
+                  {platforms.length === 0 && (
+                    <span className="text-[11.5px] text-text-faint">{tr("noCampaignsYet")}</span>
+                  )}
                   {platforms.map((p) => {
                     const on = selPlatforms.includes(p);
                     return (
@@ -276,6 +311,49 @@ export function ReportsClient({
                     );
                   })}
                 </div>
+
+                {/* اختيار الحملات صراحةً: بدونه لا توجد "حملة مقابل حملة"
+                    أصلاً - فقط تفصيل يعرض الكلّ بلا حكم. */}
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="text-[11px] text-text-faint">{tr("pickCampaigns")}</span>
+                  {selCampaigns.length > 0 && (
+                    <button onClick={() => setSelCampaigns([])} className="text-[11px] text-accent">
+                      {tr("clearSelection")}
+                    </button>
+                  )}
+                </div>
+                {campaigns.length === 0 ? (
+                  <p className="text-[11.5px] text-text-faint">{tr("noCampaignsYet")}</p>
+                ) : (
+                  <>
+                    <input
+                      value={campaignQuery}
+                      onChange={(e) => setCampaignQuery(e.target.value)}
+                      placeholder={tr("searchCampaigns")}
+                      className="mb-1.5 w-full rounded-lg border border-border bg-surface-raised px-2.5 py-1.5 text-[12px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+                    />
+                    <div className="max-h-[132px] overflow-y-auto pe-1">
+                      {visibleCampaigns.map((c) => {
+                        const on = selCampaigns.includes(c.id);
+                        return (
+                          <button
+                            key={c.id}
+                            onClick={() => setSelCampaigns((s) => (on ? s.filter((x) => x !== c.id) : [...s, c.id]))}
+                            className={`mb-1 flex w-full items-center gap-1.5 rounded-lg border px-2 py-1.5 text-start text-[11.5px] ${
+                              on ? "border-accent bg-accent/10 text-accent" : "border-border bg-surface-raised text-text-muted"
+                            }`}
+                          >
+                            <PlatformLogo platform={c.platform} size={12} />
+                            <span className="min-w-0 flex-1 truncate" title={c.name}>{c.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-1 text-[11px] text-text-faint">
+                      {selCampaigns.length === 2 ? tr("compareReady") : tr("compareNeedTwo")}
+                    </p>
+                  </>
+                )}
               </Step>
             </div>
           </div>
@@ -306,12 +384,20 @@ export function ReportsClient({
             setDimension(v.config.dimension);
             setMetrics(v.config.metrics);
             setSelPlatforms(v.config.platforms);
-            run({ source: v.config.source, dimension: v.config.dimension, metrics: v.config.metrics, platforms: v.config.platforms });
+            setSelCampaigns(v.config.campaigns ?? []);
+            run({
+              source: v.config.source,
+              dimension: v.config.dimension,
+              metrics: v.config.metrics,
+              platforms: v.config.platforms,
+              campaigns: v.config.campaigns ?? [],
+            });
           }}
         />
       </div>
 
       {/* ==================== النتيجة ==================== */}
+      <div ref={resultRef} />
       {result && (
         <ResultBlock
           result={result}
@@ -324,12 +410,13 @@ export function ReportsClient({
         />
       )}
 
+      {emptyNotice && <EmptyDataModal tr={tr} onClose={() => setEmptyNotice(false)} />}
       {emailOpen && <EmailModal tr={tr} workspaceId={workspaceId} onClose={() => setEmailOpen(false)} />}
       {saveOpen && (
         <SaveViewModal
           tr={tr}
           workspaceId={workspaceId}
-          config={{ source, dimension, metrics, preset: initial.preset, range: initial.range, compareMode: initial.compareMode, platforms: selPlatforms }}
+          config={{ source, dimension, metrics, preset: initial.preset, range: initial.range, compareMode: initial.compareMode, platforms: selPlatforms, campaigns: selCampaigns }}
           onClose={() => setSaveOpen(false)}
         />
       )}
@@ -648,6 +735,46 @@ function EmailModal({
         <button onClick={onClose} className="rounded-xl border border-border bg-surface px-4 py-2 text-[12.5px] text-text-muted">{tr("cancel")}</button>
         <button onClick={send} disabled={state === "sending"} className="rounded-xl bg-accent px-4 py-2 text-[12.5px] font-medium text-white disabled:opacity-50">
           {state === "sending" ? tr("emailSending") : tr("emailSend")}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+/**
+ * تُعرض حين يطلب المستخدم تقريراً فيعود بصفر صفوف. بدونها يبدو زرّ الإنشاء
+ * معطّلاً - وهو أسوأ من رسالة تقول "لا بيانات" وتشرح السبب المحتمل.
+ */
+function EmptyDataModal({
+  tr, onClose,
+}: {
+  tr: (k: string, v?: Record<string, string | number>) => string;
+  onClose: () => void;
+}) {
+  return (
+    <Modal onClose={onClose}>
+      <h2 className="mb-1 text-[15px] font-semibold text-text-primary">{tr("emptyTitle")}</h2>
+      <p className="mb-3 text-[12.5px] leading-relaxed text-text-muted">{tr("emptyBody")}</p>
+      <div className="mb-4 rounded-xl bg-surface-raised/70 p-3">
+        <div className="mb-1.5 text-[11.5px] font-medium text-text-primary">{tr("emptyWhy")}</div>
+        <ul className="flex flex-col gap-1">
+          {["emptyR1", "emptyR2", "emptyR3"].map((k) => (
+            <li key={k} className="flex items-start gap-1.5 text-[12px] leading-relaxed text-text-muted">
+              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-text-faint" />
+              {tr(k)}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="flex justify-end gap-2">
+        <a
+          href="/dashboard/integrations"
+          className="rounded-xl border border-border bg-surface px-4 py-2 text-[12.5px] text-text-primary no-underline"
+        >
+          {tr("goConnect")}
+        </a>
+        <button onClick={onClose} className="rounded-xl bg-accent px-4 py-2 text-[12.5px] font-medium text-white">
+          {tr("ok")}
         </button>
       </div>
     </Modal>

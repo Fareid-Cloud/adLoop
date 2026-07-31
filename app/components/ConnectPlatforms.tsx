@@ -1,11 +1,18 @@
 // app/components/ConnectPlatforms.tsx
 //
-// ربط المنصات من مكانه الطبيعي: الداشبورد نفسه وصفحة كل منصة - مش "روح
-// للإعدادات". كارت لكل منصة بلوجوها ولونها، وزر ربط مباشر (OAuth)، وحالة
-// واضحة لو مربوطة بالفعل.
+// ربط المنصات من مكانه الطبيعي: اللوحة نفسها وصفحة كل منصة - لا "اذهب إلى
+// الإعدادات". كارت لكل منصة بشعارها ولونها، وزرّ ربط مباشر (OAuth)، وحالة
+// واضحة إن كانت مربوطة بالفعل.
+//
+// **لا رابط واحد هنا يخرج إلى الإعدادات.** خطوة الربط تُنفَّذ في مكانها:
+// إمّا OAuth مباشر، أو نافذة اختيار حملات تفتح فوق الصفحة.
 
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { CampaignPickerLauncher } from "@/app/components/CampaignPickerLauncher";
 import { Check, Plus } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
+
+type AdPlatform = "GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS";
 
 export const PLATFORM_CONNECT: Record<string, { label: string; color: string; start: string }> = {
   GOOGLE_ADS: { label: "Google Ads", color: "#4285F4", start: "/api/oauth/google-ads/start" },
@@ -19,10 +26,17 @@ export interface ConnectState {
   campaignCount: number;
 }
 
-function Card({ s }: { s: ConnectState }) {
+function Card({
+  s, workspaceId, locale,
+}: {
+  s: ConnectState;
+  workspaceId: string;
+  locale: Locale;
+}) {
   const meta = PLATFORM_CONNECT[s.platform];
   if (!meta) return null;
 
+  const tr = (k: string, v?: Record<string, string | number>) => t(locale, `setup.${k}`, v);
   const needsCampaigns = s.connected && s.campaignCount === 0;
 
   return (
@@ -36,40 +50,45 @@ function Card({ s }: { s: ConnectState }) {
         <span className="text-[15px] font-semibold text-text-primary">{meta.label}</span>
         {s.connected && (
           <span className="ms-auto inline-flex items-center gap-1 rounded-full bg-verified/12 px-2 py-0.5 text-[11px] font-medium text-verified">
-            <Check size={11} /> متصل
+            <Check size={11} /> {tr("connected")}
           </span>
         )}
       </div>
 
       {!s.connected ? (
         <>
-          <p className="mb-4 text-[13px] leading-relaxed text-text-muted">
-            اربط حسابك لسحب الإنفاق والحملات تلقائياً، ومقارنة أرقام المنصة بالتحويلات المتحقّقة.
-          </p>
+          <p className="mb-4 text-[13px] leading-relaxed text-text-muted">{tr("connectHint")}</p>
           <a
             href={meta.start}
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium text-white no-underline transition-opacity hover:opacity-90"
             style={{ background: meta.color }}
           >
-            <Plus size={15} /> ربط {meta.label}
+            <Plus size={15} /> {tr("connectCta", { platform: meta.label })}
           </a>
         </>
       ) : needsCampaigns ? (
         <>
-          <p className="mb-4 text-[13px] leading-relaxed text-text-muted">
-            الحساب مربوط ✓ — تبقّت خطوة واحدة: اختر الحملات التي تريد متابعتها.
-          </p>
-          <a
-            href="/dashboard/settings?tab=workspace"
-            className="card-shadow inline-flex w-full items-center justify-center rounded-xl border border-border bg-surface-raised py-2.5 text-sm font-medium text-text-primary no-underline"
-          >
-            اختيار الحملات
-          </a>
+          <p className="mb-4 text-[13px] leading-relaxed text-text-muted">{tr("oneStepLeft")}</p>
+          <CampaignPickerLauncher
+            workspaceId={workspaceId}
+            connectedPlatforms={[s.platform as AdPlatform]}
+            locale={locale}
+            label={tr("selectCampaigns")}
+            className="card-shadow inline-flex w-full items-center justify-center rounded-xl border border-border bg-surface-raised py-2.5 text-sm font-medium text-text-primary"
+          />
         </>
       ) : (
-        <p className="text-[13px] text-text-muted">
-          {s.campaignCount} حملة متابَعة — تُزامَن يومياً تلقائياً.
-        </p>
+        <>
+          <p className="mb-3 text-[13px] text-text-muted">{tr("nTracked", { n: s.campaignCount })}</p>
+          {/* إضافة حساب آخر تحت نفس الربط - حسابات MCC/Business المتعدّدة */}
+          <CampaignPickerLauncher
+            workspaceId={workspaceId}
+            connectedPlatforms={[s.platform as AdPlatform]}
+            locale={locale}
+            label={tr("addAccount")}
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-surface-raised py-2 text-[12.5px] font-medium text-text-muted"
+          />
+        </>
       )}
     </div>
   );
@@ -77,11 +96,15 @@ function Card({ s }: { s: ConnectState }) {
 
 export function ConnectPlatforms({
   states,
-  title = "اربط منصاتك الإعلانية",
-  subtitle = "اربط حساباتك لتبدأ رؤية أرقامك الحقيقية في مكان واحد.",
+  workspaceId,
+  locale = "ar",
+  title,
+  subtitle,
   onlyUnconnected = false,
 }: {
   states: ConnectState[];
+  workspaceId: string;
+  locale?: Locale;
   title?: string;
   subtitle?: string;
   onlyUnconnected?: boolean;
@@ -91,22 +114,32 @@ export function ConnectPlatforms({
 
   return (
     <section className="mb-6">
-      <h2 className="mb-1 text-[15px] font-semibold text-text-primary">{title}</h2>
-      <p className="mb-3 text-[13px] text-text-muted">{subtitle}</p>
+      <h2 className="mb-1 text-[15px] font-semibold text-text-primary">
+        {title ?? t(locale, "setup.connectTitle")}
+      </h2>
+      <p className="mb-3 text-[13px] text-text-muted">
+        {subtitle ?? t(locale, "setup.connectSubtitle")}
+      </p>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {shown.map((s) => (
-          <Card key={s.platform} s={s} />
+          <Card key={s.platform} s={s} workspaceId={workspaceId} locale={locale} />
         ))}
       </div>
     </section>
   );
 }
 
-// كارت مفرد - لصفحة منصة بعينها
-export function ConnectSinglePlatform({ state }: { state: ConnectState }) {
+/** كارت مفرد - لصفحة منصة بعينها */
+export function ConnectSinglePlatform({
+  state, workspaceId, locale = "ar",
+}: {
+  state: ConnectState;
+  workspaceId: string;
+  locale?: Locale;
+}) {
   return (
     <div className="mx-auto max-w-md">
-      <Card s={state} />
+      <Card s={state} workspaceId={workspaceId} locale={locale} />
     </div>
   );
 }

@@ -14,6 +14,15 @@ import { shouldSendEmail, sendUrgentNotificationEmail } from "@/lib/notification
 import { sendPushToUser } from "@/lib/webPush";
 import { checkMonthlyChangeCeiling } from "@/lib/automationRules";
 
+/**
+ * المحرّكات التي تُنتج قرارات. قائمة مغلقة عمداً: إضافة محرّك جديد يجب أن
+ * تمرّ من هنا فيظهر في التجميع، لا أن يسقط بصمت في "أخرى".
+ */
+export type ActionSource =
+  | "AUTOMATION" | "SCALE_KILL" | "BID_STRATEGY" | "TRUTH_GAP" | "PRICING"
+  | "STOCK" | "TRAFFIC_QUALITY" | "CREATIVE" | "FORECAST" | "CONNECTION"
+  | "EXPERIMENT" | "ECOMMERCE" | "ACCOUNT" | "OTHER";
+
 export interface ActionFeedInput {
   workspaceId: string;
   type: "SUGGESTION" | "ALERT" | "ACCOUNT";
@@ -24,6 +33,9 @@ export interface ActionFeedInput {
   linkUrl?: string; // لما المستخدم يدوس على الإشعار في الجرس، يودّيه فين
   actionType?: string; // نوع التنفيذ الحقيقي - null = اقتراح معلوماتي بس
   actionPayload?: Record<string, unknown>; // بيانات كافية للتنفيذ
+  source?: ActionSource;
+  /** الأثر المالي الشهري المقدَّر - يُترك فارغاً حين لا يمكن حسابه بصدق */
+  estimatedImpact?: number | null;
 }
 
 export async function pushToActionFeed(item: ActionFeedInput) {
@@ -38,6 +50,8 @@ export async function pushToActionFeed(item: ActionFeedInput) {
       linkUrl: item.linkUrl,
       actionType: item.actionType,
       actionPayload: item.actionPayload as any,
+      source: item.source ?? "OTHER",
+      estimatedImpact: item.estimatedImpact ?? null,
     },
   });
 

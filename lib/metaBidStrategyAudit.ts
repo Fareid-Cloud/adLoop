@@ -114,6 +114,7 @@ export async function checkMetaBidStrategyAlertsForWorkspace(workspaceId: string
     if (result.status === "DIVERGENT") {
       await pushToActionFeed({
         workspaceId,
+        source: "BID_STRATEGY",
         type: "ALERT",
         severity: "MEDIUM",
         title: `${result.adSetName ?? result.adSetId}: هدف المزايدة بعيد عن الواقع`,

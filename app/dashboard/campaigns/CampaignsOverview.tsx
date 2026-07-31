@@ -169,7 +169,7 @@ export function CampaignsOverview({
           <table className="w-full min-w-[760px] border-collapse">
             <thead>
               <tr className="border-b border-border">
-                {["ovColCampaign", "ovColState", "ovColSpend", "ovColReportedVerified", "ovColCpa", "ovColInflation"].map((h) => (
+                {["ovColCampaign", "ovColState", "ovColSpend", "ovColReportedVerified", "ovColCpa", "ovColWasted"].map((h) => (
                   <th key={h} className="px-4 py-3 text-start text-[11.5px] font-medium text-text-muted">{tr(h)}</th>
                 ))}
               </tr>
@@ -215,11 +215,23 @@ export function CampaignsOverview({
                       {r.cplVerified || "—"}
                     </span>
                   </td>
+                  {/* الفجوة بالفلوس لا بالنسبة: عمود "مُعلَن ← متحقّق" يعرض
+                      النسبة ضمناً بالفعل، والرقم القابل للتصرّف فيه هو المبلغ
+                      المصروف بلا نتيجة مؤكَّدة - لا نسبة مجرّدة. */}
                   <td className="whitespace-nowrap px-4 py-3.5">
-                    <span className="font-mono text-[12.5px] font-medium"
-                          style={{ color: r.inflationRatePct >= 50 ? "var(--critical)" : r.inflationRatePct >= 25 ? "var(--gap)" : "var(--text-muted)" }}>
-                      {r.inflationRatePct}%
-                    </span>
+                    {(() => {
+                      const wasted = r.rawConversions > 0
+                        ? Math.round(r.cost * ((r.rawConversions - r.verifiedConversions) / r.rawConversions))
+                        : Math.round(r.cost);
+                      if (wasted <= 0) return <span className="text-[12.5px] text-text-faint">—</span>;
+                      const share = r.cost > 0 ? (wasted / r.cost) * 100 : 0;
+                      return (
+                        <span className="font-mono text-[12.5px] font-medium"
+                              style={{ color: share >= 50 ? "var(--critical)" : share >= 25 ? "var(--gap)" : "var(--text-muted)" }}>
+                          {num(wasted)} {currency}
+                        </span>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}

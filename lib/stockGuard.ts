@@ -108,6 +108,7 @@ export async function checkStockGuardForWorkspace(workspaceId: string) {
       // لا حملة مرتبطة يمكن التصرّف فيها بثقة - تنبيه فقط
       await pushToActionFeed({
         workspaceId,
+        source: "STOCK",
         type: "ALERT",
         severity,
         title: `مخزون — ${s.name}`,
@@ -123,6 +124,7 @@ export async function checkStockGuardForWorkspace(workspaceId: string) {
 
       await pushToActionFeed({
         workspaceId,
+        source: "STOCK",
         type: executable ? "SUGGESTION" : "ALERT",
         severity,
         title: `مخزون — ${s.name}: ${executable ? "إيقاف الحملة" : "انتبه"}`,

@@ -23,6 +23,8 @@ export async function checkScaleKillDecisionsForWorkspace(workspaceId: string) {
     await getWorkspaceCreativePerformances(workspaceId);
   if (performances.length === 0) return;
 
+  const costByAdId = new Map(performances.map((p: { adId: string; cost: number }) => [p.adId, p.cost]));
+
   const links = await prisma.campaignLink.findMany({ where: { workspaceId } });
   const accountIdByCampaignId = new Map(links.map((l: any) => [l.externalCampaignId, l.externalAccountId]));
 
@@ -89,6 +91,7 @@ export async function checkScaleKillDecisionsForWorkspace(workspaceId: string) {
 
     await pushToActionFeed({
       workspaceId,
+      source: "SCALE_KILL",
       type: "SUGGESTION",
       severity: decision.decision === "KILL" ? "HIGH" : "MEDIUM",
       title: `${decision.decision === "SCALE" ? "Scale" : "Kill"}: ${decision.adName ?? decision.adId}`,
@@ -96,6 +99,9 @@ export async function checkScaleKillDecisionsForWorkspace(workspaceId: string) {
       linkUrl: "/dashboard/campaigns/creatives",
       actionType,
       actionPayload,
+      // للإيقاف: الإنفاق الحالي هو ما يُوفَّر. للتوسيع: لا رقم صادق
+      // يمكن ادّعاؤه مسبقاً، فيُترك فارغاً بدل تخمين يُقرأ كوعد.
+      estimatedImpact: decision.decision === "KILL" ? Math.round(costByAdId.get(decision.adId) ?? 0) : null,
     });
   }
 }

@@ -778,6 +778,15 @@ model ActionFeedItem {
   // لو البند ده ناتج من AutomationRule محدد (بند "تنفيذي" غالباً)
   relatedRuleExecutionId String?
 
+  /// المحرّك الذي أنتج البند. حقل صريح لا استنتاج من linkUrl: محرّكان
+  /// مختلفان (التسعير والمخزون) يشيران لنفس الصفحة، فالرابط لا يميّزهما.
+  /// التجميع في صفحة القرارات مبنيّ عليه.
+  source       String   @default("OTHER")
+
+  /// الأثر المالي الشهري المقدَّر بعملة مساحة العمل - null حين لا يمكن
+  /// حسابه بصدق. يُرتَّب به الأهمّ أولاً بدل ترتيب زمني أعمى.
+  estimatedImpact Float?
+
   status       ActionFeedStatus @default(PENDING)
   resolvedAt   DateTime?
 

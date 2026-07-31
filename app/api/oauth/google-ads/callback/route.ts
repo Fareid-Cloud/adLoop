@@ -12,21 +12,23 @@ export async function GET(req: NextRequest) {
   const state = searchParams.get("state");
   const error = searchParams.get("error");
 
-  const settingsUrl = `${getAppUrl()}/dashboard/settings`;
+  // العودة إلى صفحة ربط المنصات لا إلى الإعدادات: الربط لا يمرّ بالإعدادات
+  // في أي خطوة، وإرجاع المستخدم إليها بعد الموافقة يضيّعه في صفحة لا تخصّه.
+  const returnUrl = `${getAppUrl()}/dashboard/integrations`;
 
   // المستخدم رفض الموافقة من عند جوجل - رجّعه بشكل طبيعي، مش خطأ
   if (error) {
-    return NextResponse.redirect(`${settingsUrl}?connection=cancelled`);
+    return NextResponse.redirect(`${returnUrl}?connection=cancelled`);
   }
 
   if (!code || !state) {
-    return NextResponse.redirect(`${settingsUrl}?connection=error`);
+    return NextResponse.redirect(`${returnUrl}?connection=error`);
   }
 
   const verified = verifyOAuthState(state);
   if (!verified) {
     // state مش صالح - ممكن يكون منتهي أو محاولة اختراق. أيضاً نرفض بهدوء
-    return NextResponse.redirect(`${settingsUrl}?connection=error`);
+    return NextResponse.redirect(`${returnUrl}?connection=error`);
   }
 
   const redirectUri = `${getAppUrl()}/api/oauth/google-ads/callback`;
@@ -45,7 +47,7 @@ export async function GET(req: NextRequest) {
 
   if (!tokenRes.ok) {
     console.error("فشل تبادل كود Google Ads OAuth:", await tokenRes.text());
-    return NextResponse.redirect(`${settingsUrl}?connection=error`);
+    return NextResponse.redirect(`${returnUrl}?connection=error`);
   }
 
   const tokens = await tokenRes.json();
@@ -55,7 +57,7 @@ export async function GET(req: NextRequest) {
     // لو المستخدم وافق قبل كده والـ prompt=consent مشتغلش لأي سبب، جوجل
     // ممكن ميرجعش refresh_token تاني - من غيره منقدرش نجدد الوصول لاحقاً
     console.error("جوجل مرجعش refresh_token - محتاجين المستخدم يعيد الموافقة");
-    return NextResponse.redirect(`${settingsUrl}?connection=missing_refresh_token`);
+    return NextResponse.redirect(`${returnUrl}?connection=missing_refresh_token`);
   }
 
   const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);

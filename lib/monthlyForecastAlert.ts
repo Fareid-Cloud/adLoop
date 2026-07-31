@@ -33,6 +33,7 @@ export async function checkMonthlyForecastAlertForWorkspace(workspaceId: string)
   if (projectedPct > 110) {
     await pushToActionFeed({
       workspaceId,
+      source: "FORECAST",
       type: "ALERT",
       severity: "HIGH",
       title: "متوقّع تتجاوز الميزانية الشهرية",
@@ -42,6 +43,7 @@ export async function checkMonthlyForecastAlertForWorkspace(workspaceId: string)
   } else if (projectedPct < 80) {
     await pushToActionFeed({
       workspaceId,
+      source: "FORECAST",
       type: "ALERT",
       severity: "MEDIUM",
       title: "متوقّع تصرف أقل من الميزانية الشهرية",

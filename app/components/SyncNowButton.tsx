@@ -8,16 +8,19 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 interface Outcome { platform: string; ok: boolean; error?: string }
 
 export function SyncNowButton({
-  workspaceId, label, className,
+  workspaceId, label, className, locale = "ar",
 }: {
   workspaceId: string;
   label: string;
   className?: string;
+  locale?: Locale;
 }) {
+  const tr = (k: string) => t(locale, `setup.${k}`);
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
@@ -33,12 +36,12 @@ export function SyncNowButton({
     const res = await fetch(`/api/workspaces/${workspaceId}/sync`, { method: "POST" }).catch(() => null);
     setBusy(false);
 
-    if (!res) { setFailed(true); setSummary("تعذّر الاتصال بالخادم."); return; }
+    if (!res) { setFailed(true); setSummary(tr("syncNoServer")); return; }
 
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) { setFailed(true); setSummary(data.error ?? "تعذّرت المزامنة."); return; }
+    if (!res.ok) { setFailed(true); setSummary(data.error ?? tr("syncFailed")); return; }
 
-    setSummary(data.summaryAr ?? null);
+    setSummary((locale === "en" ? data.summaryEn : data.summaryAr) ?? data.summaryAr ?? null);
     setResults(data.results ?? []);
     setFailed(!data.ok);
     router.refresh();
@@ -48,7 +51,7 @@ export function SyncNowButton({
     <div className="flex flex-col items-stretch gap-2">
       <button onClick={run} disabled={busy} className={className}>
         {busy ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-        {busy ? "جارٍ المزامنة..." : label}
+        {busy ? tr("syncing") : label}
       </button>
 
       {summary && (
@@ -72,7 +75,7 @@ export function SyncNowButton({
                 <div key={r.platform} className="flex items-start gap-1.5 text-[11.5px]">
                   <PlatformLogo platform={r.platform} size={12} />
                   <span style={{ color: r.ok ? "var(--verified)" : "var(--critical)" }}>
-                    {r.ok ? "تمت" : r.error ?? "فشلت"}
+                    {r.ok ? tr("syncOk") : r.error ?? tr("syncRowFailed")}
                   </span>
                 </div>
               ))}

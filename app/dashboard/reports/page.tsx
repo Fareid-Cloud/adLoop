@@ -57,6 +57,7 @@ export default async function ReportsPage({
     "cost", "clicks", "conversions", "cpa", "ctr",
   ];
   const selectedPlatforms = one("pf")?.split(",").filter(Boolean) ?? [];
+  const selectedCampaigns = one("cg")?.split(",").filter(Boolean) ?? [];
   const shouldRun = one("run") === "1";
 
   const [campaignLinks, views] = await Promise.all([
@@ -72,6 +73,11 @@ export default async function ReportsPage({
   ]);
 
   const platforms = [...new Set(campaignLinks.map((c: { platform: string }) => c.platform))];
+  const campaigns = campaignLinks.map((c: { externalCampaignId: string; campaignName: string; platform: string }) => ({
+    id: c.externalCampaignId,
+    name: c.campaignName,
+    platform: c.platform,
+  }));
   const campaignNames = new Map(
     campaignLinks.map((c: { externalCampaignId: string; campaignName: string }) => [c.externalCampaignId, c.campaignName])
   );
@@ -83,7 +89,10 @@ export default async function ReportsPage({
           source,
           dimension,
           metrics,
-          filters: { platforms: selectedPlatforms.length ? selectedPlatforms : undefined },
+          filters: {
+            platforms: selectedPlatforms.length ? selectedPlatforms : undefined,
+            campaignIds: selectedCampaigns.length ? selectedCampaigns : undefined,
+          },
           range: period.range,
           compare: period.compare,
         },
@@ -104,6 +113,7 @@ export default async function ReportsPage({
       workspaceId={workspace.id}
       currency={workspace.currency}
       platforms={platforms}
+      campaigns={campaigns}
       savedViews={savedViews}
       initial={{
         source,
@@ -114,6 +124,7 @@ export default async function ReportsPage({
         compare: period.compare,
         compareMode,
         selectedPlatforms,
+        selectedCampaigns,
       }}
       result={result}
     />

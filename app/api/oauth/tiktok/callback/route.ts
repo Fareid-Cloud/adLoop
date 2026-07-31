@@ -17,15 +17,17 @@ export async function GET(req: NextRequest) {
   const authCode = searchParams.get("auth_code");
   const state = searchParams.get("state");
 
-  const settingsUrl = `${getAppUrl()}/dashboard/settings`;
+  // العودة إلى صفحة ربط المنصات لا إلى الإعدادات: الربط لا يمرّ بالإعدادات
+  // في أي خطوة، وإرجاع المستخدم إليها بعد الموافقة يضيّعه في صفحة لا تخصّه.
+  const returnUrl = `${getAppUrl()}/dashboard/integrations`;
 
   if (!authCode || !state) {
-    return NextResponse.redirect(`${settingsUrl}?connection=cancelled`);
+    return NextResponse.redirect(`${returnUrl}?connection=cancelled`);
   }
 
   const verified = verifyOAuthState(state);
   if (!verified) {
-    return NextResponse.redirect(`${settingsUrl}?connection=error`);
+    return NextResponse.redirect(`${returnUrl}?connection=error`);
   }
 
   const tokenRes = await fetch("https://business-api.tiktok.com/open_api/v1.3/oauth2/access_token/", {
@@ -40,7 +42,7 @@ export async function GET(req: NextRequest) {
 
   if (!tokenRes.ok) {
     console.error("فشل تبادل auth_code تيك توك:", await tokenRes.text());
-    return NextResponse.redirect(`${settingsUrl}?connection=error`);
+    return NextResponse.redirect(`${returnUrl}?connection=error`);
   }
 
   const tokenData = await tokenRes.json();
@@ -48,7 +50,7 @@ export async function GET(req: NextRequest) {
 
   if (tokenData.code !== 0 || !tokenData.data?.access_token) {
     console.error("رد تيك توك غير متوقع وقت تبادل التوكن:", tokenData);
-    return NextResponse.redirect(`${settingsUrl}?connection=error`);
+    return NextResponse.redirect(`${returnUrl}?connection=error`);
   }
 
   await prisma.connectedPlatform.upsert({

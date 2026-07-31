@@ -1278,6 +1278,7 @@ export async function checkShoppingSpendAlertsForWorkspace(workspaceId: string) 
   for (const product of wastefulProducts) {
     await pushToActionFeed({
       workspaceId,
+      source: "ECOMMERCE",
       type: "ALERT",
       severity: "MEDIUM",
       title: `${product.title ?? product.itemId}: منتج بيصرف من غير مبيعات`,

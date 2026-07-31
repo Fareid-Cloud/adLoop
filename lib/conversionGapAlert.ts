@@ -30,7 +30,7 @@ export async function checkConversionGapAlertForWorkspace(workspaceId: string) {
   const byPlatform = await prisma.metricSnapshot.groupBy({
     by: ["platform"],
     where: { workspaceId, date: { gte: thirtyDaysAgo } },
-    _sum: { rawConversions: true, verifiedConversions: true },
+    _sum: { rawConversions: true, verifiedConversions: true, cost: true },
   });
 
   for (const p of byPlatform) {
@@ -55,11 +55,14 @@ export async function checkConversionGapAlertForWorkspace(workspaceId: string) {
 
     await pushToActionFeed({
       workspaceId,
+      source: "TRUTH_GAP",
       type: "ALERT",
       severity: "HIGH",
       title: `فجوة كبيرة بين تحويلات ${p.platform} المُبلّغة والمؤكدة`,
       description: `المنصة بتقول ${raw} تحويل، لكن اتأكد منهم فعلياً ${verified} بس (فجوة ${gapPct}%).${platformNote} القرارات المبنية على الرقم المُبلّغ وحده ممكن تكون مضلِّلة.`,
       linkUrl: "/dashboard/reports",
+      // حصّة التحويلات غير المؤكَّدة من الإنفاق الفعلي - لا تقدير عام
+      estimatedImpact: Math.round((p._sum.cost ?? 0) * ((raw - verified) / raw)),
     });
   }
 }

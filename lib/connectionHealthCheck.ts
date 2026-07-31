@@ -29,6 +29,7 @@ export async function checkExpiringConnections(daysBeforeWarning: number = 7) {
 
     await pushToActionFeed({
       workspaceId: workspace.id,
+      source: "CONNECTION",
       type: "ALERT",
       severity: daysLeft <= 2 ? "URGENT" : "HIGH",
       title: `ربط ${platformLabel} هينتهي خلال ${daysLeft} يوم`,

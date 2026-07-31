@@ -15,7 +15,20 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
-export default async function IntegrationsPage() {
+export default async function IntegrationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const raw = Array.isArray(sp.connection) ? sp.connection[0] : sp.connection;
+  // نتيجة الربط كانت تُعرض في الإعدادات؛ بعد نقل التحويل إلى هنا يجب أن
+  // تُعرض هنا وإلا فشل الربط بصمت والمستخدم لا يعرف لماذا.
+  const connectionResult =
+    raw === "cancelled" ? "connCancelled"
+    : raw === "missing_refresh_token" ? "connMissingRefresh"
+    : raw === "error" ? "connError"
+    : null;
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
 
@@ -40,5 +53,14 @@ export default async function IntegrationsPage() {
 
   const overview = await getIntegrationsOverview(workspace.id, user.id);
 
-  return <IntegrationsView overview={overview} workspaceId={workspace.id} locale={locale} />;
+  return (
+    <>
+      {connectionResult && (
+        <div className="mx-auto mb-4 max-w-[1400px] rounded-2xl border border-critical/35 bg-critical/[0.06] p-4 text-[13px] leading-relaxed text-text-primary">
+          {t(locale, `integrations.${connectionResult}`)}
+        </div>
+      )}
+      <IntegrationsView overview={overview} workspaceId={workspace.id} locale={locale} />
+    </>
+  );
 }

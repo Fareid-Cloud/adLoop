@@ -80,6 +80,7 @@ export async function checkBidStrategyProgressionForWorkspace(workspaceId: strin
 
     await pushToActionFeed({
       workspaceId,
+      source: "BID_STRATEGY",
       type: "SUGGESTION",
       severity: "MEDIUM",
       title: suggestion.title,

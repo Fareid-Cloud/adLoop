@@ -113,7 +113,7 @@ export const NAV_GROUPS: NavGroup[] = [
     labelEn: null,
     items: [
       { href: "/dashboard/reports", labelAr: "التقارير", labelEn: "Reports", iconName: "FileBarChart" },
-      { href: "/dashboard/integrations", labelAr: "الربط", labelEn: "Connections", iconName: "Plug" },
+      { href: "/dashboard/integrations", labelAr: "ربط المنصات", labelEn: "Integrations", iconName: "Plug" },
       { href: "/dashboard/settings", labelAr: "الإعدادات", labelEn: "Settings", iconName: "SettingsIcon" },
       { href: "/dashboard/billing", labelAr: "الاشتراك والفواتير", labelEn: "Billing", iconName: "CreditCard" },
     ],

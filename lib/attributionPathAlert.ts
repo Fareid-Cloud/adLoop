@@ -65,6 +65,7 @@ export async function checkAttributionPathAlertForWorkspace(workspaceId: string)
 
   await pushToActionFeed({
     workspaceId,
+    source: "TRUTH_GAP",
     type: "ALERT",
     severity: "LOW",
     title: "نسبة اللمسة الواحدة ارتفعت بشكل ملحوظ",

@@ -37,7 +37,8 @@ export interface ActiveIntegration {
   logoKey: string;
   /** عدد الحسابات/المتاجر المرتبطة */
   accountCount: number;
-  accountNames: string[];
+  /** الحساب باسمه وعدد حملاته - المعرّف وحده لا يقول شيئاً للمستخدم */
+  accounts: Array<{ id: string; label: string; campaignCount: number }>;
   connectedAt: Date | null;
   expiresAt: Date | null;
   lastSyncAt: Date | null;
@@ -165,7 +166,11 @@ export async function getIntegrationsOverview(
         accountCount: uniqueAccounts.length,
         now,
       }),
-      accountNames: uniqueAccounts.map((a) => a.externalAccountId),
+      accounts: uniqueAccounts.map((a) => ({
+        id: a.externalAccountId,
+        label: a.externalAccountId,
+        campaignCount: accounts.filter((c) => c.externalAccountId === a.externalAccountId).length,
+      })),
       connectedAt: conn.connectedAt,
       expiresAt: conn.expiresAt,
       lastSyncAt: lastSuccess?.startedAt ?? null,
@@ -224,7 +229,11 @@ export async function getIntegrationsOverview(
       entityCount: store.ordersReceived,
       entityLabelKey: "webhooks",
       healthPct: storeHealthPct,
-      accountNames: [store.storeName ?? store.storeUrl ?? def.name],
+      accounts: [{
+        id: store.id,
+        label: store.storeName ?? store.storeUrl ?? def.name,
+        campaignCount: 0,
+      }],
       connectedAt: store.createdAt,
       expiresAt: null,
       lastSyncAt: store.lastOrderAt,

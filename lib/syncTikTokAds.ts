@@ -424,6 +424,7 @@ export async function checkTikTokAlertsForWorkspace(workspaceId: string) {
     if (result.status === "SEVERE_FATIGUE" || result.status === "EARLY_FATIGUE") {
       await pushToActionFeed({
         workspaceId,
+        source: "CREATIVE",
         type: "ALERT",
         severity: result.status === "SEVERE_FATIGUE" ? "HIGH" : "MEDIUM",
         title: `${nameMap.get(adId) ?? adId}: ${result.status === "SEVERE_FATIGUE" ? "تعب حقيقي" : "بداية تعب"}`,
@@ -438,6 +439,7 @@ export async function checkTikTokAlertsForWorkspace(workspaceId: string) {
   for (const v of weakHooks) {
     await pushToActionFeed({
       workspaceId,
+      source: "CREATIVE",
       type: "ALERT",
       severity: "MEDIUM",
       title: `${v.adName ?? v.adId}: خطّاف ضعيف`,
@@ -577,6 +579,7 @@ export async function syncTikTokBidCapForWorkspace(workspaceId: string) {
         if (result.status === "DIVERGENT") {
           await pushToActionFeed({
             workspaceId,
+            source: "BID_STRATEGY",
             type: "ALERT",
             severity: "MEDIUM",
             title: `${result.adGroupName ?? result.adGroupId}: سقف التكلفة بعيد عن الواقع`,
@@ -685,6 +688,7 @@ export async function syncTikTokLearningPhaseForWorkspace(workspaceId: string) {
         if (result.status === "LEARNING_LIMITED") {
           await pushToActionFeed({
             workspaceId,
+            source: "BID_STRATEGY",
             type: "ALERT",
             severity: "MEDIUM",
             title: `${result.adGroupName ?? adGroupId}: بعيدة عن الخروج من فترة التعلّم`,
@@ -807,6 +811,7 @@ export async function syncTikTokLookalikeComparisonForWorkspace(workspaceId: str
           const { pushToActionFeed } = await import("@/lib/actionFeed");
           await pushToActionFeed({
             workspaceId,
+            source: "SCALE_KILL",
             type: "ALERT",
             severity: "MEDIUM",
             title: "الجمهور المتشابه أغلى من باقي الاستهداف",
@@ -1145,6 +1150,7 @@ export async function checkTikTokBidStrategyProgressionForWorkspace(workspaceId:
 
         await pushToActionFeed({
           workspaceId,
+          source: "BID_STRATEGY",
           type: "SUGGESTION",
           severity: "MEDIUM",
           title: `${adGroup.adgroup_name ?? adGroupId}: جاهزة لتحديد Cost Cap`,

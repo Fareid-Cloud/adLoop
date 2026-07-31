@@ -185,6 +185,7 @@ export async function measurePendingExperiments(workspaceId: string) {
         const improved = def.lowerIsBetter ? change < 0 : change > 0;
         await pushToActionFeed({
           workspaceId,
+          source: "EXPERIMENT",
           type: "ALERT",
           severity: "LOW",
           title: `نتيجة تجربة: ${improved ? "تحسّن" : "تراجع"} ${def.labelAr} بنسبة ${Math.abs(change)}%`,

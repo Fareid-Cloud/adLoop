@@ -91,7 +91,7 @@ export async function PlatformHub({
           <PlatformLogo platform={platform} size={24} />
           {platformLabel}
         </h1>
-        <ConnectSinglePlatform state={state} />
+        <ConnectSinglePlatform state={state} workspaceId={workspace.id} locale={locale} />
       </div>
     );
   }
@@ -142,21 +142,21 @@ export async function PlatformHub({
       {/* بطاقات المؤشّر الموحّدة - نفس الشكل الهادئ في كل أقسام المنتج */}
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
         <MetricCard
-          label="الإنفاق (٣٠ يوماً)"
+          label={t(locale, "campPages.hubSpend")}
           value={Math.round(cost).toLocaleString("en-US")}
           unit={workspace.currency}
           icon={Icons.Wallet}
           tone="accent"
         />
         <MetricCard
-          label="تحويلات متحقّق منها"
+          label={t(locale, "campPages.hubVerified")}
           value={verified.toLocaleString("en-US")}
           icon={Icons.ShieldCheck}
           tone="verified"
           verified
         />
         <MetricCard
-          label="تكلفة العميل الحقيقية"
+          label={t(locale, "campPages.hubCpa")}
           value={cpa ? Math.round(cpa).toLocaleString("en-US") : "—"}
           unit={cpa ? workspace.currency : undefined}
           icon={Icons.Target}
@@ -164,7 +164,7 @@ export async function PlatformHub({
           caption={
             cpa
               ? undefined
-              : { text: "لا توجد تحويلات متحقّق منها بعد لحساب التكلفة الحقيقية.", tone: "muted" }
+              : { text: t(locale, "campPages.hubNoCpa"), tone: "muted" }
           }
         />
       </div>

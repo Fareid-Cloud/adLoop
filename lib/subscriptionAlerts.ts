@@ -26,6 +26,7 @@ export async function checkSubscriptionExpiryForWorkspace(workspaceId: string) {
 
   await pushToActionFeed({
     workspaceId,
+    source: "ACCOUNT",
     type: "ACCOUNT",
     severity: "HIGH",
     title: "فشل الدفع - حدّث بيانات الدفع",

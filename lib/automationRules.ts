@@ -150,6 +150,7 @@ export async function runAutomationForWorkspace(workspaceId: string, locale: Loc
     if (result.triggered && isDrasticAction && marketWide.isMarketWide) {
       await pushToActionFeed({
         workspaceId,
+        source: "AUTOMATION",
         type: "ALERT",
         severity: "MEDIUM",
         title: `${rule.name}: الشرط تحقق، لكن السبب الأرجح ضغط سوق عام مش مشكلة في الحملة`,

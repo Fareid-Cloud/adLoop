@@ -112,6 +112,7 @@ export async function checkTrafficQualityForWorkspace(workspaceId: string) {
 
   await pushToActionFeed({
     workspaceId,
+    source: "TRAFFIC_QUALITY",
     type: "ALERT",
     severity: "MEDIUM",
     title: `إشارات ترافيك مشبوه (${signalParts.length} نوع إشارة)`,

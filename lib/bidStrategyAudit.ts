@@ -118,6 +118,7 @@ export async function checkBidStrategyAlertsForWorkspace(workspaceId: string) {
     if (result.status === "DIVERGENT") {
       await pushToActionFeed({
         workspaceId,
+        source: "BID_STRATEGY",
         type: "ALERT",
         severity: "MEDIUM",
         title: `${result.campaignName}: هدف المزايدة بعيد عن الواقع`,
@@ -200,6 +201,7 @@ export async function checkGoogleLearningPhaseAlertsForWorkspace(workspaceId: st
     if (result.status === "LEARNING_LIMITED") {
       await pushToActionFeed({
         workspaceId,
+        source: "BID_STRATEGY",
         type: "ALERT",
         severity: "MEDIUM",
         title: `${result.campaignName}: بعيدة عن الخروج من فترة التعلّم`,

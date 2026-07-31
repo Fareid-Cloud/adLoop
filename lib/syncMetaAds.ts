@@ -458,6 +458,7 @@ export async function syncMetaAccountHealthForWorkspace(workspaceId: string) {
         if (usagePct >= 90) {
           await pushToActionFeed({
             workspaceId,
+            source: "ACCOUNT",
             type: "ALERT",
             severity: usagePct >= 98 ? "URGENT" : "HIGH",
             title: `حساب ميتا وصل ${usagePct}% من قيد الإنفاق`,
@@ -475,6 +476,7 @@ export async function syncMetaAccountHealthForWorkspace(workspaceId: string) {
       if (adsRes.ok && Array.isArray(adsData.data) && adsData.data.length > 0) {
         await pushToActionFeed({
           workspaceId,
+          source: "CREATIVE",
           type: "ALERT",
           severity: "HIGH",
           title: `${adsData.data.length} إعلان مرفوض من ميتا لمخالفة سياسة`,
@@ -553,6 +555,7 @@ export async function checkMetaLearningPhaseAlertsForWorkspace(workspaceId: stri
     if (result.status === "LEARNING_LIMITED") {
       await pushToActionFeed({
         workspaceId,
+        source: "BID_STRATEGY",
         type: "ALERT",
         severity: "MEDIUM",
         title: `${result.adSetName ?? result.adSetId}: بعيدة عن الخروج من فترة التعلّم`,
@@ -683,6 +686,7 @@ export async function checkCatalogSpendAlertsForWorkspace(workspaceId: string) {
   for (const c of campaigns) {
     await pushToActionFeed({
       workspaceId,
+      source: "ECOMMERCE",
       type: "ALERT",
       severity: "MEDIUM",
       title: `${nameMap.get(c.campaignId) ?? c.campaignId}: كتالوج بيصرف من غير مبيعات`,
@@ -732,6 +736,7 @@ export async function checkMetaBidStrategyProgressionForWorkspace(workspaceId: s
 
     await pushToActionFeed({
       workspaceId,
+      source: "BID_STRATEGY",
       type: "SUGGESTION",
       severity: "MEDIUM",
       title: `${adSet.adSetName ?? adSet.adSetId}: جاهزة لتحديد Cost Cap`,

@@ -51,6 +51,7 @@ export async function checkCostTrendAlertForWorkspace(workspaceId: string) {
 
   await pushToActionFeed({
     workspaceId,
+    source: "FORECAST",
     type: "ALERT",
     severity: "MEDIUM",
     title: "تكلفة العميل ارتفعت بشكل ملحوظ هذا الأسبوع",

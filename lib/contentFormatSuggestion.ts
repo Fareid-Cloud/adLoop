@@ -54,6 +54,7 @@ export async function checkContentFormatSuggestionForWorkspace(workspaceId: stri
 
   await pushToActionFeed({
     workspaceId,
+    source: "CREATIVE",
     type: "SUGGESTION",
     severity: "MEDIUM",
     title: `${FORMAT_LABELS[cheapest.format]} بيجيب عميل أرخص بـ${diffPct}% من ${FORMAT_LABELS[mostExpensive.format]}`,

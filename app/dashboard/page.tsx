@@ -274,7 +274,7 @@ export default async function GlancePage({
       />
 
       {/* ربط المنصات - دائماً في المقدمة لو فيه منصة ناقصة، بلوجوها وزر مباشر */}
-      <ConnectPlatforms states={connectStates} onlyUnconnected={hasAnyData} />
+      <ConnectPlatforms states={connectStates} workspaceId={workspace.id} locale={locale} onlyUnconnected={hasAnyData} />
 
       {hasAnyData && <PlatformSwitcher platform={platformFilter} days={days} locale={locale} />}
 

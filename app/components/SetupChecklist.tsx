@@ -91,6 +91,7 @@ export function SetupChecklist({
                 <div className="w-56 shrink-0">
                   <SyncNowButton
                     workspaceId={workspaceId}
+                    locale={locale}
                     label={ar ? s.ctaAr : s.ctaEn}
                     className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-accent px-3.5 py-2 text-[12.5px] font-medium text-white disabled:opacity-60"
                   />

@@ -153,6 +153,7 @@ export async function checkPricingHealthAlertsForWorkspace(workspaceId: string) 
     // نفسه عبر واجهة المنصة، لا في قاعدتنا وحدها.
     await pushToActionFeed({
       workspaceId,
+      source: "PRICING",
       type: r.suggestedPrice > r.currentPrice ? "SUGGESTION" : "ALERT",
       severity: r.actualLossAlert ? "URGENT" : "HIGH",
       title: `خطر تسعير — ${r.name}`,

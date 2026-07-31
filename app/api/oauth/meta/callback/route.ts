@@ -20,19 +20,21 @@ export async function GET(req: NextRequest) {
   const state = searchParams.get("state");
   const error = searchParams.get("error");
 
-  const settingsUrl = `${getAppUrl()}/dashboard/settings`;
+  // العودة إلى صفحة ربط المنصات لا إلى الإعدادات: الربط لا يمرّ بالإعدادات
+  // في أي خطوة، وإرجاع المستخدم إليها بعد الموافقة يضيّعه في صفحة لا تخصّه.
+  const returnUrl = `${getAppUrl()}/dashboard/integrations`;
 
   if (error) {
-    return NextResponse.redirect(`${settingsUrl}?connection=cancelled`);
+    return NextResponse.redirect(`${returnUrl}?connection=cancelled`);
   }
 
   if (!code || !state) {
-    return NextResponse.redirect(`${settingsUrl}?connection=error`);
+    return NextResponse.redirect(`${returnUrl}?connection=error`);
   }
 
   const verified = verifyOAuthState(state);
   if (!verified) {
-    return NextResponse.redirect(`${settingsUrl}?connection=error`);
+    return NextResponse.redirect(`${returnUrl}?connection=error`);
   }
 
   const redirectUri = `${getAppUrl()}/api/oauth/meta/callback`;
@@ -51,7 +53,7 @@ export async function GET(req: NextRequest) {
 
   if (!shortTokenRes.ok) {
     console.error("فشل تبادل كود Meta OAuth:", await shortTokenRes.text());
-    return NextResponse.redirect(`${settingsUrl}?connection=error`);
+    return NextResponse.redirect(`${returnUrl}?connection=error`);
   }
 
   const { access_token: shortLivedToken } = await shortTokenRes.json();
@@ -71,7 +73,7 @@ export async function GET(req: NextRequest) {
 
   if (!longTokenRes.ok) {
     console.error("فشل تمديد توكن Meta:", await longTokenRes.text());
-    return NextResponse.redirect(`${settingsUrl}?connection=error`);
+    return NextResponse.redirect(`${returnUrl}?connection=error`);
   }
 
   const longTokenData = await longTokenRes.json();

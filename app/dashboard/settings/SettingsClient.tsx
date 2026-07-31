@@ -206,7 +206,9 @@ export function SettingsClient({
         )}
       </div>
 
-      <div className="mb-6 flex gap-1 overflow-x-auto">
+      {/* التفاف لا تمرير أفقي: شريط يتمرّر جانبياً يخفي تبويبات كاملة
+          عن العين، فيظنّ المستخدم أنها غير موجودة. */}
+      <div className="mb-6 flex flex-wrap gap-1">
         {TABS.map((tab) => (
           <button
             key={tab.key}
