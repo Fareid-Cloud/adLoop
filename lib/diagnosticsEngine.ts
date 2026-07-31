@@ -144,7 +144,7 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       trend: seriesFrom(rows, (r) => r.cost),
       sourceAr: `جدول لقطات الأداء اليومية، منصة ${label}، آخر 30 يوماً.`,
       remedyAr: !isLinked
-        ? ["اربط حساب المنصة من الإعدادات ثم اختر الحملات التي تريد متابعتها."]
+        ? ["اربط حساب المنصة من صفحة ربط المنصات ثم اختر الحملات التي تريد متابعتها."]
         : hasData ? undefined
         : ["تأكد أن حساب الإعلانات ما زال مرتبطاً ولم تنتهِ صلاحيته.",
            "تأكد أن المستخدم المرتبط يملك صلاحية القراءة على الحساب.",

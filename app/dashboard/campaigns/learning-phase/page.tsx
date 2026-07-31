@@ -8,6 +8,9 @@ import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { estimateLearningPhase } from "@/lib/syncMetaAds";
 import { EmptyState } from "@/app/components/ui/EmptyState";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams, toDateBounds, daysBetween } from "@/lib/dateRange";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const STATUS_CONFIG = {
   LIKELY_STABLE: { color: "text-verified", label: "على الأرجح مستقرة" },
@@ -15,8 +18,16 @@ const STATUS_CONFIG = {
   LEARNING_LIMITED: { color: "text-critical", label: "على الأرجح Learning Limited" },
 };
 
-export default async function LearningPhasePage() {
+export default async function LearningPhasePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const period = periodFromParams(await searchParams);
+  const bounds = toDateBounds(period.range);
+
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
     return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
   }
@@ -30,12 +41,10 @@ export default async function LearningPhasePage() {
     return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
   }
 
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
   const dailyRows = await prisma.adSetDailyConversions.groupBy({
     by: ["adSetId"],
-    where: { workspaceId: workspace.id, date: { gte: sevenDaysAgo } },
+    where: { workspaceId: workspace.id, date: bounds },
     _sum: { conversions: true },
   });
 
@@ -55,6 +64,7 @@ export default async function LearningPhasePage() {
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">فترة التعلّم</h1>
+      <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">
         قاعدة ميتا الموثّقة علناً: تحتاج ~50 تحويلاً خلال 7 أيام لتخرج من فترة التعلّم بثبات.
         محسوبة من بياناتك الفعلية لا من تخمين.

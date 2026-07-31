@@ -29,6 +29,14 @@ export interface RuleRow {
 
 
 
+// ألوان العلامات الرسمية - نفس القيم المستخدمة في بقيّة المنتج، فتُقرأ
+// المنصة من لونها قبل قراءة اسمها.
+const PLATFORM_TINT: Record<string, string> = {
+  GOOGLE_ADS: "#4285F4",
+  META_ADS: "#0866FF",
+  TIKTOK_ADS: "#FE2C55",
+};
+
 const ACTION_TONE: Record<string, string> = {
   PAUSE_CAMPAIGN: "var(--critical)", PAUSE_AD: "var(--critical)",
   REDUCE_BUDGET_PCT: "var(--gap)", INCREASE_BUDGET_PCT: "var(--verified)",
@@ -95,10 +103,12 @@ export function ActiveRulesList({
                   {rule.platform ? (
                     <span className="flex items-center gap-1.5 rounded-full bg-surface-raised px-2 py-0.5">
                       <PlatformLogo platform={rule.platform} size={13} />
-                      <span className="text-[11px] text-text-muted">{platformLabel(locale, rule.platform)}</span>
+                      <span className="text-[11px] font-medium" style={{ color: PLATFORM_TINT[rule.platform] ?? "var(--text-muted)" }}>
+                        {platformLabel(locale, rule.platform)}
+                      </span>
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1.5 rounded-full bg-surface-raised px-2 py-0.5 text-[11px] text-text-muted">
+                    <span className="flex items-center gap-1.5 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">
                       <Layers size={12} /> {tr("allPlatforms")}
                     </span>
                   )}
@@ -109,7 +119,7 @@ export function ActiveRulesList({
                     {rule.actionValue ? ` ${Math.abs(rule.actionValue)}%` : ""}
                   </span>
                   {rule.requireApproval && (
-                    <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10.5px] text-text-muted">
+                    <span className="rounded-full bg-gap/12 px-2 py-0.5 text-[10.5px] font-medium text-gap">
                       {tr("needsApproval")}
                     </span>
                   )}

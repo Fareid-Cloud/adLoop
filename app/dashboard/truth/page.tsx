@@ -10,16 +10,21 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { getTruthSnapshot } from "@/lib/truthKpis";
 import { TruthView } from "./TruthView";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams, toDateBounds, daysBetween } from "@/lib/dateRange";
 
 export const dynamic = "force-dynamic";
 
 export default async function TruthPage({
   searchParams,
 }: {
-  searchParams: Promise<{ days?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
-  const days = [7, 30, 90].includes(Number(sp.days)) ? Number(sp.days) : 30;
+  // ثلاثة أزرار ثابتة ← فترة حرّة: السؤال "وماذا عن الأسبوع الماضي؟"
+  // لم يكن له جواب هنا.
+  const period = periodFromParams(sp);
+  const days = daysBetween(period.range.from, period.range.to);
 
   const user = await getSessionUserFromCookies();
   if (!user) {

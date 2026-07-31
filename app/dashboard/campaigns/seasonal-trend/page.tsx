@@ -8,9 +8,20 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams, toDateBounds, daysBetween } from "@/lib/dateRange";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
-export default async function SeasonalTrendPage() {
+export default async function SeasonalTrendPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const period = periodFromParams(await searchParams);
+  const bounds = toDateBounds(period.range);
+
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
     return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
   }
@@ -59,6 +70,7 @@ export default async function SeasonalTrendPage() {
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">اتجاه التكلفة الشهري</h1>
+      <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">
         ملاحظة صادقة: تنبؤ موسمي حقيقي محتاج بيانات تاريخية متعددة السنين معندناش.
         مقارنة فعلية بين الشهر الحالي والشهر الماضي (بعدد الأيام نفسه) — إشارة واقعية على الاتجاه لا تنبؤ.

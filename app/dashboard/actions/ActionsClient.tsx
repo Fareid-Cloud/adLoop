@@ -189,6 +189,8 @@ export function ActionsClient({
         />
         <MetricCard
           label={tr("kpiImpact")}
+          explainKey="estimatedImpact"
+          locale={locale}
           value={counts.impact > 0 ? Math.round(counts.impact).toLocaleString("en-US") : "—"}
           unit={counts.impact > 0 ? currency : undefined}
           icon={Wallet}

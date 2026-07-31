@@ -7,6 +7,7 @@ import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { PricingClient } from "./PricingClient";
+import { ProductCostsPanel } from "./ProductCostsPanel";
 import { getWorkspacePricing } from "@/lib/pricingHealth";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds } from "@/lib/dateRange";
@@ -82,6 +83,9 @@ export default async function PricingPage({
     };
   }
 
+  // "بلا تكلفة" = صفر أو غير مضبوط. الربح عندها يُحسب كأن السعر كلّه ربح.
+  const missingCogsCount = productRecords.filter((p: { cogs: number }) => !p.cogs || p.cogs <= 0).length;
+
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
@@ -93,6 +97,8 @@ export default async function PricingPage({
           💡 {roasGapInsight}
         </div>
       )}
+      <ProductCostsPanel workspaceId={workspace.id} missingCount={missingCogsCount} locale={locale} />
+
       <PricingClient workspaceId={workspace.id} products={rows} records={productRecords} currency={workspace.currency} salesStats={salesStats} />
     </div>
   );

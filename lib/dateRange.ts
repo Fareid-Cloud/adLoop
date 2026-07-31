@@ -171,7 +171,9 @@ export function periodFromParams(
   const range =
     preset === "custom" && from && to ? { from, to } : resolvePreset(preset, now);
 
-  const cmpMode = (get("cmp") as CompareMode) ?? "previous";
+  // المقارنة مطفأة افتراضياً: فتح كل صفحة على وضع مقارنة يضاعف كل رقم
+  // معروض ويحوّل قراءة بسيطة إلى مقارنة لم يطلبها أحد. من يريدها يفعّلها.
+  const cmpMode = (get("cmp") as CompareMode) ?? "none";
   const cmpFrom = get("cmpFrom");
   const cmpTo = get("cmpTo");
   const compare =

@@ -1,60 +1,82 @@
 "use client";
 
-// بوابة الترحيب: أول ما تدخل، بتغطي الشاشة بالكامل قبل القائمة الجانبية
-// وتشرح البرنامج في خطوات واضحة بأزرار تنقّل خاصة بيها (مستحيل تعلق).
-// "تخطٍّ" متاح دائماً. عند الإنهاء بنعلّم الحساب إنه أنهى التعريف.
-import { useState } from "react";
+// app/components/WelcomeGate.tsx
+//
+// بوابة الترحيب. النسخة السابقة كانت أربع شرائح نصّية وزرّ "التالي" -
+// المستخدم يضغطه أربع مرّات فيخرج وقد أنجز **صفر خطوات**، ثم يقف أمام
+// لوحة فارغة لا يعرف لماذا هي فارغة.
+//
+// **القاعدة الحاكمة هنا:** خطوة تطلب فعلاً لا تُتجاوَز إلا بالفعل. زرّ
+// "التالي" يُعطَّل صراحةً ويُقال سبب تعطيله - لا يُترك المستخدم يضغط
+// زرّاً ميّتاً يظنّه معطوباً. أما الشرائح التعريفية فالتالي فيها مشروع
+// لأنها لا تطلب شيئاً أصلاً.
+
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Link2, Sparkles, Rocket } from "lucide-react";
+import {
+  ShieldCheck, Link2, ListChecks, Rocket, Check, Loader2, ArrowLeft, RefreshCw,
+} from "lucide-react";
+import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { CampaignPickerModal } from "@/app/components/CampaignPickerModal";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
-interface Slide {
-  icon: typeof ShieldCheck;
-  titleAr: string;
-  titleEn: string;
-  bodyAr: string;
-  bodyEn: string;
-}
+type Platform = "GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS";
 
-const SLIDES: Slide[] = [
-  {
-    icon: Rocket,
-    titleAr: "أهلاً بك في AdLoop",
-    titleEn: "Welcome to AdLoop",
-    bodyAr: "طبقة الحقيقة لإعلاناتك. سنأخذك في جولة سريعة توضّح فكرة البرنامج وكيف تبدأ.",
-    bodyEn: "The truth layer for your ads. Here's a quick tour of what AdLoop does and how to start.",
-  },
-  {
-    icon: ShieldCheck,
-    titleAr: "الرقم الحقيقي، لا رقم المنصة فقط",
-    titleEn: "The real number, not just the platform's",
-    bodyAr: "المنصات تبالغ أحياناً في عدد التحويلات. نقارن ما تقوله المنصة بما تحقّق فعلاً من محادثات واتساب وماسنجر حقيقية — وهذا الفارق يقود كل قرار.",
-    bodyEn: "Platforms often overstate conversions. We compare what the platform claims against what is actually verified from real WhatsApp/Messenger conversations — and that gap drives every decision.",
-  },
-  {
-    icon: Link2,
-    titleAr: "الخطوة الأولى: اربط حساباتك",
-    titleEn: "Step one: connect your accounts",
-    bodyAr: "من الإعدادات، اربط حسابات Google وMeta وTikTok. تحتاج الأرقام بضع دقائق لتتزامن أول مرة.",
-    bodyEn: "From Settings, connect your Google, Meta and TikTok accounts. Data takes a few minutes to sync the first time.",
-  },
-  {
-    icon: Sparkles,
-    titleAr: "قرارات جاهزة للتنفيذ",
-    titleEn: "Decisions ready to act on",
-    bodyAr: "يحلّل النظام بياناتك ويقترح قرارات (زيادة/إيقاف ميزانية، تنبيهات) تنفّذها بضغطة. ستجد في اللوحة قائمة «أكمل إعداد حسابك» تقودك خطوة بخطوة — وتكتمل كل خطوة تلقائياً بمجرد إنجازها فعلياً.",
-    bodyEn: "AdLoop analyzes your data and suggests decisions you can apply in one click. On the dashboard you'll find a setup checklist that guides you step by step — each step completes automatically once actually done.",
-  },
+const PLATFORMS: { id: Platform; label: string; start: string; color: string }[] = [
+  { id: "GOOGLE_ADS", label: "Google Ads", start: "/api/oauth/google-ads/start", color: "#4285F4" },
+  { id: "META_ADS", label: "Meta Ads", start: "/api/oauth/meta/start", color: "#0866FF" },
+  { id: "TIKTOK_ADS", label: "TikTok Ads", start: "/api/oauth/tiktok/start", color: "#FE2C55" },
 ];
 
-export function WelcomeGate({ locale, startStep = 0 }: { locale: "ar" | "en"; startStep?: number }) {
-  const router = useRouter();
-  const ar = locale === "ar";
-  const [i, setI] = useState(Math.min(startStep, SLIDES.length - 1));
-  const [closing, setClosing] = useState(false);
+/** الشرائح: تعريفية (لا تطلب شيئاً) أو فعلية (لا تُتجاوَز بلا إنجاز) */
+type SlideId = "welcome" | "gap" | "connect" | "campaigns" | "done";
 
-  const slide = SLIDES[i];
-  const Icon = slide.icon;
-  const isLast = i === SLIDES.length - 1;
+const ICONS: Record<SlideId, typeof Rocket> = {
+  welcome: Rocket, gap: ShieldCheck, connect: Link2, campaigns: ListChecks, done: Check,
+};
+
+const ORDER: SlideId[] = ["welcome", "gap", "connect", "campaigns", "done"];
+
+export function WelcomeGate({
+  locale,
+  startStep = 0,
+  workspaceId,
+  connectStates,
+  campaignCount,
+}: {
+  locale: Locale;
+  startStep?: number;
+  workspaceId: string;
+  connectStates: { platform: string; connected: boolean; campaignCount: number }[];
+  campaignCount: number;
+}) {
+  const tr = (k: string, v?: Record<string, string | number>) => t(locale, `welcome.${k}`, v);
+  const router = useRouter();
+
+  const [i, setI] = useState(Math.min(startStep, ORDER.length - 1));
+  const [closing, setClosing] = useState(false);
+  const [picking, setPicking] = useState<Platform | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const connected = connectStates.filter((s) => s.connected);
+  const connectDone = connected.length > 0;
+  const campaignsDone = campaignCount > 0;
+
+  const id = ORDER[i];
+  const Icon = ICONS[id];
+
+  // العودة من OAuth تُعيد تحميل الصفحة، فنقفز تلقائياً إلى أوّل خطوة
+  // ناقصة بدل أن يبدأ المستخدم من الشريحة الأولى في كل مرّة.
+  useEffect(() => {
+    if (id === "connect" && connectDone) setI(ORDER.indexOf("campaigns"));
+    else if (id === "campaigns" && campaignsDone) setI(ORDER.indexOf("done"));
+  }, [connectDone, campaignsDone, id]);
+
+  /** الشريحة الفعلية تُقفل حتى يتحقّق شرطها في قاعدة البيانات */
+  const blockedReason: string | null =
+    id === "connect" && !connectDone ? tr("blockConnect")
+    : id === "campaigns" && !campaignsDone ? tr("blockCampaigns")
+    : null;
 
   async function persist(body: object) {
     await fetch("/api/onboarding/progress", {
@@ -66,7 +88,7 @@ export function WelcomeGate({ locale, startStep = 0 }: { locale: "ar" | "en"; st
 
   async function finish() {
     setClosing(true);
-    await persist({ step: SLIDES.length, completed: true });
+    await persist({ step: ORDER.length, completed: true });
     router.refresh();
   }
 
@@ -77,7 +99,8 @@ export function WelcomeGate({ locale, startStep = 0 }: { locale: "ar" | "en"; st
   }
 
   function next() {
-    if (isLast) return finish();
+    if (blockedReason) return;
+    if (i === ORDER.length - 1) return finish();
     const n = i + 1;
     setI(n);
     void persist({ step: n });
@@ -87,49 +110,136 @@ export function WelcomeGate({ locale, startStep = 0 }: { locale: "ar" | "en"; st
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-bg/85 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl card-shadow border border-border bg-surface p-8 shadow-2xl">
-        <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/15 text-accent">
-          <Icon size={26} />
-        </div>
-        <h2 className="mb-2 text-xl font-bold text-text-primary">{ar ? slide.titleAr : slide.titleEn}</h2>
-        <p className="mb-7 text-sm leading-relaxed text-text-muted">{ar ? slide.bodyAr : slide.bodyEn}</p>
-
-        <div className="flex items-center justify-between">
-          <div className="flex gap-1.5">
-            {SLIDES.map((_, idx) => (
+      <div className="pop-shadow w-full max-w-md rounded-3xl border border-border bg-surface p-7">
+        {/* مؤشّر التقدّم - الخطوات المنجزة فعلاً بلون مختلف عن المعروضة */}
+        <div className="mb-5 flex gap-1.5">
+          {ORDER.map((sid, idx) => {
+            const realDone =
+              sid === "connect" ? connectDone
+              : sid === "campaigns" ? campaignsDone
+              : idx < i;
+            return (
               <span
-                key={idx}
-                className={`h-1.5 rounded-full transition-all ${idx === i ? "w-5 bg-accent" : "w-1.5 bg-border-visible"}`}
+                key={sid}
+                className="h-1 flex-1 rounded-full transition-colors"
+                style={{
+                  background: realDone ? "var(--verified)" : idx === i ? "var(--accent)" : "var(--surface-raised)",
+                }}
               />
-            ))}
+            );
+          })}
+        </div>
+
+        <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/12 text-accent">
+          <Icon size={21} />
+        </span>
+
+        <div className="mb-1.5 text-[12px] font-medium text-accent">
+          {tr("stepOf", { a: i + 1, b: ORDER.length })}
+        </div>
+        <h1 className="mb-2 text-[24px] font-bold leading-snug tracking-tight text-text-primary">
+          {tr(`${id}Title`)}
+        </h1>
+        <p className="mb-5 text-[13.5px] leading-relaxed text-text-muted">{tr(`${id}Body`)}</p>
+
+        {/* ==================== الخطوة الفعلية: الربط ==================== */}
+        {id === "connect" && (
+          <div className="mb-5 flex flex-col gap-2">
+            {PLATFORMS.map((p) => {
+              const on = connectStates.find((s) => s.platform === p.id)?.connected ?? false;
+              return (
+                <a
+                  key={p.id}
+                  href={on ? undefined : p.start}
+                  className={`flex items-center gap-3 rounded-xl border p-3 no-underline transition-colors ${
+                    on ? "border-verified/40 bg-verified/[0.06]" : "border-border bg-surface-raised hover:border-accent"
+                  }`}
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ background: `${p.color}1A` }}>
+                    <PlatformLogo platform={p.id} size={18} />
+                  </span>
+                  <span className="flex-1 text-[13.5px] font-medium text-text-primary">{p.label}</span>
+                  {on ? (
+                    <span className="flex items-center gap-1 text-[12px] font-medium text-verified">
+                      <Check size={13} /> {tr("connected")}
+                    </span>
+                  ) : (
+                    <span className="rounded-lg bg-accent px-3 py-1 text-[12px] font-medium text-white">{tr("connect")}</span>
+                  )}
+                </a>
+              );
+            })}
           </div>
-          <div className="flex items-center gap-2">
-            {i > 0 && (
-              <button
-                onClick={() => setI(i - 1)}
-                className="rounded-xl px-3 py-2 text-sm text-text-muted transition-colors hover:text-text-primary"
-              >
-                {ar ? "السابق" : "Back"}
-              </button>
+        )}
+
+        {/* ==================== الخطوة الفعلية: الحملات ==================== */}
+        {id === "campaigns" && (
+          <div className="mb-5 flex flex-col gap-2">
+            {campaignsDone ? (
+              <div className="flex items-center gap-2 rounded-xl border border-verified/40 bg-verified/[0.06] p-3 text-[13px] font-medium text-verified">
+                <Check size={15} /> {tr("nLinked", { n: campaignCount })}
+              </div>
+            ) : (
+              connected.map((s) => (
+                <button
+                  key={s.platform}
+                  onClick={() => setPicking(s.platform as Platform)}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-surface-raised p-3 text-start transition-colors hover:border-accent"
+                >
+                  <PlatformLogo platform={s.platform} size={18} />
+                  <span className="flex-1 text-[13.5px] font-medium text-text-primary">
+                    {tr("pickFrom", { platform: PLATFORMS.find((p) => p.id === s.platform)?.label ?? s.platform })}
+                  </span>
+                  <span className="rounded-lg bg-accent px-3 py-1 text-[12px] font-medium text-white">{tr("pick")}</span>
+                </button>
+              ))
             )}
+          </div>
+        )}
+
+        {/* سبب التعطيل مكتوب - زرّ معطَّل بلا تفسير يُقرأ كعطل في البرنامج */}
+        {blockedReason && (
+          <div className="mb-4 flex items-start justify-between gap-2 rounded-xl bg-gap/[0.08] p-3">
+            <p className="text-[12.5px] leading-relaxed text-text-muted">{blockedReason}</p>
             <button
-              onClick={next}
-              className="rounded-xl bg-accent px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+              onClick={() => { setRefreshing(true); router.refresh(); setTimeout(() => setRefreshing(false), 900); }}
+              className="flex shrink-0 items-center gap-1 text-[11.5px] text-accent"
             >
-              {isLast ? (ar ? "ابدأ الآن" : "Get started") : ar ? "التالي" : "Next"}
+              {refreshing ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
+              {tr("recheck")}
             </button>
           </div>
+        )}
+
+        <div className="flex items-center justify-between gap-3">
+          <button onClick={skip} className="text-[13px] text-text-muted hover:text-text-primary">
+            {tr("skip")}
+          </button>
+
+          <button
+            onClick={next}
+            disabled={blockedReason !== null}
+            title={blockedReason ?? undefined}
+            className="flex items-center gap-1.5 rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {i === ORDER.length - 1 ? tr("finish") : tr("next")}
+            <ArrowLeft size={15} className="rtl:rotate-0 ltr:rotate-180" />
+          </button>
         </div>
 
-        {!isLast && (
-          <button
-            onClick={skip}
-            className="mt-5 w-full text-center text-xs text-text-faint transition-colors hover:text-text-muted"
-          >
-            {ar ? "تخطّي الجولة" : "Skip the tour"}
-          </button>
-        )}
+        <p className="mt-5 text-[11.5px] leading-relaxed text-text-faint">{tr("note")}</p>
       </div>
+
+      {picking && (
+        <CampaignPickerModal
+          workspaceId={workspaceId}
+          platform={picking}
+          open
+          locale={locale === "en" ? "en" : "ar"}
+          onClose={() => setPicking(null)}
+          onSaved={() => { setPicking(null); router.refresh(); }}
+        />
+      )}
     </div>
   );
 }

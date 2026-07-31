@@ -66,6 +66,8 @@ export default async function AttributionEnginePage({
           <div className="mb-4 grid gap-3 sm:grid-cols-2">
             <MetricCard
               label={t(locale, "campPages.attrVerified")}
+              explainKey="verifiedConversions"
+              locale={locale}
               value={summary.verifiedCount}
               icon={ShieldCheck}
               tone="verified"

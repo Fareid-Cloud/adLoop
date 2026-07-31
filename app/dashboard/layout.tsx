@@ -117,6 +117,32 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const activeId = cookieStore.get("adloop_workspace")?.value;
   const activeWorkspace = allWorkspaces.find((w) => w.id === activeId) ?? allWorkspaces[0] ?? null;
 
+  // حالة الربط تُقرأ فقط حين تظهر البوابة فعلاً - استعلامان لكل تحميل
+  // صفحة لمستخدم أنهى الإعداد هدر بلا مقابل.
+  let onboardingState: {
+    connectStates: { platform: string; connected: boolean; campaignCount: number }[];
+    campaignCount: number;
+  } | null = null;
+
+  if (showOnboarding && activeWorkspace) {
+    const [connections, links] = await Promise.all([
+      prisma.connectedPlatform.findMany({ where: { userId: user!.id }, select: { platform: true } }),
+      prisma.campaignLink.findMany({
+        where: { workspaceId: activeWorkspace.id },
+        select: { platform: true },
+      }),
+    ]);
+    const connectedSet = new Set(connections.map((c: { platform: string }) => c.platform));
+    onboardingState = {
+      connectStates: ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"].map((p) => ({
+        platform: p,
+        connected: connectedSet.has(p),
+        campaignCount: links.filter((l: { platform: string }) => l.platform === p).length,
+      })),
+      campaignCount: links.length,
+    };
+  }
+
   return (
     <div
       dir={locale === "ar" ? "rtl" : "ltr"}
@@ -177,7 +203,15 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         <div className="px-10 pb-10">{children}</div>
       </main>
       </div>
-      {showOnboarding && <WelcomeGate locale={locale} startStep={user!.onboardingStep} />}
+      {showOnboarding && activeWorkspace && onboardingState && (
+        <WelcomeGate
+          locale={locale}
+          startStep={user!.onboardingStep}
+          workspaceId={activeWorkspace.id}
+          connectStates={onboardingState.connectStates}
+          campaignCount={onboardingState.campaignCount}
+        />
+      )}
       <NotificationToast />
       </LiveDataProvider>
     </div>

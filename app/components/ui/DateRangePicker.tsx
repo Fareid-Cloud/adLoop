@@ -25,7 +25,7 @@ export function DateRangePicker({
   range,
   compare,
   preset,
-  compareMode = "previous",
+  compareMode = "none",
   allowCompare = true,
   onApply,
 }: {

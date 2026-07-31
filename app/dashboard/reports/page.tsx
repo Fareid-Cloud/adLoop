@@ -48,7 +48,7 @@ export default async function ReportsPage({
   };
 
   const period = periodFromParams(params);
-  const compareMode = (one("cmp") as CompareMode) ?? "previous";
+  const compareMode = (one("cmp") as CompareMode) ?? "none";
 
   // لا نثق بالـURL: كل قيمة تُصفّى مقابل قائمة معروفة قبل أن تصل للاستعلام
   const source = (["REPORTED", "VERIFIED", "BOTH"].includes(one("src") ?? "") ? one("src") : "VERIFIED") as DataSource;

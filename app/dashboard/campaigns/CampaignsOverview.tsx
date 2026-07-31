@@ -97,6 +97,8 @@ export function CampaignsOverview({
       <div className="reveal mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" style={{ animationDelay: "60ms" }}>
         <MetricCard
           label={tr("ovTotalSpend")}
+          explainKey="cost"
+          locale={locale}
           value={num(totals.cost)}
           unit={currency}
           icon={Wallet}
@@ -104,6 +106,8 @@ export function CampaignsOverview({
         />
         <MetricCard
           label={tr("ovVerifiedConv")}
+          explainKey="verifiedConversions"
+          locale={locale}
           value={num(totals.verified)}
           icon={CheckCircle2}
           tone="verified"
@@ -113,6 +117,8 @@ export function CampaignsOverview({
         />
         <MetricCard
           label={tr("ovWasted")}
+          explainKey="wastedSpend"
+          locale={locale}
           value={num(totals.wasted)}
           unit={currency}
           icon={TrendingDown}

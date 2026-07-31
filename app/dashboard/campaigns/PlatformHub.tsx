@@ -143,6 +143,8 @@ export async function PlatformHub({
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
         <MetricCard
           label={t(locale, "campPages.hubSpend")}
+          explainKey="cost"
+          locale={locale}
           value={Math.round(cost).toLocaleString("en-US")}
           unit={workspace.currency}
           icon={Icons.Wallet}
@@ -150,6 +152,8 @@ export async function PlatformHub({
         />
         <MetricCard
           label={t(locale, "campPages.hubVerified")}
+          explainKey="verifiedConversions"
+          locale={locale}
           value={verified.toLocaleString("en-US")}
           icon={Icons.ShieldCheck}
           tone="verified"
@@ -157,6 +161,8 @@ export async function PlatformHub({
         />
         <MetricCard
           label={t(locale, "campPages.hubCpa")}
+          explainKey="cpaVerified"
+          locale={locale}
           value={cpa ? Math.round(cpa).toLocaleString("en-US") : "—"}
           unit={cpa ? workspace.currency : undefined}
           icon={Icons.Target}

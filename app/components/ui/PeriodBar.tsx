@@ -15,7 +15,7 @@ export function PeriodBar({
   preset,
   range,
   compare,
-  compareMode = "previous",
+  compareMode = "none",
   allowCompare = true,
   children,
 }: {

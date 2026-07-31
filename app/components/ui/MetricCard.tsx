@@ -18,6 +18,8 @@
 import Link from "next/link";
 import type { ReactNode, ComponentType } from "react";
 import { ArrowUpRight, ArrowDownRight, ChevronLeft, Info } from "lucide-react";
+import { MetricInfo } from "./MetricInfo";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export type MetricTone = "default" | "verified" | "gap" | "critical" | "accent" | "neutral";
 
@@ -57,6 +59,13 @@ interface MetricCardProps {
   trend?: ReactNode;
   /** شرح المؤشّر عند المرور بالمؤشّر */
   hint?: string;
+  /**
+   * مفتاح شرح المؤشّر في القاموس (قسم explain). يفتح لوحة "ما هو / كيف
+   * يُحسب / لماذا يهمّ" - أيقونة صامتة كانت تترك المستخدم يخمّن مصدر رقم
+   * يُفترض أن يبني عليه قراراً.
+   */
+  explainKey?: string;
+  locale?: Locale;
   /** علامة التحقّق - جوهر المنتج: رقم متحقّق منه مقابل رقم معلَن */
   verified?: boolean;
   /**
@@ -98,6 +107,7 @@ export function MetricCard(props: MetricCardProps) {
   const {
     label, value, unit, subLabel, href, icon: Icon,
     delta, bar, caption, trend, hint, verified, onClick, selected,
+    explainKey, locale = "ar",
   } = props;
   const tone: MetricTone = props.tone ?? props.color ?? "default";
 
@@ -117,7 +127,23 @@ export function MetricCard(props: MetricCardProps) {
           )}
           <span className="flex min-w-0 items-center gap-1 text-[13px] font-medium text-text-muted">
             <span className="truncate">{label}</span>
-            {hint && <Info size={11} className="shrink-0 text-text-faint" aria-label={hint} />}
+            {explainKey ? (
+              <MetricInfo
+                explain={{
+                  what: t(locale, `explain.${explainKey}_what`),
+                  how: t(locale, `explain.${explainKey}_how`),
+                  why: t(locale, `explain.${explainKey}_why`),
+                }}
+                labels={{
+                  what: t(locale, "explain.labelWhat"),
+                  how: t(locale, "explain.labelHow"),
+                  why: t(locale, "explain.labelWhy"),
+                  close: t(locale, "explain.close"),
+                }}
+              />
+            ) : hint ? (
+              <Info size={11} className="shrink-0 text-text-faint" aria-label={hint} />
+            ) : null}
           </span>
         </div>
         {href && (
