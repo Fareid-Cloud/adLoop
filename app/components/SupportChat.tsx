@@ -30,6 +30,14 @@ export function SupportChat({
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `supportChat.${k}`, vars);
   const [open, setOpen] = useState(false);
+
+  // بطاقة الدعم في الرئيسية كانت تُحيل إلى /dashboard/support - صفحة لا
+  // وجود لها. الدعم مكوّن لا صفحة، فيُفتح بحدث لا بتنقّل.
+  useEffect(() => {
+    const openChat = () => setOpen(true);
+    window.addEventListener("adloop:open-support", openChat);
+    return () => window.removeEventListener("adloop:open-support", openChat);
+  }, []);
   const [thread, setThread] = useState<Thread | null>(null);
   const [unread, setUnread] = useState(0);
   const [step, setStep] = useState(0);

@@ -22,15 +22,19 @@ export function DemoBar({
   const expired = daysLeft !== null && daysLeft <= 0;
 
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-gap/40 bg-gap/[0.08] p-3.5">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gap/15 text-gap">
+    // سطح هادئ بحدّ رفيع وشريط لوني جانبي واحد. الخلفية الصفراء الممتلئة
+    // كانت تصرخ في كل صفحة وتسحب العين من الأرقام نفسها - والمقصود
+    // تذكير دائم لا إنذار.
+    <div className="relative mb-4 flex flex-wrap items-center gap-3 overflow-hidden rounded-2xl border border-border bg-surface p-3.5">
+      <span className="absolute inset-y-0 w-1 bg-gap" style={{ insetInlineStart: 0 }} />
+      <span className="ms-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gap/12 text-gap">
         <FlaskConical size={17} />
       </span>
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[13.5px] font-semibold text-text-primary">{tr("barTitle")}</span>
-          <span className="rounded-full bg-gap/15 px-2 py-0.5 text-[11px] font-medium text-gap">
+          <span className="rounded-full border border-gap/30 px-2 py-0.5 text-[11px] font-medium text-gap">
             {expired ? tr("barExpired") : daysLeft !== null ? tr("barDaysLeft", { n: daysLeft }) : tr("badge")}
           </span>
         </div>

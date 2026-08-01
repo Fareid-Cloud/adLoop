@@ -27,11 +27,18 @@ const PLATFORM_LABEL: Record<string, string> = {
 // حالة الربط لكل المنصات المدعومة - تُستخدم لعرض كروت الربط في الداشبورد
 export async function getConnectStates(workspaceId: string, userId: string) {
   const platforms = ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"];
-  const [connections, links] = await Promise.all([
+  const [connections, links, ws] = await Promise.all([
     prisma.connectedPlatform.findMany({ where: { userId }, select: { platform: true } }),
     prisma.campaignLink.groupBy({ by: ["platform"], where: { workspaceId }, _count: { _all: true } }),
+    prisma.workspace.findUnique({ where: { id: workspaceId }, select: { isDemo: true } }),
   ]);
-  const connectedSet = new Set(connections.map((c: any) => c.platform));
+
+  // ConnectedPlatform مرتبط بالمستخدم لا بمساحة العمل، فلا يمكن بذر ربط
+  // وهمي دون المساس بحالة حسابه الحقيقي. المساحة التجريبية تُعتبر مربوطة
+  // بحكم كونها تجريبية - وحملاتها المبذورة هي الدليل.
+  const connectedSet = ws?.isDemo
+    ? new Set(platforms)
+    : new Set(connections.map((c: any) => c.platform));
   const countByPlatform = new Map(links.map((l: any) => [l.platform, l._count._all]));
 
   return platforms.map((p) => ({

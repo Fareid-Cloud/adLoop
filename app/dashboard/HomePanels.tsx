@@ -311,7 +311,7 @@ export function SupportPanel({
           tone="var(--accent)"
           title={tr("supportChat")}
           body={tr("supportChatBody")}
-          href="/dashboard/support"
+          onClick={() => window.dispatchEvent(new CustomEvent("adloop:open-support"))}
         />
         {waHref && (
           <SupportRow
@@ -336,14 +336,15 @@ export function SupportPanel({
 }
 
 function SupportRow({
-  Icon, tone, title, body, href, external,
+  Icon, tone, title, body, href, external, onClick,
 }: {
   Icon: typeof MessageCircle;
   tone: string;
   title: string;
   body: string;
-  href: string;
+  href?: string;
   external?: boolean;
+  onClick?: () => void;
 }) {
   const inner = (
     <>
@@ -363,9 +364,10 @@ function SupportRow({
 
   const cls = "flex items-center gap-2.5 rounded-xl border border-border bg-surface-raised/50 p-2.5 no-underline transition-colors hover:border-accent";
 
+  if (onClick) return <button onClick={onClick} className={`${cls} w-full text-start`}>{inner}</button>;
   return external
     ? <a href={href} target="_blank" rel="noopener noreferrer" className={cls}>{inner}</a>
-    : <Link href={href} className={cls}>{inner}</Link>;
+    : <Link href={href ?? "#"} className={cls}>{inner}</Link>;
 }
 
 /** GOOGLE_ADS → Google، لمطابقة مفاتيح أسماء المنصّات في القاموس */

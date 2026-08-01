@@ -12,6 +12,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { DEMO_DAYS } from "@/lib/entitlements";
+import { seedDemoData } from "@/lib/demoSeed";
 
 export const DEMO_WORKSPACE_NAME_AR = "متجر النخبة — عرض تجريبي";
 export const DEMO_WORKSPACE_NAME_EN = "Elite Store — Demo";
@@ -112,52 +113,7 @@ export async function seedDemoWorkspace(userId: string, locale: "ar" | "en"): Pr
     },
   });
 
-  await prisma.campaignLink.createMany({
-    data: CAMPAIGNS.map((c) => ({
-      workspaceId: workspace.id,
-      platform: c.platform,
-      externalAccountId: c.account,
-      externalCampaignId: c.id,
-      campaignName: c.name,
-    })),
-  });
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const rows: Array<Record<string, unknown>> = [];
-  for (let i = DAYS; i >= 1; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    const wf = weekendFactor(date);
-
-    CAMPAIGNS.forEach((c, ci) => {
-      const w = wave(i, ci * 3) * wf;
-      const cost = Math.round(c.baseCost * w);
-      const clicks = Math.round(c.baseClicks * w);
-      const raw = Math.max(0, Math.round(c.baseRaw * w));
-      const verified = Math.round(raw * c.verifyRate);
-
-      rows.push({
-        workspaceId: workspace.id,
-        platform: c.platform,
-        campaignId: c.id,
-        date,
-        impressions: clicks * 34,
-        clicks,
-        cost,
-        rawConversions: raw,
-        verifiedConversions: verified,
-        // الإيراد للحملات التي تبيع فعلاً - حملة الوعي بلا إيراد مباشر
-        revenue: verified > 0 ? Math.round(verified * 430 * (0.9 + (ci % 3) * 0.12)) : null,
-        ordersCount: verified > 0 ? verified : null,
-      });
-    });
-  }
-
-  // نداء واحد لا ثلاثة: كل ذهاب وإياب إلى القاعدة عبر الـpooler يكلّف
-  // مئات الميلي ثانية، و٥٤٠ صفّاً تمرّ في دفعة واحدة بلا مشكلة.
-  await prisma.metricSnapshot.createMany({ data: rows as never, skipDuplicates: true });
+  await seedDemoData(workspace.id, locale);
 
   return workspace.id;
 }

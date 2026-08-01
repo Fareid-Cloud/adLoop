@@ -11,7 +11,7 @@ import { useState } from "react";
 import { ArrowUpRight, ArrowDownRight, Minus, Info } from "lucide-react";
 import { ATTRIBUTION_MODELS, type AttributionModelKey, type ModelComparisonRow } from "@/lib/attributionModels";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
-import { CHANNEL_LABELS } from "./TruthView";
+import { CHANNEL_KEYS } from "./TruthView";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const PLATFORM_NAMES: Record<string, string> = {
@@ -47,7 +47,7 @@ export function AttributionModelTable({
 
   const data = dimension === "platform" ? rows : channelRows;
   const label = (key: string) =>
-    dimension === "platform" ? (PLATFORM_NAMES[key] ?? key) : (CHANNEL_LABELS[key] ?? key);
+    dimension === "platform" ? (PLATFORM_NAMES[key] ?? key) : ((CHANNEL_KEYS[key] ? t(locale, `campPages.${CHANNEL_KEYS[key]}`) : key));
 
   const underCredited = data.filter((r) => r.verdict === "UNDER_CREDITED");
   const overCredited = data.filter((r) => r.verdict === "OVER_CREDITED");

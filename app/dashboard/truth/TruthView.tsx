@@ -164,7 +164,7 @@ export function TruthView({
                   value: pctChange(previousTotals.wastedSpend, totals.wastedSpend),
                   direction: totals.wastedSpend >= previousTotals.wastedSpend ? "up" : "down",
                   positive: totals.wastedSpend < previousTotals.wastedSpend,
-                  caption: "عن الفترة السابقة",
+                  caption: tr("vsPrevPeriod"),
                 }
               : undefined
           }
@@ -447,7 +447,7 @@ export function TruthView({
                         <span key={j} className="flex items-center gap-1.5">
                           {j > 0 && <span className="text-text-faint">←</span>}
                           <span className="rounded-md bg-surface-raised px-2 py-0.5 text-[12px] text-text-primary">
-                            {PLATFORM_META[step]?.name ?? channelLabel(step)}
+                            {PLATFORM_META[step]?.name ?? channelName(locale, step)}
                           </span>
                         </span>
                       ))}
@@ -581,21 +581,23 @@ function pctChange(prev: number, now: number): string {
   return `${Math.abs(Math.round(((now - prev) / prev) * 100))}%`;
 }
 
-const CHANNEL_LABELS: Record<string, string> = {
-  PAID_SEARCH: "بحث مدفوع",
-  PAID_SOCIAL: "تواصل مدفوع",
-  PAID_VIDEO: "فيديو مدفوع",
-  ORGANIC_SEARCH: "بحث عضوي",
-  ORGANIC_SOCIAL: "تواصل عضوي",
-  DIRECT: "مباشر",
-  REFERRAL: "إحالة",
-  EMAIL: "بريد",
-  CRM: "نظام العميل",
-  OTHER: "أخرى",
+const CHANNEL_KEYS: Record<string, string> = {
+  PAID_SEARCH: "chPaidSearch",
+  PAID_SOCIAL: "chPaidSocial",
+  PAID_VIDEO: "chPaidVideo",
+  ORGANIC_SEARCH: "chOrganicSearch",
+  ORGANIC_SOCIAL: "chOrganicSocial",
+  DIRECT: "chDirect",
+  REFERRAL: "chReferral",
+  EMAIL: "chEmail",
+  CRM: "chCrm",
+  OTHER: "chOther",
 };
 
-function channelLabel(key: string): string {
-  return CHANNEL_LABELS[key] ?? key;
-}
+export { CHANNEL_KEYS };
 
-export { CHANNEL_LABELS };
+/** قناة غير معروفة تُعرض كما وردت لا كفراغ */
+function channelName(locale: Locale, channel: string): string {
+  const key = CHANNEL_KEYS[channel];
+  return key ? t(locale, `campPages.${key}`) : channel;
+}

@@ -84,8 +84,11 @@ export function SidebarNav({
   return (
     <aside
       // ثابت مع التمرير: القائمة نفسها لا تتحرك، والتنقّل يحدث داخلها
-      className={`no-scrollbar sticky top-0 flex h-screen shrink-0 flex-col overflow-y-auto border-e border-border bg-surface px-3 py-5 transition-[width] duration-200 ${collapsed ? "w-[68px]" : "w-60"}`}
+      className={`sticky top-0 flex h-screen shrink-0 flex-col overflow-hidden border-e border-border bg-surface transition-[width] duration-200 ${collapsed ? "w-[68px]" : "w-60"}`}
     >
+      {/* الرأس ثابت: الشعار والبحث لا يختفيان مع التمرير، تماماً كرأس
+          الصفحة. كان الشريط كلّه يتمرّر معاً فيضيعان عند أوّل تمرير. */}
+      <div className="shrink-0 border-b border-border/60 px-3 pb-3 pt-5">
       {/* الشعار */}
       <a href="/dashboard" className={`mb-5 flex items-center gap-2 no-underline ${collapsed ? "justify-center px-0" : "px-2"}`}>
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent text-white">
@@ -106,8 +109,9 @@ export function SidebarNav({
           />
         </div>
       )}
+      </div>
 
-      <nav className="flex flex-col gap-5">
+      <nav className="no-scrollbar flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-4">
         {query ? (
           <div className="flex flex-col gap-0.5">
             {searchResults.length === 0 ? (

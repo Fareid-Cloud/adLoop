@@ -79,7 +79,7 @@ export async function getPlatformCards(
   workspaceId: string,
   userId: string
 ): Promise<PlatformCard[]> {
-  const [connections, links, lastRuns] = await Promise.all([
+  const [connections, links, lastRuns, ws] = await Promise.all([
     prisma.connectedPlatform.findMany({ where: { userId }, select: { platform: true } }),
     prisma.campaignLink.findMany({ where: { workspaceId }, select: { platform: true } }),
     prisma.syncRun.findMany({
@@ -88,9 +88,13 @@ export async function getPlatformCards(
       take: 30,
       select: { platform: true, startedAt: true },
     }),
+    prisma.workspace.findUnique({ where: { id: workspaceId }, select: { isDemo: true } }),
   ]);
 
-  const connected = new Set(connections.map((c: { platform: string }) => c.platform));
+  // المساحة التجريبية مربوطة بحكم كونها كذلك - راجع getConnectStates
+  const connected = ws?.isDemo
+    ? new Set(["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"])
+    : new Set(connections.map((c: { platform: string }) => c.platform));
   const lastByPlatform = new Map<string, Date>();
   for (const r of lastRuns) {
     if (!lastByPlatform.has(r.platform)) lastByPlatform.set(r.platform, r.startedAt);

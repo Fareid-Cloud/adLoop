@@ -21,7 +21,7 @@ export default async function AudiencePage({
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -30,7 +30,7 @@ export default async function AudiencePage({
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
 
@@ -61,28 +61,25 @@ export default async function AudiencePage({
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">أداء شرائح الجمهور</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.audTitle")}</h1>
       <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
 
       <div className="mb-6 rounded-2xl bg-gap/10 p-4 text-xs text-gap">
-        بيانات الجمهور متاحة بس لحملات Display/YouTube/RLSA — حملات Search
-        العادية جمهورها للمراقبة لا للاستهداف المقيَّد، فجوجل نفسها لا تُعيد
-        لها بيانات جمهور تفصيلية. غياب البيانات هنا قيد من
-        المنصة لا خطأ في المزامنة.
+        {t(locale, "campPages.audIntro")}
       </div>
 
       {segments.length === 0 ? (
         <EmptyState
-          title="لا توجد بيانات جمهور متاحة"
-          description="إما لا توجد حملات Display/YouTube/RLSA مربوطة، أو لم تتم المزامنة بعد."
+          title={t(locale, "campPages.audNone")}
+          description={t(locale, "campPages.audNoneBody")}
         />
       ) : (
         <div className="flex flex-col gap-1">
           {segments.map((s) => (
             <div key={s.criterionId} className="flex items-center justify-between rounded-2xl bg-surface p-4">
               <div>
-                <div className="text-sm text-text-primary">{s.criterionType ?? "غير محدد"}</div>
-                <div className="text-xs text-text-faint">{s.conversions} تحويل، {s.cost.toLocaleString()} تكلفة</div>
+                <div className="text-sm text-text-primary">{s.criterionType ?? t(locale, "campPages.audUnspecified")}</div>
+                <div className="text-xs text-text-faint">{t(locale, "campPages.audStat", { conversions: s.conversions, cost: s.cost.toLocaleString() })}</div>
               </div>
               <div className="font-mono text-sm text-verified">{s.cpa}</div>
             </div>

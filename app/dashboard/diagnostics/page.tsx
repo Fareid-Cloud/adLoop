@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { runDiagnostics } from "@/lib/diagnosticsEngine";
 import { DiagnosticsView, type CheckRow, type ActivityRow } from "./DiagnosticsView";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -19,19 +20,20 @@ function safeHost(url: string): string {
   }
 }
 
-function timeAgo(d: Date): string {
+function timeAgo(locale: Locale, d: Date): string {
   const mins = Math.floor((Date.now() - d.getTime()) / 60000);
-  if (mins < 1) return "الآن";
-  if (mins < 60) return `منذ ${mins} دقيقة`;
+  if (mins < 1) return t(locale, "campPages.tNow");
+  if (mins < 60) return t(locale, "campPages.tMinsAgo", { n: mins });
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `منذ ${hrs} ساعة`;
-  return `منذ ${Math.floor(hrs / 24)} يوم`;
+  if (hrs < 24) return t(locale, "campPages.tHoursAgo", { n: hrs });
+  return t(locale, "campPages.tDaysAgo", { n: Math.floor(hrs / 24) });
 }
 
 export default async function DiagnosticsPage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -40,7 +42,7 @@ export default async function DiagnosticsPage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
   const report = await runDiagnostics(workspace.id);
@@ -62,27 +64,27 @@ export default async function DiagnosticsPage() {
 
   const activity: ActivityRow[] = [
     ...cronRuns.map((r: any) => ({
-      titleAr: "اكتملت المزامنة اليومية",
-      detailAr: `تمت معالجة ${r.totalWorkspaces} مساحة عمل (${r.succeeded} ناجحة)`,
-      at: timeAgo(r.runAt),
+      titleAr: t(locale, "campPages.actSyncDone"),
+      detailAr: t(locale, "campPages.actSyncDetail", { n: r.totalWorkspaces, ok: r.succeeded }),
+      at: timeAgo(locale, r.runAt),
     })),
     ...recentPages.map((p: any) => ({
       // new URL() ترمي استثناءً على رابط بلا بروتوكول (مثل "example.com")
       // وكان ذلك كافياً لإسقاط الصفحة بالكامل - نتعامل معه بأمان
-      titleAr: `فحص صفحة ${p.label ?? safeHost(p.url)}`,
-      detailAr: p.trackingDetected ? "التتبع مكتشف" : "لم يُكتشف تتبع",
-      at: timeAgo(p.lastCheckedAt),
+      titleAr: t(locale, "campPages.actPageCheck", { page: p.label ?? safeHost(p.url) }),
+      detailAr: t(locale, p.trackingDetected ? "campPages.actTrackingFound" : "campPages.actTrackingMissing"),
+      at: timeAgo(locale, p.lastCheckedAt),
     })),
     ...recentActions.map((a: any) => ({
-      titleAr: a.type === "SUGGESTION" ? "اقتراح جديد" : "تنبيه جديد",
+      titleAr: t(locale, a.type === "SUGGESTION" ? "campPages.actNewSuggestion" : "campPages.actNewAlert"),
       detailAr: a.title.slice(0, 70),
-      at: timeAgo(a.createdAt),
+      at: timeAgo(locale, a.createdAt),
     })),
   ].slice(0, 6);
 
   const checks: CheckRow[] = report.checks.map((c) => ({
     ...c,
-    lastScanAt: timeAgo(c.lastScanAt),
+    lastScanAt: timeAgo(locale, c.lastScanAt),
   }));
 
   return (
@@ -95,7 +97,7 @@ export default async function DiagnosticsPage() {
       activity={activity}
       totalMonthlyImpact={report.totalMonthlyImpact}
       currency={report.currency}
-      lastScanAt={report.lastScanAt ? timeAgo(report.lastScanAt) : null}
+      lastScanAt={report.lastScanAt ? timeAgo(locale, report.lastScanAt) : null}
       locale={(user.preferredLocale as "ar" | "en") ?? "ar"}
     />
   );
