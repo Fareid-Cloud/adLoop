@@ -25,7 +25,7 @@ export default async function LeadFormsPage({
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -34,7 +34,7 @@ export default async function LeadFormsPage({
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
 
@@ -75,35 +75,34 @@ export default async function LeadFormsPage({
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">فورم المنصات الداخلي مقابل فورم موقعك</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.lfTitle")}</h1>
       <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">
-        عدد الليدز من كل مصدر آخر 30 يوم. ملاحظة: "الجودة" الفعلية (هل تحوّلوا لعملاء حقيقيين)
-        تتطلّب ربطاً يدوياً بنتائج فريق المبيعات — هذا العدد فقط، لا نسبة التحويل النهائية.
+        {t(locale, "campPages.lfIntro")}
       </p>
 
       {!hasAnyData ? (
         <EmptyState
-          title="لا توجد بيانات بعد"
-          description="فورم ميتا الداخلي محتاج تفعيل صلاحيات إضافية (راجع دليل التفعيل)."
+          title={t(locale, "campPages.lfNone")}
+          description={t(locale, "campPages.lfNoneBody")}
         />
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-2xl bg-surface p-5 text-center">
             <div className="font-mono text-3xl text-text-primary">{googleCount}</div>
-            <div className="mt-1 text-xs text-text-faint">فورم جوجل الداخلي</div>
+            <div className="mt-1 text-xs text-text-faint">{t(locale, "campPages.lfGoogle")}</div>
           </div>
           <div className="rounded-2xl bg-surface p-5 text-center">
             <div className="font-mono text-3xl text-text-primary">{metaCount}</div>
-            <div className="mt-1 text-xs text-text-faint">فورم ميتا الداخلي</div>
+            <div className="mt-1 text-xs text-text-faint">{t(locale, "campPages.lfMeta")}</div>
           </div>
           <div className="rounded-2xl bg-surface p-5 text-center">
             <div className="font-mono text-3xl text-text-primary">{tiktokCount}</div>
-            <div className="mt-1 text-xs text-text-faint">فورم تيك توك الداخلي</div>
+            <div className="mt-1 text-xs text-text-faint">{t(locale, "campPages.lfTiktok")}</div>
           </div>
           <div className="rounded-2xl bg-surface p-5 text-center">
             <div className="font-mono text-3xl text-text-primary">{websiteFormCount}</div>
-            <div className="mt-1 text-xs text-text-faint">فورم موقعك</div>
+            <div className="mt-1 text-xs text-text-faint">{t(locale, "campPages.lfSite")}</div>
           </div>
         </div>
       )}

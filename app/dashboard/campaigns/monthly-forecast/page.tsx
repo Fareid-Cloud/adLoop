@@ -7,11 +7,13 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export default async function MonthlyForecastPage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -20,16 +22,16 @@ export default async function MonthlyForecastPage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
   if (!workspace.monthlyBudgetTarget) {
     return (
       <div className="mx-auto max-w-2xl">
-        <h1 className="mb-2 text-[26px] font-semibold text-text-primary">التوقّع الشهري</h1>
+        <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.mfTitle")}</h1>
         <EmptyState
-          title="لم تُحدَّد ميزانية شهرية بعد"
-          description="اضبط الهدف الشهري من الإعدادات لنتمكّن من توقّع مسارك الحالي."
+          title={t(locale, "campPages.mfNoBudget")}
+          description={t(locale, "campPages.mfNoBudgetBody")}
         />
       </div>
     );
@@ -57,9 +59,9 @@ export default async function MonthlyForecastPage() {
     projectedPct > 110 ? "OVER" : projectedPct < 80 ? "UNDER" : "ON_TRACK";
 
   const statusConfig = {
-    ON_TRACK: { color: "text-verified", label: "على المسار الصحيح" },
-    OVER: { color: "text-critical", label: "متوقّع تتجاوز الهدف" },
-    UNDER: { color: "text-gap", label: "متوقّع تصرف أقل من الهدف" },
+    ON_TRACK: { color: "text-verified", key: "mfOnTrack" },
+    OVER: { color: "text-critical", key: "mfOver" },
+    UNDER: { color: "text-gap", key: "mfUnder" },
   }[status];
 
   return (
@@ -72,7 +74,7 @@ export default async function MonthlyForecastPage() {
 
       <div className="mb-4 rounded-2xl bg-surface p-5 text-center">
         <div className={`font-mono text-3xl ${statusConfig.color}`}>{projectedPct}%</div>
-        <div className={`mt-1 text-sm ${statusConfig.color}`}>{statusConfig.label}</div>
+        <div className={`mt-1 text-sm ${statusConfig.color}`}>{t(locale, `campPages.${statusConfig.key}`)}</div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

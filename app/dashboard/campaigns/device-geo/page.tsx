@@ -6,19 +6,21 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
-const DEVICE_LABELS: Record<string, string> = {
-  MOBILE: "الموبايل",
-  DESKTOP: "الكمبيوتر",
-  TABLET: "التابلت",
-  CONNECTED_TV: "التلفزيون الذكي",
-  OTHER: "أخرى",
+const DEVICE_KEYS: Record<string, string> = {
+  MOBILE: "devMobile",
+  DESKTOP: "devDesktop",
+  TABLET: "devTablet",
+  CONNECTED_TV: "devTv",
+  OTHER: "devOther",
 };
 
 export default async function DeviceGeoPage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -27,7 +29,7 @@ export default async function DeviceGeoPage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
   const [deviceRows, geoRows] = await Promise.all([
@@ -59,22 +61,22 @@ export default async function DeviceGeoPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">الجهاز والموقع الجغرافي</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.geoTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
-        أي جهاز أو موقع فعلاً يجلب عملاء أرخص — استعلامان منفصلان عمداً لتجنّب فقدان بيانات حقيقية.
+        {t(locale, "campPages.geoIntro")}
       </p>
 
       <div className="mb-6">
-        <div className="mb-2 text-sm font-semibold text-text-primary">حسب الجهاز</div>
+        <div className="mb-2 text-sm font-semibold text-text-primary">{t(locale, "campPages.geoByDevice")}</div>
         {devices.length === 0 ? (
-          <EmptyState title="لا توجد بيانات بعد" description="تُسحب تلقائياً مع المزامنة اليومية." />
+          <EmptyState title={t(locale, "campPages.geoNoData")} description={t(locale, "campPages.geoNoDataBody")} />
         ) : (
           <div className="flex flex-col gap-2">
             {devices.map((d: any) => (
               <div key={d.device} className="flex items-center justify-between rounded-2xl bg-surface p-4">
-                <span className="text-sm text-text-primary">{DEVICE_LABELS[d.device] ?? d.device}</span>
+                <span className="text-sm text-text-primary">{deviceName(locale, d.device)}</span>
                 <div className="flex items-center gap-3 text-xs text-text-faint">
-                  <span>{d.clicks.toLocaleString()} كليكة</span>
+                  <span>{t(locale, "campPages.geoClicks", { n: d.clicks.toLocaleString() })}</span>
                   <span className="font-mono text-verified">{d.cpa ?? "—"}</span>
                 </div>
               </div>
@@ -103,4 +105,10 @@ export default async function DeviceGeoPage() {
       </div>
     </div>
   );
+}
+
+/** جهاز غير معروف يُعرض كما ورد من المنصّة لا كفراغ */
+function deviceName(locale: Locale, device: string): string {
+  const key = DEVICE_KEYS[device];
+  return key ? t(locale, `campPages.${key}`) : device;
 }

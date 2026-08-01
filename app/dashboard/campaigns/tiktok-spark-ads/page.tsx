@@ -8,6 +8,7 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 function classify(identityType: string | null): "SPARK" | "DARK_POST" | "UNKNOWN" {
   if (identityType === "AUTH_CODE" || identityType === "TT_USER") return "SPARK";
@@ -17,8 +18,9 @@ function classify(identityType: string | null): "SPARK" | "DARK_POST" | "UNKNOWN
 
 export default async function TikTokSparkAdsPage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -27,7 +29,7 @@ export default async function TikTokSparkAdsPage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
   const videos = await prisma.tikTokVideoMetricSnapshot.findMany({
@@ -51,18 +53,15 @@ export default async function TikTokSparkAdsPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">Spark Ads مقابل الإعلان العادي</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.spTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
-        مصادر الصناعة مختلفة على رقم التحسّن (37% إلى 48% حسب المصدر) - بدل ما نصدّق رقماً عاماً،
-        دي مقارنة حقيقية من بيانات حسابك أنت بالذات، بنفس مقاييس الخطّاف والإكمال المعتادة.
-        عدد التعليقات ونسبة السبام (بقواعد ثابتة، بدون ذكاء اصطناعي) جزء من الصورة لـSpark Ads تحديداً -
-        التفاعل العضوي هنا جزء من المنتج نفسه لا مسألة سمعة منفصلة.
+        {t(locale, "campPages.spIntro")}
       </p>
 
       {!hasComparison ? (
         <EmptyState
-          title="لا توجد بيانات كافية للمقارنة بعد"
-          description="محتاجة إعلانات من النوعين (Spark وعادي) بظهور كافٍ لكل منهما."
+          title={t(locale, "campPages.spNone")}
+          description={t(locale, "campPages.spNoneBody")}
         />
       ) : (
         <div className="flex flex-col gap-3">

@@ -6,17 +6,19 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
-const COMPONENT_LABELS: Record<string, string> = {
-  BELOW_AVERAGE: "أقل من المتوسط",
-  AVERAGE: "متوسط",
-  ABOVE_AVERAGE: "أعلى من المتوسط",
+const COMPONENT_KEYS: Record<string, string> = {
+  BELOW_AVERAGE: "qsBelowAvg",
+  AVERAGE: "qsAvg",
+  ABOVE_AVERAGE: "qsAboveAvg",
 };
 
 export default async function QualityScorePage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -25,7 +27,7 @@ export default async function QualityScorePage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
   // الأولوية للكلمات منخفضة الجودة (تحت 5 من 10) - دي اللي فعلاً بتستاهل انتباه
@@ -37,23 +39,23 @@ export default async function QualityScorePage() {
 
   function diagnoseIssue(row: (typeof rows)[number]): string {
     const issues: string[] = [];
-    if (row.landingPageExperience === "BELOW_AVERAGE") issues.push("تجربة صفحة الهبوط");
-    if (row.adRelevance === "BELOW_AVERAGE") issues.push("صلة الإعلان بالكلمة");
-    if (row.expectedCtr === "BELOW_AVERAGE") issues.push("نسبة النقر المتوقعة");
-    return issues.length > 0 ? issues.join(" + ") : "غير محدد بدقة";
+    if (row.landingPageExperience === "BELOW_AVERAGE") issues.push(t(locale, "campPages.qsLanding"));
+    if (row.adRelevance === "BELOW_AVERAGE") issues.push(t(locale, "campPages.qsRelevance"));
+    if (row.expectedCtr === "BELOW_AVERAGE") issues.push(t(locale, "campPages.qsExpectedCtr"));
+    return issues.length > 0 ? issues.join(" + ") : t(locale, "campPages.qsUnclear");
   }
 
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">تفصيل درجة الجودة</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.qsTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
-        بدلاً من "الجودة منخفضة"، هذا يوضح السبب بالتحديد لكل كلمة مفتاحية.
+        {t(locale, "campPages.qsIntro")}
       </p>
 
       {rows.length === 0 ? (
         <EmptyState
-          title="لا توجد كلمات منخفضة الجودة حالياً"
+          title={t(locale, "campPages.qsNone")}
           description="كل الكلمات المفتاحية النشطة بدرجة جودة معقولة، أو لم تُسحب البيانات بعد."
         />
       ) : (
@@ -68,9 +70,9 @@ export default async function QualityScorePage() {
               </div>
               <div className="mb-2 text-xs text-gap">السبب الأساسي: {diagnoseIssue(row)}</div>
               <div className="flex gap-4 text-xs text-text-faint">
-                <span>صلة الإعلان: {COMPONENT_LABELS[row.adRelevance ?? ""] ?? "—"}</span>
-                <span>صفحة الهبوط: {COMPONENT_LABELS[row.landingPageExperience ?? ""] ?? "—"}</span>
-                <span>نسبة النقر المتوقعة: {COMPONENT_LABELS[row.expectedCtr ?? ""] ?? "—"}</span>
+                <span>{t(locale, "campPages.qsRelevance")}: {label(locale, row.adRelevance)}</span>
+                <span>{t(locale, "campPages.qsLanding")}: {label(locale, row.landingPageExperience)}</span>
+                <span>{t(locale, "campPages.qsExpectedCtr")}: {label(locale, row.expectedCtr)}</span>
               </div>
             </div>
           ))}
@@ -78,4 +80,10 @@ export default async function QualityScorePage() {
       )}
     </div>
   );
+}
+
+/** المكوّن غير المعروف يُعرض كشرطة لا كنصّ خام من الـAPI */
+function label(locale: Locale, value: string | null | undefined): string {
+  const key = COMPONENT_KEYS[value ?? ""];
+  return key ? t(locale, `campPages.${key}`) : "—";
 }

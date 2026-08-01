@@ -192,7 +192,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             />
           ) : null
         }
-        supportSlot={user ? <SupportChat name={user.name ?? ""} email={user.email} variant="sidebar" label={locale === "ar" ? "الدعم الفني" : "Support"} /> : null}
+        supportSlot={user ? <SupportChat name={user.name ?? ""} email={user.email} variant="sidebar" locale={locale} /> : null}
       />
 
       <main className="min-w-0 flex-1">

@@ -6,6 +6,7 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 function pctColor(rate: number, good: number, bad: number): string {
   if (rate >= good) return "text-verified";
@@ -15,8 +16,9 @@ function pctColor(rate: number, good: number, bad: number): string {
 
 export default async function TikTokHookRatePage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -25,7 +27,7 @@ export default async function TikTokHookRatePage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
   const videos = await prisma.tikTokVideoMetricSnapshot.findMany({
@@ -36,16 +38,15 @@ export default async function TikTokHookRatePage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">معدل الخطّاف والإكمال</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.hkTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
-        نسبة من أكملوا مشاهدة ثانيتين (خطّاف قوي)، 6 ثواني (مشاهدة متفاعلة فعلياً - تيك توك
-        نفسها بتحتسبها كتحويل مُسند حتى من غير كليك)، ونسبة الإكمال الكامل. معيار: خطّاف قوي فوق 30%.
+        {t(locale, "campPages.hkIntro")}
       </p>
 
       {videos.length === 0 ? (
         <EmptyState
-          title="لا توجد بيانات فيديو كافية بعد"
-          description="تحتاج ظهوراً كافياً (100+) لكل إعلان لتصبح النسب موثوقة."
+          title={t(locale, "campPages.hkNone")}
+          description={t(locale, "campPages.hkNoneBody")}
         />
       ) : (
         <div className="flex flex-col gap-2">
@@ -58,7 +59,7 @@ export default async function TikTokHookRatePage() {
                 </span>
               </div>
               <div className="flex gap-4 text-xs text-text-faint">
-                <span>خطّاف: {Math.round(v.hookRate * 1000) / 10}%</span>
+                <span>{t(locale, "campPages.hkHook", { n: Math.round(v.hookRate * 1000) / 10 })}</span>
                 <span>متفاعل (6ث): {Math.round(v.engagedViewRate * 1000) / 10}%</span>
                 <span>إكمال كامل: {Math.round(v.completionRate * 1000) / 10}%</span>
                 <span>{v.impressions.toLocaleString()} ظهور</span>

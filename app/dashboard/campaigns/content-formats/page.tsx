@@ -11,14 +11,14 @@ import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds } from "@/lib/dateRange";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
-const FORMAT_LABELS: Record<string, string> = {
-  REELS: "ريلز",
-  STORY: "ستوري",
-  FEED: "الفيد (منشور عادي)",
-  SEARCH: "نتائج البحث",
-  INSTREAM_VIDEO: "فيديو داخل المحتوى",
-  MARKETPLACE: "ماركت بليس",
-  RIGHT_HAND_COLUMN: "العمود الجانبي",
+const FORMAT_KEYS: Record<string, string> = {
+  REELS: "plReels",
+  STORY: "plStory",
+  FEED: "plFeedPost",
+  SEARCH: "plSearch",
+  INSTREAM_VIDEO: "plInstream",
+  MARKETPLACE: "plMarketplace",
+  RIGHT_HAND_COLUMN: "plRightColumn",
 };
 
 export default async function ContentFormatsPage({
@@ -32,7 +32,7 @@ export default async function ContentFormatsPage({
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -41,7 +41,7 @@ export default async function ContentFormatsPage({
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
 
@@ -89,7 +89,7 @@ export default async function ContentFormatsPage({
           {results.map((r: any) => (
             <div key={r.format} className="flex items-center justify-between rounded-2xl bg-surface p-4">
               <span className="text-sm font-medium text-text-primary">
-                {FORMAT_LABELS[r.format] ?? r.format}
+                {placementName(locale, r.format)}
               </span>
               <div className="flex items-center gap-3 text-xs text-text-faint">
                 <span>{r.clicks.toLocaleString()} كليكة</span>
@@ -102,4 +102,10 @@ export default async function ContentFormatsPage({
       )}
     </div>
   );
+}
+
+/** قيمة غير معروفة تُعرض كما وردت من المنصّة لا كفراغ */
+function placementName(locale: Locale, value: string): string {
+  const key = FORMAT_KEYS[value];
+  return key ? t(locale, `campPages.${key}`) : value;
 }

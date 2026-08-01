@@ -11,6 +11,7 @@
 
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { TrendingUp, TrendingDown, ShoppingBag } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export interface RevenuePlatformRow {
   platform: string;
@@ -34,12 +35,15 @@ export function RevenueByPlatform({
   rows,
   currency,
   breakEvenRoas,
+  locale = "ar",
 }: {
   rows: RevenuePlatformRow[];
   currency: string;
   /** نقطة التعادل الحقيقية من هامش الربح - إن وُجدت، تصبح الحكم لا المتوسط */
   breakEvenRoas: number | null;
+  locale?: Locale;
 }) {
+  const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `revenue.${k}`, vars);
   const withRevenue = rows.filter((r) => r.revenue > 0);
 
   if (withRevenue.length === 0) {
@@ -47,11 +51,10 @@ export function RevenueByPlatform({
       <div className="card-shadow rounded-2xl border border-border bg-surface p-4">
         <div className="mb-2 flex items-center gap-2 text-[13px] font-medium text-text-muted">
           <ShoppingBag size={15} />
-          الإيراد لكل منصة
+          {tr("title")}
         </div>
         <p className="text-[12.5px] leading-relaxed text-text-faint">
-          لا يوجد إيراد مسجَّل في هذه الفترة. الإيراد يصل من المتجر المربوط (سلة، شوبيفاي، زد،
-          ووكومرس، إيزي أوردرز) — بدون ربط متجر نعرف الإنفاق ولا نعرف ما عاد منه.
+          {tr("empty")}
         </p>
       </div>
     );
@@ -70,14 +73,14 @@ export function RevenueByPlatform({
           الإيراد لكل منصة
         </span>
         <span className="text-[12px] tabular-nums text-text-faint">
-          الإجمالي {num(totalRevenue)} {currency}
+          {tr("total", { value: num(totalRevenue), currency })}
         </span>
       </div>
       <p className="mb-3 text-[11.5px] text-text-faint">
-        مرتَّبة بالإيراد، ملوَّنة بالعائد
+        {tr("sortedBy")}
         {breakEvenRoas !== null
-          ? ` مقابل نقطة التعادل الحقيقية لحسابك (${breakEvenRoas}x)`
-          : " — حدِّد هامش ربحك في الإعدادات ليصبح الحكم على أساس نقطة تعادل حقيقية لا مقارنة نسبية"}
+          ? tr("vsBreakEven", { n: breakEvenRoas })
+          : tr("setMargin")}
         .
       </p>
 
@@ -119,15 +122,15 @@ export function RevenueByPlatform({
                 <div
                   className="absolute inset-y-0 w-px bg-text-primary/50"
                   style={{ insetInlineStart: `${Math.min(100, (row.cost / maxRevenue) * 100)}%` }}
-                  title={`الإنفاق ${num(row.cost)} ${currency}`}
+                  title={tr("spendTitle", { value: num(row.cost), currency })}
                 />
               </div>
 
               <div className="mt-1 flex flex-wrap items-center gap-x-3 text-[11.5px] text-text-faint">
-                <span className="tabular-nums">إنفاق {num(row.cost)}</span>
+                <span className="tabular-nums">{tr("spend", { value: num(row.cost) })}</span>
                 <span className="tabular-nums">
-                  عائد {roas !== null ? `${roas}x` : "—"}
-                  {profitable === false && <span className="text-critical"> (تحت التعادل)</span>}
+                  {tr("roas", { value: roas !== null ? `${roas}x` : "—" })}
+                  {profitable === false && <span className="text-critical">{tr("belowBreakEven")}</span>}
                 </span>
                 <span className="tabular-nums">
                   ربح {num(row.revenue - row.cost)} {currency}

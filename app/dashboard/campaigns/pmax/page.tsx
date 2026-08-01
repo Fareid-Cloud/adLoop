@@ -6,22 +6,24 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const CHANNEL_LABELS: Record<string, string> = {
-  SEARCH: "البحث",
-  SEARCH_PARTNERS: "شركاء البحث",
+  SEARCH: "pmSearch",
+  SEARCH_PARTNERS: "pmSearchPartners",
   GMAIL: "Gmail",
-  YOUTUBE: "يوتيوب",
-  DISPLAY: "الشبكة الإعلانية",
+  YOUTUBE: "pmYoutube",
+  DISPLAY: "pmDisplay",
   DISCOVER: "Discover",
-  MAPS: "الخرائط",
-  MIXED: "غير مُصنّف (بيانات قبل يونيو 2025، أو إصدار API قديم)",
+  MAPS: "pmMaps",
+  MIXED: "pmMixed",
 };
 
 export default async function PmaxPage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -30,7 +32,7 @@ export default async function PmaxPage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
   const rows = await prisma.pmaxChannelSnapshot.groupBy({

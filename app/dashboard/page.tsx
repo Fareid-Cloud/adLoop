@@ -381,6 +381,7 @@ export default async function GlancePage({
           {revenueRows.length > 0 && (
             <div className="mb-4">
               <RevenueByPlatform
+                locale={locale}
                 rows={revenueRows}
                 currency={workspace.currency}
                 breakEvenRoas={breakEvenRoas}

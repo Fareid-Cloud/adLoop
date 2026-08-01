@@ -27,7 +27,7 @@ export default async function CreativesPage({
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -36,7 +36,7 @@ export default async function CreativesPage({
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
   const { performances, daysActiveByAdId, historicalCtrByAdId, fatiguedAdIds } =
@@ -66,11 +66,11 @@ export default async function CreativesPage({
     return (
       <div className="mx-auto max-w-4xl">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="mb-6 text-[26px] font-semibold text-text-primary">أداء الإعلانات الفردية</h1>
+        <h1 className="mb-6 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.crTitle")}</h1>
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <EmptyState
-          title="لا توجد بيانات على مستوى الإعلان بعد"
-          description="بتتحدث تلقائياً مع المزامنة اليومية بعد ربط الحملات."
+          title={t(locale, "campPages.crNone")}
+          description={t(locale, "campPages.crNoneBody")}
         />
       </div>
     );
@@ -98,7 +98,7 @@ export default async function CreativesPage({
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-6 text-[26px] font-semibold text-text-primary">أداء الإعلانات الفردية</h1>
 
-      <SectionTitle>القرار — توسيع، إبقاء، أم إيقاف؟</SectionTitle>
+      <SectionTitle>{t(locale, "campPages.crDecision")}</SectionTitle>
       <p className="mb-3 text-xs text-text-faint">
         كل زرّ ينفّذ فعلياً على المنصة نفسها. مقارنةً بمتوسط تكلفة العميل في حسابك أنت، لا بمعيار خارجي.
       </p>

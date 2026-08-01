@@ -10,22 +10,22 @@ import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds } from "@/lib/dateRange";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
-const PLACEMENT_LABELS: Record<string, string> = {
-  FACEBOOK: "فيسبوك",
-  INSTAGRAM: "إنستجرام",
-  AUDIENCE_NETWORK: "الشبكة الإعلانية",
-  MESSENGER: "ماسنجر",
-  ALL: "غير مقسّم (بيانات قديمة قبل هذه الميزة)",
+const PLACEMENT_KEYS: Record<string, string> = {
+  FACEBOOK: "plFacebook",
+  INSTAGRAM: "plInstagram",
+  AUDIENCE_NETWORK: "plAudienceNetwork",
+  MESSENGER: "plMessenger",
+  ALL: "plAll",
 };
 
-const DETAIL_LABELS: Record<string, string> = {
-  FEED: "الفيد",
-  STORY: "ستوري",
-  REELS: "ريلز",
-  INSTREAM_VIDEO: "فيديو داخل المحتوى",
-  SEARCH: "نتائج البحث",
-  MARKETPLACE: "ماركت بليس",
-  RIGHT_HAND_COLUMN: "العمود الجانبي",
+const FORMAT_KEYS: Record<string, string> = {
+  FEED: "plFeed",
+  STORY: "plStory",
+  REELS: "plReels",
+  INSTREAM_VIDEO: "plInstream",
+  SEARCH: "plSearch",
+  MARKETPLACE: "plMarketplace",
+  RIGHT_HAND_COLUMN: "plRightColumn",
   ALL: "غير مقسّم",
 };
 
@@ -50,7 +50,7 @@ export default async function PlacementsPage({
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -59,7 +59,7 @@ export default async function PlacementsPage({
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
 
@@ -118,7 +118,7 @@ export default async function PlacementsPage({
           {platformGroups.map((group) => (
             <div key={group.platform} className="rounded-2xl bg-surface p-4">
               <div className="mb-3 text-sm font-semibold text-text-primary">
-                {PLACEMENT_LABELS[group.platform] ?? group.platform}
+                {placementName(locale, group.platform)}
               </div>
               <div className="flex flex-col gap-2">
                 {group.details.map((d) => (
@@ -127,7 +127,7 @@ export default async function PlacementsPage({
                     className="flex items-center justify-between rounded-xl bg-surface-raised px-3 py-2"
                   >
                     <span className="text-xs text-text-muted">
-                      {DETAIL_LABELS[d.placementDetail] ?? d.placementDetail}
+                      {placementName(locale, d.placementDetail)}
                     </span>
                     <div className="flex items-center gap-3 text-xs text-text-faint">
                       <span>{d.clicks.toLocaleString()} كليكة</span>
@@ -143,4 +143,10 @@ export default async function PlacementsPage({
       )}
     </div>
   );
+}
+
+/** قيمة غير معروفة تُعرض كما وردت من المنصّة لا كفراغ */
+function placementName(locale: Locale, value: string): string {
+  const key = PLACEMENT_KEYS[value] ?? FORMAT_KEYS[value];
+  return key ? t(locale, `campPages.${key}`) : value;
 }

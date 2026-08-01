@@ -8,18 +8,20 @@ import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { detectTikTokFatigue } from "@/lib/syncTikTokAds";
 import { EmptyState } from "@/app/components/ui/EmptyState";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const STATUS_CONFIG = {
-  HEALTHY: { color: "text-verified", label: "صحي" },
-  EARLY_FATIGUE: { color: "text-gap", label: "بداية تعب" },
-  SEVERE_FATIGUE: { color: "text-critical", label: "تعب حقيقي" },
-  INSUFFICIENT_DATA: { color: "text-text-faint", label: "بيانات غير كافية" },
+  HEALTHY: { color: "text-verified", key: "tfHealthy" },
+  EARLY_FATIGUE: { color: "text-gap", key: "tfEarly" },
+  SEVERE_FATIGUE: { color: "text-critical", key: "tfSevere" },
+  INSUFFICIENT_DATA: { color: "text-text-faint", key: "tfInsufficient" },
 };
 
 export default async function TikTokFatiguePage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -28,7 +30,7 @@ export default async function TikTokFatiguePage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
   const weeklyData = await prisma.tikTokWeeklyEngagement.findMany({
@@ -68,7 +70,7 @@ export default async function TikTokFatiguePage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">تعب الفيديو</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.tfTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
         تيك توك بطبيعتها بتتعب أسرع من جوجل وميتا. الإشارة الأساسية: انخفاض معدل المشاهدة المتفاعلة
         أسبوع عن أسبوع. التكرار إشارة مساندة فقط - لا توجد عتبة موحّدة متفق عليها لتيك توك.
@@ -86,7 +88,7 @@ export default async function TikTokFatiguePage() {
               <div className="mb-1 flex items-center justify-between">
                 <span className="text-sm font-medium text-text-primary">{r.adName ?? r.adId}</span>
                 <span className={`text-xs font-medium ${STATUS_CONFIG[r.status].color}`}>
-                  {STATUS_CONFIG[r.status].label}
+                  {t(locale, `campPages.${STATUS_CONFIG[r.status].key}`)}
                 </span>
               </div>
               <p className="text-xs text-text-faint">{r.message}</p>

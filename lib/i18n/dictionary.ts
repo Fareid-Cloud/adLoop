@@ -905,6 +905,39 @@ export const dictionary = {
         controlBody: "يمكنك حذف الملفات أو حظرها من إعدادات متصفّحك في أي وقت. حظر الملفات الضرورية يمنع تسجيل الدخول ويعطّل المنصة، أمّا حظر البقيّة فيُفقدك تفضيلاتك ودقّة قياس التحويلات دون أن يمنع الاستخدام.",
       },
     },
+    // ==== الدعم الفني ====
+    supportChat: {
+      title: "الدعم الفني",
+      hours: "نردّ عادةً خلال ساعات العمل.",
+      received: "استُلمت رسالتك، وسيتواصل معك مسؤول الدعم قريباً.",
+      intro: "اترك رسالتك وسنعود إليك في هذه المحادثة نفسها.",
+      name: "الاسم",
+      email: "البريد الإلكتروني",
+      phone: "رقم الهاتف (اختياري)",
+      subject: "موضوع الرسالة",
+      details: "اكتب تفاصيل استفسارك أو مشكلتك…",
+      attach: "إرفاق صورة (اختياري)",
+      uploading: "جارٍ الرفع…",
+      replyPlaceholder: "اكتب ردّاً…",
+      prev: "السابق",
+      next: "التالي",
+      send: "إرسال",
+      sending: "جارٍ الإرسال…",
+      country: "الدولة",
+    },
+    // ==== الإيراد لكل منصة ====
+    revenue: {
+      title: "الإيراد لكل منصة",
+      empty: "لا يوجد إيراد مسجَّل في هذه الفترة. الإيراد يصل من المتجر المربوط (سلة، شوبيفاي، زد، ووكومرس، إيزي أوردرز) — بدون ربط متجر نعرف الإنفاق ولا نعرف ما عاد منه.",
+      total: "الإجمالي {value} {currency}",
+      sortedBy: "مرتَّبة بالإيراد، ملوَّنة بالعائد",
+      vsBreakEven: " مقابل نقطة التعادل الحقيقية لحسابك ({n}x)",
+      setMargin: " — حدِّد هامش ربحك في الإعدادات ليصبح الحكم على أساس نقطة تعادل حقيقية لا مقارنة نسبية",
+      spendTitle: "الإنفاق {value} {currency}",
+      spend: "إنفاق {value}",
+      roas: "عائد {value}",
+      belowBreakEven: " (تحت التعادل)",
+    },
     // ==== مساحة العرض التجريبية ====
     demo: {
       badge: "عرض تجريبي",
@@ -919,7 +952,10 @@ export const dictionary = {
       startTitle: "جرّب AdLoop ببيانات جاهزة",
       startBody: "مساحة كاملة بتسعين يوماً من البيانات — تتصفّح كل شيء بلا ربط حساب. متاحة {n} أيام.",
       startCta: "ادخل العرض التجريبي",
-      creating: "جارٍ التجهيز…",
+      creating: "جارٍ تجهيز عرضك التجريبي…",
+      creatingBody: "نُنشئ مساحة كاملة بتسعين يوماً من البيانات. ثوانٍ قليلة، ولن تحتاج تكرارها.",
+      failed: "تعذّر تجهيز العرض التجريبي.",
+      retry: "حاول مرّة أخرى",
     },
     // ==== شريط الاشتراك ====
     trialBar: {
@@ -1722,6 +1758,119 @@ export const dictionary = {
       hubVerified: "تحويلات متحقّق منها",
       hubCpa: "تكلفة العميل الحقيقية",
       hubNoCpa: "لا توجد تحويلات متحقّق منها بعد لحساب التكلفة الحقيقية.",
+      // درجة الجودة
+      qsTitle: "تفصيل درجة الجودة",
+      qsIntro: "بدل «الجودة منخفضة»، هذا يوضّح السبب بالتحديد لكل كلمة مفتاحية.",
+      qsNone: "لا توجد كلمات منخفضة الجودة حالياً",
+      qsBelowAvg: "أقلّ من المتوسّط",
+      qsAvg: "متوسّط",
+      qsAboveAvg: "أعلى من المتوسّط",
+      qsLanding: "تجربة صفحة الهبوط",
+      qsRelevance: "صلة الإعلان بالكلمة",
+      qsExpectedCtr: "نسبة النقر المتوقّعة",
+      qsUnclear: "غير محدّد بدقّة",
+
+      // أداء الفيديو
+      vidTitle: "أداء الفيديو عبر المنصات",
+      vidIntro: "آخر ٣٠ يوماً. مقياس «تكلفة المشاهدة الكاملة» أدقّ من تكلفة المشاهدة العادية.",
+      vidNone: "لا توجد بيانات فيديو بعد",
+      vidNoneBody: "يحتاج حملات فيديو حقيقية (يوتيوب حالياً) عاملة خلال آخر ٣٠ يوماً.",
+      vidGoogleYt: "جوجل (يوتيوب)",
+
+      // الجهاز والموقع
+      geoTitle: "الجهاز والموقع الجغرافي",
+      geoIntro: "أي جهاز أو موقع يجلب عملاء أرخص فعلاً — استعلامان منفصلان عمداً لتجنّب فقدان بيانات حقيقية.",
+      geoByDevice: "حسب الجهاز",
+      geoByLocation: "حسب الموقع",
+      geoNoData: "لا توجد بيانات بعد",
+      geoNoDataBody: "تُسحب تلقائياً مع المزامنة اليومية.",
+      geoClicks: "{n} نقرة",
+      devMobile: "الجوّال",
+      devDesktop: "الحاسوب",
+      devTablet: "اللوحي",
+      devTv: "التلفاز الذكي",
+      devOther: "أخرى",
+      // أماكن الظهور وأشكال المحتوى
+      plFacebook: "فيسبوك",
+      plInstagram: "إنستجرام",
+      plAudienceNetwork: "الشبكة الإعلانية",
+      plMessenger: "ماسنجر",
+      plAll: "غير مقسّم (بيانات سابقة لهذه الميزة)",
+      plFeed: "الفيد",
+      plStory: "ستوري",
+      plReels: "ريلز",
+      plInstream: "فيديو داخل المحتوى",
+      plSearch: "نتائج البحث",
+      plMarketplace: "ماركت بليس",
+      plRightColumn: "العمود الجانبي",
+      plFeedPost: "الفيد (منشور عادي)",
+
+      // نماذج الليدز
+      lfTitle: "نماذج المنصات الداخلية مقابل نموذج موقعك",
+      lfIntro: "عدد العملاء المحتملين من كل مصدر خلال آخر ٣٠ يوماً. ملاحظة: «الجودة» الفعلية — هل تحوّلوا إلى عملاء حقيقيين — تتطلّب ربطاً يدوياً بنتائج فريق المبيعات؛ هذا العدد وحده لا نسبة التحويل النهائية.",
+      lfNone: "لا توجد بيانات بعد",
+      lfNoneBody: "نموذج ميتا الداخلي يحتاج تفعيل صلاحيات إضافية (راجع دليل التفعيل).",
+      lfGoogle: "نموذج جوجل الداخلي",
+      lfMeta: "نموذج ميتا الداخلي",
+      lfTiktok: "نموذج تيك توك الداخلي",
+      lfSite: "نموذج موقعك",
+
+      // الإعلانات الفردية
+      crTitle: "أداء الإعلانات الفردية",
+      crNone: "لا توجد بيانات على مستوى الإعلان بعد",
+      crNoneBody: "تتحدّث تلقائياً مع المزامنة اليومية بعد ربط الحملات.",
+      crDecision: "القرار — توسيع، إبقاء، أم إيقاف؟",
+
+      // Spark Ads
+      spTitle: "Spark Ads مقابل الإعلان العادي",
+      spIntro: "مصادر الصناعة مختلفة على رقم التحسّن (٣٧٪ إلى ٤٨٪ بحسب المصدر). بدل تصديق رقم عامّ، هذه مقارنة حقيقية من بيانات حسابك أنت بنفس مقاييس الخطّاف والإكمال. عدد التعليقات ونسبة السبام (بقواعد ثابتة بلا ذكاء اصطناعي) جزء من الصورة هنا تحديداً — التفاعل العضوي في Spark Ads جزء من المنتج نفسه لا مسألة سمعة منفصلة.",
+      spNone: "لا توجد بيانات كافية للمقارنة بعد",
+      spNoneBody: "تحتاج إعلانات من النوعين (Spark وعادي) بظهور كافٍ لكلٍّ منهما.",
+      // Performance Max
+      pmSearch: "البحث",
+      pmSearchPartners: "شركاء البحث",
+      pmYoutube: "يوتيوب",
+      pmDisplay: "الشبكة الإعلانية",
+      pmMaps: "الخرائط",
+      pmMixed: "غير مُصنّف (بيانات سابقة ليونيو ٢٠٢٥، أو إصدار API قديم)",
+
+      // التوقّع الشهري
+      mfTitle: "التوقّع الشهري",
+      mfNoBudget: "لم تُحدَّد ميزانية شهرية بعد",
+      mfNoBudgetBody: "اضبط الهدف الشهري من الإعدادات لنتمكّن من توقّع مسارك الحالي.",
+      mfOnTrack: "على المسار الصحيح",
+      mfOver: "يُتوقَّع تجاوز الهدف",
+      mfUnder: "يُتوقَّع صرف أقلّ من الهدف",
+
+      // أنواع المطابقة
+      mtTitle: "أنواع المطابقة",
+      mtIntro: "مقارنة مباشرة بين المطابقة الواسعة والعبارة والتامّة — أي نوع يجلب عملاء أرخص فعلاً.",
+      mtBroad: "المطابقة الواسعة",
+      mtPhrase: "مطابقة العبارة",
+      mtExact: "المطابقة التامّة",
+      mtUnknown: "غير معروف",
+
+      // يوتيوب
+      ytTitle: "أداء حملات يوتيوب",
+      ytIntro: "نسبة المشاهدة الكاملة والتفاعل لا النقرات — مقياس النجاح هنا مختلف عن حملات البحث. ملاحظة: الأرقام مشاهدات مدفوعة فقط (العضوية غير متاحة عبر الواجهة البرمجية).",
+      ytNone: "لا توجد بيانات فيديو بعد",
+      ytNoneBody: "إمّا لا توجد حملات يوتيوب نشطة، أو لم تُسحب البيانات بعد.",
+      ytViewRate: "{n}% مشاهدة كاملة",
+
+      // معدّل الخطّاف
+      hkTitle: "معدّل الخطّاف والإكمال",
+      hkIntro: "نسبة من أكملوا مشاهدة ثانيتين (خطّاف قوي)، وستّ ثوانٍ (مشاهدة متفاعلة فعلاً — تيك توك نفسها تحتسبها تحويلاً مُسنداً حتى بلا نقرة)، ونسبة الإكمال الكامل. المعيار: خطّاف قويّ فوق ٣٠٪.",
+      hkNone: "لا توجد بيانات فيديو كافية بعد",
+      hkNoneBody: "تحتاج ظهوراً كافياً (١٠٠ فأكثر) لكل إعلان لتصبح النسب موثوقة.",
+      hkHook: "خطّاف: {n}%",
+
+      // إجهاد الفيديو
+      tfTitle: "إجهاد الفيديو",
+      tfIntro: "تيك توك بطبيعتها تُجهِد الإعلان أسرع من جوجل وميتا. الإشارة الأساسية: انخفاض معدّل المشاهدة المتفاعلة.",
+      tfHealthy: "سليم",
+      tfEarly: "بداية إجهاد",
+      tfSevere: "إجهاد حقيقي",
+      tfInsufficient: "بيانات غير كافية",
     },
     // ==== تنقّل الحملات ====
     campNav: {
@@ -3333,6 +3482,39 @@ export const dictionary = {
         controlBody: "You can delete or block cookies from your browser settings at any time. Blocking essential cookies prevents login and disables the Platform; blocking the rest costs you your preferences and conversion measurement accuracy without preventing use.",
       },
     },
+    // ==== Support chat ====
+    supportChat: {
+      title: "Support",
+      hours: "We usually reply within working hours.",
+      received: "Your message was received; a support agent will contact you shortly.",
+      intro: "Leave your message and we will come back to you in this same conversation.",
+      name: "Name",
+      email: "Email address",
+      phone: "Phone number (optional)",
+      subject: "Subject",
+      details: "Describe your question or the problem…",
+      attach: "Attach an image (optional)",
+      uploading: "Uploading…",
+      replyPlaceholder: "Write a reply…",
+      prev: "Back",
+      next: "Next",
+      send: "Send",
+      sending: "Sending…",
+      country: "Country",
+    },
+    // ==== Revenue by platform ====
+    revenue: {
+      title: "Revenue by platform",
+      empty: "No revenue recorded in this period. Revenue arrives from your connected store (Salla, Shopify, Zid, WooCommerce, EasyOrders) — without one we know the spend but not what came back.",
+      total: "Total {value} {currency}",
+      sortedBy: "Sorted by revenue, coloured by return",
+      vsBreakEven: " against your account's real break-even ({n}x)",
+      setMargin: " — set your profit margin in Settings so the verdict rests on a real break-even rather than a relative comparison",
+      spendTitle: "Spend {value} {currency}",
+      spend: "Spend {value}",
+      roas: "Return {value}",
+      belowBreakEven: " (below break-even)",
+    },
     // ==== Demo workspace ====
     demo: {
       badge: "Demo",
@@ -3347,7 +3529,10 @@ export const dictionary = {
       startTitle: "Try AdLoop on ready-made data",
       startBody: "A full workspace with 90 days of data — explore everything without connecting an account. Available for {n} days.",
       startCta: "Enter the demo",
-      creating: "Preparing…",
+      creating: "Preparing your demo…",
+      creatingBody: "We are building a full workspace with 90 days of data. A few seconds, and you will not need to repeat it.",
+      failed: "Could not prepare the demo.",
+      retry: "Try again",
     },
     // ==== Subscription bar ====
     trialBar: {
@@ -4148,6 +4333,119 @@ export const dictionary = {
       hubVerified: "Verified conversions",
       hubCpa: "Real cost per customer",
       hubNoCpa: "No verified conversions yet to calculate the real cost.",
+      // Quality score
+      qsTitle: "Quality score breakdown",
+      qsIntro: "Instead of \"quality is low\", this shows the exact reason for each keyword.",
+      qsNone: "No low-quality keywords right now",
+      qsBelowAvg: "Below average",
+      qsAvg: "Average",
+      qsAboveAvg: "Above average",
+      qsLanding: "Landing page experience",
+      qsRelevance: "Ad relevance to the keyword",
+      qsExpectedCtr: "Expected click-through rate",
+      qsUnclear: "Not precisely identified",
+
+      // Video performance
+      vidTitle: "Video performance across platforms",
+      vidIntro: "Last 30 days. Cost per completed view is a sharper measure than cost per view.",
+      vidNone: "No video data yet",
+      vidNoneBody: "Requires real video campaigns (YouTube for now) running in the last 30 days.",
+      vidGoogleYt: "Google (YouTube)",
+
+      // Device and location
+      geoTitle: "Device and location",
+      geoIntro: "Which device or location actually brings cheaper customers — two separate queries on purpose, to avoid dropping real rows.",
+      geoByDevice: "By device",
+      geoByLocation: "By location",
+      geoNoData: "No data yet",
+      geoNoDataBody: "Pulled automatically with the daily sync.",
+      geoClicks: "{n} clicks",
+      devMobile: "Mobile",
+      devDesktop: "Desktop",
+      devTablet: "Tablet",
+      devTv: "Connected TV",
+      devOther: "Other",
+      // Placements and content formats
+      plFacebook: "Facebook",
+      plInstagram: "Instagram",
+      plAudienceNetwork: "Audience Network",
+      plMessenger: "Messenger",
+      plAll: "Not split (data predating this feature)",
+      plFeed: "Feed",
+      plStory: "Story",
+      plReels: "Reels",
+      plInstream: "In-stream video",
+      plSearch: "Search results",
+      plMarketplace: "Marketplace",
+      plRightColumn: "Right column",
+      plFeedPost: "Feed (standard post)",
+
+      // Lead forms
+      lfTitle: "In-platform forms vs your own site form",
+      lfIntro: "Lead count from each source over the last 30 days. Note: actual quality — whether they became real customers — needs a manual link to your sales team's results; this is the count alone, not the final conversion rate.",
+      lfNone: "No data yet",
+      lfNoneBody: "Meta's native form needs additional permissions enabled (see the activation guide).",
+      lfGoogle: "Google native form",
+      lfMeta: "Meta native form",
+      lfTiktok: "TikTok native form",
+      lfSite: "Your site form",
+
+      // Individual ads
+      crTitle: "Individual ad performance",
+      crNone: "No ad-level data yet",
+      crNoneBody: "This fills in automatically with the daily sync once campaigns are connected.",
+      crDecision: "The decision — scale, hold, or pause?",
+
+      // Spark Ads
+      spTitle: "Spark Ads vs standard ads",
+      spIntro: "Industry sources disagree on the improvement figure (37% to 48% depending on the source). Rather than trusting a generic number, this is a real comparison from your own account data using the same hook and completion metrics. Comment counts and spam rate (fixed rules, no AI) belong in this picture specifically — organic engagement in Spark Ads is part of the product itself, not a separate reputation matter.",
+      spNone: "Not enough data to compare yet",
+      spNoneBody: "Needs ads of both kinds (Spark and standard) with enough impressions for each.",
+      // Performance Max
+      pmSearch: "Search",
+      pmSearchPartners: "Search partners",
+      pmYoutube: "YouTube",
+      pmDisplay: "Display network",
+      pmMaps: "Maps",
+      pmMixed: "Unclassified (data predating June 2025, or an older API version)",
+
+      // Monthly forecast
+      mfTitle: "Monthly forecast",
+      mfNoBudget: "No monthly budget set yet",
+      mfNoBudgetBody: "Set your monthly target in Settings so we can forecast your current pace.",
+      mfOnTrack: "On track",
+      mfOver: "Forecast to exceed the target",
+      mfUnder: "Forecast to spend under the target",
+
+      // Match types
+      mtTitle: "Match types",
+      mtIntro: "A direct comparison between broad, phrase and exact match — which one actually brings cheaper customers.",
+      mtBroad: "Broad match",
+      mtPhrase: "Phrase match",
+      mtExact: "Exact match",
+      mtUnknown: "Unknown",
+
+      // YouTube
+      ytTitle: "YouTube campaign performance",
+      ytIntro: "View-through rate and engagement, not clicks — success is measured differently here than in search. Note: these are paid views only (organic is not available through the API).",
+      ytNone: "No video data yet",
+      ytNoneBody: "Either no YouTube campaigns are active, or the data has not been pulled yet.",
+      ytViewRate: "{n}% view-through",
+
+      // Hook rate
+      hkTitle: "Hook and completion rate",
+      hkIntro: "The share who watched two seconds (a strong hook), six seconds (genuinely engaged — TikTok itself counts this as an attributed conversion even without a click), and full completion. Benchmark: a strong hook is above 30%.",
+      hkNone: "Not enough video data yet",
+      hkNoneBody: "Each ad needs enough impressions (100+) for the rates to be reliable.",
+      hkHook: "Hook: {n}%",
+
+      // Video fatigue
+      tfTitle: "Video fatigue",
+      tfIntro: "TikTok fatigues an ad faster than Google or Meta by nature. The primary signal: a falling engaged-view rate.",
+      tfHealthy: "Healthy",
+      tfEarly: "Early fatigue",
+      tfSevere: "Real fatigue",
+      tfInsufficient: "Not enough data",
     },
     // ==== Campaigns navigation ====
     campNav: {

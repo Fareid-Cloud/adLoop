@@ -1,11 +1,15 @@
 // app/demo/page.tsx
 //
-// باب العرض التجريبي. المسجَّل يدخل مباشرةً بعد تجهيز مساحته، وغير
-// المسجَّل يُوجَّه إلى التسجيل ثم يعود إلى هنا تلقائياً.
+// باب العرض التجريبي.
+//
+// **البذر لا يحدث أثناء رندر الصفحة.** كان يحدث هناك، فيُبقي Next الصفحة
+// السابقة معروضة حتى ينتهي - دقيقة كاملة بلا أي مؤشّر على أن شيئاً يجري.
+// الآن تُرسم الشاشة فوراً، والتجهيز يجري خلفها بحالة ظاهرة.
 
 import { redirect } from "next/navigation";
 import { getSessionUserFromCookies } from "@/lib/auth";
-import { seedDemoWorkspace } from "@/lib/demo";
+import { DemoLoader } from "./DemoLoader";
+import { type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +17,6 @@ export default async function DemoEntryPage() {
   const user = await getSessionUserFromCookies();
   if (!user) redirect("/signup?next=/demo");
 
-  const locale = (user.preferredLocale as "ar" | "en") ?? "ar";
-  const workspaceId = await seedDemoWorkspace(user.id, locale);
-
-  // الكوكي نفسه الذي يستخدمه مبدّل المساحات - الديمو مساحة عادية لا مسار
-  // موازٍ، فيعمل معها كل ما في المنتج بلا استثناء
-  redirect(`/dashboard?ws=${workspaceId}`);
+  const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
+  return <DemoLoader locale={locale} />;
 }

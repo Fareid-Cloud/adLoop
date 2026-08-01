@@ -155,13 +155,9 @@ export async function seedDemoWorkspace(userId: string, locale: "ar" | "en"): Pr
     });
   }
 
-  // دفعات بحجم معقول: صفّ واحد لكل حملة في اليوم × ٩٠ يوماً = ٥٤٠ صفّاً
-  for (let i = 0; i < rows.length; i += 200) {
-    await prisma.metricSnapshot.createMany({
-      data: rows.slice(i, i + 200) as never,
-      skipDuplicates: true,
-    });
-  }
+  // نداء واحد لا ثلاثة: كل ذهاب وإياب إلى القاعدة عبر الـpooler يكلّف
+  // مئات الميلي ثانية، و٥٤٠ صفّاً تمرّ في دفعة واحدة بلا مشكلة.
+  await prisma.metricSnapshot.createMany({ data: rows as never, skipDuplicates: true });
 
   return workspace.id;
 }

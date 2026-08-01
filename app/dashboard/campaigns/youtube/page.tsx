@@ -5,11 +5,13 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export default async function YoutubePage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -18,7 +20,7 @@ export default async function YoutubePage() {
   });
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
   const rows = await prisma.youtubeMetricSnapshot.groupBy({
@@ -46,16 +48,15 @@ export default async function YoutubePage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">أداء حملات يوتيوب</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.ytTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
-        نسبة المشاهدة الكاملة والتفاعل لا النقرات — مقياس النجاح هنا مختلف عن حملات البحث.
-        ملاحظة: الأرقام هنا مشاهدات مدفوعة فقط (العضوية غير متاحة عبر الواجهة البرمجية).
+        {t(locale, "campPages.ytIntro")}
       </p>
 
       {results.length === 0 ? (
         <EmptyState
-          title="لا توجد بيانات فيديو بعد"
-          description="إما لا توجد حملات يوتيوب نشطة، أو لم تُسحب البيانات بعد."
+          title={t(locale, "campPages.ytNone")}
+          description={t(locale, "campPages.ytNoneBody")}
         />
       ) : (
         <div className="flex flex-col gap-2">
@@ -63,7 +64,7 @@ export default async function YoutubePage() {
             <div key={r.campaignId} className="rounded-2xl bg-surface p-4">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium text-text-primary">{r.name}</span>
-                <span className="font-mono text-sm text-verified">{r.viewRate}% مشاهدة كاملة</span>
+                <span className="font-mono text-sm text-verified">{t(locale, "campPages.ytViewRate", { n: r.viewRate })}</span>
               </div>
               <div className="flex gap-4 text-xs text-text-faint">
                 <span>{r.videoViews.toLocaleString()} مشاهدة</span>

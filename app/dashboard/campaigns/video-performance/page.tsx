@@ -10,13 +10,10 @@ import { EmptyState } from "@/app/components/ui/EmptyState";
 import { computeVideoMetrics, compareVideoPerformance } from "@/lib/videoMetrics";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds } from "@/lib/dateRange";
-import { t, type Locale } from "@/lib/i18n/dictionary";
+import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 
 const PLATFORM_LABELS: Record<string, string> = {
-  GOOGLE_ADS: "جوجل (يوتيوب)",
-  META_ADS: "ميتا",
-  TIKTOK_ADS: "تيك توك",
-  SNAPCHAT_ADS: "سناب شات",
+  GOOGLE_ADS: "vidGoogleYt",
 };
 
 export default async function VideoPerformancePage({
@@ -30,7 +27,7 @@ export default async function VideoPerformancePage({
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -38,7 +35,7 @@ export default async function VideoPerformancePage({
     orderBy: { createdAt: "asc" },
   });
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
 
@@ -52,11 +49,11 @@ export default async function VideoPerformancePage({
     return (
       <div className="mx-auto max-w-4xl">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="mb-6 text-[26px] font-semibold text-text-primary">أداء الفيديو عبر المنصات</h1>
+        <h1 className="mb-6 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.vidTitle")}</h1>
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <EmptyState
-          title="لا توجد بيانات فيديو بعد"
-          description="محتاج كامبينز فيديو حقيقية (يوتيوب حالياً) شغالة آخر 30 يوم."
+          title={t(locale, "campPages.vidNone")}
+          description={t(locale, "campPages.vidNoneBody")}
         />
       </div>
     );
@@ -82,9 +79,9 @@ export default async function VideoPerformancePage({
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">أداء الفيديو عبر المنصات</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.vidTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
-        آخر 30 يوم. مقياس "تكلفة المشاهدة الكاملة" أدق من تكلفة المشاهدة العادية.
+        {t(locale, "campPages.vidIntro")}
       </p>
 
       {ranked.length >= 2 && (
@@ -95,7 +92,7 @@ export default async function VideoPerformancePage({
         {withMetrics.map((m: any) => (
           <div key={m.platform} className="rounded-2xl bg-surface p-5">
             <div className="mb-3 text-sm font-semibold text-text-primary">
-              {PLATFORM_LABELS[m.platform] ?? m.platform}
+              {platformName(locale, m.platform)}
             </div>
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>
@@ -119,10 +116,16 @@ export default async function VideoPerformancePage({
 
       {missingPlatforms.length > 0 && (
         <p className="mt-4 text-xs text-text-faint">
-          ملاحظة صادقة: {missingPlatforms.map((p) => PLATFORM_LABELS[p]).join("، ")} لا تُزامَن بياناتها
+          ملاحظة صادقة: {missingPlatforms.map((p) => platformName(locale, p)).join("، ")} لا تُزامَن بياناتها
           فيديو للصفحة دي حالياً - محتاجة بناء إضافي منفصل لكل منصة.
         </p>
       )}
     </div>
   );
+}
+
+/** يوتيوب هو ما يظهر فعلاً تحت جوجل هنا، فيُسمّى باسمه لا باسم المنصّة */
+function platformName(locale: Locale, platform: string): string {
+  if (platform === "GOOGLE_ADS") return t(locale, "campPages.vidGoogleYt");
+  return platformLabel(locale, platform);
 }
