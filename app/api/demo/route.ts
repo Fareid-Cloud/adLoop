@@ -14,6 +14,11 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 const ACTIVE_WORKSPACE_COOKIE = "adloop_workspace";
 
+// البذر يكتب نحو ألفي صفّ عبر اثني عشر جدولاً، وقياسه الفعلي ~١٥ ثانية
+// على Neon. الحدّ الافتراضي للدالة أقصر من ذلك، فكان الطلب يُقطع في
+// منتصف البذر وتبقى مساحة موجودة وفارغة - وهو أصل «الديمو صفر داتا».
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });

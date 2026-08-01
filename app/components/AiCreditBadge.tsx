@@ -37,7 +37,7 @@ export function AiCreditBadge({
       </Link>
 
       <Link
-        href="/dashboard/billing"
+        href="/dashboard/billing?credits=1"
         title={ar ? "شراء رصيد أو ترقية الباقة" : "Buy credit or upgrade plan"}
         aria-label={ar ? "شراء رصيد" : "Buy credit"}
         className="flex items-center justify-center rounded-xl border border-border bg-surface p-1.5 text-text-muted no-underline hover:text-accent"

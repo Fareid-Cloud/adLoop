@@ -10,6 +10,7 @@
 // في كل تسجيل، والقصّة نفسها تصل لكل من يراها.
 
 import { prisma } from "@/lib/prisma";
+import { Prisma, type Platform, type TouchpointChannel } from "@prisma/client";
 
 // ==================== القصّة ====================
 //
@@ -122,8 +123,8 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
   });
 
   // ---------- لقطات الأداء اليومية ----------
-  const snapshots: Record<string, unknown>[] = [];
-  const creatives: Record<string, unknown>[] = [];
+  const snapshots: Prisma.MetricSnapshotCreateManyInput[] = [];
+  const creatives: Prisma.CreativeSnapshotCreateManyInput[] = [];
 
   for (let i = DAYS; i >= 1; i--) {
     const date = day(i);
@@ -176,8 +177,8 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
   }
 
   await Promise.all([
-    prisma.metricSnapshot.createMany({ data: snapshots as never, skipDuplicates: true }),
-    prisma.creativeSnapshot.createMany({ data: creatives as never, skipDuplicates: true }),
+    prisma.metricSnapshot.createMany({ data: snapshots, skipDuplicates: true }),
+    prisma.creativeSnapshot.createMany({ data: creatives, skipDuplicates: true }),
   ]);
 
   // ---------- مصطلحات البحث ----------
@@ -199,7 +200,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
         cost: Math.round(96 * (1 + ti * 0.18)),
         conversions: Math.round(6 * (q as number)),
       }))
-    ) as never,
+    ),
     skipDuplicates: true,
   });
 
@@ -212,7 +213,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
       avgAdCostPerOrder: 46, rtoRatePct: p.rto,
       paymentGatewayFeePct: 2.75, paymentGatewayFixedFee: 1,
       desiredMarginPct: p.margin,
-    })) as never,
+    })),
     skipDuplicates: true,
   });
 
@@ -256,7 +257,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
         durationMs: 42_000,
         recordsWritten: 120 + pi * 34,
       }))
-    ) as never,
+    ),
     skipDuplicates: true,
   });
 
@@ -295,7 +296,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
           : "The true cost per order exceeds the selling price by SAR 41.",
         linkUrl: "/dashboard/pricing",
       },
-    ] as never,
+    ],
     skipDuplicates: true,
   });
 
@@ -305,10 +306,12 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
   // بدونها يبقى «مركز الحقيقة» فارغاً تماماً: النماذج تُحسب من مسار
   // اللمسات لا من لقطات الأداء. الرحلات هنا متعدّدة المنصّات عمداً -
   // وهي بالضبط ما لا تستطيع أي لوحة منصّة منفردة أن تراه.
-  const touchpoints: Record<string, unknown>[] = [];
-  const conversions: Record<string, unknown>[] = [];
+  const touchpoints: Prisma.TouchpointCreateManyInput[] = [];
+  const conversions: Prisma.ConversionEventCreateManyInput[] = [];
 
-  const JOURNEYS: Array<{ path: Array<[string, string]>; value: number }> = [
+  // المنصّة والقناة نوعان مُعدّدان لا نصّان حرّان: كتابتهما `string` هي
+  // ما سمح لخطأ حقلٍ غير موجود بأن يمرّ إلى وقت التشغيل من قبل.
+  const JOURNEYS: Array<{ path: Array<[Platform, string]>; value: number }> = [
     { path: [["META_ADS", "demo-m-awareness"], ["GOOGLE_ADS", "demo-g-brand"]], value: 520 },
     { path: [["TIKTOK_ADS", "demo-t-video"], ["META_ADS", "demo-m-retarget"], ["GOOGLE_ADS", "demo-g-brand"]], value: 690 },
     { path: [["GOOGLE_ADS", "demo-g-search"]], value: 480 },
@@ -317,7 +320,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
     { path: [["TIKTOK_ADS", "demo-t-video"], ["GOOGLE_ADS", "demo-g-search"]], value: 610 },
   ];
 
-  const CHANNEL: Record<string, string> = {
+  const CHANNEL: Partial<Record<Platform, TouchpointChannel>> = {
     GOOGLE_ADS: "PAID_SEARCH", META_ADS: "PAID_SOCIAL", TIKTOK_ADS: "PAID_VIDEO",
   };
 
@@ -332,7 +335,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
           workspaceId, visitorId,
           sessionId: `${visitorId}-s${step}`,
           kind: "AD_CLICK",
-          channel: CHANNEL[platform],
+          channel: CHANNEL[platform] ?? "OTHER",
           platform, campaignId,
           adSetId: `${campaignId}-set`,
           source: platform.toLowerCase(),
@@ -363,8 +366,8 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
   }
 
   await Promise.all([
-    prisma.touchpoint.createMany({ data: touchpoints as never, skipDuplicates: true }),
-    prisma.conversionEvent.createMany({ data: conversions as never, skipDuplicates: true }),
+    prisma.touchpoint.createMany({ data: touchpoints, skipDuplicates: true }),
+    prisma.conversionEvent.createMany({ data: conversions, skipDuplicates: true }),
   ]);
 
   // ---------- المتجر: عملاء وطلبات ومبيعات لكل منتج ----------
@@ -390,14 +393,14 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
     firstOrderAt: day(60 - ci),
     lastOrderAt: day(ci % 20),
   }));
-  await prisma.customer.createMany({ data: customers as never, skipDuplicates: true });
+  await prisma.customer.createMany({ data: customers, skipDuplicates: true });
 
   const savedCustomers = await prisma.customer.findMany({
     where: { workspaceId },
     select: { id: true, externalCustomerId: true },
   });
 
-  const orders: Record<string, unknown>[] = [];
+  const orders: Prisma.OrderCreateManyInput[] = [];
   for (let oi = 0; oi < 160; oi++) {
     const cust = savedCustomers[oi % savedCustomers.length];
     const p = products[oi % products.length];
@@ -422,7 +425,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
         : [],
     });
   }
-  await prisma.order.createMany({ data: orders as never, skipDuplicates: true });
+  await prisma.order.createMany({ data: orders, skipDuplicates: true });
 
   const savedOrders = await prisma.order.findMany({
     where: { workspaceId },
@@ -443,7 +446,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
         returned: o.isReturned,
         occurredAt: o.orderedAt,
       };
-    }) as never,
+    }),
     skipDuplicates: true,
   });
 
@@ -470,7 +473,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
         platform: "META_ADS" as const, source: "AUTO" as const, status: "RUNNING" as const,
         windowDays: 14, trackedMetrics: ["cost", "cpl_verified"],
       },
-    ] as never,
+    ],
     skipDuplicates: true,
   });
 }

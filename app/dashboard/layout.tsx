@@ -27,7 +27,6 @@ import { WorkspaceSwitcher } from "@/app/components/WorkspaceSwitcher";
 import { getEntitlements } from "@/lib/entitlements";
 import { TrialBar } from "@/app/components/TrialBar";
 import { DemoBar } from "@/app/components/DemoBar";
-import { CreditsButton } from "@/app/components/CreditsButton";
 import { getMonthlyAiUsage } from "@/lib/aiRateLimit";
 // next/font/google بيحمّل ملف الخط فعلياً وقت الـ build ويربطه بمتغير CSS -
 // ده الفرق عن مجرد كتابة اسم الخط في font-family من غير ما يكون مستورد
@@ -205,18 +204,12 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         <div className="sticky top-0 z-40 mb-5 flex items-center gap-3 border-b border-border bg-bg px-10 py-4">
           <TopSearch locale={locale} />
           <div className="flex flex-1 items-center justify-end gap-1.5">
-          {user && (
-            <AiCreditBadge
-              remaining={Math.max(0, MONTHLY_LIMIT - (user.aiRefreshMonthlyCount ?? 0))}
-              total={MONTHLY_LIMIT}
-              locale={locale}
-            />
-          )}
-          {/* رصيد الكريدت: عدّاد لا زرّ بيع - الشراء يظهر داخله عند
-              الحاجة. ويُخفى في الديمو لأن الذكاء الاصطناعي معطَّل هناك. */}
+          {/* شارة واحدة للرصيد. كانت اثنتين لنفس الرقم: واحدة تقرأ حدّاً
+              ثابتاً وتتجاهل الباقة والرصيد المشترى، وأخرى تكرّرها. تُخفى
+              في الديمو لأن الذكاء الاصطناعي معطَّل هناك. */}
           {entitlements && !demoWs && (
-            <CreditsButton
-              left={creditsLeft}
+            <AiCreditBadge
+              remaining={creditsLeft}
               total={entitlements.limits.aiCredits + entitlements.purchasedCredits}
               locale={locale}
             />

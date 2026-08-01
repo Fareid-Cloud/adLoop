@@ -46,8 +46,11 @@ export function WorkspaceSwitcher({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ workspaceId: id }),
     }).catch(() => {});
-    // مهلة قصيرة ليكتمل الانتقال بصرياً قبل إعادة التحميل
-    setTimeout(() => { router.refresh(); router.push("/dashboard"); }, 700);
+    // تحميل كامل لا تنقّل داخل العميل. `router.push` يُبقي المكوّن حيّاً،
+    // فتبقى `switching` صحيحة إلى الأبد وتظلّ الشاشة معلّقة - وهو ما كان
+    // يبدو "تحميلاً لا ينتهي". التحميل الكامل يقرأ الكوكي من جديد ويصفّر
+    // كل حالة العميل، والشاشة تبقى ظاهرة حتى ترسم الصفحة الجديدة.
+    window.location.assign("/dashboard");
   }
 
   async function create() {
@@ -73,9 +76,10 @@ export function WorkspaceSwitcher({
 
   return (
     <>
-      {/* شاشة الانتقال */}
+      {/* شاشة الانتقال - معتمة تماماً: خمسة بالمئة من الشفافية كانت تكفي
+          لظهور الصفحة السابقة خلفها عند التمرير، فيبدو المشهد نصفين */}
       {switching && (
-        <div className="fixed inset-0 z-[95] flex flex-col items-center justify-center gap-4 bg-bg/95 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[95] flex flex-col items-center justify-center gap-4 overflow-hidden bg-bg">
           <div className="relative">
             <ShieldCheck size={40} className="text-verified" />
             <Sparkles size={16} className="absolute -end-1 -top-1 animate-pulse text-accent" />

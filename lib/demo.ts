@@ -92,12 +92,35 @@ function weekendFactor(d: Date): number {
   return day === 5 || day === 6 ? 0.72 : 1;
 }
 
+/**
+ * مساحة الديمو ليست جاهزة لمجرّد وجود صفّها. البذر يكتب عشرة جداول، وأي
+ * انقطاع في منتصفه يترك مساحة موجودة وفارغة - وهذا بالضبط ما كان يحدث:
+ * الصفّ يُنشأ، ثمّ يفشل البذر، ثمّ يعود كل دخول لاحق بالمساحة الفارغة
+ * نفسها لأن الفحص كان على الوجود لا على المحتوى. الفحص هنا على المحتوى.
+ */
+async function isDemoPopulated(workspaceId: string): Promise<boolean> {
+  const [snapshots, creatives, products] = await Promise.all([
+    prisma.metricSnapshot.count({ where: { workspaceId } }),
+    prisma.creativeSnapshot.count({ where: { workspaceId } }),
+    prisma.product.count({ where: { workspaceId } }),
+  ]);
+  return snapshots > 0 && creatives > 0 && products > 0;
+}
+
 export async function seedDemoWorkspace(userId: string, locale: "ar" | "en"): Promise<string> {
   const existing = await prisma.workspace.findFirst({
     where: { userId, isDemo: true },
     select: { id: true },
   });
-  if (existing) return existing.id;
+
+  if (existing) {
+    // البذر يتخطّى المكرّر، فإعادته على مساحة مكتملة لا تُضاعف شيئاً،
+    // وعلى مساحة ناقصة تُكملها بدل تركها فارغة إلى الأبد.
+    if (!(await isDemoPopulated(existing.id))) {
+      await seedDemoData(existing.id, locale);
+    }
+    return existing.id;
+  }
 
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + DEMO_DAYS);

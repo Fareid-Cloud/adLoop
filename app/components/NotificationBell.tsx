@@ -107,14 +107,14 @@ export function NotificationBell() {
       >
         <Bell size={18} strokeWidth={1.75} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-critical px-1 text-[10px] font-medium text-white">
+          <span className="absolute -top-0.5 -end-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-critical px-1 text-[10px] font-medium text-white">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="pop-shadow absolute right-0 top-11 z-50 max-h-[70vh] w-80 overflow-y-auto rounded-2xl card-shadow border border-border bg-surface">
+        <div className="pop-shadow absolute end-0 top-11 z-50 max-h-[70vh] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl card-shadow border border-border bg-surface">
           <div className="sticky top-0 flex items-center justify-between border-b border-border bg-surface px-4 py-3">
             <span className="text-sm font-semibold text-text-primary">الإشعارات</span>
             {unreadCount > 0 && (
