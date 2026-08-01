@@ -520,7 +520,7 @@ function AccountsTab({ connectedPlatforms }: { connectedPlatforms: ConnectedPlat
             {/* فحص الاتصال - يوضّح أين توقّف المسار بدل رسالة عامة */}
             {connection && (
               <div className="mt-3 border-t border-border pt-3">
-                <ConnectionTester platform={platform} compact />
+                <ConnectionTester platform={platform} compact locale={useContext(SettingsLocaleContext)} />
               </div>
             )}
           </div>

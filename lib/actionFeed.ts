@@ -13,6 +13,7 @@ import { t, Locale } from "@/lib/i18n/dictionary";
 import { shouldSendEmail, sendUrgentNotificationEmail } from "@/lib/notifications";
 import { sendPushToUser } from "@/lib/webPush";
 import { checkMonthlyChangeCeiling } from "@/lib/automationRules";
+import { assertNotDemo } from "@/lib/demo";
 
 /**
  * المحرّكات التي تُنتج قرارات. قائمة مغلقة عمداً: إضافة محرّك جديد يجب أن
@@ -146,6 +147,11 @@ export function ruleResultToActionFeedItem(
 export async function applyActionFeedItem(itemId: string) {
   const item = await prisma.actionFeedItem.findUnique({ where: { id: itemId } });
   if (!item) return;
+
+  // نقطة الاختناق الوحيدة لكل تنفيذ حقيقي على منصّة إعلانية. الحارس هنا
+  // لا في كل دالة تنفيذ على حدة: دالة واحدة تفوت تكفي لأن تُوقف ضغطةٌ
+  // في الديمو إعلاناً حقيقياً لعميل.
+  await assertNotDemo(item.workspaceId);
 
   // لو مفيش actionType، ده اقتراح معلوماتي بس (زي "راجع الصفحة دي") -
   // مفيش حاجة تتنفّذ آلياً، بس نسجّل الموافقة

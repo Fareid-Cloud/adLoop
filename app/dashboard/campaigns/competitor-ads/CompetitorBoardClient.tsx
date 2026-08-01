@@ -107,6 +107,8 @@ export function CompetitorBoardClient({
         </button>
       </header>
 
+      <QuickSearch tr={tr} locale={locale} />
+
       {board.totalAds > 0 && (
         <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard label={tr("kpiTracked")} value={String(board.competitors.length)} icon={Search} tone="default" locale={locale} />
@@ -252,6 +254,61 @@ export function CompetitorBoardClient({
         />
       )}
     </div>
+  );
+}
+
+
+// ==================== البحث السريع في مكتبة الإعلانات ====================
+//
+// كان هذا كلّ ما في الصفحة سابقاً، ويعمل فعلاً: تكتب اسماً فتفتح مكتبة
+// ميتا عليه. حُذف عند بناء اللوحة، وإزالة ما يعمل خسارة صافية - فعاد
+// أعلى الصفحة، واللوحة تحته لمن يريد تتبّعاً لا بحثاً عابراً.
+
+function QuickSearch({
+  tr, locale,
+}: {
+  tr: (k: string, v?: Record<string, string | number>) => string;
+  locale: Locale;
+}) {
+  const [brand, setBrand] = useState("");
+  const [country, setCountry] = useState("EG");
+
+  const url = brand.trim() ? adLibraryUrl(brand.trim(), country) : null;
+
+  return (
+    <section className="card-shadow mb-5 rounded-2xl border border-border bg-surface p-4">
+      <h2 className="text-[14px] font-semibold text-text-primary">{tr("quickTitle")}</h2>
+      <p className="mb-3 mt-0.5 text-[12.5px] leading-relaxed text-text-muted">{tr("quickBody")}</p>
+
+      <div className="flex flex-wrap gap-2">
+        <input
+          value={brand}
+          onChange={(e) => setBrand(e.target.value)}
+          placeholder={tr("quickPlaceholder")}
+          className="min-w-[200px] flex-1 rounded-xl border border-border bg-surface-raised px-3.5 py-2.5 text-[13.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+        />
+        <select
+          value={country}
+          onChange={(e) => setCountry(e.target.value)}
+          className="rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-[13px] text-text-primary outline-none"
+        >
+          {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <a
+          href={url ?? undefined}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-disabled={!url}
+          onClick={(e) => { if (!url) e.preventDefault(); }}
+          className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-medium no-underline ${
+            url ? "bg-accent text-white" : "cursor-not-allowed bg-surface-raised text-text-faint"
+          }`}
+        >
+          <ExternalLink size={14} /> {tr("quickOpen")}
+        </a>
+      </div>
+      <span className="hidden">{locale}</span>
+    </section>
   );
 }
 

@@ -18,7 +18,7 @@ import { MetricsExplorer } from "@/app/components/MetricsExplorer";
 import { computeHealthScore } from "@/lib/healthScore";
 import { getConnectStates } from "@/lib/connectionState";
 import { ConnectPlatforms } from "@/app/components/ConnectPlatforms";
-import { SetupProgressPanel, RecentActivityPanel, ConnectedPlatformsPanel } from "./HomePanels";
+import { SetupProgressPanel, RecentActivityPanel, ConnectedPlatformsPanel, AfterActivationPanel, SupportPanel } from "./HomePanels";
 import { getRecentActivity, getPlatformCards } from "@/lib/homeActivity";
 import { getSetupProgress } from "@/lib/setupProgress";
 import { PostConnectCampaignPrompt } from "@/app/components/PostConnectCampaignPrompt";
@@ -274,14 +274,25 @@ export default async function GlancePage({
           كل نتيجة أسفل الطيّة، فيقف من أدّى ثلاث خطوات أمام صفحة تبدو
           فارغة رغم أن بياناته وصلت فعلاً. */}
       {!setup.allDone && (
-        <div className="mb-4 grid gap-3 lg:grid-cols-2">
-          <SetupProgressPanel
-            progress={setup}
-            locale={locale}
-            ctaHref={setup.nextStep?.ctaHref ?? "/dashboard/integrations"}
-          />
-          <RecentActivityPanel rows={activityRows} locale={locale} />
-        </div>
+        <>
+          <div className="mb-4 grid gap-3 lg:grid-cols-[2fr_1fr]">
+            <SetupProgressPanel
+              progress={setup}
+              locale={locale}
+              ctaHref={setup.nextStep?.ctaHref ?? "/dashboard/integrations"}
+            />
+            <RecentActivityPanel rows={activityRows} locale={locale} />
+          </div>
+
+          {/* ما ينتظره بعد التفعيل - يظهر قبل وصول أي أرقام فقط، ثم
+              تتكلّم الأرقام عن نفسها فيختفي وحده */}
+          {!hasAnyData && (
+            <div className="mb-4 grid gap-3 lg:grid-cols-[2fr_1fr]">
+              <AfterActivationPanel locale={locale} />
+              <SupportPanel locale={locale} whatsappNumber={process.env.SUPPORT_WHATSAPP_NUMBER ?? null} />
+            </div>
+          )}
+        </>
       )}
 
       <div className="mb-4">

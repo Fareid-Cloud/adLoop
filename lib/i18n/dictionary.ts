@@ -765,6 +765,8 @@ export const dictionary = {
     // ==== فحص الاتصال بالمنصة ====
     connTest: {
       unknownPlatform: "منصة غير معروفة.",
+      test: "فحص الاتصال",
+      testing: "جارٍ الفحص…",
       sLinked: "الحساب مربوط",
       sToken: "صلاحية الوصول سارية",
       sConfig: "إعدادات الخادم مكتملة",
@@ -795,6 +797,129 @@ export const dictionary = {
       vTiktokFailed: "تعذّر الوصول إلى حسابات تيك توك.",
       vFailed: "فشل الاتصال: {error}",
       unknownError: "خطأ غير معروف",
+    },
+    // ==== الوثائق القانونية ====
+    // نصّان محرَّران لا منقولان: الترجمة الحرفية لبند قانوني تُنتج التزاماً
+    // مختلفاً عمّا قُصد. تحتاجان مراجعة محامٍ قبل الاعتماد النهائي.
+    legal: {
+      updated: "آخر تحديث: {date}",
+      disclaimer: "هذه الوثيقة مسودّة أُعدّت بناءً على وظائف المنصة الفعلية، وهي للتوضيح ولا تُعدّ استشارة قانونية. يُنصح بمراجعتها من مختصّ قانوني قبل الاعتماد النهائي.",
+      privacyTitle: "سياسة الخصوصية",
+      termsTitle: "شروط الاستخدام",
+      cookiesTitle: "سياسة ملفات تعريف الارتباط",
+
+      privacy: {
+        introTitle: "مقدّمة",
+        introBody: "تشرح هذه السياسة كيف تجمع منصة AdLoop («المنصة»، «نحن») بياناتك وتستخدمها وتحميها عند استخدامك خدماتنا لتحليل أداء حملاتك الإعلانية والتحقّق من التحويلات الحقيقية. باستخدامك المنصة فأنت توافق على الممارسات الموضّحة هنا.",
+
+        collectTitle: "البيانات التي نجمعها",
+        collectBody: "نجمع ما يلزم لتشغيل الخدمة فقط، ولا نجمع بياناتٍ لا نستخدمها:",
+        collectL1: "بيانات الحساب: الاسم والبريد الإلكتروني وكلمة المرور (مُخزَّنة بصيغة مُجزَّأة لا يمكن ردّها) وتفضيلاتك من لغة ومنطقة زمنية.",
+        collectL2: "بيانات الحسابات الإعلانية: عند ربط حساباتك على Google وMeta وTikTok نصل إلى مقاييس الأداء (الإنفاق والنقرات والتحويلات) عبر واجهاتها الرسمية، ونخزّن رموز الوصول مشفَّرة بمعيار AES-256-GCM.",
+        collectL3: "بيانات التحقّق من التحويلات: إشارات نقر ومحادثات واتساب أو ماسنجر تُستخدم لربط الإعلان بالتحويل الحقيقي. لا نخزّن محتوى المحادثات الخاصة بما يتجاوز ما يلزم للتحقّق، وتُجزَّأ البيانات الشخصية قبل الإرسال إلى أي طرف خارجي.",
+        collectL4: "بيانات المتجر (اختيارية): عند ربط منصة تجارة إلكترونية نستقبل بيانات الطلبات والإيرادات والمرتجعات لحساب الربحية.",
+        collectL5: "بيانات تقنية: عنوان IP ونوع المتصفّح وسجلّات الاستخدام، لأغراض الأمان وكشف الاستخدام الآلي وتحسين الأداء.",
+
+        useTitle: "كيف نستخدم بياناتك",
+        useBody: "نستخدم بياناتك لغرضٍ واحد: تشغيل الخدمة التي اشتركت فيها.",
+        useL1: "احتساب أداء حملاتك ومقارنة الأرقام المُعلَنة بالمتحقَّق منها فعلياً.",
+        useL2: "توليد التنبيهات والقرارات المقترحة، وتنفيذ ما تأذن بتنفيذه على حساباتك الإعلانية.",
+        useL3: "إعادة رفع التحويلات المتحقَّقة إلى المنصات الإعلانية بأمر منك، بعد تجزئة أي بيانات شخصية.",
+        useL4: "تحسين الخدمة وكشف إساءة الاستخدام والحفاظ على أمن الحسابات.",
+        useL5: "التواصل معك بشأن حسابك واشتراكك والتنبيهات التي فعّلتها.",
+
+        shareTitle: "مشاركة البيانات ومزوّدو الخدمة",
+        shareBody: "لا نبيع بياناتك ولا نؤجّرها لأي طرف. نشاركها في الحدود التالية حصراً:",
+        shareL1: "منصات الإعلان (Google وMeta وTikTok): لقراءة أداء حملاتك، ولرفع التحويلات المتحقَّقة عند تفعيلك الخاصية.",
+        shareL2: "مزوّدو البنية التحتية: الاستضافة وقاعدة البيانات والبريد الإلكتروني وبوّابة الدفع — بموجب اتفاقيات معالجة بيانات.",
+        shareL3: "الجهات القضائية أو التنظيمية: عند وجود التزام قانوني صريح، وبالقدر المطلوب فقط.",
+        shareL4: "لا يُشارَك محتوى محادثاتك مع أي طرف لأغراض تسويقية أو إعلانية إطلاقاً.",
+
+        securityTitle: "حماية البيانات والاحتفاظ بها",
+        securityBody: "نطبّق تدابير تقنية وتنظيمية متناسبة مع حساسية البيانات:",
+        securityL1: "تشفير رموز الوصول إلى حساباتك الإعلانية بمعيار AES-256-GCM، ولا تُعاد إلى المتصفّح إطلاقاً.",
+        securityL2: "تجزئة البيانات الشخصية (البريد والهاتف) بخوارزمية SHA-256 قبل أي إرسال خارجي.",
+        securityL3: "الاحتفاظ بالبيانات طوال مدّة اشتراكك، وحذفها خلال ثلاثين يوماً من طلب حذف الحساب ما لم يوجب القانون خلاف ذلك.",
+        securityL4: "لا يوجد نظام آمن بالمطلق؛ نلتزم بإخطارك دون تأخير غير مبرَّر عند وقوع خرق يمسّ بياناتك.",
+
+        rightsTitle: "حقوقك",
+        rightsBody: "لك في أي وقت أن تمارس الحقوق التالية بمراسلتنا:",
+        rightsL1: "الوصول إلى بياناتك والحصول على نسخة منها بصيغة قابلة للنقل.",
+        rightsL2: "تصحيح أي بيانات غير دقيقة أو تحديثها.",
+        rightsL3: "حذف حسابك وبياناته حذفاً نهائياً.",
+        rightsL4: "سحب موافقتك على أي معالجة اختيارية، وفصل أي حساب إعلاني مربوط.",
+        rightsL5: "الاعتراض على معالجة معيّنة أو طلب تقييدها.",
+
+        contactTitle: "التواصل",
+        contactBody: "لأي استفسار أو طلب يتعلّق بخصوصيتك أو لممارسة أيٍّ من حقوقك أعلاه، تواصل معنا عبر بريد الدعم المذكور داخل المنصة. نلتزم بالردّ خلال ثلاثين يوماً من تاريخ الطلب.",
+      },
+
+      terms: {
+        acceptTitle: "قبول الشروط",
+        acceptBody: "باستخدامك منصة AdLoop تُقرّ بأنك قرأت هذه الشروط وفهمتها ووافقت عليها. إن كنت تستخدم المنصة نيابةً عن شركة فأنت تُقرّ بأنك مخوَّل بإلزامها بهذه الشروط. وإن لم توافق على أيٍّ منها فامتنع عن استخدام المنصة.",
+
+        serviceTitle: "وصف الخدمة",
+        serviceBody: "توفّر AdLoop طبقة تحقّق فوق حساباتك الإعلانية: تقارن ما تُعلنه المنصات الإعلانية بما تحقّق فعلياً من محادثات وطلبات مؤكَّدة، وتقترح قرارات وتنفّذ ما تأذن بتنفيذه. الخدمة أداة تحليل ومساعدة، ولا تشكّل ضماناً لأي نتيجة إعلانية أو تجارية.",
+
+        userTitle: "مسؤوليات المستخدم",
+        userBody: "باستخدامك المنصة تلتزم بما يلي:",
+        userL1: "أن تكون مالكاً للحسابات الإعلانية التي تربطها أو مخوَّلاً بإدارتها.",
+        userL2: "الحفاظ على سرّية بيانات دخولك، وتتحمّل مسؤولية كل نشاط يجري عبر حسابك.",
+        userL3: "ألّا تستخدم المنصة لغرض مخالف للقانون أو لسياسات المنصات الإعلانية المربوطة.",
+        userL4: "ألّا تحاول الوصول غير المصرّح به إلى أنظمتنا أو إلى بيانات مستخدمين آخرين.",
+        userL5: "أن تراجع بنفسك أي قرار قبل اعتماد تنفيذه على حساباتك الإعلانية.",
+
+        automationTitle: "الإجراءات الآلية على الحملات",
+        automationBody: "قد تنفّذ المنصة إجراءات فعلية على حساباتك الإعلانية — إيقاف إعلان أو تعديل ميزانية أو تغيير استراتيجية مزايدة — وذلك في الحالتين التاليتين حصراً: بموافقتك الصريحة على قرار بعينه، أو ضمن قاعدة أتمتة فعّلتها بنفسك وحدّدت شروطها. أنت المسؤول عن مراجعة القواعد التي تفعّلها وعن أثرها على إنفاقك، ونحن غير مسؤولين عن نتائج إجراء أذنت به.",
+
+        billingTitle: "الاشتراك والدفع",
+        billingBody: "تُقدَّم الخدمة باشتراك مدفوع وفق الباقة التي تختارها:",
+        billingL1: "تُحصَّل المدفوعات عبر بوّابة دفع خارجية، ولا نطّلع على بيانات بطاقتك ولا نخزّنها.",
+        billingL2: "يتجدّد الاشتراك تلقائياً في نهاية كل مدّة ما لم تُلغِه قبل تاريخ التجديد.",
+        billingL3: "الإلغاء يوقف التجديد التالي ويُبقي الخدمة عاملة حتى نهاية المدّة المدفوعة.",
+        billingL4: "لا تُستردّ المبالغ عن مدّة بدأت بالفعل، ما لم ينصّ القانون الواجب التطبيق على خلاف ذلك.",
+        billingL5: "قد تتغيّر الأسعار مستقبلاً، ونُخطرك قبل سريان أي تغيير على اشتراكك بمدّة معقولة.",
+
+        liabilityTitle: "حدود المسؤولية",
+        liabilityBody: "تُقدَّم المنصة «كما هي». نبذل جهداً معقولاً لدقّة البيانات، غير أن جزءاً جوهرياً منها يأتي من واجهات برمجية تابعة لأطراف خارجية لا نتحكّم في توفّرها ولا في دقّتها. لا نتحمّل مسؤولية أي خسارة غير مباشرة أو تبعية أو فوات ربح، وتقتصر مسؤوليتنا الإجمالية في كل الأحوال على قيمة ما سدّدته فعلياً خلال الاثني عشر شهراً السابقة للواقعة.",
+
+        terminationTitle: "إنهاء الخدمة",
+        terminationBody: "لك أن تنهي اشتراكك في أي وقت من داخل المنصة. ولنا أن نوقف حسابك أو ننهيه عند مخالفة جوهرية لهذه الشروط أو عند استخدام يضرّ بالمنصة أو بمستخدميها، مع إخطارك بالسبب. عند الإنهاء تبقى بياناتك متاحة للتصدير لمدّة ثلاثين يوماً ثمّ تُحذف.",
+      },
+
+      cookies: {
+        whatTitle: "ما ملفات تعريف الارتباط؟",
+        whatBody: "ملفات نصّية صغيرة يحفظها متصفّحك عند زيارتك المنصة. نستخدمها لتشغيل الخدمة وتذكّر تفضيلاتك وقياس أداء الإعلانات التي تقودك إلينا — لا لبناء ملفّ إعلاني عنك ولا لبيع بياناتك.",
+
+        typesTitle: "الأنواع التي نستخدمها",
+        typesBody: "نستخدم أربعة أنواع، أوّلها لا غنى عنه والبقيّة قابلة للتعطيل:",
+        typesL1: "ضرورية: تُبقي جلستك مفتوحة وتحمي النماذج من إساءة الاستخدام. لا تعمل المنصة بدونها.",
+        typesL2: "تفضيلات: تحفظ لغتك ومنطقتك الزمنية ووضع العرض الفاتح أو الداكن.",
+        typesL3: "قياس الأداء: تربط زيارتك بالإعلان الذي جاء بها، وهي أساس ميزة التحقّق من التحويلات.",
+        typesL4: "تحليلية: تقيس استخدام المنصة بشكل مجمَّع لتحسينها، ولا تُستخدم لاستهدافك إعلانياً.",
+
+        thirdTitle: "ملفات الأطراف الخارجية",
+        thirdBody: "قد تضع منصات الإعلان المربوطة (Google وMeta وTikTok) ملفاتها الخاصة على صفحات الهبوط التي تركّب عليها وسومها. هذه الملفات تخضع لسياسات تلك المنصات لا لسياستنا، ونحن لا نتحكّم في مدّتها ولا في بياناتها.",
+
+        controlTitle: "التحكّم في ملفات تعريف الارتباط",
+        controlBody: "يمكنك حذف الملفات أو حظرها من إعدادات متصفّحك في أي وقت. حظر الملفات الضرورية يمنع تسجيل الدخول ويعطّل المنصة، أمّا حظر البقيّة فيُفقدك تفضيلاتك ودقّة قياس التحويلات دون أن يمنع الاستخدام.",
+      },
+    },
+    // ==== مساحة العرض التجريبية ====
+    demo: {
+      badge: "عرض تجريبي",
+      barTitle: "أنت في العرض التجريبي — البيانات هنا تجريبية بالكامل",
+      barBody: "كل الأرقام والحملات في هذه المساحة من صنعنا للتوضيح. لا شيء هنا يمسّ حساباً إعلانياً حقيقياً، ولا يُنفَّذ أي إجراء خارجي منها.",
+      barDaysLeft: "متاح {n} أيام",
+      barExpired: "انتهت مدّة العرض",
+      connectReal: "اربط حسابك الحقيقي",
+      switchToReal: "ارجع لمساحتك",
+      blockedTitle: "هذا إجراء حقيقي — معطَّل في العرض التجريبي",
+      blockedBody: "التنفيذ هنا كان سيصل إلى منصّة إعلانية فعلية. اربط حسابك لترى أرقامك أنت، وعندها تعمل القرارات فعلاً.",
+      startTitle: "جرّب AdLoop ببيانات جاهزة",
+      startBody: "مساحة كاملة بتسعين يوماً من البيانات — تتصفّح كل شيء بلا ربط حساب. متاحة {n} أيام.",
+      startCta: "ادخل العرض التجريبي",
+      creating: "جارٍ التجهيز…",
     },
     // ==== شريط الاشتراك ====
     trialBar: {
@@ -932,6 +1057,29 @@ export const dictionary = {
       nCampaigns: "{n} حملة",
       lastSync: "آخر مزامنة {when}",
       neverSynced: "لم تُزامَن بعد",
+      afterActivation: "ماذا تحصل بعد التفعيل",
+      afterActivationHint: "هذه ليست وعوداً عامّة — كل بند منها يبدأ بالعمل فور تركيب وسم التتبّع.",
+      aVerifiedLeads: "عملاء متحقَّقون",
+      aVerifiedLeadsBody: "نميّز العميل الحقيقي من الضغطة الخاطئة والرقم الوهمي.",
+      aRealRoas: "العائد الحقيقي",
+      aRealRoasBody: "عائدك محسوباً على من دفع فعلاً لا على ما تعلنه المنصة.",
+      aOfflineUpload: "رفع التحويلات للمنصات",
+      aOfflineUploadBody: "نُعيد عميلك المؤكَّد إلى جوجل وميتا، فتتعلّم خوارزمياتها منه.",
+      aFakeDetection: "كشف الأرقام الوهمية",
+      aFakeDetectionBody: "زيارات مشبوهة ومحادثات غير جادّة تُرصد قبل أن تُحتسب نتيجة.",
+      aAttribution: "إسناد دقيق",
+      aAttributionBody: "أي قناة وأي حملة جلبت كل عميل — لا آخر نقرة وحدها.",
+      aAutomation: "قرارات تنفَّذ",
+      aAutomationBody: "توسيع وإيقاف وتعديل مزايدة تُنفَّذ على حسابك فعلاً لا اقتراحات.",
+
+      support: "الدعم",
+      supportHint: "نحن هنا لمساعدتك.",
+      supportChat: "محادثة مع الدعم",
+      supportChatBody: "تحدّث مع فريق الدعم داخل المنتج.",
+      supportWhatsapp: "تواصل عبر واتساب",
+      supportWhatsappBody: "راسلنا على واتساب مباشرةً.",
+      supportGuide: "مركز المساعدة",
+      supportGuideBody: "أدلّة ومقالات وشروح مصوّرة.",
     },
     // ==== بوابة الترحيب ====
     welcome: {
@@ -1032,6 +1180,10 @@ export const dictionary = {
     competitors: {
       title: "إعلانات المنافسين",
       subtitle: "احفظ إعلانات منافسيك هنا وتابعها. الإعلان الذي يُبقيه منافسك شهرين هو إعلانه الرابح — لا أحد يدفع شهرين على إعلان فاشل.",
+      quickTitle: "بحث سريع في مكتبة إعلانات ميتا",
+      quickBody: "اكتب اسم أي علامة لتفتح كل إعلاناتها العاملة الآن في مكتبة ميتا. للمتابعة المستمرّة استخدم اللوحة أدناه.",
+      quickPlaceholder: "اسم المنافس أو الصفحة",
+      quickOpen: "افتح المكتبة",
       addCompetitor: "أضف منافساً",
       removeCompetitor: "حذف المنافس",
       searchCompetitor: "ابحث باسم المنافس…",
@@ -3043,6 +3195,8 @@ export const dictionary = {
     // ==== Platform connection test ====
     connTest: {
       unknownPlatform: "Unknown platform.",
+      test: "Test connection",
+      testing: "Testing…",
       sLinked: "Account connected",
       sToken: "Access still valid",
       sConfig: "Server configuration complete",
@@ -3073,6 +3227,127 @@ export const dictionary = {
       vTiktokFailed: "Could not reach your TikTok accounts.",
       vFailed: "Connection failed: {error}",
       unknownError: "Unknown error",
+    },
+    // ==== Legal documents ====
+    legal: {
+      updated: "Last updated: {date}",
+      disclaimer: "This document is a draft prepared from the platform's actual functionality. It is provided for clarity and does not constitute legal advice. Review by a qualified lawyer is recommended before final adoption.",
+      privacyTitle: "Privacy Policy",
+      termsTitle: "Terms of Service",
+      cookiesTitle: "Cookie Policy",
+
+      privacy: {
+        introTitle: "Introduction",
+        introBody: "This policy explains how AdLoop (\"the Platform\", \"we\") collects, uses and protects your data when you use our services to analyse advertising performance and verify real conversions. By using the Platform you agree to the practices described here.",
+
+        collectTitle: "Data we collect",
+        collectBody: "We collect only what the service requires, and we do not collect data we do not use:",
+        collectL1: "Account data: your name, email address, password (stored as an irreversible hash) and your preferences such as language and time zone.",
+        collectL2: "Ad account data: when you connect your Google, Meta or TikTok accounts we access performance metrics (spend, clicks, conversions) through their official APIs, and store access tokens encrypted with AES-256-GCM.",
+        collectL3: "Conversion verification data: click signals and WhatsApp or Messenger conversations used to tie an ad to a real conversion. We do not store private message content beyond what verification requires, and personal data is hashed before it is sent to any third party.",
+        collectL4: "Store data (optional): when you connect an eCommerce platform we receive order, revenue and return data to calculate profitability.",
+        collectL5: "Technical data: IP address, browser type and usage logs, for security, automated-abuse detection and performance improvement.",
+
+        useTitle: "How we use your data",
+        useBody: "We use your data for one purpose: running the service you subscribed to.",
+        useL1: "Calculating campaign performance and comparing reported figures against those actually verified.",
+        useL2: "Generating alerts and suggested decisions, and applying those you authorise to your ad accounts.",
+        useL3: "Uploading verified conversions back to advertising platforms at your instruction, after hashing any personal data.",
+        useL4: "Improving the service, detecting abuse and maintaining account security.",
+        useL5: "Contacting you about your account, subscription and the alerts you enabled.",
+
+        shareTitle: "Data sharing and service providers",
+        shareBody: "We do not sell or rent your data to anyone. We share it only within the following limits:",
+        shareL1: "Advertising platforms (Google, Meta, TikTok): to read your campaign performance, and to upload verified conversions when you enable that feature.",
+        shareL2: "Infrastructure providers: hosting, database, email and the payment gateway — under data processing agreements.",
+        shareL3: "Judicial or regulatory authorities: where there is a clear legal obligation, and only to the extent required.",
+        shareL4: "Your conversation content is never shared with any party for marketing or advertising purposes.",
+
+        securityTitle: "Data protection and retention",
+        securityBody: "We apply technical and organisational measures proportionate to the sensitivity of the data:",
+        securityL1: "Access tokens for your ad accounts are encrypted with AES-256-GCM and are never returned to the browser.",
+        securityL2: "Personal identifiers (email, phone) are hashed with SHA-256 before any external transmission.",
+        securityL3: "Data is retained for the duration of your subscription and deleted within thirty days of an account deletion request, unless the law requires otherwise.",
+        securityL4: "No system is absolutely secure; we undertake to notify you without undue delay of any breach affecting your data.",
+
+        rightsTitle: "Your rights",
+        rightsBody: "You may exercise the following rights at any time by contacting us:",
+        rightsL1: "Access your data and obtain a copy of it in a portable format.",
+        rightsL2: "Correct or update any inaccurate data.",
+        rightsL3: "Permanently delete your account and its data.",
+        rightsL4: "Withdraw consent to any optional processing, and disconnect any linked ad account.",
+        rightsL5: "Object to particular processing or request its restriction.",
+
+        contactTitle: "Contact",
+        contactBody: "For any question or request concerning your privacy, or to exercise any of the rights above, contact us through the support email listed inside the Platform. We undertake to respond within thirty days of the request.",
+      },
+
+      terms: {
+        acceptTitle: "Acceptance of terms",
+        acceptBody: "By using AdLoop you confirm that you have read, understood and agreed to these terms. If you use the Platform on behalf of a company, you confirm you are authorised to bind it to these terms. If you do not agree to any of them, do not use the Platform.",
+
+        serviceTitle: "Description of the service",
+        serviceBody: "AdLoop provides a verification layer over your advertising accounts: it compares what advertising platforms report against what was actually verified through confirmed conversations and orders, suggests decisions, and applies those you authorise. The service is an analysis and assistance tool and does not guarantee any advertising or commercial outcome.",
+
+        userTitle: "User responsibilities",
+        userBody: "In using the Platform you undertake to:",
+        userL1: "Own the ad accounts you connect, or be authorised to manage them.",
+        userL2: "Keep your login credentials confidential; you are responsible for all activity carried out through your account.",
+        userL3: "Not use the Platform for any unlawful purpose or in breach of the policies of the connected advertising platforms.",
+        userL4: "Not attempt unauthorised access to our systems or to other users' data.",
+        userL5: "Review any decision yourself before authorising it to run on your ad accounts.",
+
+        automationTitle: "Automated actions on campaigns",
+        automationBody: "The Platform may carry out real actions on your ad accounts — pausing an ad, adjusting a budget, or changing a bid strategy — in exactly two cases: with your explicit approval of a specific decision, or under an automation rule you enabled and whose conditions you set. You are responsible for reviewing the rules you enable and their effect on your spend, and we are not liable for the outcome of an action you authorised.",
+
+        billingTitle: "Subscription and payment",
+        billingBody: "The service is provided on a paid subscription according to the plan you select:",
+        billingL1: "Payments are processed by an external payment gateway; we neither see nor store your card details.",
+        billingL2: "The subscription renews automatically at the end of each period unless cancelled before the renewal date.",
+        billingL3: "Cancellation stops the next renewal and keeps the service running until the end of the paid period.",
+        billingL4: "Amounts are not refunded for a period that has already started, unless applicable law provides otherwise.",
+        billingL5: "Prices may change in future; we will notify you a reasonable time before any change applies to your subscription.",
+
+        liabilityTitle: "Limitation of liability",
+        liabilityBody: "The Platform is provided \"as is\". We make reasonable efforts to ensure data accuracy, but a substantial part of it comes from third-party APIs whose availability and accuracy we do not control. We are not liable for any indirect or consequential loss or loss of profit, and our total liability is in all cases limited to the amount you actually paid during the twelve months preceding the event.",
+
+        terminationTitle: "Termination",
+        terminationBody: "You may end your subscription at any time from within the Platform. We may suspend or terminate your account upon a material breach of these terms, or upon use that harms the Platform or its users, giving you the reason. On termination your data remains available for export for thirty days and is then deleted.",
+      },
+
+      cookies: {
+        whatTitle: "What are cookies?",
+        whatBody: "Small text files your browser stores when you visit the Platform. We use them to run the service, remember your preferences and measure the performance of the ads that bring you here — not to build an advertising profile of you, and not to sell your data.",
+
+        typesTitle: "The types we use",
+        typesBody: "We use four types; the first is indispensable and the rest can be disabled:",
+        typesL1: "Essential: keep your session open and protect forms from abuse. The Platform does not work without them.",
+        typesL2: "Preferences: store your language, time zone and light or dark display mode.",
+        typesL3: "Performance measurement: tie your visit to the ad that brought it, which is the basis of the conversion verification feature.",
+        typesL4: "Analytics: measure Platform usage in aggregate to improve it; they are not used to target you with advertising.",
+
+        thirdTitle: "Third-party cookies",
+        thirdBody: "Connected advertising platforms (Google, Meta, TikTok) may set their own cookies on the landing pages where you install their tags. Those cookies are governed by those platforms' policies rather than ours, and we control neither their lifetime nor their data.",
+
+        controlTitle: "Controlling cookies",
+        controlBody: "You can delete or block cookies from your browser settings at any time. Blocking essential cookies prevents login and disables the Platform; blocking the rest costs you your preferences and conversion measurement accuracy without preventing use.",
+      },
+    },
+    // ==== Demo workspace ====
+    demo: {
+      badge: "Demo",
+      barTitle: "You are in the demo — all data here is sample data",
+      barBody: "Every number and campaign in this workspace was made by us for illustration. Nothing here touches a real ad account, and no external action runs from it.",
+      barDaysLeft: "{n} days left",
+      barExpired: "The demo period has ended",
+      connectReal: "Connect your real account",
+      switchToReal: "Back to your workspace",
+      blockedTitle: "This is a real action — disabled in the demo",
+      blockedBody: "Applying this would have reached an actual advertising platform. Connect your account to see your own numbers, and decisions will genuinely run.",
+      startTitle: "Try AdLoop on ready-made data",
+      startBody: "A full workspace with 90 days of data — explore everything without connecting an account. Available for {n} days.",
+      startCta: "Enter the demo",
+      creating: "Preparing…",
     },
     // ==== Subscription bar ====
     trialBar: {
@@ -3210,6 +3485,29 @@ export const dictionary = {
       nCampaigns: "{n} campaigns",
       lastSync: "Last sync {when}",
       neverSynced: "Never synced",
+      afterActivation: "What you get after activation",
+      afterActivationHint: "These are not general promises — each one starts working the moment the tracking tag is installed.",
+      aVerifiedLeads: "Verified customers",
+      aVerifiedLeadsBody: "We tell a real customer apart from an accidental tap or a fake number.",
+      aRealRoas: "Real return",
+      aRealRoasBody: "Your return calculated on who actually paid, not on what the platform claims.",
+      aOfflineUpload: "Conversion upload",
+      aOfflineUploadBody: "We send your confirmed customer back to Google and Meta so their algorithms learn from them.",
+      aFakeDetection: "Fake number detection",
+      aFakeDetectionBody: "Suspicious traffic and non-serious conversations are caught before they count as a result.",
+      aAttribution: "Accurate attribution",
+      aAttributionBody: "Which channel and campaign brought each customer — not last click alone.",
+      aAutomation: "Decisions that get applied",
+      aAutomationBody: "Scaling, pausing and bid changes applied to your account for real, not suggestions.",
+
+      support: "Support",
+      supportHint: "We are here to help.",
+      supportChat: "Chat with support",
+      supportChatBody: "Talk to the support team inside the product.",
+      supportWhatsapp: "Message us on WhatsApp",
+      supportWhatsappBody: "Reach us directly on WhatsApp.",
+      supportGuide: "Help centre",
+      supportGuideBody: "Guides, articles and walkthroughs.",
     },
     // ==== Welcome gate ====
     welcome: {
@@ -3310,6 +3608,10 @@ export const dictionary = {
     competitors: {
       title: "Competitor ads",
       subtitle: "Save your competitors' ads here and track them. An ad a competitor keeps running for two months is their winner — nobody pays for two months of a failing ad.",
+      quickTitle: "Quick search in Meta's Ad Library",
+      quickBody: "Type any brand name to open every ad it is currently running in Meta's Library. For ongoing tracking, use the board below.",
+      quickPlaceholder: "Competitor or page name",
+      quickOpen: "Open the Library",
       addCompetitor: "Add competitor",
       removeCompetitor: "Remove competitor",
       searchCompetitor: "Search by competitor name…",

@@ -8,17 +8,30 @@
 import { useState } from "react";
 import { Check, AlertCircle, Loader2, Stethoscope } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
-interface Step { key: string; labelAr: string; ok: boolean | null; detailAr?: string }
+interface Step {
+  key: string;
+  labelKey: string;
+  ok: boolean | null;
+  detailKey?: string;
+  detailVars?: Record<string, string | number>;
+}
 
 export function ConnectionTester({
-  platform, compact = false,
+  platform, compact = false, locale = "ar",
 }: {
   platform: "GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS";
   compact?: boolean;
+  locale?: Locale;
 }) {
+  const tr = (k: string, v?: Record<string, string | number>) => t(locale, `connTest.${k}`, v);
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<{ steps: Step[]; verdictAr: string } | null>(null);
+  const [result, setResult] = useState<{
+    steps: Step[];
+    verdictKey: string;
+    verdictVars?: Record<string, string | number>;
+  } | null>(null);
 
   async function run() {
     setBusy(true);
@@ -29,9 +42,17 @@ export function ConnectionTester({
       body: JSON.stringify({ platform }),
     }).catch(() => null);
     setBusy(false);
-    if (!res) { setResult({ steps: [], verdictAr: "تعذّر الاتصال بالخادم." }); return; }
+    if (!res) { setResult({ steps: [], verdictKey: "vFailed", verdictVars: { error: "" } }); return; }
     const data = await res.json().catch(() => null);
-    if (data) setResult({ steps: data.steps ?? [], verdictAr: data.verdictAr ?? data.error ?? "" });
+    // المفاتيح لا النصوص: المسار حُوّل إلى مفاتيح، وقراءة الحقول القديمة
+    // كانت تُرجع undefined فيُرسم صندوق فارغ وينهار ارتفاعه.
+    if (data) {
+      setResult({
+        steps: data.steps ?? [],
+        verdictKey: data.verdictKey ?? data.errorKey ?? "vFailed",
+        verdictVars: data.verdictVars,
+      });
+    }
   }
 
   const allOk = result?.steps.every((s) => s.ok !== false) ?? false;
@@ -44,7 +65,7 @@ export function ConnectionTester({
         className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] text-text-primary disabled:opacity-50"
       >
         {busy ? <Loader2 size={13} className="animate-spin" /> : <Stethoscope size={13} />}
-        {busy ? "جارٍ الفحص..." : "فحص الاتصال"}
+        {busy ? tr("testing") : tr("test")}
       </button>
 
       {result && (
@@ -52,7 +73,7 @@ export function ConnectionTester({
           <p className="mb-2 flex items-center gap-1.5 text-[12.5px] font-medium"
              style={{ color: allOk ? "var(--verified)" : "var(--critical)" }}>
             <PlatformLogo platform={platform} size={13} />
-            {result.verdictAr}
+            {tr(result.verdictKey, result.verdictVars)}
           </p>
           <ul className="flex flex-col gap-1.5">
             {result.steps.map((s) => (
@@ -63,9 +84,9 @@ export function ConnectionTester({
                     : <span className="block h-3 w-3 rounded-full border border-border" />}
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-[12px] text-text-primary">{s.labelAr}</span>
-                  {s.detailAr && (
-                    <span className="block text-[11px] leading-relaxed text-text-muted">{s.detailAr}</span>
+                  <span className="block text-[12px] text-text-primary">{tr(s.labelKey)}</span>
+                  {s.detailKey && (
+                    <span className="block text-[11px] leading-relaxed text-text-muted">{tr(s.detailKey, s.detailVars)}</span>
                   )}
                 </span>
               </li>

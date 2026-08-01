@@ -183,6 +183,10 @@ model Workspace {
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name        String   // مثلاً "Thawabet"
+  /// مساحة عرض ببيانات ثابتة. **كل أثر خارجي محظور منها** عبر
+  /// `assertNotDemo` - ضغطة هنا يجب أن تستحيل أن توقف إعلاناً حقيقياً.
+  isDemo      Boolean  @default(false)
+  demoExpiresAt DateTime?
   currency    String   @default("SAR")
   // هامش الربح - الأساس الحقيقي لحساب "نقطة تعادل ROAS" (= 1 ÷ الهامش)
   // بدل رقم ثابت عشوائي زي "3x للكل". مصادر متعددة متفقة: رقم ROAS

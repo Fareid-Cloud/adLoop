@@ -1,41 +1,26 @@
+// app/legal/cookies/page.tsx
+//
+// الوثيقة نفسها في اللغتين من قاموس واحد. النصّان محرَّران لا منقولان:
+// الترجمة الحرفية لبند قانوني تُنتج التزاماً مختلفاً عمّا قُصد.
+
 import type { Metadata } from "next";
-import { DocShell, Section, List } from "../Doc";
+import { getSessionUserFromCookies } from "@/lib/auth";
+import { DocShell, DocSection } from "../Doc";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
-export const metadata: Metadata = { title: "سياسة ملفات تعريف الارتباط — AdLoop" };
+export const metadata: Metadata = { title: "AdLoop" };
 
-export default function CookiesPage() {
+export default async function LegalPage() {
+  const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const updated = locale === "en" ? "22 July 2026" : "22 يوليو 2026";
+
   return (
-    <DocShell title="سياسة ملفات تعريف الارتباط (Cookies)" updated="22 يوليو 2026">
-      <Section title="ما هي ملفات تعريف الارتباط؟">
-        <p>
-          ملفات تعريف الارتباط ملفات صغيرة تُحفظ في متصفحك لتمكين وظائف أساسية وتذكّر
-          تفضيلاتك. تستخدم AdLoop الحد الأدنى الضروري منها.
-        </p>
-      </Section>
-
-      <Section title="الأنواع التي نستخدمها">
-        <List
-          items={[
-            "ملفات أساسية: كوكي الجلسة (session) للإبقاء على تسجيل دخولك وتأمين حسابك — لا يعمل الموقع بدونها.",
-            "ملفات تفضيلات: لحفظ اختياراتك مثل اللغة والوضع (فاتح/داكن) وحالة القائمة الجانبية.",
-            "ملفات أمان: للمساعدة في الحماية من إساءة الاستخدام (مثل التحقق من أنك لست روبوتاً).",
-          ]}
-        />
-      </Section>
-
-      <Section title="ملفات الأطراف الخارجية">
-        <p>
-          قد تضع خدمات نستعين بها (مثل مزوّد التحقق البشري ومراقبة الأخطاء) ملفاتها الخاصة
-          لأداء وظائفها. لا نستخدم ملفات تتبّع إعلانية لأغراض تسويقية داخل المنصة.
-        </p>
-      </Section>
-
-      <Section title="التحكّم في ملفات تعريف الارتباط">
-        <p>
-          يمكنك حذف ملفات تعريف الارتباط أو حظرها من إعدادات متصفحك، لكن تعطيل الملفات
-          الأساسية سيمنعك من تسجيل الدخول واستخدام المنصة.
-        </p>
-      </Section>
+    <DocShell title={t(locale, "legal.cookiesTitle")} updated={updated} locale={locale}>
+      <DocSection locale={locale} doc="cookies" id="what" />
+      <DocSection locale={locale} doc="cookies" id="types" listCount={4} />
+      <DocSection locale={locale} doc="cookies" id="third" />
+      <DocSection locale={locale} doc="cookies" id="control" />
     </DocShell>
   );
 }

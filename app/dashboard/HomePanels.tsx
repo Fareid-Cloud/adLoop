@@ -16,7 +16,8 @@
 import Link from "next/link";
 import {
   Check, ChevronLeft, RefreshCw, ShieldCheck, AlertTriangle, Zap,
-  CircleDot, ArrowLeft,
+  CircleDot, ArrowLeft, TrendingUp, Upload, ShieldAlert, GitBranch,
+  MessageCircle, BookOpen,
 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { t, relativeFromDate, type Locale } from "@/lib/i18n/dictionary";
@@ -241,6 +242,130 @@ export function ConnectedPlatformsPanel({
       )}
     </section>
   );
+}
+
+
+// ==================== ماذا تحصل بعد التفعيل ====================
+//
+// يُعرض **قبل ظهور النتائج**: المستخدم الذي لم يركّب الوسم بعد يقف أمام
+// لوحة بلا أرقام، فيحتاج أن يعرف ما ينتظره تحديداً لا أن يُترك يخمّن.
+// يختفي وحده فور وصول أوّل بيانات - عندها الأرقام تتكلّم عن نفسها.
+
+const BENEFITS = [
+  { key: "VerifiedLeads", Icon: ShieldCheck, tone: "var(--verified)" },
+  { key: "RealRoas", Icon: TrendingUp, tone: "var(--accent)" },
+  { key: "OfflineUpload", Icon: Upload, tone: "var(--accent)" },
+  { key: "FakeDetection", Icon: ShieldAlert, tone: "var(--critical)" },
+  { key: "Attribution", Icon: GitBranch, tone: "var(--gap)" },
+  { key: "Automation", Icon: Zap, tone: "var(--gap)" },
+] as const;
+
+export function AfterActivationPanel({ locale }: { locale: Locale }) {
+  const tr = (k: string) => t(locale, `homePanels.${k}`);
+  return (
+    <section className="card-shadow rounded-2xl border border-border bg-surface p-4">
+      <h2 className="text-[15px] font-semibold text-text-primary">{tr("afterActivation")}</h2>
+      <p className="mb-3 mt-0.5 text-[12px] leading-relaxed text-text-muted">{tr("afterActivationHint")}</p>
+      <ul className="flex flex-col gap-2.5">
+        {BENEFITS.map(({ key, Icon, tone }) => (
+          <li key={key} className="flex items-start gap-2.5">
+            <span
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+              style={{ background: `color-mix(in srgb, ${tone} 12%, transparent)`, color: tone }}
+            >
+              <Icon size={15} />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[12.5px] font-medium text-text-primary">{tr(`a${key}`)}</span>
+              <span className="block text-[11.5px] leading-relaxed text-text-muted">{tr(`a${key}Body`)}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+// ==================== الدعم ====================
+
+export function SupportPanel({
+  locale, whatsappNumber,
+}: {
+  locale: Locale;
+  /** رقم واتساب الدعم - يُخفى الخيار كلّه إن لم يُضبط بدل رابط معطّل */
+  whatsappNumber: string | null;
+}) {
+  const tr = (k: string) => t(locale, `homePanels.${k}`);
+  const waHref = whatsappNumber
+    ? `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}`
+    : null;
+
+  return (
+    <section className="card-shadow rounded-2xl border border-border bg-surface p-4">
+      <h2 className="text-[15px] font-semibold text-text-primary">{tr("support")}</h2>
+      <p className="mb-3 mt-0.5 text-[12px] text-text-muted">{tr("supportHint")}</p>
+
+      <div className="flex flex-col gap-2">
+        <SupportRow
+          Icon={MessageCircle}
+          tone="var(--accent)"
+          title={tr("supportChat")}
+          body={tr("supportChatBody")}
+          href="/dashboard/support"
+        />
+        {waHref && (
+          <SupportRow
+            Icon={MessageCircle}
+            tone="#25D366"
+            title={tr("supportWhatsapp")}
+            body={tr("supportWhatsappBody")}
+            href={waHref}
+            external
+          />
+        )}
+        <SupportRow
+          Icon={BookOpen}
+          tone="var(--gap)"
+          title={tr("supportGuide")}
+          body={tr("supportGuideBody")}
+          href="/dashboard/help"
+        />
+      </div>
+    </section>
+  );
+}
+
+function SupportRow({
+  Icon, tone, title, body, href, external,
+}: {
+  Icon: typeof MessageCircle;
+  tone: string;
+  title: string;
+  body: string;
+  href: string;
+  external?: boolean;
+}) {
+  const inner = (
+    <>
+      <span
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+        style={{ background: `color-mix(in srgb, ${tone} 12%, transparent)`, color: tone }}
+      >
+        <Icon size={16} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[12.5px] font-medium text-text-primary">{title}</span>
+        <span className="block text-[11.5px] text-text-muted">{body}</span>
+      </span>
+      <ChevronLeft size={14} className="shrink-0 text-text-faint rtl:rotate-0 ltr:rotate-180" />
+    </>
+  );
+
+  const cls = "flex items-center gap-2.5 rounded-xl border border-border bg-surface-raised/50 p-2.5 no-underline transition-colors hover:border-accent";
+
+  return external
+    ? <a href={href} target="_blank" rel="noopener noreferrer" className={cls}>{inner}</a>
+    : <Link href={href} className={cls}>{inner}</Link>;
 }
 
 /** GOOGLE_ADS → Google، لمطابقة مفاتيح أسماء المنصّات في القاموس */

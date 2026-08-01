@@ -26,6 +26,9 @@ import { SidebarNav } from "@/app/components/SidebarNav";
 import { WorkspaceSwitcher } from "@/app/components/WorkspaceSwitcher";
 import { getEntitlements } from "@/lib/entitlements";
 import { TrialBar } from "@/app/components/TrialBar";
+import { DemoBar } from "@/app/components/DemoBar";
+import { CreditsButton } from "@/app/components/CreditsButton";
+import { getMonthlyAiUsage } from "@/lib/aiRateLimit";
 // next/font/google بيحمّل ملف الخط فعلياً وقت الـ build ويربطه بمتغير CSS -
 // ده الفرق عن مجرد كتابة اسم الخط في font-family من غير ما يكون مستورد
 // فعلياً (المشكلة اللي حصلت في المعاينة السابقة)
@@ -104,6 +107,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   // مصدر حقيقة واحد للحدود: الجدول المحلّي السابق كان يحمل باقة `growth`
   // لا وجود لها ويمنح `pro` خمس عشرة مساحة بينما الكتالوج يمنحها ثلاثاً.
   const entitlements = user ? await getEntitlements(user.id) : null;
+
   const workspaceLimit = entitlements?.limits.workspaces ?? 1;
 
   let allWorkspaces: Array<{ id: string; name: string; currency: string }> = [];
@@ -120,6 +124,24 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   }
   const activeId = cookieStore.get("adloop_workspace")?.value;
   const activeWorkspace = allWorkspaces.find((w) => w.id === activeId) ?? allWorkspaces[0] ?? null;
+
+  // حالة الديمو من المساحة النشطة - الديمو مساحة عادية بعلامة، لا مسار
+  // موازٍ يحتاج فحصاً منفصلاً في كل صفحة.
+  const demoWs = activeWorkspace && user
+    ? await prisma.workspace.findFirst({
+        where: { id: activeWorkspace.id, userId: user.id, isDemo: true },
+        select: { demoExpiresAt: true },
+      })
+    : null;
+  // الرصيد المتبقّي = ما تبقّى من مخصّص الباقة + المشترى
+  const creditsUsed = user ? await getMonthlyAiUsage(user.id) : 0;
+  const creditsLeft = entitlements
+    ? Math.max(0, entitlements.limits.aiCredits - creditsUsed) + entitlements.purchasedCredits
+    : 0;
+
+  const demoDaysLeft = demoWs?.demoExpiresAt
+    ? Math.max(0, Math.ceil((demoWs.demoExpiresAt.getTime() - Date.now()) / 86_400_000))
+    : null;
 
   // حالة الربط تُقرأ فقط حين تظهر البوابة فعلاً - استعلامان لكل تحميل
   // صفحة لمستخدم أنهى الإعداد هدر بلا مقابل.
@@ -190,6 +212,15 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               locale={locale}
             />
           )}
+          {/* رصيد الكريدت: عدّاد لا زرّ بيع - الشراء يظهر داخله عند
+              الحاجة. ويُخفى في الديمو لأن الذكاء الاصطناعي معطَّل هناك. */}
+          {entitlements && !demoWs && (
+            <CreditsButton
+              left={creditsLeft}
+              total={entitlements.limits.aiCredits + entitlements.purchasedCredits}
+              locale={locale}
+            />
+          )}
           <HelpButton locale={locale} />
           <div id="tour-notification-bell"><NotificationBell /></div>
           {user && (
@@ -207,7 +238,19 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         <div className="px-10 pb-10">{children}</div>
       </main>
       </div>
-      {entitlements && (
+      {demoWs && (
+        <div className="px-10 pt-4">
+          <DemoBar
+            locale={locale}
+            daysLeft={demoDaysLeft}
+            hasRealWorkspace={allWorkspaces.length > 1}
+          />
+        </div>
+      )}
+
+      {/* شريط الاشتراك لا يظهر داخل الديمو: بيع اشتراك فوق بيانات وهمية
+          يخلط رسالتين لا علاقة بينهما */}
+      {entitlements && !demoWs && (
         <div className="px-10 pt-4">
           <TrialBar
             state={entitlements.state}

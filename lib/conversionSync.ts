@@ -25,6 +25,7 @@ import {
   MIN_WORTH_SENDING_SCORE,
   type MatchSignals,
 } from "@/lib/matchQuality";
+import { assertNotDemo } from "@/lib/demo";
 
 const META_API_VERSION = "v25.0";
 const TIKTOK_API_VERSION = "v1.3";
@@ -447,6 +448,9 @@ export interface SyncRunSummary {
  * قيداً فريداً على (الحدث، المنصة)، فإعادة التشغيل لا ترفع الحدث مرتين.
  */
 export async function syncPendingConversions(workspaceId: string): Promise<SyncRunSummary> {
+  // لا رفع أحداث من مساحة تجريبية إلى حساب إعلاني حقيقي
+  await assertNotDemo(workspaceId);
+
   const summary: SyncRunSummary = { processed: 0, sent: 0, failed: 0, skipped: 0, byPlatform: {} };
 
   const workspace = await prisma.workspace.findUnique({ where: { id: workspaceId } });
