@@ -103,7 +103,9 @@ export function DiagnosticsView({
   locale?: Locale;
 }) {
   const ar = locale === "ar";
-  const tr = (k: string) => t(locale, ("diagnosticsPage." + k) as any);
+  // مساحتان مختلفتان في القاموس: نصوص الصفحة، ونصوص هذا العرض
+  const tp = (k: string) => t(locale, ("diagnosticsPage." + k) as never);
+  const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `diag.${k}`, vars);
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [scanning, setScanning] = useState(false);
@@ -123,7 +125,7 @@ export function DiagnosticsView({
   const [scanDone, setScanDone] = useState(false);
   const tableRef = useRef<HTMLDivElement | null>(null);
 
-  const scoreLabel = healthScore >= 80 ? tr("scoreGood") : healthScore >= 55 ? tr("scoreWarn") : tr("scoreCritical");
+  const scoreLabel = healthScore >= 80 ? tp("scoreGood") : healthScore >= 55 ? tp("scoreWarn") : tp("scoreCritical");
   const scoreTone = healthScore >= 80 ? "var(--verified)" : healthScore >= 55 ? "var(--gap)" : "var(--critical)";
 
   // أهم المشاكل: الحرجة ثم العالية، مرتّبة بالأثر المالي
@@ -188,14 +190,14 @@ export function DiagnosticsView({
       <div className="reveal mb-8 flex flex-wrap items-start justify-between gap-4" style={{ animationDelay: "0ms" }}>
         <div>
           <div className="mb-1 text-[13px] text-text-muted">{workspaceName}</div>
-          <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">{tr("title")}</h1>
+          <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">{tp("title")}</h1>
           <p className="mt-1 text-[13px] text-text-muted">
-            {tr("subtitle")}
+            {tp("subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-3">
           {lastScanAt && (
-            <span className="text-[12.5px] text-text-muted">{tr("lastScan")}: {lastScanAt}</span>
+            <span className="text-[12.5px] text-text-muted">{tp("lastScan")}: {lastScanAt}</span>
           )}
           {/* الوصول إلى صفحة الصفحات المراقَبة - كان الرابط الوحيد إليها قد
               أُزيل عند إعادة بناء هذه الصفحة، فأصبحت غير قابلة للوصول تماماً */}
@@ -204,7 +206,7 @@ export function DiagnosticsView({
             className="flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2.5 text-[13px] text-text-primary no-underline"
           >
             <Radar size={15} className="text-text-muted" />
-            {ar ? "تغطية التتبع" : "Tracking coverage"}
+            {tr("trackingCoverage")}
           </a>
           <button
             onClick={runScan}
@@ -212,7 +214,7 @@ export function DiagnosticsView({
             className="flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-[13px] font-medium text-white disabled:opacity-60"
           >
             {busy ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
-            {busy ? tr("scanning") : tr("runScan")}
+            {busy ? tr("scanning") : tp("runScan")}
           </button>
         </div>
       </div>
@@ -222,18 +224,18 @@ export function DiagnosticsView({
         <div className="card-shadow flex items-center gap-4 rounded-2xl border border-border bg-surface p-6">
           <Gauge score={healthScore} />
           <div className="min-w-0">
-            <div className="text-[13px] text-text-muted">{tr("healthScore")}</div>
+            <div className="text-[13px] text-text-muted">{tp("healthScore")}</div>
             <div className="mt-1 flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full" style={{ background: scoreTone }} />
               <span className="text-[16px] font-semibold" style={{ color: scoreTone }}>{scoreLabel}</span>
             </div>
             {totalMonthlyImpact > 0 && (
               <p className="mt-2 text-[12.5px] leading-relaxed text-text-muted">
-                الأثر المقدَّر للمشاكل القائمة{" "}
+                {tr("estimatedImpact")}{" "}
                 <span className="font-mono font-semibold text-critical">
                   {totalMonthlyImpact.toLocaleString("en-US")} {currency}
                 </span>{" "}
-                شهرياً.
+                {tr("monthly")}.
               </p>
             )}
             <div className="mt-2"><Spark data={scoreTrend} tone={scoreTone} /></div>
@@ -286,7 +288,7 @@ export function DiagnosticsView({
       <div className="reveal mb-6 grid gap-4 lg:grid-cols-[1.6fr_1fr]" style={{ animationDelay: "200ms" }}>
         <section className="card-shadow overflow-hidden rounded-2xl border border-border bg-surface">
           <div className="flex items-center gap-2 border-b border-border p-4">
-            <h2 className="text-[14px] font-semibold text-text-primary">{tr("issuesTitle")}</h2>
+            <h2 className="text-[14px] font-semibold text-text-primary">{tp("issuesTitle")}</h2>
             <span className="rounded-full bg-critical/12 px-2 py-0.5 font-mono text-[11px] font-medium text-critical">
               {topIssues.length}
             </span>
@@ -295,8 +297,8 @@ export function DiagnosticsView({
           {topIssues.length === 0 ? (
             <div className="p-8 text-center">
               <CheckCircle2 size={26} className="mx-auto mb-2 text-verified" />
-              <p className="text-[13.5px] text-text-primary">{tr("noIssues")}</p>
-              <p className="mt-1 text-[12.5px] text-text-muted">{tr("noIssuesSub")}</p>
+              <p className="text-[13.5px] text-text-primary">{tp("noIssues")}</p>
+              <p className="mt-1 text-[12.5px] text-text-muted">{tp("noIssuesSub")}</p>
             </div>
           ) : (
             <ul className="divide-y divide-border">
@@ -310,7 +312,7 @@ export function DiagnosticsView({
                         <div className="font-mono text-[15px] font-bold leading-none" style={{ color: tone }}>
                           {c.monthlyImpact.toLocaleString("en-US")}
                         </div>
-                        <div className="mt-0.5 text-[10px] text-text-muted">{currency} / شهرياً</div>
+                        <div className="mt-0.5 text-[10px] text-text-muted">{tr("perMonth", { currency })}</div>
                       </div>
                     ) : (
                       <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: tone }} />
@@ -321,7 +323,7 @@ export function DiagnosticsView({
                         <span className="text-[13.5px] font-medium text-text-primary">{c.titleAr}</span>
                         <span className="rounded-full px-2 py-0.5 text-[10.5px] font-medium"
                               style={{ background: `color-mix(in srgb, ${tone} 13%, transparent)`, color: tone }}>
-                          {c.severity === "CRITICAL" ? tr("severityCritical") : tr("severityHigh")}
+                          {c.severity === "CRITICAL" ? tp("severityCritical") : tp("severityHigh")}
                         </span>
                         <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10.5px] text-text-muted">
                           {ar ? CATEGORY_META[c.category].ar : CATEGORY_META[c.category].en}
@@ -333,7 +335,7 @@ export function DiagnosticsView({
                     {c.actionHref && (
                       <a href={c.actionHref}
                          className="shrink-0 rounded-xl border border-border bg-surface-raised px-3 py-1.5 text-[12px] text-text-primary no-underline">
-                        معالجة
+                        {tr("resolve")}
                       </a>
                     )}
                   </li>
@@ -347,7 +349,7 @@ export function DiagnosticsView({
               onClick={() => setShowAllIssues((v) => !v)}
               className="w-full border-t border-border py-3 text-[12.5px] font-medium text-accent"
             >
-              {showAllIssues ? tr("showTopOnly") : `${tr("showMore")} (${topIssues.length - 4})`}
+              {showAllIssues ? tp("showTopOnly") : `${tp("showMore")} (${topIssues.length - 4})`}
             </button>
           )}
         </section>
@@ -355,10 +357,10 @@ export function DiagnosticsView({
         <section className="card-shadow overflow-hidden rounded-2xl border border-border bg-surface">
           <div className="flex items-center gap-2 border-b border-border p-4">
             <Activity size={15} className="text-accent" />
-            <h2 className="text-[14px] font-semibold text-text-primary">{tr("recentActivity")}</h2>
+            <h2 className="text-[14px] font-semibold text-text-primary">{tp("recentActivity")}</h2>
           </div>
           {activity.length === 0 ? (
-            <p className="p-6 text-center text-[12.5px] text-text-muted">{tr("noActivity")}</p>
+            <p className="p-6 text-center text-[12.5px] text-text-muted">{tp("noActivity")}</p>
           ) : (
             <ul className="p-4">
               {activity.map((a, i) => (
@@ -387,9 +389,9 @@ export function DiagnosticsView({
             <div className="mb-2 flex items-center justify-between gap-3">
               <span className="flex items-center gap-2 text-[13px] font-medium text-text-primary">
                 {scanDone ? (
-                  <><CheckCircle2 size={15} className="text-verified" /> اكتمل الفحص بنجاح — {checks.length} فحصاً</>
+                  <><CheckCircle2 size={15} className="text-verified" /> {tr("scanDone", { n: checks.length })}</>
                 ) : (
-                  <><Loader2 size={15} className="animate-spin text-accent" /> جارٍ الفحص… {revealed} من {checks.length}</>
+                  <><Loader2 size={15} className="animate-spin text-accent" /> {tr("scanning", { done: revealed, total: checks.length })}</>
                 )}
               </span>
               {!scanDone && revealed > 0 && checks[revealed - 1] && (
@@ -410,7 +412,7 @@ export function DiagnosticsView({
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
           <div className="flex items-center gap-2">
-            <h2 className="text-[15px] font-semibold text-text-primary">{tr("allChecks")}</h2>
+            <h2 className="text-[15px] font-semibold text-text-primary">{tp("allChecks")}</h2>
             <span className="rounded-full bg-surface-raised px-2 py-0.5 font-mono text-[11.5px] text-text-muted">
               {filtered.length}
             </span>
@@ -418,7 +420,7 @@ export function DiagnosticsView({
           <div className="flex flex-wrap items-center gap-2">
             <select value={category} onChange={(e) => setCategory(e.target.value as any)}
                     className="rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-primary outline-none">
-              <option value="all">{tr("allCategories")} ({categoryCounts.all ?? 0})</option>
+              <option value="all">{tp("allCategories")} ({categoryCounts.all ?? 0})</option>
               {(Object.keys(CATEGORY_META) as CheckCategory[]).filter((k) => categoryCounts[k]).map((k) => (
                 <option key={k} value={k}>{ar ? CATEGORY_META[k].ar : CATEGORY_META[k].en} ({categoryCounts[k]})</option>
               ))}
@@ -428,19 +430,19 @@ export function DiagnosticsView({
                 onClick={() => { setSeverityFilter("all"); setStatusFilter("all"); setCategory("all"); }}
                 className="rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-muted"
               >
-                {ar ? "مسح الفلاتر" : "Clear filters"}
+                {tr("clearFilters")}
               </button>
             )}
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)}
                     className="rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-primary outline-none">
-              <option value="all">{tr("allStatuses")}</option>
+              <option value="all">{tp("allStatuses")}</option>
               {(Object.keys(STATUS_TONE) as CheckStatus[]).map((k) => (
                 <option key={k} value={k}>{tr(STATUS_KEY[k])}</option>
               ))}
             </select>
             <div className="relative">
               <Search size={14} className="absolute top-1/2 -translate-y-1/2 text-text-faint" style={{ insetInlineStart: 10 }} />
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tr("searchChecks")}
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tp("searchChecks")}
                      className="w-44 rounded-xl border border-border bg-surface-raised py-2 text-[12.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
                      style={{ paddingInlineStart: 30, paddingInlineEnd: 10 }} />
             </div>
@@ -451,14 +453,14 @@ export function DiagnosticsView({
           <table className="w-full min-w-[720px] border-collapse">
             <thead>
               <tr className="border-b border-border text-start">
-                {[tr("colCheck"), tr("colCategory"), tr("colStatus"), tr("colLastScan"), tr("colTrend"), tr("colAction")].map((h) => (
+                {[tp("colCheck"), tp("colCategory"), tp("colStatus"), tp("colLastScan"), tp("colTrend"), tp("colAction")].map((h) => (
                   <th key={h} className="px-4 py-3 text-start text-[11.5px] font-medium text-text-muted">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={6} className="p-10 text-center text-[13px] text-text-muted">{tr("noMatches")}</td></tr>
+                <tr><td colSpan={6} className="p-10 text-center text-[13px] text-text-muted">{tp("noMatches")}</td></tr>
               ) : filtered.map((c, rowIndex) => {
                 // أثناء الفحص الحيّ لا نعرض إلا ما كُشف حتى الآن
                 if (revealed !== null && rowIndex >= revealed) return null;
@@ -510,7 +512,7 @@ export function DiagnosticsView({
                             ? { borderColor: `color-mix(in srgb, ${st.tone} 32%, transparent)`, background: `color-mix(in srgb, ${st.tone} 9%, transparent)`, color: st.tone }
                             : { borderColor: "var(--border)", background: "var(--surface-raised)", color: "var(--text-primary)" }}
                         >
-                          {isOpen ? tr("hide") : tr("details")}
+                          {isOpen ? tp("hide") : tp("details")}
                           <ChevronDown size={12} className={isOpen ? "rotate-180 transition-transform" : "transition-transform"} />
                         </button>
                       ) : (
@@ -524,28 +526,28 @@ export function DiagnosticsView({
                       <td colSpan={6} className="px-4 py-4">
                         <div className="grid gap-4 md:grid-cols-2">
                           <div>
-                            <div className="mb-1 text-[11.5px] font-medium text-text-muted">{tr("whatItMeasures")}</div>
+                            <div className="mb-1 text-[11.5px] font-medium text-text-muted">{tp("whatItMeasures")}</div>
                             <p className="text-[12.5px] leading-relaxed text-text-primary">{c.descAr}</p>
                             {c.sourceAr && (
                               <>
-                                <div className="mb-1 mt-3 text-[11.5px] font-medium text-text-muted">{tr("dataSource")}</div>
+                                <div className="mb-1 mt-3 text-[11.5px] font-medium text-text-muted">{tp("dataSource")}</div>
                                 <p className="text-[12.5px] leading-relaxed text-text-muted">{c.sourceAr}</p>
                               </>
                             )}
                             {c.monthlyImpact ? (
                               <p className="mt-3 text-[12.5px] text-text-muted">
-                                الأثر المقدَّر:{" "}
+                                {tr("impactLabel")}{" "}
                                 <span className="font-mono font-semibold text-critical">
                                   {c.monthlyImpact.toLocaleString("en-US")} {currency}
                                 </span>{" "}
-                                شهرياً
+                                {tr("monthly")}
                               </p>
                             ) : null}
                           </div>
 
                           {c.remedyAr && c.remedyAr.length > 0 && (
                             <div>
-                              <div className="mb-2 text-[11.5px] font-medium text-text-muted">{tr("remedySteps")}</div>
+                              <div className="mb-2 text-[11.5px] font-medium text-text-muted">{tp("remedySteps")}</div>
                               <ol className="flex flex-col gap-2">
                                 {c.remedyAr.map((step, i) => (
                                   <li key={i} className="flex gap-2.5 text-[12.5px] leading-relaxed text-text-primary">
@@ -560,7 +562,7 @@ export function DiagnosticsView({
                               {c.actionHref && (
                                 <a href={c.actionHref}
                                    className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-accent px-3.5 py-2 text-[12px] font-medium text-white no-underline">
-                                  اذهب للمعالجة
+                                  {tr("goResolve")}
                                   <ChevronLeft size={12} className="rtl:rotate-0 ltr:rotate-180" />
                                 </a>
                               )}

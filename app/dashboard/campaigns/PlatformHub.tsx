@@ -176,7 +176,7 @@ export async function PlatformHub({
       </div>
 
       <div className="mb-6">
-        <BestAdPair pick={topPick} currency={workspace.currency} scopeLabel={platformLabel} />
+        <BestAdPair pick={topPick} currency={workspace.currency} scopeLabel={platformLabel} locale={locale} />
       </div>
 
       <div className="mb-2 text-[13px] font-medium text-text-muted">

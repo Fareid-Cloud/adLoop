@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronsUpDown, Plus, Check, ShieldCheck, X, Loader2, Sparkles } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export interface WorkspaceOption {
   id: string;
@@ -60,9 +61,9 @@ export function WorkspaceSwitcher({
     }).catch(() => null);
     setBusy(false);
 
-    if (!res) { setError("تعذّر الاتصال بالخادم."); return; }
+    if (!res) { setError(t(locale, "setup.syncNoServer")); return; }
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) { setError(data.error ?? "تعذّر إنشاء مساحة العمل."); return; }
+    if (!res.ok) { setError(data.error ?? t(locale, "setup.syncFailed")); return; }
 
     setName("");
     setCreating(false);

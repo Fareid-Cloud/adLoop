@@ -9,22 +9,26 @@
 import { Trophy, Medal, Info } from "lucide-react";
 import type { TopCreativePick } from "@/lib/creativeAnalysis";
 import type { CreativePerformance } from "@/lib/creativeAnalysis";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export function BestAdPair({
   pick,
   currency,
   scopeLabel,
+  locale = "ar",
 }: {
   pick: TopCreativePick;
   currency: string;
   scopeLabel: string;
+  locale?: Locale;
 }) {
+  const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `bestAd.${k}`, vars);
   if (!pick.best) {
     return (
       <div className="rounded-2xl border border-border bg-surface p-4">
         <div className="mb-1.5 flex items-center gap-2 text-[13px] font-medium text-text-muted">
           <Trophy size={15} className="text-text-faint" />
-          أفضل إعلان في {scopeLabel}
+          {tr("title", { scope: scopeLabel })}
         </div>
         <p className="flex items-start gap-1.5 text-[12px] leading-relaxed text-text-faint">
           <Info size={13} className="mt-0.5 shrink-0" />
@@ -37,19 +41,19 @@ export function BestAdPair({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-[13px] font-medium text-text-muted">أفضل إعلان في {scopeLabel}</span>
+        <span className="text-[13px] font-medium text-text-muted">{tr("title", { scope: scopeLabel })}</span>
         <span className="text-[11.5px] text-text-faint">
-          {pick.eligibleCount} إعلان استوفى شروط الترشيح
+          {tr("eligible", { n: pick.eligibleCount })}
         </span>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <AdCard rank={1} item={pick.best} currency={currency} />
+        <AdCard rank={1} item={pick.best} currency={currency} locale={locale} />
         {pick.runnerUp ? (
-          <AdCard rank={2} item={pick.runnerUp} currency={currency} />
+          <AdCard rank={2} item={pick.runnerUp} currency={currency} locale={locale} />
         ) : (
           <div className="flex items-center rounded-2xl border border-dashed border-border bg-surface p-4 text-[12px] text-text-faint">
-            لا يوجد إعلان ثانٍ مؤهَّل للمقارنة بعد.
+            {tr("noSecond")}
           </div>
         )}
       </div>
@@ -58,13 +62,11 @@ export function BestAdPair({
         <p className="mt-2 text-[12px] leading-relaxed text-text-faint">
           {pick.isDecisiveLead ? (
             <>
-              الأول أرخص من الثاني بـ<span className="font-semibold text-text-muted">{pick.leadPct}%</span> في
-              تكلفة العميل — فارق ذو دلالة، يستحق أن يأخذ نصيباً أكبر من الميزانية.
+              {tr("leadClear", { pct: pick.leadPct })}
             </>
           ) : (
             <>
-              الفارق بين الأول والثاني {Math.abs(pick.leadPct)}% فقط — متعادلان عملياً. أبقِ الاثنين شغّالين
-              بدل تركيز الميزانية في واحد بناءً على فارق قد يكون تذبذباً.
+              {tr("leadTie", { pct: Math.abs(pick.leadPct) })}
             </>
           )}
         </p>
@@ -77,11 +79,14 @@ function AdCard({
   rank,
   item,
   currency,
+  locale,
 }: {
   rank: 1 | 2;
   item: CreativePerformance;
   currency: string;
+  locale: Locale;
 }) {
+  const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `bestAd.${k}`, vars);
   const Icon = rank === 1 ? Trophy : Medal;
   const tone = rank === 1 ? "text-verified" : "text-text-muted";
   const bg = rank === 1 ? "bg-verified/10" : "bg-surface-raised";
@@ -94,7 +99,7 @@ function AdCard({
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-[13px] font-medium text-text-muted">
-            {rank === 1 ? "الأول" : "الثاني"}
+            {rank === 1 ? tr("first") : tr("second")}
           </div>
           <div className="truncate text-[13px] text-text-primary" title={item.adName ?? item.adId}>
             {item.adName ?? item.adId}
@@ -113,13 +118,13 @@ function AdCard({
         <span className="text-[13px] font-medium text-text-muted">{currency}</span>
       </div>
       <div className="mt-1 text-[12px] text-text-faint">
-        تكلفة العميل {item.usingVerifiedData ? "المتحقّق منها" : "(معلَنة من المنصة)"}
+        {item.usingVerifiedData ? tr("cpaVerified") : tr("cpaReported")}
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3 text-[12px]">
-        <Stat label="نسبة النقر" value={`${item.ctr}%`} />
-        <Stat label="العائد" value={item.roas !== null ? `${item.roas}x` : "—"} />
-        <Stat label="الإنفاق" value={Math.round(item.cost).toLocaleString("en-US")} />
+        <Stat label={tr("ctr")} value={`${item.ctr}%`} />
+        <Stat label={tr("roas")} value={item.roas !== null ? `${item.roas}x` : "—"} />
+        <Stat label={tr("spend")} value={Math.round(item.cost).toLocaleString("en-US")} />
       </div>
     </div>
   );

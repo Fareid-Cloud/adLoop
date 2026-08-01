@@ -9,13 +9,16 @@
 // هذه عمليات كتابة على حساب إعلاني حقيقي (إيقاف إعلان، زيادة ميزانية) -
 // ضغطة واحدة بالخطأ تكلّف مالاً فعلياً. نفس النمط المعتمد في صفحة القرارات.
 
+import type { LucideIcon } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { TrendingUp, PauseCircle, MinusCircle, Loader2, Check, Lock, AlertTriangle } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export type Decision = "SCALE" | "HOLD" | "PAUSE";
 
 export interface AdDecisionCellProps {
+  locale?: Locale;
   workspaceId: string;
   adId: string;
   decision: Decision;
@@ -30,26 +33,23 @@ export interface AdDecisionCellProps {
 
 const CONFIRM_WINDOW_MS = 4000;
 
-const STYLES: Record<
-  Decision,
-  { label: string; icon: typeof TrendingUp; className: string; confirmClassName: string }
-> = {
+const STYLES: Record<string, { labelKey: string; icon: LucideIcon; className: string; confirmClassName: string }> = {
   SCALE: {
-    label: "توسيع",
+    labelKey: "scale",
     icon: TrendingUp,
     className:
       "border-success/40 bg-success/10 text-success hover:bg-success/20 hover:ring-2 hover:ring-success/25",
     confirmClassName: "border-success bg-success text-white",
   },
   HOLD: {
-    label: "إبقاء",
+    labelKey: "hold",
     icon: MinusCircle,
     className:
       "border-border bg-surface-2 text-text-muted hover:bg-surface-3 hover:ring-2 hover:ring-border",
     confirmClassName: "border-text-muted bg-text-muted text-white",
   },
   PAUSE: {
-    label: "إيقاف",
+    labelKey: "pause",
     icon: PauseCircle,
     className:
       "border-danger/40 bg-danger/10 text-danger hover:bg-danger/20 hover:ring-2 hover:ring-danger/25",
@@ -58,6 +58,8 @@ const STYLES: Record<
 };
 
 export function AdDecisionCell(props: AdDecisionCellProps) {
+  const locale: Locale = props.locale ?? "ar";
+  const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `adCell.${k}`, vars);
   const {
     workspaceId, adId, decision, reason, executable, blockedReason,
     cooldownDaysRemaining, lastAppliedDecision, scaleIncreasePct, scaleAffectsSiblings,
@@ -80,10 +82,10 @@ export function AdDecisionCell(props: AdDecisionCellProps) {
       <div className="flex flex-col items-start gap-1">
         <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-muted">
           <Lock className="h-3.5 w-3.5" />
-          {STYLES[lastAppliedDecision].label} — قيد القياس
+          {tr("measuring", { decision: tr(STYLES[lastAppliedDecision].labelKey) })}
         </span>
         <span className="text-[11px] leading-tight text-text-muted">
-          إعادة التقييم بعد {cooldownDaysRemaining} يوم
+          {tr("reassessIn", { n: cooldownDaysRemaining })}
         </span>
       </div>
     );
@@ -109,11 +111,11 @@ export function AdDecisionCell(props: AdDecisionCellProps) {
         body: JSON.stringify({ workspaceId, adId, decision }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "فشل التنفيذ");
-      setDone(data.message ?? "تم التنفيذ");
+      if (!res.ok) throw new Error(data.error ?? tr("failed"));
+      setDone(data.message ?? tr("applied"));
     } catch (err) {
       // الفشل يظهر كما هو - إخفاؤه يجعل المستخدم يظن أن التغيير حدث
-      setError(err instanceof Error ? err.message : "فشل التنفيذ");
+      setError(err instanceof Error ? err.message : tr("failed"));
     } finally {
       setBusy(false);
     }
@@ -154,13 +156,13 @@ export function AdDecisionCell(props: AdDecisionCellProps) {
         ) : (
           <Icon className="h-3.5 w-3.5" />
         )}
-        {busy ? "جارٍ التنفيذ…" : confirming ? "تأكيد؟" : style.label}
+        {busy ? tr("applying") : confirming ? tr("confirm") : tr(style.labelKey)}
       </button>
 
       {/* الأثر الجانبي يُقال قبل التنفيذ لا بعده */}
       {executable && decision === "SCALE" && (
         <span className="text-[11px] leading-tight text-text-muted">
-          +{scaleIncreasePct}% على {scaleAffectsSiblings ? "المجموعة الإعلانية" : "ميزانية الحملة"}
+          {tr("scaleOn", { pct: scaleIncreasePct ?? 0, target: scaleAffectsSiblings ? tr("targetAdset") : tr("targetCampaign") })}
         </span>
       )}
 

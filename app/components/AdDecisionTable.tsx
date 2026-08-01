@@ -115,6 +115,7 @@ export function AdDecisionTable({
 
                 <td className="px-4 py-3">
                   <AdDecisionCell
+                    locale={locale}
                     workspaceId={workspaceId}
                     adId={d.adId}
                     decision={d.decision}
