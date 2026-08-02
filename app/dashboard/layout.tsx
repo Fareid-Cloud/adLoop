@@ -100,7 +100,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   // بوابة الترحيب بتظهر لحد ما المستخدم يخلّصها أو يتخطاها (مش مربوطة
   // بعدد أيام - بوابة أولية إجبارية الظهور، لكن التخطّي متاح دائماً)
-  const showOnboarding = !!user && !user.onboardingCompleted && !user.onboardingDismissed;
+  //
+  // **إلا داخل العرض التجريبي.** من دخل ليشاهد المنتج جاهزاً فوجئ بنافذة
+  // تطالبه بربط حساب إعلاني حقيقي فوق مساحة كل خطواتها مكتملة أصلاً -
+  // نقيض الغرض من الديمو تماماً. البوابة تعود فور رجوعه لمساحته.
+  const showOnboardingBase = !!user && !user.onboardingCompleted && !user.onboardingDismissed;
 
   // مساحات العمل ومبدّلها - المساحة النشطة من الكوكي، وإلا الأقدم
   // مصدر حقيقة واحد للحدود: الجدول المحلّي السابق كان يحمل باقة `growth`
@@ -132,6 +136,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         select: { demoExpiresAt: true },
       })
     : null;
+
+  const showOnboarding = showOnboardingBase && !demoWs;
+
   // الرصيد المتبقّي = ما تبقّى من مخصّص الباقة + المشترى
   const creditsUsed = user ? await getMonthlyAiUsage(user.id) : 0;
   const creditsLeft = entitlements

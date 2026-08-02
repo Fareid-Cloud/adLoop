@@ -19,6 +19,7 @@ import {
   PauseCircle, PackagePlus, Boxes, Users, RotateCcw, Wallet,
 } from "lucide-react";
 import { t, tText, type Locale } from "@/lib/i18n/dictionary";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export const dynamic = "force-dynamic";
 
@@ -56,10 +57,7 @@ export default async function OpportunitiesPage() {
     return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
   }
 
-  const workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-  });
+  const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
     return <DataGate titleAr={tc("noWorkspace")} reasonAr={tc("noWorkspaceHint")} href="/dashboard" hrefLabelAr={tc("toHome")} />;
   }

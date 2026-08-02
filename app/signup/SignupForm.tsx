@@ -81,7 +81,10 @@ export function SignupForm() {
     const data = await res.json();
     setLoading(false);
     if (!res.ok) { setError(data.error ?? t(locale, "auth.invalidCredentials")); return; }
-    router.push("/dashboard");
+    // تحميل كامل لا `router.push`: الكوكي وصل للتوّ في رأس الاستجابة، بينما
+    // راوتر العميل قد يخدم حمولة RSC مخبّأة من قبل تسجيل الدخول - فتبقى
+    // الصفحة مكانها بلا رسالة ولا انتقال. التحميل الكامل يقرأ الجلسة الجديدة.
+    window.location.assign("/dashboard");
   }
 
   const L = (arTxt: string, enTxt: string) => (ar ? arTxt : enTxt);

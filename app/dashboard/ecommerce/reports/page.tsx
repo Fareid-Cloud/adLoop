@@ -15,6 +15,7 @@ import { getEcommerceOverview } from "@/lib/ecommerce/productPerformance";
 import { buildOpportunities } from "@/lib/ecommerce/opportunities";
 import { PrintButton } from "./PrintButton";
 import { t, tText, type Locale } from "@/lib/i18n/dictionary";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export const dynamic = "force-dynamic";
 
@@ -36,10 +37,7 @@ export default async function ReportsPage({
     return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
   }
 
-  const workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-  });
+  const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
     return <DataGate titleAr={tc("noWorkspace")} reasonAr={tc("noWorkspaceHint")} href="/dashboard" hrefLabelAr={tc("toHome")} />;
   }

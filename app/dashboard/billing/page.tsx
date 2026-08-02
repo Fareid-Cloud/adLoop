@@ -12,6 +12,7 @@ import { PlansClient } from "./PlansClient";
 import { billingCurrencyFor, PLAN_BY_KEY, type PlanKey } from "@/lib/plans";
 import { getMonthlyAiUsage } from "@/lib/aiRateLimit";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export const dynamic = "force-dynamic";
 
@@ -28,11 +29,7 @@ export default async function BillingPage({
     return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
-  const workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-    select: { currency: true },
-  });
+  const workspace = await getActiveWorkspace(user.id);
 
   const planKey = (user.subscriptionStatus === "ACTIVE" ? user.subscriptionPlan : null) as PlanKey | null;
   const plan = PLAN_BY_KEY.get(planKey ?? "free") ?? PLAN_BY_KEY.get("free")!;

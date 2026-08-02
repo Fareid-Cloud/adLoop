@@ -12,6 +12,7 @@
 import { prisma } from "@/lib/prisma";
 import { INTEGRATIONS, type IntegrationDef } from "@/lib/integrationsCatalog";
 import type { LocalizedText } from "@/lib/ecommerce/opportunities";
+import { getConnectedPlatforms } from "@/lib/connectionState";
 
 export type IntegrationHealth = "HEALTHY" | "NEEDS_ATTENTION" | "BROKEN";
 
@@ -103,7 +104,7 @@ export async function getIntegrationsOverview(
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-  const [connections, campaignLinks, ecommerce, runs] = await Promise.all([
+  const [connections, campaignLinks, ecommerce, runs, demoSet] = await Promise.all([
     prisma.connectedPlatform.findMany({ where: { userId } }),
     prisma.campaignLink.findMany({
       where: { workspaceId },
@@ -115,6 +116,7 @@ export async function getIntegrationsOverview(
       orderBy: { startedAt: "desc" },
       take: 60,
     }),
+    getConnectedPlatforms(workspaceId, userId),
   ]);
 
   const runsByPlatform = new Map<string, SyncRunSummary[]>();
@@ -127,8 +129,25 @@ export async function getIntegrationsOverview(
   const active: ActiveIntegration[] = [];
   const now = new Date();
 
+  // المساحة التجريبية لا تملك صفوف `ConnectedPlatform` - وهي لا يجوز أن
+  // تملكها، فالجدول مرتبط بالمستخدم لا بالمساحة، وبذر توكن مزيّف فيه كان
+  // سيجعل مساحته الحقيقية تبدو مربوطة. تُشتقّ هنا مدخلات مكافئة من
+  // المنصّات التي لها حملات مبذورة فعلاً، بلا أي بيانات اعتماد.
+  const seededPlatforms = new Set(campaignLinks.map((l) => l.platform));
+  const effectiveConnections = [
+    ...connections,
+    ...[...demoSet]
+      .filter((p) => seededPlatforms.has(p as never) && !connections.some((c) => c.platform === p))
+      .map((p) => ({
+        platform: p as (typeof connections)[number]["platform"],
+        expiresAt: null,
+        // تاريخ ربط اسمي: المساحة التجريبية لا تنتهي صلاحيتها ولا تُجدَّد
+        connectedAt: new Date(),
+      })),
+  ];
+
   // ==== منصّات الإعلان ====
-  for (const conn of connections) {
+  for (const conn of effectiveConnections) {
     const def = INTEGRATIONS.find((i) => i.platform === conn.platform);
     if (!def) continue;
 

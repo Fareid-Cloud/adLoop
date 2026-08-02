@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export async function GET(req: NextRequest) {
   const user = await getSessionUser(req);
@@ -18,11 +19,7 @@ export async function GET(req: NextRequest) {
   const since = new URL(req.url).searchParams.get("since");
   const sinceDate = since ? new Date(since) : null;
 
-  const workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-    select: { id: true },
-  });
+  const workspace = await getActiveWorkspace(user.id);
 
   if (!workspace) {
     return NextResponse.json({ unreadCount: 0, supportUnread: 0, new: [] });

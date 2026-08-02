@@ -6,6 +6,7 @@ import { EmptyState } from "@/app/components/ui/EmptyState";
 import { TrackingCoverageClient } from "./TrackingCoverageClient";
 import { getAppUrl } from "@/lib/appUrl";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export default async function TrackingCoveragePage() {
   const user = await getSessionUserFromCookies();
@@ -14,10 +15,7 @@ export default async function TrackingCoveragePage() {
     return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
-  const workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-  });
+  const workspace = await getActiveWorkspace(user.id);
 
   if (!workspace) {
     return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;

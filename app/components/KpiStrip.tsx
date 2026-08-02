@@ -1,12 +1,16 @@
 "use client";
 
 // شريط مؤشرات الأداء: بطاقات قابلة للاختيار (4–10)، تحت كل واحدة رسم صغير
-// لأدائها خلال الفترة المختارة، مع تمرير أفقي لأن العدد أكبر من عرض الشاشة.
-// كل الأرقام تتبع فلتر المنصة المختار في أعلى الصفحة.
+// لأدائها خلال الفترة المختارة. كل الأرقام تتبع فلتر المنصة المختار أعلى
+// الصفحة.
+//
+// شبكة تلتفّ لا شريط يُمرَّر أفقياً: خمس بطاقات بحدّ أدنى ٢١٤ بكسل تتجاوز
+// عرض الشاشة، فيختفي آخر مؤشّر خلف حافة لا يلاحظها المستخدم - وسهما التمرير
+// اللذان كانا يعوّضان ذلك صارا بلا وظيفة بعد الالتفاف فحُذفا.
 
-import { useRef, useState } from "react";
+import { useId, useState } from "react";
 import {
-  ChevronLeft, ChevronRight, SlidersHorizontal, ArrowUpRight, ArrowDownRight, Check,
+  SlidersHorizontal, ArrowUpRight, ArrowDownRight, Check,
   Wallet, Target, ShieldCheck, Percent, UserCheck, Users, MousePointerClick, Eye,
   Activity, Coins, AlertTriangle, TrendingUp,
 } from "lucide-react";
@@ -69,11 +73,17 @@ function fmtUnit(format: string, currency: string): string {
 
 // رسم صغير (SVG خالص - بدون مكتبة، خفيف وسريع)
 function Spark({ data, color }: { data: number[]; color: string }) {
+  // `useId` لا `Math.random`: المعرّف العشوائي يختلف بين عرض الخادم وترطيب
+  // العميل، فيرفض React الشجرة ("This won't be patched up") ويسقط ما بعدها
+  // من الصفحة. `useId` مستقرّ عبر الاثنين بحكم تصميمه.
+  //
+  // ويُستدعى قبل أي خروج مبكّر: الخطّاف بعد `return` مشروط، وهو كسر لقواعد
+  // الخطّافات يُربك ترتيبها بين عرض وآخر.
+  const id = `sg-${useId().replace(/:/g, "")}`;
   if (data.length < 2) return <div className="h-9" />;
   const max = Math.max(...data), min = Math.min(...data);
   const range = max - min || 1;
   const pts = data.map((v, i) => `${(i / (data.length - 1)) * 100},${28 - ((v - min) / range) * 24}`);
-  const id = `sg-${Math.random().toString(36).slice(2, 8)}`;
   return (
     <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="h-9 w-full">
       <defs>
@@ -102,10 +112,8 @@ export function KpiStrip({
   onChangeSelection: (keys: KpiKey[]) => void;
 }) {
   const ar = locale === "ar";
-  const scroller = useRef<HTMLDivElement>(null);
   const [picker, setPicker] = useState(false);
 
-  const scroll = (dir: number) => scroller.current?.scrollBy({ left: dir * 320, behavior: "smooth" });
 
   function toggle(k: KpiKey) {
     const has = selected.includes(k);
@@ -122,8 +130,6 @@ export function KpiStrip({
           <button onClick={() => setPicker((v) => !v)} className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[12px] text-text-muted transition-colors hover:text-text-primary">
             <SlidersHorizontal size={13} /> {ar ? "اختيار المؤشرات" : "Customize"}
           </button>
-          <button onClick={() => scroll(-1)} className="rounded-lg border border-border bg-surface p-1.5 text-text-muted hover:text-text-primary" aria-label="prev"><ChevronLeft size={15} /></button>
-          <button onClick={() => scroll(1)} className="rounded-lg border border-border bg-surface p-1.5 text-text-muted hover:text-text-primary" aria-label="next"><ChevronRight size={15} /></button>
         </div>
       </div>
 
@@ -152,7 +158,7 @@ export function KpiStrip({
         </div>
       )}
 
-      <div ref={scroller} className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "thin" }}>
+      <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(214px,1fr))]">
         {results.map((r) => {
           const def = KPI_DEFS.find((d) => d.key === r.key)!;
           const up = (r.changePct ?? 0) > 0;
@@ -163,7 +169,7 @@ export function KpiStrip({
           return (
             <div
               key={r.key}
-              className="card-shadow group min-w-[214px] flex-1 rounded-2xl border border-border bg-surface p-4 transition-all hover:-translate-y-0.5 hover:ring-1 hover:ring-border"
+              className="card-shadow group rounded-2xl border border-border bg-surface p-4 transition-all hover:-translate-y-0.5 hover:ring-1 hover:ring-border"
             >
               <div className="mb-3 flex items-center gap-2.5">
                 <span

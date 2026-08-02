@@ -15,6 +15,7 @@ import { getFrequencyByPlatform } from "@/lib/frequencyCheck";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds } from "@/lib/dateRange";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export default async function CreativesPage({
   searchParams,
@@ -30,10 +31,7 @@ export default async function CreativesPage({
     return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
-  const workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-  });
+  const workspace = await getActiveWorkspace(user.id);
 
   if (!workspace) {
     return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;

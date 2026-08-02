@@ -9,6 +9,7 @@ import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 function classify(identityType: string | null): "SPARK" | "DARK_POST" | "UNKNOWN" {
   if (identityType === "AUTH_CODE" || identityType === "TT_USER") return "SPARK";
@@ -23,10 +24,7 @@ export default async function TikTokSparkAdsPage() {
     return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
-  const workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-  });
+  const workspace = await getActiveWorkspace(user.id);
 
   if (!workspace) {
     return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;

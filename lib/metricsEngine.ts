@@ -76,7 +76,7 @@ export function computeMetrics(
   };
 }
 
-import { t, Locale } from "@/lib/i18n/dictionary";
+import { t, Locale, platformLabel } from "@/lib/i18n/dictionary";
 
 // مقارنة كل المنصات مع بعض داخل نفس الـ Workspace، وترتيبهم حسب
 // الأداء الحقيقي (CPL Verified) مش حسب أرقام المنصة الخام
@@ -104,8 +104,8 @@ export function comparePlatforms(
       ((worst.cplVerified - best.cplVerified) / worst.cplVerified) * 100
     );
     insight = t(locale, "insights.platformComparison", {
-      best: best.platform,
-      worst: worst.platform,
+      best: platformLabel(locale, best.platform),
+      worst: platformLabel(locale, worst.platform),
       pct: savingsPct,
       bestValue: best.cplVerified,
       worstValue: worst.cplVerified,

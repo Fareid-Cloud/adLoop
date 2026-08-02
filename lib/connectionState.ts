@@ -24,21 +24,43 @@ const PLATFORM_LABEL: Record<string, string> = {
   SNAPCHAT_ADS: "Snapchat Ads",
 };
 
-// حالة الربط لكل المنصات المدعومة - تُستخدم لعرض كروت الربط في الداشبورد
-export async function getConnectStates(workspaceId: string, userId: string) {
-  const platforms = ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"];
-  const [connections, links, ws] = await Promise.all([
+const SUPPORTED_PLATFORMS = ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"];
+
+/**
+ * المنصّات المربوطة فعليّاً من منظور مساحة عمل بعينها.
+ *
+ * `ConnectedPlatform` مرتبط بالمستخدم لا بمساحة العمل، فبذر ربط وهمي فيه
+ * كان سيجعل مساحته **الحقيقية** تبدو مربوطة بتوكنات مزيّفة - خطر فعلي لا
+ * مجرّد عرض خاطئ. لذلك تُعتبر المساحة التجريبية مربوطة بحكم كونها تجريبية،
+ * ودليلها حملاتها المبذورة، ولا توجد بيانات اعتماد مزيّفة في أي مكان.
+ *
+ * هذه هي نقطة الحقيقة الوحيدة: كان كل قسم يستعلم عن `connectedPlatform`
+ * بنفسه، فمرّ الديمو من بوّابة واحدة وسقط عند البقية - فبدت مساحة مليئة
+ * بالبيانات وكأنها فارغة تنتظر الربط.
+ */
+export async function getConnectedPlatforms(
+  workspaceId: string | null,
+  userId: string
+): Promise<Set<string>> {
+  const [connections, ws] = await Promise.all([
     prisma.connectedPlatform.findMany({ where: { userId }, select: { platform: true } }),
-    prisma.campaignLink.groupBy({ by: ["platform"], where: { workspaceId }, _count: { _all: true } }),
-    prisma.workspace.findUnique({ where: { id: workspaceId }, select: { isDemo: true } }),
+    workspaceId
+      ? prisma.workspace.findUnique({ where: { id: workspaceId }, select: { isDemo: true } })
+      : Promise.resolve(null),
   ]);
 
-  // ConnectedPlatform مرتبط بالمستخدم لا بمساحة العمل، فلا يمكن بذر ربط
-  // وهمي دون المساس بحالة حسابه الحقيقي. المساحة التجريبية تُعتبر مربوطة
-  // بحكم كونها تجريبية - وحملاتها المبذورة هي الدليل.
-  const connectedSet = ws?.isDemo
-    ? new Set(platforms)
-    : new Set(connections.map((c: any) => c.platform));
+  if (ws?.isDemo) return new Set(SUPPORTED_PLATFORMS);
+  return new Set(connections.map((c: { platform: string }) => c.platform));
+}
+
+// حالة الربط لكل المنصات المدعومة - تُستخدم لعرض كروت الربط في الداشبورد
+export async function getConnectStates(workspaceId: string, userId: string) {
+  const platforms = SUPPORTED_PLATFORMS;
+  const [connectedSet, links] = await Promise.all([
+    getConnectedPlatforms(workspaceId, userId),
+    prisma.campaignLink.groupBy({ by: ["platform"], where: { workspaceId }, _count: { _all: true } }),
+  ]);
+
   const countByPlatform = new Map(links.map((l: any) => [l.platform, l._count._all]));
 
   return platforms.map((p) => ({

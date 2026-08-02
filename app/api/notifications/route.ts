@@ -6,15 +6,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export async function GET(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-  });
+  const workspace = await getActiveWorkspace(user.id);
   if (!workspace) return NextResponse.json({ notifications: [], unreadCount: 0 });
 
   const { searchParams } = new URL(req.url);

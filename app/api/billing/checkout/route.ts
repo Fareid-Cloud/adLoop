@@ -11,6 +11,7 @@ import { getSessionUser } from "@/lib/auth";
 import { startSubscriptionCheckout, startCreditsCheckout } from "@/lib/billing";
 import { billingCurrencyFor, PLAN_BY_KEY, type BillingCycle, type PlanKey } from "@/lib/plans";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
@@ -24,11 +25,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
 
   // العملة من مساحة عمل المستخدم لا من العميل - وإلا اختار الأرخص
-  const workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-    select: { currency: true },
-  });
+  const workspace = await getActiveWorkspace(user.id);
   const currency = billingCurrencyFor(workspace?.currency ?? "USD");
 
   if (body?.mode === "credits") {

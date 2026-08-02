@@ -22,6 +22,7 @@ import {
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { t, relativeFromDate, type Locale } from "@/lib/i18n/dictionary";
 import type { SetupProgress } from "@/lib/setupProgress";
+import { OpenSupportButton } from "./OpenSupportButton";
 
 export interface ActivityRow {
   id: string;
@@ -311,7 +312,7 @@ export function SupportPanel({
           tone="var(--accent)"
           title={tr("supportChat")}
           body={tr("supportChatBody")}
-          onClick={() => window.dispatchEvent(new CustomEvent("adloop:open-support"))}
+          opensSupport
         />
         {waHref && (
           <SupportRow
@@ -336,7 +337,7 @@ export function SupportPanel({
 }
 
 function SupportRow({
-  Icon, tone, title, body, href, external, onClick,
+  Icon, tone, title, body, href, external, opensSupport,
 }: {
   Icon: typeof MessageCircle;
   tone: string;
@@ -344,7 +345,8 @@ function SupportRow({
   body: string;
   href?: string;
   external?: boolean;
-  onClick?: () => void;
+  /** يفتح درج الدعم الجانبي - المُعالِج نفسه يعيش في مكوّن عميل */
+  opensSupport?: boolean;
 }) {
   const inner = (
     <>
@@ -364,7 +366,8 @@ function SupportRow({
 
   const cls = "flex items-center gap-2.5 rounded-xl border border-border bg-surface-raised/50 p-2.5 no-underline transition-colors hover:border-accent";
 
-  if (onClick) return <button onClick={onClick} className={`${cls} w-full text-start`}>{inner}</button>;
+  if (opensSupport)
+    return <OpenSupportButton className={`${cls} w-full text-start`}>{inner}</OpenSupportButton>;
   return external
     ? <a href={href} target="_blank" rel="noopener noreferrer" className={cls}>{inner}</a>
     : <Link href={href ?? "#"} className={cls}>{inner}</Link>;

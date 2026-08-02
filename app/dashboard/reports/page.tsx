@@ -15,6 +15,7 @@ import { ReportsClient, type SavedView } from "./ReportsClient";
 import { runReport, METRICS, type DataSource, type Dimension, type MetricKey } from "@/lib/reports/reportEngine";
 import { periodFromParams, type CompareMode } from "@/lib/dateRange";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export const dynamic = "force-dynamic";
 
@@ -34,10 +35,7 @@ export default async function ReportsPage({
     return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
-  const workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-  });
+  const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
     return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }

@@ -9,15 +9,13 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { checkTrackingPresence } from "@/lib/trackingCoverage";
 import { runDiagnostics } from "@/lib/diagnosticsEngine";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-  });
+  const workspace = await getActiveWorkspace(user.id);
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const pages = await prisma.monitoredPage.findMany({

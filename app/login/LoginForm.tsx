@@ -41,7 +41,10 @@ export function LoginForm() {
       setPendingToken(data.pendingToken);
       return;
     }
-    router.push("/dashboard");
+    // تحميل كامل لا `router.push`: الكوكي وصل للتوّ في رأس الاستجابة، بينما
+    // راوتر العميل قد يخدم حمولة RSC مخبّأة من قبل تسجيل الدخول - فتبقى
+    // الصفحة مكانها بلا رسالة ولا انتقال. التحميل الكامل يقرأ الجلسة الجديدة.
+    window.location.assign("/dashboard");
   }
 
   async function handleMfaSubmit(e: React.FormEvent) {
@@ -59,7 +62,10 @@ export function LoginForm() {
       setError(data.error ?? t(locale, "auth.mfaInvalid"));
       return;
     }
-    router.push("/dashboard");
+    // تحميل كامل لا `router.push`: الكوكي وصل للتوّ في رأس الاستجابة، بينما
+    // راوتر العميل قد يخدم حمولة RSC مخبّأة من قبل تسجيل الدخول - فتبقى
+    // الصفحة مكانها بلا رسالة ولا انتقال. التحميل الكامل يقرأ الجلسة الجديدة.
+    window.location.assign("/dashboard");
   }
 
   return (

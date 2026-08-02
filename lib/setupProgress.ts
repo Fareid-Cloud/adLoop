@@ -16,6 +16,7 @@
 //    بوجود صفوف كان يُعلّق المستخدم إلى ما لا نهاية على خطوة نفّذها فعلاً.
 
 import { prisma } from "@/lib/prisma";
+import { getConnectedPlatforms } from "@/lib/connectionState";
 
 export interface SetupStep {
   id: string;
@@ -39,7 +40,10 @@ export interface SetupProgress {
 
 export async function getSetupProgress(workspaceId: string, userId: string): Promise<SetupProgress> {
   const [connections, campaignCount, snapshotCount, syncedOk, verifiedAgg, valueConfig, appliedActions, storeCount, productCount] = await Promise.all([
-    prisma.connectedPlatform.count({ where: { userId } }),
+    // عبر المصدر الموحّد لا استعلاماً مباشراً: المساحة التجريبية مربوطة
+    // بحكم كونها تجريبية، وإلا وقف الديمو المليء بالبيانات على خطوة
+    // «اربط حساباً» إلى الأبد.
+    getConnectedPlatforms(workspaceId, userId).then((s) => s.size),
     prisma.campaignLink.count({ where: { workspaceId } }),
     prisma.metricSnapshot.count({ where: { workspaceId } }),
     prisma.syncRun.count({ where: { workspaceId, status: "SUCCESS" } }),

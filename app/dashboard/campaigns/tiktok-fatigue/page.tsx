@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { detectTikTokFatigue } from "@/lib/syncTikTokAds";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 const STATUS_CONFIG = {
   HEALTHY: { color: "text-verified", key: "tfHealthy" },
@@ -24,10 +25,7 @@ export default async function TikTokFatiguePage() {
     return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
-  const workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-  });
+  const workspace = await getActiveWorkspace(user.id);
 
   if (!workspace) {
     return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;

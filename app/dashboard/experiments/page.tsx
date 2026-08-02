@@ -10,6 +10,7 @@ import { EmptyState } from "@/app/components/ui/EmptyState";
 import { ExperimentsView, type ExperimentRow } from "./ExperimentsView";
 import { estimateLearningPhaseDuration, findStabilizationDay } from "@/lib/periodComparison";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export default async function ExperimentsPage() {
   const user = await getSessionUserFromCookies();
@@ -18,10 +19,7 @@ export default async function ExperimentsPage() {
     return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
-  const workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-  });
+  const workspace = await getActiveWorkspace(user.id);
 
   if (!workspace) {
     return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;

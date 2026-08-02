@@ -16,7 +16,7 @@ import { RevenueByPlatform, type RevenuePlatformRow } from "@/app/components/Rev
 import { TrendChart } from "@/app/components/TrendChart";
 import { MetricsExplorer } from "@/app/components/MetricsExplorer";
 import { computeHealthScore } from "@/lib/healthScore";
-import { getConnectStates } from "@/lib/connectionState";
+import { getConnectStates, getConnectedPlatforms } from "@/lib/connectionState";
 import { ConnectPlatforms } from "@/app/components/ConnectPlatforms";
 import { SetupProgressPanel, RecentActivityPanel, ConnectedPlatformsPanel, AfterActivationPanel, SupportPanel } from "./HomePanels";
 import { getRecentActivity, getPlatformCards } from "@/lib/homeActivity";
@@ -34,6 +34,7 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 import { ReportedVsActualBars } from "@/app/components/ui/ReportedVsActualBars";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds, daysBetween } from "@/lib/dateRange";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 const AD_PLATFORMS = ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS", "SNAPCHAT_ADS"];
 
@@ -67,21 +68,20 @@ export default async function GlancePage({
 
   // بوابة الإعداد الإجبارية - كانت في الـlayout، ونقلها إلى هنا يمنع أي
   // فشل فيها من إسقاط كل صفحات اللوحة دفعة واحدة.
+  const workspace = await getActiveWorkspace(user.id);
+
   let needsOnboarding = false;
   if (!user.onboardingDismissed) {
     try {
-      const connectionCount = await prisma.connectedPlatform.count({ where: { userId: user.id } });
-      needsOnboarding = connectionCount === 0;
+      // المساحة النشطة أولاً: المستخدم الذي دخل العرض التجريبي كان يُرمى
+      // إلى صفحة الإعداد لأن حسابه بلا ربط حقيقي - فلا يرى الديمو أصلاً.
+      const connected = await getConnectedPlatforms(workspace?.id ?? null, user.id);
+      needsOnboarding = connected.size === 0;
     } catch (err) {
       console.error("[glance] تعذّر فحص المنصات المرتبطة:", err);
     }
   }
   if (needsOnboarding) redirect("/onboarding");
-
-  const workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-  });
 
   if (!workspace) {
     const { CreateWorkspaceForm } = await import("./CreateWorkspaceForm");
@@ -246,7 +246,17 @@ export default async function GlancePage({
   // فتغيير الاختيار فوري بلا طلب جديد. تتبع فلتر المنصة والمدة المختارين.
   const allKpis = await computeKpis(workspace.id, KPI_DEFS.map((d) => d.key), days, platformFilter || null);
 
-  const health = computeHealthScore({ tracking: null, landing: null, ads: null, audience: null, creatives: null });
+  // كانت المكوّنات الخمسة `null` ثابتة في الكود، فعرضت الشارة «—» و«بانتظار
+  // ربط الحسابات» لكل مستخدم إلى الأبد مهما اكتملت بياناته. يُمرَّر هنا ما
+  // نملكه فعلاً؛ والباقي يبقى `null` عمداً - الدالة تُعيد الترجيح على
+  // المتاح وحده، فالمكوّن الغائب لا يخفض الدرجة ولا يُختلق له رقم.
+  const health = computeHealthScore({
+    tracking: hasAnyData ? trackingAccuracy : null,
+    landing: null,
+    ads: null,
+    audience: null,
+    creatives: null,
+  });
   const firstName = user.name?.split(" ")[0] ?? user.email.split("@")[0];
 
   return (
@@ -260,7 +270,15 @@ export default async function GlancePage({
             {health.overallScore || "—"}
           </div>
           <span className="text-xs text-text-muted">
-            {tr("healthScore", { state: health.isComplete ? tr("healthComplete") : tr("healthPending") })}
+            {tr("healthScore", {
+              // ثلاث حالات لا اثنتان: «بانتظار الربط» كانت تُعرض حتى لمن
+              // وصلت بياناته فعلاً، فتقرأ كخلل بينما الحساب يعمل.
+              state: health.isComplete
+                ? tr("healthComplete")
+                : health.overallScore > 0
+                  ? tr("healthPartial")
+                  : tr("healthPending"),
+            })}
           </span>
         </div>
       </div>

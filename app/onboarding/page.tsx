@@ -10,6 +10,7 @@ import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getConnectStates } from "@/lib/connectionState";
 import { OnboardingFlow } from "./OnboardingFlow";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +18,7 @@ export default async function OnboardingPage() {
   const user = await getSessionUserFromCookies();
   if (!user) redirect("/login");
 
-  let workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-  });
+  let workspace = await getActiveWorkspace(user.id);
 
   // لا يمكن ربط حملات بلا مساحة عمل - ننشئها ضمنياً بدل إظهار نموذج إضافي
   if (!workspace) {

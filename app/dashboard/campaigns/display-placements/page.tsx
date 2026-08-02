@@ -7,6 +7,7 @@ import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { getRelativeSpendThreshold } from "@/lib/relativeSpendThreshold";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export default async function DisplayPlacementsPage() {
   const user = await getSessionUserFromCookies();
@@ -14,10 +15,7 @@ export default async function DisplayPlacementsPage() {
     return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
   }
 
-  const workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-  });
+  const workspace = await getActiveWorkspace(user.id);
 
   if (!workspace) {
     return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;

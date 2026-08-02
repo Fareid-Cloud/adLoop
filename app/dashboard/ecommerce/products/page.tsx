@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { getEcommerceOverview } from "@/lib/ecommerce/productPerformance";
 import { EcommerceView, type ProductRow } from "../EcommerceView";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export const dynamic = "force-dynamic";
 
@@ -25,10 +26,7 @@ export default async function EcommerceProductsPage({
     return <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>;
   }
 
-  const workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-  });
+  const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
     return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
   }

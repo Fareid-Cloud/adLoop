@@ -12,6 +12,7 @@ import { EmptyState } from "@/app/components/ui/EmptyState";
 import { getIntegrationsOverview } from "@/lib/integrationsStatus";
 import { IntegrationsView } from "./IntegrationsView";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export const dynamic = "force-dynamic";
 
@@ -38,10 +39,7 @@ export default async function IntegrationsPage({
     );
   }
 
-  const workspace = await prisma.workspace.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
-  });
+  const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
     return (
       <EmptyState
