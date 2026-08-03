@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (!link) {
-    console.warn(`مفيش Workspace مربوط بمتجر سلة: ${storeId}`);
+    console.warn(`لا توجد مساحة عمل مرتبطة بمتجر سلة: ${storeId}`);
     return NextResponse.json({ ok: true });
   }
 

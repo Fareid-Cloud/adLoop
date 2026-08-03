@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { GapMeter } from "./GapMeter";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 interface PlatformData {
   platform: string;
@@ -16,7 +17,15 @@ interface PlatformData {
   reported: number;
 }
 
-export function PlatformBreakdown({ platforms }: { platforms: PlatformData[] }) {
+export function PlatformBreakdown({
+  platforms,
+  locale = "ar",
+  days = 30,
+}: {
+  platforms: PlatformData[];
+  locale?: Locale;
+  days?: number;
+}) {
   const [separated, setSeparated] = useState(false);
 
   const combined = platforms.reduce(
@@ -28,14 +37,17 @@ export function PlatformBreakdown({ platforms }: { platforms: PlatformData[] }) 
     <div className="rounded-2xl bg-surface p-6">
       <div className="mb-5 flex items-center justify-between">
         <span className="text-[13px] text-text-muted">
-          الحقيقة مقابل الظاهر — {separated ? "كل منصة على حدة" : "كل المنصات"} (آخر 30 يوم)
+          {t(locale, "ui.splitHeading", {
+            mode: t(locale, separated ? "ui.splitSeparated" : "ui.splitMerged"),
+            days: String(days),
+          })}
         </span>
         {platforms.length > 1 && (
           <button
             onClick={() => setSeparated((s) => !s)}
             className="rounded-full bg-surface-raised px-3 py-1 text-xs text-text-muted transition-colors hover:text-text-primary"
           >
-            {separated ? "دمج المنصات" : "فصل المنصات"}
+            {t(locale, separated ? "ui.splitDoMerge" : "ui.splitDoSeparate")}
           </button>
         )}
       </div>
@@ -48,15 +60,17 @@ export function PlatformBreakdown({ platforms }: { platforms: PlatformData[] }) 
               label={p.platformLabel}
               verifiedValue={p.verified}
               reportedValue={p.reported}
+              locale={locale}
             />
           ))}
         </div>
       ) : (
         <GapMeter
-          label="المحادثات"
+          label={t(locale, "ui.conversations")}
           verifiedValue={combined.verified}
           reportedValue={combined.reported}
           size="lg"
+          locale={locale}
         />
       )}
     </div>

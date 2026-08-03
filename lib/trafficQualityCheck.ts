@@ -20,6 +20,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { pushToActionFeed } from "@/lib/actionFeed";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const MIN_CLICKS_FROM_SAME_IP = 4;
 const LOOKBACK_DAYS = 14;
@@ -95,28 +96,43 @@ export async function checkTrafficQualityForWorkspace(workspaceId: string) {
   const cooldownStart = new Date();
   cooldownStart.setDate(cooldownStart.getDate() - COOLDOWN_DAYS);
   const recentSimilar = await prisma.actionFeedItem.findFirst({
-    where: { workspaceId, title: { contains: "مصادر كليك مشبوهة" }, createdAt: { gte: cooldownStart } },
+    where: { workspaceId, titleKey: "alerts.suspiciousSignalsTitle", createdAt: { gte: cooldownStart } },
   });
   if (recentSimilar) return;
 
   const platformsInvolved = [...new Set(suspiciousIpGroups.map(([, v]) => v.platform))];
-  const tiktokNote = platformsInvolved.includes("TIKTOK_ADS")
-    ? " تيك توك من ضمنها - متوقّع أكتر إحصائياً حسب البحث، لكن يستاهل مراجعة برضو."
-    : "";
+  const hasTiktok = platformsInvolved.includes("TIKTOK_ADS");
 
-  const signalParts: string[] = [];
-  if (suspiciousIpGroups.length > 0) signalParts.push(`${suspiciousIpGroups.length} مصدر IP متكرر (${totalSuspiciousClicks} كليك)`);
-  if (botSignatureCount > 0) signalParts.push(`${botSignatureCount} كليك إعلاني بتوقيع بوت معروف صراحة`);
-  if (scriptedPatternCount > 0) signalParts.push(`${scriptedPatternCount} نمط جهاز واحد بيلف على IPs مختلفة`);
-  if (websiteBotSignatureCount > 0) signalParts.push(`${websiteBotSignatureCount} زيارة موقع بتوقيع بوت معروف`);
+  // الإشارات تُبنى كمفاتيح فتُركَّب وقت العرض بلغة القارئ - سردها هنا
+  // كنصّ جاهز كان يجمّد لغة الكرون داخل الوصف.
+  const signalKeys: Array<{ key: string; vars: Record<string, number> }> = [];
+  if (suspiciousIpGroups.length > 0)
+    signalKeys.push({ key: "alerts.sigRepeatedIp", vars: { groups: suspiciousIpGroups.length, clicks: totalSuspiciousClicks } });
+  if (botSignatureCount > 0)
+    signalKeys.push({ key: "alerts.sigBotSignature", vars: { count: botSignatureCount } });
+  if (scriptedPatternCount > 0)
+    signalKeys.push({ key: "alerts.sigScripted", vars: { count: scriptedPatternCount } });
+  if (websiteBotSignatureCount > 0)
+    signalKeys.push({ key: "alerts.sigWebsiteBot", vars: { count: websiteBotSignatureCount } });
+
+  const renderSignals = (loc: Locale) => signalKeys.map((s) => t(loc, s.key, s.vars)).join(" + ");
+  const titleVars = { count: signalKeys.length };
+  const descVars = {
+    signals: renderSignals("ar"),
+    tiktokNote: hasTiktok ? t("ar", "alerts.suspiciousTiktokNote") : "",
+  };
 
   await pushToActionFeed({
     workspaceId,
     source: "TRAFFIC_QUALITY",
     type: "ALERT",
     severity: "MEDIUM",
-    title: `إشارات ترافيك مشبوه (${signalParts.length} نوع إشارة)`,
-    description: `${signalParts.join(" + ")}.${tiktokNote} ده مش إثبات احتيال قاطع، لكنه نمط يستاهل تراجعه - خصوصاً لو تكرر أو زاد.`,
+    title: t("ar", "alerts.suspiciousSignalsTitle", titleVars),
+    titleKey: "alerts.suspiciousSignalsTitle",
+    titleVars,
+    description: t("ar", "alerts.suspiciousBody", descVars),
+    descKey: "alerts.suspiciousBody",
+    descVars,
     linkUrl: "/dashboard/reports",
   });
 }

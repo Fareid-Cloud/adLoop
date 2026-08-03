@@ -4,8 +4,13 @@
 
 import { useState } from "react";
 import { RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
-export function DataConsistencyCheck({ workspaceId }: { workspaceId: string }) {
+export function DataConsistencyCheck({ workspaceId,
+  locale = "ar",
+}: { workspaceId: string
+  locale?: Locale;
+}) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     matches: boolean; storedClicks: number; liveClicks: number; discrepancyPct: number;
@@ -21,14 +26,14 @@ export function DataConsistencyCheck({ workspaceId }: { workspaceId: string }) {
   return (
     <div className="rounded-2xl bg-surface p-4">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-sm text-text-primary">تطابق البيانات مع جوجل</span>
+        <span className="text-sm text-text-primary">{t(locale, "consistency.title")}</span>
         <button
           onClick={runCheck}
           disabled={loading}
           className="flex items-center gap-1.5 rounded-full bg-surface-raised px-3 py-1 text-xs text-text-muted disabled:opacity-50"
         >
           <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
-          {loading ? "جارٍ الفحص..." : "افحص الآن"}
+          {loading ? t(locale, "consistency.checking") : t(locale, "consistency.check")}
         </button>
       </div>
 
@@ -41,8 +46,12 @@ export function DataConsistencyCheck({ workspaceId }: { workspaceId: string }) {
           )}
           <span className={result.matches ? "text-text-muted" : "text-critical"}>
             {result.matches
-              ? `متطابقة (فرق ${result.discrepancyPct}% ضمن الهامش الطبيعي)`
-              : `فرق ${result.discrepancyPct}% — عندنا ${result.storedClicks} كليكة، جوجل بتقول ${result.liveClicks}`}
+              ? t(locale, "consistency.match", { pct: String(result.discrepancyPct) })
+              : t(locale, "consistency.mismatch", {
+                  pct: String(result.discrepancyPct),
+                  ours: String(result.storedClicks),
+                  theirs: String(result.liveClicks),
+                })}
           </span>
         </div>
       )}

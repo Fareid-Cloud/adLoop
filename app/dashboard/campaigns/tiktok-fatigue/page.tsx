@@ -70,14 +70,13 @@ export default async function TikTokFatiguePage() {
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.tfTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
-        تيك توك بطبيعتها بتتعب أسرع من جوجل وميتا. الإشارة الأساسية: انخفاض معدل المشاهدة المتفاعلة
-        أسبوع عن أسبوع. التكرار إشارة مساندة فقط - لا توجد عتبة موحّدة متفق عليها لتيك توك.
+        {t(locale, "campPages.tfIntro2")}
       </p>
 
       {sorted.length === 0 ? (
         <EmptyState
-          title="لا توجد بيانات كافية بعد"
-          description="محتاجة أسبوعين على الأقل من المزامنة اليومية بعد ربط حملات تيك توك."
+          title={t(locale, "campPages.tfNone")}
+          description={t(locale, "campPages.tfNoneBody")}
         />
       ) : (
         <div className="flex flex-col gap-2">

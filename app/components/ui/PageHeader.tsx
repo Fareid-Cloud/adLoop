@@ -4,9 +4,10 @@
 // الوحيد، بيتكرر في كل الأقسام (مبدأ §4 و§11 في الـ ADR).
 
 import type { ReactNode } from "react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 interface PageHeaderProps {
-  eyebrow?: string; // نص صغير فوق العنوان (زي "مساحة العمل")
+  eyebrow?: string; // نص صغير فوق العنوان (زي t(locale, "ui.workspace"))
   title: string;
   action?: ReactNode; // زرار أو عنصر تفاعلي على الجهة التانية من العنوان
 }

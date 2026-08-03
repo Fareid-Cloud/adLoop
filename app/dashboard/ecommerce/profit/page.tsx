@@ -41,7 +41,7 @@ export default async function ProfitPage({
 
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
-    return <DataGate title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
+    return <DataGate locale={locale} title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
   const journey = await getProfitJourney(workspace.id, windowDays);
@@ -55,7 +55,7 @@ export default async function ProfitPage({
           subtitle={tr("subtitle")}
           storeName={workspace.name}
         />
-        <DataGate
+        <DataGate locale={locale}
           title={tr("noRevenue")}
           reason={tr("noRevenueReason")}
         />
@@ -160,7 +160,7 @@ export default async function ProfitPage({
         />
       </div>
 
-      <LimitsNote items={journey.missingCostsAr} />
+      <LimitsNote locale={locale} items={journey.missingCostsAr} />
 
       <SectionHeading hint={tr("whereMoneyGoesHint")}>{tr("whereMoneyGoes")}</SectionHeading>
 
@@ -251,7 +251,7 @@ export default async function ProfitPage({
         </div>
       )}
 
-      <RecommendedActions actions={actions} empty={tr("healthy")} />
+      <RecommendedActions locale={locale} actions={actions} empty={tr("healthy")} />
     </div>
   );
 }

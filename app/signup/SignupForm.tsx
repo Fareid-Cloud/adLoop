@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { t, Locale } from "@/lib/i18n/dictionary";
 import { useAuthLocale } from "@/app/components/useAuthLocale";
-import { PasswordRequirements } from "@/app/components/PasswordRequirements";
+import { PasswordRequirements, PasswordMatch } from "@/app/components/PasswordRequirements";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { AuthShell } from "@/app/components/AuthShell";
 import { SocialButton, FIELD as F, PRIMARY_BTN as PB } from "@/app/components/AuthControls";
@@ -43,7 +43,7 @@ export function SignupForm() {
   const [locale, setLocale] = useAuthLocale();
   const [f, setF] = useState({
     name: "", username: "", email: "", password: "", confirm: "",
-    companyName: "", gender: "", country: "", adSpendMonthly: "", businessScale: "", howHeard: "", referralSource: "",
+    companyName: "", gender: "", birthDate: "", country: "", adSpendMonthly: "", businessScale: "", howHeard: "", referralSource: "",
   });
   const [showPw, setShowPw] = useState(false);
   const [showPw2, setShowPw2] = useState(false);
@@ -93,9 +93,9 @@ export function SignupForm() {
     <AuthShell
       wide
       locale={locale}
+      // بلا headline/sub: النصّ التسويقي مصدره القشرة، فتُقرأ الرسالة
+      // نفسها على شاشتي الدخول والتسجيل بدل نسختين تتباعدان.
       onLocaleChange={setLocale}
-      headline={ar ? "ابدأ بأرقام تثق فيها" : "Start with numbers you can trust"}
-      sub={ar ? "دقائق للربط، ثم ترى الفرق بين ما تقوله المنصات وما تحقّق فعلاً." : "Connect in minutes, then see the gap between reported and verified."}
     >
       <div className="w-full">
         <div className="mb-7">
@@ -104,7 +104,7 @@ export function SignupForm() {
         </div>
 
         <div className="mb-5 grid grid-cols-2 gap-2.5">
-          <SocialButton href="/api/oauth/login-google/start" logo={<PlatformLogo platform="GOOGLE_ADS" size={18} />}>Google</SocialButton>
+          <SocialButton href="/api/oauth/login-google/start" logo={<PlatformLogo platform="GOOGLE" size={18} />}>Google</SocialButton>
           <SocialButton href="/api/oauth/login-facebook/start" logo={<PlatformLogo platform="FACEBOOK" size={18} />}>Facebook</SocialButton>
         </div>
 
@@ -129,10 +129,24 @@ export function SignupForm() {
               <button type="button" tabIndex={-1} onClick={() => setShowPw2((v) => !v)} className="absolute inset-y-0 end-2.5 flex items-center text-text-faint hover:text-text-primary">{showPw2 ? <EyeOff size={16} /> : <Eye size={16} />}</button>
             </div>
           </div>
-          <PasswordRequirements password={f.password} />
+          <PasswordRequirements password={f.password} locale={locale} />
+          <PasswordMatch password={f.password} confirm={f.confirm} locale={locale} />
 
           <div className="grid grid-cols-2 gap-3">
             <input className={FIELD} placeholder={L("اسم الشركة (اختياري)", "Company (optional)")} value={f.companyName} onChange={(e) => set("companyName", e.target.value)} />
+            {/* تاريخ الميلاد: `type="date"` يعطي منتقي المتصفّح الأصلي -
+                لا مكتبة ولا ثلاث قوائم منسدلة. `max` اليوم يمنع تاريخاً
+                مستقبلياً قبل أن يُرسل. */}
+            <input
+              className={FIELD}
+              type="date"
+              max={new Date().toISOString().slice(0, 10)}
+              value={f.birthDate}
+              onChange={(e) => set("birthDate", e.target.value)}
+              aria-label={L("تاريخ الميلاد", "Date of birth")}
+              title={L("تاريخ الميلاد", "Date of birth")}
+            />
+
             <select className={FIELD} value={f.gender} onChange={(e) => set("gender", e.target.value)}>
               <option value="">{L("النوع", "Gender")}</option>
               {GENDERS.map((g) => <option key={g.v} value={g.v}>{ar ? g.ar : g.en}</option>)}

@@ -45,9 +45,9 @@ export default async function SearchTermsPage({
     return (
       <div className="mx-auto max-w-3xl">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="mb-6 text-[26px] font-semibold text-text-primary">مصطلحات البحث المهدرة</h1>
+        <h1 className="mb-6 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.stTitle")}</h1>
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
-        <EmptyState title="لا توجد بيانات مصطلحات بحث بعد" description="تتحدّث تلقائياً مع المزامنة اليومية." />
+        <EmptyState title={t(locale, "campPages.stNone")} description={t(locale, "campPages.stNoneBody")} />
       </div>
     );
   }
@@ -68,25 +68,25 @@ export default async function SearchTermsPage({
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">مصطلحات البحث المهدرة</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.stTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
-        إجمالي مهدور آخر 30 يوم:{" "}
+        {t(locale, "campPages.stWasted", { days: "30" })}{" "}
         <span className="font-mono text-critical">{totalWastedCost}</span> {workspace.currency}
       </p>
 
       {wasteful.length === 0 ? (
-        <EmptyState title="لا يوجد هدر واضح حالياً" description="كل عبارات البحث التي أنفقت عليها حقّقت نتيجة." />
+        <EmptyState title={t(locale, "campPages.stNoWaste")} description={t(locale, "campPages.stNoWasteBody")} />
       ) : (
         <div className="flex flex-col gap-1">
-          {wasteful.map((t) => (
-            <div key={t.searchTerm} className="rounded-2xl bg-surface p-4">
+          {wasteful.map((term) => (
+            <div key={term.searchTerm} className="rounded-2xl bg-surface p-4">
               <div className="mb-1 flex items-center justify-between">
-                <span className="text-sm text-text-primary">"{t.searchTerm}"</span>
-                <span className="font-mono text-sm text-critical">{Math.round(t.cost * 100) / 100}</span>
+                <span className="text-sm text-text-primary">"{term.searchTerm}"</span>
+                <span className="font-mono text-sm text-critical">{Math.round(term.cost * 100) / 100}</span>
               </div>
               <p className="text-xs text-text-faint">
-                {t.clicks} كليكة، صفر تحويل
-                {t.matchedKeyword && ` — طابقت الكلمة المفتاحية "${t.matchedKeyword}"`}
+                {term.clicks} {t(locale, "campPages.stClicksNoConv")}
+                {term.matchedKeyword && t(locale, "campPages.stMatched", { keyword: term.matchedKeyword })}
               </p>
             </div>
           ))}

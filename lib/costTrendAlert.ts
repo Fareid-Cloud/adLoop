@@ -8,6 +8,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { pushToActionFeed } from "@/lib/actionFeed";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const RISE_THRESHOLD_PCT = 25;
 const COOLDOWN_DAYS = 7;
@@ -45,7 +46,7 @@ export async function checkCostTrendAlertForWorkspace(workspaceId: string) {
   const cooldownStart = new Date();
   cooldownStart.setDate(cooldownStart.getDate() - COOLDOWN_DAYS);
   const recentSimilar = await prisma.actionFeedItem.findFirst({
-    where: { workspaceId, title: { contains: "تكلفة العميل ارتفعت" }, createdAt: { gte: cooldownStart } },
+    where: { workspaceId, titleKey: "alerts.costTrendTitle", createdAt: { gte: cooldownStart } },
   });
   if (recentSimilar) return;
 
@@ -54,8 +55,15 @@ export async function checkCostTrendAlertForWorkspace(workspaceId: string) {
     source: "FORECAST",
     type: "ALERT",
     severity: "MEDIUM",
-    title: "تكلفة العميل ارتفعت بشكل ملحوظ هذا الأسبوع",
-    description: `تكلفة العميل هذا الأسبوع (${Math.round(thisCpa)}) أعلى بـ${risePct}% عن الأسبوع اللي فات (${Math.round(lastCpa)}).`,
+    title: t("ar", "alerts.costTrendTitle"),
+    titleKey: "alerts.costTrendTitle",
+    description: t("ar", "alerts.costTrendBody", {
+      thisCpa: Math.round(thisCpa),
+      risePct,
+      lastCpa: Math.round(lastCpa),
+    }),
+    descKey: "alerts.costTrendBody",
+    descVars: { thisCpa: Math.round(thisCpa), risePct, lastCpa: Math.round(lastCpa) },
     linkUrl: "/dashboard/campaigns/seasonal-trend",
   });
 }

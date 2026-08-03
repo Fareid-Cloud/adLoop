@@ -11,13 +11,13 @@ export default async function SiteScanPage() {
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await getActiveWorkspace(user.id);
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
   const pastScans = await prisma.siteScanResult.findMany({
@@ -29,10 +29,9 @@ export default async function SiteScanPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">فحص الموقع</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.scanTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
-        فحص عميق مترابط: تقني + بصري بالذكاء الاصطناعي + أداء حقيقي (Google
-        PageSpeed) + مقارنة منافسين، مبنيّ على تحليل مركّب لا على نتائج منعزلة.
+        {t(locale, "campPages.scanIntro")}
       </p>
       <DeepScanClient
         locale={locale}

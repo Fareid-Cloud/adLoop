@@ -39,6 +39,8 @@ import { HealthGauge } from "@/app/components/ui/HealthGauge";
 import Link from "next/link";
 import { buildTodaySummary } from "@/lib/todaySummary";
 import { TodaySummaryCard } from "@/app/components/TodaySummaryCard";
+import { taskTitle } from "@/lib/taskTitle";
+import { itemTitle } from "@/lib/localizedRecord";
 
 const AD_PLATFORMS = ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS", "SNAPCHAT_ADS"];
 
@@ -203,7 +205,7 @@ export default async function GlancePage({
     topPending: urgentActionItems[0]
       ? {
           id: urgentActionItems[0].id,
-          title: urgentActionItems[0].title,
+          title: itemTitle(locale, urgentActionItems[0]),
           severity: String(urgentActionItems[0].severity ?? ""),
         }
       : null,
@@ -388,7 +390,7 @@ export default async function GlancePage({
               {inflationPct > 0 && (
                 <div className="mt-5 inline-flex items-center gap-2 rounded-lg bg-gap/10 px-3 py-2 text-[13px] text-gap">
                   <Megaphone size={15} />
-                  {tr("inflationLine", { pct: inflationPct })}ً.
+                  {tr("inflationLine", { pct: inflationPct })}
                 </div>
               )}
             </div>
@@ -396,7 +398,7 @@ export default async function GlancePage({
                 `min-w-0` على الشريط ضروري: بدونه يرفض عنصر flex أن يضيق
                 عن محتواه فيدفع العدّاد خارج البطاقة على الشاشات الضيّقة. */}
             <div className="flex items-center gap-5 rounded-2xl card-shadow border border-border bg-surface p-6">
-              <TrackingAccuracyGauge verified={totalVerified} raw={totalRaw} />
+              <TrackingAccuracyGauge verified={totalVerified} raw={totalRaw} locale={locale} />
               <div className="min-w-0 flex-1">
                 <ReportedVsActualBars reported={totalRaw} actual={totalVerified} locale={locale} />
               </div>
@@ -446,7 +448,7 @@ export default async function GlancePage({
           {/* جدول الأداء حسب المصدر */}
           {sourceRows.length > 0 && (
             <div className="mb-4">
-              <SourcePerformanceTable rows={sourceRows} />
+              <SourcePerformanceTable rows={sourceRows} locale={locale} />
               {platformInsight && <p className="mt-2 px-1 text-[13px] text-text-muted">💡 {platformInsight}</p>}
             </div>
           )}
@@ -486,7 +488,7 @@ export default async function GlancePage({
                 className="flex items-center gap-2.5 rounded-xl card-shadow border border-border bg-surface px-3.5 py-3 text-[13.5px] text-text-primary no-underline transition-colors hover:bg-surface-raised"
               >
                 <PriorityDot priority={item.severity} />
-                <span>{item.title}</span>
+                <span>{itemTitle(locale, item)}</span>
               </a>
             ))}
           </div>
@@ -505,7 +507,7 @@ export default async function GlancePage({
               className="flex items-center gap-2.5 rounded-xl card-shadow border border-border bg-surface px-3.5 py-3 text-[13.5px] text-text-primary no-underline transition-colors hover:bg-surface-raised"
             >
               <PriorityDot priority={task.priority} />
-              <span>{task.title}</span>
+              <span>{taskTitle(locale, task)}</span>
             </a>
           ))}
         </div>

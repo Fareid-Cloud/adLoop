@@ -54,7 +54,7 @@ export default async function QualityScorePage() {
       {rows.length === 0 ? (
         <EmptyState
           title={t(locale, "campPages.qsNone")}
-          description="كل الكلمات المفتاحية النشطة بدرجة جودة معقولة، أو لم تُسحب البيانات بعد."
+          description={t(locale, "campPages.qsNoneBody")}
         />
       ) : (
         <div className="flex flex-col gap-2">
@@ -66,7 +66,7 @@ export default async function QualityScorePage() {
                 </span>
                 <span className="font-mono text-lg text-critical">{row.qualityScore}/10</span>
               </div>
-              <div className="mb-2 text-xs text-gap">السبب الأساسي: {diagnoseIssue(row)}</div>
+              <div className="mb-2 text-xs text-gap">{t(locale, "campPages.qsMainReason")} {diagnoseIssue(row)}</div>
               <div className="flex gap-4 text-xs text-text-faint">
                 <span>{t(locale, "campPages.qsRelevance")}: {label(locale, row.adRelevance)}</span>
                 <span>{t(locale, "campPages.qsLanding")}: {label(locale, row.landingPageExperience)}</span>

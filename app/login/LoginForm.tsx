@@ -103,7 +103,7 @@ export function LoginForm() {
       ) : (
         <>
           <div className="mb-5 flex flex-col gap-2.5">
-            <SocialButton href="/api/oauth/login-google/start" logo={<PlatformLogo platform="GOOGLE_ADS" size={18} />}>
+            <SocialButton href="/api/oauth/login-google/start" logo={<PlatformLogo platform="GOOGLE" size={18} />}>
               {t(locale, "auth.googleContinue")}
             </SocialButton>
             <SocialButton href="/api/oauth/login-facebook/start" logo={<PlatformLogo platform="FACEBOOK" size={18} />}>

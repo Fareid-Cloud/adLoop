@@ -38,6 +38,8 @@ export function CampaignPickerModal({
   onSaved?: (count: number) => void;
   locale?: "ar" | "en";
 }) {
+  const tr = (k: string, vars?: Record<string, string | number>) =>
+    t(locale, `picker.${k}`, vars);
   const ar = locale === "ar";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +77,7 @@ export function CampaignPickerModal({
       const res = await fetch(`/api/workspaces/${workspaceId}/available-campaigns?platform=${platform}`);
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? (ar ? "تعذّر جلب الحملات." : "Could not load campaigns."));
+        setError(data.error ?? (ar ? tr("errFetch") : "Could not load campaigns."));
         setAccounts([]);
       } else {
         setAccounts(data.accounts ?? []);
@@ -87,7 +89,7 @@ export function CampaignPickerModal({
         setSelected(preselect);
       }
     } catch {
-      setError(ar ? "تعذّر الاتصال بالخادم." : "Could not reach the server.");
+      setError(ar ? tr("errServer") : "Could not reach the server.");
     }
     setLoading(false);
   }, [workspaceId, platform, ar]);
@@ -142,14 +144,14 @@ export function CampaignPickerModal({
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        setError(d.error ?? (ar ? "تعذّر حفظ الحملات." : "Could not save campaigns."));
+        setError(d.error ?? (ar ? tr("errSave") : "Could not save campaigns."));
         setSaving(false);
         return;
       }
       onSaved?.(campaigns.length);
       onClose();
     } catch {
-      setError(ar ? "تعذّر الاتصال بالخادم." : "Could not reach the server.");
+      setError(ar ? tr("errServer") : "Could not reach the server.");
     }
     setSaving(false);
   }
@@ -167,7 +169,7 @@ export function CampaignPickerModal({
             <PlatformLogo platform={platform} size={22} />
             <div>
               <h2 className="text-[15px] font-semibold text-text-primary">
-                {ar ? "اختر الحملات التي تريد متابعتها" : "Choose campaigns to track"}
+                {ar ? tr("title") : "Choose campaigns to track"}
               </h2>
               <p className="text-[12px] text-text-muted">{PLATFORM_LABEL[platform]}</p>
             </div>
@@ -185,7 +187,7 @@ export function CampaignPickerModal({
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={ar ? "ابحث باسم الحملة" : "Search campaigns"}
+                placeholder={ar ? tr("search") : "Search campaigns"}
                 className="w-full rounded-lg border border-border bg-surface-raised py-2 text-[13px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
                 style={{ paddingInlineStart: 30, paddingInlineEnd: 10 }}
               />
@@ -196,10 +198,10 @@ export function CampaignPickerModal({
                 onlyActive ? "border-accent bg-accent/10 text-accent" : "border-border bg-surface-raised text-text-muted"
               }`}
             >
-              {ar ? "النشطة فقط" : "Active only"}
+              {ar ? tr("activeOnly") : "Active only"}
             </button>
             <button onClick={toggleAll} className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-[12px] text-text-muted hover:text-text-primary">
-              {ar ? "تحديد الكل" : "Select all"}
+              {ar ? tr("selectAll") : "Select all"}
             </button>
           </div>
         )}
@@ -209,7 +211,7 @@ export function CampaignPickerModal({
           {loading && (
             <div className="flex flex-col items-center gap-3 py-12 text-text-muted">
               <Loader2 size={26} className="animate-spin" />
-              <span className="text-[13px]">{ar ? "جارٍ جلب حملاتك..." : "Loading your campaigns..."}</span>
+              <span className="text-[13px]">{ar ? tr("loading") : "Loading your campaigns..."}</span>
             </div>
           )}
 
@@ -219,11 +221,11 @@ export function CampaignPickerModal({
               <p className="max-w-sm text-[13px] leading-relaxed text-text-primary">{error}</p>
               <div className="flex gap-2">
                 <button onClick={load} className="rounded-xl border border-border bg-surface-raised px-4 py-2 text-[13px] text-text-primary">
-                  {ar ? "إعادة المحاولة" : "Try again"}
+                  {ar ? tr("retry") : "Try again"}
                 </button>
                 <button onClick={diagnose} disabled={diagnosing}
                         className="rounded-xl bg-accent px-4 py-2 text-[13px] font-medium text-white disabled:opacity-50">
-                  {diagnosing ? (ar ? "جارٍ الفحص..." : "Testing...") : ar ? "فحص الاتصال" : "Test connection"}
+                  {diagnosing ? (ar ? tr("testing") : "Testing...") : ar ? tr("testConnection") : "Test connection"}
                 </button>
               </div>
             </div>
@@ -254,13 +256,13 @@ export function CampaignPickerModal({
           {!loading && !error && totalVisible === 0 && (
             <div className="py-12 text-center text-[13px] text-text-muted">
               {accounts.length === 0
-                ? ar ? "لا توجد حملات في هذا الحساب." : "No campaigns found in this account."
-                : ar ? "لا توجد حملات مطابقة للتصفية الحالية." : "No campaigns match the current filter."}
+                ? ar ? tr("noneInAccount") : "No campaigns found in this account."
+                : ar ? tr("noneMatching") : "No campaigns match the current filter."}
               {accounts.length === 0 && (
                 <div className="mt-3">
                   <button onClick={diagnose} disabled={diagnosing}
                           className="rounded-xl bg-accent px-4 py-2 text-[12.5px] font-medium text-white disabled:opacity-50">
-                    {diagnosing ? (ar ? "جارٍ الفحص..." : "Testing...") : ar ? "فحص الاتصال" : "Test connection"}
+                    {diagnosing ? (ar ? tr("testing") : "Testing...") : ar ? tr("testConnection") : "Test connection"}
                   </button>
                 </div>
               )}
@@ -287,7 +289,7 @@ export function CampaignPickerModal({
                       <span className="min-w-0 flex-1 truncate text-[13px] text-text-primary">{c.name}</span>
                       {c.recentlyActive && (
                         <span className="shrink-0 rounded-full bg-verified/12 px-2 py-0.5 text-[10.5px] font-medium text-verified">
-                          {ar ? "نشطة" : "Active"}
+                          {ar ? tr("active") : "Active"}
                         </span>
                       )}
                     </button>
@@ -301,18 +303,18 @@ export function CampaignPickerModal({
         {/* التذييل */}
         <div className="flex items-center justify-between gap-3 border-t border-border p-4">
           <span className="text-[12.5px] text-text-muted">
-            {ar ? `${selected.size} حملة مختارة` : `${selected.size} selected`}
+            {ar ? tr("selectedCount", { n: selected.size }) : `${selected.size} selected`}
           </span>
           <div className="flex gap-2">
             <button onClick={onClose} className="rounded-xl border border-border bg-surface-raised px-4 py-2 text-[13px] text-text-muted hover:text-text-primary">
-              {ar ? "لاحقاً" : "Later"}
+              {ar ? tr("later") : "Later"}
             </button>
             <button
               onClick={save}
               disabled={saving || selected.size === 0}
               className="rounded-xl bg-accent px-5 py-2 text-[13px] font-medium text-white disabled:opacity-45"
             >
-              {saving ? (ar ? "جارٍ الحفظ..." : "Saving...") : ar ? "حفظ ومتابعة" : "Save & continue"}
+              {saving ? (ar ? tr("saving") : "Saving...") : ar ? tr("save") : "Save & continue"}
             </button>
           </div>
         </div>

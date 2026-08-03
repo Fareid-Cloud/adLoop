@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
   }
 
   // الحقول الإضافية (اختيارية) + التأكد إن اسم المستخدم غير مكرر
-  const { username, companyName, gender, howHeard, referralSource, country, adSpendMonthly, businessScale } = rawBody;
+  const { username, companyName, gender, birthDate, howHeard, referralSource, country, adSpendMonthly, businessScale } = rawBody;
   const cleanUsername = username ? String(username).trim().toLowerCase() : null;
   if (cleanUsername) {
     const uExists = await prisma.user.findUnique({ where: { username: cleanUsername } });
@@ -86,6 +86,9 @@ export async function POST(req: NextRequest) {
       username: cleanUsername,
       companyName: companyName ? String(companyName).trim() : null,
       gender: gender || null,
+      // نصّ فارغ من حقل تاريخ غير مملوء ينتج `Invalid Date` -
+      // يُحوَّل صراحةً أو يبقى null.
+      birthDate: birthDate ? new Date(String(birthDate)) : null,
       howHeard: howHeard || null,
       referralSource: referralSource ? String(referralSource).trim() : null,
       country: country || null,

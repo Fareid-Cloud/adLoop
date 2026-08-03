@@ -7,9 +7,10 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { Layers } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const OPTIONS = [
-  { value: "", labelAr: "كل المنصات", labelEn: "All platforms", color: null as string | null },
+  { value: "", labelAr: "كل المنصّات", labelEn: "All platforms", color: null as string | null },
   { value: "GOOGLE_ADS", labelAr: "Google Ads", labelEn: "Google Ads", color: "#4285F4" },
   { value: "META_ADS", labelAr: "Meta Ads", labelEn: "Meta Ads", color: "#0866FF" },
   { value: "TIKTOK_ADS", labelAr: "TikTok Ads", labelEn: "TikTok Ads", color: "#FE2C55" },

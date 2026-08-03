@@ -9,6 +9,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Bell, X } from "lucide-react";
 import { useLive } from "@/app/components/LiveData";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 interface Notification {
   id: string;
@@ -28,7 +29,7 @@ const SEVERITY_COLOR: Record<string, string> = {
   URGENT: "bg-critical",
 };
 
-export function NotificationBell() {
+export function NotificationBell({ locale = "ar" }: { locale?: Locale }) {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -92,10 +93,11 @@ export function NotificationBell() {
   async function handleBellClick() {
     const nextOpen = !open;
     setOpen(nextOpen);
-    if (nextOpen) {
-      await loadNotifications(); // القائمة الكاملة عند الفتح فقط
-      if (unreadCount > 0) await handleMarkAllRead();
-    }
+    // **الفتح ليس قراءة.** كان مجرّد فتح الجرس يعلّم كل الإشعارات مقروءة،
+    // فتومض القائمة زرقاء لحظةً ثمّ تبيضّ كاملةً قبل أن يقرأ المستخدم
+    // سطراً واحداً - ويفقد بذلك أثر ما لم يطّلع عليه بعد. كلٌّ يُقرأ
+    // بالضغط عليه، و«تعليم الكلّ كمقروء» يبقى متاحاً كخيار صريح.
+    if (nextOpen) await loadNotifications();
   }
 
   return (
@@ -103,7 +105,7 @@ export function NotificationBell() {
       <button
         onClick={handleBellClick}
         className="relative flex h-9 w-9 items-center justify-center rounded-full text-text-muted hover:bg-surface-raised hover:text-text-primary"
-        aria-label="الإشعارات"
+        aria-label={t(locale, "notif.title")}
       >
         <Bell size={18} strokeWidth={1.75} />
         {unreadCount > 0 && (
@@ -116,16 +118,16 @@ export function NotificationBell() {
       {open && (
         <div className="pop-shadow absolute end-0 top-11 z-50 max-h-[70vh] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl card-shadow border border-border bg-surface">
           <div className="sticky top-0 flex items-center justify-between border-b border-border bg-surface px-4 py-3">
-            <span className="text-sm font-semibold text-text-primary">الإشعارات</span>
+            <span className="text-sm font-semibold text-text-primary">{t(locale, "notif.title")}</span>
             {unreadCount > 0 && (
               <button onClick={handleMarkAllRead} className="text-xs text-accent">
-                تعليم الكل كمقروء
+                {t(locale, "notif.markAllRead")}
               </button>
             )}
           </div>
 
           {notifications.length === 0 ? (
-            <div className="px-4 py-10 text-center text-xs text-text-faint">لا توجد إشعارات بعد</div>
+            <div className="px-4 py-10 text-center text-xs text-text-faint">{t(locale, "notif.none")}</div>
           ) : (
             <div className="flex flex-col">
               {notifications.map((n) => (
@@ -148,7 +150,7 @@ export function NotificationBell() {
                   <button
                     onClick={(e) => handleDelete(e, n.id)}
                     className="shrink-0 rounded-full p-1 text-text-faint opacity-0 hover:bg-surface hover:text-critical group-hover:opacity-100"
-                    aria-label="حذف"
+                    aria-label={t(locale, "notif.remove")}
                   >
                     <X size={13} />
                   </button>

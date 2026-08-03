@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { MetricCard, type MetricTone } from "@/app/components/ui/MetricCard";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { itemTitle, itemDescription } from "@/lib/localizedRecord";
 
 export interface ActionItemData {
   id: string;
@@ -306,7 +307,7 @@ export function ActionsClient({
                           className="mt-1 flex w-full items-center gap-2 text-start"
                         >
                           <span className="min-w-0 flex-1 text-[13.5px] font-medium leading-snug text-text-primary">
-                            {item.title}
+                            {itemTitle(locale, item)}
                           </span>
                           {item.description && (
                             <ChevronDown
@@ -320,7 +321,7 @@ export function ActionsClient({
                             لصفحة أخرى تبدأ من الصفر */}
                         {expanded === item.id && item.description && (
                           <div className="mt-2 rounded-xl bg-surface-raised/70 p-3">
-                            <p className="text-[12.5px] leading-relaxed text-text-muted">{item.description}</p>
+                            <p className="text-[12.5px] leading-relaxed text-text-muted">{itemDescription(locale, item)}</p>
                             <div className="mt-2 flex flex-wrap items-center gap-3">
                               <span className={`text-[11px] ${item.executable ? "text-verified" : "text-text-faint"}`}>
                                 {tr(item.executable ? "executable" : "informational")}

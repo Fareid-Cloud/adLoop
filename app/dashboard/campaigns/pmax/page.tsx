@@ -56,15 +56,15 @@ export default async function PmaxPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">قنوات Performance Max</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.pmaxTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
-        الصندوق الأسود بقى شفافاً - إنفاقك موزّع فعلياً على أي قناة. البيانات متاحة فقط اعتباراً من يونيو 2025.
+        {t(locale, "campPages.pmaxIntro", { year: "2025" })}
       </p>
 
       {results.length === 0 ? (
         <EmptyState
-          title="لا توجد بيانات قنوات بعد"
-          description="إما لا توجد حملات Performance Max نشطة، أو لم تُسحب البيانات بعد."
+          title={t(locale, "campPages.pmaxNone")}
+          description={t(locale, "campPages.pmaxNoneBody")}
         />
       ) : (
         <div className="flex flex-col gap-2">
@@ -77,8 +77,8 @@ export default async function PmaxPage() {
                   : r.channel}
               </span>
               <div className="flex items-center gap-4 text-xs text-text-faint">
-                <span>{r.clicks.toLocaleString()} كليكة</span>
-                <span>{r.cost.toLocaleString()} تكلفة</span>
+                <span>{r.clicks.toLocaleString()} {t(locale, "campPages.unitClicks")}</span>
+                <span>{r.cost.toLocaleString()} {t(locale, "campPages.unitCost")}</span>
                 <span className="font-mono text-verified">{r.cpa ?? "—"}</span>
               </div>
             </div>

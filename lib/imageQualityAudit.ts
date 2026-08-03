@@ -12,7 +12,7 @@
 //   الشاشات عالية الكثافة
 
 import Anthropic from "@anthropic-ai/sdk";
-import { Locale } from "@/lib/i18n/dictionary";
+import { Locale , t } from "@/lib/i18n/dictionary";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -53,8 +53,8 @@ export async function auditAdImageQuality(
 
   const platformGuideline =
     platform === "META_ADS"
-      ? "ميتا: النص أقل من ثلث مساحة الصورة تقريباً (نصيحة عملية، مش قاعدة صارمة رسمية)، دقة موصى بيها 1440×1440 أو أعلى."
-      : "جوجل: بتخصم فعلياً من أي صورة فيها نص أكتر من 20% من المساحة، بتفضّل صور نظيفة بأقل نص ممكن.";
+      ? t(locale, "alerts.imgMetaGuide")
+      : t(locale, "alerts.imgGoogleGuide");
 
   const systemPrompt =
     locale === "ar"

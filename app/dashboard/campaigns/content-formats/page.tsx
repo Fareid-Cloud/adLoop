@@ -71,16 +71,16 @@ export default async function ContentFormatsPage({
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">أداء شكل المحتوى</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.cfTitle")}</h1>
       <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">
-        ريلز مقابل ستوري مقابل الفيد العادي - أي شكل فعلاً يجلب عملاء أرخص لنفس الميزانية.
+        {t(locale, "campPages.cfIntro")}
       </p>
 
       {results.length === 0 ? (
         <EmptyState
-          title="لا توجد بيانات مُفصّلة حسب شكل المحتوى بعد"
-          description="تُسحب تلقائياً مع المزامنة اليومية بعد ربط حملات ميتا."
+          title={t(locale, "campPages.cfNone")}
+          description={t(locale, "campPages.cfNoneBody")}
         />
       ) : (
         <div className="flex flex-col gap-2">
@@ -90,8 +90,8 @@ export default async function ContentFormatsPage({
                 {placementName(locale, r.format)}
               </span>
               <div className="flex items-center gap-3 text-xs text-text-faint">
-                <span>{r.clicks.toLocaleString()} كليكة</span>
-                <span>{r.conversions} تحويل</span>
+                <span>{r.clicks.toLocaleString()} {t(locale, "campPages.unitClicks")}</span>
+                <span>{r.conversions} {t(locale, "campPages.unitConversions")}</span>
                 <span className="font-mono text-verified">{r.cpa ?? "—"}</span>
               </div>
             </div>

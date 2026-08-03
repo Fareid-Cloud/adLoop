@@ -10,6 +10,7 @@ import {
 import * as Icons from "lucide-react";
 import { NAV_GROUPS, type NavItem } from "@/lib/navConfig";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 // 🔴 سبب عطل إنتاج حقيقي: كانت هذه خريطة يدوية بأحد عشر اسماً فقط. أي
 // عنصر تنقّل بأيقونة خارجها كان يُرجع undefined، فيُرمى React error #130
@@ -116,7 +117,7 @@ export function SidebarNav({
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder={ar ? "بحث..." : "Search..."}
+              placeholder={t(locale, "sidebar.search")}
               className="w-full rounded-lg border border-border bg-surface-raised py-1.5 ps-8 pe-2 text-[13px] text-text-primary placeholder:text-text-faint outline-none focus:border-accent"
             />
           </div>
@@ -127,7 +128,7 @@ export function SidebarNav({
         {query ? (
           <div className="flex flex-col gap-0.5">
             {searchResults.length === 0 ? (
-              <div className="px-2.5 py-2 text-[13px] text-text-faint">{ar ? "لا نتائج" : "No results"}</div>
+              <div className="px-2.5 py-2 text-[13px] text-text-faint">{t(locale, "sidebar.noResults")}</div>
             ) : (
               searchResults.map((r) => (
                 <a key={r.href} href={r.href} className="flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13.5px] text-text-muted no-underline transition-colors hover:bg-surface-raised hover:text-text-primary">
@@ -198,7 +199,7 @@ export function SidebarNav({
                             // السهم يقرأ كعنصر ثانٍ منفصل عن القسم، فيبدو
                             // كأنه زرّ آخر. اللون وحده يكفي إشارةً.
                             className="p-1 text-text-faint transition-colors hover:text-accent"
-                            aria-label={expanded ? (ar ? "طي" : "Collapse") : (ar ? "توسيع" : "Expand")}
+                            aria-label={expanded ? t(locale, "sidebar.collapseSection") : t(locale, "sidebar.expandSection")}
                           >
                             <ChevronDown size={14} className={`transition-transform ${expanded ? "rotate-0" : "-rotate-90 rtl:rotate-90"}`} />
                           </button>
@@ -254,11 +255,11 @@ export function SidebarNav({
 
         <button
           onClick={toggleCollapse}
-          title={collapsed ? (ar ? "توسيع القائمة" : "Expand") : (ar ? "طي القائمة" : "Collapse")}
+          title={collapsed ? (ar ? t(locale, "sidebar.expandMenu") : "Expand") : (ar ? t(locale, "sidebar.collapseMenu") : "Collapse")}
           className="mt-2 flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13.5px] text-text-faint transition-colors hover:bg-surface-raised hover:text-text-primary"
         >
           {collapsed ? <PanelLeftOpen size={16} strokeWidth={1.75} /> : <PanelLeftClose size={16} strokeWidth={1.75} />}
-          {!collapsed && <span>{ar ? "طي القائمة" : "Collapse"}</span>}
+          {!collapsed && <span>{ar ? t(locale, "sidebar.collapseMenu") : "Collapse"}</span>}
         </button>
       </nav>
     </aside>

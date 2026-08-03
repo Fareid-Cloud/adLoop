@@ -13,6 +13,7 @@ import { GoogleAdsApi } from "google-ads-api";
 import { prisma } from "@/lib/prisma";
 import type { CampaignLink, ConnectedPlatform } from "@prisma/client";
 import { decryptToken } from "@/lib/encryption";
+import { t } from "@/lib/i18n/dictionary";
 
 // حقول جودة الإعلان بترجع من Google API كـ enum (رقم/سلسلة)، وحقول Prisma
 // نوعها String? - بنحوّلها لنص، ونسيب null زي ما هي
@@ -718,7 +719,7 @@ export async function syncShoppingProductsForWorkspace(workspaceId: string) {
     } catch (err) {
       // حساب من غير Merchant Center مربوط هيرمي خطأ هنا - بنسجله ونكمل،
       // مش كل الـ Workspaces عندها حملات تسوق أصلاً
-      console.error(`فشلت مزامنة منتجات التسوق للحساب ${accountId} (على الأرجح مفيش Merchant Center مربوط):`, err);
+      console.error(`فشلت مزامنة منتجات التسوق للحساب ${accountId} (على الأرجح لا يوجد Merchant Center مرتبط):`, err);
     }
   }
 }
@@ -1281,8 +1282,12 @@ export async function checkShoppingSpendAlertsForWorkspace(workspaceId: string) 
       source: "ECOMMERCE",
       type: "ALERT",
       severity: "MEDIUM",
-      title: `${product.title ?? product.itemId}: منتج بيصرف من غير مبيعات`,
-      description: `صرفت ${Math.round(product.cost).toLocaleString()} على المنتج ده من غير أي عملية شراء واحدة.`,
+      title: t("ar", "alerts.shopNoSalesTitle", { product: product.title ?? product.itemId }),
+      titleKey: "alerts.shopNoSalesTitle",
+      titleVars: { product: product.title ?? product.itemId },
+      description: t("ar", "alerts.shopNoSalesBody", { cost: Math.round(product.cost).toLocaleString("en-US") }),
+      descKey: "alerts.shopNoSalesBody",
+      descVars: { cost: Math.round(product.cost).toLocaleString("en-US") },
       linkUrl: "/dashboard/campaigns/shopping",
     });
   }
@@ -1305,12 +1310,12 @@ export async function applyGoogleBidStrategyChange(
   const connection = workspace?.user.connectedPlatforms.find(
     (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
   );
-  if (!connection) throw new Error("حساب جوجل مش متصل");
+  if (!connection) throw new Error(t("ar", "alerts.noGoogleAccount"));
 
   const link = await prisma.campaignLink.findFirst({
     where: { workspaceId, platform: "GOOGLE_ADS", externalCampaignId: campaignId },
   });
-  if (!link) throw new Error("الحملة مش موجودة");
+  if (!link) throw new Error(t("ar", "alerts.campaignNotFound"));
 
   const client = new GoogleAdsApi({
     client_id: process.env.GOOGLE_ADS_CLIENT_ID!,
@@ -1348,12 +1353,12 @@ export async function pauseGoogleAd(workspaceId: string, campaignId: string, adG
   const connection = workspace?.user.connectedPlatforms.find(
     (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
   );
-  if (!connection) throw new Error("حساب جوجل مش متصل");
+  if (!connection) throw new Error(t("ar", "alerts.noGoogleAccount"));
 
   const link = await prisma.campaignLink.findFirst({
     where: { workspaceId, platform: "GOOGLE_ADS", externalCampaignId: campaignId },
   });
-  if (!link) throw new Error("الحملة مش موجودة");
+  if (!link) throw new Error(t("ar", "alerts.campaignNotFound"));
 
   const client = new GoogleAdsApi({
     client_id: process.env.GOOGLE_ADS_CLIENT_ID!,

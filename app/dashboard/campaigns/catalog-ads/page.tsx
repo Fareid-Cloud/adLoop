@@ -39,16 +39,15 @@ export default async function CatalogAdsPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">الإعلانات الديناميكية (كتالوج)</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.catalogTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
-        أداء الحملة ككل. ملاحظة صريحة: أداء منتج بعينه جوه الحملة (أي منتج بالضبط بيتحوّل) غير متاح
-        كرؤية أصلية لدى ميتا. يتطلّب نظام بيانات منفصلاً يربط عدّة مصادر يدوياً، لا سحب بيانات بسيطاً.
+        {t(locale, "campPages.catalogIntro")}
       </p>
 
       {campaigns.length === 0 ? (
         <EmptyState
-          title="لا توجد حملات كتالوج بعد"
-          description="إما لا توجد حملات ديناميكية مرتبطة بكتالوج، أو لم تُسحب البيانات بعد."
+          title={t(locale, "campPages.catalogNone")}
+          description={t(locale, "campPages.catalogNoneBody")}
         />
       ) : (
         <div className="flex flex-col gap-2">
@@ -58,11 +57,11 @@ export default async function CatalogAdsPage() {
                 <span className="text-sm font-medium text-text-primary">
                   {nameMap.get(c.campaignId) ?? c.campaignId}
                 </span>
-                <span className="font-mono text-sm text-verified">{c.purchases} عملية شراء</span>
+                <span className="font-mono text-sm text-verified">{c.purchases} {t(locale, "campPages.catalogPurchases")}</span>
               </div>
               <div className="flex gap-4 text-xs text-text-faint">
-                <span>{c.clicks.toLocaleString()} كليكة</span>
-                <span>{c.cost.toLocaleString()} تكلفة</span>
+                <span>{c.clicks.toLocaleString()} {t(locale, "campPages.unitClicks")}</span>
+                <span>{c.cost.toLocaleString()} {t(locale, "campPages.unitCost")}</span>
               </div>
             </div>
           ))}

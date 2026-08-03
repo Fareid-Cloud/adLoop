@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
   if (!tokens.refresh_token) {
     // لو المستخدم وافق قبل كده والـ prompt=consent مشتغلش لأي سبب، جوجل
     // ممكن ميرجعش refresh_token تاني - من غيره منقدرش نجدد الوصول لاحقاً
-    console.error("جوجل مرجعش refresh_token - محتاجين المستخدم يعيد الموافقة");
+    console.error("جوجل لم تُرجع refresh_token - يلزم أن يعيد المستخدم الموافقة");
     return NextResponse.redirect(`${returnUrl}?connection=missing_refresh_token`);
   }
 

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { KPI_DEFS, type KpiKey, type KpiResult } from "@/lib/kpiEngine";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const MIN_KPIS = 4;
 const MAX_KPIS = 10;
@@ -125,10 +126,10 @@ export function KpiStrip({
   return (
     <div className="mb-4">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-[13px] text-text-muted">{ar ? "مؤشرات الأداء" : "Key metrics"}</span>
+        <span className="text-[13px] text-text-muted">{t(locale, "kpiStrip.title")}</span>
         <div className="flex items-center gap-1">
           <button onClick={() => setPicker((v) => !v)} className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[12px] text-text-muted transition-colors hover:text-text-primary">
-            <SlidersHorizontal size={13} /> {ar ? "اختيار المؤشرات" : "Customize"}
+            <SlidersHorizontal size={13} /> {t(locale, "kpiStrip.customize")}
           </button>
         </div>
       </div>
@@ -186,7 +187,7 @@ export function KpiStrip({
                 {r.sources.length > 0 && (
                   <span
                     className="flex shrink-0 items-center rounded-full border border-border bg-surface px-1 py-0.5"
-                    title={ar ? "مصدر البيانات" : "Data source"}
+                    title={ar ? t(locale, "kpiStrip.dataSource") : "Data source"}
                   >
                     {r.sources.map((p, i) => (
                       <span key={p} className="flex items-center justify-center rounded-full bg-surface" style={{ marginInlineStart: i === 0 ? 0 : -4, zIndex: r.sources.length - i }}>
@@ -210,7 +211,7 @@ export function KpiStrip({
                     {up ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
                     {Math.abs(r.changePct)}%
                   </span>
-                  <span className="text-text-faint">{ar ? "عن الفترة السابقة" : "vs prev. period"}</span>
+                  <span className="text-text-faint">{ar ? t(locale, "kpiStrip.vsPrev") : "vs prev. period"}</span>
                 </div>
               )}
 

@@ -95,11 +95,11 @@ export default async function VideoPerformancePage({
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>
                 <div className="font-mono text-lg text-text-primary">{m.viewRate}%</div>
-                <div className="text-[11px] text-text-faint">نسبة المشاهدة</div>
+                <div className="text-[11px] text-text-faint">{t(locale, "campPages.vidViewRate")}</div>
               </div>
               <div>
                 <div className="font-mono text-lg text-text-primary">{m.cpv || "—"}</div>
-                <div className="text-[11px] text-text-faint">تكلفة المشاهدة</div>
+                <div className="text-[11px] text-text-faint">{t(locale, "campPages.vidCostPerView")}</div>
               </div>
               <div>
                 <div className="font-mono text-lg text-text-primary">
@@ -115,7 +115,7 @@ export default async function VideoPerformancePage({
       {missingPlatforms.length > 0 && (
         <p className="mt-4 text-xs text-text-faint">
           {t(locale, "campPages.vidMissing", {
-            platforms: missingPlatforms.map((p) => platformLabel(locale, p)).join("، "),
+            platforms: missingPlatforms.map((p) => platformLabel(locale, p)).join(t(locale, "ui.listSep")),
           })}
         </p>
       )}

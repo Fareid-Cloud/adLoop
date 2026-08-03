@@ -310,7 +310,7 @@ export async function buildOpportunities(
     blindSpots.push({ key: "blind.noCustomers" });
   }
   // تكاليف غير مقروءة: نص جاهز من محرّك الربح، يُمرَّر بمفتاح شفّاف
-  for (const m of journey.missingCostsAr) blindSpots.push({ key: "raw", vars: { text: m } });
+  for (const m of journey.missingCostsAr) blindSpots.push(m);
 
   // الترتيب: الأثر المالي أولاً، والثقة تفصل بين المتقاربين. عرض فرصة
   // ضخمة منخفضة الثقة فوق فرصة مؤكَّدة أصغر يُفقد الثقة في القائمة كلها.

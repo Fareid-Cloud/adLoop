@@ -25,7 +25,7 @@ import {
   getWorkspaceCreativePerformances,
   type CreativePerformance,
 } from "@/lib/creativeAnalysis";
-import { platformLabel } from "@/lib/i18n/dictionary";
+import { platformLabel, t } from "@/lib/i18n/dictionary";
 
 /** نسبة الزيادة الآمنة - ٢٠٪ لا أكثر، باتفاق مصادر ميديا باير متعددة */
 export const SAFE_SCALE_INCREASE_PCT = 20;
@@ -244,8 +244,15 @@ function daysSince(from: Date, now: Date): number {
   return Math.max(0, Math.floor((now.getTime() - from.getTime()) / (24 * 60 * 60 * 1000)));
 }
 
+/** مفتاح القاموس لكلّ قرار - يُترجَم وقت العرض لا وقت التنفيذ. */
+export const DECISION_KEY: Record<Decision, string> = {
+  SCALE: "expDesc.decScale",
+  PAUSE: "expDesc.decPause",
+  HOLD: "expDesc.decHold",
+};
+
 export function decisionLabelAr(d: Decision): string {
-  return d === "SCALE" ? "توسيع" : d === "PAUSE" ? "إيقاف" : "إبقاء";
+  return t("ar", DECISION_KEY[d]);
 }
 
 // ==================== التنفيذ ====================
@@ -336,7 +343,13 @@ export async function applyAdDecision(
     await recordExperiment({
       workspaceId,
       changeType: decision === "PAUSE" ? "PAUSE" : decision === "SCALE" ? "BUDGET" : "OTHER",
-      description: `${decisionLabelAr(decision)}: ${view.adName ?? view.adId}`,
+      description: t("ar", "expDesc.adDecision", {
+        decision: decisionLabelAr(decision),
+        ad: view.adName ?? view.adId,
+      }),
+      descKey: "expDesc.adDecision",
+      // `decisionKey` يملأ `decision` وقت العرض بلغة القارئ
+      descVars: { decisionKey: DECISION_KEY[decision], ad: view.adName ?? view.adId },
       campaignId: view.campaignId,
       platform: view.platform as never,
       source: "AUTO",

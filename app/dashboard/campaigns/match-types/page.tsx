@@ -60,8 +60,8 @@ export default async function MatchTypesPage() {
 
       {results.length === 0 ? (
         <EmptyState
-          title="لا توجد بيانات بعد"
-          description="تُسحب تلقائياً مع المزامنة اليومية بعد ربط حملات جوجل."
+          title={t(locale, "campPages.mtNone")}
+          description={t(locale, "campPages.mtNoneBody")}
         />
       ) : (
         <div className="flex flex-col gap-2">
@@ -83,13 +83,13 @@ export default async function MatchTypesPage() {
                 </span>
               </div>
               <div className="flex gap-4 text-xs text-text-faint">
-                <span>{r.clicks.toLocaleString()} كليكة</span>
-                <span>{r.cost.toLocaleString()} تكلفة</span>
-                <span>{r.conversions} تحويل</span>
+                <span>{r.clicks.toLocaleString()} {t(locale, "campPages.unitClicks")}</span>
+                <span>{r.cost.toLocaleString()} {t(locale, "campPages.unitCost")}</span>
+                <span>{r.conversions} {t(locale, "campPages.unitConversions")}</span>
               </div>
               {r.wasteRisk && (
                 <div className="mt-2 text-xs text-critical">
-                  صرف حقيقي بدون أي تحويل - يستاهل مراجعة الكلمات المفتاحية لهذا النوع.
+                  {t(locale, "campPages.mtWasteRisk")}
                 </div>
               )}
             </div>

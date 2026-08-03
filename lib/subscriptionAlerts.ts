@@ -7,6 +7,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { pushToActionFeed } from "@/lib/actionFeed";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const COOLDOWN_DAYS = 3;
 
@@ -20,7 +21,9 @@ export async function checkSubscriptionExpiryForWorkspace(workspaceId: string) {
   const cooldownStart = new Date();
   cooldownStart.setDate(cooldownStart.getDate() - COOLDOWN_DAYS);
   const recentSimilar = await prisma.actionFeedItem.findFirst({
-    where: { workspaceId, title: { contains: "فشل الدفع" }, createdAt: { gte: cooldownStart } },
+    // الفحص بالمفتاح لا بنصّ العنوان: النصّ يتغيّر مع اللغة والصياغة،
+    // فالبحث فيه كان يكسر منع التكرار بصمت عند أوّل إعادة صياغة.
+    where: { workspaceId, titleKey: "alerts.paymentFailedTitle", createdAt: { gte: cooldownStart } },
   });
   if (recentSimilar) return;
 
@@ -29,8 +32,10 @@ export async function checkSubscriptionExpiryForWorkspace(workspaceId: string) {
     source: "ACCOUNT",
     type: "ACCOUNT",
     severity: "HIGH",
-    title: "فشل الدفع - حدّث بيانات الدفع",
-    description: "آخر محاولة تجديد فشلت. حدّث طريقة الدفع بسرعة قبل ما يتوقف اشتراكك تلقائياً.",
+    title: t("ar", "alerts.paymentFailedTitle"),
+    titleKey: "alerts.paymentFailedTitle",
+    description: t("ar", "alerts.paymentFailedBody"),
+    descKey: "alerts.paymentFailedBody",
     linkUrl: "/dashboard/billing",
   });
 }

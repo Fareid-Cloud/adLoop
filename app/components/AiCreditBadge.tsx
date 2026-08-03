@@ -6,6 +6,7 @@
 
 import Link from "next/link";
 import { Sparkles, Plus } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export function AiCreditBadge({
   remaining,
@@ -26,7 +27,7 @@ export function AiCreditBadge({
     <div className="flex items-center gap-1">
       <Link
         href="/dashboard/billing"
-        title={ar ? "رصيد التحليلات الذكية لهذا الشهر" : "This month's AI analysis credit"}
+        title={ar ? t(locale, "aiCredit.label") : "This month's AI analysis credit"}
         className="flex items-center gap-1.5 rounded-xl border border-border bg-surface px-2.5 py-1.5 no-underline"
       >
         <Sparkles size={14} style={{ color: tone }} />
@@ -38,8 +39,8 @@ export function AiCreditBadge({
 
       <Link
         href="/dashboard/billing?credits=1"
-        title={ar ? "شراء رصيد أو ترقية الباقة" : "Buy credit or upgrade plan"}
-        aria-label={ar ? "شراء رصيد" : "Buy credit"}
+        title={ar ? t(locale, "aiCredit.buyOrUpgrade") : "Buy credit or upgrade plan"}
+        aria-label={ar ? t(locale, "aiCredit.buy") : "Buy credit"}
         className="flex items-center justify-center rounded-xl border border-border bg-surface p-1.5 text-text-muted no-underline hover:text-accent"
       >
         <Plus size={14} />

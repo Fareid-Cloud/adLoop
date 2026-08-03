@@ -6,6 +6,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { pushToActionFeed } from "@/lib/actionFeed";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export async function checkMonthlyForecastAlertForWorkspace(workspaceId: string) {
   const workspace = await prisma.workspace.findUnique({ where: { id: workspaceId } });
@@ -30,14 +31,23 @@ export async function checkMonthlyForecastAlertForWorkspace(workspaceId: string)
 
   if (dayOfMonth < 5) return;
 
+  const overVars = {
+    pct: projectedPct,
+    projected: Math.round(projectedTotal).toLocaleString("en-US"),
+    target: target.toLocaleString("en-US"),
+  };
+
   if (projectedPct > 110) {
     await pushToActionFeed({
       workspaceId,
       source: "FORECAST",
       type: "ALERT",
       severity: "HIGH",
-      title: "متوقّع تتجاوز الميزانية الشهرية",
-      description: `بمعدل صرفك الحالي، متوقّع توصل لـ${projectedPct}% من هدفك الشهري (${Math.round(projectedTotal).toLocaleString()} من ${target.toLocaleString()}).`,
+      title: t("ar", "alerts.forecastOverTitle"),
+      titleKey: "alerts.forecastOverTitle",
+      description: t("ar", "alerts.forecastOverBody", overVars),
+      descKey: "alerts.forecastOverBody",
+      descVars: overVars,
       linkUrl: "/dashboard/campaigns/monthly-forecast",
     });
   } else if (projectedPct < 80) {
@@ -46,8 +56,11 @@ export async function checkMonthlyForecastAlertForWorkspace(workspaceId: string)
       source: "FORECAST",
       type: "ALERT",
       severity: "MEDIUM",
-      title: "متوقّع تصرف أقل من الميزانية الشهرية",
-      description: `بمعدل صرفك الحالي، متوقّع توصل لـ${projectedPct}% بس من هدفك الشهري - يستاهل مراجعة ليه.`,
+      title: t("ar", "alerts.forecastUnderTitle"),
+      titleKey: "alerts.forecastUnderTitle",
+      description: t("ar", "alerts.forecastUnderBody", { pct: projectedPct }),
+      descKey: "alerts.forecastUnderBody",
+      descVars: { pct: projectedPct },
       linkUrl: "/dashboard/campaigns/monthly-forecast",
     });
   }

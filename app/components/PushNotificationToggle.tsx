@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { Bell, BellOff } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 // تفعيل إشعارات الموبايل (Web Push) - يشتغل من المتصفح مباشرة على
 // أندرويد بالكامل. آيفون محتاج المستخدم يضيف الموقع للشاشة الرئيسية
 // كـ"تطبيق" الأول (قيد من نظام آبل نفسه، مش حاجة نقدر نتحكم فيها).
-export function PushNotificationToggle() {
+export function PushNotificationToggle({ locale = "ar" }: { locale?: Locale }) {
   const [status, setStatus] = useState<"loading" | "unsupported" | "granted" | "denied" | "default">("loading");
 
   useEffect(() => {
@@ -39,13 +40,13 @@ export function PushNotificationToggle() {
   }
 
   if (status === "unsupported") {
-    return <p className="text-xs text-text-faint">متصفّحك لا يدعم إشعارات الجوال حالياً.</p>;
+    return <p className="text-xs text-text-faint">{t(locale, "push.unsupported")}</p>;
   }
 
   if (status === "granted") {
     return (
       <p className="flex items-center gap-1.5 text-xs text-verified">
-        <Bell size={13} /> الإشعارات مفعّلة على الجهاز ده
+        <Bell size={13} /> {t(locale, "push.enabled")}
       </p>
     );
   }
@@ -53,7 +54,7 @@ export function PushNotificationToggle() {
   if (status === "denied") {
     return (
       <p className="flex items-center gap-1.5 text-xs text-text-faint">
-        <BellOff size={13} /> رفضت الإذن - لازم تفعّله من إعدادات المتصفح نفسه
+        <BellOff size={13} /> {t(locale, "push.denied")}
       </p>
     );
   }
@@ -63,7 +64,7 @@ export function PushNotificationToggle() {
       onClick={handleEnable}
       className="flex items-center gap-1.5 rounded-full bg-surface-raised px-3.5 py-1.5 text-xs text-text-primary"
     >
-      <Bell size={13} /> فعّل إشعارات الموبايل على الجهاز ده
+      <Bell size={13} /> {t(locale, "push.enable")}
     </button>
   );
 }

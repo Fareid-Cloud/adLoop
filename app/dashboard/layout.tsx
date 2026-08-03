@@ -187,7 +187,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       data-mode={mode}
       className={`${display.variable} ${numeric.variable} flex min-h-screen flex-col bg-bg font-display`}
     >
-      {isImpersonating && <ImpersonationBanner />}
+      {isImpersonating && <ImpersonationBanner locale={locale} />}
       <LiveDataProvider>
       <div className="flex flex-1">
       <SidebarNav
@@ -239,7 +239,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           )}
           <ThemeModeToggle initialMode={mode} locale={locale} />
           <HelpButton locale={locale} />
-          <div id="tour-notification-bell"><NotificationBell /></div>
+          <div id="tour-notification-bell"><NotificationBell locale={locale} /></div>
           {user && (
             <AccountMenu
               name={user.name}
@@ -282,7 +282,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           campaignCount={onboardingState.campaignCount}
         />
       )}
-      <NotificationToast />
+      <NotificationToast locale={locale} />
       </LiveDataProvider>
     </div>
   );

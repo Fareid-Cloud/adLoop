@@ -94,7 +94,7 @@ export function RuleCatalogBrowser({
                 <Icon size={16} className={active ? "text-accent" : "text-text-muted"} />
                 <span className="min-w-0 flex-1">
                   <span className={`block truncate text-[13px] font-medium ${active ? "text-accent" : "text-text-primary"}`}>
-                    {cat.labelAr}
+                    {locale === "en" ? cat.labelEn : cat.labelAr}
                   </span>
                 </span>
                 <span className="shrink-0 rounded-full bg-surface-raised px-1.5 py-0.5 font-mono text-[10.5px] text-text-muted">{n}</span>
@@ -106,7 +106,9 @@ export function RuleCatalogBrowser({
         {/* القرارات */}
         <div>
           <p className="mb-3 text-[12.5px] text-text-muted">
-            {RULE_CATEGORIES.find((c) => c.id === category)?.descAr}
+            {locale === "en"
+              ? RULE_CATEGORIES.find((c) => c.id === category)?.descEn
+              : RULE_CATEGORIES.find((c) => c.id === category)?.descAr}
           </p>
           <div className="flex flex-col gap-2">
             {list.map((tpl) => (
@@ -233,8 +235,8 @@ function RuleConfigModal({
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="pop-shadow flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-surface">
         <div className="border-b border-border p-5">
-          <h2 className="text-[15px] font-semibold text-text-primary">{template.nameAr}</h2>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-text-muted">{template.descAr}</p>
+          <h2 className="text-[15px] font-semibold text-text-primary">{locale === "en" ? template.nameEn : template.nameAr}</h2>
+          <p className="mt-1 text-[12.5px] leading-relaxed text-text-muted">{locale === "en" ? template.descEn : template.descAr}</p>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5">

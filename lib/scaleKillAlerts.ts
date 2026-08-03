@@ -12,6 +12,7 @@
 import { prisma } from "@/lib/prisma";
 import { pushToActionFeed } from "@/lib/actionFeed";
 import { classifyScaleKillWatch, getWorkspaceCreativePerformances } from "@/lib/creativeAnalysis";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const COOLDOWN_DAYS = 7;
 const SCALE_SPECIFIC_COOLDOWN_DAYS = 4; // نفس "3-4 أيام" اللي مصادر ميديا باير محترفين متفقة عليها بين كل زيادة والتانية
@@ -96,6 +97,10 @@ export async function checkScaleKillDecisionsForWorkspace(workspaceId: string) {
       severity: decision.decision === "KILL" ? "HIGH" : "MEDIUM",
       title: `${decision.decision === "SCALE" ? "Scale" : "Kill"}: ${decision.adName ?? decision.adId}`,
       description: decision.reason,
+      // السبب مُنتَج بالعربية والإنجليزية في محرّك التحليل نفسه، فيُخزَّن
+      // النصّان ويُختار المناسب وقت العرض بلغة القارئ.
+      descKey: "raw.bilingual",
+      descVars: { ar: decision.reason, en: decision.reasonEn },
       linkUrl: "/dashboard/campaigns/creatives",
       actionType,
       actionPayload,

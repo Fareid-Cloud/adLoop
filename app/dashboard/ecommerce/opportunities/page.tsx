@@ -59,7 +59,7 @@ export default async function OpportunitiesPage() {
 
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
-    return <DataGate title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
+    return <DataGate locale={locale} title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
   const result = await buildOpportunities(workspace.id, 30);
@@ -112,10 +112,10 @@ export default async function OpportunitiesPage() {
         </div>
       )}
 
-      <LimitsNote items={result.blindSpots.map(tx)} />
+      <LimitsNote locale={locale} items={result.blindSpots} />
 
       {result.opportunities.length === 0 ? (
-        <DataGate
+        <DataGate locale={locale}
           title={tr("noneTitle")}
           reason={tr("noneReason")}
           href="/dashboard/ecommerce/products"

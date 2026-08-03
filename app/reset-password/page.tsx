@@ -60,7 +60,7 @@ function ResetPasswordInner() {
             minLength={8}
             className="mb-1 block w-full rounded-xl card-shadow border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-faint outline-none transition-colors focus:border-accent"
           />
-          <PasswordRequirements password={newPassword} />
+          <PasswordRequirements password={newPassword} locale={locale} />
           {error && <p className="mb-2 text-xs text-critical">{error}</p>}
           <button
             type="submit"

@@ -6,6 +6,7 @@
 //    مش مشكلة في الحملة نفسها؟ - منع إيقاف حملة غلط بسبب ظرف خارجي
 
 import { prisma } from "@/lib/prisma";
+import { t } from "@/lib/i18n/dictionary";
 
 // ==================== حساب تغيّر تكلفة العميل الحقيقية لكل حملة ====================
 // دالة مشتركة - كانت هتتحسب مرتين منفصلتين (صفحة التشخيص + محرك الأتمتة)
@@ -60,7 +61,7 @@ export async function fetchAndStoreExchangeRate(fromCurrency: string, toCurrency
 
   const data = await res.json();
   const rate = data.rates?.[toCurrency];
-  if (!rate) throw new Error(`مفيش سعر صرف متاح لـ ${fromCurrency} إلى ${toCurrency}`);
+  if (!rate) throw new Error(`لا يتوفّر سعر صرف من ${fromCurrency} إلى ${toCurrency}`);
 
   const today = new Date(new Date().toISOString().slice(0, 10));
 
@@ -77,6 +78,8 @@ export interface ExchangeRateImpact {
   hasEnoughHistory: boolean; // محتاجين على الأقل بداية الشهر مسجّلة عشان نقارن
   rateChangePct: number;
   impactExplanation: string;
+  /** مفتاح الشرح ومتغيّراته - النصّ أعلاه احتياطيّ عربي فقط. */
+  impactKey: string;
 }
 
 export async function getExchangeRateImpact(
@@ -84,7 +87,7 @@ export async function getExchangeRateImpact(
   toCurrency: string
 ): Promise<ExchangeRateImpact> {
   if (fromCurrency === toCurrency) {
-    return { hasEnoughHistory: true, rateChangePct: 0, impactExplanation: "نفس العملة - مفيش تأثير صرف." };
+    return { hasEnoughHistory: true, rateChangePct: 0, impactExplanation: t("ar", "alerts.mktSameCurrency"), impactKey: "alerts.mktSameCurrency" };
   }
 
   const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -104,20 +107,22 @@ export async function getExchangeRateImpact(
     return {
       hasEnoughHistory: false,
       rateChangePct: 0,
-      impactExplanation: "لا يوجد تاريخ كافٍ لسعر الصرف بعد (يتم تسجيله يومياً من الآن) - ستتوفر المقارنة قريباً.",
+      impactExplanation: t("ar", "alerts.mktNoHistory"),
+      impactKey: "alerts.mktNoHistory",
     };
   }
 
   const rateChangePct = round2(((latestRate.rate - monthStartRate.rate) / monthStartRate.rate) * 100);
 
-  const impactExplanation =
+  const impactKey =
     Math.abs(rateChangePct) < 1
-      ? "سعر الصرف مستقر تقريباً الشهر ده - مأثرش على تكلفتك الحقيقية بشكل ملحوظ."
+      ? "alerts.mktStable"
       : rateChangePct > 0
-      ? `سعر الصرف اتحرك ${rateChangePct}% منذ بداية الشهر - نفس الإنفاق بقى يكلفك أكتر فعلياً، مش بس أرقام الحملة اتغيرت.`
-      : `سعر الصرف اتحرك ${rateChangePct}% لصالحك منذ بداية الشهر - جزء من "التحسّن" الظاهر ممكن يكون سببه الصرف مش أداء الحملة نفسها.`;
+      ? "alerts.mktWorse"
+      : "alerts.mktBetter";
+  const impactExplanation = t("ar", impactKey, { pct: rateChangePct });
 
-  return { hasEnoughHistory: true, rateChangePct, impactExplanation };
+  return { hasEnoughHistory: true, rateChangePct, impactExplanation, impactKey };
 }
 
 // ==================== ضغط السوق العام (Market-Wide Move) ====================
@@ -153,7 +158,7 @@ export function detectMarketWideMove(changes: CampaignCostChange[]): MarketWideM
     isMarketWide,
     affectedCampaignsPct,
     explanation: isMarketWide
-      ? `${affectedCampaignsPct}% من حملاتك ارتفعت تكلفتها مع بعض في نفس الفترة - الاحتمال الأقوى ضغط سوق عام (منافسة زادت)، مش مشكلة في حملة بعينها.`
+      ? t("ar", "alerts.mktWideExplanation", { pct: affectedCampaignsPct })
       : "",
   };
 }

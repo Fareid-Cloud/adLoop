@@ -1,16 +1,20 @@
 // app/components/ui/TrackingAccuracyGauge.tsx
 //
-// عداد دائري "نسبة تطابق التتبع" - نفس فكرة عداد الفجوة (رقمين جنب
+// عداد دائري لنسبة تطابق التتبّع - نفس فكرة عداد الفجوة (رقمين جنب
 // بعض)، لكن بعرض بصري تفاعلي. مبني على بيانات حقيقية فعلاً.
+
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export function TrackingAccuracyGauge({
   verified,
   raw,
   size = 140,
+  locale = "ar",
 }: {
   verified: number;
   raw: number;
   size?: number;
+  locale?: Locale;
 }) {
   const pct = raw > 0 ? Math.min(100, Math.round((verified / raw) * 100)) : 0;
   const radius = (size - 16) / 2;
@@ -41,7 +45,7 @@ export function TrackingAccuracyGauge({
           <span className="font-mono text-2xl font-semibold text-text-primary">{raw > 0 ? `${pct}%` : "—"}</span>
         </div>
       </div>
-      <span className="text-xs text-text-muted">نسبة تطابق التتبع</span>
+      <span className="text-xs text-text-muted">{t(locale, "ui.trackingMatch")}</span>
     </div>
   );
 }

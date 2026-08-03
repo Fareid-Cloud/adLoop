@@ -97,7 +97,7 @@ export function ProductCostsPanel({
     const out: Line[] = [];
     if (d.updated > 0) out.push({ text: tr("impUpdated", { n: d.updated }), tone: "positive" });
     if (d.unmatched.length > 0) {
-      out.push({ text: tr("impUnmatched", { n: d.unmatched.length, list: d.unmatched.slice(0, 8).join("، ") }), tone: "neutral" });
+      out.push({ text: tr("impUnmatched", { n: d.unmatched.length, list: d.unmatched.slice(0, 8).join(t(locale, "ui.listSep")) }), tone: "neutral" });
     }
     if (d.invalid.length > 0) {
       out.push({ text: tr("impInvalid", { n: d.invalid.length, lines: d.invalid.slice(0, 10).join(", ") }), tone: "negative" });

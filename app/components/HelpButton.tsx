@@ -5,8 +5,10 @@
 import { useState } from "react";
 import { HelpCircle, X, Search, ChevronDown } from "lucide-react";
 import { HELP_SECTIONS, searchHelp, helpText, type HelpArticle } from "@/lib/helpContent";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export function HelpButton({ locale }: { locale: "ar" | "en" }) {
+  const tr = (k: string) => t(locale, `helpPanel.${k}`);
   const ar = locale === "ar";
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -19,8 +21,8 @@ export function HelpButton({ locale }: { locale: "ar" | "en" }) {
       <button
         onClick={() => setOpen(true)}
         className="flex h-9 w-9 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface-raised hover:text-text-primary"
-        aria-label={ar ? "المساعدة" : "Help"}
-        title={ar ? "المساعدة" : "Help"}
+        aria-label={ar ? tr("button") : "Help"}
+        title={ar ? tr("button") : "Help"}
       >
         <HelpCircle size={18} strokeWidth={1.75} />
       </button>
@@ -33,10 +35,10 @@ export function HelpButton({ locale }: { locale: "ar" | "en" }) {
           >
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
               <div>
-                <div className="text-base font-semibold text-text-primary">{ar ? "مركز المساعدة" : "Help center"}</div>
-                <div className="text-xs text-text-muted">{ar ? "إجابات عن أسئلتك حول AdLoop" : "Answers about AdLoop"}</div>
+                <div className="text-base font-semibold text-text-primary">{ar ? tr("title") : "Help center"}</div>
+                <div className="text-xs text-text-muted">{ar ? tr("subtitle") : "Answers about AdLoop"}</div>
               </div>
-              <button onClick={() => setOpen(false)} className="text-text-faint hover:text-text-primary" aria-label={ar ? "إغلاق" : "Close"}>
+              <button onClick={() => setOpen(false)} className="text-text-faint hover:text-text-primary" aria-label={ar ? tr("close") : "Close"}>
                 <X size={18} />
               </button>
             </div>
@@ -47,7 +49,7 @@ export function HelpButton({ locale }: { locale: "ar" | "en" }) {
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  placeholder={ar ? "ابحث في المساعدة..." : "Search help..."}
+                  placeholder={ar ? tr("search") : "Search help..."}
                   className="card-shadow w-full rounded-xl border border-border bg-surface-raised py-2 ps-9 pe-3 text-[13px] text-text-primary placeholder:text-text-faint outline-none focus:border-accent"
                 />
               </div>
@@ -56,7 +58,7 @@ export function HelpButton({ locale }: { locale: "ar" | "en" }) {
             <div className="flex-1 overflow-y-auto p-4">
               {results ? (
                 results.length === 0 ? (
-                  <p className="py-6 text-center text-sm text-text-faint">{ar ? "لا نتائج" : "No results"}</p>
+                  <p className="py-6 text-center text-sm text-text-faint">{ar ? tr("noResults") : "No results"}</p>
                 ) : (
                   <div className="flex flex-col gap-2">
                     {results.map((a) => (
@@ -79,7 +81,7 @@ export function HelpButton({ locale }: { locale: "ar" | "en" }) {
             </div>
 
             <div className="border-t border-border p-4 text-center text-xs text-text-muted">
-              {ar ? "لم تجد إجابتك؟ استخدم زر المحادثة أسفل الشاشة." : "Still stuck? Use the chat button at the bottom."}
+              {ar ? tr("footer") : "Still stuck? Use the chat button at the bottom."}
             </div>
           </div>
         </div>

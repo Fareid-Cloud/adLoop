@@ -3,8 +3,9 @@
 "use client";
 
 import { useState } from "react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
-export function ImpersonationBanner() {
+export function ImpersonationBanner({ locale = "ar" }: { locale?: Locale }) {
   const [returning, setReturning] = useState(false);
 
   async function handleReturn() {
@@ -15,13 +16,13 @@ export function ImpersonationBanner() {
 
   return (
     <div className="flex items-center justify-between bg-critical px-4 py-2 text-xs text-white">
-      <span>أنت الآن شايف الحساب ده كأدمن - أي تعديل هيؤثر على بيانات العميل الحقيقية</span>
+      <span>{t(locale, "ui.impersonating")}</span>
       <button
         onClick={handleReturn}
         disabled={returning}
         className="rounded-full bg-white/20 px-3 py-1 text-white hover:bg-white/30"
       >
-        {returning ? "جارٍ الرجوع..." : "الرجوع للوحة الأدمن"}
+        {returning ? t(locale, "ui.impersonateGoing") : t(locale, "ui.impersonateBack")}
       </button>
     </div>
   );

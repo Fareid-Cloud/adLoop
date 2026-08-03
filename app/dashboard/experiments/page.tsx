@@ -10,6 +10,7 @@ import { EmptyState } from "@/app/components/ui/EmptyState";
 import { ExperimentsView, type ExperimentRow } from "./ExperimentsView";
 import { estimateLearningPhaseDuration, findStabilizationDay } from "@/lib/periodComparison";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { itemDescription } from "@/lib/localizedRecord";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export default async function ExperimentsPage() {
@@ -44,7 +45,8 @@ export default async function ExperimentsPage() {
   const experiments: ExperimentRow[] = logs.map((log: any) => ({
     id: log.id,
     changeType: log.changeType,
-    description: log.description,
+    // الوصف يُترجَم هنا بلغة القارئ - كان يُخزَّن نصّاً عربياً جاهزاً
+    description: itemDescription(locale, { title: "", description: log.description, descKey: log.descKey, descVars: log.descVars }),
     changedAt: log.changedAt.toISOString(),
     platform: log.platform ?? null,
     campaignName: log.relatedCampaignId ? nameByCampaign.get(log.relatedCampaignId) ?? null : null,

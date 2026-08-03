@@ -22,6 +22,8 @@ export default async function CreativesPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const tr = (k: string, vars?: Record<string, string | number>) =>
+    t(locale, `creativesPage.${k}`, vars);
   const period = periodFromParams(await searchParams);
   const bounds = toDateBounds(period.range);
 
@@ -94,11 +96,11 @@ export default async function CreativesPage({
   return (
     <div className="mx-auto max-w-6xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-6 text-[26px] font-semibold text-text-primary">أداء الإعلانات الفردية</h1>
+      <h1 className="mb-6 text-[26px] font-semibold text-text-primary">{tr("title")}</h1>
 
       <SectionTitle>{t(locale, "campPages.crDecision")}</SectionTitle>
       <p className="mb-3 text-xs text-text-faint">
-        كل زرّ ينفّذ فعلياً على المنصة نفسها. مقارنةً بمتوسط تكلفة العميل في حسابك أنت، لا بمعيار خارجي.
+        {t(locale, "campPages.crIntro2")}
       </p>
       <div className="mb-8">
         <AdDecisionTable
@@ -109,23 +111,23 @@ export default async function CreativesPage({
         />
       </div>
 
-      <SectionTitle>الأفضل أداءً</SectionTitle>
-      <CreativeGrid items={ranking.best} accentColor="verified" />
+      <SectionTitle>{tr("best")}</SectionTitle>
+      <CreativeGrid items={ranking.best} accentColor="verified" locale={locale} />
 
-      <SectionTitle>الأضعف أداءً (بميزانية معتبرة)</SectionTitle>
-      <CreativeGrid items={ranking.worst} accentColor="critical" />
+      <SectionTitle>{tr("worst")}</SectionTitle>
+      <CreativeGrid items={ranking.worst} accentColor="critical" locale={locale} />
 
       {ranking.fatigued.length > 0 && (
         <>
-          <SectionTitle>إعلانات متعبة (أداء يتراجع إحصائياً)</SectionTitle>
-          <CreativeGrid items={ranking.fatigued} accentColor="gap" />
+          <SectionTitle>{tr("fatigued")}</SectionTitle>
+          <CreativeGrid items={ranking.fatigued} accentColor="gap" locale={locale} />
         </>
       )}
 
       {cplFatiguedAdIds.size > 0 && (
         <>
-          <SectionTitle>تكلفة العميل ترتفع (تعب متأخر — النقر لا يزال جيداً، لكن العملاء أصبحوا أغلى)</SectionTitle>
-          <CreativeGrid items={performances.filter((p) => cplFatiguedAdIds.has(p.adId))} accentColor="gap" />
+          <SectionTitle>{tr("lateFatigue")}</SectionTitle>
+          <CreativeGrid items={performances.filter((p) => cplFatiguedAdIds.has(p.adId))} accentColor="gap" locale={locale} />
         </>
       )}
     </div>
@@ -139,12 +141,14 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 function CreativeGrid({
   items,
   accentColor,
+  locale,
 }: {
   items: CreativePerformance[];
   accentColor: "verified" | "critical" | "gap";
+  locale: Locale;
 }) {
   if (items.length === 0) {
-    return <p className="mb-4 text-xs text-text-faint">لا توجد بيانات كافية.</p>;
+    return <p className="mb-4 text-xs text-text-faint">{t(locale, "creativesPage.notEnough")}</p>;
   }
 
   return (
@@ -155,10 +159,10 @@ function CreativeGrid({
             <p className="mb-2 line-clamp-2 text-xs text-text-primary">{item.headline}</p>
           )}
           <div className={`font-mono text-sm text-${accentColor}`}>{item.cpa || "—"}</div>
-          <div className="text-[10px] text-text-faint">تكلفة التحويل {!item.usingVerifiedData && "(معلنة)"}</div>
+          <div className="text-[10px] text-text-faint">{t(locale, "campPages.crCpaReported")} {!item.usingVerifiedData && ""}</div>
           <div className="mt-1 text-[10px] text-text-faint">CTR: {item.ctr}%</div>
           {item.thumbnailUrl && (
-            <ImageQualityButton imageUrl={item.thumbnailUrl} platform={item.platform} />
+            <ImageQualityButton imageUrl={item.thumbnailUrl} platform={item.platform} locale={locale} />
           )}
         </div>
       ))}

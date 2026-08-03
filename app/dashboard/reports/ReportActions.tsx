@@ -4,8 +4,9 @@
 
 import { useState } from "react";
 import { Link2, Download } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
-export function ReportActions({ workspaceId }: { workspaceId: string }) {
+export function ReportActions({ workspaceId, locale = "ar" }: { workspaceId: string; locale?: Locale }) {
   const [copied, setCopied] = useState(false);
 
   async function handleShareLink() {
@@ -25,14 +26,14 @@ export function ReportActions({ workspaceId }: { workspaceId: string }) {
         className="flex items-center gap-1.5 rounded-full bg-surface px-4 py-1.5 text-xs text-text-muted hover:text-text-primary"
       >
         <Link2 size={14} />
-        {copied ? "تم النسخ ✓" : "رابط مشاركة"}
+        {copied ? t(locale, "ui.copied") : t(locale, "ui.shareLink")}
       </button>
       <a
         href={`/api/workspaces/${workspaceId}/export-csv`}
         className="flex items-center gap-1.5 rounded-full bg-surface px-4 py-1.5 text-xs text-text-muted no-underline hover:text-text-primary"
       >
         <Download size={14} />
-        تصدير CSV
+        {t(locale, "ui.export")} CSV
       </a>
     </div>
   );

@@ -12,6 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { syncPriceToStore } from "@/lib/ecommerce/priceSync";
 import { recordExperiment } from "@/lib/experimentEngine";
+import { t } from "@/lib/i18n/dictionary";
 
 export async function POST(
   req: NextRequest,
@@ -44,11 +45,20 @@ export async function POST(
     },
   });
 
+  const priceDescVars = {
+    product: product.name,
+    from: previousPrice,
+    to: newPrice,
+    currency: product.workspace.currency,
+  };
+
   // تغيير السعر قرار له أثر يُقاس - يدخل المعمل تلقائياً مثل بقية القرارات
   await recordExperiment({
     workspaceId: product.workspace.id,
     changeType: "OTHER",
-    description: `تغيير سعر «${product.name}» من ${previousPrice} إلى ${newPrice} ${product.workspace.currency}`,
+    description: t("ar", "expDesc.priceChange", priceDescVars),
+    descKey: "expDesc.priceChange",
+    descVars: priceDescVars,
     trackedMetrics: ["revenue", "orders", "aov", "returned_orders", "profit_estimate"],
     windowDays: 14,
     source: "AUTO",

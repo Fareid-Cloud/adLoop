@@ -44,7 +44,7 @@ export default async function AiInsightsPage() {
 
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
-    return <DataGate title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
+    return <DataGate locale={locale} title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
   const [journey, prevJourney, overview, products, opps] = await Promise.all([
@@ -65,7 +65,7 @@ export default async function AiInsightsPage() {
           subtitle={tr("subtitleShort")}
           storeName={workspace.name}
         />
-        <DataGate
+        <DataGate locale={locale}
           title={tr("noneTitle")}
           reason={tr("noneReason")}
         />

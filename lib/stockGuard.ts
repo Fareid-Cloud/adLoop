@@ -9,6 +9,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { pushToActionFeed } from "@/lib/actionFeed";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const COOLDOWN_DAYS = 3;
 const SALES_WINDOW_DAYS = 14;
@@ -89,7 +90,11 @@ export async function checkStockGuardForWorkspace(workspaceId: string) {
 
   for (const s of atRisk) {
     const recent = await prisma.actionFeedItem.findFirst({
-      where: { workspaceId, title: { contains: s.name }, createdAt: { gte: cooldownStart } },
+      where: {
+        workspaceId,
+        titleVars: { path: ["name"], equals: s.name },
+        createdAt: { gte: cooldownStart },
+      },
     });
     if (recent) continue;
 
@@ -97,12 +102,20 @@ export async function checkStockGuardForWorkspace(workspaceId: string) {
     const matched = links.filter((l: any) => l.campaignName?.toLowerCase().includes(needle));
 
     const severity = s.state === "OUT_OF_STOCK" ? "URGENT" : s.state === "CRITICAL" ? "HIGH" : "MEDIUM";
-    const reason =
+    const reasonKey =
       s.state === "OUT_OF_STOCK"
-        ? `نفد مخزون «${s.name}» بالكامل. كل نقرة تُدفع الآن لا يمكن أن تتحول إلى بيع.`
+        ? "alerts.stockReasonOut"
         : s.state === "CRITICAL"
-        ? `مخزون «${s.name}» يكفي ${s.daysLeft} أيام تقريباً بمعدل البيع الحالي (${s.dailySalesRate}/يوم).`
-        : `مخزون «${s.name}» انخفض إلى ${s.stockQuantity} وحدة، تحت حدّك المحدد (${s.lowStockThreshold}).`;
+        ? "alerts.stockReasonCritical"
+        : "alerts.stockReasonLow";
+    const reasonVars = {
+      name: s.name,
+      days: s.daysLeft ?? 0,
+      rate: s.dailySalesRate ?? 0,
+      qty: s.stockQuantity ?? 0,
+      threshold: s.lowStockThreshold ?? 0,
+    };
+    const reason = t("ar", reasonKey, reasonVars);
 
     if (matched.length === 0) {
       // لا حملة مرتبطة يمكن التصرّف فيها بثقة - تنبيه فقط
@@ -111,8 +124,12 @@ export async function checkStockGuardForWorkspace(workspaceId: string) {
         source: "STOCK",
         type: "ALERT",
         severity,
-        title: `مخزون — ${s.name}`,
-        description: `${reason} لم نتمكن من تحديد حملة مرتبطة بهذا المنتج تلقائياً؛ راجع حملاتك يدوياً.`,
+        title: t("ar", "alerts.stockTitle", { name: s.name }),
+        titleKey: "alerts.stockTitle",
+        titleVars: { name: s.name },
+        description: t("ar", "alerts.stockNoCampaign", { reason }),
+        descKey: "alerts.stockNoCampaign",
+        descVars: { reason, reasonKey, ...reasonVars },
         linkUrl: "/dashboard/pricing",
       });
       continue;
@@ -127,8 +144,18 @@ export async function checkStockGuardForWorkspace(workspaceId: string) {
         source: "STOCK",
         type: executable ? "SUGGESTION" : "ALERT",
         severity,
-        title: `مخزون — ${s.name}: ${executable ? "إيقاف الحملة" : "انتبه"}`,
-        description: `${reason} الحملة المتأثرة: ${link.campaignName}.`,
+        title: t("ar", "alerts.stockTitleWithAction", {
+          name: s.name,
+          action: t("ar", executable ? "alerts.stockActionPause" : "alerts.stockActionWatch"),
+        }),
+        titleKey: "alerts.stockTitleWithAction",
+        titleVars: {
+          name: s.name,
+          actionKey: executable ? "alerts.stockActionPause" : "alerts.stockActionWatch",
+        },
+        description: t("ar", "alerts.stockWithCampaign", { reason, campaign: link.campaignName }),
+        descKey: "alerts.stockWithCampaign",
+        descVars: { reason, reasonKey, campaign: link.campaignName, ...reasonVars },
         linkUrl: "/dashboard/pricing",
         ...(executable
           ? {

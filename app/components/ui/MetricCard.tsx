@@ -165,7 +165,7 @@ export function MetricCard(props: MetricCardProps) {
         </span>
         {unit && <span className="text-[13px] font-medium text-text-muted">{unit}</span>}
         {verified === true && (
-          <span className="text-[13px] text-verified" title="رقم متحقّق منه فعلياً">
+          <span className="text-[13px] text-verified" title={t(locale, "ui.trustVerified")}>
             ✓
           </span>
         )}

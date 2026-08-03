@@ -107,10 +107,10 @@ export default async function LeadFormsPage({
 
       {messengerBreakdown && (
         <>
-          <div className="mb-2 mt-8 text-[13px] text-text-muted">جودة محادثات ماسنجر (آخر 30 يوم)</div>
+          <div className="mb-2 mt-8 text-[13px] text-text-muted">{t(locale, "campPages.lfQualityTitle", { days: "30" })}</div>
           <div className="grid gap-3 sm:grid-cols-3">
             <MetricCard
-              label="تواصل حقيقي"
+              label={t(locale, "campPages.lfGenuine")}
               value={messengerBreakdown.genuineCount}
               icon={MessageCircle}
               tone="verified"
@@ -119,16 +119,16 @@ export default async function LeadFormsPage({
               locale={locale}
             />
             <MetricCard
-              label="ضغطة بالخطأ (الأرجح)"
+              label={t(locale, "campPages.lfAccidental")}
               value={messengerBreakdown.likelyAccidentalCount}
               icon={MousePointerClick}
               tone="critical"
-              caption={{ text: "تُحتسب تحويلاً لدى المنصّة ولم تُنتج عميلاً", tone: "negative" }}
+              caption={{ text: t(locale, "campPages.lfCountsAsConv"), tone: "negative" }}
               explainKey="accidentalTap"
               locale={locale}
             />
             <MetricCard
-              label="تحتاج وقتاً للتقييم"
+              label={t(locale, "campPages.lfNeedsTime")}
               value={messengerBreakdown.pendingCount}
               icon={Clock}
               tone="neutral"

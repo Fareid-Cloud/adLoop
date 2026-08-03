@@ -39,7 +39,7 @@ export default async function ReportsPage({
 
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
-    return <DataGate title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
+    return <DataGate locale={locale} title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
   const [journey, overview, products, customers, opps] = await Promise.all([
@@ -56,7 +56,7 @@ export default async function ReportsPage({
     return (
       <div className="mx-auto max-w-4xl">
         <EcomHeader title={tr("title")} subtitle={tr("subtitle")} storeName={workspace.name} />
-        <DataGate
+        <DataGate locale={locale}
           title={tr("noneTitle")}
           reason={tr("noneReason")}
         />
@@ -74,7 +74,7 @@ export default async function ReportsPage({
           title={tr("title")}
           subtitle={tr("subtitleWindow", { days: windowDays })}
           storeName={workspace.name}
-          action={<PrintButton label={tr("print")} />}
+          action={<PrintButton locale={locale} label={tr("print")} />}
         />
       </div>
 
@@ -182,7 +182,7 @@ export default async function ReportsPage({
                 <li key={o.id} className="text-[12.5px] leading-relaxed text-text-muted">
                   <span className="font-medium text-text-primary">{tx(o.title)}</span> — {tx(o.action)}{" "}
                   <span className="font-semibold text-verified">
-                    (+{fmtNum(o.estimatedMonthlyProfit)} {c} شهرياً)
+                    (+{fmtNum(o.estimatedMonthlyProfit)} {c} {tr("perMonth")})
                   </span>
                 </li>
               ))}
@@ -197,7 +197,7 @@ export default async function ReportsPage({
             <ul className="flex flex-col gap-1">
               {journey.missingCostsAr.map((m, i) => (
                 <li key={i} className="text-[11.5px] leading-relaxed text-text-faint">
-                  • {m}
+                  • {t(locale, m.key, m.vars)}
                 </li>
               ))}
             </ul>

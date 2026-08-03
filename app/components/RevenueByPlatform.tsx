@@ -70,7 +70,7 @@ export function RevenueByPlatform({
       <div className="mb-1 flex items-center justify-between gap-2">
         <span className="flex items-center gap-2 text-[13px] font-medium text-text-muted">
           <ShoppingBag size={15} />
-          الإيراد لكل منصة
+          {tr("title")}
         </span>
         <span className="text-[12px] tabular-nums text-text-faint">
           {tr("total", { value: num(totalRevenue), currency })}
@@ -153,11 +153,11 @@ export function RevenueByPlatform({
 
       {totalCost > 0 && (
         <div className="mt-3 border-t border-border pt-3 text-[12px] text-text-muted">
-          إجمالي العائد{" "}
+          {tr("totalRoas")}{" "}
           <span className="font-semibold tabular-nums text-text-primary">
             {Math.round((totalRevenue / totalCost) * 100) / 100}x
           </span>{" "}
-          — صافي{" "}
+          {tr("netProfitSep")}{" "}
           <span
             className={`font-semibold tabular-nums ${
               totalRevenue - totalCost >= 0 ? "text-verified" : "text-critical"

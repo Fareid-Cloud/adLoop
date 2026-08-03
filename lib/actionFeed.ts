@@ -30,6 +30,16 @@ export interface ActionFeedInput {
   severity: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   title: string;
   description?: string;
+  /**
+   * مفتاح القاموس ومتغيّراته - يُفضَّل دائماً على `title`/`description`.
+   * النصّان يبقيان كاحتياطي وللنصوص الحرّة التي لا مفتاح لها (مخرجات
+   * الذكاء الاصطناعي مثلاً). حين يُمرَّر المفتاح، يُترجَم وقت **العرض**
+   * بلغة القارئ لا بلغة الكرون الذي أنتج البند.
+   */
+  titleKey?: string;
+  titleVars?: Record<string, string | number>;
+  descKey?: string;
+  descVars?: Record<string, string | number>;
   relatedRuleExecutionId?: string;
   linkUrl?: string; // لما المستخدم يدوس على الإشعار في الجرس، يودّيه فين
   actionType?: string; // نوع التنفيذ الحقيقي - null = اقتراح معلوماتي بس
@@ -47,6 +57,10 @@ export async function pushToActionFeed(item: ActionFeedInput) {
       severity: item.severity as any,
       title: item.title,
       description: item.description,
+      titleKey: item.titleKey ?? null,
+      titleVars: (item.titleVars ?? undefined) as any,
+      descKey: item.descKey ?? null,
+      descVars: (item.descVars ?? undefined) as any,
       relatedRuleExecutionId: item.relatedRuleExecutionId,
       linkUrl: item.linkUrl,
       actionType: item.actionType,
@@ -203,7 +217,10 @@ export async function applyActionFeedItem(itemId: string) {
 
     if (!ceilingCheck.allowed) {
       throw new Error(
-        `تخطّى سقف التغيير الشهري (${ceilingCheck.ceilingPct}%) - مجموع التغييرات على نفس الإعلان/الحملة هيوصل ${ceilingCheck.totalChangeIfApplied}% لو نفّذت ده. راجع الإعدادات لو عايز تعدّل السقف.`
+        t("ar", "alerts.ceilingExceeded", {
+          pct: ceilingCheck.ceilingPct,
+          total: ceilingCheck.totalChangeIfApplied,
+        })
       );
     }
   }
@@ -292,7 +309,10 @@ export async function applyActionFeedItem(itemId: string) {
     await recordExperiment({
       workspaceId: item.workspaceId,
       changeType: CHANGE_TYPE[item.actionType ?? ""] ?? "OTHER",
+      // عنوان البند صار مفتاحاً بالفعل، فتَرِثه التجربة كما هو بدل نسخ نصّه
       description: item.title,
+      descKey: item.titleKey ?? undefined,
+      descVars: (item.titleVars ?? undefined) as Record<string, string | number> | undefined,
       campaignId: payload.campaignId ?? null,
       platform: payload.platform ?? null,
       sourceActionId: item.id,

@@ -153,8 +153,12 @@ export async function runAutomationForWorkspace(workspaceId: string, locale: Loc
         source: "AUTOMATION",
         type: "ALERT",
         severity: "MEDIUM",
-        title: `${rule.name}: الشرط تحقق، لكن السبب الأرجح ضغط سوق عام مش مشكلة في الحملة`,
+        title: t("ar", "alerts.ruleMarketWideTitle", { rule: rule.name }),
+        titleKey: "alerts.ruleMarketWideTitle",
+        titleVars: { rule: rule.name },
         description: marketWide.explanation,
+        descKey: "alerts.mktWideExplanation",
+        descVars: { pct: marketWide.affectedCampaignsPct },
       });
       continue; // منكملش لباقي منطق الدفع العادي للقاعدة دي
     }

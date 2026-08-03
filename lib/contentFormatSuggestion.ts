@@ -7,12 +7,15 @@
 
 import { prisma } from "@/lib/prisma";
 import { pushToActionFeed } from "@/lib/actionFeed";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
-const FORMAT_LABELS: Record<string, string> = {
-  REELS: "ريلز",
-  STORY: "ستوري",
-  FEED: "الفيد (منشور عادي)",
+// مفاتيح لا نصوص: الشكل يُسمّى بلغة القارئ وقت العرض.
+const FORMAT_KEYS: Record<string, string> = {
+  REELS: "alerts.fmtReels",
+  STORY: "alerts.fmtStory",
+  FEED: "alerts.fmtFeed",
 };
+const fmt = (loc: Locale, format: string) => t(loc, FORMAT_KEYS[format] ?? format);
 
 // إصلاح عدم اتساق: باقي المنتج كله (جوجل/ميتا/تيك توك) بيستخدم 20%
 // كعتبة "فرق حقيقي مش صدفة" و5 كحد أدنى للعينة - كانت هنا 25% من غير
@@ -29,7 +32,7 @@ export async function checkContentFormatSuggestionForWorkspace(workspaceId: stri
     where: {
       workspaceId,
       platform: "META_ADS",
-      placementDetail: { in: Object.keys(FORMAT_LABELS) },
+      placementDetail: { in: Object.keys(FORMAT_KEYS) },
       date: { gte: thirtyDaysAgo },
     },
     _sum: { cost: true, rawConversions: true },
@@ -52,13 +55,32 @@ export async function checkContentFormatSuggestionForWorkspace(workspaceId: stri
   const diffPct = Math.round(((mostExpensive.cpa! - cheapest.cpa!) / cheapest.cpa!) * 100);
   if (diffPct < MEANINGFUL_DIFFERENCE_PCT) return;
 
+  // اسما الشكلين يُترجمان وقت العرض من مفتاحيهما - تخزينهما كنصّ عربي
+  // كان يجعل القارئ الإنجليزي يرى «ريلز» داخل جملة إنجليزية.
+  const titleVars = {
+    cheap: fmt("ar", cheapest.format),
+    cheapKey: FORMAT_KEYS[cheapest.format],
+    expensive: fmt("ar", mostExpensive.format),
+    expensiveKey: FORMAT_KEYS[mostExpensive.format],
+    diffPct,
+  };
+  const descVars = {
+    ...titleVars,
+    cheapCpa: Math.round(cheapest.cpa!),
+    expensiveCpa: Math.round(mostExpensive.cpa!),
+  };
+
   await pushToActionFeed({
     workspaceId,
     source: "CREATIVE",
     type: "SUGGESTION",
     severity: "MEDIUM",
-    title: `${FORMAT_LABELS[cheapest.format]} بيجيب عميل أرخص بـ${diffPct}% من ${FORMAT_LABELS[mostExpensive.format]}`,
-    description: `تكلفة العميل عبر ${FORMAT_LABELS[cheapest.format]} (${Math.round(cheapest.cpa!)}) أرخص بوضوح من ${FORMAT_LABELS[mostExpensive.format]} (${Math.round(mostExpensive.cpa!)}) - يستاهل تحويل ميزانية أكتر للشكل الأرخص.`,
+    title: t("ar", "alerts.formatTitle", titleVars),
+    titleKey: "alerts.formatTitle",
+    titleVars,
+    description: t("ar", "alerts.formatBody", descVars),
+    descKey: "alerts.formatBody",
+    descVars,
     linkUrl: "/dashboard/campaigns/content-formats",
   });
 }

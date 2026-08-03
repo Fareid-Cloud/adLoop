@@ -13,6 +13,7 @@ import { TruthView } from "./TruthView";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds, daysBetween } from "@/lib/dateRange";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -28,9 +29,10 @@ export default async function TruthPage({
   const days = daysBetween(period.range.from, period.range.to);
 
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
     return (
-      <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>
+      <div className="py-20 text-center text-text-muted">{t(locale, "ui.sessionExpired")}</div>
     );
   }
 
@@ -38,8 +40,8 @@ export default async function TruthPage({
   if (!workspace) {
     return (
       <EmptyState
-        title="لا توجد مساحة عمل بعد"
-        description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل."
+        title={t(locale, "common.noWorkspace")}
+        description={t(locale, "common.noWorkspaceHint")}
       />
     );
   }

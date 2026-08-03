@@ -23,14 +23,22 @@ export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user || !isOwner(user)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-  const { threadId, text } = await req.json();
-  if (!threadId || !text?.trim()) return NextResponse.json({ error: "بيانات ناقصة" }, { status: 400 });
+  const body = await req.json();
+  const threadId: string | undefined = body.threadId;
+  const text: string = typeof body.text === "string" ? body.text.trim() : "";
+  // نفس سقف العميل: ستّ صور كحدّ أقصى للرسالة الواحدة.
+  const imageUrls: string[] = Array.isArray(body.imageUrls) ? body.imageUrls.slice(0, 6) : [];
+
+  // صورة وحدها ردّ صالح - اشتراط النصّ كان يمنع إرسال لقطة شاشة بلا تعليق.
+  if (!threadId || (!text && imageUrls.length === 0)) {
+    return NextResponse.json({ error: "بيانات ناقصة" }, { status: 400 });
+  }
 
   const thread = await prisma.supportThread.findUnique({ where: { id: threadId } });
   if (!thread) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const msg = await prisma.supportMessage.create({
-    data: { threadId, fromSupport: true, body: text.trim(), imageUrls: [], readByUser: false },
+    data: { threadId, fromSupport: true, body: text, imageUrls, readByUser: false },
   });
   await prisma.supportThread.update({ where: { id: threadId }, data: { status: "ANSWERED", updatedAt: new Date() } });
   return NextResponse.json({ message: msg }, { status: 201 });

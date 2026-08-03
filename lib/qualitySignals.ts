@@ -1,4 +1,5 @@
-// lib/qualitySignals.ts
+
+import { t } from "@/lib/i18n/dictionary";// lib/qualitySignals.ts
 //
 // حسابين مهمين: (1) سرعة رد فريق المبيعات الحقيقية (مش الرد الأوتوماتيك)
 // و(2) كشف أنماط الكليكات المشبوهة (بوتات)
@@ -114,7 +115,7 @@ export function detectSuspiciousIPs(
       maxInWindow = Math.max(maxInWindow, count);
     }
     if (maxInWindow > maxClicksPerWindow) {
-      signals.push(`${maxInWindow} كليكة من نفس الـ IP خلال ${windowMinutes} دقيقة`);
+      signals.push(t("ar", "alerts.qsRepeatedIp", { count: maxInWindow, minutes: windowMinutes }));
       score += 40;
     }
 
@@ -123,7 +124,7 @@ export function detectSuspiciousIPs(
       (c) => c.userAgent && KNOWN_BOT_USER_AGENT_PATTERNS.some((p) => p.test(c.userAgent!))
     );
     if (hasBotUserAgent) {
-      signals.push("متصفح/أداة آلية معروفة (User Agent)");
+      signals.push(t("ar", "alerts.qsAutomatedAgent"));
       score += 40;
     }
 
@@ -131,7 +132,7 @@ export function detectSuspiciousIPs(
     // مهدرة، حتى لو منقدرش نثبت 100% إنه بوت (ممكن يكون جمهور خطأ برضو)
     const conversionTracked = ipClicks.some((c) => c.resultedInConversion !== undefined);
     if (conversionTracked && ipClicks.length >= 5 && !ipClicks.some((c) => c.resultedInConversion)) {
-      signals.push(`${ipClicks.length} كليكة من نفس المصدر بدون أي تحويل واحد`);
+      signals.push(t("ar", "alerts.qsNoConversion", { count: ipClicks.length }));
       score += 20;
     }
 

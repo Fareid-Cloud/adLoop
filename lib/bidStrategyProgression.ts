@@ -15,6 +15,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { pushToActionFeed } from "@/lib/actionFeed";
+import { t } from "@/lib/i18n/dictionary";
 
 const MIN_CONVERSIONS_FOR_MAX_CONVERSIONS = 30;
 const MIN_CONVERSIONS_FOR_TARGET_CPA = 30;
@@ -45,13 +46,22 @@ export async function checkBidStrategyProgressionForWorkspace(workspaceId: strin
     const conversions = agg._sum.verifiedConversions ?? 0;
     const cost = agg._sum.cost ?? 0;
 
-    let suggestion: { title: string; description: string; actionType: string; actionPayload: Record<string, unknown> } | null = null;
+    let suggestion: {
+      titleKey: string;
+      titleVars: Record<string, string | number>;
+      descKey: string;
+      descVars: Record<string, string | number>;
+      actionType: string;
+      actionPayload: Record<string, unknown>;
+    } | null = null;
 
     if (link.biddingStrategyType === "MAXIMIZE_CLICKS") {
       if (conversions >= MIN_CONVERSIONS_FOR_MAX_CONVERSIONS && campaignAgeDays >= MIN_CAMPAIGN_AGE_DAYS) {
         suggestion = {
-          title: `${link.campaignName}: جاهزة للانتقال لـ Max Conversions`,
-          description: `${conversions} تحويل حقيقي آخر 30 يوماً، والحملة شغالة ${campaignAgeDays} يوم - بيانات كافية للخوارزمية تبدأ تحسّن على التحويلات بدل الكليكات بس.`,
+          titleKey: "alerts.progMaxConvTitle",
+          titleVars: { campaign: link.campaignName },
+          descKey: "alerts.progMaxConvBody",
+          descVars: { conversions, age: campaignAgeDays },
           actionType: "SET_BID_STRATEGY_GOOGLE",
           actionPayload: { campaignId: link.externalCampaignId, newStrategy: "MAXIMIZE_CONVERSIONS" },
         };
@@ -61,8 +71,15 @@ export async function checkBidStrategyProgressionForWorkspace(workspaceId: strin
         const avgCpa = cost / conversions;
         const suggestedTargetCpa = Math.round(avgCpa * (1 + TARGET_CPA_SAFETY_MARGIN_PCT / 100));
         suggestion = {
-          title: `${link.campaignName}: جاهزة لتحديد Target CPA`,
-          description: `${conversions} تحويل آخر 30 يوماً بمتوسط تكلفة ${Math.round(avgCpa)} - نقترح تحديد الهدف عند ${suggestedTargetCpa} (فوق متوسطك الفعلي بـ${TARGET_CPA_SAFETY_MARGIN_PCT}% كهامش أمان، مش تحته - تحديد رقم أقل من أدائك الحالي بيخنق الحملة فوراً).`,
+          titleKey: "alerts.progTargetCpaTitle",
+          titleVars: { campaign: link.campaignName },
+          descKey: "alerts.progTargetCpaBody",
+          descVars: {
+            conversions,
+            avgCpa: Math.round(avgCpa),
+            target: suggestedTargetCpa,
+            margin: TARGET_CPA_SAFETY_MARGIN_PCT,
+          },
           actionType: "SET_BID_STRATEGY_GOOGLE",
           actionPayload: { campaignId: link.externalCampaignId, newStrategy: "TARGET_CPA", targetCpaValue: suggestedTargetCpa, changePct: TARGET_CPA_SAFETY_MARGIN_PCT },
         };
@@ -83,8 +100,12 @@ export async function checkBidStrategyProgressionForWorkspace(workspaceId: strin
       source: "BID_STRATEGY",
       type: "SUGGESTION",
       severity: "MEDIUM",
-      title: suggestion.title,
-      description: suggestion.description,
+      title: t("ar", suggestion.titleKey, suggestion.titleVars),
+      titleKey: suggestion.titleKey,
+      titleVars: suggestion.titleVars,
+      description: t("ar", suggestion.descKey, suggestion.descVars),
+      descKey: suggestion.descKey,
+      descVars: suggestion.descVars,
       linkUrl: "/dashboard/diagnostics",
       actionType: suggestion.actionType,
       actionPayload: suggestion.actionPayload,

@@ -7,6 +7,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { pushToActionFeed } from "@/lib/actionFeed";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const SPIKE_THRESHOLD_POINTS = 20;
 const COOLDOWN_DAYS = 14;
@@ -59,7 +60,7 @@ export async function checkAttributionPathAlertForWorkspace(workspaceId: string)
   const cooldownStart = new Date();
   cooldownStart.setDate(cooldownStart.getDate() - COOLDOWN_DAYS);
   const recentSimilar = await prisma.actionFeedItem.findFirst({
-    where: { workspaceId, title: { contains: "نسبة اللمسة الواحدة ارتفعت" }, createdAt: { gte: cooldownStart } },
+    where: { workspaceId, titleKey: "alerts.singleTouchTitle", createdAt: { gte: cooldownStart } },
   });
   if (recentSimilar) return;
 
@@ -68,8 +69,11 @@ export async function checkAttributionPathAlertForWorkspace(workspaceId: string)
     source: "TRUTH_GAP",
     type: "ALERT",
     severity: "LOW",
-    title: "نسبة اللمسة الواحدة ارتفعت بشكل ملحوظ",
-    description: `${thisPct}% من التحويلات آخر أسبوعين لمست منصة واحدة بس قبل التحويل، مقابل ${lastPct}% في الفترة اللي فاتت - ممكن يعني منصة معينة بقت معزولة عن الباقي، أو تتبع منصة تانية توقف.`,
+    title: t("ar", "alerts.singleTouchTitle"),
+    titleKey: "alerts.singleTouchTitle",
+    description: t("ar", "alerts.singleTouchBody", { thisPct, lastPct }),
+    descKey: "alerts.singleTouchBody",
+    descVars: { thisPct, lastPct },
     linkUrl: "/dashboard/campaigns/attribution-path",
   });
 }

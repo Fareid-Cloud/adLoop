@@ -11,6 +11,7 @@
 import { prisma } from "@/lib/prisma";
 import type { CampaignLink, ConnectedPlatform } from "@prisma/client";
 import { decryptToken } from "@/lib/encryption";
+import { t } from "@/lib/i18n/dictionary";
 
 const TIKTOK_API_VERSION = "v1.3";
 
@@ -334,6 +335,9 @@ export interface TikTokFatigueResult {
   currentFrequency: number;
   status: "HEALTHY" | "EARLY_FATIGUE" | "SEVERE_FATIGUE" | "INSUFFICIENT_DATA";
   message: string;
+  /** مفتاح الرسالة ومتغيّراتها - النصّ أعلاه احتياطيّ عربي فقط. */
+  messageKey?: string;
+  messageVars?: Record<string, string | number>;
 }
 
 export function detectTikTokFatigue(
@@ -359,7 +363,9 @@ export function detectTikTokFatigue(
   if (thisWeek.engagedViewRate < 0.38) {
     return {
       ...base, weekOverWeekDeclinePct: null, status: "SEVERE_FATIGUE",
-      message: `معدل المشاهدة المتفاعلة ${Math.round(thisWeek.engagedViewRate * 1000) / 10}% - تحت الحد الحرج (38%). محتاج تجديد إبداعي فوري.`,
+      messageKey: "alerts.tkFatigueBody",
+      messageVars: { rate: Math.round(thisWeek.engagedViewRate * 1000) / 10 },
+      message: t("ar", "alerts.tkFatigueBody", { rate: Math.round(thisWeek.engagedViewRate * 1000) / 10 }),
     };
   }
 
@@ -367,9 +373,13 @@ export function detectTikTokFatigue(
     return {
       ...base, weekOverWeekDeclinePct: null,
       status: thisWeek.engagedViewRate < 0.45 ? "EARLY_FATIGUE" : "HEALTHY",
-      message: thisWeek.engagedViewRate < 0.45
-        ? `معدل المشاهدة المتفاعلة ${Math.round(thisWeek.engagedViewRate * 1000) / 10}% - تحت 45%، يستاهل مراقبة.`
-        : "لا توجد بيانات أسبوع سابق للمقارنة، لكن الرقم الحالي صحي.",
+      messageKey: thisWeek.engagedViewRate < 0.45 ? "alerts.tkFatigueWatch" : "alerts.tkFatigueNoHistory",
+      messageVars: { rate: Math.round(thisWeek.engagedViewRate * 1000) / 10 },
+      message: t(
+        "ar",
+        thisWeek.engagedViewRate < 0.45 ? "alerts.tkFatigueWatch" : "alerts.tkFatigueNoHistory",
+        { rate: Math.round(thisWeek.engagedViewRate * 1000) / 10 }
+      ),
     };
   }
 
@@ -388,7 +398,7 @@ export function detectTikTokFatigue(
 
   return {
     ...base, weekOverWeekDeclinePct: declinePct, status: "HEALTHY",
-    message: "معدل المشاهدة المتفاعلة مستقر أو بيتحسّن مقارنة بالأسبوع اللي فات.",
+    message: t("ar", "alerts.tkFatigueStable"),
   };
 }
 
@@ -427,7 +437,15 @@ export async function checkTikTokAlertsForWorkspace(workspaceId: string) {
         source: "CREATIVE",
         type: "ALERT",
         severity: result.status === "SEVERE_FATIGUE" ? "HIGH" : "MEDIUM",
-        title: `${nameMap.get(adId) ?? adId}: ${result.status === "SEVERE_FATIGUE" ? "تعب حقيقي" : "بداية تعب"}`,
+        title: t("ar", "alerts.tkFatigueTitle", {
+          ad: nameMap.get(adId) ?? adId,
+          state: t("ar", result.status === "SEVERE_FATIGUE" ? "alerts.tkFatigueSevere" : "alerts.tkFatigueEarly"),
+        }),
+        titleKey: "alerts.tkFatigueTitle",
+        titleVars: {
+          ad: nameMap.get(adId) ?? adId,
+          stateKey: result.status === "SEVERE_FATIGUE" ? "alerts.tkFatigueSevere" : "alerts.tkFatigueEarly",
+        },
         description: result.message,
       });
     }
@@ -442,8 +460,12 @@ export async function checkTikTokAlertsForWorkspace(workspaceId: string) {
       source: "CREATIVE",
       type: "ALERT",
       severity: "MEDIUM",
-      title: `${v.adName ?? v.adId}: خطّاف ضعيف`,
-      description: `${Math.round(v.hookRate * 1000) / 10}% بس من المشاهدين كملوا ثانيتين - أقل من المعيار الصحي (30%+). أول 2 ثانية من الفيديو تحتاج إعادة تصميم.`,
+      title: t("ar", "alerts.tkWeakHookTitle", { ad: v.adName ?? v.adId }),
+      titleKey: "alerts.tkWeakHookTitle",
+      titleVars: { ad: v.adName ?? v.adId },
+      description: t("ar", "alerts.tkWeakHookBody", { pct: Math.round(v.hookRate * 1000) / 10 }),
+      descKey: "alerts.tkWeakHookBody",
+      descVars: { pct: Math.round(v.hookRate * 1000) / 10 },
     });
   }
 }
@@ -582,8 +604,12 @@ export async function syncTikTokBidCapForWorkspace(workspaceId: string) {
             source: "BID_STRATEGY",
             type: "ALERT",
             severity: "MEDIUM",
-            title: `${result.adGroupName ?? result.adGroupId}: سقف التكلفة بعيد عن الواقع`,
+            title: t("ar", "alerts.tkCostCapTitle", { adGroup: result.adGroupName ?? result.adGroupId }),
+            titleKey: "alerts.tkCostCapTitle",
+            titleVars: { adGroup: result.adGroupName ?? result.adGroupId },
             description: result.message,
+            descKey: (result as { messageKey?: string }).messageKey,
+            descVars: (result as { messageVars?: Record<string, string | number> }).messageVars,
           });
         }
       }
@@ -691,7 +717,9 @@ export async function syncTikTokLearningPhaseForWorkspace(workspaceId: string) {
             source: "BID_STRATEGY",
             type: "ALERT",
             severity: "MEDIUM",
-            title: `${result.adGroupName ?? adGroupId}: بعيدة عن الخروج من فترة التعلّم`,
+            title: t("ar", "alerts.tkLearnTitle", { adGroup: result.adGroupName ?? adGroupId }),
+            titleKey: "alerts.tkLearnTitle",
+            titleVars: { adGroup: result.adGroupName ?? adGroupId },
             description: result.message,
           });
         }
@@ -808,14 +836,22 @@ export async function syncTikTokLookalikeComparisonForWorkspace(workspaceId: str
       if (lookalikeCpa !== null && otherCpa !== null && lookalikeStats.conversions >= 5 && otherStats.conversions >= 5) {
         const diffPct = Math.round(((lookalikeCpa - otherCpa) / otherCpa) * 100);
         if (diffPct > 20) {
+          const lookalikeVars = {
+            lookalike: Math.round(lookalikeCpa),
+            diffPct,
+            interest: Math.round(otherCpa),
+          };
           const { pushToActionFeed } = await import("@/lib/actionFeed");
           await pushToActionFeed({
             workspaceId,
             source: "SCALE_KILL",
             type: "ALERT",
             severity: "MEDIUM",
-            title: "الجمهور المتشابه أغلى من باقي الاستهداف",
-            description: `تكلفة العميل عبر Lookalike (${Math.round(lookalikeCpa)}) أعلى بـ${diffPct}% من باقي الاستهداف (${Math.round(otherCpa)}) - يستاهل مراجعة جودة مصدر الـLookalike.`,
+            title: t("ar", "alerts.tkLookalikeTitle"),
+            titleKey: "alerts.tkLookalikeTitle",
+            description: t("ar", "alerts.tkLookalike", lookalikeVars),
+            descKey: "alerts.tkLookalike",
+            descVars: lookalikeVars,
           });
         }
       }
@@ -1181,7 +1217,7 @@ export async function applyTikTokBidStrategyChange(
   const connection = workspace?.user.connectedPlatforms.find(
     (c: ConnectedPlatform) => c.platform === "TIKTOK_ADS"
   );
-  if (!connection) throw new Error("حساب تيك توك مش متصل");
+  if (!connection) throw new Error(t("ar", "alerts.noTiktokAccount"));
 
   const res = await fetch(`https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/adgroup/update/`, {
     method: "POST",
@@ -1215,7 +1251,7 @@ export async function pauseTikTokAd(workspaceId: string, advertiserId: string, a
   const connection = workspace?.user.connectedPlatforms.find(
     (c: ConnectedPlatform) => c.platform === "TIKTOK_ADS"
   );
-  if (!connection) throw new Error("حساب تيك توك مش متصل");
+  if (!connection) throw new Error(t("ar", "alerts.noTiktokAccount"));
 
   const res = await fetch(`https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/ad/status/update/`, {
     method: "POST",

@@ -5,6 +5,7 @@ import { TrendingDown, TrendingUp } from "lucide-react";
 import { platformMeta } from "@/lib/platformMeta";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { TH } from "@/app/components/ui/tableStyles";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export interface SourceRow {
   platform: string;
@@ -37,24 +38,31 @@ function TrendBadge({ pct, lowerIsBetter }: { pct: number | null; lowerIsBetter?
   );
 }
 
-export function SourcePerformanceTable({ rows }: { rows: SourceRow[] }) {
+export function SourcePerformanceTable({
+  rows,
+  locale = "ar",
+}: {
+  rows: SourceRow[];
+  locale?: Locale;
+}) {
+  const tr = (k: string) => t(locale, `sourceTable.${k}`);
   const sorted = [...rows].sort((a, b) => b.cost - a.cost);
 
   return (
     <div className="overflow-hidden rounded-2xl card-shadow border border-border bg-surface">
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-        <h3 className="text-sm font-semibold text-text-primary">الأداء حسب المصدر</h3>
-        <span className="rounded-full bg-surface-raised px-2.5 py-1 text-[11px] text-text-muted">آخر 30 يوماً</span>
+        <h3 className="text-[16.5px] font-semibold tracking-tight text-text-primary">{tr("title")}</h3>
+        <span className="rounded-full bg-surface-raised px-2.5 py-1 text-[11px] text-text-muted">{tr("last30")}</span>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[560px] text-sm">
           <thead>
             <tr className="text-[12px] text-text-faint">
-              <th className={TH}>المصدر</th>
-              <th className={TH}>تحويلات معلنة</th>
-              <th className={TH}>محقّقة ✓</th>
-              <th className={TH}>الإنفاق</th>
-              <th className={TH}>تكلفة العميل الحقيقية</th>
+              <th className={TH}>{tr("colSource")}</th>
+              <th className={TH}>{tr("colReported")}</th>
+              <th className={TH}>{tr("colVerified")}</th>
+              <th className={TH}>{tr("colSpend")}</th>
+              <th className={TH}>{tr("colCpa")}</th>
             </tr>
           </thead>
           <tbody>

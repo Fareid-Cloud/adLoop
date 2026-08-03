@@ -553,6 +553,8 @@ function WorkspaceTab({
   onSwitchWorkspace: (id: string) => void;
 }) {
   const tr = useT();
+  // سياق اللغة موجود في هذا الملفّ أصلاً - نقرأه بدل تمرير خاصّية عبر طبقات
+  const tabLocale = useContext(SettingsLocaleContext);
   const router = useRouter();
   const workspace = workspaces.find((w) => w.id === activeWorkspaceId) ?? workspaces[0];
   const [name, setName] = useState(workspace.name);
@@ -671,7 +673,7 @@ function WorkspaceTab({
       <ToggleRow label={tr("emailHigh")} checked={notifyHighByEmail} onChange={setNotifyHighByEmail} />
 
       <div className="mb-2 mt-4 text-xs text-text-faint">{tr("pushHint")}</div>
-      <div className="mb-4"><PushNotificationToggle /></div>
+      <div className="mb-4"><PushNotificationToggle locale={tabLocale} /></div>
 
       <FieldLabel>{tr("alertEmail")}</FieldLabel>
       <TextInput value={notificationEmail} onChange={setNotificationEmail} placeholder="you@example.com" />

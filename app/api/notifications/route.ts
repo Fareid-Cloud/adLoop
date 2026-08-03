@@ -7,11 +7,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { itemTitle, itemDescription } from "@/lib/localizedRecord";
+import type { Locale } from "@/lib/i18n/dictionary";
 
 export async function GET(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
+  const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) return NextResponse.json({ notifications: [], unreadCount: 0 });
 
@@ -36,8 +39,10 @@ export async function GET(req: NextRequest) {
       id: n.id,
       type: n.type,
       severity: n.severity,
-      title: n.title,
-      description: n.description,
+      // الترجمة هنا لا في المكوّن: الجرس والبوب-أب مكوّنان عميلان يقرآن
+      // هذه الاستجابة كما هي، فلو أرسلنا النصّ المخزَّن لظهر بلغة الكرون.
+      title: itemTitle(locale, n),
+      description: itemDescription(locale, n) || null,
       linkUrl: n.linkUrl,
       read: n.read,
       createdAt: n.createdAt.toISOString(),

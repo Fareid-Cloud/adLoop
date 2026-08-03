@@ -14,6 +14,7 @@ import { prisma } from "@/lib/prisma";
 import type { CampaignLink, ConnectedPlatform } from "@prisma/client";
 import { decryptToken } from "@/lib/encryption";
 import { pushToActionFeed } from "@/lib/actionFeed";
+import { t } from "@/lib/i18n/dictionary";
 
 const META_API_VERSION = "v25.0";
 const ROLLING_WINDOW_DAYS = 28; // نفس نافذة إغلاق الإسناد بتاعة ميتا نفسها
@@ -461,8 +462,15 @@ export async function syncMetaAccountHealthForWorkspace(workspaceId: string) {
             source: "ACCOUNT",
             type: "ALERT",
             severity: usagePct >= 98 ? "URGENT" : "HIGH",
-            title: `حساب ميتا وصل ${usagePct}% من قيد الإنفاق`,
-            description: `الحد الأقصى المسموح ${spendCap.toLocaleString()}، المصروف فعلياً ${amountSpent.toLocaleString()} - هيوقف تسليم الإعلانات لو وصل 100%.`,
+            title: t("ar", "alerts.metaSpendCapTitle", { pct: usagePct }),
+            titleKey: "alerts.metaSpendCapTitle",
+            titleVars: { pct: usagePct },
+            description: t("ar", "alerts.metaSpendCapBody", {
+              cap: spendCap.toLocaleString("en-US"),
+              spent: amountSpent.toLocaleString("en-US"),
+            }),
+            descKey: "alerts.metaSpendCapBody",
+            descVars: { cap: spendCap.toLocaleString("en-US"), spent: amountSpent.toLocaleString("en-US") },
           });
         }
       }
@@ -479,8 +487,11 @@ export async function syncMetaAccountHealthForWorkspace(workspaceId: string) {
           source: "CREATIVE",
           type: "ALERT",
           severity: "HIGH",
-          title: `${adsData.data.length} إعلان مرفوض من ميتا لمخالفة سياسة`,
-          description: `راجع تفاصيل الرفض من داخل Ads Manager نفسه - السبب الدقيق مش متاح عن طريق الواجهة البرمجية بثقة كافية.`,
+          title: t("ar", "alerts.metaRejectedTitle", { count: adsData.data.length }),
+          titleKey: "alerts.metaRejectedTitle",
+          titleVars: { count: adsData.data.length },
+          description: t("ar", "alerts.metaRejectedBody"),
+          descKey: "alerts.metaRejectedBody",
         });
       }
     } catch (err) {
@@ -501,6 +512,9 @@ export interface LearningPhaseEstimate {
   conversionsLast7Days: number;
   status: "LIKELY_STABLE" | "LEARNING" | "LEARNING_LIMITED";
   message: string;
+  /** مفتاح الرسالة ومتغيّراتها - النصّ أعلاه احتياطيّ عربي فقط. */
+  messageKey: string;
+  messageVars?: Record<string, string | number>;
 }
 
 const OPTIMIZATION_EVENTS_NEEDED = 50; // القاعدة الموثّقة علناً من ميتا
@@ -519,7 +533,9 @@ export function estimateLearningPhase(
   if (conversionsLast7Days >= OPTIMIZATION_EVENTS_NEEDED) {
     return {
       ...base, status: "LIKELY_STABLE",
-      message: `${conversionsLast7Days} تحويل خلال آخر سبعة أيام - على الأرجح خارج فترة التعلّم فعلاً.`,
+      messageKey: "alerts.metaLearnStable",
+      messageVars: { conversions: conversionsLast7Days },
+      message: t("ar", "alerts.metaLearnStable", { conversions: conversionsLast7Days }),
     };
   }
 
@@ -527,7 +543,9 @@ export function estimateLearningPhase(
   return {
     ...base,
     status: conversionsLast7Days < OPTIMIZATION_EVENTS_NEEDED / 2 ? "LEARNING_LIMITED" : "LEARNING",
-    message: `${conversionsLast7Days} تحويل خلال آخر سبعة أيام - تحتاج ${gapNeeded} تحويل إضافي في الأسبوع للوصول إلى ${OPTIMIZATION_EVENTS_NEEDED} المطلوبين والخروج من فترة التعلّم بثبات.`,
+    messageKey: "alerts.metaLearnNeeds",
+    messageVars: { conversions: conversionsLast7Days, gap: gapNeeded, needed: OPTIMIZATION_EVENTS_NEEDED },
+    message: t("ar", "alerts.metaLearnNeeds", { conversions: conversionsLast7Days, gap: gapNeeded, needed: OPTIMIZATION_EVENTS_NEEDED }),
   };
 }
 
@@ -558,8 +576,12 @@ export async function checkMetaLearningPhaseAlertsForWorkspace(workspaceId: stri
         source: "BID_STRATEGY",
         type: "ALERT",
         severity: "MEDIUM",
-        title: `${result.adSetName ?? result.adSetId}: بعيدة عن الخروج من فترة التعلّم`,
+        title: t("ar", "alerts.metaLearnTitle", { adSet: result.adSetName ?? result.adSetId }),
+        titleKey: "alerts.metaLearnTitle",
+        titleVars: { adSet: result.adSetName ?? result.adSetId },
         description: result.message,
+        descKey: (result as { messageKey?: string }).messageKey,
+        descVars: (result as { messageVars?: Record<string, string | number> }).messageVars,
         linkUrl: "/dashboard/campaigns/learning-phase",
       });
     }
@@ -689,8 +711,12 @@ export async function checkCatalogSpendAlertsForWorkspace(workspaceId: string) {
       source: "ECOMMERCE",
       type: "ALERT",
       severity: "MEDIUM",
-      title: `${nameMap.get(c.campaignId) ?? c.campaignId}: كتالوج بيصرف من غير مبيعات`,
-      description: `صرفت ${Math.round(c.cost).toLocaleString()} على الحملة الديناميكية دي آخر 30 يوماً من غير أي عملية شراء واحدة.`,
+      title: t("ar", "alerts.catalogNoSalesTitle", { campaign: nameMap.get(c.campaignId) ?? c.campaignId }),
+      titleKey: "alerts.catalogNoSalesTitle",
+      titleVars: { campaign: nameMap.get(c.campaignId) ?? c.campaignId },
+      description: t("ar", "alerts.catalogNoSalesBody", { cost: Math.round(c.cost).toLocaleString("en-US") }),
+      descKey: "alerts.catalogNoSalesBody",
+      descVars: { cost: Math.round(c.cost).toLocaleString("en-US") },
       linkUrl: "/dashboard/campaigns/catalog-ads",
     });
   }
@@ -762,7 +788,7 @@ export async function applyMetaBidStrategyChange(
   const connection = workspace?.user.connectedPlatforms.find(
     (c: ConnectedPlatform) => c.platform === "META_ADS"
   );
-  if (!connection) throw new Error("حساب ميتا مش متصل");
+  if (!connection) throw new Error(t("ar", "alerts.noMetaAccount"));
 
   const res = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${adSetId}`, {
     method: "POST",
@@ -789,7 +815,7 @@ export async function pauseMetaAd(workspaceId: string, adId: string) {
   const connection = workspace?.user.connectedPlatforms.find(
     (c: ConnectedPlatform) => c.platform === "META_ADS"
   );
-  if (!connection) throw new Error("حساب ميتا مش متصل");
+  if (!connection) throw new Error(t("ar", "alerts.noMetaAccount"));
 
   const res = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${adId}`, {
     method: "POST",

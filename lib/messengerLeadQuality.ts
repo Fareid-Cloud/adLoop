@@ -1,4 +1,5 @@
-// lib/messengerLeadQuality.ts
+
+import { t } from "@/lib/i18n/dictionary";// lib/messengerLeadQuality.ts
 //
 // المشكلة اللي وصفتها بالظبط: ضغطة بالخطأ على إعلان بتوصّل رسالة تلقائية
 // لماسنجر الصفحة، وبتتحسب "ليد" عند ميتا رغم إن الشخص مش قاصد يتواصل
@@ -22,6 +23,9 @@ export interface LeadQualityResult {
   isLikelyAccidental: boolean;
   confidence: "HIGH" | "MEDIUM" | "LOW";
   reason: string;
+  /** مفتاح الرسالة ومتغيّراتها - النصّ أعلاه احتياطيّ عربي فقط. */
+  reasonKey: string;
+  reasonVars?: Record<string, string | number>;
 }
 
 // لو المحادثة اتفتحت من أكتر من ساعتين وصفر رد بشري حقيقي، الاحتمال
@@ -45,7 +49,9 @@ export function assessLeadQuality(
       ...base,
       isLikelyAccidental: true,
       confidence: "HIGH",
-      reason: `الشخص مردش خالص بعد الرسالة التلقائية، وعدّى ${Math.round(conversation.minutesSinceLastActivity / 60)} ساعة - الاحتمال الأقوى ضغطة بالخطأ.`,
+      reason: t("ar", "alerts.msgAccidental", { hours: Math.round(conversation.minutesSinceLastActivity / 60) }),
+      reasonKey: "alerts.msgAccidental",
+      reasonVars: { hours: Math.round(conversation.minutesSinceLastActivity / 60) },
     };
   }
 
@@ -55,7 +61,8 @@ export function assessLeadQuality(
       ...base,
       isLikelyAccidental: false, // لسه منقدرش نجزم - منحسبهاش "عرضية" قبل ما الوقت يعدي
       confidence: "LOW",
-      reason: "لسه بدري نحكم - الشخص لسه ممكن يرد.",
+      reason: t("ar", "alerts.msgTooEarly"),
+      reasonKey: "alerts.msgTooEarly",
     };
   }
 
@@ -64,7 +71,8 @@ export function assessLeadQuality(
     ...base,
     isLikelyAccidental: false,
     confidence: "HIGH",
-    reason: "فيه رد بشري حقيقي من الشخص نفسه - تواصل حقيقي.",
+    reason: t("ar", "alerts.msgGenuine"),
+    reasonKey: "alerts.msgGenuine",
   };
 }
 

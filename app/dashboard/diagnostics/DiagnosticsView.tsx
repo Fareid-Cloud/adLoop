@@ -16,6 +16,7 @@ import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { MetricCard, type MetricTone } from "@/app/components/ui/MetricCard";
 import { CATEGORY_META, type CheckCategory, type CheckSeverity, type CheckStatus } from "@/lib/diagnosticsEngine";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { itemTitle } from "@/lib/localizedRecord";
 import { HealthGauge } from "@/app/components/ui/HealthGauge";
 
 export interface CheckRow {
@@ -243,7 +244,7 @@ export function DiagnosticsView({
             return (
               <MetricCard
                 key={s.key}
-                label={tr(s.key)}
+                label={tp(s.key)}
                 explainKey={SEVERITY_EXPLAIN[s.key]}
                 locale={locale}
                 value={n}
@@ -362,7 +363,7 @@ export function DiagnosticsView({
                     {i < activity.length - 1 && <span className="mt-1 w-px flex-1 bg-border" />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[12.5px] font-medium text-text-primary">{a.title}</div>
+                    <div className="text-[12.5px] font-medium text-text-primary">{itemTitle(locale, a)}</div>
                     <div className="text-[11.5px] text-text-muted">{a.detail}</div>
                   </div>
                   <span className="shrink-0 font-mono text-[11px] text-text-faint">{a.at}</span>
@@ -429,7 +430,7 @@ export function DiagnosticsView({
                     className="rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-primary outline-none">
               <option value="all">{tp("allStatuses")}</option>
               {(Object.keys(STATUS_TONE) as CheckStatus[]).map((k) => (
-                <option key={k} value={k}>{tr(STATUS_KEY[k])}</option>
+                <option key={k} value={k}>{tp(STATUS_KEY[k])}</option>
               ))}
             </select>
             <div className="relative">
@@ -456,7 +457,7 @@ export function DiagnosticsView({
               ) : filtered.map((c, rowIndex) => {
                 // أثناء الفحص الحيّ لا نعرض إلا ما كُشف حتى الآن
                 if (revealed !== null && rowIndex >= revealed) return null;
-                const st = { tone: STATUS_TONE[c.status], ar: tr(STATUS_KEY[c.status]) };
+                const st = { tone: STATUS_TONE[c.status], ar: tp(STATUS_KEY[c.status]) };
                 const cat = CATEGORY_META[c.category];
                 const failing = c.status === "FAILED" || c.status === "WARNING";
                 const isOpen = expanded === c.id;

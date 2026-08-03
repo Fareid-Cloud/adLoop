@@ -25,16 +25,16 @@ export default async function PricingPage({
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await getActiveWorkspace(user.id);
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
-  const { rows, roasGapInsight } = await getWorkspacePricing(workspace.id, workspace.currency);
+  const { rows, roasGapInsight } = await getWorkspacePricing(workspace.id, workspace.currency, locale);
 
   // السجلات الكاملة للمنتجات - العرض المركّز يعيد حساب التسعير لحظياً في
   // المتصفح، فيحتاج كل المدخلات لا الملخّص فقط
@@ -87,7 +87,7 @@ export default async function PricingPage({
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-6 text-[26px] font-semibold text-text-primary">التسعير</h1>
+      <h1 className="mb-6 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.pricingTitle")}</h1>
       <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
 
       {roasGapInsight && (

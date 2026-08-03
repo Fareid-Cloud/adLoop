@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Settings, LogOut, CreditCard, Shield, Bot, Cpu, Sparkles, Terminal, Brain, Zap } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 // نفس مفاتيح avatarIcon المحفوظة في قاعدة البيانات
 const AVATAR_ICONS: Record<string, typeof Bot> = { bot: Bot, cpu: Cpu, sparkles: Sparkles, terminal: Terminal, brain: Brain, zap: Zap };
@@ -72,27 +73,27 @@ export function AccountMenu({
             href="/dashboard/settings"
             className="mt-1 flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-text-primary no-underline transition-colors hover:bg-surface"
           >
-            <Settings size={15} /> {ar ? "الإعدادات" : "Settings"}
+            <Settings size={15} /> {ar ? t(locale, "accountMenu.settings") : "Settings"}
           </a>
           <a
             href="/dashboard/billing"
             className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-text-primary no-underline transition-colors hover:bg-surface"
           >
-            <CreditCard size={15} /> {ar ? "الاشتراك والباقة" : "Billing & Plan"}
+            <CreditCard size={15} /> {ar ? t(locale, "accountMenu.billing") : "Billing & Plan"}
           </a>
           {isOwner && (
             <a
               href="/admin"
               className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-accent no-underline transition-colors hover:bg-surface"
             >
-              <Shield size={15} /> {ar ? "لوحة المالك" : "Admin panel"}
+              <Shield size={15} /> {ar ? t(locale, "accountMenu.owner") : "Admin panel"}
             </a>
           )}
           <button
             onClick={logout}
             className="mt-0.5 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-critical transition-colors hover:bg-surface"
           >
-            <LogOut size={15} /> {ar ? "تسجيل الخروج" : "Log out"}
+            <LogOut size={15} /> {ar ? t(locale, "accountMenu.signOut") : "Log out"}
           </button>
         </div>
       )}

@@ -1,21 +1,45 @@
 // app/api/support/upload/route.ts - رفع صور مرفقة عبر Vercel Blob (اختياري)
+//
+// نقطة واحدة للطرفين: العميل والمالك. المسار يفصل بينهما (`support/<userId>/`
+// مقابل `support/admin/`) فيبقى واضحاً من رفع ماذا عند المراجعة.
+
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { put } from "@vercel/blob";
+import { t, type Locale } from "@/lib/i18n/dictionary";
+
+const MAX_BYTES = 5 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
+
+  // الرفع معطَّل لا مكسور: الرسالة تقول ما الناقص وما الخطوة، لا "خطأ" مبهم.
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return NextResponse.json({ error: "رفع الصور غير مفعّل حالياً" }, { status: 503 });
+    return NextResponse.json({ error: t(locale, "supportUpload.disabled") }, { status: 503 });
   }
 
   const form = await req.formData();
   const file = form.get("file") as File | null;
-  if (!file) return NextResponse.json({ error: "لا يوجد ملف" }, { status: 400 });
-  if (file.size > 5 * 1024 * 1024) return NextResponse.json({ error: "الحد الأقصى 5 ميجابايت" }, { status: 413 });
-  if (!file.type.startsWith("image/")) return NextResponse.json({ error: "الصور فقط" }, { status: 415 });
+  if (!file) return NextResponse.json({ error: t(locale, "supportUpload.noFile") }, { status: 400 });
+  if (file.size > MAX_BYTES) {
+    return NextResponse.json({ error: t(locale, "supportUpload.tooLarge") }, { status: 413 });
+  }
+  if (!file.type.startsWith("image/")) {
+    return NextResponse.json({ error: t(locale, "supportUpload.imagesOnly") }, { status: 415 });
+  }
 
-  const blob = await put(`support/${user.id}/${Date.now()}-${file.name}`, file, { access: "public" });
-  return NextResponse.json({ url: blob.url });
+  const isOwner = user.isAdmin || user.email === process.env.OWNER_EMAIL;
+  const folder = isOwner ? "support/admin" : `support/${user.id}`;
+
+  try {
+    const blob = await put(`${folder}/${Date.now()}-${file.name}`, file, { access: "public" });
+    return NextResponse.json({ url: blob.url });
+  } catch (err) {
+    // فشل التخزين الخارجي لا يجوز أن يظهر كخطأ عامّ: المالك يحتاج أن يعرف
+    // أن التوكن موجود لكنه غير صالح، لا أن "الرفع لا يعمل".
+    console.error("[support/upload] فشل الرفع إلى Vercel Blob:", err);
+    return NextResponse.json({ error: t(locale, "supportUpload.failed") }, { status: 502 });
+  }
 }

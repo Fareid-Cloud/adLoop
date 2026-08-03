@@ -53,7 +53,7 @@ export default async function OrdersPage() {
 
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
-    return <DataGate title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
+    return <DataGate locale={locale} title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
   const quality = await getOrderQuality(workspace.id, 30);
@@ -67,7 +67,7 @@ export default async function OrdersPage() {
           subtitle={tr("subtitle")}
           storeName={workspace.name}
         />
-        <DataGate
+        <DataGate locale={locale}
           title={tr("noneTitle")}
           reason={tr("noneReason")}
         />
@@ -194,7 +194,7 @@ export default async function OrdersPage() {
         </DataTable>
       </div>
 
-      <RecommendedActions actions={actions} empty={tr("healthy")} />
+      <RecommendedActions locale={locale} actions={actions} empty={tr("healthy")} />
     </div>
   );
 }

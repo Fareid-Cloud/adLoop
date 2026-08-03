@@ -134,6 +134,8 @@ model User {
   username       String? @unique // اسم مستخدم فريد يختاره العميل
   companyName    String? // اسم الشركة (اختياري)
   gender         String? // "male" | "female"
+  /// تاريخ الميلاد - اختياري، يُستخدم لتقسيم شرائح المستخدمين لا للتحقّق
+  birthDate      DateTime?
   howHeard       String? // من أين سمع عن AdLoop
   referralSource String? // كود/مصدر إحالة (اختياري)
   country        String? // الدولة
@@ -198,6 +200,19 @@ model Workspace {
   // معرف صفحة فيسبوك (Page ID) - مطلوب لربط ويب هوك ماسنجر بمساحة العمل
   // الصحيحة (ميتا بتبعت page id بس، مش workspace id طبعاً)
   facebookPageId String? @unique
+  /// معرّف رقم واتساب الأعمال (`phone_number_id` من Meta) - هو الهويّة
+  /// الوحيدة التي يرسلها ويب هوك واتساب، فهو مفتاح ربط الرسالة الواردة
+  /// بمساحة عملها. كان المتتبّع يعتمد خريطة عملاء مكتوبة في الكود
+  /// (`tamkeen`/`thawabet`)، فكان يستحيل أن يستخدمه أيّ مشترك آخر.
+  whatsappPhoneNumberId String? @unique
+  /// رقم واتساب المعروض للزوّار (بالصيغة الدولية بلا +) - إليه يُحوَّل
+  /// الزائر بعد النقر على الإعلان. منفصل عن المعرّف أعلاه: ذاك داخليّ
+  /// من Meta، وهذا رقم يقرؤه البشر.
+  whatsappBusinessPhone String?
+  /// معرّف حساب Google Ads الذي تُرفع إليه التحويلات غير المتّصلة.
+  /// كان مقروءاً من متغيّر بيئة باسم العميل، فيحتاج نشراً جديداً لكلّ
+  /// مشترك. يُملأ تلقائياً عند أوّل مزامنة، ويظلّ قابلاً للتعديل.
+  googleAdsCustomerId String?
   // آخر مرة المستخدم راجع صفحة مصطلحات البحث المهدرة - يغذّي تذكير
   // "معملتش مراجعة من فترة" في المهام اليومية (كان TODO قبل كده)
   lastSearchTermsReviewAt DateTime?
@@ -634,7 +649,14 @@ model DailyTask {
   workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   date         DateTime  @db.Date // اليوم اللي اترشحت فيه المهمة دي
 
+  /// النصّ المعروض وقت التوليد - يبقى كاحتياطي للصفوف القديمة وللمهام
+  /// المولّدة بالذكاء الاصطناعي (نصّها حرّ لا مفتاح له).
   title        String    // "راجع Search Terms Report - آخر مراجعة من 8 أيام"
+  /// مفتاح القاموس ومتغيّراته بدل النصّ الجاهز: المهمة تُولَّد مرّة واحدة
+  /// يومياً وتُقرأ مراراً، فتخزين النصّ المترجَم يثبّت لغة لحظة التوليد
+  /// على القارئ مهما غيّر لغته. المفتاح يُترجَم وقت العرض بلغة القارئ.
+  titleKey     String?
+  titleVars    Json?
   category     TaskCategory
   priority     TaskPriority @default(MEDIUM)
   source       TaskSource   // rule-based ولا AI-generated
@@ -881,8 +903,17 @@ model ActionFeedItem {
 
   type         ActionFeedType
   severity     TaskPriority // نفس enum الأولوية المستخدم في DailyTask - توحيد بدل تكرار
+  /// النصّ المعروض وقت التوليد - احتياطي للصفوف القديمة وللنصوص الحرّة
+  /// (المولّدة بالذكاء الاصطناعي مثلاً) التي لا مفتاح قاموس لها.
   title        String
   description  String?  @db.Text
+  /// مفتاح القاموس ومتغيّراته بدل النصّ الجاهز - لنفس سبب `DailyTask`:
+  /// البند يُولَّد مرّة بالكرون ويُقرأ مراراً، فتخزين النصّ المترجَم كان
+  /// يثبّت لغة لحظة التوليد على القارئ. يُترجَم وقت العرض بلغة القارئ.
+  titleKey     String?
+  titleVars    Json?
+  descKey      String?
+  descVars     Json?
 
   // رابط اختياري - لما المستخدم يدوس على الإشعار في الجرس، يودّيه للصفحة
   // المناسبة (صفحة الاشتراك، صفحة القرارات، صفحة فحص الموقع، إلخ)
@@ -943,7 +974,14 @@ model ExperimentLog {
   workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   changeType     ExperimentChangeType
+  /// النصّ المعروض وقت التسجيل - احتياطيّ للصفوف القديمة وللوصف اليدوي
+  /// الذي يكتبه المستخدم بنفسه (نصّ حرّ لا مفتاح له).
   description    String   // "زيادة ميزانية كامبين X من 500 لـ 650 ريال"
+  /// مفتاح القاموس ومتغيّراته - نفس قاعدة `DailyTask` و`ActionFeedItem`:
+  /// التجربة تُسجَّل مرّة وتُقرأ مراراً، فتخزين النصّ المترجَم يجمّد لغة
+  /// لحظة التنفيذ على القارئ. يُترجَم وقت العرض بلغة القارئ.
+  descKey        String?
+  descVars       Json?
   changedAt      DateTime @default(now())
   relatedCampaignId String?
 

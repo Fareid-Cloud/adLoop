@@ -58,7 +58,7 @@ export default async function AttributionEnginePage({
       ) : (
         <>
           <div className="mb-4 flex items-center justify-center rounded-2xl bg-surface p-6">
-            <TrackingAccuracyGauge verified={summary.verifiedCount} raw={total} />
+            <TrackingAccuracyGauge verified={summary.verifiedCount} raw={total} locale={locale} />
           </div>
 
           <div className="mb-4 grid gap-3 sm:grid-cols-2">

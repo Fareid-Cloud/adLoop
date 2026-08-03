@@ -15,7 +15,8 @@ export interface DateRange {
 export interface PeriodComparisonResult {
   current: DateRange;
   previous: DateRange; // نفس طول الفترة، فوراً قبلها - عشان تكون المقارنة عادلة
-  label: string;
+  /** مفتاح القاموس - يُترجَم وقت العرض بلغة القارئ، لا نصّاً جاهزاً. */
+  labelKey: string;
 }
 
 export function resolvePeriodComparison(
@@ -32,7 +33,7 @@ export function resolvePeriodComparison(
       return {
         current: { from, to },
         previous: { from: addDays(from, -1), to: addDays(to, -1) },
-        label: "اليوم مقابل أمس",
+        labelKey: "periodCmp.todayVsYesterday",
       };
     }
     case "yesterday": {
@@ -41,7 +42,7 @@ export function resolvePeriodComparison(
       return {
         current: { from, to },
         previous: { from: addDays(from, -1), to: addDays(to, -1) },
-        label: "أمس مقابل اللي قبله",
+        labelKey: "periodCmp.yesterdayVsPrior",
       };
     }
     case "this_week": {
@@ -51,7 +52,7 @@ export function resolvePeriodComparison(
       return {
         current: { from, to },
         previous: { from: addDays(from, -(lengthDays + 1)), to: addDays(from, -1) },
-        label: "هذا الأسبوع مقابل الأسبوع اللي فات",
+        labelKey: "periodCmp.thisWeekVsLast",
       };
     }
     case "last_week": {
@@ -61,7 +62,7 @@ export function resolvePeriodComparison(
       return {
         current: { from, to },
         previous: { from: addDays(from, -7), to: addDays(to, -7) },
-        label: "الأسبوع اللي فات مقابل اللي قبله",
+        labelKey: "periodCmp.lastWeekVsPrior",
       };
     }
     case "this_month": {
@@ -72,7 +73,7 @@ export function resolvePeriodComparison(
       return {
         current: { from, to },
         previous: { from: prevMonthStart, to: prevMonthEquivalentDay },
-        label: "هذا الشهر مقابل الشهر اللي فات",
+        labelKey: "periodCmp.thisMonthVsLast",
       };
     }
     case "last_month": {
@@ -83,7 +84,7 @@ export function resolvePeriodComparison(
       return {
         current: { from, to },
         previous: { from: prevFrom, to: prevTo },
-        label: "الشهر اللي فات مقابل اللي قبله",
+        labelKey: "periodCmp.lastMonthVsPrior",
       };
     }
     case "this_year": {
@@ -94,7 +95,7 @@ export function resolvePeriodComparison(
       return {
         current: { from, to },
         previous: { from: prevYearStart, to: prevYearEquivalentDay },
-        label: "هذه السنة مقابل السنة اللي فاتت",
+        labelKey: "periodCmp.thisYearVsLast",
       };
     }
     case "last_year": {
@@ -105,7 +106,7 @@ export function resolvePeriodComparison(
       return {
         current: { from, to },
         previous: { from: prevFrom, to: prevTo },
-        label: "السنة اللي فاتت مقابل اللي قبلها",
+        labelKey: "periodCmp.lastYearVsPrior",
       };
     }
     case "custom": {
@@ -116,7 +117,7 @@ export function resolvePeriodComparison(
       return {
         current: { from: customFrom, to: customTo },
         previous: { from: addDays(customFrom, -(lengthDays + 1)), to: addDays(customFrom, -1) },
-        label: "الفترة المخصصة مقابل نفس الطول قبلها",
+        labelKey: "periodCmp.customVsPrior",
       };
     }
   }

@@ -35,7 +35,7 @@ export default async function PricingIntelligencePage() {
 
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
-    return <DataGate title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
+    return <DataGate locale={locale} title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
   const overview = await getEcommerceOverview(workspace.id, 30);
@@ -49,7 +49,7 @@ export default async function PricingIntelligencePage() {
           subtitle={tr("subtitleShort")}
           storeName={workspace.name}
         />
-        <DataGate
+        <DataGate locale={locale}
           title={tr("noneTitle")}
           reason={tr("noneReason")}
           href="/dashboard/pricing"
@@ -156,10 +156,10 @@ export default async function PricingIntelligencePage() {
         />
       </div>
 
-      <LimitsNote
+      <LimitsNote locale={locale}
         items={[
-          tr("limitNoCompetitors"),
-          tr("limitElasticity"),
+          { key: "pricingIntel.limitNoCompetitors" },
+          { key: "pricingIntel.limitElasticity" },
         ]}
       />
 
@@ -238,7 +238,7 @@ export default async function PricingIntelligencePage() {
         </>
       )}
 
-      <RecommendedActions actions={actions} empty={tr("healthy")} />
+      <RecommendedActions locale={locale} actions={actions} empty={tr("healthy")} />
     </div>
   );
 }

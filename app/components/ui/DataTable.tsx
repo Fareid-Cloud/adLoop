@@ -9,6 +9,7 @@
 
 import { useState } from "react";
 import { ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export interface Column<T> {
   key: string;
@@ -23,9 +24,10 @@ interface DataTableProps<T> {
   rows: T[];
   rowKey: (row: T) => string;
   onRowClick?: (row: T) => void;
+  locale?: Locale;
 }
 
-export function DataTable<T>({ columns, rows, rowKey, onRowClick }: DataTableProps<T>) {
+export function DataTable<T>({ columns, rows, rowKey, onRowClick, locale = "ar" }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
@@ -105,7 +107,7 @@ export function DataTable<T>({ columns, rows, rowKey, onRowClick }: DataTablePro
       </table>
 
       {rows.length === 0 && (
-        <div className="px-4 py-10 text-center text-sm text-text-faint">لا توجد بيانات لعرضها.</div>
+        <div className="px-4 py-10 text-center text-sm text-text-faint">{t(locale, "ui.noData")}</div>
       )}
     </div>
   );

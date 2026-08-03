@@ -8,6 +8,7 @@ import { CampaignPickerLauncher } from "@/app/components/CampaignPickerLauncher"
 import { SyncNowButton } from "@/app/components/SyncNowButton";
 import { ConnectPlatformLauncher } from "@/app/components/ConnectPlatformLauncher";
 import { Check, ArrowLeft } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export function SetupChecklist({
   progress,
@@ -29,7 +30,7 @@ export function SetupChecklist({
       <div className="border-b border-border p-5">
         <div className="mb-2 flex items-center justify-between gap-3">
           <h2 className="text-[15px] font-semibold text-text-primary">
-            {ar ? "أكمل إعداد حسابك" : "Finish setting up"}
+            {ar ? t(locale, "ui.setupTitle") : "Finish setting up"}
           </h2>
           <span className="font-mono text-[13px] text-text-muted">
             {progress.completedCount}/{progress.total}
@@ -37,7 +38,7 @@ export function SetupChecklist({
         </div>
         <p className="mb-3 text-[13px] text-text-muted">
           {ar
-            ? "تكتمل كل خطوة تلقائياً بمجرد إنجازها فعلياً — لا حاجة لتعليمها يدوياً."
+            ? t(locale, "ui.setupHint")
             : "Each step completes automatically once it's actually done — nothing to check off manually."}
         </p>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-raised">

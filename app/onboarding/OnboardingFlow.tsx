@@ -177,7 +177,7 @@ export function OnboardingFlow({
                 ? "المزامنة تعمل تلقائياً كل يوم. يمكنك تشغيلها الآن لترى أرقامك مباشرةً."
                 : "Sync runs automatically every day. Run it now to see your numbers right away."}
             </p>
-            <SyncNowButton
+            <SyncNowButton locale={locale}
               workspaceId={workspaceId}
               label={ar ? "مزامنة الآن" : "Sync now"}
               className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-surface-raised px-4 py-2.5 text-[13px] font-medium text-text-primary disabled:opacity-60"

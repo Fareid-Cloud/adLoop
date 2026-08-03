@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Send } from "lucide-react";
+import { Send, ImagePlus, X, Loader2 } from "lucide-react";
 
 interface Msg { id: string; fromSupport: boolean; body: string; imageUrls: string[]; createdAt: string; }
 interface Thread {
@@ -14,22 +14,44 @@ export function AdminSupportClient({ threads: initial }: { threads: Thread[] }) 
   const [selectedId, setSelectedId] = useState<string | null>(initial[0]?.id ?? null);
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const selected = threads.find((t) => t.id === selectedId) ?? null;
 
+  // صورة وحدها ردّ صالح: لقطة شاشة تشرح أكثر من فقرة أحياناً.
   async function sendReply() {
-    if (!reply.trim() || !selected) return;
+    if (!selected || (!reply.trim() && images.length === 0)) return;
     setBusy(true);
     const res = await fetch("/api/admin/support", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ threadId: selected.id, text: reply }),
+      body: JSON.stringify({ threadId: selected.id, text: reply, imageUrls: images }),
     });
     setBusy(false);
     if (res.ok) {
       const d = await res.json();
       setThreads((prev) => prev.map((t) => t.id === selected.id ? { ...t, status: "ANSWERED", messages: [...t.messages, d.message] } : t));
       setReply("");
+      setImages([]);
     }
+  }
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError(null);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/support/upload", { method: "POST", body: fd });
+    setUploading(false);
+    e.target.value = ""; // حتى يمكن رفع الملفّ نفسه مرّة أخرى بعد إزالته
+    const d = await res.json().catch(() => ({}));
+    // سبب الفشل يُعرَض كما جاء من الخادم: "الرفع غير مفعّل" تختلف تماماً
+    // عن "التوكن غير صالح"، والمالك هو من يملك إصلاح الاثنين.
+    if (res.ok && d.url) setImages((p) => [...p, d.url]);
+    else setUploadError(d.error ?? "تعذّر رفع الصورة.");
   }
 
   if (threads.length === 0) {
@@ -72,7 +94,36 @@ export function AdminSupportClient({ threads: initial }: { threads: Thread[] }) 
               </div>
             ))}
           </div>
-          <div className="flex items-center gap-2 border-t border-border p-3">
+          <div className="border-t border-border p-3">
+            {(images.length > 0 || uploadError) && (
+              <div className="mb-2">
+                {images.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {images.map((u) => (
+                      <div key={u} className="relative">
+                        <img src={u} alt="" className="h-14 w-14 rounded-lg object-cover" />
+                        <button
+                          onClick={() => setImages((p) => p.filter((x) => x !== u))}
+                          title="إزالة"
+                          className="absolute -end-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-critical text-white"
+                        >
+                          <X size={11} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {uploadError && <p className="mt-1.5 text-[11.5px] text-critical">{uploadError}</p>}
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+            <label
+              title="إرفاق صورة"
+              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border bg-surface-raised text-text-muted transition-colors hover:text-text-primary"
+            >
+              {uploading ? <Loader2 size={15} className="animate-spin" /> : <ImagePlus size={15} />}
+              <input type="file" accept="image/*" onChange={handleFile} className="hidden" disabled={uploading} />
+            </label>
             <input
               value={reply}
               onChange={(e) => setReply(e.target.value)}
@@ -80,9 +131,14 @@ export function AdminSupportClient({ threads: initial }: { threads: Thread[] }) 
               placeholder="اكتب رداً للعميل..."
               className="w-full rounded-xl card-shadow border border-border bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none focus:border-accent"
             />
-            <button onClick={sendReply} disabled={busy} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-white disabled:opacity-50">
+            <button
+              onClick={sendReply}
+              disabled={busy || uploading || (!reply.trim() && images.length === 0)}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-white disabled:opacity-50"
+            >
               <Send size={15} />
             </button>
+            </div>
           </div>
         </div>
       )}

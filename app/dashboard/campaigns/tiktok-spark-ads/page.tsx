@@ -67,18 +67,18 @@ export default async function TikTokSparkAdsPage() {
             <div key={type} className="rounded-2xl bg-surface p-4">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium text-text-primary">
-                  {type === "SPARK" ? "Spark Ads" : "إعلان عادي (Dark Post)"}
+                  {type === "SPARK" ? "Spark Ads" : t(locale, "campPages.sparkOrganic")}
                 </span>
-                <span className="text-xs text-text-faint">{groups[type].length} إعلان</span>
+                <span className="text-xs text-text-faint">{groups[type].length} {t(locale, "campPages.unitAd")}</span>
               </div>
               <div className="flex gap-4 text-xs text-text-faint">
-                <span>خطّاف: {Math.round((avg(groups[type], "hookRate") ?? 0) * 1000) / 10}%</span>
-                <span>متفاعل: {Math.round((avg(groups[type], "engagedViewRate") ?? 0) * 1000) / 10}%</span>
-                <span>إكمال: {Math.round((avg(groups[type], "completionRate") ?? 0) * 1000) / 10}%</span>
+                <span>{t(locale, "campPages.sparkHook")} {Math.round((avg(groups[type], "hookRate") ?? 0) * 1000) / 10}%</span>
+                <span>{t(locale, "campPages.sparkEngaged")} {Math.round((avg(groups[type], "engagedViewRate") ?? 0) * 1000) / 10}%</span>
+                <span>{t(locale, "campPages.sparkCompletion")} {Math.round((avg(groups[type], "completionRate") ?? 0) * 1000) / 10}%</span>
                 {type === "SPARK" && (
                   <span>
-                    تعليقات: {groups.SPARK.reduce((s: number, v: any) => s + v.totalComments, 0)}
-                    {" "}(سبام: {groups.SPARK.reduce((s: number, v: any) => s + v.flaggedComments, 0)})
+                    {t(locale, "campPages.sparkComments")} {groups.SPARK.reduce((s: number, v: any) => s + v.totalComments, 0)}
+                    {" "}({t(locale, "campPages.sparkSpam")} {groups.SPARK.reduce((s: number, v: any) => s + v.flaggedComments, 0)})
                   </span>
                 )}
               </div>

@@ -84,16 +84,16 @@ export default async function DeviceGeoPage() {
       </div>
 
       <div>
-        <div className="mb-2 text-sm font-semibold text-text-primary">أعلى 10 مواقع جغرافية إنفاقاً</div>
+        <div className="mb-2 text-sm font-semibold text-text-primary">{t(locale, "campPages.dgTopGeo10")}</div>
         {geos.length === 0 ? (
-          <EmptyState title="لا توجد بيانات بعد" description="تُسحب تلقائياً مع المزامنة اليومية." />
+          <EmptyState title={t(locale, "campPages.dgNone")} description={t(locale, "campPages.dgNoneBody")} />
         ) : (
           <div className="flex flex-col gap-2">
             {geos.map((g: any) => (
               <div key={g.geoTarget} className="flex items-center justify-between rounded-2xl bg-surface p-4">
                 <span className="text-xs text-text-muted">{g.geoTarget}</span>
                 <div className="flex items-center gap-3 text-xs text-text-faint">
-                  <span>{g.clicks.toLocaleString()} كليكة</span>
+                  <span>{g.clicks.toLocaleString()} {t(locale, "campPages.unitClicks")}</span>
                   <span className="font-mono text-verified">{g.cpa ?? "—"}</span>
                 </div>
               </div>

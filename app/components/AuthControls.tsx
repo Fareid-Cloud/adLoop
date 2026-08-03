@@ -23,7 +23,9 @@ export function SocialButton({
   return (
     <a
       href={href}
-      className="card-shadow flex w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-surface py-3 text-sm font-medium text-text-primary no-underline transition-colors hover:border-border-visible hover:bg-surface-raised"
+      // إطار وحده بلا ظلّ: الظلّ يرفع الزرّ عن السطح فيبدو بطاقة لا خياراً،
+      // وثلاث بطاقات مرفوعة فوق فورم مسطّح تشوّش تسلسل العمق.
+      className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-surface py-3 text-sm font-medium text-text-primary no-underline transition-colors hover:border-border-visible hover:bg-surface-raised"
     >
       {logo}
       {children}

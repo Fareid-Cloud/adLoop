@@ -20,13 +20,13 @@ export default async function PortfolioPage({
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await getActiveWorkspace(user.id);
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
 
@@ -43,9 +43,9 @@ export default async function PortfolioPage({
     return (
       <div className="mx-auto max-w-3xl">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="mb-6 text-[26px] font-semibold text-text-primary">توزيع المحفظة</h1>
+        <h1 className="mb-6 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.pfTitle")}</h1>
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
-        <EmptyState title="لا توجد حملات مربوطة بعد" description="اربط حملاتك من الإعدادات أولاً." />
+        <EmptyState title={t(locale, "common.noCampaigns")} description={t(locale, "common.noCampaignsHint")} />
       </div>
     );
   }
@@ -77,9 +77,9 @@ export default async function PortfolioPage({
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">توزيع المحفظة</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.pfTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
-        اقتراح إعادة توزيع الميزانية اليومية التقديرية بين الحملات بناءً على الكفاءة النسبية خلال آخر ٧ أيام — اقتراح لا تنفيذ تلقائي.
+        {t(locale, "campPages.pfIntro")}
       </p>
 
       <div className="flex flex-col gap-2">
@@ -98,8 +98,8 @@ export default async function PortfolioPage({
             </div>
             <p className="text-xs text-text-faint">{a.reasoning}</p>
             <div className="mt-2 flex gap-4 font-mono text-xs text-text-muted">
-              <span>الحالية: {a.currentBudget}</span>
-              <span>المقترحة: {a.suggestedBudget}</span>
+              <span>{t(locale, "campPages.pfCurrent")} {a.currentBudget}</span>
+              <span>{t(locale, "campPages.pfSuggested")} {a.suggestedBudget}</span>
             </div>
           </div>
         ))}

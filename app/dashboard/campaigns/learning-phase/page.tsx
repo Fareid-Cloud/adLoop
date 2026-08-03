@@ -13,10 +13,12 @@ import { periodFromParams, toDateBounds, daysBetween } from "@/lib/dateRange";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
+// الخريطة تحمل **مفاتيح** لا نصوصاً: تُعرَّف على مستوى الوحدة حيث لا
+// وجود لـ`locale`، فتُترجَم وقت العرض.
 const STATUS_CONFIG = {
-  LIKELY_STABLE: { color: "text-verified", label: "على الأرجح مستقرة" },
-  LEARNING: { color: "text-gap", label: "في فترة التعلّم" },
-  LEARNING_LIMITED: { color: "text-critical", label: "على الأرجح Learning Limited" },
+  LIKELY_STABLE: { color: "text-verified", labelKey: "learnStable" },
+  LEARNING: { color: "text-gap", labelKey: "learnIn" },
+  LEARNING_LIMITED: { color: "text-critical", labelKey: "learnLimited" },
 };
 
 export default async function LearningPhasePage({
@@ -61,17 +63,17 @@ export default async function LearningPhasePage({
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">فترة التعلّم</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.learnTitle")}</h1>
       <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">
-        قاعدة ميتا الموثّقة علناً: تحتاج ~50 تحويلاً خلال 7 أيام لتخرج من فترة التعلّم بثبات.
-        محسوبة من بياناتك الفعلية لا من تخمين.
+        {t(locale, "campPages.learnIntro")}{" "}
+        {t(locale, "campPages.learnFromData")}
       </p>
 
       {estimates.length === 0 ? (
         <EmptyState
-          title="لا توجد بيانات كافية بعد"
-          description="محتاجة يوم أو اتنين من المزامنة اليومية بعد ربط حملات ميتا."
+          title={t(locale, "campPages.learnNone")}
+          description={t(locale, "campPages.learnNoneBody")}
         />
       ) : (
         <div className="flex flex-col gap-2">
@@ -80,7 +82,7 @@ export default async function LearningPhasePage({
               <div className="mb-1 flex items-center justify-between">
                 <span className="text-sm font-medium text-text-primary">{e.adSetName ?? e.adSetId}</span>
                 <span className={`text-xs font-medium ${STATUS_CONFIG[e.status as keyof typeof STATUS_CONFIG].color}`}>
-                  {STATUS_CONFIG[e.status as keyof typeof STATUS_CONFIG].label}
+                  {t(locale, `campPages.${STATUS_CONFIG[e.status as keyof typeof STATUS_CONFIG].labelKey}`)}
                 </span>
               </div>
               <p className="text-xs text-text-faint">{e.message}</p>

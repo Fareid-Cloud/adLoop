@@ -73,7 +73,7 @@ export async function auditTechnicalSEO(url: string): Promise<TechnicalSEOResult
     passed: hasSchema,
     detail: hasSchema
       ? "موجود"
-      : "لا يوجد Schema Markup - جوجل مش هيقدر يوري تقييمات أو سعر أو معلومات إضافية في نتائج البحث",
+      : t("ar", "alerts.lpNoSchema"),
   });
 
   // Canonical tag
@@ -122,7 +122,7 @@ export async function auditTechnicalSEO(url: string): Promise<TechnicalSEOResult
     passed: hasViewport,
     detail: hasViewport
       ? "موجود"
-      : "وسم viewport مفقود - الصفحة على الأغلب مش هتظهر صح على الموبايل، ومعظم الزوار جايين من الموبايل",
+      : t("ar", "alerts.lpNoViewport"),
   });
 
   // سياسة الخصوصية والشروط والأحكام - أساسية لثقة العميل خصوصاً في الدفع أونلاين
@@ -252,14 +252,14 @@ export async function auditDomainTrust(url: string): Promise<DomainTrustResult> 
           check: "domain_age",
           passed: isEstablished,
           detail: isEstablished
-            ? `الدومين مسجّل من ${ageInMonths} شهر تقريباً - مؤشر ثقة كويس.`
-            : `الدومين حديث التسجيل (${ageInDays} يوم بس) - مش دليل احتيال بالضرورة، لكن يستاهل انتباه إضافي.`,
+            ? t("ar", "alerts.lpOldDomain", { months: ageInMonths })
+            : t("ar", "alerts.lpNewDomain", { days: ageInDays }),
         });
       } else {
         findings.push({
           check: "domain_age",
           passed: true, // مفيش بيانات تسجيل واضحة (بعض الـTLDs بتخفيها) - منعاقبش الدومين على نقص بيانات مش في إيده
-          detail: "بيانات تاريخ التسجيل غير متاحة علناً لهذا النطاق - مش مؤشر سلبي بالضرورة.",
+          detail: t("ar", "alerts.lpNoWhois"),
         });
       }
     } else {
@@ -320,7 +320,7 @@ export async function auditVisualAndCopy(
 ): Promise<VisualAuditResult> {
   const verticalContext = industryVertical
     ? locale === "ar"
-      ? `المجال: ${industryVertical}. مهم جداً: نوع اقتراح استقطاب العميل لازم يناسب طبيعة المجال ده - مثلاً الخصومات المباشرة مناسبة للإيكومرس، لكن غير مناسبة إطلاقاً لمجالات زي B2B أو الخدمات الطبية أو الاستشارات القانونية، اللي بتحتاج ضمانات أو استشارة مجانية أو عرض دراسة حالة بدلاً من ذلك.`
+      ? `المجال: ${industryVertical}. مهمّ جداً: نوع اقتراح استقطاب العميل يجب أن يناسب طبيعة هذا المجال - فالخصومات المباشرة مناسبة للتجارة الإلكترونية، لكنها غير مناسبة إطلاقاً لمجالات مثل B2B أو الخدمات الطبية أو الاستشارات القانونية، التي تحتاج ضمانات أو استشارة مجانية أو عرض دراسة حالة بدلاً منها.`
       : `Industry: ${industryVertical}. Important: the acquisition suggestion type must fit this industry - direct discounts suit e-commerce, but are inappropriate for B2B, medical, or legal/consulting fields, which need guarantees, free consultations, or case studies instead.`
     : "";
 
@@ -339,7 +339,7 @@ ${verticalContext}
 - ترتيب العناصر ومنطقية تدفق القراءة
 - جودة صور المنتج
 - إشارات الثقة (تقييمات، شهادات عملاء، شارات أمان، أرقام/إحصائيات مصداقية) - منفصلة عن ثقة التصميم العامة
-- وضوح القيمة المقدَّمة: هل يفهم الزائر "بيقدملك إيه بالظبط" خلال 5 ثوانٍ من فتح الصفحة؟
+- وضوح القيمة المقدَّمة: هل يفهم الزائر "ما الذي تقدّمه له بالضبط" خلال 5 ثوانٍ من فتح الصفحة؟
 - احتكاك النموذج (لو يوجد فورم): عدد الحقول، الحقول الإلزامية غير الضرورية - إذا لم يوجد فورم، اجعل score = null
 - عمق الدليل الاجتماعي: هل الأرقام والشهادات محددة وقابلة للتصديق (أسماء حقيقية، أرقام دقيقة) أم عامة وضعيفة ("آلاف العملاء الراضين")؟
 - مصداقية عناصر الإلحاح: إذا وُجدت عدادات تنازلية أو "الكمية محدودة"، هل تبدو حقيقية أم مصطنعة بشكل واضح؟ إذا لم توجد عناصر إلحاح، اجعل score = null

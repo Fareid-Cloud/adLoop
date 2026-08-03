@@ -1,4 +1,5 @@
-// lib/bidStrategyAudit.ts
+
+import { t } from "@/lib/i18n/dictionary";// lib/bidStrategyAudit.ts
 //
 // المنصة بتحسّن نحو الهدف اللي انت حاططه (Target CPA/ROAS)، مش نحو
 // الحقيقة. لو الهدف نفسه بعيد عن الواقع (مبني على بيانات المنصة المتضخمة
@@ -25,6 +26,9 @@ export interface BidStrategySanityResult {
   divergencePct: number | null;
   status: "ALIGNED" | "DIVERGENT" | "NOT_APPLICABLE";
   message: string;
+  /** مفتاح الرسالة ومتغيّراتها - النصّ أعلاه احتياطيّ عربي فقط. */
+  messageKey: string;
+  messageVars?: Record<string, string | number>;
 }
 
 // هامش معقول - فرق أقل من 20% طبيعي جداً (تقلب يومي عادي)، أكتر من كده
@@ -41,7 +45,7 @@ export function auditBidStrategySanity(
   if (input.biddingStrategyType === "TARGET_CPA" || input.biddingStrategyType === "MAXIMIZE_CONVERSIONS") {
     if (input.targetCpa === null || input.verifiedCpa === null || verifiedSampleSize < MIN_VERIFIED_SAMPLE) {
       return { ...base, hasTarget: input.targetCpa !== null, divergencePct: null, status: "NOT_APPLICABLE",
-        message: "لا توجد عينة تحويلات حقيقية كافية للمقارنة بعد." };
+        message: t("ar", "alerts.bidNoSample"), messageKey: "alerts.bidNoSample" };
     }
 
     const divergencePct = Math.round(((input.verifiedCpa - input.targetCpa) / input.targetCpa) * 100);
@@ -50,16 +54,20 @@ export function auditBidStrategySanity(
     return {
       ...base, hasTarget: true, divergencePct,
       status: isDivergent ? "DIVERGENT" : "ALIGNED",
-      message: isDivergent
-        ? `الهدف المضبوط في جوجل (${input.targetCpa}) بعيد عن تكلفة العميل الحقيقية الفعلية (${input.verifiedCpa}) بنسبة ${Math.abs(divergencePct)}% - جوجل بتحسّن نحو رقم مش واقعي.`
-        : `الهدف المضبوط قريب من الواقع الفعلي (فرق ${Math.abs(divergencePct)}% بس) - الاستراتيجية منطقية.`,
+      messageKey: isDivergent ? "alerts.bidCpaDivergent" : "alerts.bidCpaAligned",
+      messageVars: { target: input.targetCpa, actual: input.verifiedCpa, pct: Math.abs(divergencePct) },
+      message: t("ar", isDivergent ? "alerts.bidCpaDivergent" : "alerts.bidCpaAligned", {
+        target: input.targetCpa,
+        actual: input.verifiedCpa,
+        pct: Math.abs(divergencePct),
+      }),
     };
   }
 
   if (input.biddingStrategyType === "TARGET_ROAS" || input.biddingStrategyType === "MAXIMIZE_CONVERSION_VALUE") {
     if (input.targetRoas === null || input.verifiedRoas === null || verifiedSampleSize < MIN_VERIFIED_SAMPLE) {
       return { ...base, hasTarget: input.targetRoas !== null, divergencePct: null, status: "NOT_APPLICABLE",
-        message: "لا توجد عينة تحويلات حقيقية كافية للمقارنة بعد." };
+        message: t("ar", "alerts.bidNoSample"), messageKey: "alerts.bidNoSample" };
     }
 
     const divergencePct = Math.round(((input.verifiedRoas - input.targetRoas) / input.targetRoas) * 100);
@@ -68,15 +76,19 @@ export function auditBidStrategySanity(
     return {
       ...base, hasTarget: true, divergencePct,
       status: isDivergent ? "DIVERGENT" : "ALIGNED",
-      message: isDivergent
-        ? `الهدف المضبوط (${input.targetRoas}x) بعيد عن العائد الحقيقي الفعلي (${input.verifiedRoas}x) بنسبة ${Math.abs(divergencePct)}%.`
-        : `الهدف المضبوط قريب من الواقع الفعلي - الاستراتيجية منطقية.`,
+      messageKey: isDivergent ? "alerts.bidRoasDivergent" : "alerts.bidRoasAligned",
+      messageVars: { target: input.targetRoas, actual: input.verifiedRoas, pct: Math.abs(divergencePct) },
+      message: t("ar", isDivergent ? "alerts.bidRoasDivergent" : "alerts.bidRoasAligned", {
+        target: input.targetRoas,
+        actual: input.verifiedRoas,
+        pct: Math.abs(divergencePct),
+      }),
     };
   }
 
   // Manual CPC وأنواع تانية مفيهاش "هدف" تلقائي - الفحص ده مش منطبق عليها أصلاً
   return { ...base, hasTarget: false, divergencePct: null, status: "NOT_APPLICABLE",
-    message: "استراتيجية المزايدة دي (يدوية) معندهاش هدف تلقائي يتفحص." };
+    message: t("ar", "alerts.bidManual"), messageKey: "alerts.bidManual" };
 }
 
 // ==================== إغلاق نفس الفجوة اللي اكتشفناها في ميتا ====================
@@ -121,8 +133,12 @@ export async function checkBidStrategyAlertsForWorkspace(workspaceId: string) {
         source: "BID_STRATEGY",
         type: "ALERT",
         severity: "MEDIUM",
-        title: `${result.campaignName}: هدف المزايدة بعيد عن الواقع`,
+        title: t("ar", "alerts.bidAlertTitle", { campaign: result.campaignName }),
+        titleKey: "alerts.bidAlertTitle",
+        titleVars: { campaign: result.campaignName },
         description: result.message,
+        descKey: result.messageKey,
+        descVars: result.messageVars,
       });
     }
   }
@@ -147,6 +163,9 @@ export interface GoogleLearningPhaseResult {
   threshold: number | null;
   status: "LIKELY_STABLE" | "LEARNING" | "LEARNING_LIMITED" | "NOT_APPLICABLE";
   message: string;
+  /** مفتاح الرسالة ومتغيّراتها - النصّ أعلاه احتياطيّ عربي فقط. */
+  messageKey: string;
+  messageVars?: Record<string, string | number>;
 }
 
 export function estimateGoogleLearningPhase(
@@ -160,19 +179,23 @@ export function estimateGoogleLearningPhase(
 
   if (threshold === null) {
     return { ...base, threshold: null, status: "NOT_APPLICABLE",
-      message: "استراتيجية المزايدة هذه يدوية - لا توجد فترة تعلّم تلقائية لفحصها." };
+      message: t("ar", "alerts.learnManual"), messageKey: "alerts.learnManual" };
   }
 
   if (conversionsLast30Days >= threshold) {
     return { ...base, threshold, status: "LIKELY_STABLE",
-      message: `${conversionsLast30Days} تحويل خلال آخر 30 يوماً - فوق حد ${biddingStrategyType} (${threshold}) - على الأرجح خارج فترة التعلّم.` };
+      messageKey: "alerts.learnStable",
+      messageVars: { conversions: conversionsLast30Days, strategy: biddingStrategyType, threshold },
+      message: t("ar", "alerts.learnStable", { conversions: conversionsLast30Days, strategy: biddingStrategyType, threshold }) };
   }
 
   const gapNeeded = threshold - conversionsLast30Days;
   return {
     ...base, threshold,
     status: conversionsLast30Days < threshold / 2 ? "LEARNING_LIMITED" : "LEARNING",
-    message: `${conversionsLast30Days} تحويل خلال آخر 30 يوماً - تحتاج ${gapNeeded} تحويل إضافي للوصول إلى حدّ ${biddingStrategyType} (${threshold}).`,
+    messageKey: "alerts.learnNeeds",
+    messageVars: { conversions: conversionsLast30Days, gap: gapNeeded, strategy: biddingStrategyType, threshold },
+    message: t("ar", "alerts.learnNeeds", { conversions: conversionsLast30Days, gap: gapNeeded, strategy: biddingStrategyType, threshold }),
   };
 }
 

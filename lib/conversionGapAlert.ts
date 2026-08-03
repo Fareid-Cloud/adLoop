@@ -13,7 +13,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { pushToActionFeed } from "@/lib/actionFeed";
-import { platformLabel } from "@/lib/i18n/dictionary";
+import { platformLabel, t } from "@/lib/i18n/dictionary";
 
 const GAP_THRESHOLD_PCT: Record<string, number> = {
   GOOGLE_ADS: 30,
@@ -46,13 +46,26 @@ export async function checkConversionGapAlertForWorkspace(workspaceId: string) {
     const cooldownStart = new Date();
     cooldownStart.setDate(cooldownStart.getDate() - COOLDOWN_DAYS);
     const recentSimilar = await prisma.actionFeedItem.findFirst({
-      where: { workspaceId, title: { contains: "فجوة كبيرة بين" }, description: { contains: p.platform }, createdAt: { gte: cooldownStart } },
+      // الفحص بالمفتاح والمنصّة في المتغيّرات، لا بنصّ العنوان: النصّ
+      // يتغيّر مع اللغة فينكسر منع التكرار بصمت.
+      where: {
+        workspaceId,
+        titleKey: "alerts.convGapTitle",
+        titleVars: { path: ["platformKey"], equals: p.platform },
+        createdAt: { gte: cooldownStart },
+      },
     });
     if (recentSimilar) continue;
 
-    const platformNote = p.platform === "TIKTOK_ADS"
-      ? " تيك توك معروف عندها معدل ترافيك مزيّف أعلى من المنصات التانية بطبيعتها (بحث موثّق: 13-25%)، فالعتبة هنا أعلى عمداً - يعني الرقم ده فعلاً يستاهل انتباه، مش تحذير عادي."
-      : "";
+    const isTiktok = p.platform === "TIKTOK_ADS";
+    // اسم المنصّة يُبنى وقت العرض من `platformKey`، فيظهر بلغة القارئ.
+    const titleVars = { platform: platformLabel("ar", p.platform), platformKey: p.platform };
+    const descVars = {
+      raw,
+      verified,
+      gapPct,
+      note: isTiktok ? t("ar", "alerts.convGapTiktokNote") : "",
+    };
 
     await pushToActionFeed({
       workspaceId,
@@ -61,8 +74,12 @@ export async function checkConversionGapAlertForWorkspace(workspaceId: string) {
       severity: "HIGH",
       // اسم المنصّة لا قيمة تعدادها: كان العنوان يظهر للمستخدم
       // كـ«تحويلات GOOGLE_ADS المُبلّغة»
-      title: `فجوة كبيرة بين تحويلات ${platformLabel("ar", p.platform)} المُبلّغة والمؤكدة`,
-      description: `المنصة بتقول ${raw} تحويل، لكن اتأكد منهم فعلياً ${verified} بس (فجوة ${gapPct}%).${platformNote} القرارات المبنية على الرقم المُبلّغ وحده ممكن تكون مضلِّلة.`,
+      title: t("ar", "alerts.convGapTitle", titleVars),
+      titleKey: "alerts.convGapTitle",
+      titleVars,
+      description: t("ar", "alerts.convGapBody", descVars),
+      descKey: "alerts.convGapBody",
+      descVars,
       linkUrl: "/dashboard/reports",
       // حصّة التحويلات غير المؤكَّدة من الإنفاق الفعلي - لا تقدير عام
       estimatedImpact: Math.round((p._sum.cost ?? 0) * ((raw - verified) / raw)),

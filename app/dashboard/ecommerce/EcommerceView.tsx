@@ -75,6 +75,8 @@ export function EcommerceView({
   locale?: Locale;
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `productsPage.${k}`, v);
+  // جدول المنتجات له مساحة مفاتيح خاصة - أعمدته مشتركة مع أقسام أخرى
+  const ts = (k: string) => t(locale, `storeTable.${k}`);
   const [query, setQuery] = useState("");
   const [verdict, setVerdict] = useState<"all" | string>("all");
 
@@ -214,9 +216,10 @@ export function EcommerceView({
 
             {runnerUp && (
               <p className="mt-4 border-t border-border pt-3 text-[12.5px] text-text-muted">
-                الثاني: <span className="text-text-primary">{runnerUp.name}</span> بربح{" "}
+                {tr("runnerUp")} <span className="text-text-primary">{runnerUp.name}</span>{" "}
+                {tr("withProfit")}{" "}
                 <span className="font-mono text-text-primary">{num(runnerUp.totalProfit)} {currency}</span>
-                {" "}— الفارق {num(winner.totalProfit - runnerUp.totalProfit)} {currency}.
+                {" "}— {tr("gap")} {num(winner.totalProfit - runnerUp.totalProfit)} {currency}.
               </p>
             )}
           </div>
@@ -225,8 +228,7 @@ export function EcommerceView({
             <Trophy size={26} className="mx-auto mb-2 text-text-faint" />
             <p className="text-[13.5px] text-text-primary">{tr("noWinner")}</p>
             <p className="mx-auto mt-1 max-w-md text-[12.5px] leading-relaxed text-text-muted">
-              الترشيح يتطلب ربحاً موجباً وعينة كافية (25 وحدة على الأقل) ونسبة مرتجعات معقولة.
-              ترشيح منتج بناءً على عينة صغيرة أسوأ من عدم الترشيح.
+              {tr("noWinnerWhy")}
             </p>
           </div>
         )}
@@ -298,14 +300,14 @@ export function EcommerceView({
           <table className="w-full min-w-[820px] border-collapse">
             <thead>
               <tr className="border-b border-border">
-                {["المنتج", "الحالة", "مباع", "المرتجعات", "ربح الوحدة", "الربح المتحقق", "المخزون"].map((h) => (
+                {[tr("colProduct"), tr("colState"), tr("colSold"), tr("colReturns"), tr("colUnitProfit"), tr("colRealProfit"), tr("colStock")].map((h) => (
                   <th key={h} className="px-4 py-3 text-start text-[11.5px] font-medium text-text-muted">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={7} className="p-10 text-center text-[13px] text-text-muted">لا توجد منتجات مطابقة.</td></tr>
+                <tr><td colSpan={7} className="p-10 text-center text-[13px] text-text-muted">{tr("noMatch")}</td></tr>
               ) : filtered.map((p) => {
                 const v = VERDICT_META[p.verdict];
                 return (

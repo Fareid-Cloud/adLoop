@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ProductFocusView, type ProductRecord, type SalesStats } from "./ProductFocusView";
 import { Plus, Trash2 } from "lucide-react";
-import { type Locale } from "@/lib/i18n/dictionary";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export interface ProductHealthRow {
   id: string;
@@ -34,9 +34,11 @@ export function PricingClient({
   locale?: Locale;
   salesStats: Record<string, SalesStats>;
 }) {
+  const tr = (k: string, vars?: Record<string, string | number>) =>
+    t(locale, `productForm.${k}`, vars);
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
-  // معرّف المنتج قيد التعديل - وجوده يعني أن النموذج في وضع "تعديل" لا "إضافة"
+  // معرّف المنتج قيد التعديل - وجوده يعني أن النموذج في وضع تعديل لا إضافة
   const [editingId, setEditingId] = useState<string | null>(null);
   // المنتج المفتوح في العرض المركّز - يُفتح تلقائياً بعد الإضافة، وعند
   // الضغط على أي منتج قائم
@@ -111,7 +113,7 @@ export function PricingClient({
           className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-xs text-white"
         >
           <Plus size={14} />
-          {editingId ? "تعديل المنتج" : "منتج جديد"}
+          {editingId ? tr("edit") : tr("new")}
         </button>
       </div>
 
@@ -119,20 +121,20 @@ export function PricingClient({
         <form onSubmit={handleAdd} className="mb-4 rounded-2xl bg-surface p-5">
           <div className="grid grid-cols-2 gap-2">
             <input
-              placeholder="اسم المنتج"
+              placeholder={tr("name")}
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
               className="col-span-2 rounded-xl bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none"
             />
             <input
-              placeholder="SKU (اختياري - لربط مبيعات سلة الحقيقية بالمنتج ده)"
+              placeholder={tr("sku")}
               value={form.sku}
               onChange={(e) => setForm({ ...form, sku: e.target.value })}
               className="col-span-2 rounded-xl bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none"
             />
             <input
-              placeholder="السعر الحالي"
+              placeholder={tr("price")}
               type="number"
               value={form.currentPrice}
               onChange={(e) => setForm({ ...form, currentPrice: e.target.value })}
@@ -140,28 +142,28 @@ export function PricingClient({
               className="rounded-xl bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none"
             />
             <input
-              placeholder="تكلفة المنتج (COGS)"
+              placeholder={tr("cogs")}
               type="number"
               value={form.cogs}
               onChange={(e) => setForm({ ...form, cogs: e.target.value })}
               className="rounded-xl bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none"
             />
             <input
-              placeholder="تكلفة الشحن"
+              placeholder={tr("shipping")}
               type="number"
               value={form.outboundShippingCost}
               onChange={(e) => setForm({ ...form, outboundShippingCost: e.target.value })}
               className="rounded-xl bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none"
             />
             <input
-              placeholder="نسبة المرتجعات %"
+              placeholder={tr("returnRate")}
               type="number"
               value={form.rtoRatePct}
               onChange={(e) => setForm({ ...form, rtoRatePct: e.target.value })}
               className="rounded-xl bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none"
             />
             <input
-              placeholder="متوسط تكلفة الإعلان للطلب"
+              placeholder={tr("adCost")}
               type="number"
               value={form.avgAdCostPerOrder}
               onChange={(e) => setForm({ ...form, avgAdCostPerOrder: e.target.value })}
@@ -173,14 +175,14 @@ export function PricingClient({
             disabled={saving}
             className="mt-3 rounded-full bg-accent px-4 py-1.5 text-xs text-white disabled:opacity-50"
           >
-            {saving ? "جارٍ الإضافة..." : "إضافة"}
+            {saving ? tr("adding") : tr("add")}
           </button>
         </form>
       )}
 
       {products.length === 0 ? (
         <div className="rounded-card border border-dashed border-border bg-surface px-8 py-12 text-center text-text-muted">
-          لا توجد منتجات بعد
+          {tr("none")}
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -201,14 +203,14 @@ export function PricingClient({
                     <p className="mt-1 text-xs font-medium text-critical">{p.actualLossAlert}</p>
                   )}
                   <div className="mt-2 flex gap-4 font-mono text-xs">
-                    <span className="text-text-muted">الحالي: {p.currentPrice}</span>
-                    <span className="text-verified">المقترح: {p.suggestedPrice}</span>
+                    <span className="text-text-muted">{tr("current")} {p.currentPrice}</span>
+                    <span className="text-verified">{tr("suggested")} {p.suggestedPrice}</span>
                   </div>
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}
                   className="text-text-faint hover:text-critical"
-                  aria-label="حذف المنتج"
+                  aria-label={tr("remove")}
                 >
                   <Trash2 size={15} />
                 </button>

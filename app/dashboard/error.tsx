@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import * as Sentry from "@sentry/nextjs";
 import { AlertTriangle } from "lucide-react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export default function DashboardError({
   error,
@@ -14,6 +15,9 @@ export default function DashboardError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  // صفحة خطأ عميل: لا وصول للجلسة هنا، فتُقرأ اللغة من عنصر الجذر
+  const locale: Locale =
+    (typeof document !== "undefined" && document.documentElement.lang === "en") ? "en" : "ar";
   const [en, setEn] = useState(false);
   useEffect(() => setEn(navigator.language.toLowerCase().startsWith("en")), []);
   useEffect(() => {
@@ -26,25 +30,23 @@ export default function DashboardError({
         <AlertTriangle size={22} />
       </div>
       <h1 className="mb-1.5 text-lg font-semibold text-text-primary">
-        {en ? "Something went wrong on this page" : "حدث خطأ في هذه الصفحة"}
+        {t(locale, "errPage.title")}
       </h1>
       <p className="mb-5 max-w-sm text-sm text-text-muted">
-        {en
-          ? "You can retry, or go back to your dashboard. The rest of the app is still working normally."
-          : "يمكنك إعادة المحاولة أو العودة إلى لوحة التحكم. بقية البرنامج تعمل بشكل طبيعي."}
+        {t(locale, "errPage.body")}
       </p>
       <div className="flex gap-2">
         <button
           onClick={reset}
           className="rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
         >
-          {en ? "Retry" : "إعادة المحاولة"}
+          {t(locale, "errPage.retry")}
         </button>
         <a
           href="/dashboard"
           className="rounded-xl bg-surface-raised px-5 py-2.5 text-sm text-text-primary no-underline"
         >
-          {en ? "Dashboard" : "لوحة التحكم"}
+          {t(locale, "errPage.home")}
         </a>
       </div>
     </div>

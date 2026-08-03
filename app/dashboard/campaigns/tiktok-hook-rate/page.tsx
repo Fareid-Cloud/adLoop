@@ -58,9 +58,9 @@ export default async function TikTokHookRatePage() {
               </div>
               <div className="flex gap-4 text-xs text-text-faint">
                 <span>{t(locale, "campPages.hkHook", { n: Math.round(v.hookRate * 1000) / 10 })}</span>
-                <span>متفاعل (6ث): {Math.round(v.engagedViewRate * 1000) / 10}%</span>
-                <span>إكمال كامل: {Math.round(v.completionRate * 1000) / 10}%</span>
-                <span>{v.impressions.toLocaleString()} ظهور</span>
+                <span>{t(locale, "campPages.thEngaged6s")} {Math.round(v.engagedViewRate * 1000) / 10}%</span>
+                <span>{t(locale, "campPages.thFullCompletion")} {Math.round(v.completionRate * 1000) / 10}%</span>
+                <span>{v.impressions.toLocaleString()} {t(locale, "campPages.unitImpressions")}</span>
               </div>
             </div>
           ))}

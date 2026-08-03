@@ -62,7 +62,7 @@ export interface ProfitJourney {
   /** أكبر بند تكلفة - نقطة التدخّل الأولى */
   biggestLeak: { label: LocalizedText; amount: number; pctOfRevenue: number } | null;
   /** تكاليف لم نستطع قراءتها، تُذكر صراحةً لأن غيابها يضخّم الربح */
-  missingCostsAr: string[];
+  missingCostsAr: Array<{ key: string; vars?: Record<string, string | number> }>;
   currency: string;
 }
 
@@ -92,7 +92,9 @@ export async function getProfitJourney(workspaceId: string, windowDays = 30): Pr
     prisma.product.findMany({ where: { workspaceId } }),
   ]);
 
-  const missingCosts: string[] = [];
+  // مفاتيح لا نصّاً: هذه القائمة تُعرَض في صفحة الربح، فيلزم أن تتبع لغة
+  // القارئ لا لغة لحظة الحساب.
+  const missingCosts: Array<{ key: string; vars?: Record<string, string | number> }> = [];
 
   // الإيراد: الطلبات الحقيقية أولاً، وإلّا المجاميع اليومية
   let revenue = orders.filter((o) => o.state !== "CANCELLED").reduce((s, o) => s + o.total, 0);
@@ -112,12 +114,13 @@ export async function getProfitJourney(workspaceId: string, windowDays = 30): Pr
   // لو جزء كبير من الإيراد بلا منتج مطابق، تكلفة البضاعة ناقصة حتماً
   const cogsCoveragePct = revenue > 0 ? (matchedRevenue / revenue) * 100 : 0;
   if (revenue > 0 && cogsCoveragePct < 80) {
-    missingCosts.push(
-      `تكلفة البضاعة محسوبة على ${Math.round(cogsCoveragePct)}% من الإيراد فقط — الباقي طلبات لم تُطابَق بمنتج (يلزم ضبط SKU).`
-    );
+    missingCosts.push({
+      key: "missingCost.partialCogs",
+      vars: { pct: Math.round(cogsCoveragePct) },
+    });
   }
   if (products.length > 0 && products.every((p) => p.cogs === 0)) {
-    missingCosts.push("كل المنتجات مسجَّلة بتكلفة بضاعة صفر — الربح أدناه مبالغ فيه حتماً.");
+    missingCosts.push({ key: "missingCost.allZeroCogs" });
   }
 
   // الشحن: من الطلبات إن وُجد، وإلّا تقدير من إعدادات المنتجات
@@ -153,7 +156,7 @@ export async function getProfitJourney(workspaceId: string, windowDays = 30): Pr
   const returns = returnedOrdersValue + returnExtra;
 
   if (advertising === 0) {
-    missingCosts.push("لا يوجد إنفاق إعلاني مسجَّل في هذه الفترة — إن كنت تُعلن فعلاً، اربط حساباتك.");
+    missingCosts.push({ key: "missingCost.noAdSpend" });
   }
 
   const costStages: Array<Omit<ProfitStage, "runningTotal" | "pctOfRevenue">> = [

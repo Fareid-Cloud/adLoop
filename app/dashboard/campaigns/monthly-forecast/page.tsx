@@ -65,9 +65,9 @@ export default async function MonthlyForecastPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">التوقّع الشهري</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.mfTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
-        بناءً على معدل صرفك الفعلي حتى الآن هذا الشهر - ليس تنبؤاً ذكياً بل حساب مباشر لاستمرار الوتيرة نفسها.
+        {t(locale, "campPages.mfIntro")}
       </p>
 
       <div className="mb-4 rounded-2xl bg-surface p-5 text-center">
@@ -77,19 +77,19 @@ export default async function MonthlyForecastPage() {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-2xl bg-surface p-4">
-          <div className="text-xs text-text-faint">مصروف حتى الآن</div>
+          <div className="text-xs text-text-faint">{t(locale, "campPages.mfSpent")}</div>
           <div className="font-mono text-lg text-text-primary">{spentSoFar.toLocaleString()}</div>
         </div>
         <div className="rounded-2xl bg-surface p-4">
-          <div className="text-xs text-text-faint">متوقّع نهاية الشهر</div>
+          <div className="text-xs text-text-faint">{t(locale, "campPages.mfProjected")}</div>
           <div className="font-mono text-lg text-text-primary">{Math.round(projectedTotal).toLocaleString()}</div>
         </div>
         <div className="rounded-2xl bg-surface p-4">
-          <div className="text-xs text-text-faint">الهدف الشهري</div>
+          <div className="text-xs text-text-faint">{t(locale, "campPages.mfTarget")}</div>
           <div className="font-mono text-lg text-text-primary">{target.toLocaleString()}</div>
         </div>
         <div className="rounded-2xl bg-surface p-4">
-          <div className="text-xs text-text-faint">أيام متبقية</div>
+          <div className="text-xs text-text-faint">{t(locale, "campPages.mfDaysLeft")}</div>
           <div className="font-mono text-lg text-text-primary">{daysRemaining}</div>
         </div>
       </div>

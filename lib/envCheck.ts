@@ -29,7 +29,7 @@ export function validateEnvOrThrow() {
   );
   if (missingRecommended.length > 0) {
     console.warn(
-      `تنبيه: المتغيرات دي مش متضبطة، وبعض الميزات مش هتشتغل: ${missingRecommended.join(", ")}`
+      `تنبيه: هذه المتغيّرات غير مضبوطة، وبعض الميزات لن تعمل: ${missingRecommended.join(", ")}`
     );
   }
 }

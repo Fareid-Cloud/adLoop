@@ -34,7 +34,7 @@ export default async function EcommerceOverviewPage() {
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
     return (
-      <DataGate
+      <DataGate locale={locale}
         title={tc("noWorkspace")}
         reason={tc("noWorkspaceHint")}
         href="/dashboard"
@@ -59,7 +59,7 @@ export default async function EcommerceOverviewPage() {
           subtitle={tr("subtitle")}
           storeName={workspace.name}
         />
-        <DataGate
+        <DataGate locale={locale}
           title={tr("connectStoreTitle")}
           reason={tr("connectStoreReason")}
           hrefLabel={tr("connectStore")}
@@ -254,7 +254,7 @@ export default async function EcommerceOverviewPage() {
         </>
       )}
 
-      <RecommendedActions actions={actions} />
+      <RecommendedActions locale={locale} actions={actions} />
     </div>
   );
 }

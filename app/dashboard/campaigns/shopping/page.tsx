@@ -9,17 +9,19 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { getRelativeSpendThreshold } from "@/lib/relativeSpendThreshold";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export default async function ShoppingProductsPage() {
   const user = await getSessionUserFromCookies();
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">الجلسة انتهت، برجاء تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await getActiveWorkspace(user.id);
 
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى لمحة لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
   // إصلاح باگ: الرقم كان ثابت (10) من غير وعي بالعملة - بقى نسبي لصرف
@@ -44,21 +46,21 @@ export default async function ShoppingProductsPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">منتجات التسوق (Merchant Center)</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.shopTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
-        منتجات مرفوضة أو مقيّدة بصمت، ومنتجات بتصرف عليها من غير أي تحويل حقيقي.
+        {t(locale, "campPages.shopIntro")}
       </p>
 
       {!hasAnyData ? (
         <EmptyState
-          title="لا توجد بيانات تسوق بعد"
-          description="إما لا يوجد حساب Merchant Center مربوط، أو لم تُسحب البيانات بعد."
+          title={t(locale, "campPages.shopNone")}
+          description={t(locale, "campPages.shopNoneBody")}
         />
       ) : (
         <>
           {rejectedProducts.length > 0 && (
             <div className="mb-6">
-              <div className="mb-2 text-sm font-semibold text-critical">منتجات مرفوضة أو مقيّدة</div>
+              <div className="mb-2 text-sm font-semibold text-critical">{t(locale, "campPages.shopRejected")}</div>
               <div className="flex flex-col gap-2">
                 {rejectedProducts.map((p: any) => (
                   <div key={p.id} className="rounded-2xl bg-critical/10 p-4">
@@ -72,7 +74,7 @@ export default async function ShoppingProductsPage() {
 
           {wastefulProducts.length > 0 && (
             <div>
-              <div className="mb-2 text-sm font-semibold text-gap">صرف بدون تحويلات</div>
+              <div className="mb-2 text-sm font-semibold text-gap">{t(locale, "campPages.shopNoConv")}</div>
               <div className="flex flex-col gap-2">
                 {wastefulProducts.map((p: any) => (
                   <div key={p.id} className="flex items-center justify-between rounded-2xl bg-gap/10 p-4">

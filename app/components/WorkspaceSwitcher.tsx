@@ -25,6 +25,8 @@ export function WorkspaceSwitcher({
   collapsed?: boolean;
   locale?: "ar" | "en";
 }) {
+  const tr = (k: string, vars?: Record<string, string | number>) =>
+    t(locale, `wsSwitch.${k}`, vars);
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -85,8 +87,8 @@ export function WorkspaceSwitcher({
             <Sparkles size={16} className="absolute -end-1 -top-1 animate-pulse text-accent" />
           </div>
           <div className="text-center">
-            <p className="text-[15px] font-medium text-text-primary">نكشف الحقيقة…</p>
-            <p className="mt-1 text-[12.5px] text-text-muted">نُحضّر أرقام مساحة العمل الجديدة</p>
+            <p className="text-[15px] font-medium text-text-primary">{tr("title")}</p>
+            <p className="mt-1 text-[12.5px] text-text-muted">{tr("body")}</p>
           </div>
           <Loader2 size={18} className="animate-spin text-accent" />
         </div>
@@ -104,7 +106,7 @@ export function WorkspaceSwitcher({
             <>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[13px] font-medium text-text-primary">{current.name}</span>
-                <span className="block text-[11px] text-text-muted">مساحة العمل</span>
+                <span className="block text-[11px] text-text-muted">{tr("label")}</span>
               </span>
               <ChevronsUpDown size={14} className="shrink-0 text-text-muted" />
             </>
@@ -131,14 +133,14 @@ export function WorkspaceSwitcher({
                   <input
                     value={name} onChange={(e) => setName(e.target.value)} autoFocus
                     onKeyDown={(e) => e.key === "Enter" && create()}
-                    placeholder="اسم مساحة العمل"
+                    placeholder={tr("namePlaceholder")}
                     className="mb-2 w-full rounded-lg border border-border bg-surface-raised px-2.5 py-2 text-[12.5px] text-text-primary outline-none focus:border-accent"
                   />
                   {error && <p className="mb-2 text-[11.5px] leading-relaxed text-critical">{error}</p>}
                   <div className="flex gap-1.5">
                     <button onClick={create} disabled={busy || !name.trim()}
                             className="flex-1 rounded-lg bg-accent px-2 py-1.5 text-[12px] font-medium text-white disabled:opacity-45">
-                      {busy ? "جارٍ الإنشاء..." : "إنشاء"}
+                      {busy ? tr("creating") : tr("create")}
                     </button>
                     <button onClick={() => { setCreating(false); setError(null); }}
                             className="rounded-lg border border-border bg-surface-raised p-1.5 text-text-muted">
@@ -149,16 +151,16 @@ export function WorkspaceSwitcher({
               ) : canAddMore ? (
                 <button onClick={() => setCreating(true)}
                         className="flex w-full items-center gap-2 rounded-lg p-2.5 text-[12.5px] text-text-primary hover:bg-surface-raised">
-                  <Plus size={14} /> مساحة عمل جديدة
+                  <Plus size={14} /> {tr("newWorkspace")}
                 </button>
               ) : (
                 <div className="p-2.5">
                   <p className="mb-2 text-[11.5px] leading-relaxed text-text-muted">
-                    وصلت إلى حدّ باقتك ({limit === 1 ? "مساحة واحدة" : `${limit} مساحات`}).
+                    {tr("limitReached", { limit: limit === 1 ? tr("limitOne") : tr("limitN", { n: limit }) })}
                   </p>
                   <a href="/dashboard/billing"
                      className="block rounded-lg bg-accent px-2.5 py-1.5 text-center text-[12px] font-medium text-white no-underline">
-                    ترقية الباقة
+                    {tr("upgrade")}
                   </a>
                 </div>
               )}

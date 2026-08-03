@@ -27,7 +27,7 @@ const FORMAT_KEYS: Record<string, string> = {
   SEARCH: "plSearch",
   MARKETPLACE: "plMarketplace",
   RIGHT_HAND_COLUMN: "plRightColumn",
-  ALL: "غير مقسّم",
+  ALL: "placeUnsplit",
 };
 
 interface Row {
@@ -100,16 +100,16 @@ export default async function PlacementsPage({
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">فيسبوك مقابل إنستجرام والأماكن التفصيلية</h1>
+      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.placeTitle")}</h1>
       <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">
-        نفس الحملة، مقسّمة حسب المنصة والمكان الفعلي (فيد/ستوري/ريلز) — لتعرف بالضبط أين يأتي أرخص عميل.
+        {t(locale, "campPages.placeIntro")}
       </p>
 
       {platformGroups.length === 0 ? (
         <EmptyState
-          title="لا توجد بيانات مقسّمة بعد"
-          description="بتتحدث تلقائياً مع المزامنة اليومية بعد ربط حملات ميتا."
+          title={t(locale, "campPages.placeNone")}
+          description={t(locale, "campPages.placeNoneBody")}
         />
       ) : (
         <div className="flex flex-col gap-3">
@@ -128,8 +128,8 @@ export default async function PlacementsPage({
                       {placementName(locale, d.placementDetail)}
                     </span>
                     <div className="flex items-center gap-3 text-xs text-text-faint">
-                      <span>{d.clicks.toLocaleString()} كليكة</span>
-                      <span>{d.cost.toLocaleString()} تكلفة</span>
+                      <span>{d.clicks.toLocaleString()} {t(locale, "campPages.unitClicks")}</span>
+                      <span>{d.cost.toLocaleString()} {t(locale, "campPages.unitCost")}</span>
                       <span className="font-mono text-verified">{d.cpl ?? "—"}</span>
                     </div>
                   </div>

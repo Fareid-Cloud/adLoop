@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from "react";
 import { Search } from "lucide-react";
 import { NAV_GROUPS } from "@/lib/navConfig";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 function plat(href: string): string | null {
   if (/google|youtube|pmax|shopping/.test(href)) return "GOOGLE_ADS";
@@ -44,7 +45,7 @@ export function TopSearch({ locale }: { locale: "ar" | "en" }) {
         value={q}
         onFocus={() => setOpen(true)}
         onChange={(e) => { setQ(e.target.value); setOpen(true); }}
-        placeholder={ar ? "ابحث في الحملات والمصادر والمقاييس..." : "Search campaigns, sources, or metrics..."}
+        placeholder={ar ? t(locale, "ui.searchPlaceholder") : "Search campaigns, sources, or metrics..."}
         className="card-shadow w-full rounded-xl border border-border bg-surface py-2 ps-9 pe-14 text-[13px] text-text-primary placeholder:text-text-faint outline-none focus:border-accent"
       />
       <span className="pointer-events-none absolute inset-y-0 end-2.5 my-auto flex h-5 items-center rounded-md border border-border px-1.5 text-[10px] text-text-faint">⌘ K</span>
@@ -52,7 +53,7 @@ export function TopSearch({ locale }: { locale: "ar" | "en" }) {
       {open && query && (
         <div className="pop-shadow absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-border bg-surface">
           {results.length === 0 ? (
-            <div className="px-4 py-4 text-center text-[13px] text-text-faint">{ar ? "لا نتائج" : "No results"}</div>
+            <div className="px-4 py-4 text-center text-[13px] text-text-faint">{ar ? t(locale, "ui.noResults") : "No results"}</div>
           ) : (
             results.map((r) => (
               <a key={r.href} href={r.href} className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-primary no-underline transition-colors hover:bg-surface-raised">

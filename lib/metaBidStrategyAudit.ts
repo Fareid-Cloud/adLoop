@@ -12,6 +12,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { pushToActionFeed } from "@/lib/actionFeed";
+import { t } from "@/lib/i18n/dictionary";
 
 export interface MetaBidStrategyInput {
   adSetId: string;
@@ -28,6 +29,9 @@ export interface MetaBidStrategySanityResult {
   divergencePct: number | null;
   status: "ALIGNED" | "DIVERGENT" | "NOT_APPLICABLE";
   message: string;
+  /** مفتاح الرسالة ومتغيّراتها - النصّ أعلاه احتياطيّ عربي فقط. */
+  messageKey: string;
+  messageVars?: Record<string, string | number>;
 }
 
 const DIVERGENCE_THRESHOLD_PCT = 20;
@@ -42,27 +46,34 @@ export function auditMetaBidStrategy(
   if (input.bidStrategyType === "LOWEST_COST_WITHOUT_CAP") {
     return {
       ...base, hasTarget: false, divergencePct: null, status: "NOT_APPLICABLE",
-      message: "أقل تكلفة من غير سقف - لا يوجد هدف مضبوط يُفحص أصلاً، ميتا بتحسّن بحرية كاملة.",
+      message: t("ar", "alerts.metaNoCap"),
+      messageKey: "alerts.metaNoCap",
     };
   }
 
   if (input.bidAmount === null || input.verifiedCpa === null || verifiedSampleSize < MIN_VERIFIED_SAMPLE) {
     return {
       ...base, hasTarget: input.bidAmount !== null, divergencePct: null, status: "NOT_APPLICABLE",
-      message: "لا توجد عينة تحويلات حقيقية كافية للمقارنة بعد.",
+      message: t("ar", "alerts.bidNoSample"),
+      messageKey: "alerts.bidNoSample",
     };
   }
 
   const divergencePct = Math.round(((input.verifiedCpa - input.bidAmount) / input.bidAmount) * 100);
   const isDivergent = Math.abs(divergencePct) > DIVERGENCE_THRESHOLD_PCT;
+  const bidVars = {
+    target: input.bidAmount,
+    actual: input.verifiedCpa,
+    pct: Math.abs(divergencePct),
+  };
 
   if (input.bidStrategyType === "COST_CAP") {
     return {
       ...base, hasTarget: true, divergencePct,
       status: isDivergent ? "DIVERGENT" : "ALIGNED",
-      message: isDivergent
-        ? `Cost Cap المضبوط (${input.bidAmount}) بعيد عن تكلفة العميل الحقيقية الفعلية (${input.verifiedCpa}) بنسبة ${Math.abs(divergencePct)}% - ميتا بتحسّن نحو متوسط مش واقعي.`
-        : `Cost Cap قريب من الواقع الفعلي (فرق ${Math.abs(divergencePct)}% بس) - منطقي.`,
+      messageKey: isDivergent ? "alerts.metaCostCapDivergent" : "alerts.metaCostCapAligned",
+      messageVars: bidVars,
+      message: t("ar", isDivergent ? "alerts.metaCostCapDivergent" : "alerts.metaCostCapAligned", bidVars),
     };
   }
 
@@ -72,11 +83,21 @@ export function auditMetaBidStrategy(
     return {
       ...base, hasTarget: true, divergencePct,
       status: isDivergent ? "DIVERGENT" : "ALIGNED",
-      message: isDivergent
-        ? divergencePct > 0
-          ? `Bid Cap (${input.bidAmount}) أقل بكتير من تكلفة العميل الحقيقية (${input.verifiedCpa}) - ده على الأرجح بيقيّد وصولك ويقلل الظهور في مزايدات كتير، مش "هدف غلط" زي Cost Cap.`
-          : `Bid Cap (${input.bidAmount}) أعلى بكتير من تكلفة العميل الحقيقية - سقف واسع أكتر من اللازم، مفيش استفادة حقيقية منه.`
-        : `Bid Cap قريب من الواقع الفعلي - منطقي.`,
+      messageKey: !isDivergent
+        ? "alerts.metaBidCapAligned"
+        : divergencePct > 0
+        ? "alerts.metaBidCapLow"
+        : "alerts.metaBidCapHigh",
+      messageVars: bidVars,
+      message: t(
+        "ar",
+        !isDivergent
+          ? "alerts.metaBidCapAligned"
+          : divergencePct > 0
+          ? "alerts.metaBidCapLow"
+          : "alerts.metaBidCapHigh",
+        bidVars
+      ),
     };
   }
 
@@ -85,9 +106,9 @@ export function auditMetaBidStrategy(
   return {
     ...base, hasTarget: true, divergencePct,
     status: isDivergent ? "DIVERGENT" : "ALIGNED",
-    message: isDivergent
-      ? `الهدف المضبوط (${input.bidAmount}) بعيد عن الواقع الفعلي (${input.verifiedCpa}) بنسبة ${Math.abs(divergencePct)}%.`
-      : "الهدف المضبوط قريب من الواقع الفعلي.",
+    messageKey: isDivergent ? "alerts.metaGenericDivergent" : "alerts.metaGenericAligned",
+    messageVars: bidVars,
+    message: t("ar", isDivergent ? "alerts.metaGenericDivergent" : "alerts.metaGenericAligned", bidVars),
   };
 }
 
@@ -117,8 +138,12 @@ export async function checkMetaBidStrategyAlertsForWorkspace(workspaceId: string
         source: "BID_STRATEGY",
         type: "ALERT",
         severity: "MEDIUM",
-        title: `${result.adSetName ?? result.adSetId}: هدف المزايدة بعيد عن الواقع`,
+        title: t("ar", "alerts.metaBidAlertTitle", { adSet: result.adSetName ?? result.adSetId }),
+        titleKey: "alerts.metaBidAlertTitle",
+        titleVars: { adSet: result.adSetName ?? result.adSetId },
         description: result.message,
+        descKey: result.messageKey,
+        descVars: result.messageVars,
       });
     }
   }

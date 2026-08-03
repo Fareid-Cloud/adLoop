@@ -69,6 +69,10 @@ export async function recordExperiment(input: {
   workspaceId: string;
   changeType: "BUDGET" | "AD_COPY" | "CREATIVE" | "LANDING_PAGE" | "TARGETING" | "BID_STRATEGY" | "PAUSE" | "AUTOMATION_RULE" | "OTHER";
   description: string;
+  /** مفتاح القاموس ومتغيّراته - يُفضَّل على `description` دائماً. النصّ
+   *  يبقى احتياطياً وللوصف اليدوي الذي يكتبه المستخدم بنفسه. */
+  descKey?: string;
+  descVars?: Record<string, string | number>;
   campaignId?: string | null;
   platform?: string | null;
   sourceActionId?: string | null;
@@ -82,6 +86,8 @@ export async function recordExperiment(input: {
       workspaceId: input.workspaceId,
       changeType: input.changeType as any,
       description: input.description,
+      descKey: input.descKey ?? null,
+      descVars: (input.descVars ?? undefined) as never,
       relatedCampaignId: input.campaignId ?? null,
       platform: (input.platform as any) ?? null,
       sourceActionId: input.sourceActionId ?? null,

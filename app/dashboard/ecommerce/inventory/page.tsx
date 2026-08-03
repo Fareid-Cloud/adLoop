@@ -31,7 +31,7 @@ export default async function InventoryPage() {
 
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
-    return <DataGate title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
+    return <DataGate locale={locale} title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
   const analysis = await getInventoryAnalysis(workspace.id, 30);
@@ -45,7 +45,7 @@ export default async function InventoryPage() {
           subtitle={tr("subtitle")}
           storeName={workspace.name}
         />
-        <DataGate
+        <DataGate locale={locale}
           title={tr("noneTitle")}
           reason={tr("noneReason", { count: analysis.untrackedProducts })}
           href="/dashboard/pricing"
@@ -179,7 +179,7 @@ export default async function InventoryPage() {
         </DecisionBucket>
       ))}
 
-      <RecommendedActions actions={actions} empty={tr("healthy")} />
+      <RecommendedActions locale={locale} actions={actions} empty={tr("healthy")} />
     </div>
   );
 }

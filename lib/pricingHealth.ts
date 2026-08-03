@@ -13,6 +13,7 @@ import {
   explainRoasGap,
 } from "@/lib/ecommerceMetrics";
 import { pushToActionFeed } from "@/lib/actionFeed";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export interface PricingRow {
   id: string;
@@ -27,7 +28,10 @@ export interface PricingRow {
 
 export async function getWorkspacePricing(
   workspaceId: string,
-  currency: string
+  currency: string,
+  // العرض يتبع لغة القارئ. كانت مثبّتة على العربية، فكان مستخدم الواجهة
+  // الإنجليزية يرى رسائل التسعير عربيةً مهما فعل.
+  locale: Locale = "ar"
 ): Promise<{ rows: PricingRow[]; roasGapInsight: string | null }> {
   const products = await prisma.product.findMany({ where: { workspaceId }, orderBy: { createdAt: "desc" } });
   if (products.length === 0) return { rows: [], roasGapInsight: null };
@@ -70,7 +74,7 @@ export async function getWorkspacePricing(
       avgShippingCostAllProducts: avgShippingAll,
     };
 
-    const result = runPricingHealthCheck(p.name, p.currentPrice, pricingInputsOf(p), marginDiagnosisInput, "ar");
+    const result = runPricingHealthCheck(p.name, p.currentPrice, pricingInputsOf(p), marginDiagnosisInput, locale);
 
     const events = byProduct.get(p.id) ?? [];
     let actualLossAlert: string | null = null;
@@ -85,7 +89,7 @@ export async function getWorkspacePricing(
           platform: "SALLA", cost: p.avgAdCostPerOrder * ordersCount, ordersCount, revenue,
           cogs: p.cogs * ordersCount, shippingCost: p.outboundShippingCost * ordersCount, returnedOrdersCount,
         },
-        marginDiagnosisInput, "ar"
+        marginDiagnosisInput, locale
       );
       if (safetyNet.slippedThrough) {
         actualLossAlert = `الفحص الاستباقي لم يتوقّع ذلك، لكن خلال آخر 30 يوماً هذا المنتج يحقّق خسارة فعلية (${Math.round(safetyNet.after!.grossProfit)} ${currency}).`;
@@ -121,7 +125,7 @@ export async function getWorkspacePricing(
       revenue: sallaAgg._sum.revenue ?? 0, cogs: avgCogs * ordersCount,
       shippingCost: avgShippingAll * ordersCount, returnedOrdersCount: sallaAgg._sum.returnedOrdersCount ?? 0,
     });
-    roasGapInsight = explainRoasGap(computed, "ar");
+    roasGapInsight = explainRoasGap(computed, locale);
   }
 
   return { rows, roasGapInsight };
@@ -145,9 +149,20 @@ export async function checkPricingHealthAlertsForWorkspace(workspaceId: string) 
     if (r.status !== "CRITICAL" && !r.actualLossAlert) continue;
 
     const recent = await prisma.actionFeedItem.findFirst({
-      where: { workspaceId, title: { contains: "تسعير" }, description: { contains: r.name }, createdAt: { gte: cooldownStart } },
+      where: {
+        workspaceId,
+        titleKey: "alerts.pricingTitle",
+        titleVars: { path: ["name"], equals: r.name },
+        createdAt: { gte: cooldownStart },
+      },
     });
     if (recent) continue;
+
+    const pricingDescVars = {
+      message: r.actualLossAlert ?? r.message,
+      price: Math.round(r.suggestedPrice),
+      currency,
+    };
 
     // اقتراح قابل للتنفيذ لا مجرد تنبيه: الموافقة تُحدّث السعر في المتجر
     // نفسه عبر واجهة المنصة، لا في قاعدتنا وحدها.
@@ -156,8 +171,12 @@ export async function checkPricingHealthAlertsForWorkspace(workspaceId: string) 
       source: "PRICING",
       type: r.suggestedPrice > r.currentPrice ? "SUGGESTION" : "ALERT",
       severity: r.actualLossAlert ? "URGENT" : "HIGH",
-      title: `خطر تسعير — ${r.name}`,
-      description: `${r.actualLossAlert ?? r.message} السعر المقترح ${Math.round(r.suggestedPrice)} ${currency}.`,
+      title: t("ar", "alerts.pricingTitle", { name: r.name }),
+      titleKey: "alerts.pricingTitle",
+      titleVars: { name: r.name },
+      description: t("ar", "alerts.pricingBody", pricingDescVars),
+      descKey: "alerts.pricingBody",
+      descVars: pricingDescVars,
       linkUrl: "/dashboard/pricing",
       ...(r.suggestedPrice > r.currentPrice
         ? {

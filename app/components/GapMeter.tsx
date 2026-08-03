@@ -1,7 +1,7 @@
 // app/components/GapMeter.tsx
 //
 // العنصر التوقيعي للمنتج كله - شريط بيوري في نفس اللقطة: الرقم اللي المنصة
-// بتقوله (تعبئة شفافة بحد أصفر) مقابل الرقم المتحقق منه فعلياً (شريط أخضر
+// بتقوله (تعبئة شفافة بحد أصفر) مقابل الرقم ال{t(locale, "ui.verified")} منه فعلياً (شريط أخضر
 // ممتلئ فوقه). الفرق البصري بين الاتنين هو "الفجوة" نفسها.
 //
 // بيتبني تدريجياً أول ما يظهر في الشاشة (من صفر للقيمة الحقيقية) - مش
@@ -11,6 +11,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 interface GapMeterProps {
   label: string;
@@ -18,6 +19,7 @@ interface GapMeterProps {
   reportedValue: number;
   unit?: string;
   size?: "sm" | "lg";
+  locale?: Locale;
 }
 
 export function GapMeter({
@@ -26,6 +28,7 @@ export function GapMeter({
   reportedValue,
   unit = "",
   size = "sm",
+  locale = "ar",
 }: GapMeterProps) {
   const [animated, setAnimated] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -72,11 +75,11 @@ export function GapMeter({
       <div className="gap-meter-labels">
         <span className="verified">
           {verifiedValue.toLocaleString()}
-          {unit} — متحقق
+          {unit} — {t(locale, "ui.verified")}
         </span>
         <span className="reported">
           {reportedValue.toLocaleString()}
-          {unit} — معلن
+          {unit} — {t(locale, "ui.reported")}
         </span>
       </div>
     </div>

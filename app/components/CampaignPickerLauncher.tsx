@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CampaignPickerModal } from "@/app/components/CampaignPickerModal";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 type Platform = "GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS";
 
@@ -42,7 +43,7 @@ export function CampaignPickerLauncher({
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm" onClick={() => setChoosing(false)}>
           <div onClick={(e) => e.stopPropagation()} className="pop-shadow w-full max-w-xs rounded-2xl border border-border bg-surface p-5">
             <h3 className="mb-3 text-[14px] font-semibold text-text-primary">
-              {ar ? "اختر المنصة" : "Choose a platform"}
+              {ar ? t(locale, "ui.pickPlatform") : "Choose a platform"}
             </h3>
             <div className="flex flex-col gap-2">
               {connectedPlatforms.map((p) => (

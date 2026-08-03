@@ -180,7 +180,14 @@ export function DataGate({
 
 // ==================== تنبيه حدود البيانات ====================
 
-export function LimitsNote({ items, locale = "ar" }: { items: string[]; locale?: Locale }) {
+export function LimitsNote({
+  items,
+  locale = "ar",
+}: {
+  /** مفاتيح لا نصوص - تُترجَم هنا بلغة القارئ */
+  items: Array<{ key: string; vars?: Record<string, string | number> }>;
+  locale?: Locale;
+}) {
   if (items.length === 0) return null;
   return (
     <div className="mb-6 rounded-2xl border border-gap/30 bg-gap/[0.06] p-4">
@@ -191,7 +198,7 @@ export function LimitsNote({ items, locale = "ar" }: { items: string[]; locale?:
       <ul className="flex flex-col gap-1">
         {items.map((item, i) => (
           <li key={i} className="text-[12px] leading-relaxed text-text-muted">
-            • {item}
+            • {t(locale, item.key, item.vars)}
           </li>
         ))}
       </ul>

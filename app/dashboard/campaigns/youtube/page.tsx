@@ -65,9 +65,9 @@ export default async function YoutubePage() {
                 <span className="font-mono text-sm text-verified">{t(locale, "campPages.ytViewRate", { n: r.viewRate })}</span>
               </div>
               <div className="flex gap-4 text-xs text-text-faint">
-                <span>{r.videoViews.toLocaleString()} مشاهدة</span>
-                <span>{r.cost.toLocaleString()} تكلفة</span>
-                <span>{r.engagementRate}% تفاعل</span>
+                <span>{r.videoViews.toLocaleString()} {t(locale, "campPages.unitViews")}</span>
+                <span>{r.cost.toLocaleString()} {t(locale, "campPages.unitCost")}</span>
+                <span>{r.engagementRate}% {t(locale, "campPages.unitEngagement")}</span>
               </div>
             </div>
           ))}

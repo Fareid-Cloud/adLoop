@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { Plug, X } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const PLATFORMS = [
   { id: "GOOGLE_ADS", label: "Google Ads", start: "/api/oauth/google-ads/start", color: "#1A73E8" },
@@ -37,7 +38,7 @@ export function ConnectPlatformLauncher({
                className="pop-shadow w-full max-w-sm rounded-2xl border border-border bg-surface p-5">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-[15px] font-semibold text-text-primary">
-                {ar ? "اختر المنصة للربط" : "Choose a platform"}
+                {ar ? t(locale, "ui.pickPlatformToConnect") : "Choose a platform"}
               </h3>
               <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-text-muted hover:bg-surface-raised">
                 <X size={16} />
@@ -46,7 +47,7 @@ export function ConnectPlatformLauncher({
 
             <p className="mb-4 text-[12.5px] leading-relaxed text-text-muted">
               {ar
-                ? "ستنتقل إلى صفحة المنصة للموافقة، ثم تعود إلى هنا مباشرةً لاختيار حملاتك."
+                ? t(locale, "ui.pickPlatformHint")
                 : "You'll approve on the platform's page, then come straight back to pick your campaigns."}
             </p>
 

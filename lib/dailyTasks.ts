@@ -45,9 +45,18 @@ interface RuleCheckContext {
 // المرتبطة بيها ببساطة مش هتتفعّل لحد ما نبني مصدر البيانات ده - أوضح
 // من إننا نظهر بيانات وهمية.
 
-export async function runDailyDiagnosticsForWorkspace(workspaceId: string, locale: Locale = "ar") {
-  const workspace = await prisma.workspace.findUnique({ where: { id: workspaceId } });
+export async function runDailyDiagnosticsForWorkspace(workspaceId: string, locale?: Locale) {
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    include: { user: { select: { preferredLocale: true } } },
+  });
   if (!workspace || !workspace.enableDailyDiagnostics) return;
+
+  // النصّ الاحتياطي المخزَّن يُكتب بلغة مالك المساحة لا بالعربية دائماً:
+  // القارئ يرى المفتاح مترجَماً بلغته، لكن لو سقط المفتاح لسبب ما فالأولى
+  // أن يقع الاحتياطي على لغته هو. النداء الصريح - إن وُجد - يسبق ذلك.
+  const effectiveLocale: Locale =
+    locale ?? ((workspace.user?.preferredLocale as Locale) || "ar");
 
   const today = new Date();
   const yesterday = new Date();
@@ -141,7 +150,7 @@ export async function runDailyDiagnosticsForWorkspace(workspaceId: string, local
     landingPageLoadTimeSeconds: null, // TODO: يحتاج تكامل مع خدمة قياس سرعة الصفحة
   };
 
-  const ruleTasks = generateRuleBasedTasks(ctx, locale);
+  const ruleTasks = generateRuleBasedTasks(ctx, effectiveLocale);
 
   let aiTasks: Array<{ title: string; category: string; priority: string }> = [];
   if (workspace.enableAIInsights) {
@@ -184,78 +193,111 @@ export async function runDailyDiagnosticsForWorkspace(workspaceId: string, local
       await sendUrgentNotificationEmail({
         toEmail: workspace.notificationEmail || owner.email,
         workspaceName: workspace.name,
-        title: t(locale, "notifications.urgentTasksTitle", { count: urgentTasks.length }),
+        title: t(effectiveLocale, "notifications.urgentTasksTitle", { count: urgentTasks.length }),
         description: urgentTasks.map((task) => task.title).join(" • "),
-        locale,
+        locale: effectiveLocale,
       });
     }
   }
 }
 
+/**
+ * مهمة مولّدة بقاعدة ثابتة.
+ *
+ * تحمل **مفتاح القاموس ومتغيّراته** لا النصّ الجاهز: المهمة تُولَّد مرّة
+ * واحدة يومياً وتُقرأ مراراً، فتخزين النصّ المترجَم كان يثبّت لغة لحظة
+ * التوليد على القارئ مهما غيّر لغته. `title` يبقى محسوباً هنا كاحتياطي
+ * للصفوف القديمة ولأي قارئ لم يُحدَّث بعد.
+ */
+export interface RuleTask {
+  title: string;
+  titleKey: string;
+  titleVars?: Record<string, string | number>;
+  category: string;
+  priority: string;
+}
+
 export function generateRuleBasedTasks(
   ctx: RuleCheckContext,
   locale: Locale = "ar"
-): Array<{
-  title: string;
-  category: string;
-  priority: string;
-}> {
-  const tasks: Array<{ title: string; category: string; priority: string }> = [];
+): RuleTask[] {
+  const tasks: RuleTask[] = [];
+
+  /** يبني المهمة بالمفتاح، ويحسب النصّ الاحتياطي منه في اللحظة نفسها. */
+  const task = (
+    titleKey: string,
+    titleVars: Record<string, string | number> | undefined,
+    category: string,
+    priority: string
+  ): RuleTask => ({
+    title: t(locale, titleKey, titleVars),
+    titleKey,
+    titleVars,
+    category,
+    priority,
+  });
 
   // Search Terms Report - أهم عنصر يُهمَل غالباً ويستنزف الميزانية بصمت
   const daysSinceSearchTerms = daysSince(ctx.lastSearchTermsReview);
   if (daysSinceSearchTerms === null || daysSinceSearchTerms >= 7) {
-    tasks.push({
-      title:
-        daysSinceSearchTerms === null
-          ? t(locale, "tasks.searchTermsNever")
-          : t(locale, "tasks.searchTermsSince", { days: daysSinceSearchTerms }),
-      category: "SEARCH_TERMS",
-      priority: daysSinceSearchTerms && daysSinceSearchTerms >= 14 ? "HIGH" : "MEDIUM",
-    });
+    tasks.push(
+      daysSinceSearchTerms === null
+        ? task("tasks.searchTermsNever", undefined, "SEARCH_TERMS", "MEDIUM")
+        : task(
+            "tasks.searchTermsSince",
+            { days: daysSinceSearchTerms },
+            "SEARCH_TERMS",
+            daysSinceSearchTerms >= 14 ? "HIGH" : "MEDIUM"
+          )
+    );
   }
 
   // Negative Keywords - امتداد طبيعي لمراجعة مصطلحات البحث
   const daysSinceNegatives = daysSince(ctx.lastNegativeKeywordsUpdate);
   if (daysSinceNegatives === null || daysSinceNegatives >= 14) {
-    tasks.push({
-      title: t(locale, "tasks.negativeKeywords"),
-      category: "NEGATIVE_KEYWORDS",
-      priority: "MEDIUM",
-    });
+    tasks.push(task("tasks.negativeKeywords", undefined, "NEGATIVE_KEYWORDS", "MEDIUM"));
   }
 
   // Budget Pacing - هل معدّل الإنفاق متوافق مع تقدّم الشهر؟
   const pacingGap = ctx.budgetSpentPct - ctx.monthProgressPct;
   if (Math.abs(pacingGap) > 15) {
-    tasks.push({
-      title:
-        pacingGap > 0
-          ? t(locale, "tasks.pacingFast", { pct: Math.round(pacingGap) })
-          : t(locale, "tasks.pacingSlow", { pct: Math.round(Math.abs(pacingGap)) }),
-      category: "BUDGET_PACING",
-      priority: Math.abs(pacingGap) > 25 ? "URGENT" : "HIGH",
-    });
+    const pacingPriority = Math.abs(pacingGap) > 25 ? "URGENT" : "HIGH";
+    tasks.push(
+      pacingGap > 0
+        ? task("tasks.pacingFast", { pct: Math.round(pacingGap) }, "BUDGET_PACING", pacingPriority)
+        : task(
+            "tasks.pacingSlow",
+            { pct: Math.round(Math.abs(pacingGap)) },
+            "BUDGET_PACING",
+            pacingPriority
+          )
+    );
   }
 
   // Ad Fatigue - ارتفاع معدل التكرار (خاص بميتا وتيك توك وسناب شات غالباً)
   for (const [platform, frequency] of Object.entries(ctx.frequencyByPlatform)) {
     if (frequency > 3.5) {
-      tasks.push({
-        title: t(locale, "tasks.adFatigue", { platform, freq: frequency.toFixed(1) }),
-        category: "AD_FATIGUE",
-        priority: frequency > 5 ? "HIGH" : "MEDIUM",
-      });
+      tasks.push(
+        task(
+          "tasks.adFatigue",
+          { platform, freq: frequency.toFixed(1) },
+          "AD_FATIGUE",
+          frequency > 5 ? "HIGH" : "MEDIUM"
+        )
+      );
     }
   }
 
   // Disapproved Ads - إعلانات مرفوضة تُنفق صفراً دون أن يلاحظها أحد
   if (ctx.disapprovedAdsCount > 0) {
-    tasks.push({
-      title: t(locale, "tasks.disapprovedAds", { count: ctx.disapprovedAdsCount }),
-      category: "DISAPPROVED_ADS",
-      priority: "HIGH",
-    });
+    tasks.push(
+      task(
+        "tasks.disapprovedAds",
+        { count: ctx.disapprovedAdsCount },
+        "DISAPPROVED_ADS",
+        "HIGH"
+      )
+    );
   }
 
   // Tracking Health - أهم فحص على الإطلاق: توقف التحويلات الموثّقة فجأة
@@ -263,22 +305,14 @@ export function generateRuleBasedTasks(
     ctx.verifiedConversionsAvgLast7Days > 2 &&
     ctx.verifiedConversionsYesterday === 0
   ) {
-    tasks.push({
-      title: t(locale, "tasks.trackingHealth"),
-      category: "TRACKING_HEALTH",
-      priority: "URGENT",
-    });
+    tasks.push(task("tasks.trackingHealth", undefined, "TRACKING_HEALTH", "URGENT"));
   }
 
   // Tag Health - مختلف عن Tracking Health: هنا فيه كليكات مسجلة عند المنصة
   // فعلاً، لكن صفر إشارة وصلت لنظام التتبع بتاعنا - ده مؤشر إن وسم التتبع
   // (tracking tag) نفسه معطّل أو اتشال بالغلط من الصفحة، مش مشكلة بيانات عادية
   if (ctx.clicksButZeroTagFires) {
-    tasks.push({
-      title: t(locale, "tasks.tagHealth"),
-      category: "TAG_HEALTH",
-      priority: "URGENT",
-    });
+    tasks.push(task("tasks.tagHealth", undefined, "TAG_HEALTH", "URGENT"));
   }
 
   // CTR Drop - مش نسبة انخفاض ثابتة لكل الحسابات (30% كانت ساذجة)، لكن
@@ -294,24 +328,28 @@ export function generateRuleBasedTasks(
           ? Math.round(((anomaly.baseline.mean - ctx.ctrToday) / anomaly.baseline.mean) * 100)
           : 0;
 
-      tasks.push({
-        title: t(locale, "tasks.ctrDrop", { pct: dropPct }),
-        category: "CTR_DROP",
-        // انحراف أكبر من 3 = شذوذ قوي جداً إحصائياً، مش مجرد تقلب عادي
-        priority: Math.abs(anomaly.zScore) > 3 ? "HIGH" : "MEDIUM",
-      });
+      // انحراف أكبر من 3 = شذوذ قوي جداً إحصائياً، مش مجرد تقلب عادي
+      tasks.push(
+        task(
+          "tasks.ctrDrop",
+          { pct: dropPct },
+          "CTR_DROP",
+          Math.abs(anomaly.zScore) > 3 ? "HIGH" : "MEDIUM"
+        )
+      );
     }
   }
 
   // Page Speed - بطء تحميل صفحة الهبوط بشكل يؤثر فعلياً على معدل التحويل
   if (ctx.landingPageLoadTimeSeconds !== null && ctx.landingPageLoadTimeSeconds > 3) {
-    tasks.push({
-      title: t(locale, "tasks.pageSpeed", {
-        seconds: ctx.landingPageLoadTimeSeconds.toFixed(1),
-      }),
-      category: "PAGE_SPEED",
-      priority: ctx.landingPageLoadTimeSeconds > 5 ? "HIGH" : "MEDIUM",
-    });
+    tasks.push(
+      task(
+        "tasks.pageSpeed",
+        { seconds: ctx.landingPageLoadTimeSeconds.toFixed(1) },
+        "PAGE_SPEED",
+        ctx.landingPageLoadTimeSeconds > 5 ? "HIGH" : "MEDIUM"
+      )
+    );
   }
 
   return tasks;
@@ -345,14 +383,20 @@ export async function generateAITask(
 
 export async function generateAndStoreDailyTasks(
   workspaceId: string,
-  ruleTasks: Array<{ title: string; category: string; priority: string }>,
+  ruleTasks: RuleTask[],
   aiTasks: Array<{ title: string; category: string; priority: string }>
 ) {
   const today = new Date(new Date().toISOString().slice(0, 10));
 
-  const allTasks = [
+  // مهام الذكاء الاصطناعي نصّها حرّ لا مفتاح له - تُخزَّن كنصّ كما هي.
+  const allTasks: Array<RuleTask & { source: "RULE_BASED" | "AI_DETECTED" }> = [
     ...ruleTasks.map((task) => ({ ...task, source: "RULE_BASED" as const })),
-    ...aiTasks.map((task) => ({ ...task, source: "AI_DETECTED" as const })),
+    ...aiTasks.map((task) => ({
+      ...task,
+      titleKey: "",
+      titleVars: undefined,
+      source: "AI_DETECTED" as const,
+    })),
   ];
 
   for (const task of allTasks) {
@@ -361,6 +405,8 @@ export async function generateAndStoreDailyTasks(
         workspaceId,
         date: today,
         title: task.title,
+        titleKey: task.titleKey || null,
+        titleVars: task.titleVars ?? undefined,
         category: task.category as any,
         priority: task.priority as any,
         source: task.source,

@@ -9,6 +9,7 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Zap, TrendingUp, Lightbulb } from "lucide-react";
 import { useLive } from "@/app/components/LiveData";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 // صوت تنبيه بسيط عبر Web Audio API - مفيش ملف صوتي خارجي، صوت "نغمة"
 // قصيرة ولطيفة (نغمتين متتاليتين، زي معظم أنظمة الإشعارات المعروفة)
@@ -32,7 +33,7 @@ function playNotificationSound() {
 
     const now = ctx.currentTime;
     playTone(880, now, 0.12); // نغمة أولى
-    playTone(1108, now + 0.1, 0.15); // نغمة تانية أعلى شوية - إحساس "تم" إيجابي
+    playTone(1108, now + 0.1, 0.15); // نغمة تانية أعلى شوية - إحساس t(locale, "ui.done") إيجابي
   } catch {
     // بعض المتصفحات بترفض تشغيل صوت من غير تفاعل مستخدم الأول - مش مشكلة
     // حرجة، الإشعار البصري (البوب-أب نفسه) لسه بيظهر عادي
@@ -57,7 +58,7 @@ const TYPE_ICON: Record<string, typeof Zap> = {
 
 const AUTO_DISMISS_MS = 8000;
 
-export function NotificationToast() {
+export function NotificationToast({ locale = "ar" }: { locale?: Locale }) {
   const [queue, setQueue] = useState<ToastNotification[]>([]);
   const lastCheckRef = useRef<string>(new Date().toISOString());
 
@@ -103,14 +104,14 @@ export function NotificationToast() {
           )}
           {current.linkUrl && (
             <a href={current.linkUrl} className="mt-1.5 inline-block text-xs text-accent no-underline">
-              عرض التفاصيل ←
+              {t(locale, "ui.viewDetails")} ←
             </a>
           )}
         </div>
         <button
           onClick={() => dismiss(current.id)}
           className="shrink-0 rounded-full p-1 text-text-faint hover:bg-surface-raised hover:text-text-primary"
-          aria-label="إغلاق"
+          aria-label={t(locale, "ui.close")}
         >
           <X size={14} />
         </button>
