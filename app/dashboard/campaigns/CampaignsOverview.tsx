@@ -9,6 +9,7 @@ import { Search, TrendingDown, AlertOctagon, CheckCircle2, Wallet, ChevronLeft }
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
+import { TH } from "@/app/components/ui/tableStyles";
 
 export interface CampaignRow {
   campaignId: string;
@@ -135,6 +136,8 @@ export function CampaignsOverview({
               ? { text: tr("ovNeedActionCaption", { critical: counts.critical, watch: counts.watch }), tone: "negative" }
               : { text: tr("ovNoneCritical"), tone: "positive" }
           }
+          explainKey="needAction"
+          locale={locale}
         />
       </div>
 
@@ -176,7 +179,7 @@ export function CampaignsOverview({
             <thead>
               <tr className="border-b border-border">
                 {["ovColCampaign", "ovColState", "ovColSpend", "ovColReportedVerified", "ovColCpa", "ovColWasted"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-start text-[11.5px] font-medium text-text-muted">{tr(h)}</th>
+                  <th key={h} className={TH}>{tr(h)}</th>
                 ))}
               </tr>
             </thead>

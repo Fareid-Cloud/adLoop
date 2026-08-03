@@ -39,7 +39,7 @@ export default async function ReportsPage({
 
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
-    return <DataGate titleAr={tc("noWorkspace")} reasonAr={tc("noWorkspaceHint")} href="/dashboard" hrefLabelAr={tc("toHome")} />;
+    return <DataGate title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
   const [journey, overview, products, customers, opps] = await Promise.all([
@@ -57,8 +57,8 @@ export default async function ReportsPage({
       <div className="mx-auto max-w-4xl">
         <EcomHeader title={tr("title")} subtitle={tr("subtitle")} storeName={workspace.name} />
         <DataGate
-          titleAr={tr("noneTitle")}
-          reasonAr={tr("noneReason")}
+          title={tr("noneTitle")}
+          reason={tr("noneReason")}
         />
       </div>
     );

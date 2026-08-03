@@ -15,24 +15,22 @@ const OPTIONS = [
   { value: "TIKTOK_ADS", labelAr: "TikTok Ads", labelEn: "TikTok Ads", color: "#FE2C55" },
 ];
 
-const RANGES = [7, 30, 90];
 
-export function PlatformSwitcher({ platform, days, locale }: { platform: string; days: number; locale: "ar" | "en" }) {
+export function PlatformSwitcher({ platform, locale }: { platform: string; locale: "ar" | "en" }) {
   const router = useRouter();
   const params = useSearchParams();
   const ar = locale === "ar";
 
-  function go(next: { platform?: string; days?: number }) {
+  function go(next: { platform?: string }) {
     const q = new URLSearchParams(params.toString());
     if (next.platform !== undefined) {
       next.platform ? q.set("platform", next.platform) : q.delete("platform");
     }
-    if (next.days !== undefined) q.set("days", String(next.days));
     router.push(`/dashboard?${q.toString()}`);
   }
 
   return (
-    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+    <div className="mb-5 flex flex-wrap items-center gap-1.5">
       <div className="flex flex-wrap gap-1.5">
         {OPTIONS.map((o) => {
           const active = platform === o.value;
@@ -50,20 +48,6 @@ export function PlatformSwitcher({ platform, days, locale }: { platform: string;
             </button>
           );
         })}
-      </div>
-
-      <div className="flex gap-1 rounded-xl border border-border bg-surface p-1">
-        {RANGES.map((d) => (
-          <button
-            key={d}
-            onClick={() => go({ days: d })}
-            className={`rounded-lg px-3 py-1.5 text-[12.5px] transition-colors ${
-              days === d ? "bg-accent font-medium text-white" : "text-text-muted hover:text-text-primary"
-            }`}
-          >
-            {ar ? `${d} يوم` : `${d}d`}
-          </button>
-        ))}
       </div>
     </div>
   );

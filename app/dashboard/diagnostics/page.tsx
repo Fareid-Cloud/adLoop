@@ -62,20 +62,20 @@ export default async function DiagnosticsPage() {
 
   const activity: ActivityRow[] = [
     ...cronRuns.map((r: any) => ({
-      titleAr: t(locale, "campPages.actSyncDone"),
-      detailAr: t(locale, "campPages.actSyncDetail", { n: r.totalWorkspaces, ok: r.succeeded }),
+      title: t(locale, "campPages.actSyncDone"),
+      detail: t(locale, "campPages.actSyncDetail", { n: r.totalWorkspaces, ok: r.succeeded }),
       at: timeAgo(locale, r.runAt),
     })),
     ...recentPages.map((p: any) => ({
       // new URL() ترمي استثناءً على رابط بلا بروتوكول (مثل "example.com")
       // وكان ذلك كافياً لإسقاط الصفحة بالكامل - نتعامل معه بأمان
-      titleAr: t(locale, "campPages.actPageCheck", { page: p.label ?? safeHost(p.url) }),
-      detailAr: t(locale, p.trackingDetected ? "campPages.actTrackingFound" : "campPages.actTrackingMissing"),
+      title: t(locale, "campPages.actPageCheck", { page: p.label ?? safeHost(p.url) }),
+      detail: t(locale, p.trackingDetected ? "campPages.actTrackingFound" : "campPages.actTrackingMissing"),
       at: timeAgo(locale, p.lastCheckedAt),
     })),
     ...recentActions.map((a: any) => ({
-      titleAr: t(locale, a.type === "SUGGESTION" ? "campPages.actNewSuggestion" : "campPages.actNewAlert"),
-      detailAr: a.title.slice(0, 70),
+      title: t(locale, a.type === "SUGGESTION" ? "campPages.actNewSuggestion" : "campPages.actNewAlert"),
+      detail: a.title.slice(0, 70),
       at: timeAgo(locale, a.createdAt),
     })),
   ].slice(0, 6);

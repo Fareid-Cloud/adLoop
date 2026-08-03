@@ -9,7 +9,7 @@ import { Toggle } from "@/app/components/ui/Toggle";
 import { ConnectionTester } from "@/app/components/ConnectionTester";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { useState, useMemo, useEffect, createContext, useContext } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Bot, Cpu, Sparkles, Terminal, Brain, Zap, Upload, Search } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
 import { PushNotificationToggle } from "@/app/components/PushNotificationToggle";
@@ -157,7 +157,15 @@ export function SettingsClient({
   workspaces: WorkspaceData[];
   connectedPlatforms: ConnectedPlatformData[];
 }) {
-  const [activeTab, setActiveTab] = useState<(typeof TABS)[number]["key"]>("profile");
+  // التبويب الأوّلي من الرابط: بدونه كان كل زرّ يشير إلى إعداد بعينه
+  // يهبط بالمستخدم على «الملف الشخصي» ويتركه يبحث عمّا أُرسل إليه.
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<(typeof TABS)[number]["key"]>(
+    TABS.some((t) => t.key === requestedTab)
+      ? (requestedTab as (typeof TABS)[number]["key"])
+      : "profile"
+  );
   const [activeWorkspaceId, setActiveWorkspaceId] = useState(workspaces[0]?.id ?? "");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -213,10 +221,13 @@ export function SettingsClient({
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition-colors ${
+            // النشط بلون الثيم لا برمادي أفتح بدرجة: `bg-surface-raised`
+            // على `bg-surface` فرق لا تلتقطه العين، فيتوه المستخدم عن
+            // موضعه بين تسعة تبويبات متشابهة.
+            className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
               activeTab === tab.key
-                ? "bg-surface-raised text-text-primary"
-                : "text-text-muted hover:text-text-primary"
+                ? "bg-accent text-white shadow-[0_2px_10px_-4px_var(--accent)]"
+                : "text-text-muted hover:bg-surface-raised hover:text-text-primary"
             }`}
           >
             {tr(tab.labelKey)}

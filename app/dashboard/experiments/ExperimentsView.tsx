@@ -163,26 +163,43 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
 
   return (
     <div className="card-shadow rounded-2xl border border-border bg-surface p-4">
-      <div className="mb-2 flex flex-wrap items-center gap-2">
-        {exp.platform && <PlatformLogo platform={exp.platform} size={15} />}
-        <span className="text-[13.5px] font-medium text-text-primary">{exp.description}</span>
-        <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10.5px] text-text-muted">
-          {CHANGE_TYPE_KEYS[exp.changeType] ? tr(CHANGE_TYPE_KEYS[exp.changeType]) : exp.changeType}
-        </span>
-        {exp.source === "MANUAL" && (
-          <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10.5px] text-text-muted">{tr("manualTag")}</span>
+      <div className="mb-3 flex items-start gap-3">
+        {/* الشعار كتلة مربّعة تُثبّت بداية الصفّ - كان أيقونة ١٥ بكسل
+            سابحة بين النصوص لا تُميَّز بلمحة */}
+        {exp.platform && (
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-raised">
+            <PlatformLogo platform={exp.platform} size={20} />
+          </span>
         )}
-        <span className="flex-1" />
-        <button onClick={() => setEditing((v) => !v)}
-                className="rounded-lg border border-border bg-surface-raised p-1.5 text-text-muted hover:text-text-primary"
-                aria-label={tr("editAria")}>
-          <Pencil size={13} />
-        </button>
-        <button onClick={() => setConfirmDelete(true)}
-                className="rounded-lg border border-border bg-surface-raised p-1.5 text-text-muted hover:text-critical"
-                aria-label={tr("deleteAria")}>
-          <Trash2 size={13} />
-        </button>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[14px] font-semibold tracking-tight text-text-primary">
+              {exp.description}
+            </span>
+            <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10.5px] text-text-muted">
+              {CHANGE_TYPE_KEYS[exp.changeType] ? tr(CHANGE_TYPE_KEYS[exp.changeType]) : exp.changeType}
+            </span>
+            {exp.source === "MANUAL" && (
+              <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10.5px] text-text-muted">
+                {tr("manualTag")}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1.5">
+          <button onClick={() => setEditing((v) => !v)}
+                  className="rounded-lg border border-border bg-surface-raised p-1.5 text-text-muted hover:text-text-primary"
+                  aria-label={tr("editAria")}>
+            <Pencil size={13} />
+          </button>
+          <button onClick={() => setConfirmDelete(true)}
+                  className="rounded-lg border border-border bg-surface-raised p-1.5 text-text-muted hover:text-critical"
+                  aria-label={tr("deleteAria")}>
+            <Trash2 size={13} />
+          </button>
+        </div>
       </div>
 
       {editing && (

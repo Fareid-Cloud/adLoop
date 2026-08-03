@@ -31,7 +31,7 @@ export default async function InventoryPage() {
 
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
-    return <DataGate titleAr={tc("noWorkspace")} reasonAr={tc("noWorkspaceHint")} href="/dashboard" hrefLabelAr={tc("toHome")} />;
+    return <DataGate title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
   const analysis = await getInventoryAnalysis(workspace.id, 30);
@@ -46,10 +46,10 @@ export default async function InventoryPage() {
           storeName={workspace.name}
         />
         <DataGate
-          titleAr={tr("noneTitle")}
-          reasonAr={tr("noneReason", { count: analysis.untrackedProducts })}
+          title={tr("noneTitle")}
+          reason={tr("noneReason", { count: analysis.untrackedProducts })}
           href="/dashboard/pricing"
-          hrefLabelAr={tr("noneCta")}
+          hrefLabel={tr("noneCta")}
         />
       </div>
     );
@@ -62,27 +62,27 @@ export default async function InventoryPage() {
 
   if (outOfStock) {
     actions.push({
-      titleAr: tr("actPause", { count: outOfStock.items.length }),
-      reasonAr: tr("actPauseReason"),
+      title: tr("actPause", { count: outOfStock.items.length }),
+      reason: tr("actPauseReason"),
       tone: "critical",
       href: "/dashboard/automation",
-      hrefLabelAr: tr("actPauseCta"),
+      hrefLabel: tr("actPauseCta"),
     });
   }
   if (runningOut) {
     actions.push({
-      titleAr: tr("actRestock", { count: runningOut.items.length }),
-      reasonAr: tr("actRestockReason", { name: runningOut.items[0].name, days: runningOut.items[0].daysLeft ?? 0 }),
+      title: tr("actRestock", { count: runningOut.items.length }),
+      reason: tr("actRestockReason", { name: runningOut.items[0].name, days: runningOut.items[0].daysLeft ?? 0 }),
       tone: "warning",
     });
   }
   if (dead && dead.capitalImpact > 0) {
     actions.push({
-      titleAr: tr("actFree", { amount: `${fmtNum(dead.capitalImpact)} ${c}` }),
-      reasonAr: tr("actFreeReason", { pct: analysis.deadCapitalPct }),
+      title: tr("actFree", { amount: `${fmtNum(dead.capitalImpact)} ${c}` }),
+      reason: tr("actFreeReason", { pct: analysis.deadCapitalPct }),
       tone: "warning",
       href: "/dashboard/ecommerce/opportunities",
-      hrefLabelAr: t(locale, "profit.seeOpportunities"),
+      hrefLabel: t(locale, "profit.seeOpportunities"),
     });
   }
 
@@ -102,6 +102,8 @@ export default async function InventoryPage() {
           icon={Boxes}
           tone="accent"
           caption={{ text: tr("capitalTiedHint"), tone: "muted" }}
+          explainKey="capitalTied"
+          locale={locale}
         />
         <MetricCard
           label={tr("deadCapital")}
@@ -111,6 +113,8 @@ export default async function InventoryPage() {
           tone={analysis.deadCapitalPct >= 25 ? "critical" : analysis.deadCapitalPct >= 10 ? "gap" : "verified"}
           bar={{ pct: analysis.deadCapitalPct }}
           caption={{ text: tr("deadCapitalHint"), tone: "muted" }}
+          explainKey="capitalTied"
+          locale={locale}
         />
         <MetricCard
           label={tr("untracked")}
@@ -122,6 +126,8 @@ export default async function InventoryPage() {
               ? { text: tr("untrackedWarn"), tone: "warning" }
               : { text: tr("allTracked"), tone: "positive" }
           }
+          explainKey="untrackedItems"
+          locale={locale}
         />
       </div>
 
@@ -173,7 +179,7 @@ export default async function InventoryPage() {
         </DecisionBucket>
       ))}
 
-      <RecommendedActions actions={actions} emptyAr={tr("healthy")} />
+      <RecommendedActions actions={actions} empty={tr("healthy")} />
     </div>
   );
 }

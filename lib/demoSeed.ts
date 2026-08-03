@@ -49,6 +49,11 @@ interface SeedAd {
   /** مضاعِف الأداء مقابل متوسّط الحملة - هنا يعيش قرار التوسيع/الإيقاف */
   perf: number;
   share: number;
+  /**
+   * مسار الإعلان عبر الأيام: `up` يتحسّن، `flat` مستقرّ، `down` يتدهور.
+   * بدونه تتطابق منحنيات كل الإعلانات فيَسِمها كاشف الإجهاد جميعاً.
+   */
+  trend: "up" | "flat" | "down";
 }
 
 /**
@@ -56,21 +61,21 @@ interface SeedAd {
  * وبعضها يستحقّ الإيقاف — وإلا بقي عمود القرار فارغاً في كل لقطة.
  */
 export const DEMO_ADS: SeedAd[] = [
-  { adId: "ad-g1", campaignId: "demo-g-search", nameAr: "عرض الخصم — نصّ", nameEn: "Discount offer — text", type: "RESPONSIVE", perf: 1.45, share: 0.42 },
-  { adId: "ad-g2", campaignId: "demo-g-search", nameAr: "شحن مجاني — نصّ", nameEn: "Free shipping — text", type: "RESPONSIVE", perf: 1.05, share: 0.34 },
-  { adId: "ad-g3", campaignId: "demo-g-search", nameAr: "ضمان الاسترجاع", nameEn: "Money-back guarantee", type: "RESPONSIVE", perf: 0.62, share: 0.24 },
-  { adId: "ad-g4", campaignId: "demo-g-brand", nameAr: "الاسم التجاري", nameEn: "Brand name", type: "RESPONSIVE", perf: 1.2, share: 1 },
-  { adId: "ad-m1", campaignId: "demo-m-retarget", nameAr: "سلة متروكة — صورة", nameEn: "Abandoned cart — image", type: "IMAGE", perf: 1.6, share: 0.38 },
-  { adId: "ad-m2", campaignId: "demo-m-retarget", nameAr: "شهادات العملاء — كاروسيل", nameEn: "Testimonials — carousel", type: "CAROUSEL", perf: 1.1, share: 0.35 },
-  { adId: "ad-m3", campaignId: "demo-m-retarget", nameAr: "خصم ٢٤ ساعة", nameEn: "24-hour discount", type: "IMAGE", perf: 0.55, share: 0.27 },
-  { adId: "ad-m4", campaignId: "demo-m-awareness", nameAr: "قصّة العلامة — ريلز", nameEn: "Brand story — Reels", type: "VIDEO", perf: 1.15, share: 0.45 },
-  { adId: "ad-m5", campaignId: "demo-m-awareness", nameAr: "قبل وبعد — صورة", nameEn: "Before and after — image", type: "IMAGE", perf: 0.78, share: 0.33 },
-  { adId: "ad-m6", campaignId: "demo-m-awareness", nameAr: "إعلان عام — صورة", nameEn: "Generic — image", type: "IMAGE", perf: 0.41, share: 0.22 },
-  { adId: "ad-t1", campaignId: "demo-t-video", nameAr: "استخدام المنتج — ١٥ث", nameEn: "Product in use — 15s", type: "VIDEO", perf: 1.35, share: 0.4 },
-  { adId: "ad-t2", campaignId: "demo-t-video", nameAr: "تجربة عميلة", nameEn: "Customer experience", type: "VIDEO", perf: 1.0, share: 0.35 },
-  { adId: "ad-t3", campaignId: "demo-t-video", nameAr: "فكّ التغليف", nameEn: "Unboxing", type: "VIDEO", perf: 0.6, share: 0.25 },
-  { adId: "ad-t4", campaignId: "demo-t-broad", nameAr: "جمهور واسع — أ", nameEn: "Broad — A", type: "VIDEO", perf: 0.9, share: 0.5 },
-  { adId: "ad-t5", campaignId: "demo-t-broad", nameAr: "جمهور واسع — ب", nameEn: "Broad — B", type: "VIDEO", perf: 0.7, share: 0.5 },
+  { adId: "ad-g1", campaignId: "demo-g-search", nameAr: "عرض الخصم — نصّ", nameEn: "Discount offer — text", type: "RESPONSIVE", perf: 1.45, share: 0.42, trend: "up" },
+  { adId: "ad-g2", campaignId: "demo-g-search", nameAr: "شحن مجاني — نصّ", nameEn: "Free shipping — text", type: "RESPONSIVE", perf: 1.05, share: 0.34, trend: "flat" },
+  { adId: "ad-g3", campaignId: "demo-g-search", nameAr: "ضمان الاسترجاع", nameEn: "Money-back guarantee", type: "RESPONSIVE", perf: 0.62, share: 0.24, trend: "down" },
+  { adId: "ad-g4", campaignId: "demo-g-brand", nameAr: "الاسم التجاري", nameEn: "Brand name", type: "RESPONSIVE", perf: 1.2, share: 1, trend: "up" },
+  { adId: "ad-m1", campaignId: "demo-m-retarget", nameAr: "سلة متروكة — صورة", nameEn: "Abandoned cart — image", type: "IMAGE", perf: 1.6, share: 0.38, trend: "up" },
+  { adId: "ad-m2", campaignId: "demo-m-retarget", nameAr: "شهادات العملاء — كاروسيل", nameEn: "Testimonials — carousel", type: "CAROUSEL", perf: 1.1, share: 0.35, trend: "flat" },
+  { adId: "ad-m3", campaignId: "demo-m-retarget", nameAr: "خصم ٢٤ ساعة", nameEn: "24-hour discount", type: "IMAGE", perf: 0.55, share: 0.27, trend: "down" },
+  { adId: "ad-m4", campaignId: "demo-m-awareness", nameAr: "قصّة العلامة — ريلز", nameEn: "Brand story — Reels", type: "VIDEO", perf: 1.15, share: 0.45, trend: "flat" },
+  { adId: "ad-m5", campaignId: "demo-m-awareness", nameAr: "قبل وبعد — صورة", nameEn: "Before and after — image", type: "IMAGE", perf: 0.78, share: 0.33, trend: "flat" },
+  { adId: "ad-m6", campaignId: "demo-m-awareness", nameAr: "إعلان عام — صورة", nameEn: "Generic — image", type: "IMAGE", perf: 0.41, share: 0.22, trend: "down" },
+  { adId: "ad-t1", campaignId: "demo-t-video", nameAr: "استخدام المنتج — ١٥ث", nameEn: "Product in use — 15s", type: "VIDEO", perf: 1.35, share: 0.4, trend: "up" },
+  { adId: "ad-t2", campaignId: "demo-t-video", nameAr: "تجربة عميلة", nameEn: "Customer experience", type: "VIDEO", perf: 1.0, share: 0.35, trend: "flat" },
+  { adId: "ad-t3", campaignId: "demo-t-video", nameAr: "فكّ التغليف", nameEn: "Unboxing", type: "VIDEO", perf: 0.6, share: 0.25, trend: "flat" },
+  { adId: "ad-t4", campaignId: "demo-t-broad", nameAr: "جمهور واسع — أ", nameEn: "Broad — A", type: "VIDEO", perf: 0.9, share: 0.5, trend: "flat" },
+  { adId: "ad-t5", campaignId: "demo-t-broad", nameAr: "جمهور واسع — ب", nameEn: "Broad — B", type: "VIDEO", perf: 0.7, share: 0.5, trend: "flat" },
 ];
 
 export const DEMO_PRODUCTS = [
@@ -159,7 +164,15 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
       for (const ad of i > 30 ? [] : DEMO_ADS.filter((a) => a.campaignId === c.id)) {
         const adCost = Math.round(cost * ad.share);
         const adClicks = Math.round(clicks * ad.share);
-        const adRaw = Math.max(0, Math.round(raw * ad.share * ad.perf));
+        // `i` عدد الأيام إلى الوراء، فـ`recency` صفر عند أقدم يوم وواحد
+        // عند اليوم. الاتجاه ينحرف بها ±٣٥٪ - قدر يكفي ليقرأه كاشف
+        // الإجهاد كاتجاه حقيقي، ولا يكفي ليقلب ترتيب الإعلانات رأساً.
+        const recency = Math.max(0, Math.min(1, (30 - i) / 30));
+        const trendFactor =
+          ad.trend === "up" ? 0.82 + recency * 0.35
+            : ad.trend === "down" ? 1.18 - recency * 0.35
+              : 1;
+        const adRaw = Math.max(0, Math.round(raw * ad.share * ad.perf * trendFactor));
         creatives.push({
           workspaceId, platform: c.platform, campaignId: c.id,
           adId: ad.adId, adName: name(ad), creativeType: ad.type,
@@ -167,7 +180,15 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
           adSetId: c.platform !== "GOOGLE_ADS" ? `${c.id}-set` : null,
           headline: name(ad),
           finalUrl: "https://example-store.com/products",
-          date, impressions: adClicks * 34, clicks: adClicks, cost: adCost,
+          // **الظهور يتحرّك مستقلّاً عن النقر.** كان `adClicks * 34` ثابتاً،
+          // أي أن نسبة النقر تساوي ١÷٣٤ في كل يوم ولكل إعلان: سلسلة
+          // انحرافها المعياري صفر. كاشف الإجهاد يقيس شذوذ نسبة النقر
+          // بالدرجة المعيارية، والقسمة على انحراف صفري تجعل أي فرق ضئيل
+          // شذوذاً هائلاً - فوُسِمت كل الإعلانات «متعبة» واستُبعدت جميعاً
+          // من ترشيح «أفضل إعلان»، فبدا القسم فارغاً بلا سبب مفهوم.
+          date,
+          impressions: Math.max(1, Math.round(adClicks * (34 / trendFactor) * (1 + Math.sin(i * 0.9 + ad.adId.length) * 0.12))),
+          clicks: adClicks, cost: adCost,
           rawConversions: adRaw,
           verifiedConversions: Math.round(adRaw * c.verifyRate),
           conversionsValue: c.aov > 0 ? Math.round(adRaw * c.verifyRate * c.aov) : null,
@@ -449,6 +470,174 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
     }),
     skipDuplicates: true,
   });
+
+
+  // ==================== الأقسام الداخلية ====================
+  //
+  // البذر الأول غطّى الصفحة الرئيسية وحدها، فبدت عشرات الصفحات الداخلية
+  // فارغة داخل ديمو يُفترض أن يُصوَّر منه فيديو لكل قدرة في المنتج. كل
+  // جدول هنا يقف خلفه قسم حقيقي، والأرقام تتبع القصّة نفسها: جوجل تتحقّق،
+  // ميتا أقلّ، وتيك توك الأضعف.
+
+  const gCampaigns = ["demo-g-search", "demo-g-brand"];
+
+  // ---------- درجة الجودة (جوجل) ----------
+  const KEYWORDS = ar
+    ? ["خدمات تنظيف", "شركة تنظيف منازل", "تنظيف مكيفات", "عرض سعر تنظيف", "تنظيف بعد البناء", "تنظيف سجاد"]
+    : ["cleaning services", "home cleaning company", "ac cleaning", "cleaning quote", "post-construction cleaning", "carpet cleaning"];
+  await prisma.qualityScoreSnapshot.createMany({
+    data: KEYWORDS.map((kw, i) => ({
+      workspaceId,
+      campaignId: gCampaigns[i % gCampaigns.length],
+      criterionId: `demo-kw-${i}`,
+      keywordText: kw,
+      // مدى ٤-٩ عمداً: درجة جودة كلّها ممتازة لا تُظهر القسم أصلاً
+      qualityScore: [9, 8, 6, 7, 4, 5][i],
+      adRelevance: i % 3 === 2 ? "BELOW_AVERAGE" : "ABOVE_AVERAGE",
+      landingPageExperience: i === 4 ? "BELOW_AVERAGE" : "AVERAGE",
+      expectedCtr: i % 2 === 0 ? "ABOVE_AVERAGE" : "AVERAGE",
+    })),
+    skipDuplicates: true,
+  });
+
+  // ---------- منتجات التسوّق ----------
+  await prisma.shoppingProductSnapshot.createMany({
+    data: DEMO_PRODUCTS.map((p, i) => ({
+      workspaceId,
+      accountId: "demo-google-1",
+      itemId: p.sku,
+      title: ar ? p.nameAr : p.nameEn,
+      feedLabel: "SA",
+      hasIssues: i === 2,
+      issuesDetail: i === 2 ? (ar ? "صورة مفقودة" : "Missing image") : null,
+      clicks: 210 + i * 45,
+      impressions: 4_800 + i * 900,
+      conversions: i === 2 ? 0 : 12 + i * 4,
+      cost: 640 + i * 130,
+    })),
+    skipDuplicates: true,
+  });
+
+  // ---------- أماكن الظهور / الجهاز / الموقع / يوتيوب / الجمهور ----------
+  const placements: Prisma.DisplayPlacementSnapshotCreateManyInput[] = [];
+  const devices: Prisma.DevicePerformanceSnapshotCreateManyInput[] = [];
+  const geos: Prisma.GeoPerformanceSnapshotCreateManyInput[] = [];
+  const youtube: Prisma.YoutubeMetricSnapshotCreateManyInput[] = [];
+  const audiences: Prisma.AudienceSegmentSnapshotCreateManyInput[] = [];
+  const matchTypes: Prisma.MatchTypeSnapshotCreateManyInput[] = [];
+  const pmax: Prisma.PmaxChannelSnapshotCreateManyInput[] = [];
+
+  const PLACEMENTS = [
+    { id: "youtube.com", name: "YouTube", type: "YOUTUBE_CHANNEL", q: 1.0 },
+    { id: "news-app-1", name: ar ? "تطبيق أخبار" : "News app", type: "MOBILE_APPLICATION", q: 0.28 },
+    { id: "game-app-7", name: ar ? "لعبة جوّال" : "Mobile game", type: "MOBILE_APPLICATION", q: 0.1 },
+    { id: "recipes.example", name: ar ? "موقع وصفات" : "Recipes site", type: "WEBSITE", q: 0.72 },
+  ];
+  const DEVICES = [
+    { d: "MOBILE", share: 0.62, q: 0.82 },
+    { d: "DESKTOP", share: 0.29, q: 1.15 },
+    { d: "TABLET", share: 0.09, q: 0.55 },
+  ];
+  const GEOS = ar
+    ? [{ g: "الرياض", s: 0.44 }, { g: "جدة", s: 0.27 }, { g: "الدمام", s: 0.17 }, { g: "أبها", s: 0.12 }]
+    : [{ g: "Riyadh", s: 0.44 }, { g: "Jeddah", s: 0.27 }, { g: "Dammam", s: 0.17 }, { g: "Abha", s: 0.12 }];
+  const MATCH = [
+    { m: "EXACT", s: 0.3, q: 1.35 },
+    { m: "PHRASE", s: 0.38, q: 0.95 },
+    { m: "BROAD", s: 0.32, q: 0.48 },
+  ];
+  const PMAX_CHANNELS = ["SEARCH", "SHOPPING", "DISPLAY", "YOUTUBE"];
+
+  // أربعة عشر يوماً تكفي كل هذه الأقسام - نطاقها الزمني في الواجهة أقصر
+  for (let d = 14; d >= 1; d--) {
+    const when = day(d);
+    // نهاية الأسبوع أهدأ - نفس معامل بقيّة البذر، محسوباً موضعياً
+    const w = when.getDay() === 5 || when.getDay() === 6 ? 0.72 : 1;
+
+    for (const p of PLACEMENTS) {
+      placements.push({
+        workspaceId, campaignId: "demo-g-brand", placement: p.id, displayName: p.name,
+        placementType: p.type, date: when,
+        impressions: Math.round(2_400 * w * (0.5 + p.q)),
+        clicks: Math.round(60 * w * (0.5 + p.q)),
+        cost: Math.round(95 * w * (1.4 - p.q * 0.5)),
+        conversions: Math.round(6 * w * p.q),
+      });
+    }
+
+    for (const dev of DEVICES) {
+      devices.push({
+        workspaceId, campaignId: "demo-g-search", date: when, device: dev.d,
+        impressions: Math.round(5_200 * dev.share * w),
+        clicks: Math.round(190 * dev.share * w),
+        cost: Math.round(430 * dev.share * w),
+        conversions: Math.round(22 * dev.share * dev.q * w),
+      });
+    }
+
+    for (const g of GEOS) {
+      geos.push({
+        workspaceId, campaignId: "demo-g-search", date: when, geoTarget: g.g,
+        impressions: Math.round(5_200 * g.s * w),
+        clicks: Math.round(190 * g.s * w),
+        cost: Math.round(430 * g.s * w),
+        conversions: Math.round(22 * g.s * w),
+      });
+    }
+
+    youtube.push({
+      workspaceId, campaignId: "demo-g-brand", date: when,
+      impressions: Math.round(9_400 * w),
+      videoViews: Math.round(3_100 * w),
+      videoViewRate: 0.33,
+      engagementRate: 0.041,
+      cost: Math.round(210 * w),
+      conversions: Math.round(7 * w),
+    });
+
+    for (const [ai, name] of (ar
+      ? ["مهتمّون بالتنظيف", "زوّار الموقع", "عملاء سابقون"]
+      : ["Cleaning intenders", "Site visitors", "Past customers"]).entries()) {
+      audiences.push({
+        workspaceId, campaignId: "demo-g-brand", criterionId: `demo-aud-${ai}`,
+        criterionType: name, date: when,
+        impressions: Math.round(3_200 * w * (1 - ai * 0.22)),
+        clicks: Math.round(105 * w * (1 - ai * 0.2)),
+        cost: Math.round(140 * w * (1 - ai * 0.18)),
+        conversions: Math.round(9 * w * (1 + ai * 0.35)),
+      });
+    }
+
+    for (const m of MATCH) {
+      matchTypes.push({
+        workspaceId, campaignId: "demo-g-search", matchType: m.m, date: when,
+        impressions: Math.round(5_200 * m.s * w),
+        clicks: Math.round(190 * m.s * w),
+        cost: Math.round(430 * m.s * w),
+        conversions: Math.round(22 * m.s * m.q * w),
+      });
+    }
+
+    PMAX_CHANNELS.forEach((ch, ci) => {
+      pmax.push({
+        workspaceId, campaignId: "demo-g-brand", date: when, channel: ch,
+        impressions: Math.round(4_100 * w * (1 - ci * 0.18)),
+        clicks: Math.round(130 * w * (1 - ci * 0.2)),
+        cost: Math.round(180 * w * (1 - ci * 0.15)),
+        conversions: Math.round(8 * w * (1 - ci * 0.22)),
+      });
+    });
+  }
+
+  await Promise.all([
+    prisma.displayPlacementSnapshot.createMany({ data: placements, skipDuplicates: true }),
+    prisma.devicePerformanceSnapshot.createMany({ data: devices, skipDuplicates: true }),
+    prisma.geoPerformanceSnapshot.createMany({ data: geos, skipDuplicates: true }),
+    prisma.youtubeMetricSnapshot.createMany({ data: youtube, skipDuplicates: true }),
+    prisma.audienceSegmentSnapshot.createMany({ data: audiences, skipDuplicates: true }),
+    prisma.matchTypeSnapshot.createMany({ data: matchTypes, skipDuplicates: true }),
+    prisma.pmaxChannelSnapshot.createMany({ data: pmax, skipDuplicates: true }),
+  ]);
 
   // ---------- اختبارات ----------
   await prisma.experimentLog.createMany({

@@ -10,6 +10,7 @@ import { EmptyState } from "@/app/components/ui/EmptyState";
 import { getEcommerceOverview } from "@/lib/ecommerce/productPerformance";
 import { EcommerceView, type ProductRow } from "../EcommerceView";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +24,14 @@ export default async function EcommerceProductsPage({
 
   const user = await getSessionUserFromCookies();
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.</div>;
+    return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
   }
+
+  const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
 
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
-    return <EmptyState title="لا توجد مساحة عمل بعد" description="ارجع إلى «لمحة» لإنشاء أول مساحة عمل." />;
+    return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
   const overview = await getEcommerceOverview(workspace.id, windowDays);
@@ -37,8 +40,8 @@ export default async function EcommerceProductsPage({
     return (
       <div className="mx-auto max-w-3xl">
         <EmptyState
-          title="لم تُضف أي منتج بعد"
-          description="أضف منتجاتك من صفحة التسعير لتبدأ مقارنة ربحيتها الفعلية وتحديد المنتج الرابح."
+          title={t(locale, "store.noProducts")}
+          description={t(locale, "store.noProductsHint")}
         />
       </div>
     );

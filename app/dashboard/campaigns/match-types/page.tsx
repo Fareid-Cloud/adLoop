@@ -72,7 +72,11 @@ export default async function MatchTypesPage() {
             >
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium text-text-primary">
-                  {MATCH_TYPE_LABELS[r.matchType] ?? r.matchType}
+                  {/* المفتاح يمرّ على `t()`: كان يُطبع خاماً فيرى
+                      المستخدم «mtPhrase» مكان «مطابقة العبارة». */}
+                  {MATCH_TYPE_LABELS[r.matchType]
+                    ? t(locale, `campPages.${MATCH_TYPE_LABELS[r.matchType]}`)
+                    : r.matchType}
                 </span>
                 <span className={`font-mono text-lg ${r.wasteRisk ? "text-critical" : "text-verified"}`}>
                   {r.cpa ?? "—"}

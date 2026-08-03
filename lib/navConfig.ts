@@ -4,6 +4,8 @@
 // اختيارية (قاعدة عامة، مش مخصوصة لـ"الحملات" بس).
 
 export interface NavChild {
+  /** يُستدعى فيه نموذج لغوي - راجع NavItem.usesAi */
+  usesAi?: boolean;
   href: string;
   /** منصة هذا العنصر - العناصر المتداخلة تظهر فقط داخل قسم منصتها */
   platform?: string;
@@ -19,6 +21,17 @@ export interface NavItem {
   labelEn: string;
   iconName: string;
   children?: NavChild[];
+  /**
+   * **يُستدعى فيه نموذج لغوي فعلاً.** ثلاثة أقسام فقط تفعل: الرؤى
+   * (`aiInsights.ts`)، وفحص جودة الصور (`imageQualityAudit.ts`)، والفحص
+   * العميق للموقع (`landingPageAudit.ts`).
+   *
+   * التسعير والتقارير والقرارات تعمل بقواعد ثابتة صفر AI - وسمها بـ«AI»
+   * ليس تجميلاً تسويقياً بل ادّعاء يكتشفه المستخدم في أول استخدام، فيشكّ
+   * في بقية ما نقوله. والعلامة هنا تفيد عكسياً أيضاً: القسم الموسوم يستهلك
+   * من رصيده الشهري، وغير الموسوم لا يستهلك.
+   */
+  usesAi?: boolean;
 }
 
 export interface NavGroup {
@@ -48,13 +61,14 @@ export const NAV_GROUPS: NavGroup[] = [
         // بدل الاضطرار إلى العودة لصفحة الحملات لاختيار تحليل آخر.
         children: [
           { href: "/dashboard/campaigns", labelAr: "ملخّص الأداء", labelEn: "Overview" },
+          // تقارن الفيديو على المنصّات الثلاث، فليست تابعة لجوجل
+          { href: "/dashboard/campaigns/video-performance", labelAr: "أداء الفيديو", labelEn: "Video" },
 
           { href: "/dashboard/campaigns/google-hub", labelAr: "جوجل", labelEn: "Google", platform: "GOOGLE_ADS" },
           { href: "/dashboard/campaigns/search-terms", labelAr: "عبارات البحث", labelEn: "Search Terms", platform: "GOOGLE_ADS", nested: true },
           { href: "/dashboard/campaigns/quality-score", labelAr: "نقاط الجودة", labelEn: "Quality Score", platform: "GOOGLE_ADS", nested: true },
           { href: "/dashboard/campaigns/shopping", labelAr: "التسوّق", labelEn: "Shopping", platform: "GOOGLE_ADS", nested: true },
           { href: "/dashboard/campaigns/display-placements", labelAr: "مواضع الإعلان", labelEn: "Placements", platform: "GOOGLE_ADS", nested: true },
-          { href: "/dashboard/campaigns/video-performance", labelAr: "أداء الفيديو", labelEn: "Video", platform: "GOOGLE_ADS", nested: true },
 
           { href: "/dashboard/campaigns/meta-hub", labelAr: "ميتا", labelEn: "Meta", platform: "META_ADS" },
           { href: "/dashboard/campaigns/placements", labelAr: "فيسبوك وإنستغرام", labelEn: "FB / IG", platform: "META_ADS", nested: true },
@@ -85,11 +99,11 @@ export const NAV_GROUPS: NavGroup[] = [
           { href: "/dashboard/ecommerce/customers", labelAr: "العملاء", labelEn: "Customers" },
           { href: "/dashboard/ecommerce/orders", labelAr: "الطلبات", labelEn: "Orders" },
           { href: "/dashboard/ecommerce/opportunities", labelAr: "فرص النمو", labelEn: "Opportunities" },
-          { href: "/dashboard/ecommerce/ai-insights", labelAr: "رؤى وتوصيات", labelEn: "Insights" },
+          { href: "/dashboard/ecommerce/ai-insights", labelAr: "رؤى وتوصيات", labelEn: "Insights", usesAi: true },
           { href: "/dashboard/ecommerce/reports", labelAr: "التقارير", labelEn: "Reports" },
         ],
       },
-      { href: "/dashboard/site-scan", labelAr: "فحص الموقع", labelEn: "Site Scan", iconName: "ScanSearch" },
+      { href: "/dashboard/site-scan", labelAr: "فحص الموقع", labelEn: "Site Scan", iconName: "ScanSearch", usesAi: true },
       {
         href: "/dashboard/diagnostics", labelAr: "صحة الحساب", labelEn: "Account Health", iconName: "Stethoscope",
         children: [

@@ -255,36 +255,10 @@ export function IntegrationsView({
         )}
       </div>
 
-      {/* ==================== المتاحة (شريط أسفل) ==================== */}
-      {tab !== "available" && available.length > 0 && (
-        <section className="card-shadow mt-6 rounded-2xl border border-border bg-surface p-4">
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-            <div>
-              <h2 className="text-[15px] font-semibold text-text-primary">{tr("availableTitle")}</h2>
-              <p className="mt-0.5 text-[12.5px] text-text-muted">{tr("availableSubtitle")}</p>
-            </div>
-            <button onClick={() => setTab("available")} className="flex items-center gap-1 text-[12.5px] font-medium text-accent">
-              {tr("viewAllAvailable")}
-              {locale === "en" ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-            </button>
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-1">
-            {available.slice(0, 6).map((def) => (
-              <AvailableCard
-                key={def.key}
-                def={def}
-                locale={locale}
-                tr={tr}
-                nameOf={nameOf}
-                onPick={() => {
-                  if (def.connectPath?.startsWith("/api/")) window.location.href = def.connectPath;
-                  else if (def.platform) setPickerPlatform(def.platform);
-                }}
-              />
-            ))}
-          </div>
-        </section>
-      )}
+      {/* حُذف شريط «منصّات متاحة» الذي كان هنا: تبويب «المتاحة» أعلى
+          الصفحة يعرض القائمة نفسها كاملةً، فكان الشريط يكرّر ستّاً منها
+          أسفل كل تبويب آخر. تكرار القائمة نفسها في شاشة واحدة يجعل
+          المستخدم يتساءل عن الفرق بينهما - ولا فرق. */}
 
       {pickerPlatform && (
         <CampaignPickerModal
@@ -319,8 +293,10 @@ function Kpi({
   caption: string;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-xl bg-surface-raised/60 p-3.5">
-      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${TONE_BG[tone] ?? TONE_BG.muted}`}>
+    // خلفية خفيفة بلون الثيم عند المرور: تفاعل بصري يؤكّد أن المؤشّر
+    // عنصر حيّ لا نصّ مطبوع، بلا حركة ولا إطار صارخ.
+    <div className="group flex items-start gap-3 rounded-xl bg-surface-raised/60 p-3.5 transition-colors hover:bg-accent/[0.07]">
+      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-105 ${TONE_BG[tone] ?? TONE_BG.muted}`}>
         <Icon size={17} />
       </span>
       <div className="min-w-0">
@@ -511,7 +487,7 @@ function AvailableGrid({
           <section key={cat.key}>
             <h3 className="text-[14px] font-semibold text-text-primary">{locale === "en" ? cat.labelEn : cat.labelAr}</h3>
             <p className="mb-2.5 mt-0.5 text-[12px] text-text-muted">{locale === "en" ? cat.descriptionEn : cat.descriptionAr}</p>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {live.map((def) => (
                 <AvailableCard key={def.key} def={def} locale={locale} tr={tr} nameOf={nameOf} onPick={() => onPick(def)} />
               ))}
@@ -542,30 +518,41 @@ function AvailableCard({
 
   return (
     <div
-      className={`card-shadow flex w-[260px] shrink-0 flex-col rounded-2xl border border-border bg-surface p-4 sm:w-auto ${
-        disabled ? "opacity-45" : ""
+      // الشعار هو ما تبحث عنه العين في شبكة تكاملات - لا الاسم. كان
+      // ‎١٧ بكسل داخل مربّع ‎٣٦، أصغر من أن يُميَّز بلمحة. صار ‎٢٨ داخل ‎٥٦.
+      //
+      // `group` + خلفية بلون الثيم عند المرور: تغذية راجعة تقول «هذا الكرت
+      // قابل للضغط» قبل أن يصل المؤشّر إلى الزرّ في أسفله.
+      className={`group card-shadow flex flex-col rounded-2xl border border-border bg-surface p-5 transition-colors ${
+        disabled ? "opacity-45" : "hover:border-accent/45 hover:bg-accent/[0.045]"
       }`}
     >
-      <div className="mb-2 flex items-center gap-2.5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: `color-mix(in srgb, ${def.color} 12%, transparent)` }}>
-          <PlatformLogo platform={def.logoKey} size={17} />
+      <div className="mb-3 flex items-center gap-3">
+        <span
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-transform group-hover:scale-105"
+          style={{ background: `color-mix(in srgb, ${def.color} 12%, transparent)` }}
+        >
+          <PlatformLogo platform={def.logoKey} size={28} />
         </span>
         <div className="min-w-0">
-          <div className="truncate text-[13.5px] font-medium text-text-primary">{nameOf(def)}</div>
+          <div className="truncate text-[15px] font-semibold tracking-tight text-text-primary">{nameOf(def)}</div>
           <div className="text-[11.5px] text-text-muted">{cat ? (locale === "en" ? cat.labelEn : cat.labelAr) : ""}</div>
         </div>
       </div>
 
-      <p className="mb-3 flex-1 text-[12px] leading-relaxed text-text-muted">
+      <p className="mb-4 flex-1 text-[12.5px] leading-relaxed text-text-muted">
         {disabled ? tr("soonHint") : locale === "en" ? def.valueEn : def.valueAr}
       </p>
 
       {disabled ? (
-        <span className="rounded-xl border border-border bg-surface-raised py-2 text-center text-[12.5px] text-text-faint">
+        <span className="rounded-xl border border-border bg-surface-raised py-2.5 text-center text-[12.5px] text-text-faint">
           {tr("soon")}
         </span>
       ) : (
-        <button onClick={onPick} className="rounded-xl bg-accent py-2 text-[12.5px] font-medium text-white">
+        <button
+          onClick={onPick}
+          className="rounded-xl bg-accent py-2.5 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+        >
           {tr("connect")}
         </button>
       )}

@@ -4,6 +4,7 @@
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { platformMeta } from "@/lib/platformMeta";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { TH } from "@/app/components/ui/tableStyles";
 
 export interface SourceRow {
   platform: string;
@@ -49,11 +50,11 @@ export function SourcePerformanceTable({ rows }: { rows: SourceRow[] }) {
         <table className="w-full min-w-[560px] text-sm">
           <thead>
             <tr className="text-[12px] text-text-faint">
-              <th className="px-5 py-2.5 text-start font-medium">المصدر</th>
-              <th className="px-3 py-2.5 text-start font-medium">تحويلات معلنة</th>
-              <th className="px-3 py-2.5 text-start font-medium">محقّقة ✓</th>
-              <th className="px-3 py-2.5 text-start font-medium">الإنفاق</th>
-              <th className="px-5 py-2.5 text-start font-medium">تكلفة العميل الحقيقية</th>
+              <th className={TH}>المصدر</th>
+              <th className={TH}>تحويلات معلنة</th>
+              <th className={TH}>محقّقة ✓</th>
+              <th className={TH}>الإنفاق</th>
+              <th className={TH}>تكلفة العميل الحقيقية</th>
             </tr>
           </thead>
           <tbody>

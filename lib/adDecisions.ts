@@ -25,6 +25,7 @@ import {
   getWorkspaceCreativePerformances,
   type CreativePerformance,
 } from "@/lib/creativeAnalysis";
+import { platformLabel } from "@/lib/i18n/dictionary";
 
 /** نسبة الزيادة الآمنة - ٢٠٪ لا أكثر، باتفاق مصادر ميديا باير متعددة */
 export const SAFE_SCALE_INCREASE_PCT = 20;
@@ -63,6 +64,8 @@ export interface AdDecisionView {
 
   decision: Decision;
   reason: string;
+  /** السبب بالإنجليزية - يعبر من `creativeAnalysis` بلا إعادة صياغة */
+  reasonEn: string;
   signals: AdDecisionSignals;
 
   /** هل يمكن تنفيذ هذا القرار فعلاً على المنصة الآن */
@@ -140,14 +143,19 @@ export async function buildAdDecisions(opts: BuildOptions): Promise<AdDecisionVi
           ? "SCALE"
           : "HOLD";
     let reason = classification.reason;
+    let reasonEn = classification.reasonEn;
 
     // طبقة التكرار - تُطبَّق فوق القاعدة الأساسية لا بدلاً منها
     if (decision === "SCALE" && frequency !== null && frequency >= FREQUENCY_SATURATION_THRESHOLD) {
       decision = "HOLD";
       reason =
-        `الأداء يستحق زيادة، لكن معدّل التكرار وصل ${frequency.toFixed(1)} مرة لكل شخص أسبوعياً ` +
+        `الأداء يستحقّ الزيادة، لكن معدّل التكرار بلغ ${frequency.toFixed(1)} مرّة لكل شخص أسبوعياً ` +
         `(الحدّ ${FREQUENCY_SATURATION_THRESHOLD}) - الجمهور مُشبَع، وزيادة الميزانية الآن تشتري تكراراً لا وصولاً جديداً. ` +
         `جدّد المحتوى أو وسّع الاستهداف أولاً.`;
+      reasonEn =
+        `Performance justifies an increase, but frequency has reached ${frequency.toFixed(1)} times per person per week ` +
+        `(threshold ${FREQUENCY_SATURATION_THRESHOLD}) - the audience is saturated, and more budget now buys repetition, not new reach. ` +
+        `Refresh the creative or widen the targeting first.`;
     }
 
     // ==== البوابة الزمنية ====
@@ -190,6 +198,7 @@ export async function buildAdDecisions(opts: BuildOptions): Promise<AdDecisionVi
       adGroupId: parent?.adGroupId ?? null,
       decision,
       reason,
+      reasonEn,
       signals: {
         cpa: perf.cpa,
         accountAvgCpa: classification.accountAvgCpa,
@@ -277,7 +286,7 @@ export async function applyAdDecision(
 
   if (decision === "PAUSE") {
     await executePause(workspaceId, view);
-    message = "أُوقف الإعلان فعلياً على المنصة.";
+    message = "يُوقَف الإعلان فعلياً على المنصّة.";
   } else if (decision === "SCALE") {
     const res = await executeScale(workspaceId, view);
     previousValue = res.previous;
@@ -303,6 +312,8 @@ export async function applyAdDecision(
       campaignId: view.campaignId,
       adSetId: view.adSetId,
       decision: decision as never,
+      // السبب يُخزَّن بالعربية وحدها: هذا سجلّ تدقيق داخلي لا نصّ واجهة،
+      // والإنجليزية تُبنى وقت العرض من المحرّك نفسه.
       reason: view.reason,
       reEvaluateAt,
       previousValue: previousValue ?? null,
@@ -355,7 +366,7 @@ async function executePause(workspaceId: string, view: AdDecisionView) {
       return pauseTikTokAd(workspaceId, advertiserId, view.adId);
     }
     default:
-      throw new Error(`الإيقاف غير مدعوم للمنصة ${view.platform}`);
+      throw new Error(`الإيقاف غير مدعوم للمنصة ${platformLabel("ar", view.platform)}`);
   }
 }
 
@@ -381,7 +392,7 @@ async function executeScale(
       return changeTikTokAdGroupBudget(workspaceId, advertiserId, view.adSetId, SAFE_SCALE_INCREASE_PCT);
     }
     default:
-      throw new Error(`التوسيع غير مدعوم للمنصة ${view.platform}`);
+      throw new Error(`التوسيع غير مدعوم للمنصة ${platformLabel("ar", view.platform)}`);
   }
 }
 

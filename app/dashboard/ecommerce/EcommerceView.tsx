@@ -50,8 +50,10 @@ const CONFIDENCE_KEY: Record<string, string> = {
 };
 
 const STORE_LABEL: Record<string, string> = {
-  SALLA: "سلة", SHOPIFY: "شوبيفاي", ZID: "زد",
-  WOOCOMMERCE: "ووكومرس", EASY_ORDERS: "إيزي أوردرز",
+  // أسماء المنصّات علامات تجارية تُكتب كما هي في اللغتين - عدا «سلة»
+  // و«زد» فاسمهما العربي هو الرسمي، ولهما مقابل لاتيني معتمد.
+  SALLA: "Salla", SHOPIFY: "Shopify", ZID: "Zid",
+  WOOCOMMERCE: "WooCommerce", EASY_ORDERS: "EasyOrders",
 };
 
 const num = (n: number) => Math.round(n).toLocaleString("en-US");
@@ -157,6 +159,8 @@ export function EcommerceView({
           <MetricCard
             key={c.key}
             label={c.label}
+            explainKey={ECOMMERCE_EXPLAIN[c.key]}
+            locale={locale}
             value={c.value}
             unit={c.unit}
             icon={c.Icon}
@@ -372,3 +376,15 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: str
     </span>
   );
 }
+
+/**
+ * مفتاح الشرح لكل بطاقة حصيلة. التسمية تُبنى وقت التشغيل داخل الحلقة،
+ * فالمرساة الثابتة الوحيدة هي `key` نفسه. المفتاح غير المعروف يُعيد
+ * `undefined` فتظهر البطاقة بلا أيقونة شرح بدل أن تعرض شرحاً خاطئاً.
+ */
+const ECOMMERCE_EXPLAIN: Record<string, string | undefined> = {
+  revenue: "revenue",
+  profit: "netProfit",
+  units: "orders",
+  returns: "refundRate",
+};

@@ -15,7 +15,15 @@ interface TrendPoint {
   reported: number;
 }
 
-export function TrendChart({ data }: { data: TrendPoint[] }) {
+export function TrendChart({
+  data,
+  labels,
+}: {
+  data: TrendPoint[];
+  /** أسماء السلسلتين في التلميح - بدونها يقرأ المستخدم `verified` الخام */
+  labels?: { verified: string; reported: string };
+}) {
+  const name = (key: "verified" | "reported") => labels?.[key] ?? key;
   return (
     <div className="h-[180px] w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -50,6 +58,7 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
           <Area
             type="monotone"
             dataKey="reported"
+            name={name("reported")}
             stroke="var(--gap)"
             strokeWidth={1.5}
             fill="url(#reportedFill)"
@@ -59,6 +68,7 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
           <Area
             type="monotone"
             dataKey="verified"
+            name={name("verified")}
             stroke="var(--verified)"
             strokeWidth={2}
             fill="url(#verifiedFill)"

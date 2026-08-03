@@ -16,6 +16,7 @@ import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { MetricCard, type MetricTone } from "@/app/components/ui/MetricCard";
 import { CATEGORY_META, type CheckCategory, type CheckSeverity, type CheckStatus } from "@/lib/diagnosticsEngine";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { HealthGauge } from "@/app/components/ui/HealthGauge";
 
 export interface CheckRow {
   id: string;
@@ -34,7 +35,12 @@ export interface CheckRow {
   actionHref?: string;
 }
 
-export interface ActivityRow { titleAr: string; detailAr: string; at: string }
+export interface ActivityRow {
+  /** نصّ مترجَم جاهز - يصل من `t(locale, ...)` في الصفحة */
+  title: string;
+  detail: string;
+  at: string;
+}
 
 const STATUS_TONE: Record<CheckStatus, string> = {
   PASS: "var(--verified)",
@@ -67,26 +73,6 @@ function Spark({ data, tone }: { data: number[]; tone: string }) {
   );
 }
 
-function Gauge({ score }: { score: number }) {
-  const R = 52, C = 2 * Math.PI * R;
-  const tone = score >= 80 ? "var(--verified)" : score >= 55 ? "var(--gap)" : "var(--critical)";
-  return (
-    <div className="relative h-[132px] w-[132px] shrink-0">
-      <svg viewBox="0 0 132 132" className="h-full w-full -rotate-90">
-        <circle cx="66" cy="66" r={R} fill="none" stroke="var(--surface-raised)" strokeWidth="11" />
-        <circle
-          cx="66" cy="66" r={R} fill="none" stroke={tone} strokeWidth="11" strokeLinecap="round"
-          strokeDasharray={C} strokeDashoffset={C - (score / 100) * C}
-          style={{ transition: "stroke-dashoffset .8s ease" }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-mono text-[34px] font-bold leading-none" style={{ color: tone }}>{score}</span>
-        <span className="mt-0.5 text-[11px] text-text-muted">/ 100</span>
-      </div>
-    </div>
-  );
-}
 
 export function DiagnosticsView({
   workspaceName, healthScore, scoreTrend, counts, checks, activity, totalMonthlyImpact, currency, lastScanAt, locale = "ar",
@@ -143,7 +129,11 @@ export function DiagnosticsView({
       (category === "all" || c.category === category) &&
       (statusFilter === "all" || c.status === statusFilter) &&
       (severityFilter === "all" || c.severity === severityFilter) &&
-      (!q || c.titleAr.toLowerCase().includes(q) || c.descAr.toLowerCase().includes(q))
+      (!q ||
+        c.titleAr.toLowerCase().includes(q) ||
+        c.titleEn.toLowerCase().includes(q) ||
+        c.descAr.toLowerCase().includes(q) ||
+        c.descEn.toLowerCase().includes(q))
     );
   }, [checks, category, statusFilter, severityFilter, query]);
 
@@ -222,7 +212,7 @@ export function DiagnosticsView({
       {/* مؤشر الصحة + بطاقات الخطورة */}
       <div className="reveal mb-6 grid gap-4 lg:grid-cols-[1.15fr_2fr]" style={{ animationDelay: "80ms" }}>
         <div className="card-shadow flex items-center gap-4 rounded-2xl border border-border bg-surface p-6">
-          <Gauge score={healthScore} />
+          <HealthGauge score={healthScore} size="lg" />
           <div className="min-w-0">
             <div className="text-[13px] text-text-muted">{tp("healthScore")}</div>
             <div className="mt-1 flex items-center gap-1.5">
@@ -254,6 +244,8 @@ export function DiagnosticsView({
               <MetricCard
                 key={s.key}
                 label={tr(s.key)}
+                explainKey={SEVERITY_EXPLAIN[s.key]}
+                locale={locale}
                 value={n}
                 icon={s.Icon}
                 // العدد صفر لا يستحق تلويناً تحذيرياً - لا مشكلة أصلاً
@@ -320,7 +312,7 @@ export function DiagnosticsView({
 
                     <div className="min-w-0 flex-1">
                       <div className="mb-0.5 flex flex-wrap items-center gap-2">
-                        <span className="text-[13.5px] font-medium text-text-primary">{c.titleAr}</span>
+                        <span className="text-[13.5px] font-medium text-text-primary">{bi(locale, c.titleAr, c.titleEn)}</span>
                         <span className="rounded-full px-2 py-0.5 text-[10.5px] font-medium"
                               style={{ background: `color-mix(in srgb, ${tone} 13%, transparent)`, color: tone }}>
                           {c.severity === "CRITICAL" ? tp("severityCritical") : tp("severityHigh")}
@@ -329,7 +321,7 @@ export function DiagnosticsView({
                           {ar ? CATEGORY_META[c.category].ar : CATEGORY_META[c.category].en}
                         </span>
                       </div>
-                      <p className="text-[12.5px] leading-relaxed text-text-muted">{c.findingAr ?? c.descAr}</p>
+                      <p className="text-[12.5px] leading-relaxed text-text-muted">{c.findingAr ?? bi(locale, c.descAr, c.descEn)}</p>
                     </div>
 
                     {c.actionHref && (
@@ -370,8 +362,8 @@ export function DiagnosticsView({
                     {i < activity.length - 1 && <span className="mt-1 w-px flex-1 bg-border" />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[12.5px] font-medium text-text-primary">{a.titleAr}</div>
-                    <div className="text-[11.5px] text-text-muted">{a.detailAr}</div>
+                    <div className="text-[12.5px] font-medium text-text-primary">{a.title}</div>
+                    <div className="text-[11.5px] text-text-muted">{a.detail}</div>
                   </div>
                   <span className="shrink-0 font-mono text-[11px] text-text-faint">{a.at}</span>
                 </li>
@@ -395,7 +387,7 @@ export function DiagnosticsView({
                 )}
               </span>
               {!scanDone && revealed > 0 && checks[revealed - 1] && (
-                <span className="truncate text-[12px] text-text-muted">{checks[revealed - 1].titleAr}</span>
+                <span className="truncate text-[12px] text-text-muted">{bi(locale, checks[revealed - 1].titleAr, checks[revealed - 1].titleEn)}</span>
               )}
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-surface-raised">
@@ -480,8 +472,8 @@ export function DiagnosticsView({
                             : <span className="h-2 w-2 rounded-full" style={{ background: cat.color }} />}
                         </span>
                         <div className="min-w-0">
-                          <div className="text-[13px] font-medium text-text-primary">{c.titleAr}</div>
-                          <div className="text-[11.5px] leading-relaxed text-text-muted">{c.findingAr ?? c.descAr}</div>
+                          <div className="text-[13px] font-medium text-text-primary">{bi(locale, c.titleAr, c.titleEn)}</div>
+                          <div className="text-[11.5px] leading-relaxed text-text-muted">{c.findingAr ?? bi(locale, c.descAr, c.descEn)}</div>
                         </div>
                       </div>
                     </td>
@@ -581,4 +573,17 @@ export function DiagnosticsView({
       </section>
     </div>
   );
+}
+
+/** الشرح مشتقّ من مفتاح الخطورة الثابت لا من نصّها المترجَم */
+const SEVERITY_EXPLAIN: Record<string, string | undefined> = {
+  critical: "urgentActions",
+  high: "importantActions",
+  medium: "suggestions",
+  passing: "healthScore",
+};
+
+/** الحقل المطابق للّغة - البيانات تحمل الاثنين، والعرض كان يقرأ العربي دائماً */
+function bi(locale: Locale, ar: string, en: string): string {
+  return locale === "en" ? en : ar;
 }

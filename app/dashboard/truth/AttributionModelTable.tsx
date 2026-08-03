@@ -13,6 +13,7 @@ import { ATTRIBUTION_MODELS, type AttributionModelKey, type ModelComparisonRow }
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { CHANNEL_KEYS } from "./TruthView";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { TABLE_WRAP, TH } from "@/app/components/ui/tableStyles";
 
 const PLATFORM_NAMES: Record<string, string> = {
   GOOGLE_ADS: "Google Ads",
@@ -102,7 +103,7 @@ export function AttributionModelTable({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
+      <div className={TABLE_WRAP}>
         <table className="w-full min-w-[900px] text-start text-[12.5px]">
           <thead>
             <tr className="border-b border-border text-text-muted">
@@ -117,7 +118,7 @@ export function AttributionModelTable({
                   </span>
                 </th>
               ))}
-              <th className="px-4 py-3 font-medium">{tr("amtColVerdict")}</th>
+              <th className={TH}>{tr("amtColVerdict")}</th>
             </tr>
           </thead>
           <tbody>

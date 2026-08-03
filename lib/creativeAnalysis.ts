@@ -206,7 +206,7 @@ export function selectTopTwoCreatives(
 // مش رقم ترتيب بس المستخدم لازم يفسّره بنفسه.
 // إعادة تفكير كاملة بعد ملاحظة صحيحة 100%: "5 تحويلات ممكن تيجي في يوم
 // واحد" - كان الشرط بيعد العدد بس، مش الانتشار الزمني. 5 تحويلات في
-// يوم واحد حظ، مش نمط. وكمان: إعلان "متعب" (تعبه مؤكد إحصائياً) ميستاهلش
+// يوم واحد حظ، مش نمط. وكمان: إعلان "مُجهَد" (تعبه مؤكد إحصائياً) ميستاهلش
 // Scale أبداً حتى لو متوسط تكلفته لسه شكله كويس - الاتجاه العام أهم من
 // اللقطة الحالية. ميديا باير محترف بيبص للاتنين مع بعض، مش رقم واحد.
 // إعادة ضبط بعد بحث في ممارسات ميديا باير محترفين حقيقيين (8 مصادر
@@ -231,6 +231,8 @@ export interface ScaleKillDecision {
   divergencePct: number;
   decision: "SCALE" | "KILL" | "WATCH";
   reason: string;
+  /** السبب بالإنجليزية - مكتوب بلغته لا مترجَماً حرفياً */
+  reasonEn: string;
 }
 
 // معامل أمان فوق نقطة التعادل - "established brands target 3.5x-5x على
@@ -282,7 +284,7 @@ export function classifyScaleKillWatch(
       if (c.roas < breakEvenRoas && daysActive >= MIN_DAYS_ACTIVE_FOR_KILL) {
         return {
           ...base, divergencePct: Math.round(((c.roas - breakEvenRoas) / breakEvenRoas) * 100), decision: "KILL",
-          reason: `العائد (ROAS ${c.roas}x) تحت نقطة التعادل الحقيقية لحسابك (${Math.round(breakEvenRoas * 100) / 100}x، من هامش ربح ${profitMarginPct}%) - الإعلان ده بيخسّرك فلوس فعلياً، مش تقريباً.`,
+          reason: `العائد (ROAS ${c.roas}x) تحت نقطة التعادل الحقيقية لحسابك (${Math.round(breakEvenRoas * 100) / 100}x، محسوبة من هامش ربح ${profitMarginPct}%) - هذا الإعلان يُخسّرك مالاً فعلياً لا تقريباً.`, reasonEn: `Return (ROAS ${c.roas}x) is below your account's real break-even (${Math.round(breakEvenRoas * 100) / 100}x, from a ${profitMarginPct}% margin) - this ad is losing you money outright, not nearly.`,
         };
       }
     }
@@ -291,18 +293,18 @@ export function classifyScaleKillWatch(
     // عبر أيام كافية (مش نوقف إعلان لسه شغال من ساعتين)
     if (c.cpa === 0 && c.cost > accountAvgCpa) {
       if (daysActive < MIN_DAYS_ACTIVE_FOR_KILL) {
-        return { ...base, divergencePct: -100, decision: "WATCH", reason: `صرف بدون تحويل، لكن الإعلان شغال ${daysActive} يوم بس لسه - محتاج ${MIN_DAYS_ACTIVE_FOR_KILL} أيام على الأقل قبل الحكم.` };
+        return { ...base, divergencePct: -100, decision: "WATCH", reason: `أنفق بلا تحويل، لكنه يعمل منذ ${daysActive} يوم فقط - يحتاج ${MIN_DAYS_ACTIVE_FOR_KILL} أيام على الأقلّ قبل الحكم.` , reasonEn: `Spending with no conversions, but it has only run ${daysActive} days - it needs at least ${MIN_DAYS_ACTIVE_FOR_KILL} before a verdict.` };
       }
       return {
         ...base, divergencePct: -100, decision: "KILL",
-        reason: `صرفت ${c.cost} من غير أي تحويل واحد عبر ${daysActive} يوم - أكتر من متوسط تكلفة تحويل في حسابك (${Math.round(accountAvgCpa * 100) / 100}).`,
+        reason: `أنفق ${c.cost} دون تحويل واحد عبر ${daysActive} يوم - أكثر من متوسط تكلفة التحويل في حسابك (${Math.round(accountAvgCpa * 100) / 100}).`, reasonEn: `Spent ${c.cost} without a single conversion across ${daysActive} days - more than your account's average cost per conversion (${Math.round(accountAvgCpa * 100) / 100}).`,
       };
     }
 
     // بوابة أولى بأقل عتبة (Kill) - عشان نقدر نكمل نفحص. لو الاتجاه Scale،
     // فيه فحص إضافي بعتبة أعلى (20) جوه الفرع نفسه تحت
     if (conversionsForConfidence < MIN_CONVERSIONS_FOR_KILL) {
-      return { ...base, divergencePct: 0, decision: "WATCH", reason: "لا توجد عينة كافية للحكم بثقة." };
+      return { ...base, divergencePct: 0, decision: "WATCH", reason: "لا توجد عيّنة كافية للحكم بثقة." , reasonEn: "Not a large enough sample to judge with confidence." };
     }
 
     const divergencePct = Math.round(((c.cpa - accountAvgCpa) / accountAvgCpa) * 100);
@@ -311,58 +313,58 @@ export function classifyScaleKillWatch(
       // Scale محتاج إثبات أقوى بكتير من Kill - مصادر متعددة متفقة على
       // 20-50 تحويل قبل ما تثق في زيادة ميزانية، مش 5 بس
       if (conversionsForConfidence < MIN_CONVERSIONS_FOR_SCALE) {
-        return { ...base, divergencePct, decision: "WATCH", reason: `التكلفة أرخص من المتوسط، لكن بعينة ${conversionsForConfidence} تحويل بس - Scale محتاج ${MIN_CONVERSIONS_FOR_SCALE}+ عشان تثق فيه، عكس Kill اللي ممكن يتقرر بعينة أصغر.` };
+        return { ...base, divergencePct, decision: "WATCH", reason: `التكلفة أرخص من المتوسط، لكن بعيّنة ${conversionsForConfidence} تحويل فقط - التوسيع يحتاج ${MIN_CONVERSIONS_FOR_SCALE} تحويلاً على الأقلّ ليُوثق به، بخلاف الإيقاف الذي يُقرَّر بعيّنة أصغر.` , reasonEn: `Cheaper than average, but on a sample of only ${conversionsForConfidence} conversions - scaling needs at least ${MIN_CONVERSIONS_FOR_SCALE} to be trusted, unlike pausing, which can be decided on less.` };
       }
-      // إعلان متعب (اتجاهه بيتراجع إحصائياً) - ميستاهلش Scale حتى لو
+      // إعلان مُجهَد (اتجاهه بيتراجع إحصائياً) - ميستاهلش Scale حتى لو
       // متوسط تكلفته لسه كويس، لأن الاتجاه أهم من اللقطة الحالية
       if (fatiguedAdIds.has(c.adId)) {
-        return { ...base, divergencePct, decision: "WATCH", reason: "التكلفة أرخص من المتوسط، لكن الأداء بدأ يتعب إحصائياً - متزوّدش ميزانية لحد ما يستقر." };
+        return { ...base, divergencePct, decision: "WATCH", reason: "التكلفة أرخص من المتوسط، لكن الأداء بدأ يتراجع إحصائياً - لا تزد الميزانية حتى يستقرّ." , reasonEn: "Cheaper than average, but performance has begun to decline statistically - hold the budget until it settles." };
       }
       if (daysActive < MIN_DAYS_ACTIVE_FOR_SCALE) {
-        return { ...base, divergencePct, decision: "WATCH", reason: `التكلفة أرخص من المتوسط، لكن على ${daysActive} يوم بس - محتاج ${MIN_DAYS_ACTIVE_FOR_SCALE} أيام على الأقل يثبت نفسه، مش يوم حظ واحد.` };
+        return { ...base, divergencePct, decision: "WATCH", reason: `التكلفة أرخص من المتوسط، لكن عبر ${daysActive} يوم فقط - يحتاج ${MIN_DAYS_ACTIVE_FOR_SCALE} أيام على الأقلّ ليُثبت نفسه، لا يوم حظّ واحد.` , reasonEn: `Cheaper than average, but across only ${daysActive} days - it needs at least ${MIN_DAYS_ACTIVE_FOR_SCALE} to prove itself, not one lucky day.` };
       }
       // تأكيد الترتيب النسبي - لازم يكون فعلاً من أرخص 30% من الإعلانات،
       // مش بس بعيد عن المتوسط رقمياً (ممكن المتوسط نفسه متأثر بإعلان شاذ)
       if (rank !== undefined && rank > bestRankCutoff) {
-        return { ...base, divergencePct, decision: "WATCH", reason: "التكلفة أرخص من المتوسط، لكن مش من ضمن أرخص الإعلانات فعلياً - المتوسط ممكن يكون متأثر بإعلان شاذ." };
+        return { ...base, divergencePct, decision: "WATCH", reason: "التكلفة أرخص من المتوسط، لكنه ليس فعلاً ضمن أرخص إعلاناتك - قد يكون المتوسط متأثّراً بإعلان شاذّ." , reasonEn: "Cheaper than average, but not genuinely among your cheapest ads - the average may be skewed by one outlier." };
       }
       // ROAS كنقض: تكلفة رخيصة لكن قيمة العميل ضعيفة (لو البيانات متاحة) -
       // مش نجاح حقيقي، رخيص وفاضي مش نفس رخيص وقيّم
       if (accountAvgRoas !== null && c.roas !== null && c.roas < accountAvgRoas * 0.8) {
-        return { ...base, divergencePct, decision: "WATCH", reason: `التكلفة أرخص من المتوسط، لكن العائد (ROAS ${c.roas}x) أضعف من متوسط حسابك (${Math.round(accountAvgRoas * 100) / 100}x) - عملاء رخاص لكن قيمتهم أقل، مش نجاح كامل.` };
+        return { ...base, divergencePct, decision: "WATCH", reason: `التكلفة أرخص من المتوسط، لكن العائد (ROAS ${c.roas}x) أضعف من متوسط حسابك (${Math.round(accountAvgRoas * 100) / 100}x) - عملاء أرخص لكن قيمتهم أقلّ، وليس نجاحاً كاملاً.` , reasonEn: `Cheaper than average, but the return (ROAS ${c.roas}x) is weaker than your account average (${Math.round(accountAvgRoas * 100) / 100}x) - cheaper customers worth less, not a full win.` };
       }
       // فحص نقطة التعادل - لو هامش الربح متحدد، الـScale محتاج ROAS
       // فوق نقطة التعادل بمسافة أمان حقيقية (30%)، مش بس فوق الصفر
       if (breakEvenRoas !== null && c.roas !== null && c.roas < breakEvenRoas * SCALE_ROAS_SAFETY_MULTIPLIER) {
-        return { ...base, divergencePct, decision: "WATCH", reason: `التكلفة أرخص من المتوسط، لكن العائد (ROAS ${c.roas}x) قريب جداً من نقطة التعادل (${Math.round(breakEvenRoas * 100) / 100}x) - مش هامش أمان كافي عشان تزوّد ميزانية.` };
+        return { ...base, divergencePct, decision: "WATCH", reason: `التكلفة أرخص من المتوسط، لكن العائد (ROAS ${c.roas}x) قريب جداً من نقطة التعادل (${Math.round(breakEvenRoas * 100) / 100}x) - هامش الأمان لا يكفي لزيادة الميزانية.` , reasonEn: `Cheaper than average, but the return (ROAS ${c.roas}x) sits very close to break-even (${Math.round(breakEvenRoas * 100) / 100}x) - too thin a margin to raise the budget on.` };
       }
       const roasNote = c.roas !== null ? ` والعائد ${c.roas}x` : "";
       return {
         ...base, divergencePct, decision: "SCALE",
-        reason: `تكلفة العميل (${c.cpa}) أرخص من متوسط حسابك بـ${Math.abs(divergencePct)}%${roasNote} عبر ${daysActive} يوم وعينة ${conversionsForConfidence} تحويل - زوّد الميزانية ${SAFE_SCALE_INCREASE_PCT}% بس (مش أكتر، وانتظر 3-4 أيام قبل أي زيادة تانية - نفس ممارسة الميديا باير المحترفين).`,
+        reason: `تكلفة العميل (${c.cpa}) أرخص من متوسط حسابك بـ${Math.abs(divergencePct)}%${roasNote} عبر ${daysActive} يوم وعيّنة ${conversionsForConfidence} تحويل - زد الميزانية ${SAFE_SCALE_INCREASE_PCT}% فقط، وانتظر ثلاثة إلى أربعة أيام قبل أي زيادة تالية.`, reasonEn: `Cost per customer (${c.cpa}) is ${Math.abs(divergencePct)}% below your account average${roasNote}, across ${daysActive} days and ${conversionsForConfidence} conversions - raise the budget by ${SAFE_SCALE_INCREASE_PCT}% only, then wait three to four days before the next increase.`,
       };
     }
 
     if (divergencePct >= DECISION_THRESHOLD_PCT) {
       if (daysActive < MIN_DAYS_ACTIVE_FOR_KILL) {
-        return { ...base, divergencePct, decision: "WATCH", reason: `التكلفة أعلى من المتوسط، لكن على ${daysActive} يوم بس - محتاج فرصة أطول قبل الحكم.` };
+        return { ...base, divergencePct, decision: "WATCH", reason: `التكلفة أعلى من المتوسط، لكن عبر ${daysActive} يوم فقط - يحتاج مدّة أطول قبل الحكم عليه.` , reasonEn: `Costlier than average, but across only ${daysActive} days - it needs longer before a verdict.` };
       }
       if (rank !== undefined && rank < worstRankCutoff) {
-        return { ...base, divergencePct, decision: "WATCH", reason: "التكلفة أعلى من المتوسط، لكن مش من ضمن أضعف الإعلانات فعلياً - يستاهل مراقبة بس مش إيقاف فوري." };
+        return { ...base, divergencePct, decision: "WATCH", reason: "التكلفة أعلى من المتوسط، لكنه ليس فعلاً ضمن أضعف إعلاناتك - يستحقّ المراقبة لا الإيقاف الفوري." , reasonEn: "Costlier than average, but not genuinely among your weakest ads - worth watching, not pausing yet." };
       }
       // ROAS كتأكيد إضافي هنا (مش نقض) - لو العائد كمان أضعف من المتوسط،
       // ده يقوّي قرار الإيقاف. لو العائد لسه كويس رغم التكلفة الأعلى،
       // العميل غالي بس قيّم - يستاهل مراجعة بشرية مش إيقاف تلقائي
       if (accountAvgRoas !== null && c.roas !== null && c.roas >= accountAvgRoas) {
-        return { ...base, divergencePct, decision: "WATCH", reason: `التكلفة أعلى من المتوسط، لكن العائد (ROAS ${c.roas}x) لسه كويس - عميل غالي لكن قيّم، يستاهل مراجعة بشرية مش إيقاف تلقائي.` };
+        return { ...base, divergencePct, decision: "WATCH", reason: `التكلفة أعلى من المتوسط، لكن العائد (ROAS ${c.roas}x) ما زال جيّداً - عميل مكلف لكنه قيّم، يستحقّ مراجعة بشرية لا إيقافاً تلقائياً.` , reasonEn: `Costlier than average, but the return (ROAS ${c.roas}x) is still good - an expensive customer who is nonetheless valuable, worth a human look rather than an automatic pause.` };
       }
       return {
         ...base, divergencePct, decision: "KILL",
-        reason: `تكلفة العميل (${c.cpa}) أغلى من متوسط حسابك بـ${divergencePct}% عبر ${daysActive} يوم، ومن ضمن أضعف الإعلانات فعلياً - يستاهل إيقاف أو تقليل ميزانية كبير.`,
+        reason: `تكلفة العميل (${c.cpa}) أعلى من متوسط حسابك بـ${divergencePct}% عبر ${daysActive} يوم، وهو فعلاً ضمن أضعف إعلاناتك - يستحقّ الإيقاف أو خفضاً كبيراً في الميزانية.`, reasonEn: `Cost per customer (${c.cpa}) is ${divergencePct}% above your account average across ${daysActive} days, and it genuinely ranks among your weakest ads - it deserves a pause or a sharp budget cut.`,
       };
     }
 
-    return { ...base, divergencePct, decision: "WATCH", reason: "أداء قريب من متوسط حسابك - لا يستدعي قراراً حاسماً الآن." };
+    return { ...base, divergencePct, decision: "WATCH", reason: "أداء قريب من متوسط حسابك - لا يستدعي قراراً حاسماً الآن." , reasonEn: "Performance is close to your account average - no decisive action needed right now." };
   });
 }
 

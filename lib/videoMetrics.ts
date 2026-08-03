@@ -54,7 +54,7 @@ export function computeVideoMetrics(raw: RawVideoMetrics): ComputedVideoMetrics 
   return { viewRate, thruPlayRate, avgWatchTimeSec, cpv, costPerThruPlay, hookRate };
 }
 
-import { t, Locale } from "@/lib/i18n/dictionary";
+import { t, Locale, platformLabel } from "@/lib/i18n/dictionary";
 
 // مقارنة أداء الفيديو بين المنصات - بترتب حسب "cost per thru-play" (الأدق)
 // بدل CPV العادي، لأن CPV ممكن يكون رخيص لكن مفيش حد شاف الفيديو فعلاً
@@ -70,8 +70,8 @@ export function compareVideoPerformance(
     const best = ranked[0];
     const worst = ranked[ranked.length - 1];
     insight = t(locale, "insights.videoComparison", {
-      best: best.platform,
-      worst: worst.platform,
+      best: platformLabel(locale, best.platform),
+      worst: platformLabel(locale, worst.platform),
       bestValue: best.costPerThruPlay,
       worstValue: worst.costPerThruPlay,
     });

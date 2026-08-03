@@ -49,14 +49,16 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
             unit={workspace.currency}
             icon={Wallet}
             tone="accent"
-          />
+            explainKey="cost"
+            />
           <MetricCard
             label="تكلفة العميل الحقيقية"
             value={cplVerified}
             icon={Users}
             tone="verified"
             verified
-          />
+            explainKey="cpaVerified"
+            />
         </div>
 
         <div className="rounded-2xl bg-surface p-5">

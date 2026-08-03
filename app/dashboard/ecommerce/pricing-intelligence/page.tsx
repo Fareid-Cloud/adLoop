@@ -35,7 +35,7 @@ export default async function PricingIntelligencePage() {
 
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
-    return <DataGate titleAr={tc("noWorkspace")} reasonAr={tc("noWorkspaceHint")} href="/dashboard" hrefLabelAr={tc("toHome")} />;
+    return <DataGate title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
   const overview = await getEcommerceOverview(workspace.id, 30);
@@ -50,10 +50,10 @@ export default async function PricingIntelligencePage() {
           storeName={workspace.name}
         />
         <DataGate
-          titleAr={tr("noneTitle")}
-          reasonAr={tr("noneReason")}
+          title={tr("noneTitle")}
+          reason={tr("noneReason")}
           href="/dashboard/pricing"
-          hrefLabelAr={tr("noneCta")}
+          hrefLabel={tr("noneCta")}
         />
       </div>
     );
@@ -88,27 +88,27 @@ export default async function PricingIntelligencePage() {
   const actions: RecommendedAction[] = [];
   if (raiseOps.length > 0) {
     actions.push({
-      titleAr: tr("actFix", { count: raiseOps.length }),
-      reasonAr: tr("actFixReason", { name: raiseOps[0].name, amount: `${fmtNum(raiseOps[0].monthlyGain)} ${c}` }),
-      impactAr: tr("actFixImpact", { amount: `${fmtNum(totalLeak)} ${c}` }),
+      title: tr("actFix", { count: raiseOps.length }),
+      reason: tr("actFixReason", { name: raiseOps[0].name, amount: `${fmtNum(raiseOps[0].monthlyGain)} ${c}` }),
+      impact: tr("actFixImpact", { amount: `${fmtNum(totalLeak)} ${c}` }),
       tone: "critical",
       href: "/dashboard/pricing",
-      hrefLabelAr: tr("actFixCta"),
+      hrefLabel: tr("actFixCta"),
     });
   }
   if (lowerOps.length > 0) {
     actions.push({
-      titleAr: tr("actTest", { count: lowerOps.length }),
-      reasonAr: tr("actTestReason", { pct: Math.round(lowerOps[0].marginPct) }),
+      title: tr("actTest", { count: lowerOps.length }),
+      reason: tr("actTestReason", { pct: Math.round(lowerOps[0].marginPct) }),
       tone: "warning",
       href: "/dashboard/pricing",
-      hrefLabelAr: tr("noneCta"),
+      hrefLabel: tr("noneCta"),
     });
   }
   if (avgMargin < 15 && overview.products.length > 0) {
     actions.push({
-      titleAr: tr("actWeak"),
-      reasonAr: tr("actWeakReason", { pct: Math.round(avgMargin) }),
+      title: tr("actWeak"),
+      reason: tr("actWeakReason", { pct: Math.round(avgMargin) }),
       tone: "warning",
     });
   }
@@ -132,6 +132,8 @@ export default async function PricingIntelligencePage() {
               ? { text: tr("raiseOpsBleed", { amount: `${fmtNum(totalLeak)} ${c}` }), tone: "negative" }
               : { text: tr("raiseOpsNone"), tone: "positive" }
           }
+          explainKey="raiseOps"
+          locale={locale}
         />
         <MetricCard
           label={tr("lowerOps")}
@@ -139,6 +141,8 @@ export default async function PricingIntelligencePage() {
           icon={ArrowDownCircle}
           tone={lowerOps.length > 0 ? "gap" : "neutral"}
           caption={{ text: tr("lowerOpsHint"), tone: "muted" }}
+          explainKey="lowerOps"
+          locale={locale}
         />
         <MetricCard
           label={tr("avgMargin")}
@@ -147,6 +151,8 @@ export default async function PricingIntelligencePage() {
           icon={Percent}
           tone={avgMargin >= 25 ? "verified" : avgMargin >= 15 ? "gap" : "critical"}
           bar={{ pct: Math.max(0, Math.min(100, avgMargin)) }}
+          explainKey="grossMargin"
+          locale={locale}
         />
       </div>
 
@@ -232,7 +238,7 @@ export default async function PricingIntelligencePage() {
         </>
       )}
 
-      <RecommendedActions actions={actions} emptyAr={tr("healthy")} />
+      <RecommendedActions actions={actions} empty={tr("healthy")} />
     </div>
   );
 }

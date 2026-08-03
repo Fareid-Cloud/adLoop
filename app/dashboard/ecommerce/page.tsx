@@ -35,10 +35,10 @@ export default async function EcommerceOverviewPage() {
   if (!workspace) {
     return (
       <DataGate
-        titleAr={tc("noWorkspace")}
-        reasonAr={tc("noWorkspaceHint")}
+        title={tc("noWorkspace")}
+        reason={tc("noWorkspaceHint")}
         href="/dashboard"
-        hrefLabelAr={tc("toHome")}
+        hrefLabel={tc("toHome")}
       />
     );
   }
@@ -60,9 +60,9 @@ export default async function EcommerceOverviewPage() {
           storeName={workspace.name}
         />
         <DataGate
-          titleAr={tr("connectStoreTitle")}
-          reasonAr={tr("connectStoreReason")}
-          hrefLabelAr={tr("connectStore")}
+          title={tr("connectStoreTitle")}
+          reason={tr("connectStoreReason")}
+          hrefLabel={tr("connectStore")}
         />
       </div>
     );
@@ -70,23 +70,23 @@ export default async function EcommerceOverviewPage() {
 
   const topOpps = opps.opportunities.slice(0, 3);
   const actions: RecommendedAction[] = topOpps.map((o) => ({
-    titleAr: tx(o.title),
-    reasonAr: tx(o.reason),
-    impactAr: tc("estimatedImpact", { value: `${fmtNum(o.estimatedMonthlyProfit)} ${c}` }),
+    title: tx(o.title),
+    reason: tx(o.reason),
+    impact: tc("estimatedImpact", { value: `${fmtNum(o.estimatedMonthlyProfit)} ${c}` }),
     href: o.actionHref,
-    hrefLabelAr: tc("apply"),
+    hrefLabel: tc("apply"),
     tone: o.type === "PAUSE_ADS" || o.type === "RAISE_PRICE" ? "critical" : "positive",
   }));
 
   if (journey.biggestLeak) {
     actions.push({
-      titleAr: tr("biggestLeak", { label: tText(locale, "stageText", journey.biggestLeak.label) }),
-      reasonAr: tr("biggestLeakReason", {
+      title: tr("biggestLeak", { label: tText(locale, "stageText", journey.biggestLeak.label) }),
+      reason: tr("biggestLeakReason", {
         pct: journey.biggestLeak.pctOfRevenue,
         amount: `${fmtNum(journey.biggestLeak.amount)} ${c}`,
       }),
       href: "/dashboard/ecommerce/profit",
-      hrefLabelAr: tr("openProfit"),
+      hrefLabel: tr("openProfit"),
       tone: "warning",
     });
   }
@@ -118,6 +118,8 @@ export default async function EcommerceOverviewPage() {
                 }
               : undefined
           }
+          explainKey="revenue"
+          locale={locale}
         />
         <MetricCard
           label={tr("netProfit")}
@@ -140,6 +142,8 @@ export default async function EcommerceOverviewPage() {
               ? { text: tr("losingMoney"), tone: "negative" }
               : undefined
           }
+          explainKey="netProfit"
+          locale={locale}
         />
         <MetricCard
           label={tr("grossMargin")}
@@ -156,8 +160,13 @@ export default async function EcommerceOverviewPage() {
                   : "critical"
           }
           bar={overview.grossMarginPct !== null ? { pct: Math.max(0, overview.grossMarginPct) } : undefined}
+          explainKey="grossMargin"
+          locale={locale}
         />
-        <MetricCard label={tr("orders")} value={fmtNum(overview.orders)} icon={ShoppingCart} tone="default" />
+        <MetricCard label={tr("orders")} value={fmtNum(overview.orders)} icon={ShoppingCart} tone="default"
+          explainKey="orders"
+          locale={locale}
+        />
 
         <MetricCard
           label={tr("aov")}
@@ -165,6 +174,8 @@ export default async function EcommerceOverviewPage() {
           unit={overview.avgOrderValue !== null ? c : undefined}
           icon={Receipt}
           tone="default"
+          explainKey="aov"
+          locale={locale}
         />
         <MetricCard
           label={tr("returningCustomers")}
@@ -177,6 +188,8 @@ export default async function EcommerceOverviewPage() {
               ? { text: tr("needsCustomerData"), tone: "muted" }
               : undefined
           }
+          explainKey="repeatRate"
+          locale={locale}
         />
         <MetricCard
           label={tr("refundRate")}
@@ -189,6 +202,8 @@ export default async function EcommerceOverviewPage() {
               ? { text: tr("refundHigh"), tone: "negative" }
               : undefined
           }
+          explainKey="refundRate"
+          locale={locale}
         />
         <MetricCard
           label={tr("inventoryRisk")}
@@ -200,6 +215,8 @@ export default async function EcommerceOverviewPage() {
               ? { text: tr("stockRiskHint"), tone: "negative" }
               : { text: tr("stockSafe"), tone: "positive" }
           }
+          explainKey="capitalTied"
+          locale={locale}
         />
       </div>
 

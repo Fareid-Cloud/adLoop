@@ -70,6 +70,9 @@ export function ActionsClient({
   const [error, setError] = useState<string | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  // الأقسام المطويّة: تقصير الصفحة اختيار المستخدم لا تقسيمها إلى صفحات -
+  // التقسيم يُخفي البنود خلف أرقام لا يعرف ماذا فيها.
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [tab, setTab] = useState<Tab>("all");
   const [groupBy, setGroupBy] = useState<GroupBy>("source");
   const [sortBy, setSortBy] = useState<SortBy>("impact");
@@ -172,6 +175,8 @@ export function ActionsClient({
           icon={AlertOctagon}
           tone={(counts.urgent > 0 ? "critical" : "verified") as MetricTone}
           caption={{ text: tr("kpiUrgentCaption"), tone: counts.urgent > 0 ? "negative" : "muted" }}
+          explainKey="urgentActions"
+          locale={locale}
         />
         <MetricCard
           label={tr("kpiHigh")}
@@ -179,6 +184,8 @@ export function ActionsClient({
           icon={AlertTriangle}
           tone={(counts.high > 0 ? "gap" : "verified") as MetricTone}
           caption={{ text: tr("kpiHighCaption"), tone: "muted" }}
+          explainKey="importantActions"
+          locale={locale}
         />
         <MetricCard
           label={tr("kpiSuggestions")}
@@ -186,6 +193,8 @@ export function ActionsClient({
           icon={Zap}
           tone={"accent" as MetricTone}
           caption={{ text: tr("kpiSuggestionsCaption"), tone: "muted" }}
+          explainKey="suggestions"
+          locale={locale}
         />
         <MetricCard
           label={tr("kpiImpact")}
@@ -240,17 +249,26 @@ export function ActionsClient({
         <div className="flex flex-col gap-4">
           {groups.map(([key, groupItems]) => (
             <section key={key} className="card-shadow overflow-hidden rounded-2xl border border-border bg-surface">
-              <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2.5">
-                <span className="flex items-center gap-2 text-[13px] font-semibold text-text-primary">
+              <button
+                onClick={() => setCollapsedGroups((p) => ({ ...p, [key]: !p[key] }))}
+                className="flex w-full items-center justify-between gap-2 border-b border-border px-4 py-3 text-start transition-colors hover:bg-surface-raised/50"
+              >
+                <span className="flex items-center gap-2 text-[14px] font-semibold tracking-tight text-text-primary">
                   {groupBy === "severity" && (
                     <span className="h-2 w-2 rounded-full" style={{ background: SEVERITY_TONE[key] }} />
                   )}
                   {tr(groupBy === "source" ? `src${key}` : `sev${key}`)}
                 </span>
-                <span className="text-[11.5px] text-text-faint">{tr("nItems", { n: groupItems.length })}</span>
-              </div>
+                <span className="flex items-center gap-2">
+                  <span className="text-[11.5px] text-text-faint">{tr("nItems", { n: groupItems.length })}</span>
+                  <ChevronDown
+                    size={15}
+                    className={`text-text-faint transition-transform ${collapsedGroups[key] ? "-rotate-90 rtl:rotate-90" : ""}`}
+                  />
+                </span>
+              </button>
 
-              <ul>
+              <ul hidden={!!collapsedGroups[key]}>
                 {groupItems.map((item, i) => (
                   <li key={item.id} className={i === 0 ? "" : "border-t border-border/50"}>
                     <div className="flex items-start gap-3 p-4">
@@ -280,15 +298,20 @@ export function ActionsClient({
                           )}
                         </div>
 
+                        {/* العنوان والسهم في السطر نفسه الذي تعلوه الشارة،
+                            والسهم في طرف السطر لا ملتصقاً بآخر كلمة - كان
+                            يقفز مع كل عنوان بطول مختلف. */}
                         <button
                           onClick={() => setExpanded(expanded === item.id ? null : item.id)}
-                          className="flex w-full items-start gap-1.5 text-start"
+                          className="mt-1 flex w-full items-center gap-2 text-start"
                         >
-                          <span className="flex-1 text-[13.5px] font-medium text-text-primary">{item.title}</span>
+                          <span className="min-w-0 flex-1 text-[13.5px] font-medium leading-snug text-text-primary">
+                            {item.title}
+                          </span>
                           {item.description && (
                             <ChevronDown
-                              size={14}
-                              className={`mt-0.5 shrink-0 text-text-faint transition-transform ${expanded === item.id ? "rotate-180" : ""}`}
+                              size={15}
+                              className={`shrink-0 text-text-faint transition-transform ${expanded === item.id ? "rotate-180" : ""}`}
                             />
                           )}
                         </button>
@@ -327,7 +350,6 @@ export function ActionsClient({
                             <button
                               onClick={() => handleApplyClick(item.id)}
                               disabled={processing === item.id}
-                              title={tr("apply")}
                               aria-label={tr("apply")}
                               className="flex h-8 w-8 items-center justify-center rounded-full bg-verified/15 text-verified disabled:opacity-40"
                             >
@@ -337,7 +359,6 @@ export function ActionsClient({
                           <button
                             onClick={() => handle(item.id, "dismiss")}
                             disabled={processing === item.id}
-                            title={tr("dismiss")}
                             aria-label={tr("dismiss")}
                             className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-raised text-text-muted disabled:opacity-40"
                           >

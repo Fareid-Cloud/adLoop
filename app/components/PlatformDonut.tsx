@@ -1,46 +1,79 @@
 // app/components/PlatformDonut.tsx
 //
-// توزيع التحويلات المحقّقة حسب المنصة. لون مميّز لكل شريحة (palette مرتّبة
-// بالفهرس) عشان مفيش تصادم ألوان (Google/Meta الاتنين أزرق مثلاً)، وهوية
-// المنصة بتبان من اللوجو في الليجند. كل المنصات اللي ليها قيمة بتظهر.
+// توزيع التحويلات المحقّقة حسب المنصة.
+//
+// الألوان من `platformMeta` لا من لوحة عامة بالفهرس. اللوحة السابقة كانت
+// ترسم تيك توك أزرق وجوجل أخضر - ألوان لا علاقة لها بأي منصة، فتنهار
+// الذاكرة البصرية التي يبنيها بقية المنتج (الشارات، كروت الربط، الفلاتر).
+// تقارب أزرق جوجل وأزرق ميتا ليس مشكلة هنا: الشريحتان مفصولتان بفراغ،
+// وكل سطر في الليجند يحمل شعار منصّته.
+
 "use client";
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { platformMeta } from "@/lib/platformMeta";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
-// palette فئوية عالية التباين - كل عنصر مختلف بوضوح عن اللي جنبه
-const PALETTE = ["#3B82F6", "#22C55E", "#A855F7", "#F59E0B", "#EF4444", "#06B6D4", "#EC4899", "#14B8A6"];
-
-export function PlatformDonut({ data }: { data: { platform: string; value: number }[] }) {
+export function PlatformDonut({
+  data,
+  locale = "ar",
+}: {
+  data: { platform: string; value: number }[];
+  locale?: Locale;
+}) {
   const rows = data
     .filter((d) => d.value > 0)
-    .map((d, i) => ({ ...d, label: platformMeta(d.platform).label, color: PALETTE[i % PALETTE.length] }));
+    .map((d) => {
+      const meta = platformMeta(d.platform);
+      return { ...d, label: meta.label, color: meta.color };
+    });
   const total = rows.reduce((s, r) => s + r.value, 0);
 
   if (rows.length === 0 || total === 0) return null;
 
   return (
     <div className="rounded-2xl card-shadow border border-border bg-surface p-6">
-      <div className="mb-3 text-[13px] text-text-muted">التحويلات المحقّقة حسب المصدر</div>
+      <div className="mb-3 text-[13px] text-text-muted">{t(locale, "home.donutTitle")}</div>
       <div className="flex items-center gap-4">
         <div className="relative h-[150px] w-[150px] shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={rows} dataKey="value" nameKey="label" innerRadius={48} outerRadius={70} paddingAngle={2} stroke="none" animationDuration={800}>
+              <Pie
+                data={rows}
+                dataKey="value"
+                nameKey="label"
+                innerRadius={48}
+                outerRadius={70}
+                paddingAngle={2}
+                stroke="none"
+                animationDuration={800}
+              >
                 {rows.map((r) => (
                   <Cell key={r.platform} fill={r.color} />
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{ background: "var(--surface-raised)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                // يخرج من إطار الرسم بدل أن يستقرّ فوق الرقم في المنتصف -
+                // كان النصّان يتراكبان فلا يُقرأ أيّ منهما.
+                allowEscapeViewBox={{ x: true, y: true }}
+                wrapperStyle={{ zIndex: 30 }}
+                contentStyle={{
+                  background: "var(--surface-raised)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  boxShadow: "0 8px 24px rgb(0 0 0 / 0.18)",
+                }}
                 labelStyle={{ color: "var(--text-muted)" }}
               />
             </PieChart>
           </ResponsiveContainer>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <span className="font-mono text-xl font-semibold text-verified">{total.toLocaleString("en-US")}</span>
-            <span className="text-[10px] text-text-faint">محقّق ✓</span>
+            <span className="font-mono text-xl font-semibold text-verified">
+              {total.toLocaleString("en-US")}
+            </span>
+            <span className="text-[10px] text-text-faint">{t(locale, "home.donutVerified")}</span>
           </div>
         </div>
         <div className="flex flex-1 flex-col gap-2">
@@ -51,7 +84,9 @@ export function PlatformDonut({ data }: { data: { platform: string; value: numbe
                 <PlatformLogo platform={r.platform} size={15} />
                 {r.label}
               </span>
-              <span className="font-mono text-text-primary">{Math.round((r.value / total) * 100)}%</span>
+              <span className="font-mono text-text-primary">
+                {Math.round((r.value / total) * 100)}%
+              </span>
             </div>
           ))}
         </div>

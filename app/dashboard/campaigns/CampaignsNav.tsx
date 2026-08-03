@@ -17,6 +17,7 @@ const SECTIONS: Array<{ labelKey?: string; labelRaw?: string; color?: string; li
       { href: "/dashboard/campaigns/budget-simulator", key: "budgetSimulator" },
       { href: "/dashboard/campaigns/monthly-forecast", key: "monthlyForecast" },
       { href: "/dashboard/campaigns/creatives", key: "creatives" },
+      { href: "/dashboard/campaigns/video-performance", key: "videoPerformance" },
       { href: "/dashboard/campaigns/lead-forms", key: "leadForms" },
     ],
   },
@@ -26,7 +27,6 @@ const SECTIONS: Array<{ labelKey?: string; labelRaw?: string; color?: string; li
     links: [
       { href: "/dashboard/campaigns/google-hub", key: "googleHub" },
       { href: "/dashboard/campaigns/quality-score", key: "qualityScore" },
-      { href: "/dashboard/campaigns/video-performance", key: "videoPerformance" },
       { href: "/dashboard/campaigns/shopping", key: "shopping" },
       { href: "/dashboard/campaigns/pmax", key: "pmax" },
       { href: "/dashboard/campaigns/youtube", key: "youtube" },

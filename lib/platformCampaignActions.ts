@@ -14,6 +14,7 @@
 import { GoogleAdsApi } from "google-ads-api";
 import { prisma } from "@/lib/prisma";
 import { decryptToken } from "@/lib/encryption";
+import { platformLabel } from "@/lib/i18n/dictionary";
 
 const META_API_VERSION = "v25.0";
 const TIKTOK_API_VERSION = "v1.3";
@@ -24,7 +25,7 @@ async function getConnection(workspaceId: string, platform: "GOOGLE_ADS" | "META
     include: { user: { include: { connectedPlatforms: true } } },
   });
   const connection = workspace?.user.connectedPlatforms.find((c: any) => c.platform === platform);
-  if (!connection) throw new Error(`حساب ${platform} غير متصل`);
+  if (!connection) throw new Error(`حساب ${platformLabel("ar", platform)} غير متصل`);
   return connection;
 }
 
@@ -278,7 +279,7 @@ export async function pauseCampaignOnPlatform(workspaceId: string, platform: str
     case "GOOGLE_ADS": return pauseGoogleCampaign(workspaceId, campaignId);
     case "META_ADS": return pauseMetaCampaign(workspaceId, campaignId);
     case "TIKTOK_ADS": return pauseTikTokCampaign(workspaceId, campaignId);
-    default: throw new Error(`إيقاف الحملة غير مدعوم للمنصة ${platform}`);
+    default: throw new Error(`إيقاف الحملة غير مدعوم للمنصة ${platformLabel("ar", platform)}`);
   }
 }
 
@@ -289,6 +290,6 @@ export async function changeCampaignBudgetOnPlatform(
     case "GOOGLE_ADS": return changeGoogleCampaignBudget(workspaceId, campaignId, pct);
     case "META_ADS": return changeMetaCampaignBudget(workspaceId, campaignId, pct);
     case "TIKTOK_ADS": return changeTikTokCampaignBudget(workspaceId, campaignId, pct);
-    default: throw new Error(`تعديل الميزانية غير مدعوم للمنصة ${platform}`);
+    default: throw new Error(`تعديل الميزانية غير مدعوم للمنصة ${platformLabel("ar", platform)}`);
   }
 }

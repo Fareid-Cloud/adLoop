@@ -101,7 +101,10 @@ export function SupportChat({
         className="relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13.5px] text-text-muted transition-colors hover:bg-surface-raised hover:text-text-primary"
       >
         <MessageCircle size={16} strokeWidth={1.9} className="shrink-0" />
-        <span className="truncate">{label}</span>
+        {/* `label` خاصية اختيارية ولم يمرّرها أي استدعاء، فكان الزرّ يظهر
+            أيقونةً بلا نصّ بين عناصر كلّها مكتوبة - يقرأ كعنصر معطّل.
+            الاسم الافتراضي من القاموس، والتمرير يبقى متاحاً لمن يريده. */}
+        <span className="truncate">{label ?? tr("sidebarLabel")}</span>
         {unread > 0 && (
           <span className="ms-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-critical px-1 text-[10px] font-bold text-white">{unread}</span>
         )}

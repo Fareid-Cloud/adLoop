@@ -53,7 +53,7 @@ export default async function OrdersPage() {
 
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
-    return <DataGate titleAr={tc("noWorkspace")} reasonAr={tc("noWorkspaceHint")} href="/dashboard" hrefLabelAr={tc("toHome")} />;
+    return <DataGate title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
   const quality = await getOrderQuality(workspace.id, 30);
@@ -68,8 +68,8 @@ export default async function OrdersPage() {
           storeName={workspace.name}
         />
         <DataGate
-          titleAr={tr("noneTitle")}
-          reasonAr={tr("noneReason")}
+          title={tr("noneTitle")}
+          reason={tr("noneReason")}
         />
       </div>
     );
@@ -81,9 +81,9 @@ export default async function OrdersPage() {
   const delayed = byKey.get("delayed");
   if (delayed && delayed.count > 0) {
     actions.push({
-      titleAr: tr("actDelayed", { count: delayed.count }),
-      reasonAr: tr("actDelayedReason"),
-      impactAr: tr("atRiskValue", { value: `${fmtNum(delayed.value)} ${c}` }),
+      title: tr("actDelayed", { count: delayed.count }),
+      reason: tr("actDelayedReason"),
+      impact: tr("atRiskValue", { value: `${fmtNum(delayed.value)} ${c}` }),
       tone: "critical",
     });
   }
@@ -93,11 +93,11 @@ export default async function OrdersPage() {
     const pct = Math.round((returned.count / quality.totalOrders) * 100);
     if (pct >= 10) {
       actions.push({
-        titleAr: tr("actReturnRate", { pct }),
-        reasonAr: tr("actReturnRateReason", { value: `${fmtNum(returned.value)} ${c}` }),
+        title: tr("actReturnRate", { pct }),
+        reason: tr("actReturnRateReason", { value: `${fmtNum(returned.value)} ${c}` }),
         tone: "critical",
         href: "/dashboard/ecommerce/products",
-        hrefLabelAr: t(locale, "store.productsNav"),
+        hrefLabel: t(locale, "store.productsNav"),
       });
     }
   }
@@ -105,9 +105,9 @@ export default async function OrdersPage() {
   const risky = byKey.get("risky");
   if (risky && risky.count > 0) {
     actions.push({
-      titleAr: tr("actRisky", { count: risky.count }),
-      reasonAr: tr("actRiskyReason"),
-      impactAr: tr("atRiskValue", { value: `${fmtNum(risky.value)} ${c}` }),
+      title: tr("actRisky", { count: risky.count }),
+      reason: tr("actRiskyReason"),
+      impact: tr("atRiskValue", { value: `${fmtNum(risky.value)} ${c}` }),
       tone: "warning",
     });
   }
@@ -115,8 +115,8 @@ export default async function OrdersPage() {
   const cancelled = byKey.get("cancelled");
   if (cancelled && cancelled.count > 0) {
     actions.push({
-      titleAr: tr("actCancelled", { count: cancelled.count }),
-      reasonAr: tr("actCancelledReason"),
+      title: tr("actCancelled", { count: cancelled.count }),
+      reason: tr("actCancelledReason"),
       tone: "warning",
     });
   }
@@ -194,7 +194,7 @@ export default async function OrdersPage() {
         </DataTable>
       </div>
 
-      <RecommendedActions actions={actions} emptyAr={tr("healthy")} />
+      <RecommendedActions actions={actions} empty={tr("healthy")} />
     </div>
   );
 }

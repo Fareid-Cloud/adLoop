@@ -35,6 +35,10 @@ import { ReportedVsActualBars } from "@/app/components/ui/ReportedVsActualBars";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds, daysBetween } from "@/lib/dateRange";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { HealthGauge } from "@/app/components/ui/HealthGauge";
+import Link from "next/link";
+import { buildTodaySummary } from "@/lib/todaySummary";
+import { TodaySummaryCard } from "@/app/components/TodaySummaryCard";
 
 const AD_PLATFORMS = ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS", "SNAPCHAT_ADS"];
 
@@ -111,7 +115,7 @@ export default async function GlancePage({
       }),
       prisma.metricSnapshot.findMany({
         where: { workspaceId: workspace.id, date: { gte: fourteenDaysAgo } },
-        select: { date: true, clicks: true, verifiedConversions: true },
+        select: { date: true, rawConversions: true, verifiedConversions: true },
         orderBy: { date: "asc" },
       }),
       prisma.dailyTask.findMany({
@@ -180,6 +184,31 @@ export default async function GlancePage({
     };
   });
 
+  // خلاصة اليوم - تُبنى من الأرقام المحسوبة أعلاه، بقواعد ثابتة صفر AI
+  const todaySummary = buildTodaySummary({
+    locale,
+    cpaNow: currentCplVerified,
+    cpaPrev: prevCplVerified,
+    trackingAccuracy,
+    inflationPct,
+    totalVerified,
+    totalCost,
+    currency: workspace.currency,
+    platforms: sourceRows.map((r) => ({
+      platform: r.platform,
+      verified: r.verifiedConversions,
+      cost: r.cost,
+      cpa: r.cplVerified,
+    })),
+    topPending: urgentActionItems[0]
+      ? {
+          id: urgentActionItems[0].id,
+          title: urgentActionItems[0].title,
+          severity: String(urgentActionItems[0].severity ?? ""),
+        }
+      : null,
+  });
+
   // الإيراد لكل منصة - الإيراد وحده مضلِّل، فيُعرض مع إنفاقه وعائده
   const revenueRows: RevenuePlatformRow[] = byPlatform
     .filter((p: any) => AD_PLATFORMS.includes(p.platform))
@@ -222,12 +251,16 @@ export default async function GlancePage({
     return comparePlatforms(computed, "ar").insight;
   })();
 
+  // السلسلة «المُعلنة» تحويلات مُعلنة لا نقرات. جمعُ النقرات هنا كان يرسم
+  // مقياسين مختلفين على محور واحد - النقرات أكبر بمرتبة كاملة، فينسحق خطّ
+  // المتحقَّق إلى القاع ويبدو صفراً، ويضيع المعنى الوحيد للرسم: الفارق بين
+  // ما تقوله المنصّة وما ثبت فعلاً.
   const trendByDate = new Map<string, { verified: number; reported: number }>();
   for (const snap of dailySnapshots) {
     const key = snap.date.toISOString().slice(5, 10);
     const existing = trendByDate.get(key) ?? { verified: 0, reported: 0 };
     existing.verified += snap.verifiedConversions;
-    existing.reported += snap.clicks;
+    existing.reported += snap.rawConversions;
     trendByDate.set(key, existing);
   }
   const trendData = Array.from(trendByDate.entries()).map(([date, v]) => ({ date, ...v }));
@@ -265,22 +298,25 @@ export default async function GlancePage({
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">{tr("greeting", { name: firstName })}</h1>
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
-        <div className="inline-flex items-center gap-2.5 rounded-full card-shadow border border-border bg-surface py-1.5 pe-4 ps-1.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-raised font-mono text-[11px] font-semibold text-text-muted">
-            {health.overallScore || "—"}
-          </div>
-          <span className="text-xs text-text-muted">
-            {tr("healthScore", {
-              // ثلاث حالات لا اثنتان: «بانتظار الربط» كانت تُعرض حتى لمن
-              // وصلت بياناته فعلاً، فتقرأ كخلل بينما الحساب يعمل.
-              state: health.isComplete
+        {/* نفس عدّاد صفحة صحة الحساب بحجم الرأس - كان سطراً رمادياً طويلاً
+            بلا وزن بصري ("درجة الصحة — التتبّع وحده مُقاساً حتى الآن")، فلا
+            يُقرأ ولا يُربط بالعدّاد نفسه في مكان آخر. */}
+        <Link
+          href="/dashboard/diagnostics"
+          className="inline-flex items-center gap-2.5 rounded-full card-shadow border border-border bg-surface py-1 pe-4 ps-1 no-underline transition-colors hover:border-accent"
+        >
+          <HealthGauge score={health.overallScore} size="sm" showDenominator={false} />
+          <span className="flex flex-col leading-tight">
+            <span className="text-[12.5px] font-medium text-text-primary">{tr("healthScoreShort")}</span>
+            <span className="text-[11px] text-text-muted">
+              {health.isComplete
                 ? tr("healthComplete")
                 : health.overallScore > 0
                   ? tr("healthPartial")
-                  : tr("healthPending"),
-            })}
+                  : tr("healthPending")}
+            </span>
           </span>
-        </div>
+        </Link>
       </div>
 
       {/* اختيار الحملات يفتح تلقائياً فور العودة من ربط المنصة */}
@@ -320,7 +356,10 @@ export default async function GlancePage({
       {/* ربط ما لم يُربط بعد - يظهر فقط حين ينقص شيء فعلاً */}
       <ConnectPlatforms states={connectStates} workspaceId={workspace.id} locale={locale} onlyUnconnected />
 
-      {hasAnyData && <PlatformSwitcher platform={platformFilter} days={days} locale={locale} />}
+      {hasAnyData && <PlatformSwitcher platform={platformFilter} locale={locale} />}
+
+      {/* الطبقة الأولى: الحكم والإشارة والإجراء - قبل أي جدول أو رسم */}
+      {hasAnyData && <TodaySummaryCard summary={todaySummary} locale={locale} />}
 
       {!hasAnyData ? null : (
         <>
@@ -353,33 +392,50 @@ export default async function GlancePage({
                 </div>
               )}
             </div>
-            <div className="flex items-center justify-around rounded-2xl card-shadow border border-border bg-surface p-6">
+            {/* العدّاد نسبة، والشريط أرقام مطلقة - متكاملان لا مكرّران.
+                `min-w-0` على الشريط ضروري: بدونه يرفض عنصر flex أن يضيق
+                عن محتواه فيدفع العدّاد خارج البطاقة على الشاشات الضيّقة. */}
+            <div className="flex items-center gap-5 rounded-2xl card-shadow border border-border bg-surface p-6">
               <TrackingAccuracyGauge verified={totalVerified} raw={totalRaw} />
-              <ReportedVsActualBars reported={totalRaw} actual={totalVerified} />
+              <div className="min-w-0 flex-1">
+                <ReportedVsActualBars reported={totalRaw} actual={totalVerified} locale={locale} />
+              </div>
             </div>
           </div>
 
-          {/* صف مؤشرات الأداء الرئيسية */}
-          <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <MetricCard label={tr("spendLast30")} value={fmt(totalCost)} icon={Wallet} href="/dashboard/campaigns" />
-            <MetricCard label={tr("verifiedConversions")} value={fmt(totalVerified)} color="verified" verified icon={ShieldCheck} href="/dashboard/campaigns" />
-            <MetricCard
-              label={tr("realCpa")}
-              value={cplVerified}
-              color="verified"
-              verified
-              icon={Target}
-              href="/dashboard/campaigns"
-              trend={
-                cplVerifiedComparison?.changePct != null ? (
-                  <span className={`text-xs ${cplVerifiedComparison.changePct < 0 ? "text-verified" : "text-critical"}`}>
-                    {cplVerifiedComparison.changePct < 0 ? "▼" : "▲"} {Math.abs(cplVerifiedComparison.changePct)}% {tr("vsPrevPeriod")}
+          {/* اتجاه الفارق عبر الزمن - مباشرةً تحت لقطة الفارق لأنه هو نفسه
+              مقروءاً على محور الزمن: اللقطة تقول «كم الفارق الآن»، والمنحنى
+              يقول «يتّسع أم يضيق». كان أسفل الصفحة كلها حيث لا يراه أحد. */}
+          {trendData.length > 1 && (
+            <div className="mb-4 rounded-2xl card-shadow border border-border bg-surface p-6">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[13px] text-text-muted">{tr("trend14")}</span>
+                {/* مفتاح الألوان: منحنيان بلا تسمية يتركان القارئ يخمّن
+                    أيّهما أيّ - وهو جوهر ما يعرضه الرسم أصلاً */}
+                <span className="flex items-center gap-4 text-[12px]">
+                  <span className="flex items-center gap-1.5 text-text-muted">
+                    <span className="h-2 w-2 rounded-full bg-gap" />
+                    {tr("reportedByPlatforms")}
                   </span>
-                ) : undefined
-              }
-            />
-            <MetricCard label={tr("trackingAccuracy")} value={`${trackingAccuracy}%`} color="accent" icon={Activity} href="/dashboard/diagnostics" />
-          </div>
+                  <span className="flex items-center gap-1.5 text-verified">
+                    <span className="h-2 w-2 rounded-full bg-verified" />
+                    {tr("actuallyVerified")}
+                  </span>
+                </span>
+              </div>
+              <TrendChart
+                data={trendData}
+                labels={{ verified: tr("actuallyVerified"), reported: tr("reportedByPlatforms") }}
+              />
+            </div>
+          )}
+
+          {/* حُذف صفّ المؤشّرات الذي كان هنا: كان يعيد الإنفاق والتحويلات
+              المتحقّقة وتكلفة العميل ودقّة التتبّع - وكلّها معروضة أعلى
+              الصفحة في شريط المؤشّرات القابل للاختيار. أربع بطاقات تكرّر
+              أربعاً أخرى على الشاشة نفسها تجعل القارئ يشكّ في أيّهما الصحيح،
+              وكانت كلّها تقود إلى «الحملات» بلا علاقة بما تعرضه. */}
+
 
           {setup.allDone && (
             <div className="mb-4">
@@ -407,15 +463,9 @@ export default async function GlancePage({
             </div>
           )}
 
-          {/* توزيع دائري (دواير) + كيرف الاتجاه */}
-          <div className="mb-4 grid gap-3 lg:grid-cols-2">
-            <PlatformDonut data={sourceRows.map((r) => ({ platform: r.platform, value: r.verifiedConversions }))} />
-            {trendData.length > 1 && (
-              <div className="rounded-2xl card-shadow border border-border bg-surface p-6">
-                <div className="mb-3 text-[13px] text-text-muted">{tr("trend14")}</div>
-                <TrendChart data={trendData} />
-              </div>
-            )}
+          {/* توزيع التحويلات المتحقّقة على المنصّات */}
+          <div className="mb-4">
+            <PlatformDonut locale={locale} data={sourceRows.map((r) => ({ platform: r.platform, value: r.verifiedConversions }))} />
           </div>
         </>
       )}

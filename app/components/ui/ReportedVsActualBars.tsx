@@ -1,35 +1,63 @@
 // app/components/ui/ReportedVsActualBars.tsx
 //
-// مقارنة بصرية عمودية بين المُبلَّغ والمؤكد - نفس منطق عداد الفجوة،
-// بس بعرض أعمدة بدل رقمين. مبني على بيانات حقيقية.
+// **المُبلَّغ مقابل المؤكَّد - في شريط واحد لا عمودين.**
+//
+// النسخة السابقة كانت عمودين منفصلين يطفوان جنب بعضهما. مشكلتها ليست
+// جمالية: الفجوة - وهي كامل موضوع المنتج - لم تكن مرسومة إطلاقاً. كان
+// على العين أن تقيس فرق ارتفاع عمودين متباعدين ثم تطرح رقمين تحتهما.
+//
+// الآن الشريط واحد: طوله كلّه = ما تقوله المنصّات، والجزء الممتلئ منه =
+// ما ثبت فعلاً، والباقي **هو** الفجوة ومكتوب عليها مقدارها. قراءة واحدة.
 
-export function ReportedVsActualBars({ reported, actual }: { reported: number; actual: number }) {
-  const max = Math.max(reported, actual, 1);
-  const reportedHeightPct = (reported / max) * 100;
-  const actualHeightPct = (actual / max) * 100;
+import { t, type Locale } from "@/lib/i18n/dictionary";
+
+export function ReportedVsActualBars({
+  reported,
+  actual,
+  locale = "ar",
+}: {
+  reported: number;
+  actual: number;
+  locale?: Locale;
+}) {
+  const safeReported = Math.max(reported, 0);
+  const verifiedPct = safeReported > 0 ? Math.min(100, (actual / safeReported) * 100) : 0;
+  const gap = Math.max(0, safeReported - actual);
+  const fmt = (n: number) => Math.round(n).toLocaleString("en-US");
 
   return (
-    <div className="flex items-end justify-center gap-6 px-4" style={{ height: 120 }}>
-      <div className="flex flex-col items-center gap-2">
-        <div className="flex h-24 w-14 items-end rounded-lg bg-surface-raised">
-          <div
-            className="w-full rounded-lg bg-gap transition-[height] duration-700 ease-out"
-            style={{ height: `${reportedHeightPct}%` }}
-          />
+    <div className="w-full min-w-0 px-1">
+      {/* الطرفان: الرقمان اللذان تقارنهما، كلٌّ بلون معناه */}
+      <div className="mb-2 flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[11px] text-text-faint">{t(locale, "truthBar.verified")}</div>
+          <div className="flex items-baseline gap-1 font-mono text-[22px] font-semibold leading-none text-verified">
+            {fmt(actual)}
+            <span className="text-[13px]">✓</span>
+          </div>
         </div>
-        <span className="font-mono text-sm text-text-primary">{reported}</span>
-        <span className="text-[11px] text-text-faint">مُبلَّغ</span>
-      </div>
-      <div className="flex flex-col items-center gap-2">
-        <div className="flex h-24 w-14 items-end rounded-lg bg-surface-raised">
-          <div
-            className="w-full rounded-lg bg-verified transition-[height] duration-700 ease-out"
-            style={{ height: `${actualHeightPct}%` }}
-          />
+        <div className="min-w-0 text-end">
+          <div className="text-[11px] text-text-faint">{t(locale, "truthBar.reported")}</div>
+          <div className="font-mono text-[22px] font-semibold leading-none text-text-muted">
+            {fmt(safeReported)}
+          </div>
         </div>
-        <span className="font-mono text-sm text-text-primary">{actual}</span>
-        <span className="text-[11px] text-text-faint">مؤكد فعلياً</span>
       </div>
+
+      {/* الشريط: الممتلئ مؤكَّد، والفارغ هو الفجوة نفسها */}
+      <div className="relative h-3 w-full overflow-hidden rounded-full bg-gap/25">
+        <div
+          className="absolute inset-y-0 start-0 rounded-full bg-verified transition-[width] duration-700 ease-out"
+          style={{ width: `${verifiedPct}%` }}
+        />
+      </div>
+
+      {gap > 0 && (
+        <div className="mt-2 flex items-center gap-1.5 text-[11.5px] text-gap">
+          <span className="h-2 w-2 shrink-0 rounded-full bg-gap/45" />
+          {t(locale, "truthBar.gapLine", { n: fmt(gap) })}
+        </div>
+      )}
     </div>
   );
 }

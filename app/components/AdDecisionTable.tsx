@@ -10,6 +10,7 @@ import { AdDecisionCell } from "@/app/components/AdDecisionCell";
 import type { AdDecisionView } from "@/lib/adDecisions";
 import { TrendingUp, PauseCircle, MinusCircle } from "lucide-react";
 import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
+import { TABLE_WRAP, TH } from "@/app/components/ui/tableStyles";
 
 
 export function AdDecisionTable({
@@ -41,36 +42,65 @@ export function AdDecisionTable({
 
   return (
     <div>
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      {/* مجموعة واحدة مقسّمة بفواصل، لا ثلاث شارات عائمة: الأرقام الثلاثة
+          تقسيم لمجموع واحد فتُقرأ معاً. **عرض لا فلتر** - جعلها قابلة
+          للنقر كان سيُخفي صفوفاً دون أن يُدرك المستخدم أنه أخفاها. */}
+      <div className="mb-3 inline-flex flex-wrap items-stretch overflow-hidden rounded-xl border border-border bg-surface">
         <Summary icon={TrendingUp} count={counts.SCALE} label={t(locale, "adDecision.scale")} tone="success" />
         <Summary icon={PauseCircle} count={counts.PAUSE} label={t(locale, "adDecision.pause")} tone="danger" />
         <Summary icon={MinusCircle} count={counts.HOLD} label={t(locale, "adDecision.hold")} tone="muted" />
       </div>
 
       {/* الجدول يمرّر أفقياً داخل حاويته - لا يدفع الصفحة كلها للتمرير */}
-      <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
+      <div className={TABLE_WRAP}>
         <table className="w-full min-w-[860px] text-start text-sm">
           <thead>
             <tr className="border-b border-border text-xs text-text-muted">
-              <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colAd")}</th>
-              {showPlatform && <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colPlatform")}</th>}
-              <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colCpa")}</th>
-              <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colVsAvg")}</th>
-              <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colRoas")}</th>
-              <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colSpend")}</th>
-              <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colConversions")}</th>
-              <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colDays")}</th>
-              <th className="px-4 py-3 font-medium">{t(locale, "adDecision.colDecision")}</th>
+              <th className={TH}>{t(locale, "adDecision.colAd")}</th>
+              {showPlatform && <th className={TH}>{t(locale, "adDecision.colPlatform")}</th>}
+              <th className={TH}>{t(locale, "adDecision.colCpa")}</th>
+              <th className={TH}>{t(locale, "adDecision.colVsAvg")}</th>
+              <th className={TH}>{t(locale, "adDecision.colRoas")}</th>
+              <th className={TH}>{t(locale, "adDecision.colSpend")}</th>
+              <th className={TH}>{t(locale, "adDecision.colConversions")}</th>
+              <th className={TH}>{t(locale, "adDecision.colDays")}</th>
+              <th className={TH}>{t(locale, "adDecision.colDecision")}</th>
             </tr>
           </thead>
           <tbody>
             {decisions.map((d) => (
               <tr key={`${d.platform}-${d.adId}`} className="border-b border-border/50 last:border-0 align-top">
-                <td className="px-4 py-3">
-                  <div className="max-w-[220px] truncate font-medium text-text-primary" title={d.adName ?? d.adId}>
-                    {d.adName ?? d.adId}
+                {/* أيقونة القرار قبل الاسم: القرار يُلتقط بلمحة على يسار
+                    الصفّ بدل قراءة آخر عمود في جدول عريض */}
+                <td className="px-4 py-3.5">
+                  <div className="flex items-start gap-3">
+                    <span
+                      className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                      style={{
+                        background: `color-mix(in srgb, ${decisionColor(d.decision)} 13%, transparent)`,
+                        color: decisionColor(d.decision),
+                      }}
+                    >
+                      {d.decision === "SCALE" ? (
+                        <TrendingUp className="h-4 w-4" />
+                      ) : d.decision === "PAUSE" ? (
+                        <PauseCircle className="h-4 w-4" />
+                      ) : (
+                        <MinusCircle className="h-4 w-4" />
+                      )}
+                    </span>
+                    <span className="min-w-0">
+                      <span
+                        className="block max-w-[220px] truncate text-[13.5px] font-medium text-text-primary"
+                        title={d.adName ?? d.adId}
+                      >
+                        {d.adName ?? d.adId}
+                      </span>
+                      <span className="mt-1 block max-w-[300px] text-[11.5px] leading-relaxed text-text-muted">
+                        {locale === "en" ? d.reasonEn : d.reason}
+                      </span>
+                    </span>
                   </div>
-                  <p className="mt-1 max-w-[260px] text-[11px] leading-relaxed text-text-muted">{d.reason}</p>
                 </td>
 
                 {showPlatform && (
@@ -119,7 +149,7 @@ export function AdDecisionTable({
                     workspaceId={workspaceId}
                     adId={d.adId}
                     decision={d.decision}
-                    reason={d.reason}
+                    reason={locale === "en" ? d.reasonEn : d.reason}
                     executable={d.executable}
                     blockedReason={d.blockedReason}
                     cooldownDaysRemaining={d.cooldownDaysRemaining}
@@ -152,17 +182,22 @@ function Summary({
   label: string;
   tone: "success" | "danger" | "muted";
 }) {
-  const cls =
-    tone === "success"
-      ? "border-success/40 bg-success/10 text-success"
-      : tone === "danger"
-        ? "border-danger/40 bg-danger/10 text-danger"
-        : "border-border bg-surface-2 text-text-muted";
+  const color =
+    tone === "success" ? "var(--verified)" : tone === "danger" ? "var(--critical)" : "var(--text-muted)";
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium ${cls}`}>
-      <Icon className="h-3.5 w-3.5" />
-      <span className="tabular-nums font-semibold">{count}</span>
-      {label}
+    <span className="flex items-center gap-2.5 border-e border-border px-4 py-2.5 last:border-e-0">
+      <span
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+        style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color }}
+      >
+        <Icon className="h-3.5 w-3.5" />
+      </span>
+      <span className="flex flex-col leading-tight">
+        <span className="font-mono text-[15px] font-semibold tabular-nums" style={{ color }}>
+          {count}
+        </span>
+        <span className="text-[11px] text-text-muted">{label}</span>
+      </span>
     </span>
   );
 }
@@ -185,4 +220,13 @@ function DivergenceBadge({ pct }: { pct: number }) {
 
 function fmt(n: number): string {
   return Math.round(n).toLocaleString("en-US");
+}
+
+/** لون القرار - نفس دلالات المنتج: أخضر توسيع، أحمر إيقاف، رمادي انتظار */
+function decisionColor(decision: string): string {
+  return decision === "SCALE"
+    ? "var(--verified)"
+    : decision === "PAUSE"
+      ? "var(--critical)"
+      : "var(--text-muted)";
 }

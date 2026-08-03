@@ -115,6 +115,8 @@ export default async function LeadFormsPage({
               icon={MessageCircle}
               tone="verified"
               verified
+              explainKey="genuineContact"
+              locale={locale}
             />
             <MetricCard
               label="ضغطة بالخطأ (الأرجح)"
@@ -122,12 +124,16 @@ export default async function LeadFormsPage({
               icon={MousePointerClick}
               tone="critical"
               caption={{ text: "تُحتسب تحويلاً لدى المنصّة ولم تُنتج عميلاً", tone: "negative" }}
+              explainKey="accidentalTap"
+              locale={locale}
             />
             <MetricCard
               label="تحتاج وقتاً للتقييم"
               value={messengerBreakdown.pendingCount}
               icon={Clock}
               tone="neutral"
+              explainKey="needsTime"
+              locale={locale}
             />
           </div>
         </>

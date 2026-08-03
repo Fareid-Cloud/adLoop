@@ -109,6 +109,8 @@ export function TruthView({
           tone="neutral"
           verified={false}
           caption={{ text: tr("reportedCardHint"), tone: "muted" }}
+          explainKey="reportedConversions"
+          locale={locale}
         />
         <MetricCard
           label={tr("verifiedCard")}
@@ -117,6 +119,8 @@ export function TruthView({
           tone="verified"
           verified
           caption={{ text: tr("verifiedCardHint"), tone: "positive" }}
+          explainKey="verifiedConversions"
+          locale={locale}
         />
         <MetricCard
           label={tr("verificationRate")}
@@ -135,6 +139,8 @@ export function TruthView({
               : undefined
           }
           bar={{ pct: totals.verificationRatePct }}
+          explainKey="verificationRate"
+          locale={locale}
         />
         <MetricCard
           label={tr("inflationCard")}
@@ -143,6 +149,8 @@ export function TruthView({
           icon={AlertTriangle}
           tone={totals.inflationRatePct >= 50 ? "critical" : "gap"}
           caption={{ text: tr("inflationCardHint"), tone: "warning" }}
+          explainKey="inflationRate"
+          locale={locale}
         />
 
         <MetricCard
@@ -151,6 +159,8 @@ export function TruthView({
           unit={currency}
           icon={Wallet}
           tone="accent"
+          explainKey="cost"
+          locale={locale}
         />
         <MetricCard
           label={tr("wastedSpend")}
@@ -169,6 +179,8 @@ export function TruthView({
               : undefined
           }
           caption={{ text: tr("wastedHint", { pct: pctOf(totals.wastedSpend, totals.cost) }), tone: "negative" }}
+          explainKey="wastedSpend"
+          locale={locale}
         />
         <MetricCard
           label={tr("cpaReported")}
@@ -177,6 +189,8 @@ export function TruthView({
           icon={Users}
           tone="neutral"
           verified={false}
+          explainKey="cpaReported"
+          locale={locale}
         />
         <MetricCard
           label={tr("cpaVerified")}
@@ -190,6 +204,8 @@ export function TruthView({
               ? { text: tr("cpaGap", { amount: `${num(totals.cpaGapAmount)} ${currency}` }), tone: "negative" }
               : { text: tr("noVerifiedYet"), tone: "muted" }
           }
+          explainKey="cpaVerified"
+          locale={locale}
         />
 
         <MetricCard
@@ -204,6 +220,8 @@ export function TruthView({
               ? { text: tr("roasNeedsStore"), tone: "muted" }
               : undefined
           }
+          explainKey="roas"
+          locale={locale}
         />
         <MetricCard
           label={tr("roasVerified")}
@@ -212,6 +230,8 @@ export function TruthView({
           icon={TrendingUp}
           tone="verified"
           verified
+          explainKey="roas"
+          locale={locale}
         />
         <MetricCard
           label={tr("multiTouch")}
@@ -220,6 +240,8 @@ export function TruthView({
           icon={GitBranch}
           tone="accent"
           caption={{ text: tr("multiTouchHint", { n: journey.avgTouchesPerConversion }), tone: "muted" }}
+          explainKey="multiTouch"
+          locale={locale}
         />
         <MetricCard
           label={tr("crossPlatform")}
@@ -231,6 +253,8 @@ export function TruthView({
             text: journey.crossPlatformPaths > 0 ? tr("crossPlatformWarn") : tr("crossPlatformNone"),
             tone: journey.crossPlatformPaths > 0 ? "warning" : "muted",
           }}
+          explainKey="crossPlatform"
+          locale={locale}
         />
       </div>
 
@@ -344,6 +368,8 @@ export function TruthView({
                 tone="verified"
                 verified
                 caption={{ text: tr("probVerifiedHint"), tone: "positive" }}
+                explainKey="probVerified"
+                locale={locale}
               />
               <MetricCard
                 label={tr("probModeled")}
@@ -352,6 +378,8 @@ export function TruthView({
                 tone="gap"
                 verified={false}
                 caption={{ text: tr("probModeledHint"), tone: "warning" }}
+                explainKey="probModeled"
+                locale={locale}
               />
               <MetricCard
                 label={tr("probShare")}
@@ -364,6 +392,8 @@ export function TruthView({
                   text: snapshot.probabilistic.modeledSharePct > 40 ? tr("probShareHigh") : tr("probShareOk"),
                   tone: snapshot.probabilistic.modeledSharePct > 40 ? "negative" : "muted",
                 }}
+                explainKey="probShare"
+                locale={locale}
               />
             </div>
 
@@ -408,13 +438,18 @@ export function TruthView({
         <>
           <SectionTitle icon={Clock}>{tr("journeyHeading")}</SectionTitle>
           <div className="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricCard label={tr("journeyPaths")} value={num(journey.totalPaths)} icon={GitBranch} tone="accent" />
+            <MetricCard label={tr("journeyPaths")} value={num(journey.totalPaths)} icon={GitBranch} tone="accent"
+          explainKey="journeyPaths"
+          locale={locale}
+        />
             <MetricCard
               label={tr("journeyAvgTouches")}
               value={journey.avgTouchesPerConversion}
               icon={Layers}
               tone="default"
               subLabel={tr("journeyAvgTouchesSub")}
+              explainKey="journeyAvgTouches"
+              locale={locale}
             />
             <MetricCard
               label={tr("journeyDuration")}
@@ -423,6 +458,8 @@ export function TruthView({
               icon={Clock}
               tone="default"
               subLabel={tr("journeyDurationSub")}
+              explainKey="journeyDuration"
+              locale={locale}
             />
             <MetricCard
               label={tr("journeySingle")}
@@ -433,6 +470,8 @@ export function TruthView({
                 text: tr("journeySinglePct", { pct: 100 - journey.multiTouchRatePct }),
                 tone: "muted",
               }}
+              explainKey="journeySingle"
+              locale={locale}
             />
           </div>
 
@@ -479,8 +518,12 @@ export function TruthView({
             <p className="mb-3 text-[12.5px] leading-relaxed text-text-muted">
               {tr("syncPitch2")}
             </p>
+            {/* الإعداد نفسه يعيش في تبويب «رفع التحويلات» داخل الإعدادات -
+                معرّف البكسل ورمز الأحداث لكل منصّة. الزرّ كان يقود إلى
+                «ربط المنصّات»، وهي شاشة OAuth لا علاقة لها بهذين الحقلين،
+                فيصل المستخدم إلى مكان لا يجد فيه ما وُعِد به. */}
             <a
-              href="/dashboard/integrations"
+              href="/dashboard/settings?tab=conversionSync"
               className="inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-[12.5px] font-medium text-accent no-underline transition-colors hover:bg-accent/20"
             >
               <Send size={14} />
@@ -490,7 +533,10 @@ export function TruthView({
         ) : (
           <>
             <div className="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <MetricCard label={tr("syncSent")} value={num(sync.sentEvents)} icon={Send} tone="verified" />
+              <MetricCard label={tr("syncSent")} value={num(sync.sentEvents)} icon={Send} tone="verified"
+          explainKey="syncSent"
+          locale={locale}
+        />
               <MetricCard
                 label={tr("syncQuality")}
                 value={sync.avgMatchQuality !== null ? sync.avgMatchQuality : "—"}
@@ -502,14 +548,21 @@ export function TruthView({
                       : sync.avgMatchQuality >= 6 ? "gap" : "critical"
                 }
                 bar={sync.avgMatchQuality !== null ? { pct: sync.avgMatchQuality * 10 } : undefined}
+                explainKey="syncQuality"
+                locale={locale}
               />
               <MetricCard
                 label={tr("syncSkipped")}
                 value={num(sync.skippedEvents)}
                 icon={AlertTriangle}
                 tone="gap"
+                explainKey="syncSkipped"
+                locale={locale}
               />
-              <MetricCard label={tr("syncFailed")} value={num(sync.failedEvents)} icon={AlertTriangle} tone="critical" />
+              <MetricCard label={tr("syncFailed")} value={num(sync.failedEvents)} icon={AlertTriangle} tone="critical"
+          explainKey="syncFailed"
+          locale={locale}
+        />
             </div>
 
             <div className="flex flex-wrap items-center gap-2 text-[12px] text-text-muted">

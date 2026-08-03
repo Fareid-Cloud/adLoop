@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { UserActions } from "./UserActions";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { Users, Building2, Plug, AlertTriangle } from "lucide-react";
+import { TH } from "@/app/components/ui/tableStyles";
 
 const AT_RISK_DAYS = 14; // مفيش دخول من أسبوعين = مؤشر خطر، مش قرار نهائي
 
@@ -101,11 +102,11 @@ export default async function AdminDashboard() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-start text-xs text-text-faint">
-              <th className="px-4 py-2.5 text-start">البريد</th>
-              <th className="px-4 py-2.5 text-start">مؤكد؟</th>
-              <th className="px-4 py-2.5 text-start">آخر دخول</th>
-              <th className="px-4 py-2.5 text-start">استهلاك AI</th>
-              <th className="px-4 py-2.5 text-start">إجراءات</th>
+              <th className={TH}>البريد</th>
+              <th className={TH}>مؤكد؟</th>
+              <th className={TH}>آخر دخول</th>
+              <th className={TH}>استهلاك AI</th>
+              <th className={TH}>إجراءات</th>
             </tr>
           </thead>
           <tbody>

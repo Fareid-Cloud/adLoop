@@ -4,7 +4,7 @@
 // كامل مع بحث. المحتوى من lib/helpContent.ts (نفس مصدر صفحة /dashboard/help).
 import { useState } from "react";
 import { HelpCircle, X, Search, ChevronDown } from "lucide-react";
-import { HELP_SECTIONS, searchHelp } from "@/lib/helpContent";
+import { HELP_SECTIONS, searchHelp, helpText, type HelpArticle } from "@/lib/helpContent";
 
 export function HelpButton({ locale }: { locale: "ar" | "en" }) {
   const ar = locale === "ar";
@@ -60,17 +60,17 @@ export function HelpButton({ locale }: { locale: "ar" | "en" }) {
                 ) : (
                   <div className="flex flex-col gap-2">
                     {results.map((a) => (
-                      <Article key={a.id} a={a} open={openId === a.id} onToggle={() => setOpenId(openId === a.id ? null : a.id)} />
+                      <Article key={a.id} a={a} locale={locale} open={openId === a.id} onToggle={() => setOpenId(openId === a.id ? null : a.id)} />
                     ))}
                   </div>
                 )
               ) : (
                 HELP_SECTIONS.map((s) => (
-                  <div key={s.title} className="mb-5">
-                    <div className="mb-2 text-[11px] font-medium uppercase tracking-wider text-text-faint">{s.title}</div>
+                  <div key={s.title.en} className="mb-5">
+                    <div className="mb-2 text-[11px] font-medium uppercase tracking-wider text-text-faint">{helpText(locale, s.title)}</div>
                     <div className="flex flex-col gap-2">
                       {s.articles.map((a) => (
-                        <Article key={a.id} a={a} open={openId === a.id} onToggle={() => setOpenId(openId === a.id ? null : a.id)} />
+                        <Article key={a.id} a={a} locale={locale} open={openId === a.id} onToggle={() => setOpenId(openId === a.id ? null : a.id)} />
                       ))}
                     </div>
                   </div>
@@ -88,14 +88,21 @@ export function HelpButton({ locale }: { locale: "ar" | "en" }) {
   );
 }
 
-function Article({ a, open, onToggle }: { a: { id: string; q: string; a: string }; open: boolean; onToggle: () => void }) {
+function Article({
+  a,
+  open,
+  onToggle,
+  locale,
+}: {
+  a: HelpArticle;
+  locale: "ar" | "en"; open: boolean; onToggle: () => void }) {
   return (
     <div className="card-shadow overflow-hidden rounded-xl border border-border bg-surface-raised">
       <button onClick={onToggle} className="flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-start text-[13.5px] font-medium text-text-primary">
-        {a.q}
+        {helpText(locale, a.q)}
         <ChevronDown size={15} className={`shrink-0 text-text-faint transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
-      {open && <p className="border-t border-border px-3.5 py-3 text-[13px] leading-relaxed text-text-muted">{a.a}</p>}
+      {open && <p className="border-t border-border px-3.5 py-3 text-[13px] leading-relaxed text-text-muted">{helpText(locale, a.a)}</p>}
     </div>
   );
 }

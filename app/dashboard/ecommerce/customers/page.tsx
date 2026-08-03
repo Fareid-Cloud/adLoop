@@ -41,7 +41,7 @@ export default async function CustomersPage() {
 
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
-    return <DataGate titleAr={tc("noWorkspace")} reasonAr={tc("noWorkspaceHint")} href="/dashboard" hrefLabelAr={tc("toHome")} />;
+    return <DataGate title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
   const analytics = await getCustomerAnalytics(workspace.id);
@@ -56,8 +56,8 @@ export default async function CustomersPage() {
           storeName={workspace.name}
         />
         <DataGate
-          titleAr={tr("noneTitle")}
-          reasonAr={tr("noneReason")}
+          title={tr("noneTitle")}
+          reason={tr("noneReason")}
         />
       </div>
     );
@@ -70,35 +70,35 @@ export default async function CustomersPage() {
 
   if (vipAtRisk) {
     actions.push({
-      titleAr: tr("actVip", { count: vipAtRisk.count }),
-      reasonAr: tr("actVipReason", { ltv: `${fmtNum(vipAtRisk.avgLtv)} ${c}` }),
-      impactAr: tr("actVipImpact", { value: `${fmtNum(vipAtRisk.revenue)} ${c}` }),
+      title: tr("actVip", { count: vipAtRisk.count }),
+      reason: tr("actVipReason", { ltv: `${fmtNum(vipAtRisk.avgLtv)} ${c}` }),
+      impact: tr("actVipImpact", { value: `${fmtNum(vipAtRisk.revenue)} ${c}` }),
       tone: "critical",
     });
   }
   if (atRisk) {
     actions.push({
-      titleAr: tr("actWinBack", { count: atRisk.count }),
-      reasonAr: tr("actWinBackReason"),
-      impactAr: tr("actWinBackImpact", { value: `${fmtNum(atRisk.avgLtv * atRisk.count * 0.15)} ${c}` }),
+      title: tr("actWinBack", { count: atRisk.count }),
+      reason: tr("actWinBackReason"),
+      impact: tr("actWinBackImpact", { value: `${fmtNum(atRisk.avgLtv * atRisk.count * 0.15)} ${c}` }),
       tone: "warning",
       href: "/dashboard/ecommerce/opportunities",
-      hrefLabelAr: t(locale, "profit.seeOpportunities"),
+      hrefLabel: t(locale, "profit.seeOpportunities"),
     });
   }
   if (highReturners) {
     actions.push({
-      titleAr: tr("actReturners", { count: highReturners.count }),
-      reasonAr: tr("actReturnersReason"),
+      title: tr("actReturners", { count: highReturners.count }),
+      reason: tr("actReturnersReason"),
       tone: "critical",
       href: "/dashboard/ecommerce/products",
-      hrefLabelAr: t(locale, "store.productsNav"),
+      hrefLabel: t(locale, "store.productsNav"),
     });
   }
   if (analytics.repeatPurchaseRatePct !== null && analytics.repeatPurchaseRatePct < 20) {
     actions.push({
-      titleAr: tr("actLowRepeat"),
-      reasonAr: tr("actLowRepeatReason", { pct: analytics.repeatPurchaseRatePct ?? 0 }),
+      title: tr("actLowRepeat"),
+      reason: tr("actLowRepeatReason", { pct: analytics.repeatPurchaseRatePct ?? 0 }),
       tone: "warning",
     });
   }
@@ -112,7 +112,10 @@ export default async function CustomersPage() {
       />
 
       <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label={tr("total")} value={fmtNum(analytics.totalCustomers)} icon={Users} tone="accent" />
+        <MetricCard label={tr("total")} value={fmtNum(analytics.totalCustomers)} icon={Users} tone="accent"
+          explainKey="customersTotal"
+          locale={locale}
+        />
         <MetricCard
           label={tr("repeatRate")}
           value={analytics.repeatPurchaseRatePct ?? "—"}
@@ -123,6 +126,8 @@ export default async function CustomersPage() {
               : (analytics.repeatPurchaseRatePct ?? 0) >= 15 ? "gap" : "critical"
           }
           bar={{ pct: analytics.repeatPurchaseRatePct ?? 0 }}
+          explainKey="repeatRate"
+          locale={locale}
         />
         <MetricCard
           label={tr("avgLtv")}
@@ -131,6 +136,8 @@ export default async function CustomersPage() {
           icon={Wallet}
           tone="default"
           caption={{ text: tr("avgLtvHint"), tone: "muted" }}
+          explainKey="avgLtv"
+          locale={locale}
         />
         <MetricCard
           label={tr("repeatMultiple")}
@@ -139,6 +146,8 @@ export default async function CustomersPage() {
           icon={Crown}
           tone="verified"
           caption={{ text: tr("repeatMultipleHint"), tone: "muted" }}
+          explainKey="repeatRate"
+          locale={locale}
         />
       </div>
 
@@ -199,7 +208,7 @@ export default async function CustomersPage() {
         </DataTable>
       </div>
 
-      <RecommendedActions actions={actions} emptyAr={tr("healthy")} />
+      <RecommendedActions actions={actions} empty={tr("healthy")} />
     </div>
   );
 }

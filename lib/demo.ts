@@ -14,8 +14,11 @@ import { prisma } from "@/lib/prisma";
 import { DEMO_DAYS } from "@/lib/entitlements";
 import { seedDemoData } from "@/lib/demoSeed";
 
-export const DEMO_WORKSPACE_NAME_AR = "متجر النخبة — عرض تجريبي";
-export const DEMO_WORKSPACE_NAME_EN = "Elite Store — Demo";
+// اسم واحد قصير في اللغتين: الاسم يظهر في مبدّل مساحات العمل وعنوان كل
+// صفحة، و«متجر النخبة — عرض تجريبي» كان يُقصّ في الاثنين. الشريط العلوي
+// يشرح ما هو الديمو أصلاً، فلا حاجة لأن يحمله الاسم أيضاً.
+export const DEMO_WORKSPACE_NAME_AR = "DEMO";
+export const DEMO_WORKSPACE_NAME_EN = "DEMO";
 
 /**
  * يرفع خطأً إن كانت مساحة العمل تجريبية. يُستدعى قبل كل عملية لها أثر
@@ -68,13 +71,22 @@ interface SeedCampaign {
  * تتحقّق ٣١٪ فقط، وتيك توك ٢٢٪ - وهذه بالضبط الفجوة التي يبيعها المنتج.
  * حملة واحدة تصرف بصفر تحقّق: أوضح إشارة إهدار ممكنة.
  */
+// **المدى مضغوط عمداً.** النسخة الأولى تركت الأحجام تتباعد بمقدار سبعة
+// أضعاف (٩٦ نقرة مقابل ٦٩٠)، فعند رسمها على محور واحد تلتصق الحملات
+// الصغيرة بقاع الرسم كخطّ مستقيم بينما تأخذ الكبيرة كل الارتفاع - فيبدو
+// نصف الديمو ميّتاً وهو ليس كذلك.
+//
+// القصّة لا تعيش في الأحجام بل في `verifyRate`: جوجل تتحقّق ٨٥٪ وتيك توك
+// ٢٢٪ وحملة كاملة بصفر. لذلك ضُغطت الأحجام إلى نحو الضعف بين الأصغر
+// والأكبر، وبقي مدى التحقّق كما هو - الفجوة تظهر أوضح حين لا يشوّشها
+// فارق حجم لا معنى له.
 const CAMPAIGNS: SeedCampaign[] = [
-  { id: "demo-g-search", name: "بحث — طلب عرض سعر", platform: "GOOGLE_ADS", account: "demo-google-1", baseCost: 640, baseClicks: 148, baseRaw: 21, verifyRate: 0.85 },
-  { id: "demo-g-brand", name: "بحث — اسم العلامة", platform: "GOOGLE_ADS", account: "demo-google-1", baseCost: 180, baseClicks: 96, baseRaw: 14, verifyRate: 0.78 },
-  { id: "demo-m-retarget", name: "ميتا — إعادة استهداف", platform: "META_ADS", account: "demo-meta-1", baseCost: 520, baseClicks: 310, baseRaw: 34, verifyRate: 0.44 },
-  { id: "demo-m-awareness", name: "ميتا — وعي بالعلامة", platform: "META_ADS", account: "demo-meta-1", baseCost: 730, baseClicks: 690, baseRaw: 58, verifyRate: 0.31 },
-  { id: "demo-t-video", name: "تيك توك — فيديو المنتج", platform: "TIKTOK_ADS", account: "demo-tiktok-1", baseCost: 410, baseClicks: 540, baseRaw: 46, verifyRate: 0.22 },
-  { id: "demo-t-broad", name: "تيك توك — جمهور واسع", platform: "TIKTOK_ADS", account: "demo-tiktok-1", baseCost: 295, baseClicks: 380, baseRaw: 12, verifyRate: 0 },
+  { id: "demo-g-search", name: "بحث — طلب عرض سعر", platform: "GOOGLE_ADS", account: "demo-google-1", baseCost: 610, baseClicks: 240, baseRaw: 34, verifyRate: 0.85 },
+  { id: "demo-g-brand", name: "بحث — اسم العلامة", platform: "GOOGLE_ADS", account: "demo-google-1", baseCost: 395, baseClicks: 205, baseRaw: 28, verifyRate: 0.78 },
+  { id: "demo-m-retarget", name: "ميتا — إعادة استهداف", platform: "META_ADS", account: "demo-meta-1", baseCost: 540, baseClicks: 300, baseRaw: 38, verifyRate: 0.44 },
+  { id: "demo-m-awareness", name: "ميتا — وعي بالعلامة", platform: "META_ADS", account: "demo-meta-1", baseCost: 700, baseClicks: 415, baseRaw: 52, verifyRate: 0.31 },
+  { id: "demo-t-video", name: "تيك توك — فيديو المنتج", platform: "TIKTOK_ADS", account: "demo-tiktok-1", baseCost: 480, baseClicks: 350, baseRaw: 42, verifyRate: 0.22 },
+  { id: "demo-t-broad", name: "تيك توك — جمهور واسع", platform: "TIKTOK_ADS", account: "demo-tiktok-1", baseCost: 430, baseClicks: 285, baseRaw: 30, verifyRate: 0 },
 ];
 
 const DAYS = 90;

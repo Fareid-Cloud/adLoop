@@ -71,7 +71,10 @@ export default async function PmaxPage() {
           {results.map((r: any) => (
             <div key={r.channel} className="flex items-center justify-between rounded-2xl bg-surface p-4">
               <span className="text-sm font-medium text-text-primary">
-                {CHANNEL_LABELS[r.channel] ?? r.channel}
+                {/* المفتاح يمرّ على `t()` - كان يُطبع خاماً (pmSearch) */}
+                {CHANNEL_LABELS[r.channel]
+                  ? t(locale, `campPages.${CHANNEL_LABELS[r.channel]}`)
+                  : r.channel}
               </span>
               <div className="flex items-center gap-4 text-xs text-text-faint">
                 <span>{r.clicks.toLocaleString()} كليكة</span>

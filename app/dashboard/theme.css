@@ -56,6 +56,8 @@
      وتبان احترافية بدل ما تبقى مربعات مسطّحة (درس من Cometly/Triple Whale).
      القيمة هنا للوضع الداكن (ظل أسود أعمق)، و[data-mode=light] بيغطيها. */
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.22), 0 8px 20px -14px rgba(0, 0, 0, 0.38);
+  --shadow-card-hover: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 26px -12px rgba(0, 0, 0, 0.55);
+  --border-hover: #4A5462;
   --shadow-pop: 0 14px 40px -14px rgba(0, 0, 0, 0.52);
 
   /* مقياس المسافات - وحدة أساسية 4px */
@@ -93,6 +95,8 @@
   /* ظلال الوضع الفاتح: ناعمة، بلمسة رمادي بارد (مش أسود قاسي) - المفتاح
      البصري لإحساس المنتجات الكبيرة */
   --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.03), 0 8px 20px -14px rgba(16, 24, 40, 0.07);
+  --shadow-card-hover: 0 1px 2px rgba(16, 24, 40, 0.06), 0 10px 24px -12px rgba(16, 24, 40, 0.16);
+  --border-hover: #B9C1CC;
   --shadow-pop: 0 14px 40px -14px rgba(16, 24, 40, 0.14);
 }
 
@@ -111,6 +115,8 @@
   --text-muted: #B4BCC8;
   --text-faint: #8B95A3;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.45), 0 14px 34px -14px rgba(0, 0, 0, 0.75);
+  --shadow-card-hover: 0 1px 2px rgba(0, 0, 0, 0.55), 0 16px 38px -12px rgba(0, 0, 0, 0.85);
+  --border-hover: #4A5462;
   --shadow-pop: 0 18px 50px -14px rgba(0, 0, 0, 0.85);
 }
 
@@ -122,11 +128,16 @@
   box-shadow: var(--shadow-card);
   transition: box-shadow .22s ease, transform .22s ease;
 }
-/* عند المرور: إطار أوضح وظل أعمق قليلاً - بلا حركة رأسية.
- * الحركة على كل بطاقة كانت مُتعِبة بصرياً مع كثرة العناصر. */
+/* عند المرور: إطار أغمق بوضوح وظل أعمق قليلاً - بلا حركة رأسية.
+ * الحركة على كل بطاقة كانت مُتعِبة بصرياً مع كثرة العناصر.
+ *
+ * النسخة السابقة لم تكن تُرى أصلاً في الوضع الفاتح: الحدّ ينتقل من
+ * ‎#E7EAEF إلى ‎#D5DAE2 (فرق أقلّ من أن تلتقطه العين) والظل لا يتغيّر
+ * إطلاقاً - نفس المتغيّر في الحالتين. الآن لكلّ وضع حدّ مرور وظلّ مرور
+ * خاصّان به، بفارق محسوس وغير صارخ. */
 .card-shadow:hover {
-  border-color: var(--border-visible);
-  box-shadow: var(--shadow-card);
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-card-hover);
 }
 .pop-shadow { box-shadow: var(--shadow-pop); }
 

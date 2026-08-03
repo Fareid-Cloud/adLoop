@@ -111,8 +111,12 @@ export function CompetitorBoardClient({
 
       {board.totalAds > 0 && (
         <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricCard label={tr("kpiTracked")} value={String(board.competitors.length)} icon={Search} tone="default" locale={locale} />
-          <MetricCard label={tr("kpiRunning")} value={String(board.totalActive)} icon={CheckCircle2} tone="verified" locale={locale} />
+          <MetricCard label={tr("kpiTracked")} value={String(board.competitors.length)} icon={Search} tone="default" locale={locale}
+          explainKey="competitorsTracked"
+        />
+          <MetricCard label={tr("kpiRunning")} value={String(board.totalActive)} icon={CheckCircle2} tone="verified" locale={locale}
+          explainKey="competitorAdsRunning"
+        />
           <MetricCard
             label={tr("kpiProven")}
             value={String(board.totalProven)}
@@ -120,6 +124,7 @@ export function CompetitorBoardClient({
             tone="gap"
             caption={{ text: tr("provenHint"), tone: "muted" }}
             locale={locale}
+            explainKey="competitorProven"
           />
           <MetricCard
             label={tr("kpiLongest")}
@@ -133,6 +138,7 @@ export function CompetitorBoardClient({
                 : undefined
             }
             locale={locale}
+            explainKey="competitorLongest"
           />
         </div>
       )}

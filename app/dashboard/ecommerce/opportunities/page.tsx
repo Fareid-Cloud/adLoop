@@ -59,7 +59,7 @@ export default async function OpportunitiesPage() {
 
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
-    return <DataGate titleAr={tc("noWorkspace")} reasonAr={tc("noWorkspaceHint")} href="/dashboard" hrefLabelAr={tc("toHome")} />;
+    return <DataGate title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
   const result = await buildOpportunities(workspace.id, 30);
@@ -84,6 +84,8 @@ export default async function OpportunitiesPage() {
             unit={`${c} · ${t(locale, "store.perMonth")}`}
             icon={Wallet}
             tone="verified"
+            explainKey="opportunitiesFound"
+            locale={locale}
           />
           <MetricCard
             label={tr("quickWins")}
@@ -95,6 +97,8 @@ export default async function OpportunitiesPage() {
                 ? { text: tr("withImpact", { value: `${fmtNum(easyWins.reduce((s, o) => s + o.estimatedMonthlyProfit, 0))} ${c}` }), tone: "positive" }
                 : undefined
             }
+            explainKey="quickWins"
+            locale={locale}
           />
           <MetricCard
             label={tr("highConfidence")}
@@ -102,6 +106,8 @@ export default async function OpportunitiesPage() {
             icon={TrendingUp}
             tone="verified"
             caption={{ text: tr("highConfidenceHint"), tone: "muted" }}
+            explainKey="highConfidence"
+            locale={locale}
           />
         </div>
       )}
@@ -110,10 +116,10 @@ export default async function OpportunitiesPage() {
 
       {result.opportunities.length === 0 ? (
         <DataGate
-          titleAr={tr("noneTitle")}
-          reasonAr={tr("noneReason")}
+          title={tr("noneTitle")}
+          reason={tr("noneReason")}
           href="/dashboard/ecommerce/products"
-          hrefLabelAr={tr("noneCta")}
+          hrefLabel={tr("noneCta")}
         />
       ) : (
         <>

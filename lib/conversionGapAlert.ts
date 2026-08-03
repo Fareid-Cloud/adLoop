@@ -13,6 +13,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { pushToActionFeed } from "@/lib/actionFeed";
+import { platformLabel } from "@/lib/i18n/dictionary";
 
 const GAP_THRESHOLD_PCT: Record<string, number> = {
   GOOGLE_ADS: 30,
@@ -58,7 +59,9 @@ export async function checkConversionGapAlertForWorkspace(workspaceId: string) {
       source: "TRUTH_GAP",
       type: "ALERT",
       severity: "HIGH",
-      title: `فجوة كبيرة بين تحويلات ${p.platform} المُبلّغة والمؤكدة`,
+      // اسم المنصّة لا قيمة تعدادها: كان العنوان يظهر للمستخدم
+      // كـ«تحويلات GOOGLE_ADS المُبلّغة»
+      title: `فجوة كبيرة بين تحويلات ${platformLabel("ar", p.platform)} المُبلّغة والمؤكدة`,
       description: `المنصة بتقول ${raw} تحويل، لكن اتأكد منهم فعلياً ${verified} بس (فجوة ${gapPct}%).${platformNote} القرارات المبنية على الرقم المُبلّغ وحده ممكن تكون مضلِّلة.`,
       linkUrl: "/dashboard/reports",
       // حصّة التحويلات غير المؤكَّدة من الإنفاق الفعلي - لا تقدير عام

@@ -20,6 +20,11 @@ import { BestAdPair } from "@/app/components/BestAdPair";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { HealthGauge } from "@/app/components/ui/HealthGauge";
+import { PerformanceFunnel } from "@/app/components/PerformanceFunnel";
+import { TrendChart } from "@/app/components/TrendChart";
+import { computeHealthScore } from "@/lib/healthScore";
+import { compareMetric } from "@/lib/periodComparison";
 
 // ألوان رسمية حقيقية (مؤكدة من مصادر العلامات التجارية) - شارة لونية
 // بدل الشعار الفعلي (ملف صورة محمي بحقوق ملكية مش متاح لينا). ملاحظة:
@@ -115,30 +120,91 @@ export async function PlatformHub({
 
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const totalsAgg = await prisma.metricSnapshot.aggregate({
-    where: { workspaceId: workspace.id, platform, date: { gte: thirtyDaysAgo } },
-    _sum: { cost: true, verifiedConversions: true, rawConversions: true },
-  });
+  const sixtyDaysAgo = new Date();
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+  const fourteenDaysAgo = new Date();
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+  const [totalsAgg, prevAgg, daily] = await Promise.all([
+    prisma.metricSnapshot.aggregate({
+      where: { workspaceId: workspace.id, platform, date: { gte: thirtyDaysAgo } },
+      _sum: { cost: true, verifiedConversions: true, rawConversions: true, clicks: true, impressions: true },
+    }),
+    // الفترة السابقة مباشرةً - بدونها كل رقم لقطة بلا اتجاه
+    prisma.metricSnapshot.aggregate({
+      where: { workspaceId: workspace.id, platform, date: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
+      _sum: { cost: true, verifiedConversions: true },
+    }),
+    prisma.metricSnapshot.findMany({
+      where: { workspaceId: workspace.id, platform, date: { gte: fourteenDaysAgo } },
+      select: { date: true, rawConversions: true, verifiedConversions: true },
+      orderBy: { date: "asc" },
+    }),
+  ]);
 
   const cost = totalsAgg._sum.cost ?? 0;
   const verified = totalsAgg._sum.verifiedConversions ?? 0;
+  const rawConv = totalsAgg._sum.rawConversions ?? 0;
+  const clicks = totalsAgg._sum.clicks ?? 0;
+  const impressions = totalsAgg._sum.impressions ?? 0;
   const cpa = verified > 0 ? cost / verified : null;
+
+  const prevVerified = prevAgg._sum.verifiedConversions ?? 0;
+  const prevCpa = prevVerified > 0 ? (prevAgg._sum.cost ?? 0) / prevVerified : 0;
+  const cpaChange = cpa !== null && prevCpa > 0 ? compareMetric(cpa, prevCpa) : null;
+
+  // درجة صحة المنصّة: نفس عدّاد صحة الحساب بنفس العتبات، محسوباً على هذه
+  // المنصّة وحدها. المكوّن الوحيد المتاح هنا هو دقّة التتبّع - تُمرَّر
+  // البقيّة `null` فتُعاد الترجيح عليها وحدها بدل اختلاق رقم.
+  const platformAccuracy = rawConv > 0 ? Math.round((verified / rawConv) * 100) : 0;
+  const platformHealth = computeHealthScore({
+    tracking: rawConv > 0 ? platformAccuracy : null,
+    landing: null, ads: null, audience: null, creatives: null,
+  });
+
+  const trendData = Array.from(
+    daily
+      .reduce((m: Map<string, { verified: number; reported: number }>, s) => {
+        const k = s.date.toISOString().slice(5, 10);
+        const e = m.get(k) ?? { verified: 0, reported: 0 };
+        e.verified += s.verifiedConversions;
+        e.reported += s.rawConversions;
+        m.set(k, e);
+        return m;
+      }, new Map())
+      .entries()
+  ).map(([date, x]) => ({ date, ...x }));
 
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 flex items-center gap-2.5 text-[26px] font-semibold text-text-primary">
-        <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: PLATFORM_COLORS[platform].bg }} />
-        {platformLabel}
-      </h1>
-      <p className="mb-6 text-xs text-text-faint">
-        مقارنة الإعلانات داخل {platformLabel} فقط — لمقارنة باقي المنصات معاً، استخدم
-        "أداء الإعلانات الفردية" في قسم "نظرة شاملة عبر المنصات".
-      </p>
+    <div className="mx-auto max-w-6xl">
+      {/* ---------- الرأس: هويّة المنصّة + درجة صحّتها ---------- */}
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0">
+          <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
+          <h1 className="flex items-center gap-2.5 text-[26px] font-semibold tracking-tight text-text-primary">
+            <PlatformLogo platform={platform} size={26} />
+            {platformLabel}
+          </h1>
+          <p className="mt-1 text-[12.5px] text-text-muted">
+            {t(locale, "campPages.hubSubtitle", { platform: platformLabel })}
+          </p>
+        </div>
 
-      {/* بطاقات المؤشّر الموحّدة - نفس الشكل الهادئ في كل أقسام المنتج */}
-      <div className="mb-6 grid gap-3 sm:grid-cols-3">
+        {/* نفس عدّاد صحة الحساب - عنصر هوية واحد لكل درجة في المنتج */}
+        <div className="flex shrink-0 items-center gap-3 rounded-2xl card-shadow border border-border bg-surface px-4 py-3">
+          <HealthGauge score={platformHealth.overallScore} size="md" />
+          <div className="leading-tight">
+            <div className="text-[13px] font-medium text-text-primary">
+              {t(locale, "campPages.hubHealth", { platform: platformLabel })}
+            </div>
+            <div className="text-[11.5px] text-text-muted">{t(locale, "home.healthPartial")}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ---------- ١) المؤشّرات ---------- */}
+      <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <MetricCard
           label={t(locale, "campPages.hubSpend")}
           explainKey="cost"
@@ -165,22 +231,70 @@ export async function PlatformHub({
           unit={cpa ? workspace.currency : undefined}
           icon={Icons.Target}
           tone="default"
-          caption={
-            cpa
-              ? undefined
-              : { text: t(locale, "campPages.hubNoCpa"), tone: "muted" }
+          verified={!!cpa}
+          trend={
+            cpaChange?.changePct != null ? (
+              <span className={`text-xs ${cpaChange.changePct < 0 ? "text-verified" : "text-critical"}`}>
+                {cpaChange.changePct < 0 ? "▼" : "▲"} {Math.abs(cpaChange.changePct)}% {t(locale, "home.vsPrevPeriod")}
+              </span>
+            ) : undefined
           }
+          caption={cpa ? undefined : { text: t(locale, "campPages.hubNoCpa"), tone: "muted" }}
         />
       </div>
 
-      <div className="mb-6">
+      {/* ---------- ٢) أفضل إعلان وثانيه ---------- */}
+      <div className="mb-4">
         <BestAdPair pick={topPick} currency={workspace.currency} scopeLabel={platformLabel} locale={locale} />
       </div>
 
-      <div className="mb-2 text-[13px] font-medium text-text-muted">
-        القرار لكل إعلان داخل {platformLabel}
+      {/* ---------- ٣) القمع + ٤) الاتجاه، جنباً إلى جنب ----------
+          القمع يقول «أين يتسرّب العميل»، والاتجاه يقول «هل يتّسع التسرّب
+          أم يضيق» - سؤالان متتاليان يُقرآن معاً لا في موضعين متباعدين. */}
+      <div className="mb-4 grid gap-3 lg:grid-cols-2">
+        <PerformanceFunnel
+          impressions={impressions}
+          clicks={clicks}
+          reported={rawConv}
+          verified={verified}
+          locale={locale}
+        />
+
+        {trendData.length > 1 ? (
+          <section className="card-shadow rounded-2xl border border-border bg-surface p-5">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[13px] font-medium text-text-muted">{t(locale, "home.trend14")}</span>
+              <span className="flex items-center gap-4 text-[12px]">
+                <span className="flex items-center gap-1.5 text-text-muted">
+                  <span className="h-2 w-2 rounded-full bg-gap" />
+                  {t(locale, "home.reportedByPlatforms")}
+                </span>
+                <span className="flex items-center gap-1.5 text-verified">
+                  <span className="h-2 w-2 rounded-full bg-verified" />
+                  {t(locale, "home.actuallyVerified")}
+                </span>
+              </span>
+            </div>
+            <TrendChart
+              data={trendData}
+              labels={{
+                verified: t(locale, "home.actuallyVerified"),
+                reported: t(locale, "home.reportedByPlatforms"),
+              }}
+            />
+          </section>
+        ) : (
+          <section className="card-shadow flex items-center justify-center rounded-2xl border border-border bg-surface p-5 text-[12.5px] text-text-muted">
+            {t(locale, "campPages.hubNoTrend")}
+          </section>
+        )}
       </div>
-      <div className="mb-6">
+
+      {/* ---------- ٥) القرار لكل إعلان ---------- */}
+      <div className="mb-4">
+        <div className="mb-2.5 text-[16.5px] font-semibold tracking-tight text-text-primary">
+          {t(locale, "campPages.hubDecisions", { platform: platformLabel })}
+        </div>
         <AdDecisionTable
           locale={locale}
           decisions={adDecisions}
@@ -190,8 +304,10 @@ export async function PlatformHub({
         />
       </div>
 
-      <div className="mb-2.5 text-[13px] text-text-muted">تحليلات {platformLabel} التفصيلية</div>
-      {/* أيقونة معبّرة لكل تحليل بدل سهم مكرّر لا يضيف معنى */}
+      {/* ---------- ٦) التحليلات التفصيلية ---------- */}
+      <div className="mb-2.5 text-[16.5px] font-semibold tracking-tight text-text-primary">
+        {t(locale, "campPages.hubDeepDives", { platform: platformLabel })}
+      </div>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {deepDiveLinks.map((link) => {
           const Icon = iconForLink(link.href);

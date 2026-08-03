@@ -20,6 +20,8 @@ import { DateRangePicker } from "@/app/components/ui/DateRangePicker";
 import { METRICS, type DataSource, type Dimension, type MetricKey, type ReportResult } from "@/lib/reports/reportEngine";
 import type { DateRange, PresetKey, CompareMode } from "@/lib/dateRange";
 import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
+import { TH } from "@/app/components/ui/tableStyles";
+import { renderReportDocument } from "@/lib/reports/reportDocument";
 
 export interface SavedView {
   id: string;
@@ -180,8 +182,28 @@ export function ReportsClient({
               <button onClick={() => setEmailOpen(true)} className="flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2.5 text-[13px] text-text-primary">
                 <Mail size={15} /> {tr("emailIt")}
               </button>
-              <button onClick={() => exportCsv(result, locale, currency)} className="flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2.5 text-[13px] text-text-primary">
-                <Download size={15} /> {tr("export")}
+              {/* المستند المصمَّم أولاً - هو ما يخرج من المنتج إلى خارجه */}
+              <button
+                onClick={() =>
+                  exportDocument(
+                    result,
+                    locale,
+                    currency,
+                    tr("docTitle"),
+                    tr("docTitle"),
+                    // الفترة من المدى المختار نفسه لا من حالة منفصلة قد تنحرف عنه
+                    `${initial.range.from} — ${initial.range.to}`
+                  )
+                }
+                className="flex items-center gap-1.5 rounded-xl bg-accent px-3.5 py-2.5 text-[13px] font-medium text-white"
+              >
+                <Download size={15} /> {t(locale, "reportDoc.downloadHtml")}
+              </button>
+              <button
+                onClick={() => exportCsv(result, locale, currency)}
+                className="flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2.5 text-[13px] text-text-primary"
+              >
+                <Download size={15} /> {t(locale, "reportDoc.downloadCsv")}
               </button>
             </>
           )}
@@ -504,7 +526,7 @@ function ResultBlock({
           <table className="w-full min-w-[720px] text-start text-[13px]">
             <thead>
               <tr className="border-b border-border text-[11.5px] text-text-muted">
-                <th className="px-4 py-3 text-start font-medium">—</th>
+                <th className={TH}>—</th>
                 {cols.map((m) => (
                   <th key={m} className="px-4 py-3 text-start font-medium">{tr(metricLabelKey(m))}</th>
                 ))}
@@ -858,6 +880,64 @@ function fmtNumber(n: number): string {
   const abs = Math.abs(n);
   const digits = abs >= 100 ? 0 : abs >= 10 ? 1 : 2;
   return n.toLocaleString("en-US", { maximumFractionDigits: digits });
+}
+
+
+/**
+ * تنزيل التقرير كمستند مصمَّم بهوية المنتج.
+ *
+ * الـCSV يبقى متاحاً بجانبه لا بدلاً منه: من يريد فتح الأرقام في جدول
+ * ويعيد ترتيبها يحتاج CSV، ومن يريد إرساله لمدير أو عميل يحتاج مستنداً
+ * يُقرأ كما هو. المسار الواحد لا يخدم الحاجتين.
+ */
+function exportDocument(
+  result: ReportResult,
+  locale: Locale,
+  currency: string,
+  workspaceName: string,
+  title: string,
+  periodLabel: string
+) {
+  const cols = Object.keys(result.totals.values) as MetricKey[];
+  const tr = (k: string, vars?: Record<string, string | number>) =>
+    t(locale, `reports.${k}`, vars);
+
+  // العملة تُلحق بالمؤشّرات المالية وحدها - «نسبة التحقّق ٣٩ ريال» بلا معنى
+  const isMoney = (k: MetricKey) => /cost|spend|revenue|cpa|cpc|cpm|profit/i.test(k);
+
+  const doc = renderReportDocument({
+    locale,
+    workspaceName,
+    title,
+    periodLabel,
+    generatedAt: new Date(),
+    kpis: cols.slice(0, 5).map((c) => ({
+      label: tr(metricLabelKey(c)),
+      value: fmtNumber(result.totals.values[c] ?? 0),
+      unit: isMoney(c) ? currency : undefined,
+    })),
+    // الخلاصة مفاتيح ترجمة لا نصوص جاهزة - تُترجم هنا بلغة المستند
+    summary: result.summary.map((s) => tr(s.key, s.vars)),
+    sections: [
+      {
+        title,
+        columns: [tr("colLabel"), ...cols.map((c) => tr(metricLabelKey(c)))],
+        numericColumns: cols.map((_, i) => i + 1),
+        rows: result.rows.map((r) => [
+          r.label,
+          ...cols.map((c) => fmtNumber(r.values[c] ?? 0)),
+        ]),
+      },
+    ],
+  });
+
+  const blob = new Blob([doc], { type: "text/html;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `adloop-${new Date().toISOString().slice(0, 10)}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 /** تصدير من البيانات المعروضة نفسها - لا نداء ثانٍ قد يُرجع أرقاماً مختلفة */

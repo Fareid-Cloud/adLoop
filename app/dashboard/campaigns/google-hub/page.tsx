@@ -12,7 +12,6 @@ export default async function GoogleHubPage() {
       platformLabel={platformLabel(locale, "GOOGLE_ADS")}
       deepDiveLinks={[
         { href: "/dashboard/campaigns/quality-score", label: t(locale, "campNav.qualityScore") },
-        { href: "/dashboard/campaigns/video-performance", label: t(locale, "campNav.videoPerformance") },
         { href: "/dashboard/campaigns/shopping", label: t(locale, "campNav.shopping") },
         { href: "/dashboard/campaigns/pmax", label: t(locale, "campNav.pmax") },
         { href: "/dashboard/campaigns/youtube", label: t(locale, "campNav.youtube") },

@@ -26,8 +26,10 @@ import { SidebarNav } from "@/app/components/SidebarNav";
 import { WorkspaceSwitcher } from "@/app/components/WorkspaceSwitcher";
 import { getEntitlements } from "@/lib/entitlements";
 import { TrialBar } from "@/app/components/TrialBar";
-import { DemoBar } from "@/app/components/DemoBar";
+import { DemoBadge } from "@/app/components/DemoBadge";
 import { getMonthlyAiUsage } from "@/lib/aiRateLimit";
+import { ThemeModeToggle } from "@/app/components/ThemeModeToggle";
+import { getNavBadges } from "@/lib/navBadges";
 // next/font/google بيحمّل ملف الخط فعلياً وقت الـ build ويربطه بمتغير CSS -
 // ده الفرق عن مجرد كتابة اسم الخط في font-family من غير ما يكون مستورد
 // فعلياً (المشكلة اللي حصلت في المعاينة السابقة)
@@ -145,6 +147,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     ? Math.max(0, entitlements.limits.aiCredits - creditsUsed) + entitlements.purchasedCredits
     : 0;
 
+  // عدّادات الأقسام - استعلام واحد خفيف، وفشله يُخفيها ولا يُسقط اللوحة
+  const navBadges = await getNavBadges(activeWorkspace?.id ?? null);
+
   const demoDaysLeft = demoWs?.demoExpiresAt
     ? Math.max(0, Math.ceil((demoWs.demoExpiresAt.getTime() - Date.now()) / 86_400_000))
     : null;
@@ -187,6 +192,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <div className="flex flex-1">
       <SidebarNav
         locale={locale}
+        badges={navBadges}
         workspaceSlot={
           activeWorkspace ? (
             <WorkspaceSwitcher
@@ -208,8 +214,18 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             backdrop-filter يتموضع بالنسبة إليه لا إلى الشاشة، فتُقصّ اللوحات
             المنبثقة (المساعدة، الإشعارات) على ارتفاع الهيدر. خلفية معتمة
             تعطي نفس الفصل البصري دون كسر أي عنصر بداخله. */}
-        <div className="sticky top-0 z-40 mb-5 flex items-center gap-3 border-b border-border bg-bg px-10 py-4">
+        {/* ارتفاع ثابت ٦٨ بكسل مطابق لصفّ الشعار في القائمة الجانبية، فيصير
+            الحدّان السفليّان خطّاً واحداً متّصلاً. الارتفاع الحرّ السابق كان
+            يتبع محتواه فينكسر الخطّ عند حدّ العمودين. */}
+        <div className="sticky top-0 z-40 mb-5 flex h-[68px] items-center gap-3 border-b border-border bg-bg px-10">
           <TopSearch locale={locale} />
+          {demoWs && (
+            <DemoBadge
+              locale={locale}
+              daysLeft={demoDaysLeft}
+              hasRealWorkspace={allWorkspaces.length > 1}
+            />
+          )}
           <div className="flex flex-1 items-center justify-end gap-1.5">
           {/* شارة واحدة للرصيد. كانت اثنتين لنفس الرقم: واحدة تقرأ حدّاً
               ثابتاً وتتجاهل الباقة والرصيد المشترى، وأخرى تكرّرها. تُخفى
@@ -221,6 +237,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               locale={locale}
             />
           )}
+          <ThemeModeToggle initialMode={mode} locale={locale} />
           <HelpButton locale={locale} />
           <div id="tour-notification-bell"><NotificationBell /></div>
           {user && (
@@ -238,15 +255,10 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         <div className="px-10 pb-10">{children}</div>
       </main>
       </div>
-      {demoWs && (
-        <div className="px-10 pt-4">
-          <DemoBar
-            locale={locale}
-            daysLeft={demoDaysLeft}
-            hasRealWorkspace={allWorkspaces.length > 1}
-          />
-        </div>
-      )}
+      {/* حُذف شريط الديمو الذي كان هنا: كان يحتلّ عرض الشاشة أسفل الرأس
+          في كل صفحة ويكرّر الرسالة نفسها، فيسرق مساحة من المحتوى الذي
+          دخل المستخدم ليراه - نقيض غرض الديمو. صار شارة `DEMO` جنب
+          الشعار، وتفاصيلها عند المرور عليها. */}
 
       {/* شريط الاشتراك لا يظهر داخل الديمو: بيع اشتراك فوق بيانات وهمية
           يخلط رسالتين لا علاقة بينهما */}

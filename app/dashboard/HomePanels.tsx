@@ -57,7 +57,7 @@ export function SetupProgressPanel({
   return (
     <section className="card-shadow rounded-2xl border border-border bg-surface p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-[15px] font-semibold text-text-primary">
+        <h2 className="text-[16.5px] font-semibold tracking-tight text-text-primary">
           {tr("readyPct", { pct })}
         </h2>
         <span className="text-[12px] text-text-muted">
@@ -139,7 +139,12 @@ export function RecentActivityPanel({
   return (
     <section className="card-shadow rounded-2xl border border-border bg-surface p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-[15px] font-semibold text-text-primary">{tr("recentActivity")}</h2>
+        <div>
+          <h2 className="text-[16.5px] font-semibold tracking-tight text-text-primary">
+            {tr("recentActivity")}
+          </h2>
+          <p className="mt-0.5 text-[12px] text-text-muted">{tr("recentActivityHint")}</p>
+        </div>
         <Link href="/dashboard/actions" className="text-[12px] font-medium text-accent no-underline">
           {tr("viewAll")}
         </Link>
@@ -193,7 +198,7 @@ export function ConnectedPlatformsPanel({
   return (
     <section className="card-shadow rounded-2xl border border-border bg-surface p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-[15px] font-semibold text-text-primary">{tr("connectedPlatforms")}</h2>
+        <h2 className="text-[16.5px] font-semibold tracking-tight text-text-primary">{tr("connectedPlatforms")}</h2>
         {connected.length > 0 && (
           <span className={`flex items-center gap-1.5 text-[12px] ${allHealthy ? "text-verified" : "text-gap"}`}>
             <CircleDot size={12} />
@@ -265,7 +270,7 @@ export function AfterActivationPanel({ locale }: { locale: Locale }) {
   const tr = (k: string) => t(locale, `homePanels.${k}`);
   return (
     <section className="card-shadow rounded-2xl border border-border bg-surface p-4">
-      <h2 className="text-[15px] font-semibold text-text-primary">{tr("afterActivation")}</h2>
+      <h2 className="text-[16.5px] font-semibold tracking-tight text-text-primary">{tr("afterActivation")}</h2>
       <p className="mb-3 mt-0.5 text-[12px] leading-relaxed text-text-muted">{tr("afterActivationHint")}</p>
       <ul className="flex flex-col gap-2.5">
         {BENEFITS.map(({ key, Icon, tone }) => (
@@ -303,7 +308,7 @@ export function SupportPanel({
 
   return (
     <section className="card-shadow rounded-2xl border border-border bg-surface p-4">
-      <h2 className="text-[15px] font-semibold text-text-primary">{tr("support")}</h2>
+      <h2 className="text-[16.5px] font-semibold tracking-tight text-text-primary">{tr("support")}</h2>
       <p className="mb-3 mt-0.5 text-[12px] text-text-muted">{tr("supportHint")}</p>
 
       <div className="flex flex-col gap-2">

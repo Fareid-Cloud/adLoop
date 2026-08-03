@@ -79,6 +79,8 @@ export default async function AttributionEnginePage({
               tone="gap"
               verified={false}
               bar={{ pct: modeledPct, caption: t(locale, "campPages.attrModeledBar", { pct: modeledPct }) }}
+              explainKey="modeledAttribution"
+              locale={locale}
             />
           </div>
 

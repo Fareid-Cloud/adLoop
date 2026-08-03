@@ -37,10 +37,13 @@ export function SidebarNav({
   locale,
   supportSlot,
   workspaceSlot,
+  badges = {},
 }: {
   locale: "ar" | "en";
   supportSlot?: React.ReactNode;
   workspaceSlot?: React.ReactNode;
+  /** عدد ما ينتظر المستخدم في كل قسم، مفتاحه مسار القسم */
+  badges?: Record<string, number>;
 }) {
   const pathname = usePathname();
   const ar = locale === "ar";
@@ -86,30 +89,39 @@ export function SidebarNav({
       // ثابت مع التمرير: القائمة نفسها لا تتحرك، والتنقّل يحدث داخلها
       className={`sticky top-0 flex h-screen shrink-0 flex-col overflow-hidden border-e border-border bg-surface transition-[width] duration-200 ${collapsed ? "w-[68px]" : "w-60"}`}
     >
-      {/* الرأس ثابت: الشعار والبحث لا يختفيان مع التمرير، تماماً كرأس
-          الصفحة. كان الشريط كلّه يتمرّر معاً فيضيعان عند أوّل تمرير. */}
-      <div className="shrink-0 border-b border-border/60 px-3 pb-3 pt-5">
-      {/* الشعار */}
-      <a href="/dashboard" className={`mb-5 flex items-center gap-2 no-underline ${collapsed ? "justify-center px-0" : "px-2"}`}>
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent text-white">
-          <ListChecks size={16} />
-        </span>
-        {!collapsed && <span className="text-[16px] font-bold tracking-tight text-text-primary">AdLoop</span>}
-      </a>
+      {/* صفّ الشعار بارتفاع رأس الصفحة نفسه (SHELL_HEADER_H) وبنفس الحدّ
+          السفلي، فيمتدّ الخطّان كخطّ واحد عبر الشاشة. كان ارتفاع هذا الصفّ
+          حرّاً يتبع محتواه، فينكسر الخطّ عند الحدّ بين العمودين. */}
+      <div className="flex h-[68px] shrink-0 items-center border-b border-border px-3">
+        <a
+          href="/dashboard"
+          className={`flex w-full items-center gap-2 no-underline ${collapsed ? "justify-center px-0" : "px-2"}`}
+        >
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent text-white">
+            <ListChecks size={16} />
+          </span>
+          {!collapsed && (
+            <span className="text-[16px] font-bold tracking-tight text-text-primary">AdLoop</span>
+          )}
+        </a>
+      </div>
 
-      {/* بحث داخل القائمة */}
+      {/* البحث خارج منطقة التمرير: `shrink-0` داخل عمود `h-screen` يعني أنه
+          لا يتقلّص ولا يتمرّر مهما طالت القائمة تحته - وهو ما كان يجعله
+          يختفي عند الوصول لآخر الصفحة. */}
       {!collapsed && (
-        <div className="relative mb-4">
-          <Search size={14} className="absolute inset-y-0 my-auto ms-2.5 text-text-faint" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={ar ? "بحث..." : "Search..."}
-            className="w-full rounded-lg border border-border bg-surface-raised py-1.5 ps-8 pe-2 text-[13px] text-text-primary placeholder:text-text-faint outline-none focus:border-accent"
-          />
+        <div className="shrink-0 border-b border-border/60 px-3 py-3">
+          <div className="relative">
+            <Search size={14} className="absolute inset-y-0 my-auto ms-2.5 text-text-faint" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={ar ? "بحث..." : "Search..."}
+              className="w-full rounded-lg border border-border bg-surface-raised py-1.5 ps-8 pe-2 text-[13px] text-text-primary placeholder:text-text-faint outline-none focus:border-accent"
+            />
+          </div>
         </div>
       )}
-      </div>
 
       <nav className="no-scrollbar flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-4">
         {query ? (
@@ -145,17 +157,47 @@ export function SidebarNav({
                           href={item.href}
                           id={`tour-nav-${item.href.replace(/\//g, "-")}`}
                           title={collapsed ? label(item) : undefined}
-                          className={`flex flex-1 items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13.5px] no-underline transition-colors ${
+                          className={`relative flex flex-1 items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13.5px] no-underline transition-colors ${
                             active ? "bg-accent font-medium text-white shadow-sm" : "text-text-muted hover:bg-surface-raised hover:text-text-primary"
                           }`}
                         >
                           <Icon size={16} strokeWidth={1.9} className="shrink-0" />
                           {!collapsed && <span className="truncate">{label(item)}</span>}
+                          {/* علامة AI على ما يستدعي نموذجاً لغوياً فعلاً -
+                              فيعرف المستخدم أين يُستهلك رصيده الشهري */}
+                          {!collapsed && item.usesAi && (
+                            <span
+                              className={`shrink-0 rounded px-1 py-px font-mono text-[9px] font-bold tracking-wide ${
+                                active ? "bg-white/25 text-white" : "bg-accent/15 text-accent"
+                              }`}
+                            >
+                              AI
+                            </span>
+                          )}
+                          {/* العدّاد على القسم نفسه: بدونه لا شيء يقول أن
+                              هناك ما ينتظر، فلا يُفتح القسم أصلاً. يُخفى
+                              عند طيّ القائمة لأن النقطة الملوّنة تكفي. */}
+                          {badges[item.href] ? (
+                            collapsed ? (
+                              <span className="absolute end-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-critical" />
+                            ) : (
+                              <span
+                                className={`ms-auto flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 font-mono text-[10.5px] font-semibold ${
+                                  active ? "bg-white/25 text-white" : "bg-accent/15 text-accent"
+                                }`}
+                              >
+                                {badges[item.href] > 99 ? "99+" : badges[item.href]}
+                              </span>
+                            )
+                          ) : null}
                         </a>
                         {item.children && !collapsed && (
                           <button
                             onClick={() => setManuallyToggled((prev) => ({ ...prev, [item.href]: !expanded }))}
-                            className="rounded-md p-1 text-text-faint hover:bg-surface-raised hover:text-text-primary"
+                            // بلا خلفية عند المرور: المربّع الرمادي خلف
+                            // السهم يقرأ كعنصر ثانٍ منفصل عن القسم، فيبدو
+                            // كأنه زرّ آخر. اللون وحده يكفي إشارةً.
+                            className="p-1 text-text-faint transition-colors hover:text-accent"
                             aria-label={expanded ? (ar ? "طي" : "Collapse") : (ar ? "توسيع" : "Expand")}
                           >
                             <ChevronDown size={14} className={`transition-transform ${expanded ? "rotate-0" : "-rotate-90 rtl:rotate-90"}`} />

@@ -69,8 +69,8 @@ export default async function VideoPerformancePage({
     return { ...raw, ...computeVideoMetrics(raw) };
   });
 
-  const { ranked, insight } = compareVideoPerformance(withMetrics, "ar");
-  const missingPlatforms = ["META_ADS", "TIKTOK_ADS", "SNAPCHAT_ADS"].filter(
+  const { ranked, insight } = compareVideoPerformance(withMetrics, locale);
+  const missingPlatforms = ["META_ADS", "TIKTOK_ADS"].filter(
     (p) => !byPlatform.some((bp: any) => bp.platform === p)
   );
 
@@ -103,9 +103,9 @@ export default async function VideoPerformancePage({
               </div>
               <div>
                 <div className="font-mono text-lg text-text-primary">
-                  {m.costPerThruPlay || "غير متاح"}
+                  {m.costPerThruPlay || t(locale, "common.notAvailable")}
                 </div>
-                <div className="text-[11px] text-text-faint">تكلفة المشاهدة الكاملة</div>
+                <div className="text-[11px] text-text-faint">{t(locale, "campPages.vidCostPerThruPlay")}</div>
               </div>
             </div>
           </div>
@@ -114,8 +114,9 @@ export default async function VideoPerformancePage({
 
       {missingPlatforms.length > 0 && (
         <p className="mt-4 text-xs text-text-faint">
-          ملاحظة صادقة: {missingPlatforms.map((p) => platformName(locale, p)).join("، ")} لا تُزامَن بياناتها
-          فيديو للصفحة دي حالياً - محتاجة بناء إضافي منفصل لكل منصة.
+          {t(locale, "campPages.vidMissing", {
+            platforms: missingPlatforms.map((p) => platformLabel(locale, p)).join("، "),
+          })}
         </p>
       )}
     </div>

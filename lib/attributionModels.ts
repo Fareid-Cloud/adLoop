@@ -1,4 +1,5 @@
-// lib/attributionModels.ts
+
+import { platformLabel } from "@/lib/i18n/dictionary";// lib/attributionModels.ts
 //
 // ثمانية نماذج إسناد تعمل على مسار اللمسات نفسه، فتُقارَن جنباً إلى جنب.
 //
@@ -427,7 +428,8 @@ export function computeJourneyStats(paths: ConversionPath[], topN = 5): JourneyS
     // رحلة واحدة لا نمطان مختلفان
     const seq: string[] = [];
     for (const t of p.touches) {
-      const label = t.platform ?? t.channel;
+      // المنصّة تُعرض باسمها؛ القناة نصّ داخلي أصلاً فتبقى كما هي
+  const label = t.platform ? platformLabel("ar", t.platform) : t.channel;
       if (seq[seq.length - 1] !== label) seq.push(label);
     }
     const seqKey = seq.join(" → ");

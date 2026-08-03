@@ -107,6 +107,8 @@ export default async function AttributionPathPage({
           icon={Target}
           tone="neutral"
           bar={{ pct: 100 - multiTouchPct }}
+          explainKey="singlePath"
+          locale={locale}
         />
         <MetricCard
           label={t(locale, "campPages.pathMulti")}
@@ -122,6 +124,8 @@ export default async function AttributionPathPage({
                 : t(locale, "campPages.pathNoMulti"),
             tone: multiTouchPct > 0 ? "warning" : "muted",
           }}
+          explainKey="multiPath"
+          locale={locale}
         />
       </div>
 

@@ -41,7 +41,7 @@ export default async function ProfitPage({
 
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
-    return <DataGate titleAr={tc("noWorkspace")} reasonAr={tc("noWorkspaceHint")} href="/dashboard" hrefLabelAr={tc("toHome")} />;
+    return <DataGate title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
   const journey = await getProfitJourney(workspace.id, windowDays);
@@ -56,8 +56,8 @@ export default async function ProfitPage({
           storeName={workspace.name}
         />
         <DataGate
-          titleAr={tr("noRevenue")}
-          reasonAr={tr("noRevenueReason")}
+          title={tr("noRevenue")}
+          reason={tr("noRevenueReason")}
         />
       </div>
     );
@@ -70,55 +70,55 @@ export default async function ProfitPage({
 
   if (journey.biggestLeak) {
     actions.push({
-      titleAr: tr("focusFirst", { label: tx(journey.biggestLeak.label) }),
-      reasonAr: tr("focusReason", {
+      title: tr("focusFirst", { label: tx(journey.biggestLeak.label) }),
+      reason: tr("focusReason", {
         amount: `${fmtNum(journey.biggestLeak.amount)} ${c}`,
         pct: journey.biggestLeak.pctOfRevenue,
         gain: `${fmtNum(journey.biggestLeak.amount * 0.1)} ${c}`,
       }),
       tone: "warning",
       href: "/dashboard/ecommerce/opportunities",
-      hrefLabelAr: tr("seeOpportunities"),
+      hrefLabel: tr("seeOpportunities"),
     });
   }
 
   if (journey.netMarginPct !== null && journey.netMarginPct < 0) {
     actions.push({
-      titleAr: tr("losingTitle"),
-      reasonAr: tr("losingReason", { pct: journey.netMarginPct ?? 0 }),
+      title: tr("losingTitle"),
+      reason: tr("losingReason", { pct: journey.netMarginPct ?? 0 }),
       tone: "critical",
       href: "/dashboard/ecommerce/products",
-      hrefLabelAr: tr("losingCta"),
+      hrefLabel: tr("losingCta"),
     });
   } else if (journey.netMarginPct !== null && journey.netMarginPct < 10) {
     actions.push({
-      titleAr: tr("thinTitle"),
-      reasonAr: tr("thinReason", { pct: journey.netMarginPct ?? 0 }),
+      title: tr("thinTitle"),
+      reason: tr("thinReason", { pct: journey.netMarginPct ?? 0 }),
       tone: "warning",
       href: "/dashboard/ecommerce/pricing-intelligence",
-      hrefLabelAr: tr("thinCta"),
+      hrefLabel: tr("thinCta"),
     });
   }
 
   const adStage = journey.stages.find((s) => s.key === "advertising");
   if (adStage && adStage.pctOfRevenue >= 30) {
     actions.push({
-      titleAr: tr("adHeavyTitle"),
-      reasonAr: tr("adHeavyReason", { pct: adStage.pctOfRevenue }),
+      title: tr("adHeavyTitle"),
+      reason: tr("adHeavyReason", { pct: adStage.pctOfRevenue }),
       tone: "critical",
       href: "/dashboard/campaigns/creatives",
-      hrefLabelAr: tr("adHeavyCta"),
+      hrefLabel: tr("adHeavyCta"),
     });
   }
 
   const returnsStage = journey.stages.find((s) => s.key === "returns");
   if (returnsStage && returnsStage.pctOfRevenue >= 8) {
     actions.push({
-      titleAr: tr("returnsTitle"),
-      reasonAr: tr("returnsReason", { pct: returnsStage.pctOfRevenue }),
+      title: tr("returnsTitle"),
+      reason: tr("returnsReason", { pct: returnsStage.pctOfRevenue }),
       tone: "critical",
       href: "/dashboard/ecommerce/orders",
-      hrefLabelAr: tr("returnsCta"),
+      hrefLabel: tr("returnsCta"),
     });
   }
 
@@ -131,13 +131,18 @@ export default async function ProfitPage({
       />
 
       <div className="mb-8 grid gap-3 sm:grid-cols-3">
-        <MetricCard label={tc("revenue")} value={fmtNum(journey.revenue)} unit={c} icon={Wallet} tone="accent" />
+        <MetricCard label={tc("revenue")} value={fmtNum(journey.revenue)} unit={c} icon={Wallet} tone="accent"
+          explainKey="revenue"
+          locale={locale}
+        />
         <MetricCard
           label={t(locale, "store.netProfit")}
           value={fmtNum(journey.netProfit)}
           unit={c}
           icon={TrendingUp}
           tone={journey.netProfit >= 0 ? "verified" : "critical"}
+          explainKey="netProfit"
+          locale={locale}
         />
         <MetricCard
           label={tr("netMargin")}
@@ -150,6 +155,8 @@ export default async function ProfitPage({
                 : journey.netMarginPct >= 10 ? "gap" : "critical"
           }
           bar={journey.netMarginPct !== null ? { pct: Math.max(0, journey.netMarginPct) } : undefined}
+          explainKey="grossMargin"
+          locale={locale}
         />
       </div>
 
@@ -232,18 +239,19 @@ export default async function ProfitPage({
       {journey.biggestLeak && (
         <div className="mb-2 flex items-start gap-2 rounded-2xl border border-border bg-surface p-4">
           <AlertTriangle size={15} className="mt-0.5 shrink-0 text-gap" />
+          {/* كانت جملة عربية مثبّتة، وفيها «ريال» ثابتة رغم أن عملة
+              المساحة متغيّرة - فتقرأ خطأً صريحاً لمتجر مصري أو إماراتي. */}
           <p className="text-[12.5px] leading-relaxed text-text-muted">
-            أكبر بند يستهلك إيرادك هو <span className="font-semibold text-text-primary">{tx(journey.biggestLeak.label)}</span>{" "}
-            بـ{journey.biggestLeak.pctOfRevenue}% من كل ريال تبيعه. خفضه ١٠% يضيف{" "}
-            <span className="font-semibold text-verified">
-              {fmtNum(journey.biggestLeak.amount * 0.1)} {c}
-            </span>{" "}
-            إلى صافي ربحك دون بيع وحدة إضافية واحدة.
+            {t(locale, "store.biggestLeakLine", {
+              item: tx(journey.biggestLeak.label),
+              pct: journey.biggestLeak.pctOfRevenue,
+              amount: `${fmtNum(journey.biggestLeak.amount * 0.1)} ${c}`,
+            })}
           </p>
         </div>
       )}
 
-      <RecommendedActions actions={actions} emptyAr={tr("healthy")} />
+      <RecommendedActions actions={actions} empty={tr("healthy")} />
     </div>
   );
 }

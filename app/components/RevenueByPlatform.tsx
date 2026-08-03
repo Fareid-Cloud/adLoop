@@ -76,12 +76,19 @@ export function RevenueByPlatform({
           {tr("total", { value: num(totalRevenue), currency })}
         </span>
       </div>
-      <p className="mb-3 text-[11.5px] text-text-faint">
+      <p className="mb-2 text-[11.5px] text-text-faint">
         {tr("sortedBy")}
         {breakEvenRoas !== null
           ? tr("vsBreakEven", { n: breakEvenRoas })
           : tr("setMargin")}
         .
+      </p>
+
+      {/* مفتاح العلامة الرأسية: بدونه تُقرأ كخدش في الشريط لا كمعلومة،
+          وهي في الحقيقة أهمّ عنصر في الصفّ - ما بعدها هو الربح. */}
+      <p className="mb-3 flex items-center gap-1.5 text-[11.5px] text-text-faint">
+        <span className="inline-block h-3 w-[3px] shrink-0 rounded-full bg-text-primary" />
+        {tr("legendSpendMark")}
       </p>
 
       <div className="flex flex-col gap-3">
@@ -111,16 +118,19 @@ export function RevenueByPlatform({
                 </span>
               </div>
 
-              {/* شريط الإيراد، وعلى أرضيته علامة الإنفاق - الفارق بينهما هو الربح */}
-              <div className="relative h-2 w-full overflow-hidden rounded-full bg-surface-raised">
+              {/* شريط الإيراد، وعلى أرضيته علامة الإنفاق - **المسافة بين
+                  العلامة ونهاية الشريط هي الربح**، وهي كل ما يقوله الصفّ.
+                  كانت العلامة خطّاً رفيعاً بلا تسمية ولا تباين، فتُقرأ
+                  كخدش أو خطأ رسم. صارت علامة واضحة يعلوها مفتاحها. */}
+              <div className="relative h-3 w-full rounded-full bg-surface-raised">
                 <div
                   className={`absolute inset-y-0 start-0 rounded-full ${
                     profitable === null ? "bg-accent" : profitable ? "bg-verified" : "bg-critical"
                   }`}
                   style={{ width: `${(row.revenue / maxRevenue) * 100}%` }}
                 />
-                <div
-                  className="absolute inset-y-0 w-px bg-text-primary/50"
+                <span
+                  className="absolute -inset-y-1 flex w-[3px] items-center justify-center rounded-full bg-text-primary"
                   style={{ insetInlineStart: `${Math.min(100, (row.cost / maxRevenue) * 100)}%` }}
                   title={tr("spendTitle", { value: num(row.cost), currency })}
                 />
@@ -133,7 +143,7 @@ export function RevenueByPlatform({
                   {profitable === false && <span className="text-critical">{tr("belowBreakEven")}</span>}
                 </span>
                 <span className="tabular-nums">
-                  ربح {num(row.revenue - row.cost)} {currency}
+                  {tr("profit", { value: num(row.revenue - row.cost), currency })}
                 </span>
               </div>
             </div>

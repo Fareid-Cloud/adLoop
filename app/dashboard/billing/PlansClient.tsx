@@ -24,6 +24,7 @@ import {
   type BillingCurrency, type BillingCycle, type Plan, type PlanKey, type PlanLimits,
 } from "@/lib/plans";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { TH } from "@/app/components/ui/tableStyles";
 
 export function PlansClient({
   locale = "ar",
@@ -161,7 +162,7 @@ export function PlansClient({
             <table className="w-full min-w-[720px] text-start text-[13px]">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="px-4 py-3 text-start text-[12px] font-medium text-text-muted">{tr("feature")}</th>
+                  <th className={TH}>{tr("feature")}</th>
                   {PLANS.map((p) => (
                     <th key={p.key} className="px-4 py-3 text-start">
                       <span className={`text-[13px] font-semibold ${p.highlighted ? "text-accent" : "text-text-primary"}`}>

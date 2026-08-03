@@ -14,6 +14,7 @@ import Link from "next/link";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import type { ReactNode } from "react";
 import { ArrowLeft, Lightbulb, AlertTriangle, Info, TrendingUp } from "lucide-react";
+import { TH } from "@/app/components/ui/tableStyles";
 
 export function fmtNum(n: number): string {
   return Math.round(n).toLocaleString("en-US");
@@ -49,7 +50,7 @@ export function EcomHeader({
 export function SectionHeading({ children, hint }: { children: ReactNode; hint?: string }) {
   return (
     <div className="mb-3">
-      <h2 className="text-[15px] font-semibold text-text-primary">{children}</h2>
+      <h2 className="text-[16.5px] font-semibold tracking-tight text-text-primary">{children}</h2>
       {hint && <p className="mt-0.5 text-[12px] text-text-faint">{hint}</p>}
     </div>
   );
@@ -60,25 +61,33 @@ export function SectionHeading({ children, hint }: { children: ReactNode; hint?:
 // كل صفحة تنتهي بهذا. النمط ثابت عمداً: المستخدم يتعلّم أن أسفل الصفحة
 // هو مكان "ماذا أفعل الآن"، فيصل إليه مباشرة بعد أول زيارتين.
 
+/**
+ * التوصية المعروضة أسفل كل صفحة متجر.
+ *
+ * **الحقول نصوص مترجَمة جاهزة**، تصل من `t(locale, ...)` في الصفحة. كانت
+ * تُسمّى `title`/`reason` - لاحقة بقيت من نسخة أقدم كانت تحمل عربية
+ * مثبَّتة. الاسم المضلّل خطر عملي: من يضيف توصية جديدة يقرأ `title`
+ * فيكتب فيها نصّاً عربياً مباشرةً، ويعود القسم أحادي اللغة من جديد.
+ */
 export interface RecommendedAction {
-  titleAr: string;
-  reasonAr: string;
-  impactAr?: string;
+  title: string;
+  reason: string;
+  impact?: string;
   href?: string;
-  hrefLabelAr?: string;
+  hrefLabel?: string;
   tone?: "critical" | "warning" | "positive" | "neutral";
 }
 
 export function RecommendedActions({
   actions,
-  emptyAr,
+  empty,
   locale = "ar",
 }: {
   actions: RecommendedAction[];
-  emptyAr?: string;
+  empty?: string;
   locale?: Locale;
 }) {
-  const fallbackEmpty = emptyAr ?? t(locale, "common.noActions");
+  const fallbackEmpty = empty ?? t(locale, "common.noActions");
   return (
     <section className="mt-10 border-t border-border pt-6">
       <div className="mb-3 flex items-center gap-2">
@@ -100,11 +109,11 @@ export function RecommendedActions({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${toneDot(a.tone)}`} />
-                  <span className="text-[13.5px] font-medium text-text-primary">{a.titleAr}</span>
+                  <span className="text-[13.5px] font-medium text-text-primary">{a.title}</span>
                 </div>
-                <p className="mt-1 text-[12.5px] leading-relaxed text-text-muted">{a.reasonAr}</p>
-                {a.impactAr && (
-                  <p className="mt-1 text-[12px] font-medium text-verified">{a.impactAr}</p>
+                <p className="mt-1 text-[12.5px] leading-relaxed text-text-muted">{a.reason}</p>
+                {a.impact && (
+                  <p className="mt-1 text-[12px] font-medium text-verified">{a.impact}</p>
                 )}
               </div>
               {a.href && (
@@ -112,7 +121,7 @@ export function RecommendedActions({
                   href={a.href}
                   className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-3 py-2 text-[12.5px] font-medium text-text-primary no-underline transition-colors hover:bg-surface-3"
                 >
-                  {a.hrefLabelAr ?? t(locale, "common.open")}
+                  {a.hrefLabel ?? t(locale, "common.open")}
                   <ArrowLeft size={13} />
                 </Link>
               )}
@@ -138,26 +147,26 @@ function toneDot(tone?: RecommendedAction["tone"]): string {
 // لا نعرض صفراً مكان "لا نعرف". هذا المكوّن يقول ما الناقص وكيف يُسدّ.
 
 export function DataGate({
-  titleAr,
-  reasonAr,
+  title,
+  reason,
   href = "/dashboard/integrations",
-  hrefLabelAr,
+  hrefLabel,
   locale = "ar",
 }: {
-  titleAr: string;
-  reasonAr: string;
+  title: string;
+  reason: string;
   href?: string;
-  hrefLabelAr?: string;
+  hrefLabel?: string;
   locale?: Locale;
 }) {
-  const cta = hrefLabelAr ?? t(locale, "store.connectStore");
+  const cta = hrefLabel ?? t(locale, "store.connectStore");
   return (
     <div className="card-shadow rounded-2xl border border-border bg-surface p-6 text-center">
       <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-surface-raised">
         <Info size={20} className="text-text-muted" />
       </div>
-      <h3 className="text-[15px] font-medium text-text-primary">{titleAr}</h3>
-      <p className="mx-auto mt-1.5 max-w-md text-[12.5px] leading-relaxed text-text-muted">{reasonAr}</p>
+      <h3 className="text-[15px] font-medium text-text-primary">{title}</h3>
+      <p className="mx-auto mt-1.5 max-w-md text-[12.5px] leading-relaxed text-text-muted">{reason}</p>
       <Link
         href={href}
         className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3.5 py-2 text-[12.5px] font-medium text-accent no-underline transition-colors hover:bg-accent/20"
@@ -254,11 +263,11 @@ export function DataTable({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-right text-[12.5px]" style={{ minWidth }}>
+      <table className="w-full text-start text-[12.5px]" style={{ minWidth }}>
         <thead>
           <tr className="border-b border-border text-text-muted">
             {headers.map((h, i) => (
-              <th key={i} className="px-4 py-2.5 font-medium">
+              <th key={i} className={TH}>
                 {h}
               </th>
             ))}

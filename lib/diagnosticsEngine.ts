@@ -8,6 +8,7 @@
 // من أين جاء رقمه، وماذا يكلّفك، وهل يتحسّن أم يسوء.
 
 import { prisma } from "@/lib/prisma";
+import { platformLabel } from "@/lib/i18n/dictionary";
 
 export type CheckStatus = "PASS" | "WARNING" | "FAILED" | "UNKNOWN";
 export type CheckSeverity = "CRITICAL" | "HIGH" | "MEDIUM" | "NONE";
@@ -27,6 +28,7 @@ export interface DiagnosticCheck {
   severity: CheckSeverity;
   /** ماذا وجدنا بالضبط - جملة واحدة ببيانات حقيقية */
   findingAr?: string;
+  /** النتيجة بالإنجليزية - تُبنى بلغتها لا تُترجم حرفياً */
   findingEn?: string;
   /** الأثر المالي الشهري المقدَّر بعملة مساحة العمل */
   monthlyImpact?: number | null;
@@ -141,6 +143,9 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       findingAr: !isLinked ? "لا توجد حملات مرتبطة من هذه المنصة."
         : hasData ? `وصلت بيانات ${rows.length} يوماً خلال آخر 30 يوماً.`
         : "المنصة مرتبطة لكن لم تصل أي بيانات - تحقّق من صلاحيات الحساب.",
+      findingEn: !isLinked ? "No campaigns linked from this platform."
+        : hasData ? `Data arrived for ${rows.length} of the last 30 days.`
+        : "The platform is connected but no data has arrived - check the account permissions.",
       trend: seriesFrom(rows, (r) => r.cost),
       sourceAr: `جدول لقطات الأداء اليومية، منصة ${label}، آخر 30 يوماً.`,
       remedyAr: !isLinked
@@ -168,6 +173,9 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
     findingAr: totals.raw === 0
       ? "لا توجد تحويلات مسجّلة بعد."
       : `${Math.round(verificationRate)}% فقط من التحويلات المُعلنة تأكّدت (${totals.verified} من ${totals.raw}).`,
+    findingEn: totals.raw === 0
+      ? "No conversions recorded yet."
+      : `Only ${Math.round(verificationRate)}% of reported conversions were verified (${totals.verified} of ${totals.raw}).`,
     monthlyImpact: totals.raw > 0 && verificationRate < 60 ? Math.round(wastedOnUnverified) : null,
     trend: seriesFrom(snapshots, (r) => r.verifiedConversions),
     sourceAr: "مقارنة rawConversions (ما تعلنه المنصة) بـ verifiedConversions (ما تأكّد عبر محادثة حقيقية) خلال 30 يوماً.",
@@ -194,6 +202,9 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
     findingAr: pages.length === 0
       ? "لم تُضف أي صفحة للمراقبة بعد."
       : `${pagesWithAdloop} من ${pages.length} صفحة عليها وسم AdLoop (${pagesChecked} صفحة مفحوصة).`,
+    findingEn: pages.length === 0
+      ? "No pages added for monitoring yet."
+      : `${pagesWithAdloop} of ${pages.length} pages carry the AdLoop tag (${pagesChecked} checked).`,
     trend: [],
     lastScanAt: pages[0]?.lastCheckedAt ?? now,
     actionHref: "/dashboard/diagnostics/tracking-coverage",
@@ -214,6 +225,9 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
     findingAr: totals.clicks === 0 ? "لا توجد نقرات مسجّلة بعد."
       : totalSignals === 0 ? "المنصات تُبلّغ عن نقرات لكن لم تصلنا أي إشارة من موقعك - الوسم غالباً غير مثبّت."
       : `${totalSignals} إشارة واردة مقابل ${totals.clicks} نقرة مُعلنة.`,
+    findingEn: totals.clicks === 0 ? "No clicks recorded yet."
+      : totalSignals === 0 ? "Platforms report clicks but no signal has reached us from your site - the tag is probably not installed."
+      : `${totalSignals} incoming signals against ${totals.clicks} reported clicks.`,
     trend: seriesFrom(snapshots, (r) => r.clicks),
     lastScanAt: now,
     actionHref: "/dashboard/diagnostics/tracking-coverage",
@@ -237,6 +251,9 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       findingAr: losing
         ? `التكلفة الحقيقية ${Math.round(cost)} ${currency} تتجاوز سعر البيع ${Math.round(price)} ${currency}.`
         : `الهامش ضيق: التكلفة ${Math.round(cost)} ${currency} من سعر ${Math.round(price)} ${currency}.`,
+      findingEn: losing
+        ? `Real cost of ${Math.round(cost)} ${currency} exceeds the selling price of ${Math.round(price)} ${currency}.`
+        : `Margin is thin: costs of ${Math.round(cost)} ${currency} against a price of ${Math.round(price)} ${currency}.`,
       monthlyImpact: losing ? Math.round((cost - price) * 30) : null,
       trend: [],
       sourceAr: "تكلفة المنتج + الشحن + تكلفة الإعلان للطلب + التغليف، مقارنة بسعر البيع الحالي.",
@@ -261,6 +278,7 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
     status: totals.impressions === 0 ? "UNKNOWN" : ctr >= 2 ? "PASS" : ctr >= 1 ? "WARNING" : "FAILED",
     severity: totals.impressions === 0 ? "NONE" : ctr >= 2 ? "NONE" : ctr >= 1 ? "MEDIUM" : "HIGH",
     findingAr: totals.impressions === 0 ? "لا توجد بيانات ظهور بعد." : `معدل النقر ${ctr.toFixed(2)}%.`,
+    findingEn: totals.impressions === 0 ? "No impression data yet." : `Click-through rate ${ctr.toFixed(2)}%.`,
     trend: seriesFrom(snapshots, (r) => (r.impressions > 0 ? (r.clicks / r.impressions) * 100 : 0)),
     sourceAr: "إجمالي النقرات ÷ إجمالي مرات الظهور من لقطات الأداء، آخر 30 يوماً.",
     remedyAr: ctr >= 2 ? undefined : [
@@ -299,6 +317,9 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       findingAr: silentCampaigns.length === 0
         ? `كل الحملات المرتبطة (${activeByCampaign.size}) تُعرض بشكل طبيعي.`
         : `${silentCampaigns.length} حملة لم تُسجّل أي ظهور خلال 7 أيام رغم أنها مرتبطة.`,
+      findingEn: silentCampaigns.length === 0
+        ? `All ${activeByCampaign.size} linked campaigns are serving normally.`
+        : `${silentCampaigns.length} linked campaigns recorded no impressions in 7 days.`,
       sourceAr: "مجموع مرات الظهور لكل حملة من لقطات الأداء، آخر 7 أيام.",
       remedyAr: silentCampaigns.length === 0 ? undefined : [
         "تأكد أن الحملة ليست متوقفة أو خارج جدولها الزمني في المنصة.",
@@ -328,6 +349,7 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       category: "ads",
       status: "FAILED", severity: "CRITICAL",
       findingAr: `${spendingNoConv.length} حملة أنفقت ${Math.round(wasted)} ${currency} خلال 7 أيام بصفر تحويل.`,
+      findingEn: `${spendingNoConv.length} campaigns spent ${Math.round(wasted)} ${currency} over 7 days with zero conversions.`,
       monthlyImpact: Math.round((wasted / 7) * 30),
       sourceAr: "الحملات التي cost > 0 و rawConversions = 0 خلال آخر 7 أيام.",
       remedyAr: [
@@ -354,6 +376,7 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       status: topShare <= 70 ? "PASS" : "WARNING",
       severity: topShare <= 70 ? "NONE" : "MEDIUM",
       findingAr: `أعلى حملة تستحوذ على ${Math.round(topShare)}% من إجمالي الإنفاق.`,
+      findingEn: `Your top campaign takes ${Math.round(topShare)}% of all spend.`,
       sourceAr: "نصيب أكبر حملة من إجمالي الإنفاق خلال آخر 7 أيام.",
       remedyAr: topShare <= 70 ? undefined : [
         "وزّع جزءاً من الميزانية على حملة ثانية مختبَرة لتقليل المخاطرة.",
@@ -376,6 +399,8 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
     severity: totals.raw === 0 ? "NONE" : inflation <= 25 ? "NONE" : inflation <= 50 ? "MEDIUM" : "CRITICAL",
     findingAr: totals.raw === 0 ? "لا توجد تحويلات للمقارنة بعد."
       : `المنصات تُبلّغ عن ${Math.round(inflation)}% أكثر مما تأكّد فعلياً.`,
+    findingEn: totals.raw === 0 ? "No conversions to compare yet."
+      : `Platforms report ${Math.round(inflation)}% more than was actually verified.`,
     monthlyImpact: inflation > 25 ? Math.round(monthlySpend * (inflation / 100)) : null,
     trend: seriesFrom(snapshots, (r) => (r.rawConversions > 0 ? ((r.rawConversions - r.verifiedConversions) / r.rawConversions) * 100 : 0)),
     sourceAr: "الفارق بين ما تعلنه المنصات وما تأكّد فعلياً، مقسوماً على المُعلن.",
@@ -400,6 +425,8 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
     severity: snapshots.length === 0 ? "NONE" : daysWithSpend >= 25 ? "NONE" : "MEDIUM",
     findingAr: snapshots.length === 0 ? "لا توجد بيانات إنفاق بعد."
       : `إنفاق مسجّل في ${daysWithSpend} يوماً من آخر 30.`,
+    findingEn: snapshots.length === 0 ? "No spend data yet."
+      : `Spend recorded on ${daysWithSpend} of the last 30 days.`,
     trend: seriesFrom(snapshots, (r) => r.cost),
     lastScanAt: now,
     actionHref: "/dashboard/campaigns",
@@ -413,13 +440,14 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
     push({
       id: `security-conn-${c.platform}`,
       titleAr: `صلاحية الاتصال بـ${c.platform === "GOOGLE_ADS" ? "Google" : c.platform === "META_ADS" ? "Meta" : "TikTok"}`,
-      titleEn: `${c.platform} connection validity`,
+      titleEn: `${platformLabel("en", c.platform)} connection validity`,
       descAr: "انتهاء صلاحية الربط يوقف المزامنة تماماً دون إشعار من المنصة.",
       descEn: "An expired connection silently stops all syncing.",
       category: "security", platform: c.platform,
       status: daysLeft === null ? "PASS" : daysLeft <= 0 ? "FAILED" : daysLeft <= 7 ? "WARNING" : "PASS",
       severity: daysLeft === null ? "NONE" : daysLeft <= 0 ? "CRITICAL" : daysLeft <= 7 ? "HIGH" : "NONE",
       findingAr: daysLeft === null ? "الاتصال سليم." : daysLeft <= 0 ? "انتهت الصلاحية - أعد الربط الآن." : `تنتهي الصلاحية خلال ${daysLeft} يوماً.`,
+      findingEn: daysLeft === null ? "Connection is healthy." : daysLeft <= 0 ? "Expired - reconnect now." : `Expires in ${daysLeft} days.`,
       trend: [],
       lastScanAt: now,
       actionHref: "/dashboard/integrations",
@@ -441,6 +469,9 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       findingAr: p.lastError ?? (p.trackingDetected === false
         ? "لم يُعثر على أي وسم تتبع في مصدر الصفحة."
         : "التتبع موجود لكن وسم AdLoop غير مكتشف."),
+      findingEn: p.lastError ?? (p.trackingDetected === false
+        ? "No tracking tag was found in the page source."
+        : "Tracking is present, but the AdLoop tag was not detected."),
       trend: [],
       lastScanAt: p.lastCheckedAt ?? now,
       actionHref: "/dashboard/diagnostics/tracking-coverage",
@@ -468,6 +499,9 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       findingAr: badTitle === 0
         ? `عناوين ${seos.length} صفحة ضمن الطول المناسب.`
         : `${badTitle} من ${seos.length} صفحة عنوانها مفقود أو خارج النطاق المناسب (20–65 حرفاً).`,
+      findingEn: badTitle === 0
+        ? `Titles on all ${seos.length} pages are within a useful length.`
+        : `${badTitle} of ${seos.length} pages have a missing title or one outside the useful range (20-65 characters).`,
       trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
     });
 
@@ -483,6 +517,9 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       findingAr: badDesc === 0
         ? "كل الصفحات لديها وصف مناسب."
         : `${badDesc} من ${seos.length} صفحة بلا وصف كافٍ.`,
+      findingEn: badDesc === 0
+        ? "Every page has an adequate description."
+        : `${badDesc} of ${seos.length} pages have no adequate description.`,
       trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
     });
 
@@ -497,6 +534,7 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
         category: "seo",
         status: "FAILED", severity: "HIGH",
         findingAr: `${noIndexed} صفحة تحمل وسم noindex ولن تظهر في نتائج البحث.`,
+        findingEn: `${noIndexed} pages carry a noindex tag and will not appear in search results.`,
         trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
       });
     }
@@ -515,6 +553,9 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       findingAr: badH1 === 0 && noAlt === 0
         ? "بنية العناوين والصور سليمة."
         : `${badH1} صفحة بعنوان رئيسي غير مفرد، و${noAlt} صورة بلا نص بديل.`,
+      findingEn: badH1 === 0 && noAlt === 0
+        ? "Heading and image structure is sound."
+        : `${badH1} pages have a non-unique main heading, and ${noAlt} images have no alt text.`,
       trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
     });
 
@@ -529,6 +570,7 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       status: noViewport === 0 ? "PASS" : "FAILED",
       severity: noViewport === 0 ? "NONE" : "HIGH",
       findingAr: noViewport === 0 ? "كل الصفحات مهيّأة للجوال." : `${noViewport} صفحة بلا وسم viewport.`,
+      findingEn: noViewport === 0 ? "Every page is mobile-ready." : `${noViewport} pages have no viewport tag.`,
       trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
     });
 
@@ -548,6 +590,11 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
         : mixed > 0
         ? `الاتصال مشفّر، لكن ${mixed} مورداً يُحمَّل عبر HTTP وسيُحجب في المتصفحات.`
         : "كل الصفحات تعمل عبر اتصال مشفّر سليم.",
+      findingEn: notHttps > 0
+        ? `${notHttps} pages run without HTTPS.`
+        : mixed > 0
+        ? `The connection is encrypted, but ${mixed} resources load over HTTP and browsers will block them.`
+        : "Every page runs over a healthy encrypted connection.",
       trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
     });
 
@@ -565,6 +612,9 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       findingAr: convTotal === 0
         ? "لم نعثر على روابط محادثة في الصفحات المفحوصة."
         : `${convTracked} من ${convTotal} رابط محادثة يحمل معرّف تتبع.`,
+      findingEn: convTotal === 0
+        ? "No chat links were found on the pages we checked."
+        : `${convTracked} of ${convTotal} chat links carry a tracking id.`,
       trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
     });
 
@@ -581,6 +631,9 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       findingAr: utmLinks > 0
         ? `${utmLinks} رابطاً يحمل وسوم UTM.`
         : "لم نعثر على وسوم UTM في روابط الصفحات - قد تكون مضبوطة على مستوى الحملة بدلاً من ذلك.",
+      findingEn: utmLinks > 0
+        ? `${utmLinks} links carry UTM tags.`
+        : "No UTM tags were found in your page links - they may be set at campaign level instead.",
       trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
     });
   }
@@ -596,6 +649,7 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       status: t.priority === "URGENT" ? "FAILED" : "WARNING",
       severity: t.priority === "URGENT" ? "CRITICAL" : t.priority === "HIGH" ? "HIGH" : "MEDIUM",
       findingAr: t.title,
+      findingEn: t.title,
       trend: [],
       lastScanAt: t.createdAt,
       actionHref: "/dashboard/actions",
