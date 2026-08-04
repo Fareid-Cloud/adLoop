@@ -15,7 +15,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MailCheck, ArrowRight, RotateCcw, Mail, Send } from "lucide-react";
+import { MailCheck, ArrowRight, RotateCcw, Mail } from "lucide-react";
 import { t } from "@/lib/i18n/dictionary";
 import { useAuthLocale } from "@/app/components/useAuthLocale";
 import { AuthShell } from "@/app/components/AuthShell";
@@ -94,11 +94,13 @@ export default function ForgotPasswordPage() {
           <p className="mb-6 text-center text-[13px] leading-relaxed text-text-muted">{tr("forgotSub")}</p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            {/* الأيقونة داخل الحقل: تُعرّف نوع المدخَل قبل قراءة النائب */}
-            <div className="relative">
+            {/* الأيقونة يساراً دائماً لا `start`: الحقل نفسه `dir="ltr"`
+                لأنّ البريد لاتينيّ دائماً، فلو تبعت الأيقونة اتّجاه الصفحة
+                وقعت يميناً في العربية والنصّ يساراً - فيتصادمان. */}
+            <div className="relative" dir="ltr">
               <Mail
                 size={16}
-                className="pointer-events-none absolute inset-y-0 start-3.5 my-auto text-text-faint"
+                className="pointer-events-none absolute inset-y-0 left-3.5 my-auto text-text-faint"
               />
               <input
                 type="email"
@@ -108,13 +110,16 @@ export default function ForgotPasswordPage() {
                 required
                 autoFocus
                 dir="ltr"
-                className={`${FIELD} ps-10 text-start`}
+                className={`${FIELD} pl-10 text-left`}
               />
             </div>
 
             <button type="submit" disabled={loading} className={PRIMARY_BTN}>
               {loading ? tr("sending") : tr("sendResetLink")}
-              {!loading && <Send size={15} className="rtl:-scale-x-100" />}
+              {/* سهم أفقيّ لا طائرة: طائرة lucide مائلة لأعلى اليمين، فتُقرأ
+                  في زرّ مصطفٍّ أفقياً كأنّها تشير لمكان خطأ. السهم يتبع
+                  اتّجاه القراءة ويُقلب في العربية كبقية أسهم الشاشة. */}
+              {!loading && <ArrowRight size={15} className="rtl:rotate-180" />}
             </button>
           </form>
 

@@ -33,9 +33,9 @@ export function SocialButton({
   return (
     <a
       href={href}
-      // إطار وحده بلا ظلّ: الظلّ يرفع الزرّ عن السطح فيبدو بطاقة لا خياراً،
-      // وثلاث بطاقات مرفوعة فوق فورم مسطّح تشوّش تسلسل العمق.
-      className="btn btn-ghost btn-block"
+      // ثانويّ لا شبح: هذه **خيارات** يختار المستخدم بينها، فلا بدّ من حدّ
+      // يرسم حدودها. الشبح بلا إطار يجعلها تبدو نصّاً قابلاً للنقر لا زرّاً.
+      className="btn btn-secondary btn-block no-underline"
     >
       {logo}
       {children}
