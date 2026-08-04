@@ -16,8 +16,7 @@ import type { ReactNode } from "react";
 //
 // وبلا ظلّ ساكن: الظلّ حول حقل إدخال يوحي بأنّه مرتفع فوق السطح، وهو ليس
 // كذلك - الحقل مستوى مُحفَر لا بطاقة.
-export const FIELD =
-  "block w-full rounded-xl border border-border bg-surface px-3.5 py-3 text-sm text-text-primary placeholder:text-text-faint outline-none transition-[border-color,box-shadow] duration-150 hover:border-border-visible focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-dim)]";
+export const FIELD = "field";
 
 // يرث نظام الأزرار الموحّد - شاشات الحساب ليست استثناءً منه
 export const PRIMARY_BTN = "btn btn-primary btn-lg btn-block";

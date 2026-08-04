@@ -44,14 +44,11 @@ export function AuthShell({
   children,
   locale = "en",
   onLocaleChange,
-  sub,
   wide = false,
 }: {
   children: ReactNode;
   locale?: Locale;
   onLocaleChange?: (l: Locale) => void;
-  /** يغطّي الفقرة التوضيحية وحدها - العنوان ثابت دائماً */
-  sub?: string;
   wide?: boolean;
 }) {
   const copy = COPY[locale] ?? COPY.en;
@@ -105,7 +102,7 @@ export function AuthShell({
               <br />
               <span className="text-accent">{copy.accent}</span>
             </h2>
-            <p className="max-w-md text-[15px] leading-relaxed text-white/70">{sub ?? copy.sub}</p>
+            <p className="max-w-md text-[15px] leading-relaxed text-white/70">{copy.sub}</p>
 
             {/* الركائز الثلاث: أيقونة صغيرة وسطران - إشارة لا لافتة، فلا
                 تزاحم الصورة ولا تسرق الانتباه من العنوان. */}

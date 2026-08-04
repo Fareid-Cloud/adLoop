@@ -546,7 +546,9 @@ html, body { overflow-x: clip; }
 .field {
   display: block;
   width: 100%;
-  border: 1px solid var(--border);
+  /* `--border-visible` لا `--border`: الحقل على بطاقة بيضاء بخلفية بيضاء،
+     والحدّ الخافت يجعله يختفي تماماً فلا يُعرف أنّه قابل للكتابة. */
+  border: 1px solid var(--border-visible);
   border-radius: 12px;
   background: var(--surface);
   padding: 0.625rem 0.875rem;
@@ -557,8 +559,12 @@ html, body { overflow-x: clip; }
   transition: border-color .15s ease, box-shadow .15s ease;
 }
 .field::placeholder { color: var(--text-faint); }
-.field:hover:not(:disabled) { border-color: var(--border-visible); }
-.field:focus {
+.field:hover:not(:disabled) { border-color: var(--border-hover); }
+/* `outline` على كلّ حالات التركيز: المتصفّح يرسم إطاره الخاصّ على
+   `:focus-visible` بإزاحة، فيظهر خطّ ثانٍ خارج الحدّ الملوّن. */
+.field:focus,
+.field:focus-visible {
+  outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }

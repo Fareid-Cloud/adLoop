@@ -103,7 +103,6 @@ function ResetPasswordInner() {
     <AuthShell
       locale={locale}
       onLocaleChange={setLocale}
-      sub={tr("resetSub")}
     >
       <div className="card pad-lg">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">

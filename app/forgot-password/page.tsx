@@ -15,7 +15,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MailCheck, ArrowRight, RotateCcw } from "lucide-react";
+import { MailCheck, ArrowRight, RotateCcw, Mail, Send } from "lucide-react";
 import { t } from "@/lib/i18n/dictionary";
 import { useAuthLocale } from "@/app/components/useAuthLocale";
 import { AuthShell } from "@/app/components/AuthShell";
@@ -46,7 +46,6 @@ export default function ForgotPasswordPage() {
     <AuthShell
       locale={locale}
       onLocaleChange={setLocale}
-      sub={sent ? undefined : tr("forgotSub")}
     >
       {sent ? (
         <div className="card pad-lg text-center">
@@ -91,31 +90,45 @@ export default function ForgotPasswordPage() {
         </div>
       ) : (
         <div className="card pad-lg">
+          <h2 className="mb-1.5 text-center text-[19px] font-bold text-text-primary">{tr("forgotTitle")}</h2>
+          <p className="mb-6 text-center text-[13px] leading-relaxed text-text-muted">{tr("forgotSub")}</p>
+
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <input
-              type="email"
-              placeholder={tr("email")}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoFocus
-              dir="ltr"
-              className={`${FIELD} text-start`}
-            />
+            {/* الأيقونة داخل الحقل: تُعرّف نوع المدخَل قبل قراءة النائب */}
+            <div className="relative">
+              <Mail
+                size={16}
+                className="pointer-events-none absolute inset-y-0 start-3.5 my-auto text-text-faint"
+              />
+              <input
+                type="email"
+                placeholder={tr("email")}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoFocus
+                dir="ltr"
+                className={`${FIELD} ps-10 text-start`}
+              />
+            </div>
+
             <button type="submit" disabled={loading} className={PRIMARY_BTN}>
               {loading ? tr("sending") : tr("sendResetLink")}
+              {!loading && <Send size={15} className="rtl:-scale-x-100" />}
             </button>
           </form>
 
-          <div className="mt-4 border-t border-border pt-4 text-center">
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-1.5 text-[12.5px] text-text-muted no-underline transition-colors hover:text-text-primary"
-            >
-              <ArrowRight size={13} className="rtl:rotate-180" />
-              {tr("backToLogin")}
-            </Link>
+          {/* فاصل: يفصل الإجراء الأساسي عن المخرج، فلا يُقرأ الزرّان بوزن واحد */}
+          <div className="my-5 flex items-center gap-3">
+            <span className="h-px flex-1 bg-border" />
+            <span className="text-[11.5px] text-text-faint">{tr("or")}</span>
+            <span className="h-px flex-1 bg-border" />
           </div>
+
+          <Link href="/login" className="btn btn-secondary btn-lg btn-block no-underline">
+            <ArrowRight size={15} className="rtl:rotate-180" />
+            {tr("backToLogin")}
+          </Link>
         </div>
       )}
     </AuthShell>
