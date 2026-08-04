@@ -45,7 +45,7 @@ const STYLES: Record<string, { labelKey: string; icon: LucideIcon; className: st
     labelKey: "hold",
     icon: MinusCircle,
     className:
-      "border-border bg-surface-2 text-text-muted hover:bg-surface-3 hover:ring-2 hover:ring-border",
+      "border-border bg-surface-raised text-text-muted hover:bg-surface-raised hover:ring-2 hover:ring-border",
     confirmClassName: "border-text-muted bg-text-muted text-white",
   },
   PAUSE: {
@@ -80,7 +80,7 @@ export function AdDecisionCell(props: AdDecisionCellProps) {
   if (cooldownDaysRemaining > 0 && lastAppliedDecision) {
     return (
       <div className="flex flex-col items-start gap-1">
-        <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-muted">
+        <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-2.5 py-1.5 text-xs font-medium text-text-muted">
           <Lock className="h-3.5 w-3.5" />
           {tr("measuring", { decision: tr(STYLES[lastAppliedDecision].labelKey) })}
         </span>
@@ -145,7 +145,7 @@ export function AdDecisionCell(props: AdDecisionCellProps) {
           "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-all",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
           disabled
-            ? "cursor-not-allowed border-border bg-surface-2 text-text-muted opacity-60"
+            ? "cursor-not-allowed border-border bg-surface-raised text-text-muted opacity-60"
             : confirming
               ? style.confirmClassName
               : style.className,

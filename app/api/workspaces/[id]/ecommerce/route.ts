@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { encryptToken } from "@/lib/encryption";
 import { PLATFORM_LABEL, type EcommercePlatform } from "@/lib/ecommerce/types";
+import { checkStoreLimit } from "@/lib/entitlements";
 
 const ALLOWED: EcommercePlatform[] = ["SALLA", "SHOPIFY", "ZID", "WOOCOMMERCE", "EASY_ORDERS"];
 
@@ -45,6 +46,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "invalid body" }, { status: 400 });
+
+  // 🔴 حدّ الباقة كان معرَّفاً في `entitlements` ولا يُستدعى من أيّ مكان،
+  // فباقة تعرض «متجر واحد» كانت تقبل أيّ عدد. الفحص قبل التحقّق من
+  // الحمولة: لا معنى لتدقيق بيانات لن تُقبل أصلاً.
+  const storeCheck = await checkStoreLimit(user.id, id);
+  if (!storeCheck.allowed) {
+    return NextResponse.json(
+      {
+        error:
+          storeCheck.limit === 0
+            ? "باقتك الحالية لا تشمل ربط المتاجر. رقِّ باقتك لتفعيل هذه الميزة."
+            : `باقتك الحالية تسمح بربط ${storeCheck.limit} متجر. رقِّ باقتك لإضافة المزيد.`,
+        limitReached: true,
+        limit: storeCheck.limit,
+      },
+      { status: 403 }
+    );
+  }
 
   if (!ALLOWED.includes(body.platform)) {
     return NextResponse.json({ error: "منصة غير مدعومة." }, { status: 400 });

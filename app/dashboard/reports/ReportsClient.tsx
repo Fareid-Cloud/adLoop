@@ -166,7 +166,7 @@ export function ReportsClient({
       {/* ==================== الرأس ==================== */}
       <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">{tr("title")}</h1>
+          <h1 className="page-title">{tr("title")}</h1>
           <p className="mt-1 text-[13px] text-text-muted">{tr("subtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -179,7 +179,7 @@ export function ReportsClient({
           />
           {result && (
             <>
-              <button onClick={() => setEmailOpen(true)} className="flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2.5 text-[13px] text-text-primary">
+              <button onClick={() => setEmailOpen(true)} className="flex items-center gap-1.5 card px-3.5 py-2.5 text-[13px] text-text-primary">
                 <Mail size={15} /> {tr("emailIt")}
               </button>
               {/* المستند المصمَّم أولاً - هو ما يخرج من المنتج إلى خارجه */}
@@ -201,7 +201,7 @@ export function ReportsClient({
               </button>
               <button
                 onClick={() => exportCsv(result, locale, currency)}
-                className="flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2.5 text-[13px] text-text-primary"
+                className="flex items-center gap-1.5 card px-3.5 py-2.5 text-[13px] text-text-primary"
               >
                 <Download size={15} /> {t(locale, "reportDoc.downloadCsv")}
               </button>
@@ -230,8 +230,8 @@ export function ReportsClient({
 
       {/* ==================== البنّاء + المحفوظة ==================== */}
       <div className="mb-6 grid gap-4 xl:grid-cols-[1fr_300px]">
-        <section className="card-shadow rounded-2xl border border-border bg-surface p-4">
-          <h2 className="text-[15px] font-semibold text-text-primary">{tr("builderTitle")}</h2>
+        <section className="card pad-md">
+          <h2 className="section-title">{tr("builderTitle")}</h2>
           <p className="mb-4 mt-0.5 text-[12.5px] text-text-muted">{tr("builderSubtitle")}</p>
 
           <div className="grid gap-4 lg:grid-cols-3">
@@ -303,7 +303,7 @@ export function ReportsClient({
                 <select
                   value={dimension}
                   onChange={(e) => setDimension(e.target.value as Dimension)}
-                  className="w-full rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-primary outline-none"
+                  className="w-full card-inset px-3 py-2 text-[12.5px] text-text-primary outline-none"
                 >
                   {DIMENSIONS.map((d) => (
                     <option key={d} value={d}>{tr(`dim${d[0].toUpperCase()}${d.slice(1)}`)}</option>
@@ -352,7 +352,7 @@ export function ReportsClient({
                       value={campaignQuery}
                       onChange={(e) => setCampaignQuery(e.target.value)}
                       placeholder={tr("searchCampaigns")}
-                      className="mb-1.5 w-full rounded-lg border border-border bg-surface-raised px-2.5 py-1.5 text-[12px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+                      className="mb-1.5 w-full card-inset px-2.5 py-1.5 text-[12px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
                     />
                     <div className="max-h-[132px] overflow-y-auto pe-1">
                       {visibleCampaigns.map((c) => {
@@ -390,7 +390,7 @@ export function ReportsClient({
             </button>
             <button
               onClick={() => setSaveOpen(true)}
-              className="flex items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-4 py-2.5 text-[13px] text-text-primary"
+              className="flex items-center gap-1.5 card-inset px-4 py-2.5 text-[13px] text-text-primary"
             >
               <Save size={14} /> {tr("saveView")}
             </button>
@@ -474,13 +474,13 @@ function ResultBlock({
     <div className="flex flex-col gap-4">
       {/* الحكم */}
       {result.verdicts.length > 0 && (
-        <section className="card-shadow rounded-2xl border border-border bg-surface p-4">
-          <h2 className="mb-3 flex items-center gap-2 text-[15px] font-semibold text-text-primary">
+        <section className="card pad-md">
+          <h2 className="mb-3 flex items-center gap-2 section-title">
             <Sparkles size={16} className="text-accent" /> {tr("verdictTitle")}
           </h2>
           <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
             {result.verdicts.map((v) => (
-              <div key={v.metric} className="rounded-xl border border-border bg-surface-raised/60 p-3">
+              <div key={v.metric} className="bg-surface-raised p-3">
                 <div className="mb-1.5 text-[11.5px] font-medium uppercase tracking-wide text-text-faint">
                   {tr(metricLabelKey(v.metric))}
                 </div>
@@ -513,9 +513,9 @@ function ResultBlock({
       )}
 
       {/* الجدول */}
-      <section className="card-shadow overflow-hidden rounded-2xl border border-border bg-surface">
+      <section className="card-shadow overflow-hidden card">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h2 className="text-[15px] font-semibold text-text-primary">{tr("resultTitle")}</h2>
+          <h2 className="section-title">{tr("resultTitle")}</h2>
           <span className="text-[11.5px] text-text-faint">
             {tr(source === "REPORTED" ? "srcReported" : source === "VERIFIED" ? "srcVerified" : "srcBoth")}
             {hasCompare && ` · ${tr("vsCompare")}`}
@@ -566,8 +566,8 @@ function ResultBlock({
       </section>
 
       {/* الخلاصة */}
-      <section className="card-shadow rounded-2xl border border-border bg-surface p-4">
-        <h2 className="text-[15px] font-semibold text-text-primary">{tr("summaryTitle")}</h2>
+      <section className="card pad-md">
+        <h2 className="section-title">{tr("summaryTitle")}</h2>
         <p className="mb-3 mt-0.5 text-[11.5px] text-text-faint">{tr("summaryNote")}</p>
         <ul className="flex flex-col gap-2">
           {result.summary.map((line, i) => (
@@ -642,12 +642,12 @@ function SavedViews({
     router.refresh();
   }
   return (
-    <section className="card-shadow h-fit rounded-2xl border border-border bg-surface p-4">
-      <h2 className="text-[15px] font-semibold text-text-primary">{tr("savedTitle")}</h2>
+    <section className="card-shadow h-fit card pad-md">
+      <h2 className="section-title">{tr("savedTitle")}</h2>
       <p className="mb-3 mt-0.5 text-[12px] text-text-muted">{tr("savedSubtitle")}</p>
 
       {views.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border p-4 text-center text-[12.5px] text-text-muted">
+        <p className="card-ghost pad-md text-center text-[12.5px] text-text-muted">
           {tr("savedEmpty")}
         </p>
       ) : (
@@ -699,17 +699,17 @@ function SaveViewModal({
 
   return (
     <Modal onClose={onClose}>
-      <h2 className="mb-1 text-[15px] font-semibold text-text-primary">{tr("saveView")}</h2>
+      <h2 className="mb-1 section-title">{tr("saveView")}</h2>
       <p className="mb-3 text-[12px] text-text-muted">{tr("savedNote")}</p>
       <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("saveViewName")}</label>
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder={tr("saveViewPlaceholder")}
-        className="mb-4 w-full rounded-xl border border-border bg-surface-raised px-3 py-2 text-[13px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+        className="mb-4 w-full card-inset px-3 py-2 text-[13px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
       />
       <div className="flex justify-end gap-2">
-        <button onClick={onClose} className="rounded-xl border border-border bg-surface px-4 py-2 text-[12.5px] text-text-muted">{tr("cancel")}</button>
+        <button onClick={onClose} className="card px-4 py-2 text-[12.5px] text-text-muted">{tr("cancel")}</button>
         <button onClick={save} disabled={busy || !name.trim()} className="rounded-xl bg-accent px-4 py-2 text-[12.5px] font-medium text-white disabled:opacity-50">
           {busy ? tr("saving") : tr("save")}
         </button>
@@ -741,20 +741,20 @@ function EmailModal({
 
   return (
     <Modal onClose={onClose}>
-      <h2 className="mb-1 text-[15px] font-semibold text-text-primary">{tr("emailTitle")}</h2>
+      <h2 className="mb-1 section-title">{tr("emailTitle")}</h2>
       <p className="mb-3 text-[12px] leading-relaxed text-text-muted">{tr("emailHint")}</p>
       <input
         type="email"
         value={email}
         onChange={(e) => { setEmail(e.target.value); setState("idle"); }}
         placeholder={tr("emailPlaceholder")}
-        className="mb-2 w-full rounded-xl border border-border bg-surface-raised px-3 py-2 text-[13px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+        className="mb-2 w-full card-inset px-3 py-2 text-[13px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
       />
       {state === "invalid" && <p className="mb-2 text-[12px] text-critical">{tr("emailInvalid")}</p>}
       {state === "error" && <p className="mb-2 text-[12px] text-critical">{tr("emailFailed")}</p>}
       {state === "sent" && <p className="mb-2 text-[12px] text-verified">{tr("emailSent")}</p>}
       <div className="flex justify-end gap-2">
-        <button onClick={onClose} className="rounded-xl border border-border bg-surface px-4 py-2 text-[12.5px] text-text-muted">{tr("cancel")}</button>
+        <button onClick={onClose} className="card px-4 py-2 text-[12.5px] text-text-muted">{tr("cancel")}</button>
         <button onClick={send} disabled={state === "sending"} className="rounded-xl bg-accent px-4 py-2 text-[12.5px] font-medium text-white disabled:opacity-50">
           {state === "sending" ? tr("emailSending") : tr("emailSend")}
         </button>
@@ -775,7 +775,7 @@ function EmptyDataModal({
 }) {
   return (
     <Modal onClose={onClose}>
-      <h2 className="mb-1 text-[15px] font-semibold text-text-primary">{tr("emptyTitle")}</h2>
+      <h2 className="mb-1 section-title">{tr("emptyTitle")}</h2>
       <p className="mb-3 text-[12.5px] leading-relaxed text-text-muted">{tr("emptyBody")}</p>
       <div className="mb-4 rounded-xl bg-surface-raised/70 p-3">
         <div className="mb-1.5 text-[11.5px] font-medium text-text-primary">{tr("emptyWhy")}</div>
@@ -791,7 +791,7 @@ function EmptyDataModal({
       <div className="flex justify-end gap-2">
         <a
           href="/dashboard/integrations"
-          className="rounded-xl border border-border bg-surface px-4 py-2 text-[12.5px] text-text-primary no-underline"
+          className="card px-4 py-2 text-[12.5px] text-text-primary no-underline"
         >
           {tr("goConnect")}
         </a>
@@ -806,7 +806,7 @@ function EmptyDataModal({
 function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="pop-shadow w-full max-w-sm rounded-2xl border border-border bg-surface p-5">
+      <div onClick={(e) => e.stopPropagation()} className="pop-shadow w-full max-w-sm card pad-md">
         {children}
       </div>
     </div>
@@ -817,8 +817,8 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
 
 function Section({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <section className="card-shadow mb-4 rounded-2xl border border-border bg-surface p-4">
-      <h2 className="text-[15px] font-semibold text-text-primary">{title}</h2>
+    <section className="card-shadow mb-4 card pad-md">
+      <h2 className="section-title">{title}</h2>
       <p className="mb-3 mt-0.5 text-[12.5px] text-text-muted">{subtitle}</p>
       {children}
     </section>
@@ -836,7 +836,7 @@ function PresetCard({
   return (
     <button
       onClick={onClick}
-      className="rounded-xl border border-border bg-surface-raised/50 p-3 text-start transition-colors hover:border-accent"
+      className="bg-surface-raised p-3 text-start transition-colors hover:border-accent"
     >
       <span className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent">
         <Icon size={16} />

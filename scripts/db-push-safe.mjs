@@ -12,6 +12,18 @@
 // قاعدة بيانات) - عندها نتخطى بهدوء لأنه لا يوجد ما يُزامَن أصلاً.
 
 import { spawnSync } from "node:child_process";
+import { readFileSync, existsSync } from "node:fs";
+
+// Prisma CLI يقرأ `.env` بنفسه، لكن هذا الحارس يقرأ بيئة Node - فكان
+// يتخطّى المزامنة دائماً في البناء المحلّي رغم توفّر الاتصال. النتيجة أنّ
+// أخطاء البنية لا تظهر إلّا بعد الدفع إلى الإنتاج.
+for (const file of [".env.local", ".env"]) {
+  if (!existsSync(file)) continue;
+  for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
+    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim().replace(/^["']|["']$/g, "");
+  }
+}
 
 if (!process.env.DATABASE_URL) {
   console.warn("[db-push] DATABASE_URL غير مضبوط - تخطّي مزامنة البنية.");

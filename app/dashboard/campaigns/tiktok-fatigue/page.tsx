@@ -68,7 +68,7 @@ export default async function TikTokFatiguePage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.tfTitle")}</h1>
+      <h1 className="mb-2 page-title">{t(locale, "campPages.tfTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
         {t(locale, "campPages.tfIntro2")}
       </p>

@@ -115,7 +115,7 @@ export function RuleCatalogBrowser({
               <button
                 key={tpl.id}
                 onClick={() => setChosen(tpl)}
-                className="card-shadow flex items-start gap-3 rounded-2xl border border-border bg-surface p-4 text-start hover:border-accent"
+                className="card-shadow flex items-start gap-3 card pad-md text-start hover:border-accent"
               >
                 <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full" style={{ background: ACTION_TONE[tpl.action] }} />
                 <span className="min-w-0 flex-1">
@@ -233,9 +233,9 @@ function RuleConfigModal({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="pop-shadow flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-surface">
+      <div onClick={(e) => e.stopPropagation()} className="pop-shadow flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden card">
         <div className="border-b border-border p-5">
-          <h2 className="text-[15px] font-semibold text-text-primary">{locale === "en" ? template.nameEn : template.nameAr}</h2>
+          <h2 className="section-title">{locale === "en" ? template.nameEn : template.nameAr}</h2>
           <p className="mt-1 text-[12.5px] leading-relaxed text-text-muted">{locale === "en" ? template.descEn : template.descAr}</p>
         </div>
 
@@ -249,7 +249,7 @@ function RuleConfigModal({
               type="number"
               value={threshold}
               onChange={(e) => setThreshold(Number(e.target.value))}
-              className="w-32 rounded-xl border border-border bg-surface-raised px-3 py-2 font-mono text-[14px] text-text-primary outline-none focus:border-accent"
+              className="w-32 card-inset px-3 py-2 font-mono text-[14px] text-text-primary outline-none focus:border-accent"
             />
             <span className="text-[13px] text-text-muted">
               {template.unit === "currency" ? currency : UNIT_SUFFIX[template.unit] || ""}
@@ -261,7 +261,7 @@ function RuleConfigModal({
           <input
             type="number" min={1} max={30} value={days}
             onChange={(e) => setDays(Number(e.target.value))}
-            className="mb-4 w-32 rounded-xl border border-border bg-surface-raised px-3 py-2 font-mono text-[14px] text-text-primary outline-none focus:border-accent"
+            className="mb-4 w-32 card-inset px-3 py-2 font-mono text-[14px] text-text-primary outline-none focus:border-accent"
           />
 
           {/* قيمة الإجراء */}
@@ -273,7 +273,7 @@ function RuleConfigModal({
               <input
                 type="number" value={actionValue}
                 onChange={(e) => setActionValue(Number(e.target.value))}
-                className="mb-4 w-32 rounded-xl border border-border bg-surface-raised px-3 py-2 font-mono text-[14px] text-text-primary outline-none focus:border-accent"
+                className="mb-4 w-32 card-inset px-3 py-2 font-mono text-[14px] text-text-primary outline-none focus:border-accent"
               />
             </>
           )}
@@ -349,7 +349,7 @@ function RuleConfigModal({
           )}
 
           {/* الموافقة */}
-          <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-border bg-surface-raised p-3">
+          <label className="flex cursor-pointer items-start gap-2.5 card-inset pad-sm">
             <input type="checkbox" checked={requireApproval} onChange={(e) => setRequireApproval(e.target.checked)} className="mt-0.5" />
             <span>
               <span className="block text-[12.5px] font-medium text-text-primary">{tr("askApprovalBefore")}</span>
@@ -363,7 +363,7 @@ function RuleConfigModal({
         </div>
 
         <div className="flex justify-end gap-2 border-t border-border p-4">
-          <button onClick={onClose} className="rounded-xl border border-border bg-surface-raised px-4 py-2 text-[13px] text-text-muted">{tr("cancel")}</button>
+          <button onClick={onClose} className="card-inset px-4 py-2 text-[13px] text-text-muted">{tr("cancel")}</button>
           <button onClick={save} disabled={saving} className="rounded-xl bg-accent px-5 py-2 text-[13px] font-medium text-white disabled:opacity-50">
             {saving ? tr("saving") : tr("activateRule")}
           </button>

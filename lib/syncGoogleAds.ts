@@ -14,6 +14,7 @@ import { prisma } from "@/lib/prisma";
 import type { CampaignLink, ConnectedPlatform } from "@prisma/client";
 import { decryptToken } from "@/lib/encryption";
 import { t } from "@/lib/i18n/dictionary";
+import { assertNotDemo } from "@/lib/demo";
 
 // حقول جودة الإعلان بترجع من Google API كـ enum (رقم/سلسلة)، وحقول Prisma
 // نوعها String? - بنحوّلها لنص، ونسيب null زي ما هي
@@ -1302,6 +1303,10 @@ export async function applyGoogleBidStrategyChange(
   newStrategy: "MAXIMIZE_CONVERSIONS" | "TARGET_CPA",
   targetCpaValue?: number
 ) {
+  // حارس الديمو عند التعريف لا عند النداء: أي نداء جديد يُضاف لاحقاً
+  // يرثه تلقائياً. وضعه عند كلّ مستدعٍ يعني أنّ نسيانه مرّة واحدة
+  // يكفي ليكتب الديمو على حساب إعلاني حقيقي.
+  await assertNotDemo(workspaceId);
   const { ResourceNames } = await import("google-ads-api");
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
@@ -1345,6 +1350,10 @@ export async function applyGoogleBidStrategyChange(
 // الميزانية فيه عادةً على مستوى المجموعة/الحملة، مش الإعلان نفسه -
 // تنفيذه غلط ممكن يأثر على إعلانات تانية شريكة في نفس الميزانية).
 export async function pauseGoogleAd(workspaceId: string, campaignId: string, adGroupId: string, adId: string) {
+  // حارس الديمو عند التعريف لا عند النداء: أي نداء جديد يُضاف لاحقاً
+  // يرثه تلقائياً. وضعه عند كلّ مستدعٍ يعني أنّ نسيانه مرّة واحدة
+  // يكفي ليكتب الديمو على حساب إعلاني حقيقي.
+  await assertNotDemo(workspaceId);
   const { ResourceNames } = await import("google-ads-api");
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },

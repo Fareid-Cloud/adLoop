@@ -58,11 +58,11 @@ export function ConnectionTester({
   const allOk = result?.steps.every((s) => s.ok !== false) ?? false;
 
   return (
-    <div className={compact ? "" : "rounded-xl border border-border bg-surface-raised p-3"}>
+    <div className={compact ? "" : "card-inset pad-sm"}>
       <button
         onClick={run}
         disabled={busy}
-        className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] text-text-primary disabled:opacity-50"
+        className="flex items-center gap-1.5 card px-3 py-1.5 text-[12px] text-text-primary disabled:opacity-50"
       >
         {busy ? <Loader2 size={13} className="animate-spin" /> : <Stethoscope size={13} />}
         {busy ? tr("testing") : tr("test")}

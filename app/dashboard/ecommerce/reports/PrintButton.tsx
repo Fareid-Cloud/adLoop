@@ -11,7 +11,7 @@ export function PrintButton({ label, locale = "ar" }: { label?: string; locale?:
   return (
     <button
       onClick={() => window.print()}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3.5 py-2 text-[12.5px] font-medium text-text-primary transition-colors hover:bg-surface-2"
+      className="inline-flex items-center gap-1.5 card px-3.5 py-2 text-[12.5px] font-medium text-text-primary transition-colors hover:bg-surface-raised"
     >
       <Printer size={14} />
       {text}

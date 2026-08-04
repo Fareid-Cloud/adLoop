@@ -64,6 +64,7 @@ export function SignupForm() {
 
   const ar = locale === "ar";
   const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }));
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -72,11 +73,21 @@ export function SignupForm() {
       setError(ar ? "كلمتا المرور غير متطابقتين" : "Passwords do not match");
       return;
     }
+    // فحص هنا رغم `required` على المدخَل: `required` وحده يمنع الإرسال
+    // برسالة متصفّح عامّة بلغة النظام لا بلغة الواجهة.
+    if (!acceptedTerms) {
+      setError(
+        ar
+          ? "يلزم الاطّلاع على شروط الاستخدام وسياسة الخصوصية والموافقة عليهما."
+          : "You need to read and accept the Terms of Use and Privacy Policy."
+      );
+      return;
+    }
     setLoading(true);
     const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...f, preferredLocale: locale, turnstileToken }),
+      body: JSON.stringify({ ...f, preferredLocale: locale, turnstileToken, acceptedTerms }),
     });
     const data = await res.json();
     setLoading(false);
@@ -100,10 +111,10 @@ export function SignupForm() {
       <div className="w-full">
         <div className="mb-7">
           <div className="mb-6 text-[17px] font-bold tracking-tight text-text-primary">AdLoop</div>
-          <h1 className="text-[28px] font-bold tracking-tight text-text-primary">{t(locale, "auth.signupTitle")}</h1>
+          <h1 className="page-title">{t(locale, "auth.signupTitle")}</h1>
         </div>
 
-        <div className="mb-5 grid grid-cols-2 gap-2.5">
+        <div className="mb-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <SocialButton href="/api/oauth/login-google/start" logo={<PlatformLogo platform="GOOGLE" size={18} />}>Google</SocialButton>
           <SocialButton href="/api/oauth/login-facebook/start" logo={<PlatformLogo platform="FACEBOOK" size={18} />}>Facebook</SocialButton>
         </div>
@@ -113,13 +124,13 @@ export function SignupForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input className={FIELD} placeholder={L("الاسم الكامل *", "Full name *")} value={f.name} onChange={(e) => set("name", e.target.value)} required />
             <input className={FIELD} placeholder={L("اسم المستخدم *", "Username *")} value={f.username} onChange={(e) => set("username", e.target.value)} required />
           </div>
           <input className={FIELD} type="email" placeholder={L("البريد الإلكتروني *", "Email *")} value={f.email} onChange={(e) => set("email", e.target.value)} required />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="relative">
               <input className={`${FIELD} pe-10`} type={showPw ? "text" : "password"} placeholder={L("كلمة المرور *", "Password *")} value={f.password} onChange={(e) => set("password", e.target.value)} required minLength={8} />
               <button type="button" tabIndex={-1} onClick={() => setShowPw((v) => !v)} className="absolute inset-y-0 end-2.5 flex items-center text-text-faint hover:text-text-primary">{showPw ? <EyeOff size={16} /> : <Eye size={16} />}</button>
@@ -132,7 +143,7 @@ export function SignupForm() {
           <PasswordRequirements password={f.password} locale={locale} />
           <PasswordMatch password={f.password} confirm={f.confirm} locale={locale} />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input className={FIELD} placeholder={L("اسم الشركة (اختياري)", "Company (optional)")} value={f.companyName} onChange={(e) => set("companyName", e.target.value)} />
             {/* تاريخ الميلاد: `type="date"` يعطي منتقي المتصفّح الأصلي -
                 لا مكتبة ولا ثلاث قوائم منسدلة. `max` اليوم يمنع تاريخاً
@@ -153,7 +164,7 @@ export function SignupForm() {
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <select className={FIELD} value={f.country} onChange={(e) => set("country", e.target.value)} required>
               <option value="">{L("الدولة *", "Country *")}</option>
               {COUNTRIES.map((c, i) => <option key={c} value={c}>{ar ? c : COUNTRIES_EN[i]}</option>)}
@@ -164,7 +175,7 @@ export function SignupForm() {
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <select className={FIELD} value={f.businessScale} onChange={(e) => set("businessScale", e.target.value)}>
               <option value="">{L("عدد العملاء الحاليين", "Current clients")}</option>
               {CLIENTS.map((c) => <option key={c.v} value={c.v}>{ar ? c.ar : c.en}</option>)}
@@ -176,6 +187,29 @@ export function SignupForm() {
           </div>
 
           <input className={FIELD} placeholder={L("كود إحالة (اختياري)", "Referral code (optional)")} value={f.referralSource} onChange={(e) => set("referralSource", e.target.value)} />
+
+          {/* الموافقة قبل الزرّ مباشرةً: وضعها أعلى النموذج يجعلها تُمرَّر
+              بلا قراءة، ووضعها بعد الزرّ يجعلها تُكتشف بعد المحاولة. */}
+          <label className="flex cursor-pointer items-start gap-2.5 py-1 text-[12.5px] leading-relaxed text-text-muted">
+            <input
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+              required
+              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[var(--accent)]"
+            />
+            <span>
+              {L("أوافق على ", "I agree to the ")}
+              <a href="/legal/terms" target="_blank" rel="noreferrer" className="text-accent underline underline-offset-2">
+                {L("شروط الاستخدام", "Terms of Use")}
+              </a>
+              {L(" و", " and ")}
+              <a href="/legal/privacy" target="_blank" rel="noreferrer" className="text-accent underline underline-offset-2">
+                {L("سياسة الخصوصية", "Privacy Policy")}
+              </a>
+              {L("، وعلى استخدام ملفّات تعريف الارتباط الضرورية لتشغيل الحساب.", ", and to the cookies required to run the account.")}
+            </span>
+          </label>
 
           {error && <p className="text-xs text-critical">{error}</p>}
           {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (

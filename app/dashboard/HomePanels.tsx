@@ -55,9 +55,9 @@ export function SetupProgressPanel({
   const pct = Math.round((progress.completedCount / progress.total) * 100);
 
   return (
-    <section className="card-shadow rounded-2xl border border-border bg-surface p-4">
+    <section className="card pad-md">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-[16.5px] font-semibold tracking-tight text-text-primary">
+        <h2 className="section-title">
           {tr("readyPct", { pct })}
         </h2>
         <span className="text-[12px] text-text-muted">
@@ -137,10 +137,10 @@ export function RecentActivityPanel({
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `homePanels.${k}`, v);
 
   return (
-    <section className="card-shadow rounded-2xl border border-border bg-surface p-4">
+    <section className="card pad-md">
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <h2 className="text-[16.5px] font-semibold tracking-tight text-text-primary">
+          <h2 className="section-title">
             {tr("recentActivity")}
           </h2>
           <p className="mt-0.5 text-[12px] text-text-muted">{tr("recentActivityHint")}</p>
@@ -151,7 +151,7 @@ export function RecentActivityPanel({
       </div>
 
       {rows.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border p-6 text-center text-[12.5px] text-text-muted">
+        <p className="card-ghost pad-lg text-center text-[12.5px] text-text-muted">
           {tr("noActivity")}
         </p>
       ) : (
@@ -196,9 +196,9 @@ export function ConnectedPlatformsPanel({
   const allHealthy = connected.length > 0 && connected.every((c) => c.healthy);
 
   return (
-    <section className="card-shadow rounded-2xl border border-border bg-surface p-4">
+    <section className="card pad-md">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-[16.5px] font-semibold tracking-tight text-text-primary">{tr("connectedPlatforms")}</h2>
+        <h2 className="section-title">{tr("connectedPlatforms")}</h2>
         {connected.length > 0 && (
           <span className={`flex items-center gap-1.5 text-[12px] ${allHealthy ? "text-verified" : "text-gap"}`}>
             <CircleDot size={12} />
@@ -210,7 +210,7 @@ export function ConnectedPlatformsPanel({
       {connected.length === 0 ? (
         <Link
           href="/dashboard/integrations"
-          className="flex items-center justify-between gap-2 rounded-xl border border-dashed border-border p-5 no-underline"
+          className="flex items-center justify-between gap-2 card-ghost pad-md no-underline"
         >
           <span className="text-[12.5px] text-text-muted">{tr("noPlatforms")}</span>
           <span className="flex items-center gap-1 text-[12.5px] font-medium text-accent">
@@ -224,7 +224,7 @@ export function ConnectedPlatformsPanel({
             <Link
               key={c.platform}
               href="/dashboard/integrations"
-              className="rounded-xl border border-border bg-surface-raised/50 p-3 no-underline transition-colors hover:border-accent"
+              className="bg-surface-raised p-3 no-underline transition-colors hover:border-accent"
             >
               <div className="mb-1.5 flex items-center justify-between">
                 <PlatformLogo platform={c.platform} size={20} />
@@ -269,8 +269,8 @@ const BENEFITS = [
 export function AfterActivationPanel({ locale }: { locale: Locale }) {
   const tr = (k: string) => t(locale, `homePanels.${k}`);
   return (
-    <section className="card-shadow rounded-2xl border border-border bg-surface p-4">
-      <h2 className="text-[16.5px] font-semibold tracking-tight text-text-primary">{tr("afterActivation")}</h2>
+    <section className="card pad-md">
+      <h2 className="section-title">{tr("afterActivation")}</h2>
       <p className="mb-3 mt-0.5 text-[12px] leading-relaxed text-text-muted">{tr("afterActivationHint")}</p>
       <ul className="flex flex-col gap-2.5">
         {BENEFITS.map(({ key, Icon, tone }) => (
@@ -307,8 +307,8 @@ export function SupportPanel({
     : null;
 
   return (
-    <section className="card-shadow rounded-2xl border border-border bg-surface p-4">
-      <h2 className="text-[16.5px] font-semibold tracking-tight text-text-primary">{tr("support")}</h2>
+    <section className="card pad-md">
+      <h2 className="section-title">{tr("support")}</h2>
       <p className="mb-3 mt-0.5 text-[12px] text-text-muted">{tr("supportHint")}</p>
 
       <div className="flex flex-col gap-2">
@@ -369,7 +369,7 @@ function SupportRow({
     </>
   );
 
-  const cls = "flex items-center gap-2.5 rounded-xl border border-border bg-surface-raised/50 p-2.5 no-underline transition-colors hover:border-accent";
+  const cls = "flex items-center gap-2.5 bg-surface-raised p-2.5 no-underline transition-colors hover:border-accent";
 
   if (opensSupport)
     return <OpenSupportButton className={`${cls} w-full text-start`}>{inner}</OpenSupportButton>;

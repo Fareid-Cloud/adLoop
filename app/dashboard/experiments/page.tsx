@@ -87,9 +87,9 @@ export default async function ExperimentsPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-5 text-[26px] font-semibold text-text-primary">{t(locale, "lab.pageTitle")}</h1>
+      <h1 className="mb-5 page-title">{t(locale, "lab.pageTitle")}</h1>
 
-      <div className="card-shadow mb-5 rounded-2xl border border-border bg-surface p-4">
+      <div className="card-shadow mb-5 card pad-md">
         <div className="mb-1 text-[13.5px] text-text-primary">
           {t(locale, "lab.stabilizeLine", { n: learningPhase.estimatedDays })}
         </div>

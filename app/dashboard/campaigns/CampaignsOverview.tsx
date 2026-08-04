@@ -142,11 +142,11 @@ export function CampaignsOverview({
       </div>
 
       {/* الجدول */}
-      <section className="reveal card-shadow overflow-hidden rounded-2xl border border-border bg-surface"
+      <section className="reveal card-shadow overflow-hidden card"
                style={{ animationDelay: "180ms" }}>
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
           <div className="flex items-center gap-2">
-            <h2 className="text-[15px] font-semibold text-text-primary">{t(locale, "campPages.title")}</h2>
+            <h2 className="section-title">{t(locale, "campPages.title")}</h2>
             <span className="rounded-full bg-surface-raised px-2 py-0.5 font-mono text-[11.5px] text-text-muted">
               {filtered.length}
             </span>
@@ -154,12 +154,12 @@ export function CampaignsOverview({
 
           <div className="flex flex-wrap items-center gap-2">
             <select value={platform} onChange={(e) => setPlatform(e.target.value)}
-                    className="rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-primary outline-none">
+                    className="card-inset px-3 py-2 text-[12.5px] text-text-primary outline-none">
               <option value="all">{tr("ovAllPlatforms")}</option>
               {platforms.map((p) => <option key={p} value={p}>{platformLabel(locale, p)}</option>)}
             </select>
             <select value={state} onChange={(e) => setState(e.target.value as any)}
-                    className="rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-primary outline-none">
+                    className="card-inset px-3 py-2 text-[12.5px] text-text-primary outline-none">
               <option value="all">{tr("ovAllStates")}</option>
               <option value="critical">{tr("ovStCritical")} ({counts.critical})</option>
               <option value="watch">{tr("ovStWatch")} ({counts.watch})</option>
@@ -168,7 +168,7 @@ export function CampaignsOverview({
             <div className="relative">
               <Search size={14} className="absolute top-1/2 -translate-y-1/2 text-text-faint" style={{ insetInlineStart: 10 }} />
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tr("ovSearch")}
-                     className="w-44 rounded-xl border border-border bg-surface-raised py-2 text-[12.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+                     className="w-44 card-inset py-2 text-[12.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
                      style={{ paddingInlineStart: 30, paddingInlineEnd: 10 }} />
             </div>
           </div>

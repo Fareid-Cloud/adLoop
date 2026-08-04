@@ -220,7 +220,7 @@ export function ActionsClient({
           <select
             value={groupBy}
             onChange={(e) => setGroupBy(e.target.value as GroupBy)}
-            className="rounded-xl border border-border bg-surface px-3 py-1.5 text-[12px] text-text-primary outline-none"
+            className="card px-3 py-1.5 text-[12px] text-text-primary outline-none"
           >
             <option value="source">{tr("groupBySource")}</option>
             <option value="severity">{tr("groupBySeverity")}</option>
@@ -228,7 +228,7 @@ export function ActionsClient({
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortBy)}
-            className="rounded-xl border border-border bg-surface px-3 py-1.5 text-[12px] text-text-primary outline-none"
+            className="card px-3 py-1.5 text-[12px] text-text-primary outline-none"
           >
             <option value="impact">{tr("sortImpact")}</option>
             <option value="newest">{tr("sortNewest")}</option>
@@ -249,7 +249,7 @@ export function ActionsClient({
       ) : (
         <div className="flex flex-col gap-4">
           {groups.map(([key, groupItems]) => (
-            <section key={key} className="card-shadow overflow-hidden rounded-2xl border border-border bg-surface">
+            <section key={key} className="card-shadow overflow-hidden card">
               <button
                 onClick={() => setCollapsedGroups((p) => ({ ...p, [key]: !p[key] }))}
                 className="flex w-full items-center justify-between gap-2 border-b border-border px-4 py-3 text-start transition-colors hover:bg-surface-raised/50"

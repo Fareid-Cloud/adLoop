@@ -6,10 +6,14 @@
 // يستنى شوية بدل ما نمنعه نهائياً.
 
 import { prisma } from "@/lib/prisma";
+import { checkCredits, consumePurchasedCreditIfNeeded } from "@/lib/entitlements";
 
 // إعادة معايرة عشان نضمن سقف $4/شهر إجمالي لكل مشترك عبر التلاتة ميزات
 // اللي بتستخدم Claude (راجع docs/claude-api-usage-map.md للحساب الكامل)
 // الحد اليدوي = 80 مرة شهرياً + استدعاء تلقائي واحد يومياً (Cron) = 20-30/شهر تقريباً
+// **سقف تقني لا تجاري.** يضمن ألّا تتجاوز كلفة Claude لمشترك واحد الحدّ
+// المرصود (راجع docs/claude-api-usage-map.md)، ويُطبَّق فوق حدّ الباقة.
+// الفعليّ = الأقلّ بين الاثنين.
 export const MONTHLY_LIMIT = 80;
 const HOURLY_LIMIT = 2;
 
@@ -35,6 +39,14 @@ export async function checkAndConsumeAIRefreshQuota(
 
   if (!user) return { allowed: false, remainingThisMonth: 0 };
 
+  // 🔴 كان السقف رقماً واحداً (80) لكلّ المشتركين، فباقة `free` المُعلَن
+  // فيها صفر تحليلات كانت تحصل على ثمانين، ورصيد الكريدت المشترى لا
+  // يُخصَم منه شيء أبداً. أي أنّ الباقات كانت معروضة بحدود غير موجودة.
+  // `checkCredits` هي مصدر الحقيقة لحساب «مخصّص الباقة + المشترى». كتابة
+  // الحساب هنا مرّة ثانية تعني رقمين يفترقان عند أوّل تعديل في الباقات.
+  const credits = await checkCredits(userId, 0);
+  const effectiveMonthly = Math.min(MONTHLY_LIMIT, credits.left);
+
   const now = new Date();
 
   // ==== إعادة ضبط العداد الشهري لو دخلنا شهر جديد ====
@@ -43,7 +55,7 @@ export async function checkAndConsumeAIRefreshQuota(
     now.getFullYear() !== user.aiRefreshMonthlyReset.getFullYear();
   const monthlyCount = isNewMonth ? 0 : user.aiRefreshMonthlyCount;
 
-  if (monthlyCount >= MONTHLY_LIMIT) {
+  if (monthlyCount >= effectiveMonthly) {
     return { allowed: false, remainingThisMonth: 0, reason: "monthly_exhausted" };
   }
 
@@ -58,7 +70,7 @@ export async function checkAndConsumeAIRefreshQuota(
     );
     return {
       allowed: false,
-      remainingThisMonth: MONTHLY_LIMIT - monthlyCount,
+      remainingThisMonth: effectiveMonthly - monthlyCount,
       reason: "hourly_exhausted",
       retryAfterMinutes,
     };
@@ -74,9 +86,13 @@ export async function checkAndConsumeAIRefreshQuota(
     },
   });
 
+  // الخصم من الرصيد المشترى يبدأ بعد نفاد مخصّص الباقة وحده - وإلّا كان
+  // المستخدم يدفع ثمن رصيد إضافي لا يُستهلك.
+  await consumePurchasedCreditIfNeeded(userId, monthlyCount + 1);
+
   return {
     allowed: true,
-    remainingThisMonth: MONTHLY_LIMIT - (monthlyCount + 1),
+    remainingThisMonth: effectiveMonthly - (monthlyCount + 1),
   };
 }
 
@@ -97,6 +113,14 @@ export async function checkAndConsumeImageQualityQuota(userId: string): Promise<
     },
   });
   if (!user) return { allowed: false, remainingThisMonth: 0 };
+
+  // 🔴 كان السقف رقماً واحداً (80) لكلّ المشتركين، فباقة `free` المُعلَن
+  // فيها صفر تحليلات كانت تحصل على ثمانين، ورصيد الكريدت المشترى لا
+  // يُخصَم منه شيء أبداً. أي أنّ الباقات كانت معروضة بحدود غير موجودة.
+  // `checkCredits` هي مصدر الحقيقة لحساب «مخصّص الباقة + المشترى». كتابة
+  // الحساب هنا مرّة ثانية تعني رقمين يفترقان عند أوّل تعديل في الباقات.
+  const credits = await checkCredits(userId, 0);
+  const effectiveMonthly = Math.min(MONTHLY_LIMIT, credits.left);
 
   const now = new Date();
   const isNewMonth =
@@ -147,6 +171,14 @@ export async function checkAndConsumeSiteScanQuota(userId: string): Promise<Quot
     },
   });
   if (!user) return { allowed: false, remainingThisMonth: 0 };
+
+  // 🔴 كان السقف رقماً واحداً (80) لكلّ المشتركين، فباقة `free` المُعلَن
+  // فيها صفر تحليلات كانت تحصل على ثمانين، ورصيد الكريدت المشترى لا
+  // يُخصَم منه شيء أبداً. أي أنّ الباقات كانت معروضة بحدود غير موجودة.
+  // `checkCredits` هي مصدر الحقيقة لحساب «مخصّص الباقة + المشترى». كتابة
+  // الحساب هنا مرّة ثانية تعني رقمين يفترقان عند أوّل تعديل في الباقات.
+  const credits = await checkCredits(userId, 0);
+  const effectiveMonthly = Math.min(MONTHLY_LIMIT, credits.left);
 
   const now = new Date();
   const isNewMonth =

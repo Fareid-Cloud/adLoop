@@ -127,22 +127,22 @@ export function TrackingCoverageClient({
         defaultOpen={needsTag || pages.length === 0}
       />
 
-      <div className="card-shadow mb-4 flex items-start gap-2.5 rounded-2xl border border-border bg-surface p-4">
+      <div className="card-shadow mb-4 flex items-start gap-2.5 card pad-md">
         <Info size={16} className="mt-0.5 shrink-0 text-accent" />
         <p className="text-[12.5px] leading-relaxed text-text-muted">{tr("covScopeNote")}</p>
       </div>
 
-      <form onSubmit={handleAdd} className="card-shadow mb-4 rounded-2xl border border-border bg-surface p-5">
+      <form onSubmit={handleAdd} className="card-shadow mb-4 card pad-md">
         <div className="mb-3 grid gap-2.5 sm:grid-cols-[2fr_1fr]">
           <input
             value={url} onChange={(e) => setUrl(e.target.value)}
             placeholder={tr("covUrlPlaceholder")}
-            className="rounded-xl border border-border bg-surface-raised px-3.5 py-2.5 text-[13.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+            className="card-inset px-3.5 py-2.5 text-[13.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
           />
           <input
             value={label} onChange={(e) => setLabel(e.target.value)}
             placeholder={tr("covLabelPlaceholder")}
-            className="rounded-xl border border-border bg-surface-raised px-3.5 py-2.5 text-[13.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+            className="card-inset px-3.5 py-2.5 text-[13.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
           />
         </div>
         {error && <p className="mb-2 text-[12.5px] text-critical">{error}</p>}
@@ -154,7 +154,7 @@ export function TrackingCoverageClient({
 
           {pages.length > 0 && (
             <button type="button" onClick={recheckAll} disabled={busyId === "all"}
-                    className="flex items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-4 py-2 text-[13px] text-text-primary disabled:opacity-50">
+                    className="flex items-center gap-1.5 card-inset px-4 py-2 text-[13px] text-text-primary disabled:opacity-50">
               {busyId === "all" ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
               {busyId === "all" ? tr("covCheckingAll") : tr("covCheckAll")}
             </button>
@@ -180,7 +180,7 @@ export function TrackingCoverageClient({
               : XCircle;
 
             return (
-              <div key={p.id} className="card-shadow rounded-2xl border border-border bg-surface p-4">
+              <div key={p.id} className="card pad-md">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="mb-1 flex items-center gap-2">
@@ -239,12 +239,12 @@ export function TrackingCoverageClient({
 
                   <div className="flex shrink-0 gap-1.5">
                     <button onClick={() => recheck(p.id)} disabled={busyId === p.id}
-                            className="flex items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12px] text-text-primary disabled:opacity-50">
+                            className="flex items-center gap-1.5 card-inset px-3 py-2 text-[12px] text-text-primary disabled:opacity-50">
                       {busyId === p.id ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
                       {busyId === p.id ? tr("covChecking") : tr("covCheck")}
                     </button>
                     <button onClick={() => setConfirmDelete(p.id)}
-                            className="rounded-xl border border-border bg-surface-raised p-2 text-text-muted hover:text-critical"
+                            className="card-inset p-2 text-text-muted hover:text-critical"
                             aria-label={tr("covDelete")}>
                       <Trash2 size={14} />
                     </button>
@@ -256,7 +256,7 @@ export function TrackingCoverageClient({
                     <span className="text-[12.5px] text-text-primary">{tr("covConfirmDelete")}</span>
                     <div className="flex gap-2">
                       <button onClick={() => setConfirmDelete(null)}
-                              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] text-text-muted">
+                              className="card px-3 py-1.5 text-[12px] text-text-muted">
                         {tr("covCancel")}
                       </button>
                       <button onClick={() => remove(p.id)} disabled={busyId === p.id}

@@ -126,9 +126,9 @@ export function MetricsExplorer({ workspaceId, locale = "ar" }: { workspaceId: s
   return (
     <div className="rounded-2xl bg-surface p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <span className="text-[16.5px] font-semibold tracking-tight text-text-primary">{tr("title")}</span>
+        <span className="section-title">{tr("title")}</span>
         <div className="flex flex-wrap items-center gap-1.5">
-          <div className="flex gap-1 rounded-xl border border-border bg-surface p-1">
+          <div className="flex gap-1 card p-1">
             {RANGE_PRESETS.map((preset) => (
               <button
                 key={preset.days}
@@ -145,7 +145,7 @@ export function MetricsExplorer({ workspaceId, locale = "ar" }: { workspaceId: s
           </div>
           {/* مدى مخصّص: الاختصارات لا تغطّي كل سؤال - «آخر ٤٥ يوماً» سؤال
               مشروع لا يجيب عنه زرّ ثابت. */}
-          <label className="flex items-center gap-1.5 rounded-xl border border-border bg-surface px-2.5 py-1.5 text-[12px] text-text-muted">
+          <label className="flex items-center gap-1.5 card px-2.5 py-1.5 text-[12px] text-text-muted">
             {tr("customDays")}
             <input
               type="number"

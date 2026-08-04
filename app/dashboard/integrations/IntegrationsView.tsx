@@ -108,7 +108,7 @@ export function IntegrationsView({
       {/* ==================== الرأس ==================== */}
       <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">{tr("title")}</h1>
+          <h1 className="page-title">{tr("title")}</h1>
           <p className="mt-1 text-[13px] text-text-muted">{tr("subtitle")}</p>
         </div>
 
@@ -119,7 +119,7 @@ export function IntegrationsView({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={tr("search")}
-              className="w-56 rounded-xl border border-border bg-surface py-2.5 text-[13px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+              className="w-56 card py-2.5 text-[13px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
               style={{ paddingInlineStart: 32, paddingInlineEnd: 12 }}
             />
           </div>
@@ -133,7 +133,7 @@ export function IntegrationsView({
       </header>
 
       {/* ==================== المؤشّرات ==================== */}
-      <div className="card-shadow mb-5 grid gap-3 rounded-2xl border border-border bg-surface p-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="card-shadow mb-5 grid gap-3 card pad-sm sm:grid-cols-2 lg:grid-cols-5">
         <Kpi icon={Link2} tone="verified" value={String(overview.connectedCount)} label={tr("kpiConnected")} caption={tr("kpiConnectedCaption")} />
         <Kpi
           icon={AlertTriangle}
@@ -172,7 +172,7 @@ export function IntegrationsView({
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="rounded-xl border border-border bg-surface px-3 py-2 text-[12.5px] text-text-primary outline-none"
+            className="card px-3 py-2 text-[12.5px] text-text-primary outline-none"
           >
             <option value="all">{tr("allCategories")}</option>
             {INTEGRATION_CATEGORIES.map((c) => (
@@ -209,7 +209,7 @@ export function IntegrationsView({
               body={query || category !== "all" || tab === "disconnected" ? null : tr("noneConnectedBody")}
             />
           ) : view === "list" ? (
-            <div className="card-shadow overflow-hidden rounded-2xl border border-border bg-surface">
+            <div className="card-shadow overflow-hidden card">
               {rows.map((item, i) => (
                 <IntegrationRow
                   key={item.key}
@@ -387,7 +387,7 @@ function IntegrationRow({
       </span>
 
       <div className="w-[110px] shrink-0">
-        <div className="text-[15px] font-semibold text-text-primary">{item.accountCount}</div>
+        <div className="section-title">{item.accountCount}</div>
         <div className="text-[11.5px] text-text-muted">{tr("colAccounts")}</div>
         <div className="mt-0.5 text-[11px] text-text-faint">
           {item.entityLabelKey === "campaigns"
@@ -397,7 +397,7 @@ function IntegrationRow({
       </div>
 
       <div className="w-[110px] shrink-0">
-        <div className="text-[15px] font-semibold text-text-primary">{item.healthPct}%</div>
+        <div className="section-title">{item.healthPct}%</div>
         <div className="text-[11.5px] text-text-muted">{tr("colHealth")}</div>
         <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-surface-raised">
           <div className="h-full rounded-full" style={{ width: `${item.healthPct}%`, background: tone.bar }} />
@@ -485,7 +485,7 @@ function AvailableGrid({
         if (live.length === 0 && later.length === 0) return null;
         return (
           <section key={cat.key}>
-            <h3 className="text-[14px] font-semibold text-text-primary">{locale === "en" ? cat.labelEn : cat.labelAr}</h3>
+            <h3 className="section-title">{locale === "en" ? cat.labelEn : cat.labelAr}</h3>
             <p className="mb-2.5 mt-0.5 text-[12px] text-text-muted">{locale === "en" ? cat.descriptionEn : cat.descriptionAr}</p>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {live.map((def) => (
@@ -523,7 +523,7 @@ function AvailableCard({
       //
       // `group` + خلفية بلون الثيم عند المرور: تغذية راجعة تقول «هذا الكرت
       // قابل للضغط» قبل أن يصل المؤشّر إلى الزرّ في أسفله.
-      className={`group card-shadow flex flex-col rounded-2xl border border-border bg-surface p-5 transition-colors ${
+      className={`group card-shadow flex flex-col card pad-md transition-colors ${
         disabled ? "opacity-45" : "hover:border-accent/45 hover:bg-accent/[0.045]"
       }`}
     >
@@ -545,7 +545,7 @@ function AvailableCard({
       </p>
 
       {disabled ? (
-        <span className="rounded-xl border border-border bg-surface-raised py-2.5 text-center text-[12.5px] text-text-faint">
+        <span className="card-inset py-2.5 text-center text-[12.5px] text-text-faint">
           {tr("soon")}
         </span>
       ) : (

@@ -55,7 +55,7 @@ export function AdminSupportClient({ threads: initial }: { threads: Thread[] }) 
   }
 
   if (threads.length === 0) {
-    return <div className="rounded-2xl card-shadow border border-border bg-surface p-8 text-center text-text-muted">لا توجد رسائل دعم بعد.</div>;
+    return <div className="card pad-lg text-center text-text-muted">لا توجد رسائل دعم بعد.</div>;
   }
 
   return (
@@ -77,7 +77,7 @@ export function AdminSupportClient({ threads: initial }: { threads: Thread[] }) 
       </div>
 
       {selected && (
-        <div className="flex max-h-[70vh] flex-col rounded-2xl card-shadow border border-border bg-surface">
+        <div className="flex max-h-[70vh] flex-col card">
           <div className="border-b border-border p-4 text-sm">
             <div className="font-semibold text-text-primary">{selected.subject}</div>
             <div className="mt-1 text-xs text-text-muted">
@@ -119,7 +119,7 @@ export function AdminSupportClient({ threads: initial }: { threads: Thread[] }) 
             <div className="flex items-center gap-2">
             <label
               title="إرفاق صورة"
-              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border bg-surface-raised text-text-muted transition-colors hover:text-text-primary"
+              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center card-inset text-text-muted transition-colors hover:text-text-primary"
             >
               {uploading ? <Loader2 size={15} className="animate-spin" /> : <ImagePlus size={15} />}
               <input type="file" accept="image/*" onChange={handleFile} className="hidden" disabled={uploading} />
@@ -129,7 +129,7 @@ export function AdminSupportClient({ threads: initial }: { threads: Thread[] }) 
               onChange={(e) => setReply(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendReply()}
               placeholder="اكتب رداً للعميل..."
-              className="w-full rounded-xl card-shadow border border-border bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none focus:border-accent"
+              className="w-full card-inset px-3 py-2 text-sm text-text-primary outline-none focus:border-accent"
             />
             <button
               onClick={sendReply}

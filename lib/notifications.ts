@@ -6,6 +6,8 @@
 
 import { Resend } from "resend";
 import { Locale } from "@/lib/i18n/dictionary";
+import { renderEmail } from "@/lib/emailTemplate";
+import { getAppUrl } from "@/lib/appUrl";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -37,7 +39,14 @@ export async function sendUrgentNotificationEmail(params: {
 }) {
   if (!resend) {
     // مفيش RESEND_API_KEY مضبوط - بنسجل تحذير بدل ما نفشل الطلب كله
-    console.warn("RESEND_API_KEY غير مضبوط - تم تجاهل إرسال الإيميل");
+    // 🔴 هذا الصمت هو سبب «التنبيهات لا تصلني»: كلّ شيء يعمل، ولا شيء
+    // يُرسَل، ولا أثر لذلك إلّا سطر في سجلّ الخادم. التحذير صار صريحاً
+    // ويحمل الخطوة التالية بدل أن يذكر اسم متغيّر ويصمت.
+    console.warn(
+      "[email] RESEND_API_KEY غير مضبوط - لم يُرسَل أيّ بريد. " +
+        "التنبيهات تظهر في الجرس داخل التطبيق لكنها لن تصل بالبريد إطلاقاً. " +
+        "اضبط RESEND_API_KEY وNOTIFICATION_FROM_EMAIL - راجع دليل التفعيل."
+    );
     return;
   }
 
@@ -53,15 +62,28 @@ export async function sendUrgentNotificationEmail(params: {
       // الاستخدام - دفاع إضافي ضد حقن هيدرات بريدية، حتى لو المخاطرة
       // العملية منخفضة جداً (عناوين الإيميل مش بتترجم HTML أصلاً)
       subject: sanitizeEmailHeader(`[${params.workspaceName}] ${params.title}`),
-      html: `
-        <div dir="${locale === "ar" ? "rtl" : "ltr"}" style="font-family: sans-serif; padding: 20px;">
-          <h2 style="color: #171C27;">${escapeHtml(params.title)}</h2>
-          ${params.description ? `<p style="color: #5C6478;">${escapeHtml(params.description)}</p>` : ""}
-          <p style="color: #9AA1B0; font-size: 12px; margin-top: 24px;">
-            ${locale === "ar" ? "مساحة العمل" : "Workspace"}: ${escapeHtml(params.workspaceName)}
-          </p>
-        </div>
-      `,
+      html: renderEmail({
+        locale,
+        // «سياق ثمّ عنوان»: اسم مساحة العمل فوق بحرف صغير بدل حشره في
+        // العنوان بين أقواس - العنوان يبقى للرسالة نفسها.
+        eyebrow: params.workspaceName,
+        title: params.title,
+        tone: "urgent",
+        blocks: [
+          ...(params.description ? [{ text: params.description }] : []),
+          {
+            text:
+              locale === "ar"
+                ? "راجعناه لك ضمن الفحص اليومي، ولم نُرسله إلّا لأنّه يستحقّ نظرةً الآن لا لاحقاً."
+                : "We caught this in your daily check, and only sent it because it is worth a look now rather than later.",
+          },
+        ],
+        cta: {
+          label: locale === "ar" ? "افتح لوحة القرارات" : "Open your decisions",
+          url: `${getAppUrl()}/dashboard/actions`,
+        },
+        preferencesUrl: `${getAppUrl()}/dashboard/settings?tab=workspace`,
+      }),
     });
   } catch (err) {
     // فشل إرسال الإيميل مش لازم يكسر باقي العملية (تسجيل المهمة/التنبيه
@@ -74,6 +96,4 @@ function sanitizeEmailHeader(str: string): string {
   return str.replace(/[\r\n]/g, " ");
 }
 
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
+

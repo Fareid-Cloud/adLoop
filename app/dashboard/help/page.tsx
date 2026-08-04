@@ -18,12 +18,12 @@ export default async function HelpPage() {
       <div className="flex flex-col gap-6">
         {HELP_SECTIONS.map((s) => (
           <section key={s.title.en}>
-            <h2 className="mb-2.5 text-[16.5px] font-semibold tracking-tight text-text-primary">
+            <h2 className="mb-2.5 section-title">
               {helpText(locale, s.title)}
             </h2>
             <div className="flex flex-col gap-2">
               {s.articles.map((a) => (
-                <details key={a.id} className="card-shadow group rounded-xl border border-border bg-surface p-4">
+                <details key={a.id} className="card-shadow group card pad-md">
                   <summary className="cursor-pointer list-none text-[14px] font-medium text-text-primary">
                     {helpText(locale, a.q)}
                   </summary>
@@ -37,7 +37,7 @@ export default async function HelpPage() {
         ))}
       </div>
 
-      <div className="card-shadow mt-8 rounded-xl border border-border bg-surface-raised p-4 text-center text-sm text-text-muted">
+      <div className="card-shadow mt-8 card-inset pad-md text-center text-sm text-text-muted">
         {tr("noAnswer")}
       </div>
     </div>

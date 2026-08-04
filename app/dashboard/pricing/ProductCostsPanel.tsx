@@ -108,10 +108,10 @@ export function ProductCostsPanel({
   }
 
   return (
-    <section className="card-shadow mb-5 rounded-2xl border border-border bg-surface p-4">
+    <section className="card-shadow mb-5 card pad-md">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-[15px] font-semibold text-text-primary">{tr("title")}</h2>
+          <h2 className="section-title">{tr("title")}</h2>
           <p className="mt-0.5 text-[12.5px] leading-relaxed text-text-muted">{tr("subtitle")}</p>
         </div>
         {missingCount > 0 ? (
@@ -132,7 +132,7 @@ export function ProductCostsPanel({
       )}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-xl border border-border bg-surface-raised/60 p-3">
+        <div className="bg-surface-raised p-3">
           <div className="text-[13px] font-medium text-text-primary">{tr("pullTitle")}</div>
           <p className="mb-2.5 mt-0.5 text-[12px] leading-relaxed text-text-muted">{tr("pullBody")}</p>
           <button
@@ -145,20 +145,20 @@ export function ProductCostsPanel({
           </button>
         </div>
 
-        <div className="rounded-xl border border-border bg-surface-raised/60 p-3">
+        <div className="bg-surface-raised p-3">
           <div className="text-[13px] font-medium text-text-primary">{tr("csvTitle")}</div>
           <p className="mb-2.5 mt-0.5 text-[12px] leading-relaxed text-text-muted">{tr("csvBody")}</p>
           <div className="flex gap-2">
             <a
               href={`/api/workspaces/${workspaceId}/product-costs`}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-surface py-2 text-[12.5px] font-medium text-text-primary no-underline"
+              className="flex flex-1 items-center justify-center gap-1.5 card py-2 text-[12.5px] font-medium text-text-primary no-underline"
             >
               <Download size={14} /> {tr("download")}
             </a>
             <button
               onClick={() => fileRef.current?.click()}
               disabled={busy !== null}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-surface py-2 text-[12.5px] font-medium text-text-primary disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-1.5 card py-2 text-[12.5px] font-medium text-text-primary disabled:opacity-50"
             >
               {busy === "import" ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
               {busy === "import" ? tr("uploading") : tr("upload")}

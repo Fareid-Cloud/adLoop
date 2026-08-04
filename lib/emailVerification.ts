@@ -4,6 +4,7 @@ import { getAppUrl } from "@/lib/appUrl";
 import crypto from "crypto";
 import { Resend } from "resend";
 import { Locale } from "@/lib/i18n/dictionary";
+import { renderEmail } from "@/lib/emailTemplate";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -35,20 +36,26 @@ export async function sendVerificationEmail(params: {
       from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
       to: params.toEmail,
       subject: isAr ? "تأكيد بريدك الإلكتروني - AdLoop" : "Verify your email - AdLoop",
-      html: `
-        <div dir="${isAr ? "rtl" : "ltr"}" style="font-family: sans-serif; padding: 20px;">
-          <h2 style="color: #171C27;">${isAr ? "أهلاً بك في AdLoop" : "Welcome to AdLoop"}</h2>
-          <p style="color: #5C6478;">
-            ${isAr ? "اضغط على الرابط التالي لتأكيد بريدك الإلكتروني:" : "Click the link below to verify your email:"}
-          </p>
-          <a href="${verifyUrl}" style="display: inline-block; background: #4C8DFF; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; margin: 12px 0;">
-            ${isAr ? "تأكيد البريد الإلكتروني" : "Verify Email"}
-          </a>
-          <p style="color: #9AA1B0; font-size: 12px;">
-            ${isAr ? "الرابط صالح لمدة 24 ساعة." : "This link expires in 24 hours."}
-          </p>
-        </div>
-      `,
+      html: renderEmail({
+        locale,
+        title: isAr ? "أهلاً بك في AdLoop" : "Welcome to AdLoop",
+        blocks: [
+          {
+            text: isAr
+              ? "خطوة واحدة وتبدأ: أكّد بريدك ليصير حسابك جاهزاً."
+              : "One step and you are in: confirm your email to activate your account.",
+          },
+          {
+            text: isAr
+              ? "بعدها تربط حساباتك الإعلانية، ونبدأ في مقارنة ما تقوله المنصّات بما يحدث فعلاً - وهو الفارق الذي بُني هذا المنتج كلّه لأجله."
+              : "After that you connect your ad accounts, and we start comparing what the platforms claim against what actually happened - the gap this whole product exists for.",
+          },
+        ],
+        cta: {
+          label: isAr ? "تأكيد البريد الإلكتروني" : "Verify my email",
+          url: verifyUrl,
+        },
+      }),
     });
   } catch (err) {
     console.error("فشل إرسال إيميل التحقق:", err);

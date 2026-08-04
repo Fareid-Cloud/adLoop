@@ -71,7 +71,7 @@ export function CampaignsNav({ locale = "ar" }: { locale?: Locale }) {
         return (
           <div
             key={label}
-            className="rounded-2xl card-shadow border border-border bg-surface p-4"
+            className="card pad-md"
             style={{ ["--pc" as string]: section.color ?? "#3A4150" } as React.CSSProperties}
           >
             <div className="mb-3 flex items-center gap-2">

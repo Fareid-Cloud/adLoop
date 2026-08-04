@@ -25,7 +25,7 @@ export function BestAdPair({
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `bestAd.${k}`, vars);
   if (!pick.best) {
     return (
-      <div className="rounded-2xl border border-border bg-surface p-4">
+      <div className="card pad-md">
         <div className="mb-1.5 flex items-center gap-2 text-[13px] font-medium text-text-muted">
           <Trophy size={15} className="text-text-faint" />
           {tr("title", { scope: scopeLabel })}
@@ -92,7 +92,7 @@ function AdCard({
   const bg = rank === 1 ? "bg-verified/10" : "bg-surface-raised";
 
   return (
-    <div className="card-shadow rounded-2xl border border-border bg-surface p-4">
+    <div className="card pad-md">
       <div className="mb-3 flex items-center gap-2.5">
         <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${bg} ${tone}`}>
           <Icon size={17} />
@@ -121,7 +121,7 @@ function AdCard({
         {item.usingVerifiedData ? tr("cpaVerified") : tr("cpaReported")}
       </div>
 
-      <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3 text-[12px]">
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 border-t border-border pt-3 text-[12px]">
         <Stat label={tr("ctr")} value={`${item.ctr}%`} />
         <Stat label={tr("roas")} value={item.roas !== null ? `${item.roas}x` : "—"} />
         <Stat label={tr("spend")} value={Math.round(item.cost).toLocaleString("en-US")} />

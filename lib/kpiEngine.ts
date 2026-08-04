@@ -142,3 +142,41 @@ export async function computeKpis(
     return { key, value: Math.round(value * 100) / 100, changePct, series, sources };
   });
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// مؤشّرات مشتركة — نقطة حقيقة واحدة للصيغ التي تتكرّر عبر الصفحات
+//
+// **ما كشفه الفحص:** «تكلفة العميل الحقيقية» كانت تُحسب في أربعة عشر
+// موضعاً بأربع طرق مختلفة: بعضها يقرّب لخانة واحدة وبعضها لخانتين
+// وبعضها لا يقرّب، وبعضها يرجع `null` عند غياب التحقّق وبعضها يرجع صفراً
+// — وصفر هنا **كذب**: يُقرأ «عملاء بلا تكلفة» بينما الحقيقة «لا عملاء».
+// وموضع واحد كان يقسم بلا حارس صفر فينتج `Infinity` يسمّم كلّ حساب اتجاه
+// مبنيّ عليه.
+//
+// القاعدة: `null` تعني «لا يمكن حسابه»، والواجهة تعرض «—». التقريب قرار
+// عرض لا حساب، فيبقى في مكان واحد.
+// ═══════════════════════════════════════════════════════════════════════
+
+/** تكلفة العميل المتحقَّق. `null` حين لا تحقّق - لا صفر ولا `Infinity`. */
+export function costPerVerified(cost: number, verified: number): number | null {
+  if (!verified || verified <= 0) return null;
+  return Math.round((cost / verified) * 100) / 100;
+}
+
+/** نسبة ما تحقّق فعلاً ممّا أعلنته المنصّة (%). */
+export function verificationRate(verified: number, raw: number): number | null {
+  if (!raw || raw <= 0) return null;
+  return Math.round((verified / raw) * 1000) / 10;
+}
+
+/** فجوة التضخيم: كم ممّا أعلنته المنصّة لم يتحقّق (%). */
+export function inflationRate(verified: number, raw: number): number | null {
+  if (!raw || raw <= 0) return null;
+  return Math.round(((raw - verified) / raw) * 1000) / 10;
+}
+
+/** العائد على الإنفاق الإعلاني. */
+export function roas(revenue: number, cost: number): number | null {
+  if (!cost || cost <= 0) return null;
+  return Math.round((revenue / cost) * 100) / 100;
+}

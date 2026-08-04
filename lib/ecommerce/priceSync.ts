@@ -12,6 +12,7 @@
 import { prisma } from "@/lib/prisma";
 import { decryptToken } from "@/lib/encryption";
 import { PLATFORM_LABEL, type EcommercePlatform } from "./types";
+import { assertNotDemo } from "@/lib/demo";
 
 export interface PriceSyncResult {
   ok: boolean;
@@ -27,6 +28,10 @@ export async function syncPriceToStore(
   productId: string,
   newPrice: number
 ): Promise<PriceSyncResult> {
+  // مساحة تجريبية لا تلمس متجراً حقيقياً: ما بعد هذا السطر يكتب سعراً
+  // فعلياً في سلة أو شوبيفاي أو زد - أثره على متجر العميل ومبيعاته.
+  await assertNotDemo(workspaceId);
+
   const product = await prisma.product.findFirst({ where: { id: productId, workspaceId } });
   if (!product) return { ok: false, reasonAr: "المنتج غير موجود." };
 

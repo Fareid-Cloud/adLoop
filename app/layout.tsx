@@ -8,9 +8,11 @@
 // أيضاً بيحل فجوة مكتشفة: صفحات برّه الداشبورد ماكانتش بتحمّل خط
 // Almarai خالص - next/font كان مستورد جوه dashboard/layout.tsx بس.
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { IBM_Plex_Sans_Arabic } from "next/font/google";
+import { getSessionUserFromCookies } from "@/lib/auth";
+import { PwaSetup } from "@/app/components/PwaSetup";
 import "./dashboard/theme.css";
 
 // خط عربي/لاتيني احترافي واحد للواجهة كلها - IBM Plex Sans Arabic: نظيف،
@@ -24,13 +26,84 @@ const display = IBM_Plex_Sans_Arabic({
 
 export const metadata: Metadata = {
   title: "AdLoop",
-  description: "منصة إدارة إعلانات موحّدة - تحقّق من أرقامك بدل ما تصدّق أرقام المنصات فقط.",
+  description:
+    "قارن ما تقوله منصّات الإعلانات بما حدث فعلاً: تحويلات متحقَّقة من محادثات حقيقية، لا أرقاماً مُعلَنة.",
+
+  // ── التثبيت على الشاشة الرئيسية ──────────────────────────────────
+  // آبل تتجاهل `manifest.json` كلّياً وتقرأ هذه الوسوم وحدها. بدونها
+  // يُثبَّت الموقع على iPhone كاختصار متصفّح بشريط عنوان ظاهر - لا
+  // كتطبيق. أندرويد يقرأ البيان، فالطرفان يحتاجان الاثنين معاً.
+  appleWebApp: {
+    capable: true,
+    title: "AdLoop",
+    // `default` لا `black-translucent`: الأخيرة تمدّ المحتوى تحت شريط
+    // الحالة فيختفي أوّل صفّ من الواجهة خلف الساعة والبطارية.
+    statusBarStyle: "default",
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.png", sizes: "48x48", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  // منع التحويل التلقائي للأرقام إلى روابط اتّصال على iOS: كان يلوّن
+  // كلّ رقم في اللوحة بالأزرق ويجعله قابلاً للنقر بلا معنى.
+  formatDetection: { telephone: false },
+  // Next.js تصدر الاسم القياسي الحديث `mobile-web-app-capable` وحده.
+  // إصدارات iOS الأقدم تقرأ الاسم القديم فقط، ومن دونه يُثبَّت الموقع
+  // عندها كاختصار متصفّح بشريط عنوان ظاهر لا كتطبيق. إضافته لا تكلّف
+  // شيئاً وتغطّي الإصدارين.
+  other: { "apple-mobile-web-app-capable": "yes" },
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+/**
+ * `viewport` منفصلة عن `metadata` في Next.js 15.
+ *
+ * `viewportFit: "cover"` مع حشوة المنطقة الآمنة: بدونها يختفي المحتوى
+ * خلف نتوء الشاشة وشريط الإيماءات في هواتف iPhone الحديثة.
+ */
+export const viewport: Viewport = {
+  themeColor: "#4C8DFF",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  // التكبير مسموح عمداً: منعه يمنع ضعاف البصر من قراءة الأرقام الصغيرة،
+  // وهي أداة مليئة بالأرقام.
+  maximumScale: 5,
+};
+
+/**
+ * تفضيلات المستخدم تُطبَّق على `<html>` نفسه.
+ *
+ * **ما كان معطّلاً:** هذه القيم الأربع كانت مثبّتة هنا (`ar`/`rtl`/`light`/
+ * `blue`)، والداشبورد يعيد ضبط اثنتين منها على `<div>` داخليّ. النتيجة أنّ
+ * اللغة والاتجاه **لا يتغيّران أبداً** مهما بدّل المستخدم — لأنّ `dir` و
+ * `lang` لا معنى لهما إلّا على الجذر، وأيّ صفحة خارج الداشبورد (الدخول،
+ * الإعداد، التقرير المشترك) كانت تبقى على الأزرق الفاتح دوماً.
+ *
+ * موضعها الصحيح هنا: عنصر واحد يحكم الوثيقة كلّها، فيسري التفضيل على كلّ
+ * صفحة بلا استثناء.
+ */
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  // فشل القراءة لا يجوز أن يُسقط كلّ صفحة في التطبيق - الزائر غير المسجَّل
+  // حالة عادية لا خطأ، فنقع على الافتراضي بهدوء.
+  const user = await getSessionUserFromCookies().catch(() => null);
+  const locale = user?.preferredLocale === "en" ? "en" : "ar";
+
   return (
-    <html lang="ar" dir="rtl" data-mode="light" data-accent="blue">
-      <body className={`${display.variable} font-display antialiased`}>{children}</body>
+    <html
+      lang={locale}
+      dir={locale === "ar" ? "rtl" : "ltr"}
+      data-mode={user?.themeMode ?? "light"}
+      data-accent={user?.themeColor ?? "blue"}
+    >
+      <body className={`${display.variable} font-display antialiased`}>
+        {children}
+        {/* في الجذر لا داخل الداشبورد: تسجيل الـSW شرط التثبيت، ويجب أن
+            يحدث حتى لمن يفتح صفحة الدخول أوّل مرّة. */}
+        <PwaSetup locale={locale} />
+      </body>
     </html>
   );
 }

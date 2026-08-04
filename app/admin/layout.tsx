@@ -13,9 +13,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // الوصول للمالك: إمّا isAdmin=true في قاعدة البيانات، أو بريده مطابق
   // لـ OWNER_EMAIL (عشان تقدر تدخل لوحة المالك بمجرد ضبط المتغير، من غير
   // تعديل يدوي في قاعدة البيانات)
-  if (!user || (!user.isAdmin && user.email !== process.env.OWNER_EMAIL)) {
-    redirect("/dashboard");
-  }
+  // التمييز بين الحالتين مقصود: من ليس مسجّلاً يحتاج تسجيل دخول (ويعود
+  // إلى هنا بعده)، ومن هو مسجّل لكنه ليس المالك لا يحتاج نموذج دخول - هو
+  // في المكان الخطأ ببساطة. إرسال الأوّل إلى لوحة العميل كان يخفي وجود
+  // القسم عمّن يملكه فعلاً.
+  if (!user) redirect("/login?next=/admin");
+  if (!user.isAdmin && user.email !== process.env.OWNER_EMAIL) redirect("/dashboard");
 
   return (
     <div dir="rtl" data-accent="red" data-mode="dark" className="min-h-screen bg-bg px-8 py-7">

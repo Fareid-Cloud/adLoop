@@ -18,6 +18,7 @@ import { CATEGORY_META, type CheckCategory, type CheckSeverity, type CheckStatus
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { itemTitle } from "@/lib/localizedRecord";
 import { HealthGauge } from "@/app/components/ui/HealthGauge";
+import { TH, TD, TR, THEAD_ROW } from "@/app/components/ui/tableStyles";
 
 export interface CheckRow {
   id: string;
@@ -181,7 +182,7 @@ export function DiagnosticsView({
       <div className="reveal mb-8 flex flex-wrap items-start justify-between gap-4" style={{ animationDelay: "0ms" }}>
         <div>
           <div className="mb-1 text-[13px] text-text-muted">{workspaceName}</div>
-          <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">{tp("title")}</h1>
+          <h1 className="page-title">{tp("title")}</h1>
           <p className="mt-1 text-[13px] text-text-muted">
             {tp("subtitle")}
           </p>
@@ -194,7 +195,7 @@ export function DiagnosticsView({
               أُزيل عند إعادة بناء هذه الصفحة، فأصبحت غير قابلة للوصول تماماً */}
           <a
             href="/dashboard/diagnostics/tracking-coverage"
-            className="flex items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2.5 text-[13px] text-text-primary no-underline"
+            className="flex items-center gap-1.5 card px-3.5 py-2.5 text-[13px] text-text-primary no-underline"
           >
             <Radar size={15} className="text-text-muted" />
             {tr("trackingCoverage")}
@@ -212,7 +213,7 @@ export function DiagnosticsView({
 
       {/* مؤشر الصحة + بطاقات الخطورة */}
       <div className="reveal mb-6 grid gap-4 lg:grid-cols-[1.15fr_2fr]" style={{ animationDelay: "80ms" }}>
-        <div className="card-shadow flex items-center gap-4 rounded-2xl border border-border bg-surface p-6">
+        <div className="card-shadow flex items-center gap-4 card pad-lg">
           <HealthGauge score={healthScore} size="lg" />
           <div className="min-w-0">
             <div className="text-[13px] text-text-muted">{tp("healthScore")}</div>
@@ -279,9 +280,9 @@ export function DiagnosticsView({
 
       {/* المشاكل + النشاط */}
       <div className="reveal mb-6 grid gap-4 lg:grid-cols-[1.6fr_1fr]" style={{ animationDelay: "200ms" }}>
-        <section className="card-shadow overflow-hidden rounded-2xl border border-border bg-surface">
+        <section className="card-shadow overflow-hidden card">
           <div className="flex items-center gap-2 border-b border-border p-4">
-            <h2 className="text-[14px] font-semibold text-text-primary">{tp("issuesTitle")}</h2>
+            <h2 className="section-title">{tp("issuesTitle")}</h2>
             <span className="rounded-full bg-critical/12 px-2 py-0.5 font-mono text-[11px] font-medium text-critical">
               {topIssues.length}
             </span>
@@ -327,7 +328,7 @@ export function DiagnosticsView({
 
                     {c.actionHref && (
                       <a href={c.actionHref}
-                         className="shrink-0 rounded-xl border border-border bg-surface-raised px-3 py-1.5 text-[12px] text-text-primary no-underline">
+                         className="shrink-0 card-inset px-3 py-1.5 text-[12px] text-text-primary no-underline">
                         {tr("resolve")}
                       </a>
                     )}
@@ -347,10 +348,10 @@ export function DiagnosticsView({
           )}
         </section>
 
-        <section className="card-shadow overflow-hidden rounded-2xl border border-border bg-surface">
+        <section className="card-shadow overflow-hidden card">
           <div className="flex items-center gap-2 border-b border-border p-4">
             <Activity size={15} className="text-accent" />
-            <h2 className="text-[14px] font-semibold text-text-primary">{tp("recentActivity")}</h2>
+            <h2 className="section-title">{tp("recentActivity")}</h2>
           </div>
           {activity.length === 0 ? (
             <p className="p-6 text-center text-[12.5px] text-text-muted">{tp("noActivity")}</p>
@@ -375,7 +376,7 @@ export function DiagnosticsView({
       </div>
 
       {/* جدول كل الفحوصات */}
-      <section ref={tableRef} className="reveal card-shadow overflow-hidden rounded-2xl border border-border bg-surface" style={{ animationDelay: "320ms" }}>
+      <section ref={tableRef} className="reveal card-shadow overflow-hidden card" style={{ animationDelay: "320ms" }}>
         {/* شريط تقدّم الفحص الحيّ */}
         {revealed !== null && (
           <div className="border-b border-border px-5 py-3">
@@ -405,14 +406,14 @@ export function DiagnosticsView({
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
           <div className="flex items-center gap-2">
-            <h2 className="text-[15px] font-semibold text-text-primary">{tp("allChecks")}</h2>
+            <h2 className="section-title">{tp("allChecks")}</h2>
             <span className="rounded-full bg-surface-raised px-2 py-0.5 font-mono text-[11.5px] text-text-muted">
               {filtered.length}
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <select value={category} onChange={(e) => setCategory(e.target.value as any)}
-                    className="rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-primary outline-none">
+                    className="card-inset px-3 py-2 text-[12.5px] text-text-primary outline-none">
               <option value="all">{tp("allCategories")} ({categoryCounts.all ?? 0})</option>
               {(Object.keys(CATEGORY_META) as CheckCategory[]).filter((k) => categoryCounts[k]).map((k) => (
                 <option key={k} value={k}>{ar ? CATEGORY_META[k].ar : CATEGORY_META[k].en} ({categoryCounts[k]})</option>
@@ -421,13 +422,13 @@ export function DiagnosticsView({
             {(severityFilter !== "all" || statusFilter !== "all" || category !== "all") && (
               <button
                 onClick={() => { setSeverityFilter("all"); setStatusFilter("all"); setCategory("all"); }}
-                className="rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-muted"
+                className="card-inset px-3 py-2 text-[12.5px] text-text-muted"
               >
                 {tr("clearFilters")}
               </button>
             )}
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)}
-                    className="rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-primary outline-none">
+                    className="card-inset px-3 py-2 text-[12.5px] text-text-primary outline-none">
               <option value="all">{tp("allStatuses")}</option>
               {(Object.keys(STATUS_TONE) as CheckStatus[]).map((k) => (
                 <option key={k} value={k}>{tp(STATUS_KEY[k])}</option>
@@ -436,7 +437,7 @@ export function DiagnosticsView({
             <div className="relative">
               <Search size={14} className="absolute top-1/2 -translate-y-1/2 text-text-faint" style={{ insetInlineStart: 10 }} />
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tp("searchChecks")}
-                     className="w-44 rounded-xl border border-border bg-surface-raised py-2 text-[12.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+                     className="w-44 card-inset py-2 text-[12.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
                      style={{ paddingInlineStart: 30, paddingInlineEnd: 10 }} />
             </div>
           </div>
@@ -445,9 +446,9 @@ export function DiagnosticsView({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse">
             <thead>
-              <tr className="border-b border-border text-start">
+              <tr className={THEAD_ROW}>
                 {[tp("colCheck"), tp("colCategory"), tp("colStatus"), tp("colLastScan"), tp("colTrend"), tp("colAction")].map((h) => (
-                  <th key={h} className="px-4 py-3 text-start text-[11.5px] font-medium text-text-muted">{h}</th>
+                  <th key={h} className={TH}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -465,7 +466,7 @@ export function DiagnosticsView({
                 return (
                   <Fragment key={c.id}>
                   <tr className={`reveal border-b border-border last:border-0 ${isOpen ? "bg-surface-raised/35" : "hover:bg-surface-raised/45"}`}>
-                    <td className="px-4 py-3.5">
+                    <td className={TD}>
                       <div className="flex items-start gap-2.5">
                         <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
                               style={{ background: `color-mix(in srgb, ${cat.color} 13%, transparent)` }}>
@@ -478,13 +479,13 @@ export function DiagnosticsView({
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className={TD}>
                       <span className="whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium"
                             style={{ background: `color-mix(in srgb, ${cat.color} 13%, transparent)`, color: cat.color }}>
                         {ar ? cat.ar : cat.en}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className={TD}>
                       <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium"
                             style={{ background: `color-mix(in srgb, ${st.tone} 13%, transparent)`, color: st.tone }}>
                         <span className="h-1.5 w-1.5 rounded-full" style={{ background: st.tone }} />
@@ -492,8 +493,8 @@ export function DiagnosticsView({
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3.5 text-[11.5px] text-text-muted">{c.lastScanAt}</td>
-                    <td className="px-4 py-3.5"><Spark data={c.trend} tone={st.tone} /></td>
-                    <td className="px-4 py-3.5">
+                    <td className={TD}><Spark data={c.trend} tone={st.tone} /></td>
+                    <td className={TD}>
                       {/* زر واحد فقط عندما يوجد محتوى حقيقي وراءه: تفاصيل
                           قابلة للتوسيع، أو رابط معالجة لمشكلة قائمة. لا يُعرض
                           زر "تفاصيل" يقود إلى صفحة لا تخصّ الفحص. */}

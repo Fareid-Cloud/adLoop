@@ -73,7 +73,7 @@ export default async function LeadFormsPage({
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.lfTitle")}</h1>
+      <h1 className="mb-2 page-title">{t(locale, "campPages.lfTitle")}</h1>
       <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">
         {t(locale, "campPages.lfIntro")}
@@ -85,7 +85,7 @@ export default async function LeadFormsPage({
           description={t(locale, "campPages.lfNoneBody")}
         />
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-2xl bg-surface p-5 text-center">
             <div className="font-mono text-3xl text-text-primary">{googleCount}</div>
             <div className="mt-1 text-xs text-text-faint">{t(locale, "campPages.lfGoogle")}</div>

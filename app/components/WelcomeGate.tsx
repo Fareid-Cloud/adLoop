@@ -184,7 +184,7 @@ export function WelcomeGate({
                 <button
                   key={s.platform}
                   onClick={() => setPicking(s.platform as Platform)}
-                  className="flex items-center gap-3 rounded-xl border border-border bg-surface-raised p-3 text-start transition-colors hover:border-accent"
+                  className="flex items-center gap-3 card-inset pad-sm text-start transition-colors hover:border-accent"
                 >
                   <PlatformLogo platform={s.platform} size={18} />
                   <span className="flex-1 text-[13.5px] font-medium text-text-primary">

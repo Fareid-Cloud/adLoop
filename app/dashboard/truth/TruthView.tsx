@@ -75,11 +75,11 @@ export function TruthView({
     <div className="mx-auto max-w-6xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspaceName}</div>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="flex items-center gap-2.5 text-[26px] font-semibold text-text-primary">
+        <h1 className="flex items-center gap-2.5 page-title">
           <ShieldCheck size={24} className="text-verified" />
           {tr("heading")}
         </h1>
-        <div className="flex items-center gap-1 rounded-xl border border-border bg-surface p-1">
+        <div className="flex items-center gap-1 card p-1">
           {[7, 30, 90].map((d) => (
             <button
               key={d}
@@ -268,7 +268,7 @@ export function TruthView({
             {active.map((p) => {
               const meta = PLATFORM_META[p.platform] ?? { name: p.platform, color: "#888" };
               return (
-                <div key={p.platform} className="card-shadow rounded-2xl border border-border bg-surface p-4">
+                <div key={p.platform} className="card pad-md">
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <span className="flex items-center gap-2 text-[13px] font-medium text-text-primary">
                       <PlatformLogo platform={p.platform} size={16} />
@@ -300,7 +300,7 @@ export function TruthView({
                     />
                   </div>
 
-                  <div className="mt-3 grid grid-cols-4 gap-2 border-t border-border pt-3 text-[12px]">
+                  <div className="mt-3 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 border-t border-border pt-3 text-[12px]">
                     <MiniStat label={tr("colSpend")} value={num(p.cost)} />
                     <MiniStat
                       label={tr("colRealCpa")}
@@ -355,7 +355,7 @@ export function TruthView({
       {(snapshot.probabilistic.verifiedCount > 0 || snapshot.probabilistic.modeledCount > 0) && (
         <>
           <SectionTitle icon={Radar}>{tr("probHeading")}</SectionTitle>
-          <div className="mb-3 card-shadow rounded-2xl border border-border bg-surface p-4">
+          <div className="mb-3 card pad-md">
             <p className="mb-3 text-[12.5px] leading-relaxed text-text-muted">
               {tr("probLead")}
             </p>
@@ -476,7 +476,7 @@ export function TruthView({
           </div>
 
           {journey.topSequences.length > 0 && (
-            <div className="mb-8 card-shadow rounded-2xl border border-border bg-surface p-4">
+            <div className="mb-8 card pad-md">
               <div className="mb-3 text-[13px] font-medium text-text-muted">{tr("topSequences")}</div>
               <div className="flex flex-col gap-2">
                 {journey.topSequences.map((s, i) => (
@@ -509,7 +509,7 @@ export function TruthView({
 
       {/* ============ ٥) إعادة الرفع ============ */}
       <SectionTitle icon={Send}>{tr("syncHeading")}</SectionTitle>
-      <div className="card-shadow rounded-2xl border border-border bg-surface p-4">
+      <div className="card pad-md">
         {!sync.enabled ? (
           <div>
             <p className="mb-2 text-[13px] leading-relaxed text-text-primary">
@@ -593,7 +593,7 @@ export function TruthView({
 
 function SectionTitle({ icon: Icon, children }: { icon: typeof Gauge; children: React.ReactNode }) {
   return (
-    <h2 className="mb-3 flex items-center gap-2 text-[15px] font-semibold text-text-primary">
+    <h2 className="mb-3 flex items-center gap-2 section-title">
       <Icon size={16} className="text-text-muted" />
       {children}
     </h2>
@@ -602,7 +602,7 @@ function SectionTitle({ icon: Icon, children }: { icon: typeof Gauge; children: 
 
 function EmptyNote({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-8 rounded-2xl border border-border bg-surface p-4 text-[12.5px] leading-relaxed text-text-muted">
+    <p className="mb-8 card pad-md text-[12.5px] leading-relaxed text-text-muted">
       {children}
     </p>
   );

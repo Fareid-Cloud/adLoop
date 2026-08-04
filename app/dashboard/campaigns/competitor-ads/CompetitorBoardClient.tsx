@@ -96,7 +96,7 @@ export function CompetitorBoardClient({
     <div className="mx-auto max-w-[1300px] pb-12">
       <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">{tr("title")}</h1>
+          <h1 className="page-title">{tr("title")}</h1>
           <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-text-muted">{tr("subtitle")}</p>
         </div>
         <button
@@ -167,7 +167,7 @@ export function CompetitorBoardClient({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={tr("searchCompetitor")}
-                className="w-52 rounded-xl border border-border bg-surface py-2 text-[12.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+                className="w-52 card py-2 text-[12.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
                 style={{ paddingInlineStart: 32, paddingInlineEnd: 12 }}
               />
             </div>
@@ -175,11 +175,11 @@ export function CompetitorBoardClient({
 
           <div className="flex flex-col gap-5">
             {visible.map((c) => (
-              <section key={c.id} className="card-shadow rounded-2xl border border-border bg-surface p-4">
+              <section key={c.id} className="card pad-md">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h2 className="text-[15px] font-semibold text-text-primary">{c.name}</h2>
+                      <h2 className="section-title">{c.name}</h2>
                       <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10.5px] text-text-muted">{c.country}</span>
                       {c.longestRunningDays >= 21 && (
                         <span className="flex items-center gap-1 rounded-full bg-gap/12 px-2 py-0.5 text-[10.5px] font-medium text-gap">
@@ -197,7 +197,7 @@ export function CompetitorBoardClient({
                       href={adLibraryUrl(c.name, c.country)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12px] text-text-primary no-underline"
+                      className="flex items-center gap-1.5 card-inset px-3 py-2 text-[12px] text-text-primary no-underline"
                       title={tr("findNewHint")}
                     >
                       <ExternalLink size={13} /> {tr("findNew")}
@@ -212,7 +212,7 @@ export function CompetitorBoardClient({
                       onClick={() => removeCompetitor(c.id)}
                       disabled={busy === c.id}
                       aria-label={tr("removeCompetitor")}
-                      className="rounded-xl border border-border bg-surface-raised p-2 text-text-muted hover:text-critical disabled:opacity-50"
+                      className="card-inset p-2 text-text-muted hover:text-critical disabled:opacity-50"
                     >
                       <Trash2 size={13} />
                     </button>
@@ -220,7 +220,7 @@ export function CompetitorBoardClient({
                 </div>
 
                 {c.ads.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-border p-6 text-center text-[12.5px] text-text-muted">
+                  <p className="card-ghost pad-lg text-center text-[12.5px] text-text-muted">
                     {tr("noAdsYet")}
                   </p>
                 ) : (
@@ -244,7 +244,7 @@ export function CompetitorBoardClient({
         </>
       )}
 
-      <p className="mt-6 rounded-xl border border-border bg-surface-raised/50 p-3 text-[11.5px] leading-relaxed text-text-faint">
+      <p className="mt-6 bg-surface-raised p-3 text-[11.5px] leading-relaxed text-text-faint">
         {tr("apiNote")}
       </p>
 
@@ -282,8 +282,8 @@ function QuickSearch({
   const url = brand.trim() ? adLibraryUrl(brand.trim(), country) : null;
 
   return (
-    <section className="card-shadow mb-5 rounded-2xl border border-border bg-surface p-4">
-      <h2 className="text-[14px] font-semibold text-text-primary">{tr("quickTitle")}</h2>
+    <section className="card-shadow mb-5 card pad-md">
+      <h2 className="section-title">{tr("quickTitle")}</h2>
       <p className="mb-3 mt-0.5 text-[12.5px] leading-relaxed text-text-muted">{tr("quickBody")}</p>
 
       <div className="flex flex-wrap gap-2">
@@ -291,12 +291,12 @@ function QuickSearch({
           value={brand}
           onChange={(e) => setBrand(e.target.value)}
           placeholder={tr("quickPlaceholder")}
-          className="min-w-[200px] flex-1 rounded-xl border border-border bg-surface-raised px-3.5 py-2.5 text-[13.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+          className="min-w-[200px] flex-1 card-inset px-3.5 py-2.5 text-[13.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
         />
         <select
           value={country}
           onChange={(e) => setCountry(e.target.value)}
-          className="rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-[13px] text-text-primary outline-none"
+          className="card-inset px-3 py-2.5 text-[13px] text-text-primary outline-none"
         >
           {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
@@ -382,7 +382,7 @@ function AdCard({
                 onClick={onConfirm}
                 disabled={busy}
                 title={tr("confirmHint")}
-                className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-border bg-surface py-1.5 text-[11px] text-text-primary disabled:opacity-50"
+                className="flex flex-1 items-center justify-center gap-1 card py-1.5 text-[11px] text-text-primary disabled:opacity-50"
               >
                 {busy ? <Loader2 size={10} className="animate-spin" /> : <CheckCircle2 size={10} />}
                 {tr("confirm")}
@@ -391,7 +391,7 @@ function AdCard({
                 onClick={onStop}
                 disabled={busy}
                 title={tr("stopHint")}
-                className="rounded-lg border border-border bg-surface p-1.5 text-text-muted hover:text-gap disabled:opacity-50"
+                className="card p-1.5 text-text-muted hover:text-gap disabled:opacity-50"
                 aria-label={tr("markStopped")}
               >
                 <PauseCircle size={11} />
@@ -406,7 +406,7 @@ function AdCard({
               href={ad.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-lg border border-border bg-surface p-1.5 text-text-muted no-underline hover:text-accent"
+              className="card p-1.5 text-text-muted no-underline hover:text-accent"
               aria-label={tr("openSource")}
             >
               <ExternalLink size={11} />
@@ -415,7 +415,7 @@ function AdCard({
           <button
             onClick={onRemove}
             disabled={busy}
-            className="rounded-lg border border-border bg-surface p-1.5 text-text-muted hover:text-critical disabled:opacity-50"
+            className="card p-1.5 text-text-muted hover:text-critical disabled:opacity-50"
             aria-label={tr("removeAd")}
           >
             <Trash2 size={11} />
@@ -537,7 +537,7 @@ function AdModal({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={imageUrl} alt="" className="h-11 w-11 rounded-lg object-cover" />
           )}
-          <button onClick={() => fileRef.current?.click()} className="flex-1 rounded-lg border border-border bg-surface-raised py-2 text-[12px] text-text-primary">
+          <button onClick={() => fileRef.current?.click()} className="flex-1 card-inset py-2 text-[12px] text-text-primary">
             {imageUrl ? tr("changeImage") : tr("uploadImage")}
           </button>
           <input
@@ -571,14 +571,14 @@ function AdModal({
 // ==================== أجزاء ====================
 
 const INPUT =
-  "w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-[13px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent";
+  "w-full card-inset px-3 py-2 text-[13px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent";
 
 function Modal({ children, onClose, title }: { children: React.ReactNode; onClose: () => void; title: string }) {
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="pop-shadow max-h-[88vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-surface p-5">
+      <div onClick={(e) => e.stopPropagation()} className="pop-shadow max-h-[88vh] w-full max-w-md overflow-y-auto card pad-md">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-[15px] font-semibold text-text-primary">{title}</h2>
+          <h2 className="section-title">{title}</h2>
           <button onClick={onClose} className="rounded-lg p-1 text-text-muted hover:bg-surface-raised"><X size={16} /></button>
         </div>
         {children}
@@ -608,7 +608,7 @@ function Actions({
 }) {
   return (
     <div className="mt-4 flex justify-end gap-2">
-      <button onClick={onCancel} className="rounded-xl border border-border bg-surface px-4 py-2 text-[12.5px] text-text-muted">{tr("cancel")}</button>
+      <button onClick={onCancel} className="card px-4 py-2 text-[12.5px] text-text-muted">{tr("cancel")}</button>
       <button onClick={onSave} disabled={busy || disabled} className="rounded-xl bg-accent px-4 py-2 text-[12.5px] font-medium text-white disabled:opacity-50">
         {busy ? tr("saving") : tr("save")}
       </button>

@@ -51,7 +51,7 @@ export function IntegrationDrawer({
   const Chevron = locale === "en" ? ChevronRight : ChevronLeft;
 
   return (
-    <aside className="card-shadow h-fit rounded-2xl border border-border bg-surface xl:sticky xl:top-4">
+    <aside className="card-shadow h-fit card xl:sticky xl:top-4">
       {/* الرأس */}
       <div className="flex items-center gap-2.5 border-b border-border p-4">
         <span
@@ -60,7 +60,7 @@ export function IntegrationDrawer({
         >
           <PlatformLogo platform={integration.logoKey} size={17} />
         </span>
-        <span className="flex-1 text-[15px] font-semibold text-text-primary">
+        <span className="flex-1 section-title">
           {locale === "en" ? integration.name : integration.nameAr}
         </span>
         <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${tone.chip}`}>{tr(statusKey)}</span>
@@ -188,7 +188,7 @@ export function IntegrationDrawer({
               <>
                 <button
                   onClick={onAddAccount}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-surface-raised py-2.5 text-[12.5px] font-medium text-text-primary"
+                  className="flex w-full items-center justify-center gap-1.5 card-inset py-2.5 text-[12.5px] font-medium text-text-primary"
                 >
                   <Plus size={14} /> {tr("addAccount")}
                 </button>
@@ -245,7 +245,7 @@ export function IntegrationDrawer({
           <button
             onClick={onSync}
             disabled={busy}
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-border bg-surface-raised py-2.5 text-[12.5px] font-medium text-text-primary disabled:opacity-50"
+            className="flex items-center justify-center gap-1.5 card-inset py-2.5 text-[12.5px] font-medium text-text-primary disabled:opacity-50"
           >
             <RefreshCw size={14} className={busy ? "animate-spin" : ""} />
             {busy ? tr("syncing") : tr("syncNow")}
@@ -258,7 +258,7 @@ export function IntegrationDrawer({
             <div className="flex gap-2">
               <button
                 onClick={() => setConfirming(false)}
-                className="flex-1 rounded-lg border border-border bg-surface py-1.5 text-[12px] text-text-muted"
+                className="flex-1 card py-1.5 text-[12px] text-text-muted"
               >
                 {tr("cancel")}
               </button>

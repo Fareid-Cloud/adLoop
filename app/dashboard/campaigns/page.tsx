@@ -95,7 +95,7 @@ export default async function CampaignsPage({
     <div className="mx-auto max-w-6xl pb-10">
       <div className="reveal mb-6">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">{t(locale, "campPages.title")}</h1>
+        <h1 className="page-title">{t(locale, "campPages.title")}</h1>
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <p className="mt-1 text-[13px] text-text-muted">
           {t(locale, "campPages.subtitle")}

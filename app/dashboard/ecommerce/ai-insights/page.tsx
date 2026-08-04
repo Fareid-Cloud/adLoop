@@ -197,13 +197,13 @@ export default async function AiInsightsPage() {
           <article key={i} className={`card-shadow rounded-2xl border p-5 ${TONE[a.tone]}`}>
             <div className="mb-2 flex items-start gap-2">
               <HelpCircle size={16} className="mt-0.5 shrink-0 text-text-muted" />
-              <h3 className="text-[14px] font-semibold text-text-primary">{a.question}</h3>
+              <h3 className="section-title">{a.question}</h3>
             </div>
 
             <p className="text-[13px] leading-relaxed text-text-primary">{a.answer}</p>
 
             {a.evidence.length > 0 && (
-              <div className="mt-3 rounded-xl border border-border bg-surface/70 p-3">
+              <div className="mt-3 bg-surface p-3">
                 <div className="mb-1.5 text-[11.5px] font-medium text-text-faint">{tr("evidence")}</div>
                 <ul className="flex flex-col gap-1">
                   {a.evidence.map((e, j) => (

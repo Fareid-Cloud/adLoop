@@ -45,7 +45,7 @@ export default async function SearchTermsPage({
     return (
       <div className="mx-auto max-w-3xl">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="mb-6 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.stTitle")}</h1>
+        <h1 className="mb-6 page-title">{t(locale, "campPages.stTitle")}</h1>
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <EmptyState title={t(locale, "campPages.stNone")} description={t(locale, "campPages.stNoneBody")} />
       </div>
@@ -68,7 +68,7 @@ export default async function SearchTermsPage({
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.stTitle")}</h1>
+      <h1 className="mb-2 page-title">{t(locale, "campPages.stTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
         {t(locale, "campPages.stWasted", { days: "30" })}{" "}
         <span className="font-mono text-critical">{totalWastedCost}</span> {workspace.currency}

@@ -193,7 +193,7 @@ export default async function PricingIntelligencePage() {
                 </Tr>
               ))}
             </DataTable>
-            <div className="border-t border-border bg-surface-2/40 px-4 py-3">
+            <div className="border-t border-border bg-surface-raised/40 px-4 py-3">
               <Link
                 href="/dashboard/pricing"
                 className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-accent no-underline hover:underline"
@@ -209,7 +209,7 @@ export default async function PricingIntelligencePage() {
       {lowerOps.length > 0 && (
         <>
           <SectionHeading hint={tr("testLowerHint")}>{tr("testLower")}</SectionHeading>
-          <div className="card-shadow mb-8 overflow-hidden rounded-2xl border border-border bg-surface">
+          <div className="card-shadow mb-8 overflow-hidden card">
             <DataTable headers={[tc("product"), tc("price"), tc("margin"), tr("colVelocity"), tr("colUnitProfit"), tr("colMarginAfter")]}>
               {lowerOps.slice(0, 10).map((p) => {
                 const newPrice = p.currentPrice * 0.9;

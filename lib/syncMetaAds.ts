@@ -15,6 +15,7 @@ import type { CampaignLink, ConnectedPlatform } from "@prisma/client";
 import { decryptToken } from "@/lib/encryption";
 import { pushToActionFeed } from "@/lib/actionFeed";
 import { t } from "@/lib/i18n/dictionary";
+import { assertNotDemo } from "@/lib/demo";
 
 const META_API_VERSION = "v25.0";
 const ROLLING_WINDOW_DAYS = 28; // نفس نافذة إغلاق الإسناد بتاعة ميتا نفسها
@@ -781,6 +782,10 @@ export async function applyMetaBidStrategyChange(
   adSetId: string,
   bidAmountCents: number // ميتا بتستقبل bid_amount بالقرش/السنت (أصغر وحدة عملة)
 ) {
+  // حارس الديمو عند التعريف لا عند النداء: أي نداء جديد يُضاف لاحقاً
+  // يرثه تلقائياً. وضعه عند كلّ مستدعٍ يعني أنّ نسيانه مرّة واحدة
+  // يكفي ليكتب الديمو على حساب إعلاني حقيقي.
+  await assertNotDemo(workspaceId);
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
@@ -808,6 +813,10 @@ export async function applyMetaBidStrategyChange(
 
 // ==================== تنفيذ حقيقي - إيقاف إعلان فردي عند ميتا ====================
 export async function pauseMetaAd(workspaceId: string, adId: string) {
+  // حارس الديمو عند التعريف لا عند النداء: أي نداء جديد يُضاف لاحقاً
+  // يرثه تلقائياً. وضعه عند كلّ مستدعٍ يعني أنّ نسيانه مرّة واحدة
+  // يكفي ليكتب الديمو على حساب إعلاني حقيقي.
+  await assertNotDemo(workspaceId);
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },

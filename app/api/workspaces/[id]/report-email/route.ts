@@ -12,6 +12,8 @@ import { getSessionUser } from "@/lib/auth";
 import { runReport, METRICS, type DataSource, type Dimension, type MetricKey } from "@/lib/reports/reportEngine";
 import { periodFromParams } from "@/lib/dateRange";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { renderEmail, EMAIL_BRAND } from "@/lib/emailTemplate";
+import { getAppUrl } from "@/lib/appUrl";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const VALID_METRICS = new Set<string>(METRICS.map((m) => m.key));
@@ -92,20 +94,39 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
     to,
     subject: sanitizeHeader(`[${workspace.name}] ${title} — ${period.range.from} → ${period.range.to}`),
-    html: `<div dir="${dir}" style="font-family:sans-serif;padding:20px;color:#171C27;">
-      <h2 style="margin:0 0 4px;">${escapeHtml(title)}</h2>
-      <p style="color:#5C6478;margin:0 0 16px;font-size:13px;">${escapeHtml(workspace.name)} · ${period.range.from} → ${period.range.to}</p>
-      <table style="border-collapse:collapse;width:100%;font-size:13px;">
-        <thead><tr>
-          <th style="text-align:start;padding:8px 10px;border-bottom:2px solid #E5E7EB;">—</th>
-          ${metrics.map((m) => `<th style="text-align:start;padding:8px 10px;border-bottom:2px solid #E5E7EB;">${escapeHtml(t(locale, `reports.m${m[0].toUpperCase()}${m.slice(1)}`))}</th>`).join("")}
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-      <h3 style="margin:20px 0 6px;font-size:14px;">${escapeHtml(t(locale, "reports.summaryTitle"))}</h3>
-      <ul style="color:#5C6478;font-size:13px;padding-inline-start:18px;margin:0;">${summary}</ul>
-      <p style="color:#9AA1B0;font-size:11px;margin-top:24px;">${escapeHtml(t(locale, "reports.summaryNote"))}</p>
-    </div>`,
+    html: renderEmail({
+      locale,
+      eyebrow: `${workspace.name} · ${period.range.from} → ${period.range.to}`,
+      title,
+      blocks: [
+        // الجدول markup جاهز - كلّ قيمة فيه مرّت بـ`escapeHtml` عند بنائها
+        {
+          html: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                        style="border-collapse:collapse;width:100%;font-size:13px;">
+            <thead><tr>
+              <th style="text-align:${dir === "rtl" ? "right" : "left"};padding:9px 10px;border-bottom:1px solid ${EMAIL_BRAND.line};color:${EMAIL_BRAND.faint};font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;">—</th>
+              ${metrics
+                .map(
+                  (m) =>
+                    `<th style="text-align:${dir === "rtl" ? "right" : "left"};padding:9px 10px;border-bottom:1px solid ${EMAIL_BRAND.line};color:${EMAIL_BRAND.faint};font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;">${escapeHtml(t(locale, `reports.m${m[0].toUpperCase()}${m.slice(1)}`))}</th>`
+                )
+                .join("")}
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>`,
+        },
+        { heading: t(locale, "reports.summaryTitle") },
+        {
+          html: `<ul style="color:${EMAIL_BRAND.muted};font-size:13.5px;line-height:1.8;padding-inline-start:18px;margin:0;">${summary}</ul>`,
+        },
+        { text: t(locale, "reports.summaryNote") },
+      ],
+      cta: {
+        label: locale === "ar" ? "افتح التقرير الكامل" : "Open the full report",
+        url: `${getAppUrl()}/dashboard/reports`,
+      },
+      preferencesUrl: `${getAppUrl()}/dashboard/settings?tab=workspace`,
+    }),
   });
 
   return NextResponse.json({ ok: true });

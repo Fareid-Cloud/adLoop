@@ -26,6 +26,7 @@ import {
   type CreativePerformance,
 } from "@/lib/creativeAnalysis";
 import { platformLabel, t } from "@/lib/i18n/dictionary";
+import { assertNotDemo } from "@/lib/demo";
 
 /** نسبة الزيادة الآمنة - ٢٠٪ لا أكثر، باتفاق مصادر ميديا باير متعددة */
 export const SAFE_SCALE_INCREASE_PCT = 20;
@@ -363,6 +364,10 @@ export async function applyAdDecision(
 }
 
 async function executePause(workspaceId: string, view: AdDecisionView) {
+  // مساحة تجريبية لا تلمس حساباً حقيقياً أبداً: هذه الدالّة توقف إعلاناً
+  // فعلياً على جوجل أو ميتا أو تيك توك - أثرها خارج نظامنا ولا يُلغى.
+  await assertNotDemo(workspaceId);
+
   switch (view.platform) {
     case "GOOGLE_ADS": {
       if (!view.campaignId || !view.adGroupId) throw new Error("بيانات الإعلان ناقصة لدى جوجل");

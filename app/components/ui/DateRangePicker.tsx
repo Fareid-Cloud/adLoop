@@ -156,7 +156,7 @@ export function DateRangePicker({
     <div className="relative" ref={boxRef}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3.5 py-2.5 text-[13px] text-text-primary"
+        className="flex items-center gap-2 card px-3.5 py-2.5 text-[13px] text-text-primary"
       >
         <CalendarDays size={15} className="text-text-muted" />
         <span className="font-medium">{label}</span>
@@ -169,7 +169,7 @@ export function DateRangePicker({
 
       {open && (
         <div
-          className="pop-shadow absolute z-50 mt-2 w-[min(94vw,720px)] overflow-hidden rounded-2xl border border-border bg-surface"
+          className="pop-shadow absolute z-50 mt-2 w-[min(94vw,720px)] overflow-hidden card"
           style={{ insetInlineEnd: 0 }}
         >
           <div className="flex flex-col sm:flex-row">
@@ -275,7 +275,7 @@ export function DateRangePicker({
                     setDraftCmpMode(m);
                     if (m !== "custom") setDraftCmp(resolveCompare(draft, m));
                   }}
-                  className="rounded-lg border border-border bg-surface-raised px-2 py-1 text-[12px] text-text-primary outline-none"
+                  className="card-inset px-2 py-1 text-[12px] text-text-primary outline-none"
                 >
                   {COMPARE_MODES.map((m) => (
                     <option key={m} value={m}>{tr(`cmp_${m}`)}</option>
@@ -290,7 +290,7 @@ export function DateRangePicker({
             </div>
 
             <div className="flex gap-2">
-              <button onClick={() => setOpen(false)} className="rounded-xl border border-border bg-surface px-3.5 py-2 text-[12.5px] text-text-muted">
+              <button onClick={() => setOpen(false)} className="card px-3.5 py-2 text-[12.5px] text-text-muted">
                 {tr("cancel")}
               </button>
               <button onClick={apply} className="rounded-xl bg-accent px-4 py-2 text-[12.5px] font-medium text-white">

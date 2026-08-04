@@ -37,6 +37,21 @@ export async function POST(req: NextRequest) {
   const { email, password, name, preferredLocale, turnstileToken } = validation.data;
   const locale: Locale = preferredLocale === "en" ? "en" : "ar";
 
+  // الموافقة تُتحقَّق على الخادم لا في المتصفّح وحده: `required` على
+  // المدخَل يمنع الإرسال من النموذج، ولا يمنع طلباً مباشراً إلى المسار.
+  // حساب أُنشئ بلا موافقة مسجَّلة هو ثغرة قانونية لا خلل واجهة.
+  if (rawBody?.acceptedTerms !== true) {
+    return NextResponse.json(
+      {
+        error:
+          locale === "ar"
+            ? "يلزم الاطّلاع على شروط الاستخدام وسياسة الخصوصية والموافقة عليهما."
+            : "You need to read and accept the Terms of Use and Privacy Policy.",
+      },
+      { status: 400 }
+    );
+  }
+
   if (!email || !password || password.length < 8) {
     return NextResponse.json(
       {
@@ -82,6 +97,8 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.create({
     data: {
       email, passwordHash, name, preferredLocale: locale,
+      // لحظة الموافقة لا مجرّد أنّها حدثت - راجع التعليق في المخطَّط
+      acceptedTermsAt: new Date(),
       verificationToken, verificationTokenExpiresAt,
       username: cleanUsername,
       companyName: companyName ? String(companyName).trim() : null,

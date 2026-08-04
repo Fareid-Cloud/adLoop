@@ -14,6 +14,7 @@ import { shouldSendEmail, sendUrgentNotificationEmail } from "@/lib/notification
 import { sendPushToUser } from "@/lib/webPush";
 import { checkMonthlyChangeCeiling } from "@/lib/automationRules";
 import { assertNotDemo } from "@/lib/demo";
+import { itemTitle, itemDescription } from "@/lib/localizedRecord";
 
 /**
  * المحرّكات التي تُنتج قرارات. قائمة مغلقة عمداً: إضافة محرّك جديد يجب أن
@@ -85,14 +86,23 @@ export async function pushToActionFeed(item: ActionFeedInput) {
   if (shouldSendEmail(item.severity, prefs)) {
     const owner = await prisma.user.findUnique({ where: { id: workspace.userId } });
     if (owner) {
+      // النصّ يُترجَم بلغة المالك كما في الجرس تماماً. تمرير `item.title`
+      // كان يرسل النصّ المخزَّن (عربي دائماً) مع وسم لغة إنجليزي.
+      const ownerLocale = (owner.preferredLocale as "ar" | "en") ?? "ar";
+      const localizable = {
+        title: item.title,
+        titleKey: item.titleKey,
+        titleVars: item.titleVars,
+        description: item.description,
+        descKey: item.descKey,
+        descVars: item.descVars,
+      };
       await sendUrgentNotificationEmail({
         toEmail: workspace.notificationEmail || owner.email,
         workspaceName: workspace.name,
-        title: item.title,
-        description: item.description,
-        // الدالة تدعم اللغتين، لكن هذا المستدعي لم يكن يمرّر التفضيل -
-        // فيصل الإيميل بالعربية لمن اختار الإنجليزية في الواجهة
-        locale: (owner.preferredLocale as "ar" | "en") ?? "ar",
+        title: itemTitle(ownerLocale, localizable),
+        description: itemDescription(ownerLocale, localizable) || undefined,
+        locale: ownerLocale,
       });
     }
   }

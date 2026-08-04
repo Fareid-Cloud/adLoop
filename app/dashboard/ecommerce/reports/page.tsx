@@ -79,7 +79,7 @@ export default async function ReportsPage({
       </div>
 
       {/* الورقة نفسها - تُطبع وحدها */}
-      <article className="card-shadow rounded-2xl border border-border bg-surface p-6 print:border-0 print:shadow-none">
+      <article className="card pad-lg print:border-0 print:shadow-none">
         <header className="mb-6 border-b border-border pb-4">
           <h2 className="text-[20px] font-semibold text-text-primary">{workspace.name}</h2>
           <p className="mt-1 text-[12.5px] text-text-muted">
@@ -89,7 +89,7 @@ export default async function ReportsPage({
 
         {/* الخلاصة أولاً - من يقرأ سطراً واحداً يقرأ هذا */}
         <section className="mb-6">
-          <h3 className="mb-2 text-[14px] font-semibold text-text-primary">{tr("summary")}</h3>
+          <h3 className="mb-2 section-title">{tr("summary")}</h3>
           <p className="text-[13px] leading-relaxed text-text-muted">
             {tr("summaryLine", {
               revenue: `${fmtNum(journey.revenue)} ${c}`,
@@ -112,8 +112,8 @@ export default async function ReportsPage({
 
         {/* المؤشّرات */}
         <section className="mb-6">
-          <h3 className="mb-2 text-[14px] font-semibold text-text-primary">{tr("metrics")}</h3>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+          <h3 className="mb-2 section-title">{tr("metrics")}</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
             <Fact label={tc("revenue")} value={`${fmtNum(journey.revenue)} ${c}`} />
             <Fact label={t(locale, "store.netProfit")} value={`${fmtNum(journey.netProfit)} ${c}`} />
             <Fact label={t(locale, "profit.netMargin")} value={`${journey.netMarginPct ?? 0}%`} />
@@ -137,7 +137,7 @@ export default async function ReportsPage({
 
         {/* رحلة الربح */}
         <section className="mb-6">
-          <h3 className="mb-2 text-[14px] font-semibold text-text-primary">{tr("whereMoney")}</h3>
+          <h3 className="mb-2 section-title">{tr("whereMoney")}</h3>
           <DataTable headers={[tr("colItem"), tr("colAmount"), tr("colPctRevenue"), tr("colRemaining")]} minWidth={420}>
             {journey.stages.map((s) => (
               <Tr key={s.key}>
@@ -156,7 +156,7 @@ export default async function ReportsPage({
         {/* أفضل المنتجات */}
         {topProducts.length > 0 && (
           <section className="mb-6">
-            <h3 className="mb-2 text-[14px] font-semibold text-text-primary">{tr("topProducts")}</h3>
+            <h3 className="mb-2 section-title">{tr("topProducts")}</h3>
             <DataTable headers={[tc("product"), tc("units"), tc("revenue"), tc("profit"), tc("margin")]} minWidth={480}>
               {topProducts.map((p) => (
                 <Tr key={p.id}>
@@ -176,7 +176,7 @@ export default async function ReportsPage({
         {/* التوصيات */}
         {opps.opportunities.length > 0 && (
           <section className="mb-6">
-            <h3 className="mb-2 text-[14px] font-semibold text-text-primary">{tr("topRecs")}</h3>
+            <h3 className="mb-2 section-title">{tr("topRecs")}</h3>
             <ol className="flex list-inside list-decimal flex-col gap-2">
               {opps.opportunities.slice(0, 5).map((o) => (
                 <li key={o.id} className="text-[12.5px] leading-relaxed text-text-muted">

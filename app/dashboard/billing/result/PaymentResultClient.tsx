@@ -80,7 +80,7 @@ export function PaymentResultClient({
           <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-verified/12">
             <CheckCircle2 size={30} className="text-verified" />
           </span>
-          <h1 className="text-[22px] font-semibold text-text-primary">{tr("paidTitle")}</h1>
+          <h1 className="page-title">{tr("paidTitle")}</h1>
           <p className="mt-2 text-[13.5px] text-text-muted">
             {credits !== null ? tr("paidCredits", { n: credits }) : tr("paidSub")}
           </p>
@@ -99,7 +99,7 @@ export function PaymentResultClient({
           <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-critical/12">
             <XCircle size={30} className="text-critical" />
           </span>
-          <h1 className="text-[22px] font-semibold text-text-primary">{tr("failedTitle")}</h1>
+          <h1 className="page-title">{tr("failedTitle")}</h1>
           <p className="mt-2 text-[13.5px] leading-relaxed text-text-muted">{tr("failedBody")}</p>
           <Link
             href="/dashboard/billing"
@@ -123,7 +123,7 @@ export function PaymentResultClient({
           </p>
           <Link
             href="/dashboard/billing"
-            className="mt-6 rounded-xl border border-border bg-surface px-5 py-2.5 text-[13.5px] text-text-primary no-underline"
+            className="mt-6 card px-5 py-2.5 text-[13.5px] text-text-primary no-underline"
           >
             {tr("backToPlans")}
           </Link>

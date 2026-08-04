@@ -80,14 +80,14 @@ function ExperimentsBody({
 
   return (
     <div>
-      <div className="card-shadow mb-5 rounded-2xl border border-border bg-surface p-4">
+      <div className="card-shadow mb-5 card pad-md">
         <div className="flex items-start gap-3">
           <Beaker size={18} className="mt-0.5 shrink-0 text-accent" />
           <div className="flex-1">
-            <h2 className="mb-1 text-[14px] font-semibold text-text-primary">{tr("howItWorks")}</h2>
+            <h2 className="mb-1 section-title">{tr("howItWorks")}</h2>
             <p className="text-[12.5px] leading-relaxed text-text-muted">{tr("howItWorksBody")}</p>
           </div>
-          <button onClick={() => setAdding(true)} className="flex shrink-0 items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-primary">
+          <button onClick={() => setAdding(true)} className="flex shrink-0 items-center gap-1.5 card-inset px-3 py-2 text-[12.5px] text-text-primary">
             <Plus size={14} /> {tr("manualBtn")}
           </button>
         </div>
@@ -162,7 +162,7 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
   );
 
   return (
-    <div className="card-shadow rounded-2xl border border-border bg-surface p-4">
+    <div className="card pad-md">
       <div className="mb-3 flex items-start gap-3">
         {/* الشعار كتلة مربّعة تُثبّت بداية الصفّ - كان أيقونة ١٥ بكسل
             سابحة بين النصوص لا تُميَّز بلمحة */}
@@ -190,12 +190,12 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
 
         <div className="flex shrink-0 items-center gap-1.5">
           <button onClick={() => setEditing((v) => !v)}
-                  className="rounded-lg border border-border bg-surface-raised p-1.5 text-text-muted hover:text-text-primary"
+                  className="card-inset p-1.5 text-text-muted hover:text-text-primary"
                   aria-label={tr("editAria")}>
             <Pencil size={13} />
           </button>
           <button onClick={() => setConfirmDelete(true)}
-                  className="rounded-lg border border-border bg-surface-raised p-1.5 text-text-muted hover:text-critical"
+                  className="card-inset p-1.5 text-text-muted hover:text-critical"
                   aria-label={tr("deleteAria")}>
             <Trash2 size={13} />
           </button>
@@ -203,11 +203,11 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
       </div>
 
       {editing && (
-        <div className="mb-3 flex flex-col gap-2.5 rounded-xl border border-border bg-surface-raised p-3">
+        <div className="mb-3 flex flex-col gap-2.5 card-inset pad-sm">
           <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={tr("descPlaceholder")}
-                 className="rounded-lg border border-border bg-surface px-3 py-2 text-[13px] text-text-primary outline-none focus:border-accent" />
+                 className="card px-3 py-2 text-[13px] text-text-primary outline-none focus:border-accent" />
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder={tr("notePlaceholder")}
-                 className="rounded-lg border border-border bg-surface px-3 py-2 text-[13px] text-text-primary outline-none focus:border-accent" />
+                 className="card px-3 py-2 text-[13px] text-text-primary outline-none focus:border-accent" />
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11.5px] text-text-muted">{tr("window")}</span>
             {[3, 7, 14, 30].map((d) => (
@@ -221,7 +221,7 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
             <p className="text-[11.5px] text-gap">{tr("windowWarn")}</p>
           )}
           <div className="flex justify-end gap-2">
-            <button onClick={() => setEditing(false)} className="rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] text-text-muted">{tr("cancel")}</button>
+            <button onClick={() => setEditing(false)} className="card px-3 py-1.5 text-[12px] text-text-muted">{tr("cancel")}</button>
             <button onClick={save} disabled={busy} className="rounded-lg bg-accent px-3.5 py-1.5 text-[12px] font-medium text-white disabled:opacity-50">
               {busy ? tr("saving") : tr("save")}
             </button>
@@ -235,7 +235,7 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
             <AlertTriangle size={14} className="text-critical" /> {tr("confirmDelete")}
           </span>
           <div className="flex gap-2">
-            <button onClick={() => setConfirmDelete(false)} className="rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] text-text-muted">{tr("cancel")}</button>
+            <button onClick={() => setConfirmDelete(false)} className="card px-3 py-1.5 text-[12px] text-text-muted">{tr("cancel")}</button>
             <button onClick={remove} disabled={busy} className="rounded-lg bg-critical px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-50">
               {busy ? tr("deleting") : tr("del")}
             </button>
@@ -263,7 +263,7 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
               const good = pct === null ? null : def?.lowerIsBetter ? pct < 0 : pct > 0;
               const tone = good === null ? "var(--text-muted)" : good ? "var(--verified)" : "var(--critical)";
               return (
-                <div key={k} className="rounded-xl border border-border bg-surface-raised px-3 py-2">
+                <div key={k} className="card-inset px-3 py-2">
                   <div className="text-[11px] text-text-muted">{(locale === "en" ? def?.labelEn : def?.labelAr) ?? k}</div>
                   <div className="mt-0.5 flex items-center gap-1.5">
                     <span className="font-mono text-[13px] text-text-primary">{r.before} → {r.after}</span>
@@ -334,16 +334,16 @@ function ManualExperimentModal({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="pop-shadow flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-surface">
+      <div onClick={(e) => e.stopPropagation()} className="pop-shadow flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden card">
         <div className="flex items-center justify-between border-b border-border p-5">
-          <h2 className="text-[15px] font-semibold text-text-primary">{tr("manualTitle")}</h2>
+          <h2 className="section-title">{tr("manualTitle")}</h2>
           <button onClick={onClose} className="rounded-lg p-1.5 text-text-muted hover:bg-surface-raised"><X size={17} /></button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5">
           <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("changeType")}</label>
           <select value={changeType} onChange={(e) => setChangeType(e.target.value)}
-                  className="mb-4 w-full rounded-xl border border-border bg-surface-raised px-3 py-2 text-[13.5px] text-text-primary outline-none focus:border-accent">
+                  className="mb-4 w-full card-inset px-3 py-2 text-[13.5px] text-text-primary outline-none focus:border-accent">
             {Object.entries(CHANGE_TYPE_KEYS).filter(([k]) => k !== "AUTOMATION_RULE").map(([k, key]) => (
               <option key={k} value={k}>{tr(key)}</option>
             ))}
@@ -351,7 +351,7 @@ function ManualExperimentModal({
 
           <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("campaignOptional")}</label>
           <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
-                  className="mb-4 w-full rounded-xl border border-border bg-surface-raised px-3 py-2 text-[13.5px] text-text-primary outline-none focus:border-accent">
+                  className="mb-4 w-full card-inset px-3 py-2 text-[13.5px] text-text-primary outline-none focus:border-accent">
             <option value="">{tr("allCampaigns")}</option>
             {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
@@ -359,11 +359,11 @@ function ManualExperimentModal({
           <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("changeDesc")}</label>
           <input value={description} onChange={(e) => setDescription(e.target.value)}
                  placeholder={tr("changeDescPlaceholder")}
-                 className="mb-4 w-full rounded-xl border border-border bg-surface-raised px-3 py-2 text-[13.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent" />
+                 className="mb-4 w-full card-inset px-3 py-2 text-[13.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent" />
 
           <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("noteOptional")}</label>
           <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2}
-                    className="mb-4 w-full resize-none rounded-xl border border-border bg-surface-raised px-3 py-2 text-[13.5px] text-text-primary outline-none focus:border-accent" />
+                    className="mb-4 w-full resize-none card-inset px-3 py-2 text-[13.5px] text-text-primary outline-none focus:border-accent" />
 
           <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("windowLabel")}</label>
           <div className="mb-4 flex gap-2">
@@ -395,7 +395,7 @@ function ManualExperimentModal({
         </div>
 
         <div className="flex justify-end gap-2 border-t border-border p-4">
-          <button onClick={onClose} className="rounded-xl border border-border bg-surface-raised px-4 py-2 text-[13px] text-text-muted">{tr("cancel")}</button>
+          <button onClick={onClose} className="card-inset px-4 py-2 text-[13px] text-text-muted">{tr("cancel")}</button>
           <button onClick={save} disabled={saving} className="rounded-xl bg-accent px-5 py-2 text-[13px] font-medium text-white disabled:opacity-50">
             {saving ? tr("saving") : tr("startMeasuring")}
           </button>

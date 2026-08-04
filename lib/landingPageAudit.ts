@@ -453,44 +453,10 @@ export interface FullAuditReport {
   visual: VisualAuditResult;
 }
 
-export async function runFullLandingPageAudit(
-  url: string,
-  screenshotBase64: string,
-  pageTextContent: string,
-  industryVertical: string | null,
-  locale: Locale = "ar"
-): Promise<FullAuditReport> {
-  const [technicalSEO, domainTrust, visual] = await Promise.all([
-    auditTechnicalSEO(url),
-    auditDomainTrust(url),
-    auditVisualAndCopy(screenshotBase64, pageTextContent, industryVertical, locale),
-  ]);
-
-  // المتوسط المرجّح - موزّع على 16 فئة الآن. الجوانب اللي بتأثر مباشرة
-  // على قرار الشراء (CTA، وضوح القيمة، الثقة) لسه الأعلى وزناً.
-  // الفئات القابلة للـ null (formFriction, urgencyCredibility) بتتستبعد
-  // تلقائياً من الحساب لو مش موجودة، ووزنها بيتوزع تناسبياً على الباقي -
-  // مش ad-hoc factor يدوي عرضة للخطأ، لكن حساب موحّد بدالة واحدة.
-  const overallScore = weightedAverage([
-    { score: technicalSEO.score, weight: 0.08 },
-    { score: domainTrust.score, weight: 0.05 },
-    { score: visual.designTrust.score, weight: 0.09 },
-    { score: visual.copywriting.score, weight: 0.1 },
-    { score: visual.cta.score, weight: 0.12 },
-    { score: visual.layout.score, weight: 0.06 },
-    { score: visual.imageQuality.score, weight: 0.05 },
-    { score: visual.trustSignals.score, weight: 0.1 },
-    { score: visual.valueClarity.score, weight: 0.12 },
-    { score: visual.formFriction.score, weight: 0.04 },
-    { score: visual.socialProofDepth.score, weight: 0.06 },
-    { score: visual.urgencyCredibility.score, weight: 0.03 },
-    { score: visual.differentiation.score, weight: 0.06 },
-    { score: visual.navigationClarity.score, weight: 0.03 },
-    { score: visual.contentLocalizationQuality.score, weight: 0.05 },
-  ]);
-
-  return { url, overallScore, technicalSEO, domainTrust, visual };
-}
+// أُزيل `runFullLandingPageAudit`: كان منسّقاً ثانياً ينادي الدوالّ
+// الأربع أعلاه بنفس الترتيب، بينما `lib/siteScanOrchestrator.ts` هو
+// المنسّق المستخدَم فعلاً. منسّقان لعملية واحدة يفترقان عند أوّل
+// تعديل يمسّ أحدهما دون الآخر.
 
 // دالة موحّدة لحساب المتوسط المرجّح - بتستبعد أي فئة score = null تلقائياً
 // من البسط والمقام مع بعض، فوزنها بيتوزّع تناسبياً على باقي الفئات

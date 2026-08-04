@@ -49,9 +49,9 @@ export function SourcePerformanceTable({
   const sorted = [...rows].sort((a, b) => b.cost - a.cost);
 
   return (
-    <div className="overflow-hidden rounded-2xl card-shadow border border-border bg-surface">
+    <div className="overflow-hidden card">
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-        <h3 className="text-[16.5px] font-semibold tracking-tight text-text-primary">{tr("title")}</h3>
+        <h3 className="section-title">{tr("title")}</h3>
         <span className="rounded-full bg-surface-raised px-2.5 py-1 text-[11px] text-text-muted">{tr("last30")}</span>
       </div>
       <div className="overflow-x-auto">

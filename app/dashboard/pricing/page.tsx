@@ -87,11 +87,11 @@ export default async function PricingPage({
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-6 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.pricingTitle")}</h1>
+      <h1 className="mb-6 page-title">{t(locale, "campPages.pricingTitle")}</h1>
       <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
 
       {roasGapInsight && (
-        <div className="mb-4 rounded-2xl card-shadow border border-border bg-surface p-4 text-[13px] text-text-muted">
+        <div className="mb-4 card pad-md text-[13px] text-text-muted">
           💡 {roasGapInsight}
         </div>
       )}

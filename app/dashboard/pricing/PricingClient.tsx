@@ -119,7 +119,7 @@ export function PricingClient({
 
       {showForm && (
         <form onSubmit={handleAdd} className="mb-4 rounded-2xl bg-surface p-5">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input
               placeholder={tr("name")}
               value={form.name}
@@ -190,7 +190,7 @@ export function PricingClient({
             <div
               key={p.id}
               onClick={() => setFocusedId(p.id)}
-              className="card-shadow cursor-pointer rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-accent"
+              className="card-shadow cursor-pointer card pad-md transition-colors hover:border-accent"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">

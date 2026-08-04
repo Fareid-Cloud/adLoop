@@ -43,7 +43,7 @@ export default async function PortfolioPage({
     return (
       <div className="mx-auto max-w-3xl">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="mb-6 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.pfTitle")}</h1>
+        <h1 className="mb-6 page-title">{t(locale, "campPages.pfTitle")}</h1>
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <EmptyState title={t(locale, "common.noCampaigns")} description={t(locale, "common.noCampaignsHint")} />
       </div>
@@ -77,7 +77,7 @@ export default async function PortfolioPage({
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.pfTitle")}</h1>
+      <h1 className="mb-2 page-title">{t(locale, "campPages.pfTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
         {t(locale, "campPages.pfIntro")}
       </p>

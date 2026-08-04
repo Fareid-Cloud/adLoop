@@ -132,7 +132,7 @@ export default async function OpportunitiesPage() {
               return (
                 <article
                   key={o.id}
-                  className="card-shadow rounded-2xl border border-border bg-surface p-5"
+                  className="card pad-md"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -141,7 +141,7 @@ export default async function OpportunitiesPage() {
                       </span>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-[14px] font-semibold text-text-primary">{tx(o.title)}</h3>
+                          <h3 className="section-title">{tx(o.title)}</h3>
                           <span className="rounded-md bg-surface-raised px-1.5 py-0.5 text-[11px] text-text-muted">
                             {tr(meta.labelKey)}
                           </span>
@@ -159,7 +159,7 @@ export default async function OpportunitiesPage() {
                   </div>
 
                   {/* الإجراء المحدَّد - لا نصيحة عامة */}
-                  <div className="mt-3 rounded-xl border border-border bg-surface-2/50 p-3">
+                  <div className="mt-3 rounded-xl border border-border bg-surface-raised/50 p-3">
                     <div className="mb-1 text-[11.5px] font-medium text-text-faint">{tr("whatToDo")}</div>
                     <p className="text-[12.5px] leading-relaxed text-text-primary">{tx(o.action)}</p>
                   </div>

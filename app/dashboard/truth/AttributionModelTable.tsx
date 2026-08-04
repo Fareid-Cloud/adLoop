@@ -243,7 +243,7 @@ function Toggle({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex items-center gap-1 rounded-xl border border-border bg-surface p-1">
+    <div className="flex items-center gap-1 card p-1">
       {options.map((o) => (
         <button
           key={o.key}

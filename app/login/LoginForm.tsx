@@ -9,7 +9,7 @@ import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { AuthShell } from "@/app/components/AuthShell";
 import { SocialButton, FIELD, PRIMARY_BTN } from "@/app/components/AuthControls";
 
-export function LoginForm() {
+export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
   const router = useRouter();
   const [locale, setLocale] = useAuthLocale();
   const [email, setEmail] = useState("");
@@ -44,7 +44,7 @@ export function LoginForm() {
     // تحميل كامل لا `router.push`: الكوكي وصل للتوّ في رأس الاستجابة، بينما
     // راوتر العميل قد يخدم حمولة RSC مخبّأة من قبل تسجيل الدخول - فتبقى
     // الصفحة مكانها بلا رسالة ولا انتقال. التحميل الكامل يقرأ الجلسة الجديدة.
-    window.location.assign("/dashboard");
+    window.location.assign(nextPath);
   }
 
   async function handleMfaSubmit(e: React.FormEvent) {
@@ -65,14 +65,14 @@ export function LoginForm() {
     // تحميل كامل لا `router.push`: الكوكي وصل للتوّ في رأس الاستجابة، بينما
     // راوتر العميل قد يخدم حمولة RSC مخبّأة من قبل تسجيل الدخول - فتبقى
     // الصفحة مكانها بلا رسالة ولا انتقال. التحميل الكامل يقرأ الجلسة الجديدة.
-    window.location.assign("/dashboard");
+    window.location.assign(nextPath);
   }
 
   return (
     <AuthShell locale={locale} onLocaleChange={setLocale}>
       <div className="mb-7">
         <div className="mb-6 text-[17px] font-bold tracking-tight text-text-primary">AdLoop</div>
-        <h1 className="text-[28px] font-bold tracking-tight text-text-primary">
+        <h1 className="page-title">
           {pendingToken ? t(locale, "auth.mfaTitle") : t(locale, "auth.loginTitle")}
         </h1>
         {!pendingToken && (

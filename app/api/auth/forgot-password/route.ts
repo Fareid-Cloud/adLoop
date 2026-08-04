@@ -12,6 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { forgotPasswordSchema, validateOrError } from "@/lib/validation/schemas";
+import { renderEmail } from "@/lib/emailTemplate";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const TOKEN_EXPIRY_MINUTES = 60;
@@ -51,20 +52,27 @@ export async function POST(req: NextRequest) {
           from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
           to: user.email,
           subject: isAr ? "إعادة تعيين كلمة المرور - AdLoop" : "Reset your password - AdLoop",
-          html: `
-            <div dir="${isAr ? "rtl" : "ltr"}" style="font-family: sans-serif; padding: 20px;">
-              <h2 style="color: #171C27;">${isAr ? "إعادة تعيين كلمة المرور" : "Reset your password"}</h2>
-              <p style="color: #5C6478;">
-                ${isAr ? "اضغط على الرابط التالي خلال ساعة لإعادة تعيين كلمة المرور:" : "Click the link below within one hour to reset your password:"}
-              </p>
-              <a href="${resetUrl}" style="display: inline-block; background: #4C8DFF; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none;">
-                ${isAr ? "إعادة تعيين كلمة المرور" : "Reset Password"}
-              </a>
-              <p style="color: #9AA1B0; font-size: 12px; margin-top: 16px;">
-                ${isAr ? "لو معملتش الطلب ده، تجاهل الإيميل - حسابك آمن." : "If you didn't request this, ignore this email - your account is safe."}
-              </p>
-            </div>
-          `,
+          html: renderEmail({
+            locale: isAr ? "ar" : "en",
+            title: isAr ? "إعادة تعيين كلمة المرور" : "Reset your password",
+            blocks: [
+              {
+                text: isAr
+                  ? "وصلنا طلب لإعادة تعيين كلمة مرور حسابك. الرابط أدناه صالح لساعة واحدة."
+                  : "We received a request to reset your account password. The link below is valid for one hour.",
+              },
+              {
+                // طمأنة صريحة: رسالة أمان تترك القارئ قلقاً هي رسالة فاشلة
+                text: isAr
+                  ? "إن لم تكن أنت من طلب ذلك، تجاهل هذه الرسالة تماماً - كلمة مرورك لم تتغيّر ولن تتغيّر."
+                  : "If this was not you, ignore this email entirely - your password has not changed and will not change.",
+              },
+            ],
+            cta: {
+              label: isAr ? "إعادة تعيين كلمة المرور" : "Reset my password",
+              url: resetUrl,
+            },
+          }),
         });
       } catch (err) {
         console.error("فشل إرسال إيميل إعادة تعيين كلمة المرور:", err);

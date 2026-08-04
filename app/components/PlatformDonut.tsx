@@ -33,7 +33,7 @@ export function PlatformDonut({
   if (rows.length === 0 || total === 0) return null;
 
   return (
-    <div className="rounded-2xl card-shadow border border-border bg-surface p-6">
+    <div className="card pad-lg">
       <div className="mb-3 text-[13px] text-text-muted">{t(locale, "home.donutTitle")}</div>
       <div className="flex items-center gap-4">
         <div className="relative h-[150px] w-[150px] shrink-0">

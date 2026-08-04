@@ -39,7 +39,40 @@ export async function POST(
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const body = await req.json().catch(() => null);
+  
+  // حدّ الباقة كان معرَّفاً ولا يُستدعى: باقة تعرض ثلاث قواعد
+
+  // كانت تقبل أيّ عدد.
+
+  const ruleCheck = await checkAutomationRuleLimit(user.id, id);
+
+  if (!ruleCheck.allowed) {
+
+    return NextResponse.json(
+
+      {
+
+        error:
+
+          ruleCheck.limit === 0
+
+            ? "باقتك الحالية لا تشمل الأتمتة. رقِّ باقتك لتفعيل هذه الميزة."
+
+            : `باقتك الحالية تسمح بـ${ruleCheck.limit} قاعدة أتمتة. رقِّ باقتك لإضافة المزيد.`,
+
+        limitReached: true,
+
+        limit: ruleCheck.limit,
+
+      },
+
+      { status: 403 }
+
+    );
+
+  }
+
+const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "invalid body" }, { status: 400 });
 
   // تحقّق صريح: القيم كانت تُمرَّر إلى Prisma دون فحص، فأي قيمة enum غير

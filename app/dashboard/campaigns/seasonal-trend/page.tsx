@@ -67,7 +67,7 @@ export default async function SeasonalTrendPage({
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.seasonTitle")}</h1>
+      <h1 className="mb-2 page-title">{t(locale, "campPages.seasonTitle")}</h1>
       <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">
         {t(locale, "campPages.seasonNote")}
@@ -89,7 +89,7 @@ export default async function SeasonalTrendPage({
             {changePct! > 0 ? t(locale, "campPages.seasonHigher") : t(locale, "campPages.seasonLower")}{" "}
             {t(locale, "campPages.seasonVsLast")}
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-text-faint">
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-text-faint">
             <div>{t(locale, "campPages.seasonThisMonth")} {Math.round(thisCpa!).toLocaleString()}</div>
             <div>{t(locale, "campPages.seasonLastMonth")} {Math.round(lastCpa!).toLocaleString()}</div>
           </div>

@@ -12,6 +12,7 @@ import { prisma } from "@/lib/prisma";
 import type { CampaignLink, ConnectedPlatform } from "@prisma/client";
 import { decryptToken } from "@/lib/encryption";
 import { t } from "@/lib/i18n/dictionary";
+import { assertNotDemo } from "@/lib/demo";
 
 const TIKTOK_API_VERSION = "v1.3";
 
@@ -1210,6 +1211,10 @@ export async function applyTikTokBidStrategyChange(
   adGroupId: string,
   bidPrice: number
 ) {
+  // حارس الديمو عند التعريف لا عند النداء: أي نداء جديد يُضاف لاحقاً
+  // يرثه تلقائياً. وضعه عند كلّ مستدعٍ يعني أنّ نسيانه مرّة واحدة
+  // يكفي ليكتب الديمو على حساب إعلاني حقيقي.
+  await assertNotDemo(workspaceId);
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
@@ -1244,6 +1249,10 @@ export async function applyTikTokBidStrategyChange(
 // opt_status، بس المسار الدقيق مبني على نمط باقي endpoints تيك توك -
 // محتاج تأكيد بأول ربط حقيقي زي حقول تيك توك التانية في المشروع)
 export async function pauseTikTokAd(workspaceId: string, advertiserId: string, adId: string) {
+  // حارس الديمو عند التعريف لا عند النداء: أي نداء جديد يُضاف لاحقاً
+  // يرثه تلقائياً. وضعه عند كلّ مستدعٍ يعني أنّ نسيانه مرّة واحدة
+  // يكفي ليكتب الديمو على حساب إعلاني حقيقي.
+  await assertNotDemo(workspaceId);
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },

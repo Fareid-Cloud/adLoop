@@ -12,6 +12,9 @@ const ALLOWED_FIELDS = [
   "profitMarginPct",
   "monthlyChangeCeilingPct",
   "facebookPageId",
+  "whatsappPhoneNumberId",
+  "whatsappBusinessPhone",
+  "googleAdsCustomerId",
   "useModeledAttribution",
   "responseTimeThresholdMinutes",
   "messengerInactivityThresholdMinutes",
@@ -61,6 +64,17 @@ export async function PATCH(
   const data: Record<string, any> = {};
   for (const field of ALLOWED_FIELDS) {
     if (field in body) data[field] = body[field];
+  }
+
+  // معرّفات رقمية تُنظَّف على الخادم لا في الواجهة وحدها: نسخها من واتساب
+  // أو من لوحة جوجل يجرّ معها `+` وشرطات ومسافات، و`wa.me` وGoogle Ads
+  // يرفضان كليهما. التنظيف في المتصفّح وحده يترك أيّ نداء آخر - أو لصقاً
+  // في حقل آخر - يكتب قيمة تفشل صامتةً وقت الاستخدام لا وقت الحفظ.
+  for (const field of ["whatsappPhoneNumberId", "whatsappBusinessPhone", "googleAdsCustomerId"]) {
+    if (typeof data[field] === "string") {
+      const digits = data[field].replace(/[^0-9]/g, "");
+      data[field] = digits || null;
+    }
   }
 
   // التوكنات: تُشفَّر قبل الكتابة. سلسلة فارغة تعني "امسح التوكن" لا

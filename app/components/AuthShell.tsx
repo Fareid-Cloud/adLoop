@@ -13,6 +13,7 @@
 import type { ReactNode } from "react";
 import { Search, ShieldCheck, TrendingUp } from "lucide-react";
 import type { Locale } from "@/lib/i18n/dictionary";
+import { LegalLinks } from "@/app/components/LegalLinks";
 
 // نصّ تسويقي قصير: العنوان وعدٌ من كلمتين، والفقرة تشرحه في ثلاثة أفعال
 // (اربط، التقط، قرّر)، والأيقونات تختصر الرحلة نفسها. أطول من ذلك لا
@@ -136,7 +137,7 @@ export function AuthShell({
       <div className="relative flex w-full flex-col overflow-y-auto lg:w-1/2">
         {onLocaleChange && (
           <div className="sticky top-0 z-20 flex justify-end bg-bg/95 px-5 pt-5 backdrop-blur-sm">
-            <div className="flex gap-1 rounded-lg border border-border bg-surface p-0.5 text-[12px]">
+            <div className="flex gap-1 card p-0.5 text-[12px]">
               {(["en", "ar"] as Locale[]).map((l) => (
                 <button
                   key={l}
@@ -156,8 +157,14 @@ export function AuthShell({
 
         {/* `my-auto` يوسّط الفورم القصير رأسياً، ويتراجع من تلقائه حين يطول
             فيبدأ من الأعلى بدل أن يُقصّ نصفه خارج الشاشة. */}
-        <div className="flex flex-1 items-start justify-center px-5 pb-10 pt-6">
+        <div className="flex flex-1 items-start justify-center px-5 pb-6 pt-6">
           <div className={`my-auto w-full ${wide ? "max-w-lg" : "max-w-sm"}`}>{children}</div>
+        </div>
+
+        {/* المدخل الوحيد للصفحات القانونية قبل تسجيل الدخول - ومن لم
+            يسجّل بعدُ هو أكثر من يحتاج قراءتها. */}
+        <div className="px-5 pb-8">
+          <LegalLinks locale={locale} variant="footer" />
         </div>
       </div>
     </div>

@@ -47,6 +47,25 @@ export function SidebarNav({
   badges?: Record<string, number>;
 }) {
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // الإغلاق عند تغيّر المسار: بدونه يبقى الدرج مفتوحاً فوق الصفحة التي
+  // انتقل إليها المستخدم للتوّ، فيبدو أنّ النقر لم يفعل شيئاً.
+  useEffect(() => { setMobileOpen(false); }, [pathname]);
+
+  // زرّ الفتح يعيش في رأس الصفحة (مكوّن آخر)، فيتواصلان بحدث على النافذة
+  // بدل رفع الحالة إلى تخطيط خادم لا يملك حالة أصلاً.
+  useEffect(() => {
+    const open = () => setMobileOpen(true);
+    window.addEventListener("adloop:open-nav", open);
+    return () => window.removeEventListener("adloop:open-nav", open);
+  }, []);
+
+  // منع تمرير الصفحة خلف الدرج المفتوح
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
   const ar = locale === "ar";
   const [collapsed, setCollapsed] = useState(false);
   const [manuallyToggled, setManuallyToggled] = useState<Record<string, boolean>>({});
@@ -86,9 +105,26 @@ export function SidebarNav({
     : [];
 
   return (
+    <>
+      {/* ظلّ خلف الدرج على الموبايل. النقر عليه يغلقه - وهو ما يفعله
+          المستخدم غريزياً قبل أن يبحث عن زرّ إغلاق. */}
+      {mobileOpen && (
+        <div
+          onClick={() => setMobileOpen(false)}
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          aria-hidden
+        />
+      )}
+
     <aside
-      // ثابت مع التمرير: القائمة نفسها لا تتحرك، والتنقّل يحدث داخلها
-      className={`sticky top-0 flex h-screen shrink-0 flex-col overflow-hidden border-e border-border bg-surface transition-[width] duration-200 ${collapsed ? "w-[68px]" : "w-60"}`}
+      // ثابت مع التمرير: القائمة نفسها لا تتحرك، والتنقّل يحدث داخلها.
+      //
+      // على الموبايل درج منزلق فوق المحتوى لا عمود بجانبه: عرض 240px من
+      // شاشة 375px يعني ثلثي الشاشة للقائمة وثلثاً للمنتج - وهو ما كان
+      // يجعل اللوحة غير صالحة للاستخدام على الهاتف أصلاً.
+      className={`nav-drawer flex h-screen shrink-0 flex-col overflow-hidden border-e border-border bg-surface ${
+        mobileOpen ? "is-open" : ""
+      } ${collapsed ? "is-collapsed" : ""}`}
     >
       {/* صفّ الشعار بارتفاع رأس الصفحة نفسه (SHELL_HEADER_H) وبنفس الحدّ
           السفلي، فيمتدّ الخطّان كخطّ واحد عبر الشاشة. كان ارتفاع هذا الصفّ
@@ -118,7 +154,7 @@ export function SidebarNav({
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder={t(locale, "sidebar.search")}
-              className="w-full rounded-lg border border-border bg-surface-raised py-1.5 ps-8 pe-2 text-[13px] text-text-primary placeholder:text-text-faint outline-none focus:border-accent"
+              className="w-full card-inset py-1.5 ps-8 pe-2 text-[13px] text-text-primary placeholder:text-text-faint outline-none focus:border-accent"
             />
           </div>
         </div>
@@ -263,5 +299,6 @@ export function SidebarNav({
         </button>
       </nav>
     </aside>
+    </>
   );
 }

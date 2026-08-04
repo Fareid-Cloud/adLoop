@@ -14,6 +14,7 @@ import { Bot, Cpu, Sparkles, Terminal, Brain, Zap, Upload, Search } from "lucide
 import { getCsrfHeader } from "@/lib/csrfClient";
 import { PushNotificationToggle } from "@/app/components/PushNotificationToggle";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { LegalLinks } from "@/app/components/LegalLinks";
 
 // سياق اللغة بدل تمريرها كخاصية عبر أربعة عشر مكوّناً فرعياً. الملف واحد
 // وشجرته كلها في العميل، فالسياق هنا أنظف وأقل عرضة للخطأ من تمرير
@@ -57,6 +58,7 @@ interface UserData {
   themeColor: string;
   themeMode: string;
   timezone: string;
+  marketingOptOut: boolean;
   businessScale: string | null;
 }
 
@@ -68,6 +70,9 @@ interface WorkspaceData {
   profitMarginPct: number | null;
   monthlyChangeCeilingPct: number;
   facebookPageId: string | null;
+  whatsappPhoneNumberId: string | null;
+  whatsappBusinessPhone: string | null;
+  googleAdsCustomerId: string | null;
   useModeledAttribution: boolean;
   responseTimeThresholdMinutes: number;
   messengerInactivityThresholdMinutes: number;
@@ -86,6 +91,8 @@ interface WorkspaceData {
   notifyUrgentByEmail: boolean;
   notifyHighByEmail: boolean;
   notificationEmail: string | null;
+  /** هل البريد مضبوط على الخادم أصلاً - لا تفضيل بل قدرة */
+  emailEnabled: boolean;
   // إعادة رفع التحويلات - التوكنات نفسها لا تصل هنا أبداً، فقط وجودها
   conversionSyncEnabled: boolean;
   conversionSyncVerifiedOnly: boolean;
@@ -183,7 +190,7 @@ export function SettingsClient({
   return (
     <SettingsLocaleContext.Provider value={locale}>
     <div className="mx-auto max-w-4xl">
-      <h1 className="mb-4 text-[26px] font-semibold text-text-primary">{tr("title")}</h1>
+      <h1 className="mb-4 page-title">{tr("title")}</h1>
 
       <div className="relative mb-4">
         <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-text-faint" />
@@ -349,6 +356,7 @@ function PreferencesTab({ user }: { user: UserData }) {
   const [themeColor, setThemeColor] = useState(user.themeColor);
   const [themeMode, setThemeMode] = useState(user.themeMode);
   const [timezone, setTimezone] = useState(user.timezone);
+  const [marketingOptOut, setMarketingOptOut] = useState(user.marketingOptOut);
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
@@ -356,7 +364,7 @@ function PreferencesTab({ user }: { user: UserData }) {
     await fetch("/api/user/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ preferredLocale: locale, themeColor, themeMode, timezone }),
+      body: JSON.stringify({ preferredLocale: locale, themeColor, themeMode, timezone, marketingOptOut }),
     });
     setSaving(false);
     router.refresh();
@@ -393,6 +401,18 @@ function PreferencesTab({ user }: { user: UserData }) {
           />
         ))}
       </div>
+
+      <div className="mb-2 mt-6 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("legalSectionTitle")}</div>
+      <p className="mb-2.5 text-xs text-text-faint">{tr("legalSectionHint")}</p>
+      <LegalLinks locale={locale as Locale} variant="stacked" className="mb-2" />
+
+      <div className="mb-2 mt-6 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("marketingTitle")}</div>
+      <p className="mb-2 text-xs text-text-faint">{tr("marketingHint")}</p>
+      <ToggleRow
+        label={tr("marketingToggle")}
+        checked={!marketingOptOut}
+        onChange={(v) => setMarketingOptOut(!v)}
+      />
 
       <FieldLabel>{tr("idxTimezone")}</FieldLabel>
       <select
@@ -563,9 +583,16 @@ function WorkspaceTab({
   const [profitMarginPct, setProfitMarginPct] = useState(workspace.profitMarginPct?.toString() ?? "");
   const [monthlyChangeCeilingPct, setMonthlyChangeCeilingPct] = useState(workspace.monthlyChangeCeilingPct.toString());
   const [facebookPageId, setFacebookPageId] = useState(workspace.facebookPageId ?? "");
+  const [waPhoneNumberId, setWaPhoneNumberId] = useState(workspace.whatsappPhoneNumberId ?? "");
+  const [waBusinessPhone, setWaBusinessPhone] = useState(workspace.whatsappBusinessPhone ?? "");
+  const [googleAdsCustomerId, setGoogleAdsCustomerId] = useState(workspace.googleAdsCustomerId ?? "");
+  const [linkCopied, setLinkCopied] = useState(false);
   const [notifyUrgentByEmail, setNotifyUrgentByEmail] = useState(workspace.notifyUrgentByEmail);
   const [notifyHighByEmail, setNotifyHighByEmail] = useState(workspace.notifyHighByEmail);
   const [notificationEmail, setNotificationEmail] = useState(workspace.notificationEmail ?? "");
+  // يُمرَّر من الخادم: المتصفّح لا يرى متغيّرات البيئة، وإخفاء الحقيقة عن
+  // المستخدم هنا يعني أنّه يفعّل تنبيهات لا تصل ولا يعرف السبب أبداً.
+  const emailEnabled = workspace.emailEnabled;
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
@@ -578,6 +605,11 @@ function WorkspaceTab({
         profitMarginPct: profitMarginPct ? Number(profitMarginPct) : null,
         monthlyChangeCeilingPct: Number(monthlyChangeCeilingPct) || 50,
         facebookPageId: facebookPageId || null,
+        // الأرقام تُنظَّف من + والمسافات قبل الحفظ: نسخُها من واتساب أو
+        // من لوحة Meta يجرّ معه هذه الرموز، وwa.me لا يقبلها.
+        whatsappPhoneNumberId: waPhoneNumberId.replace(/[^0-9]/g, "") || null,
+        whatsappBusinessPhone: waBusinessPhone.replace(/[^0-9]/g, "") || null,
+        googleAdsCustomerId: googleAdsCustomerId.replace(/[^0-9]/g, "") || null,
         notifyUrgentByEmail, notifyHighByEmail,
         notificationEmail: notificationEmail || null,
       }),
@@ -665,10 +697,62 @@ function WorkspaceTab({
         className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
       />
 
-      <div className="mb-2 mt-2 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("alerts")}</div>
+      <div className="mb-2 mt-6 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("waSection")}</div>
+      <p className="mb-3 text-xs text-text-faint">{tr("waSectionHint")}</p>
+
+      <FieldLabel>{tr("waPhoneNumberId")}</FieldLabel>
+      <p className="mb-2 text-xs text-text-faint">{tr("waPhoneNumberIdHint")}</p>
+      <input
+        type="text"
+        value={waPhoneNumberId}
+        onChange={(e) => setWaPhoneNumberId(e.target.value)}
+        placeholder={tr("egPlaceholder", { value: "109876543210987" })}
+        className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
+      />
+
+      <FieldLabel>{tr("waBusinessPhone")}</FieldLabel>
+      <p className="mb-2 text-xs text-text-faint">{tr("waBusinessPhoneHint")}</p>
+      <input
+        type="text"
+        value={waBusinessPhone}
+        onChange={(e) => setWaBusinessPhone(e.target.value)}
+        placeholder={tr("egPlaceholder", { value: "9665XXXXXXXX" })}
+        dir="ltr"
+        className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-start text-sm text-text-primary outline-none"
+      />
+
+      <FieldLabel>{tr("waGoogleCustomerId")}</FieldLabel>
+      <p className="mb-2 text-xs text-text-faint">{tr("waGoogleCustomerIdHint")}</p>
+      <input
+        type="text"
+        value={googleAdsCustomerId}
+        onChange={(e) => setGoogleAdsCustomerId(e.target.value)}
+        placeholder={tr("egPlaceholder", { value: "1234567890" })}
+        dir="ltr"
+        className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-start text-sm text-text-primary outline-none"
+      />
+
+      {/* الرابط يُولَّد هنا بمعرّف المساحة مدموجاً - نسخه ولصقه في الإعلان
+          هو كلّ المطلوب. كتابته يدوياً كانت أوّل سبب لفشل التتبّع. */}
+      <TrackerAdLink
+        workspaceId={workspace.id}
+        ready={Boolean(waPhoneNumberId.trim() && waBusinessPhone.trim())}
+        copied={linkCopied}
+        onCopied={() => {
+          setLinkCopied(true);
+          setTimeout(() => setLinkCopied(false), 2000);
+        }}
+      />
+
+      <div className="mb-2 mt-6 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("alerts")}</div>
       <p className="mb-2 text-xs text-text-faint">
         {tr("alertsHint")}
       </p>
+      {!emailEnabled && (
+        <p className="card-ghost pad-sm mb-3 text-[11.5px] leading-relaxed text-gap">
+          {tr("emailDisabled")}
+        </p>
+      )}
       <ToggleRow label={tr("emailUrgent")} checked={notifyUrgentByEmail} onChange={setNotifyUrgentByEmail} />
       <ToggleRow label={tr("emailHigh")} checked={notifyHighByEmail} onChange={setNotifyHighByEmail} />
 
@@ -688,6 +772,68 @@ function WorkspaceTab({
         <SaveButton onClick={handleSave} saving={saving} />
       </div>
     </SettingsSection>
+  );
+}
+
+/**
+ * رابط الإعلان جاهزاً للنسخ.
+ *
+ * كتابته يدوياً كانت أوّل أسباب فشل التتبّع: معرّف مساحة عمل ناقص حرفاً،
+ * أو `{gclid}` مكتوبة `{{gclid}}`، تُنتج رابطاً يعمل بصرياً - يفتح واتساب
+ * عادي - لكنه لا يسجّل شيئاً. فالمستخدم يظنّ التتبّع شغّالاً وهو ليس كذلك.
+ * توليده هنا يزيل الفئة كلّها.
+ */
+function TrackerAdLink({
+  workspaceId,
+  ready,
+  copied,
+  onCopied,
+}: {
+  workspaceId: string;
+  ready: boolean;
+  copied: boolean;
+  onCopied: () => void;
+}) {
+  const tr = useT();
+  const base = process.env.NEXT_PUBLIC_TRACKER_BASE_URL;
+  const link = base
+    ? `${base.replace(/\/$/, "")}/api/track-click?gclid={gclid}&ws=${workspaceId}`
+    : null;
+
+  // كلّ حالة تقول ما الناقص وأين يُضبط، لا "غير متاح" وتصمت.
+  if (!ready || !link) {
+    return (
+      <div className="mb-4 surface-0/50 p-3.5">
+        <div className="mb-1 text-[12.5px] font-medium text-text-primary">{tr("waLinkTitle")}</div>
+        <p className="text-[11.5px] leading-relaxed text-text-faint">
+          {!base ? tr("waLinkNeedsBase") : tr("waLinkNeedsSetup")}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-4 rounded-xl border border-accent/30 bg-accent/[0.06] p-3.5">
+      <div className="mb-1 text-[12.5px] font-medium text-text-primary">{tr("waLinkTitle")}</div>
+      <p className="mb-2.5 text-[11.5px] leading-relaxed text-text-muted">{tr("waLinkHint")}</p>
+      <div className="flex items-center gap-2">
+        <code
+          dir="ltr"
+          className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-lg bg-surface px-2.5 py-2 font-mono text-[11.5px] text-text-primary"
+        >
+          {link}
+        </code>
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText(link);
+            onCopied();
+          }}
+          className="shrink-0 rounded-lg bg-accent px-3 py-2 text-[11.5px] font-medium text-white"
+        >
+          {copied ? tr("waCopied") : tr("waCopy")}
+        </button>
+      </div>
+    </div>
   );
 }
 

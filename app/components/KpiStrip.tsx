@@ -128,14 +128,14 @@ export function KpiStrip({
       <div className="mb-2 flex items-center justify-between">
         <span className="text-[13px] text-text-muted">{t(locale, "kpiStrip.title")}</span>
         <div className="flex items-center gap-1">
-          <button onClick={() => setPicker((v) => !v)} className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[12px] text-text-muted transition-colors hover:text-text-primary">
+          <button onClick={() => setPicker((v) => !v)} className="flex items-center gap-1.5 card px-2.5 py-1.5 text-[12px] text-text-muted transition-colors hover:text-text-primary">
             <SlidersHorizontal size={13} /> {t(locale, "kpiStrip.customize")}
           </button>
         </div>
       </div>
 
       {picker && (
-        <div className="pop-shadow mb-3 rounded-xl border border-border bg-surface p-3">
+        <div className="pop-shadow mb-3 card pad-sm">
           <div className="mb-2 text-[12px] text-text-faint">
             {ar ? `اختر من ${MIN_KPIS} إلى ${MAX_KPIS} مؤشرات (المحدد: ${selected.length})` : `Pick ${MIN_KPIS}–${MAX_KPIS} metrics (${selected.length} selected)`}
           </div>
@@ -170,7 +170,7 @@ export function KpiStrip({
           return (
             <div
               key={r.key}
-              className="card-shadow group rounded-2xl border border-border bg-surface p-4 transition-all hover:-translate-y-0.5 hover:ring-1 hover:ring-border"
+              className="card-shadow group card pad-md transition-all hover:-translate-y-0.5 hover:ring-1 hover:ring-border"
             >
               <div className="mb-3 flex items-center gap-2.5">
                 <span

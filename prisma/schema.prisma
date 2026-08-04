@@ -160,6 +160,16 @@ model User {
   siteScanMonthlyReset     DateTime @default(now())
   siteScanHourlyCount      Int      @default(0)
   siteScanHourlyReset      DateTime @default(now())
+  marketingEmails MarketingEmailLog[]
+  /// إيقاف رسائل التسويق. التنبيهات التشغيلية لا تتأثّر - إيقافها يتمّ
+  /// من تفضيلات مساحة العمل. الخلط بينهما يعني أنّ من لا يريد التسويق
+  /// يفقد تنبيه «إعلان يُنفق بلا عميل» أيضاً.
+  marketingOptOut Boolean @default(false)
+  /// لحظة الموافقة على الشروط وسياسة الخصوصية.
+  /// تاريخ لا `Boolean`: عند أيّ نزاع أو تدقيق، السؤال «متى وافق» لا
+  /// «هل وافق». ويسمح لاحقاً بمطالبة من وافق على نسخة قديمة بالموافقة
+  /// على المحدَّثة.
+  acceptedTermsAt DateTime?
 }
 
 // ربط المنصة على مستوى المستخدم (مرة واحدة لكل منصة)
@@ -2183,4 +2193,24 @@ enum OrderState {
   FULFILLED
   CANCELLED
   RETURNED
+}
+
+
+/// سجلّ رسائل التسويق المُرسَلة.
+///
+/// **لماذا جدول لا حقل تاريخ على المستخدم:** الحملات متعدّدة ومتوازية
+/// (تفعيل + دورة التجربة)، وكلّ رسالة تُرسَل **مرّة واحدة فقط** لكلّ
+/// مستخدم. حقل «آخر إرسال» واحد كان سيجعل رسالة تكتم أخرى، وإعادة تشغيل
+/// الكرون تعيد الإرسال - وهو أسوأ ما يمكن أن يحدث في بريد تسويقي.
+model MarketingEmailLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// معرّف الرسالة في الحملة (`trial-d7`, `engage-decisions`, ...)
+  messageId String
+  sentAt    DateTime @default(now())
+
+  /// الضمانة الفعلية ضدّ التكرار - لا منطق تطبيقي وحده
+  @@unique([userId, messageId])
+  @@index([userId, sentAt])
 }

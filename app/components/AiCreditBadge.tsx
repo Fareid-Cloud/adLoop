@@ -28,7 +28,7 @@ export function AiCreditBadge({
       <Link
         href="/dashboard/billing"
         title={ar ? t(locale, "aiCredit.label") : "This month's AI analysis credit"}
-        className="flex items-center gap-1.5 rounded-xl border border-border bg-surface px-2.5 py-1.5 no-underline"
+        className="flex items-center gap-1.5 card px-2.5 py-1.5 no-underline"
       >
         <Sparkles size={14} style={{ color: tone }} />
         <span className="font-mono text-[12.5px] font-medium" style={{ color: tone }}>
@@ -41,7 +41,7 @@ export function AiCreditBadge({
         href="/dashboard/billing?credits=1"
         title={ar ? t(locale, "aiCredit.buyOrUpgrade") : "Buy credit or upgrade plan"}
         aria-label={ar ? t(locale, "aiCredit.buy") : "Buy credit"}
-        className="flex items-center justify-center rounded-xl border border-border bg-surface p-1.5 text-text-muted no-underline hover:text-accent"
+        className="flex items-center justify-center card p-1.5 text-text-muted no-underline hover:text-accent"
       >
         <Plus size={14} />
       </Link>

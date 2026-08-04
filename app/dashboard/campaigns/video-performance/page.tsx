@@ -47,7 +47,7 @@ export default async function VideoPerformancePage({
     return (
       <div className="mx-auto max-w-4xl">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="mb-6 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.vidTitle")}</h1>
+        <h1 className="mb-6 page-title">{t(locale, "campPages.vidTitle")}</h1>
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <EmptyState
           title={t(locale, "campPages.vidNone")}
@@ -77,7 +77,7 @@ export default async function VideoPerformancePage({
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.vidTitle")}</h1>
+      <h1 className="mb-2 page-title">{t(locale, "campPages.vidTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
         {t(locale, "campPages.vidIntro")}
       </p>
@@ -92,7 +92,7 @@ export default async function VideoPerformancePage({
             <div className="mb-3 text-sm font-semibold text-text-primary">
               {platformName(locale, m.platform)}
             </div>
-            <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-center">
               <div>
                 <div className="font-mono text-lg text-text-primary">{m.viewRate}%</div>
                 <div className="text-[11px] text-text-faint">{t(locale, "campPages.vidViewRate")}</div>

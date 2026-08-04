@@ -14,6 +14,7 @@ const ALLOWED_FIELDS = [
   "preferredLocale",
   "themeColor",
   "themeMode",
+  "marketingOptOut",
   "timezone",
   "businessScale",
 ] as const;

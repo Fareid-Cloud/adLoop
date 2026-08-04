@@ -25,6 +25,7 @@ import { PerformanceFunnel } from "@/app/components/PerformanceFunnel";
 import { TrendChart } from "@/app/components/TrendChart";
 import { computeHealthScore } from "@/lib/healthScore";
 import { compareMetric } from "@/lib/periodComparison";
+import { costPerVerified } from "@/lib/kpiEngine";
 
 // ألوان رسمية حقيقية (مؤكدة من مصادر العلامات التجارية) - شارة لونية
 // بدل الشعار الفعلي (ملف صورة محمي بحقوق ملكية مش متاح لينا). ملاحظة:
@@ -90,7 +91,7 @@ export async function PlatformHub({
     return (
       <div className="mx-auto max-w-4xl">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="mb-6 flex items-center gap-2.5 text-[26px] font-semibold text-text-primary">
+        <h1 className="mb-6 flex items-center gap-2.5 page-title">
           <PlatformLogo platform={platform} size={24} />
           {platformLabel}
         </h1>
@@ -147,7 +148,7 @@ export async function PlatformHub({
   const rawConv = totalsAgg._sum.rawConversions ?? 0;
   const clicks = totalsAgg._sum.clicks ?? 0;
   const impressions = totalsAgg._sum.impressions ?? 0;
-  const cpa = verified > 0 ? cost / verified : null;
+  const cpa = costPerVerified(cost, verified);
 
   const prevVerified = prevAgg._sum.verifiedConversions ?? 0;
   const prevCpa = prevVerified > 0 ? (prevAgg._sum.cost ?? 0) / prevVerified : 0;
@@ -192,7 +193,7 @@ export async function PlatformHub({
         </div>
 
         {/* نفس عدّاد صحة الحساب - عنصر هوية واحد لكل درجة في المنتج */}
-        <div className="flex shrink-0 items-center gap-3 rounded-2xl card-shadow border border-border bg-surface px-4 py-3">
+        <div className="flex shrink-0 items-center gap-3 card px-4 py-3">
           <HealthGauge score={platformHealth.overallScore} size="md" />
           <div className="leading-tight">
             <div className="text-[13px] font-medium text-text-primary">
@@ -261,7 +262,7 @@ export async function PlatformHub({
         />
 
         {trendData.length > 1 ? (
-          <section className="card-shadow rounded-2xl border border-border bg-surface p-5">
+          <section className="card pad-md">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <span className="text-[13px] font-medium text-text-muted">{t(locale, "home.trend14")}</span>
               <span className="flex items-center gap-4 text-[12px]">
@@ -284,7 +285,7 @@ export async function PlatformHub({
             />
           </section>
         ) : (
-          <section className="card-shadow flex items-center justify-center rounded-2xl border border-border bg-surface p-5 text-[12.5px] text-text-muted">
+          <section className="card-shadow flex items-center justify-center card pad-md text-[12.5px] text-text-muted">
             {t(locale, "campPages.hubNoTrend")}
           </section>
         )}
@@ -292,7 +293,7 @@ export async function PlatformHub({
 
       {/* ---------- ٥) القرار لكل إعلان ---------- */}
       <div className="mb-4">
-        <div className="mb-2.5 text-[16.5px] font-semibold tracking-tight text-text-primary">
+        <div className="mb-2.5 section-title">
           {t(locale, "campPages.hubDecisions", { platform: platformLabel })}
         </div>
         <AdDecisionTable
@@ -305,7 +306,7 @@ export async function PlatformHub({
       </div>
 
       {/* ---------- ٦) التحليلات التفصيلية ---------- */}
-      <div className="mb-2.5 text-[16.5px] font-semibold tracking-tight text-text-primary">
+      <div className="mb-2.5 section-title">
         {t(locale, "campPages.hubDeepDives", { platform: platformLabel })}
       </div>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -315,7 +316,7 @@ export async function PlatformHub({
             <a
               key={link.href}
               href={link.href}
-              className="card-shadow flex items-center gap-2.5 rounded-xl border border-border bg-surface px-3.5 py-3 text-[12.5px] text-text-primary no-underline"
+              className="card-shadow flex items-center gap-2.5 card px-3.5 py-3 text-[12.5px] text-text-primary no-underline"
             >
               <span
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"

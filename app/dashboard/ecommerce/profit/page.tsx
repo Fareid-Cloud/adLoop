@@ -164,7 +164,7 @@ export default async function ProfitPage({
 
       <SectionHeading hint={tr("whereMoneyGoesHint")}>{tr("whereMoneyGoes")}</SectionHeading>
 
-      <div className="card-shadow mb-2 overflow-hidden rounded-2xl border border-border bg-surface">
+      <div className="card-shadow mb-2 overflow-hidden card">
         {/* الإيراد كنقطة بداية */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-accent/[0.05] p-4">
           <div>
@@ -237,7 +237,7 @@ export default async function ProfitPage({
       </div>
 
       {journey.biggestLeak && (
-        <div className="mb-2 flex items-start gap-2 rounded-2xl border border-border bg-surface p-4">
+        <div className="mb-2 flex items-start gap-2 card pad-md">
           <AlertTriangle size={15} className="mt-0.5 shrink-0 text-gap" />
           {/* كانت جملة عربية مثبّتة، وفيها «ريال» ثابتة رغم أن عملة
               المساحة متغيّرة - فتقرأ خطأً صريحاً لمتجر مصري أو إماراتي. */}

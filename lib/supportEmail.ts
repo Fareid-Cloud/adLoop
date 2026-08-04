@@ -4,6 +4,7 @@
 // مش متظبط، بنتخطى بهدوء (الرسالة تفضل محفوظة في قاعدة البيانات على أي حال).
 import { Resend } from "resend";
 import { getAppUrl } from "@/lib/appUrl";
+import { renderEmail } from "@/lib/emailTemplate";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const OWNER_INBOX = process.env.SUPPORT_INBOX_EMAIL || "manfareiduwk@gmail.com";
@@ -28,17 +29,22 @@ export async function notifyOwnerNewSupport(t: {
       to: OWNER_INBOX,
       replyTo: t.email,
       subject: t.isReply ? `رد جديد على محادثة دعم — ${t.subject}` : `رسالة دعم جديدة — ${t.subject}`,
-      html: `
-        <div dir="rtl" style="font-family: sans-serif; padding: 16px; color: #16181D;">
-          <h2 style="margin:0 0 12px;">${t.isReply ? "رد جديد من عميل" : "رسالة دعم جديدة"}</h2>
-          <p><b>الاسم:</b> ${t.name}</p>
-          <p><b>البريد:</b> ${t.email}</p>
-          ${t.phone ? `<p><b>الهاتف:</b> ${t.phone}</p>` : ""}
-          ${t.country ? `<p><b>الدولة:</b> ${t.country}</p>` : ""}
-          <p><b>الموضوع:</b> ${t.subject}</p>
-          <p style="white-space:pre-wrap; background:#F5F6F8; padding:12px; border-radius:8px;">${t.body}</p>
-          <p><a href="${adminUrl}" style="color:#4C8DFF;">افتح لوحة الدعم للرد ←</a></p>
-        </div>`,
+      // 🔴 كانت بيانات المرسِل تُحقن في HTML بلا تهريب (`${t.name}`,
+      // `${t.body}`) - أي أنّ عميلاً يكتب وسماً في رسالة دعم يحقنه في
+      // بريد المالك. `renderEmail` يهرّب كلّ قيمة تمرّ به.
+      html: renderEmail({
+        locale: "ar",
+        eyebrow: t.isReply ? "ردّ على محادثة قائمة" : "رسالة جديدة",
+        title: t.subject,
+        blocks: [
+          { stat: { label: "الاسم", value: t.name } },
+          { stat: { label: "البريد", value: t.email } },
+          ...(t.phone ? [{ stat: { label: "الهاتف", value: t.phone } }] : []),
+          ...(t.country ? [{ stat: { label: "الدولة", value: t.country } }] : []),
+          { text: t.body },
+        ],
+        cta: { label: "افتح لوحة الدعم للردّ", url: adminUrl },
+      }),
     });
   } catch (err) {
     console.error("فشل إرسال إشعار الدعم:", err);

@@ -66,7 +66,7 @@ export function MetricInfo({
         <span
           role="dialog"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-          className="pop-shadow absolute top-6 z-50 w-[264px] cursor-default rounded-xl border border-border bg-surface p-3 text-start"
+          className="pop-shadow absolute top-6 z-50 w-[264px] cursor-default card pad-sm text-start"
           style={{ insetInlineStart: 0 }}
         >
           <span className="mb-2 flex items-start justify-between gap-2">

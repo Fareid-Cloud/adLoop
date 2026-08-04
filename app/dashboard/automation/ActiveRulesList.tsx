@@ -96,7 +96,7 @@ export function ActiveRulesList({
         const scoped = rule.appliesTo === "SPECIFIC_CAMPAIGNS" && rule.specificCampaignIds.length > 0;
 
         return (
-          <div key={rule.id} className="card-shadow rounded-2xl border border-border bg-surface p-4">
+          <div key={rule.id} className="card pad-md">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="mb-1.5 flex flex-wrap items-center gap-2">
@@ -164,12 +164,12 @@ export function ActiveRulesList({
               <div className="flex shrink-0 items-center gap-1.5">
                 <Toggle checked={rule.enabled} onChange={(v) => patch(rule.id, { enabled: v })} label={tr("enableRule")} />
                 <button onClick={() => setEditing(isEditing ? null : rule.id)}
-                        className="rounded-lg border border-border bg-surface-raised p-2 text-text-muted hover:text-text-primary"
+                        className="card-inset p-2 text-text-muted hover:text-text-primary"
                         aria-label={tr("editRule")}>
                   <Pencil size={14} />
                 </button>
                 <button onClick={() => setConfirmDelete(rule.id)}
-                        className="rounded-lg border border-border bg-surface-raised p-2 text-text-muted hover:text-critical"
+                        className="card-inset p-2 text-text-muted hover:text-critical"
                         aria-label={tr("deleteRule")}>
                   <Trash2 size={14} />
                 </button>
@@ -184,7 +184,7 @@ export function ActiveRulesList({
                 </span>
                 <div className="flex gap-2">
                   <button onClick={() => setConfirmDelete(null)}
-                          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] text-text-muted">
+                          className="card px-3 py-1.5 text-[12px] text-text-muted">
                     {tr("cancel")}
                   </button>
                   <button onClick={() => remove(rule.id)} disabled={busy === rule.id}
@@ -217,22 +217,22 @@ function EditRow({
   const [requireApproval, setRequireApproval] = useState(rule.requireApproval);
 
   return (
-    <div className="mt-2 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-surface-raised p-3">
+    <div className="mt-2 flex flex-wrap items-end gap-3 card-inset pad-sm">
       <label className="flex flex-col gap-1">
         <span className="text-[11px] text-text-muted">{tr("threshold")}</span>
         <input type="number" value={threshold} onChange={(e) => setThreshold(Number(e.target.value))}
-               className="w-24 rounded-lg border border-border bg-surface px-2.5 py-1.5 font-mono text-[13px] text-text-primary outline-none focus:border-accent" />
+               className="w-24 card px-2.5 py-1.5 font-mono text-[13px] text-text-primary outline-none focus:border-accent" />
       </label>
       <label className="flex flex-col gap-1">
         <span className="text-[11px] text-text-muted">{tr("daysRow")}</span>
         <input type="number" min={1} max={30} value={days} onChange={(e) => setDays(Number(e.target.value))}
-               className="w-20 rounded-lg border border-border bg-surface px-2.5 py-1.5 font-mono text-[13px] text-text-primary outline-none focus:border-accent" />
+               className="w-20 card px-2.5 py-1.5 font-mono text-[13px] text-text-primary outline-none focus:border-accent" />
       </label>
       {rule.actionValue !== null && (
         <label className="flex flex-col gap-1">
           <span className="text-[11px] text-text-muted">{tr("actionPct")}</span>
           <input type="number" value={actionValue} onChange={(e) => setActionValue(Number(e.target.value))}
-                 className="w-20 rounded-lg border border-border bg-surface px-2.5 py-1.5 font-mono text-[13px] text-text-primary outline-none focus:border-accent" />
+                 className="w-20 card px-2.5 py-1.5 font-mono text-[13px] text-text-primary outline-none focus:border-accent" />
         </label>
       )}
       <label className="flex items-center gap-2 pb-1.5 text-[12px] text-text-primary">
@@ -251,7 +251,7 @@ function EditRow({
         >
           <Check size={13} /> {tr("save")}
         </button>
-        <button onClick={onCancel} className="rounded-lg border border-border bg-surface p-1.5 text-text-muted">
+        <button onClick={onCancel} className="card p-1.5 text-text-muted">
           <X size={14} />
         </button>
       </div>

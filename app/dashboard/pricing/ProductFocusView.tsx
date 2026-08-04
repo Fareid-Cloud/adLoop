@@ -147,7 +147,7 @@ export function ProductFocusView({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="pop-shadow max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-surface">
+      <div onClick={(e) => e.stopPropagation()} className="pop-shadow max-h-[92vh] w-full max-w-5xl overflow-hidden card">
         {/* الرأس */}
         <div className="flex items-start justify-between gap-3 border-b border-border p-5">
           <div className="min-w-0">
@@ -158,7 +158,7 @@ export function ProductFocusView({
             </p>
           </div>
           <div className="flex shrink-0 gap-1.5">
-            <button onClick={onEdit} className="flex items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-primary">
+            <button onClick={onEdit} className="flex items-center gap-1.5 card-inset px-3 py-2 text-[12.5px] text-text-primary">
               <Pencil size={13} /> {tr("edit")}
             </button>
             <button onClick={onClose} className="rounded-lg p-2 text-text-muted hover:bg-surface-raised"><X size={17} /></button>
@@ -208,14 +208,14 @@ export function ProductFocusView({
           </div>
 
           {/* التكلفة الحقيقية وسعر التعادل */}
-          <div className="mb-4 grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-border bg-surface-raised p-3">
+          <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="card-inset pad-sm">
               <div className="text-[11.5px] text-text-muted">{tr("trueCost")}</div>
               <div className="mt-1 font-mono text-[18px] font-semibold text-text-primary">
                 {money(result.trueCostPerOrder, currency)}
               </div>
             </div>
-            <div className="rounded-xl border border-border bg-surface-raised p-3">
+            <div className="card-inset pad-sm">
               <div className="flex items-center gap-1 text-[11.5px] text-text-muted">
                 {tr("breakEvenPrice")} <Info size={11} />
               </div>
@@ -289,7 +289,7 @@ export function ProductFocusView({
         <aside className="flex flex-col gap-3">
           {/* نظرة سريعة - تظهر فقط عند وجود مبيعات فعلية مربوطة */}
           {sales && (
-            <div className="rounded-2xl border border-border bg-surface-raised p-4">
+            <div className="card-inset pad-md">
               <div className="mb-3 flex items-center gap-1.5 text-[13px] font-medium text-text-primary">
                 <TrendingUp size={14} className="text-accent" /> {tr("quickLook")}
               </div>
@@ -343,7 +343,7 @@ export function ProductFocusView({
 
           {/* حساسية المرتجعات */}
           {result.rtoBreakEvenPct !== null && (
-            <div className="rounded-2xl border border-border bg-surface-raised p-4">
+            <div className="card-inset pad-md">
               <div className="mb-1.5 flex items-center gap-1.5 text-[13px] font-medium text-text-primary">
                 <RotateCcw size={14} className="text-text-muted" /> {tr("rtoTitle")}
               </div>

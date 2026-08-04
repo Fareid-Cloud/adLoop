@@ -35,7 +35,7 @@ export default async function AutomationPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-6 text-[26px] font-semibold text-text-primary">{t(locale, "autoPage.title")}</h1>
+      <h1 className="mb-6 page-title">{t(locale, "autoPage.title")}</h1>
 
       {!workspace.enableAutomationRules && (
         <div className="mb-4 rounded-2xl bg-gap/10 p-4 text-xs text-gap">

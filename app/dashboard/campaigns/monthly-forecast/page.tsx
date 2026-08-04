@@ -26,7 +26,7 @@ export default async function MonthlyForecastPage() {
   if (!workspace.monthlyBudgetTarget) {
     return (
       <div className="mx-auto max-w-2xl">
-        <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.mfTitle")}</h1>
+        <h1 className="mb-2 page-title">{t(locale, "campPages.mfTitle")}</h1>
         <EmptyState
           title={t(locale, "campPages.mfNoBudget")}
           description={t(locale, "campPages.mfNoBudgetBody")}
@@ -65,7 +65,7 @@ export default async function MonthlyForecastPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.mfTitle")}</h1>
+      <h1 className="mb-2 page-title">{t(locale, "campPages.mfTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
         {t(locale, "campPages.mfIntro")}
       </p>
@@ -75,7 +75,7 @@ export default async function MonthlyForecastPage() {
         <div className={`mt-1 text-sm ${statusConfig.color}`}>{t(locale, `campPages.${statusConfig.key}`)}</div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="rounded-2xl bg-surface p-4">
           <div className="text-xs text-text-faint">{t(locale, "campPages.mfSpent")}</div>
           <div className="font-mono text-lg text-text-primary">{spentSoFar.toLocaleString()}</div>

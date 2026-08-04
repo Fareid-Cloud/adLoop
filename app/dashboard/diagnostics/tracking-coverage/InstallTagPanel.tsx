@@ -47,7 +47,7 @@ export function InstallTagPanel({
         className="flex w-full items-center justify-between gap-3 p-4 text-start"
       >
         <div>
-          <h2 className="text-[14px] font-semibold text-text-primary">{tr("title")}</h2>
+          <h2 className="section-title">{tr("title")}</h2>
           <p className="mt-0.5 text-[12.5px] text-text-muted">{tr("subtitle")}</p>
         </div>
         <ChevronDown size={17} className={`shrink-0 text-text-muted transition-transform ${open ? "rotate-180" : ""}`} />
@@ -123,7 +123,7 @@ function CodeBlock({
     <div className="relative">
       <button
         onClick={onCopy}
-        className="absolute top-2 z-10 flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 text-[11px] text-text-primary"
+        className="absolute top-2 z-10 flex items-center gap-1 card px-2 py-1 text-[11px] text-text-primary"
         style={{ insetInlineEnd: 8 }}
       >
         {copied ? <Check size={11} className="text-verified" /> : <Copy size={11} />}
@@ -132,7 +132,7 @@ function CodeBlock({
       {/* dir=ltr إجباري: الكود يُقرأ من اليسار دائماً مهما كانت لغة الواجهة */}
       <pre
         dir="ltr"
-        className="max-h-[280px] overflow-auto rounded-xl border border-border bg-surface-raised p-3 pt-9 text-start font-mono text-[11px] leading-relaxed text-text-primary"
+        className="max-h-[280px] overflow-auto card-inset pad-sm pt-9 text-start font-mono text-[11px] leading-relaxed text-text-primary"
       >
         {code}
       </pre>

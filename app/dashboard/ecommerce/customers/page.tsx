@@ -155,7 +155,7 @@ export default async function CustomersPage() {
 
       <div className="mb-8 flex flex-col gap-2.5">
         {analytics.segments.map((s) => (
-          <div key={s.key} className="card-shadow rounded-2xl border border-border bg-surface p-4">
+          <div key={s.key} className="card pad-md">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -183,7 +183,7 @@ export default async function CustomersPage() {
 
       <SectionHeading hint={tr("topSpendersHint")}>{tr("topSpenders")}</SectionHeading>
 
-      <div className="card-shadow overflow-hidden rounded-2xl border border-border bg-surface">
+      <div className="card-shadow overflow-hidden card">
         <DataTable headers={[tr("colCustomer"), tr("colCity"), tr("colOrders"), tr("colSpent"), tr("colReturnRate"), tr("colLastOrder")]}>
           {analytics.topCustomers.map((cust, i) => (
             <Tr key={cust.id}>

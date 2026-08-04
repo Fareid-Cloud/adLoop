@@ -92,8 +92,10 @@ export function NotificationToast({ locale = "ar" }: { locale?: Locale }) {
   const Icon = TYPE_ICON[current.type] ?? Zap;
 
   return (
-    <div className="fixed bottom-6 left-1/2 z-50 w-full max-w-sm -translate-x-1/2 px-4">
-      <div className="flex items-start gap-3 rounded-2xl card-shadow border border-border bg-surface p-4 shadow-lg">
+    // `left-1/2 -translate-x-1/2` ينقلب في RTL فيدفع البطاقة خارج الشاشة
+    // يميناً. `inset-x-0 mx-auto` يتمركز بلا اعتماد على الاتجاه إطلاقاً.
+    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 mx-auto w-full max-w-sm px-4">
+      <div className="flex items-start gap-3 card pad-md shadow-lg">
         <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
           <Icon size={16} />
         </span>

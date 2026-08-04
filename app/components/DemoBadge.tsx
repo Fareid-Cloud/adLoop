@@ -44,7 +44,7 @@ export function DemoBadge({
       {open && (
         // `end-auto start-0` يثبّتها تحت الشارة في الاتجاهين - لوحة تُقصّ
         // خارج الشاشة في العربية عيبٌ رأيناه في الجرس من قبل.
-        <div className="pop-shadow absolute start-0 top-full z-50 mt-2 w-[290px] rounded-2xl border border-border bg-surface p-4">
+        <div className="pop-shadow absolute start-0 top-full z-50 mt-2 w-[290px] card pad-md">
           <div className="mb-1 flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/12 text-accent">
               <FlaskConical size={16} />
@@ -81,7 +81,7 @@ export function DemoBadge({
           {hasRealWorkspace && (
             <Link
               href="/dashboard"
-              className="mt-2 block rounded-xl border border-border bg-surface-raised px-3.5 py-2 text-center text-[12px] text-text-muted no-underline"
+              className="mt-2 block card-inset px-3.5 py-2 text-center text-[12px] text-text-muted no-underline"
             >
               {tr("backToReal")}
             </Link>

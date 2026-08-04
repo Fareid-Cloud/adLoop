@@ -38,7 +38,7 @@ export function EcomHeader({
       {storeName && <div className="mb-1 text-[13px] text-text-muted">{storeName}</div>}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">{title}</h1>
+          <h1 className="page-title">{title}</h1>
           <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-text-muted">{subtitle}</p>
         </div>
         {action}
@@ -50,7 +50,7 @@ export function EcomHeader({
 export function SectionHeading({ children, hint }: { children: ReactNode; hint?: string }) {
   return (
     <div className="mb-3">
-      <h2 className="text-[16.5px] font-semibold tracking-tight text-text-primary">{children}</h2>
+      <h2 className="section-title">{children}</h2>
       {hint && <p className="mt-0.5 text-[12px] text-text-faint">{hint}</p>}
     </div>
   );
@@ -92,11 +92,11 @@ export function RecommendedActions({
     <section className="mt-10 border-t border-border pt-6">
       <div className="mb-3 flex items-center gap-2">
         <Lightbulb size={16} className="text-accent" />
-        <h2 className="text-[15px] font-semibold text-text-primary">{t(locale, "common.recommendedActions")}</h2>
+        <h2 className="section-title">{t(locale, "common.recommendedActions")}</h2>
       </div>
 
       {actions.length === 0 ? (
-        <p className="rounded-2xl border border-border bg-surface p-4 text-[12.5px] text-text-muted">
+        <p className="card pad-md text-[12.5px] text-text-muted">
           {fallbackEmpty}
         </p>
       ) : (
@@ -104,7 +104,7 @@ export function RecommendedActions({
           {actions.map((a, i) => (
             <div
               key={i}
-              className="card-shadow flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-border bg-surface p-4"
+              className="card-shadow flex flex-wrap items-start justify-between gap-3 card pad-md"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -119,7 +119,7 @@ export function RecommendedActions({
               {a.href && (
                 <Link
                   href={a.href}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-3 py-2 text-[12.5px] font-medium text-text-primary no-underline transition-colors hover:bg-surface-3"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-2 text-[12.5px] font-medium text-text-primary no-underline transition-colors hover:bg-surface-raised"
                 >
                   {a.hrefLabel ?? t(locale, "common.open")}
                   <ArrowLeft size={13} />
@@ -161,7 +161,7 @@ export function DataGate({
 }) {
   const cta = hrefLabel ?? t(locale, "store.connectStore");
   return (
-    <div className="card-shadow rounded-2xl border border-border bg-surface p-6 text-center">
+    <div className="card pad-lg text-center">
       <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-surface-raised">
         <Info size={20} className="text-text-muted" />
       </div>
@@ -226,12 +226,12 @@ export function DecisionBucket({
   children?: ReactNode;
 }) {
   return (
-    <section className="card-shadow mb-4 overflow-hidden rounded-2xl border border-border bg-surface">
+    <section className="card-shadow mb-4 overflow-hidden card">
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border p-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className={`h-2 w-2 shrink-0 rounded-full ${toneDot(tone)}`} />
-            <h3 className="text-[14px] font-semibold text-text-primary">{labelAr}</h3>
+            <h3 className="section-title">{labelAr}</h3>
             <span className="rounded-md bg-surface-raised px-1.5 py-0.5 text-[11.5px] font-medium tabular-nums text-text-muted">
               {count}
             </span>
@@ -248,7 +248,7 @@ export function DecisionBucket({
       {children}
 
       {actionAr && (
-        <div className="flex items-start gap-2 border-t border-border bg-surface-2/40 px-4 py-3">
+        <div className="flex items-start gap-2 border-t border-border bg-surface-raised/40 px-4 py-3">
           <TrendingUp size={13} className="mt-0.5 shrink-0 text-accent" />
           <p className="text-[12px] leading-relaxed text-text-muted">{actionAr}</p>
         </div>

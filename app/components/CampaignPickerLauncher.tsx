@@ -41,8 +41,8 @@ export function CampaignPickerLauncher({
 
       {choosing && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm" onClick={() => setChoosing(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="pop-shadow w-full max-w-xs rounded-2xl border border-border bg-surface p-5">
-            <h3 className="mb-3 text-[14px] font-semibold text-text-primary">
+          <div onClick={(e) => e.stopPropagation()} className="pop-shadow w-full max-w-xs card pad-md">
+            <h3 className="mb-3 section-title">
               {ar ? t(locale, "ui.pickPlatform") : "Choose a platform"}
             </h3>
             <div className="flex flex-col gap-2">
@@ -50,7 +50,7 @@ export function CampaignPickerLauncher({
                 <button
                   key={p}
                   onClick={() => { setChoosing(false); setPicking(p); }}
-                  className="flex items-center gap-2.5 rounded-xl border border-border bg-surface-raised p-3 text-[13px] text-text-primary hover:border-accent"
+                  className="flex items-center gap-2.5 card-inset pad-sm text-[13px] text-text-primary hover:border-accent"
                 >
                   <PlatformLogo platform={p} size={18} />
                   {p === "GOOGLE_ADS" ? "Google Ads" : p === "META_ADS" ? "Meta Ads" : "TikTok Ads"}

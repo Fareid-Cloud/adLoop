@@ -233,7 +233,7 @@ export default async function EcommerceOverviewPage() {
           </SectionHeading>
           <div className="mb-2 grid gap-3 lg:grid-cols-3">
             {topOpps.map((o) => (
-              <div key={o.id} className="card-shadow rounded-2xl border border-border bg-surface p-4">
+              <div key={o.id} className="card pad-md">
                 <div className="text-[13px] font-medium text-text-primary">{tx(o.title)}</div>
                 <div className="mt-2 flex items-baseline gap-1.5">
                   <span className="text-[22px] font-semibold tabular-nums text-verified">

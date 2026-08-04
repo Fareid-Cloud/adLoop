@@ -161,14 +161,14 @@ export function CampaignPickerModal({
       <div
         dir={ar ? "rtl" : "ltr"}
         onClick={(e) => e.stopPropagation()}
-        className="pop-shadow flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-surface"
+        className="pop-shadow flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden card"
       >
         {/* الرأس */}
         <div className="flex items-center justify-between border-b border-border p-5">
           <div className="flex items-center gap-2.5">
             <PlatformLogo platform={platform} size={22} />
             <div>
-              <h2 className="text-[15px] font-semibold text-text-primary">
+              <h2 className="section-title">
                 {ar ? tr("title") : "Choose campaigns to track"}
               </h2>
               <p className="text-[12px] text-text-muted">{PLATFORM_LABEL[platform]}</p>
@@ -188,7 +188,7 @@ export function CampaignPickerModal({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={ar ? tr("search") : "Search campaigns"}
-                className="w-full rounded-lg border border-border bg-surface-raised py-2 text-[13px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+                className="w-full card-inset py-2 text-[13px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
                 style={{ paddingInlineStart: 30, paddingInlineEnd: 10 }}
               />
             </div>
@@ -200,7 +200,7 @@ export function CampaignPickerModal({
             >
               {ar ? tr("activeOnly") : "Active only"}
             </button>
-            <button onClick={toggleAll} className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-[12px] text-text-muted hover:text-text-primary">
+            <button onClick={toggleAll} className="card-inset px-3 py-2 text-[12px] text-text-muted hover:text-text-primary">
               {ar ? tr("selectAll") : "Select all"}
             </button>
           </div>
@@ -220,7 +220,7 @@ export function CampaignPickerModal({
               <AlertCircle size={28} className="text-critical" />
               <p className="max-w-sm text-[13px] leading-relaxed text-text-primary">{error}</p>
               <div className="flex gap-2">
-                <button onClick={load} className="rounded-xl border border-border bg-surface-raised px-4 py-2 text-[13px] text-text-primary">
+                <button onClick={load} className="card-inset px-4 py-2 text-[13px] text-text-primary">
                   {ar ? tr("retry") : "Try again"}
                 </button>
                 <button onClick={diagnose} disabled={diagnosing}
@@ -233,7 +233,7 @@ export function CampaignPickerModal({
 
           {/* نتيجة تشخيص الاتصال - خطوة بخطوة */}
           {diagnosis && (
-            <div className="mx-auto mt-4 max-w-md rounded-xl border border-border bg-surface-raised p-4 text-start">
+            <div className="mx-auto mt-4 max-w-md card-inset pad-md text-start">
               <p className="mb-3 text-[13px] font-medium text-text-primary">{t(locale, `connTest.${diagnosis.verdictKey}`, diagnosis.verdictVars)}</p>
               <ul className="flex flex-col gap-2">
                 {diagnosis.steps.map((st: any) => (
@@ -306,7 +306,7 @@ export function CampaignPickerModal({
             {ar ? tr("selectedCount", { n: selected.size }) : `${selected.size} selected`}
           </span>
           <div className="flex gap-2">
-            <button onClick={onClose} className="rounded-xl border border-border bg-surface-raised px-4 py-2 text-[13px] text-text-muted hover:text-text-primary">
+            <button onClick={onClose} className="card-inset px-4 py-2 text-[13px] text-text-muted hover:text-text-primary">
               {ar ? tr("later") : "Later"}
             </button>
             <button

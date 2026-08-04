@@ -359,3 +359,165 @@ button:disabled, [aria-disabled="true"] {
  * إلغاء التمرير نفسه يقطع الوصول لعناصرها على الشاشات القصيرة. */
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .no-scrollbar::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * هوية الأسطح — مصدر واحد لشكل كلّ صندوق في المنتج
+ *
+ * **المشكلة التي تحلّها:** مسحُ المشروع أظهر اثني عشر تركيباً مختلفاً
+ * لبطاقة واحدة (`rounded-2xl border bg-surface`، `rounded-xl border
+ * bg-surface-raised`، `rounded-lg …`) وخمسة أنصاف أقطار، و`card-shadow`
+ * مطبَّقاً على ستّ عشرة بطاقة من ثمانٍ وسبعين. الفارق لا يُلاحَظ في صفحة
+ * واحدة، لكنه يُلاحَظ فوراً عند التنقّل: كلّ صفحة تبدو مبنيّة في يوم آخر.
+ *
+ * الحلّ ليس إعادة تصميم: نفس الألوان ونفس اللغة البصرية («متحقَّق مقابل
+ * مُعلَن») كما هي. ما يتغيّر أنّ الشكل صار **قراراً واحداً** يُتّخذ هنا
+ * بدل أن يُعاد اختراعه في كلّ ملفّ.
+ *
+ * ثلاثة مستويات فقط، ولكلٍّ معنى — لا خيارات تجميلية:
+ *   .card  السطح الأساسي: البطاقة التي تحمل محتوى الصفحة
+ *   .card-inset  سطح متداخل: ما يقع **داخل** بطاقة أخرى
+ *   .card-ghost  سطح صامت: تلميح أو حالة فارغة، بلا ظلّ ولا وزن بصري
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+.card,
+.card-inset,
+.card-ghost {
+  border: 1px solid var(--border);
+  /* نصف قطر واحد للمنتج كلّه. الاختلاف بين 12 و16 بكسل بين صفحتين لا
+     يُقرأ كخيار تصميم بل كإهمال. */
+  border-radius: var(--radius);
+}
+
+.card {
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow .22s ease, border-color .22s ease;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* السطح المتداخل بلا ظلّ عمداً: الظلّ داخل الظلّ يُنتج عمقاً كاذباً
+   يجعل البطاقة تبدو مكدَّسة لا مرتّبة. يفصله اللون والحدّ وحدهما. */
+.card-inset {
+  background: var(--surface-raised);
+}
+
+.card-ghost {
+  background: transparent;
+  border-color: var(--border);
+  border-style: dashed;
+}
+
+/* عنصر قابل للنقر داخل قائمة: يرث السطح ويضيف استجابة اللمس وحدها */
+.card-interactive {
+  cursor: pointer;
+}
+.card-interactive:active {
+  transform: scale(.995);
+}
+
+/* ── الإيقاع الرأسي ──────────────────────────────────────────────────
+ * حشوة البطاقة كانت تتراوح بين p-3 وp-6 بلا قاعدة. ثلاث كثافات فقط:
+ *   .pad-sm  عنصر قائمة أو صفّ
+ *   .pad-md  البطاقة المعتادة
+ *   .pad-lg  بطاقة رئيسية تحمل الرقم الأهمّ في الصفحة
+ * ─────────────────────────────────────────────────────────────────── */
+.pad-sm { padding: 0.875rem; }
+.pad-md { padding: 1.25rem; }
+.pad-lg { padding: 1.75rem; }
+
+/* ── عنوان قسم موحّد ───────────────────────────────────────────────
+ * كلّ صفحة كانت تكتب عنوان قسمها بمقاس ووزن مختلفين. */
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.section-hint {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-faint);
+}
+
+/* ── الأرقام ────────────────────────────────────────────────────────
+ * كلّ رقم في المنتج يُقرأ بأرقام جدولية: بدونها يتراقص عرض الأرقام بين
+ * صفوف الجدول الواحد فتفقد الأعمدة استقامتها.
+ * ─────────────────────────────────────────────────────────────────── */
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* عنوان الصفحة - كان يُكتب بأربعة مقاسات (28/26/22) بلا قاعدة، فيتغيّر
+   حجم العنوان بين صفحة وأخرى بلا سبب يقرؤه المستخدم. */
+.page-title {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+}
+
+/* ── درج التنقّل على الشاشات الصغيرة ────────────────────────────────
+ * صريح بـ`[dir]` لا بمتغيّرات Tailwind المنطقية.
+ *
+ * **السبب:** الجمع بين `inset-inline-start` (منطقيّ) و`translate` بنسبة
+ * مئوية أنتج موضعاً لا يطابق ما تحسبه الأنماط: العنصر يُحسب خارج الشاشة
+ * ويظهر ثلثه فعلياً. اتّجاهان مكتوبان بالبكسل يزيلان الالتباس كلّه.
+ * ─────────────────────────────────────────────────────────────────── */
+.nav-drawer {
+  position: fixed;
+  inset-block: 0;
+  z-index: 50;
+  width: min(80vw, 17rem);
+  transition: transform .22s ease;
+}
+[dir="rtl"] .nav-drawer { right: 0; transform: translateX(100%); }
+[dir="ltr"] .nav-drawer { left: 0;  transform: translateX(-100%); }
+[dir="rtl"] .nav-drawer.is-open,
+[dir="ltr"] .nav-drawer.is-open { transform: translateX(0); }
+
+/* من `lg` فصاعداً: عمود عادي في التدفّق، لا درج ولا إزاحة */
+@media (min-width: 1024px) {
+  .nav-drawer {
+    position: sticky;
+    top: 0;
+    z-index: auto;
+    width: 15rem;
+    transform: none;
+    transition: width .2s ease;
+  }
+  .nav-drawer.is-collapsed { width: 68px; }
+}
+
+/* الدرج المغلق يقف خارج حافة الشاشة، وعنصر `fixed` خارج الحافة **يوسّع
+ * منطقة التمرير الأفقي** للصفحة - فتصير الصفحة قابلة للسحب جانبياً على
+ * فراغ بعرض الدرج (196 بكسل مقيسة على هاتف 390).
+ *
+ * `clip` لا `hidden`: الأخيرة تُنشئ سياق تمرير جديداً فتُبطل `position:
+ * sticky` على الرأس والقائمة معاً. `clip` تقصّ بلا إنشاء سياق. */
+html, body { overflow-x: clip; }
+
+/* ── التطبيق المثبَّت: المنطقة الآمنة ───────────────────────────────
+ * مع `viewportFit: cover` يمتدّ المحتوى إلى حواف الشاشة كلّها - وهو
+ * المطلوب بصرياً، لكنّه يعني أنّ أوّل صفّ يقع خلف نتوء الكاميرا وآخر
+ * صفّ خلف شريط الإيماءات. الحشوة هنا تعيدهما إلى المنطقة المرئية.
+ *
+ * تُطبَّق في وضع التطبيق المستقلّ وحده: داخل المتصفّح، شريط العنوان
+ * يشغل هذه المساحة أصلاً فتصير الحشوة فراغاً مضاعفاً.
+ * ─────────────────────────────────────────────────────────────────── */
+@media (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-inline-start: env(safe-area-inset-left);
+    padding-inline-end: env(safe-area-inset-right);
+  }
+
+  /* الرأس اللاصق يلتصق تحت المنطقة الآمنة لا تحت حافّة الشاشة */
+  .sticky { top: env(safe-area-inset-top); }
+}

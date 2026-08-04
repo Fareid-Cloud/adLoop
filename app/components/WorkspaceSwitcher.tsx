@@ -97,7 +97,7 @@ export function WorkspaceSwitcher({
       <div className="relative">
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex w-full items-center gap-2.5 rounded-xl border border-border bg-surface-raised p-3 text-start"
+          className="flex w-full items-center gap-2.5 card-inset pad-sm text-start"
         >
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/12 font-mono text-[13px] font-semibold text-accent">
             {current.name.charAt(0).toUpperCase()}
@@ -114,7 +114,7 @@ export function WorkspaceSwitcher({
         </button>
 
         {open && !collapsed && (
-          <div className="pop-shadow absolute bottom-full mb-2 w-full overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="pop-shadow absolute bottom-full mb-2 w-full overflow-hidden card">
             <div className="max-h-56 overflow-y-auto p-1.5">
               {workspaces.map((w) => (
                 <button key={w.id} onClick={() => switchTo(w.id)}
@@ -134,7 +134,7 @@ export function WorkspaceSwitcher({
                     value={name} onChange={(e) => setName(e.target.value)} autoFocus
                     onKeyDown={(e) => e.key === "Enter" && create()}
                     placeholder={tr("namePlaceholder")}
-                    className="mb-2 w-full rounded-lg border border-border bg-surface-raised px-2.5 py-2 text-[12.5px] text-text-primary outline-none focus:border-accent"
+                    className="mb-2 w-full card-inset px-2.5 py-2 text-[12.5px] text-text-primary outline-none focus:border-accent"
                   />
                   {error && <p className="mb-2 text-[11.5px] leading-relaxed text-critical">{error}</p>}
                   <div className="flex gap-1.5">
@@ -143,7 +143,7 @@ export function WorkspaceSwitcher({
                       {busy ? tr("creating") : tr("create")}
                     </button>
                     <button onClick={() => { setCreating(false); setError(null); }}
-                            className="rounded-lg border border-border bg-surface-raised p-1.5 text-text-muted">
+                            className="card-inset p-1.5 text-text-muted">
                       <X size={13} />
                     </button>
                   </div>

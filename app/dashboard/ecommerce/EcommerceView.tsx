@@ -14,6 +14,7 @@ import {
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { MetricCard, type MetricTone } from "@/app/components/ui/MetricCard";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { TH, TD, TR, THEAD_ROW } from "@/app/components/ui/tableStyles";
 
 export interface ProductRow {
   id: string;
@@ -127,13 +128,13 @@ export function EcommerceView({
       <div className="reveal mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="mb-1 text-[13px] text-text-muted">{workspaceName}</div>
-          <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">{tr("title")}</h1>
+          <h1 className="page-title">{tr("title")}</h1>
           <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-text-muted">
             {tr("subtitle")}
           </p>
         </div>
 
-        <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2">
+        <div className="flex items-center gap-2 card px-3 py-2">
           <Store size={14} className={hasStoreConnection ? "text-verified" : "text-text-faint"} />
           {hasStoreConnection && storePlatform ? (
             <span className="text-[12.5px] text-text-primary">{tr("storeLinked", { store: STORE_LABEL[storePlatform] ?? storePlatform })}</span>
@@ -173,11 +174,11 @@ export function EcommerceView({
       </div>
 
       {/* المنتج الرابح */}
-      <section className="reveal card-shadow mb-6 overflow-hidden rounded-2xl border border-border bg-surface"
+      <section className="reveal card-shadow mb-6 overflow-hidden card"
                style={{ animationDelay: "150ms" }}>
         <div className="flex items-center gap-2 border-b border-border p-4">
           <Trophy size={16} className="text-verified" />
-          <h2 className="text-[14px] font-semibold text-text-primary">{tr("winner")}</h2>
+          <h2 className="section-title">{tr("winner")}</h2>
         </div>
 
         {winner ? (
@@ -240,7 +241,7 @@ export function EcommerceView({
                  style={{ animationDelay: "220ms" }}>
           <div className="flex items-center gap-2 border-b border-border p-4">
             <TrendingDown size={16} className="text-critical" />
-            <h2 className="text-[14px] font-semibold text-text-primary">{tr("losingProducts")}</h2>
+            <h2 className="section-title">{tr("losingProducts")}</h2>
             <span className="rounded-full bg-critical/12 px-2 py-0.5 font-mono text-[11px] font-medium text-critical">
               {losing.length}
             </span>
@@ -257,7 +258,7 @@ export function EcommerceView({
                     {num(p.totalProfit)} {currency}
                   </span>
                   <a href="/dashboard/pricing"
-                     className="flex items-center gap-1 rounded-xl border border-border bg-surface-raised px-3 py-1.5 text-[12px] text-text-primary no-underline">
+                     className="flex items-center gap-1 card-inset px-3 py-1.5 text-[12px] text-text-primary no-underline">
                     {tr("fixPricing")}
                     <ChevronLeft size={12} className="rtl:rotate-0 ltr:rotate-180" />
                   </a>
@@ -269,19 +270,19 @@ export function EcommerceView({
       )}
 
       {/* جدول المنتجات */}
-      <section className="reveal card-shadow overflow-hidden rounded-2xl border border-border bg-surface"
+      <section className="reveal card-shadow overflow-hidden card"
                style={{ animationDelay: "300ms" }}>
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
           <div className="flex items-center gap-2">
             <Boxes size={15} className="text-text-muted" />
-            <h2 className="text-[15px] font-semibold text-text-primary">{tr("allProducts")}</h2>
+            <h2 className="section-title">{tr("allProducts")}</h2>
             <span className="rounded-full bg-surface-raised px-2 py-0.5 font-mono text-[11.5px] text-text-muted">
               {filtered.length}
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <select value={verdict} onChange={(e) => setVerdict(e.target.value)}
-                    className="rounded-xl border border-border bg-surface-raised px-3 py-2 text-[12.5px] text-text-primary outline-none">
+                    className="card-inset px-3 py-2 text-[12.5px] text-text-primary outline-none">
               <option value="all">{tr("allStates")}</option>
               {Object.entries(VERDICT_META).map(([k, v]) => (
                 <option key={k} value={k}>{tr(v.key)}</option>
@@ -290,7 +291,7 @@ export function EcommerceView({
             <div className="relative">
               <Search size={14} className="absolute top-1/2 -translate-y-1/2 text-text-faint" style={{ insetInlineStart: 10 }} />
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tr("searchPlaceholder")}
-                     className="w-44 rounded-xl border border-border bg-surface-raised py-2 text-[12.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+                     className="w-44 card-inset py-2 text-[12.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
                      style={{ paddingInlineStart: 30, paddingInlineEnd: 10 }} />
             </div>
           </div>
@@ -299,9 +300,9 @@ export function EcommerceView({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[820px] border-collapse">
             <thead>
-              <tr className="border-b border-border">
+              <tr className={THEAD_ROW}>
                 {[tr("colProduct"), tr("colState"), tr("colSold"), tr("colReturns"), tr("colUnitProfit"), tr("colRealProfit"), tr("colStock")].map((h) => (
-                  <th key={h} className="px-4 py-3 text-start text-[11.5px] font-medium text-text-muted">{h}</th>
+                  <th key={h} className={TH}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -311,12 +312,12 @@ export function EcommerceView({
               ) : filtered.map((p) => {
                 const v = VERDICT_META[p.verdict];
                 return (
-                  <tr key={p.id} className="border-b border-border last:border-0 hover:bg-surface-raised/45">
-                    <td className="px-4 py-3.5">
+                  <tr key={p.id} className={TR}>
+                    <td className={TD}>
                       <div className="text-[13px] font-medium text-text-primary">{p.name}</div>
                       {p.sku && <div className="font-mono text-[11px] text-text-faint">{p.sku}</div>}
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className={TD}>
                       <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium"
                             style={{ background: `color-mix(in srgb, ${v.tone} 13%, transparent)`, color: v.tone }}>
                         {p.verdict === "WINNER" && <Trophy size={10} />}
@@ -371,7 +372,7 @@ export function EcommerceView({
 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
-    <span className="rounded-xl border border-border bg-surface-raised px-3 py-2">
+    <span className="card-inset px-3 py-2">
       <span className="block text-[10.5px] text-text-muted">{label}</span>
       <span className="mt-0.5 block font-mono text-[13px] font-medium"
             style={{ color: tone ?? "var(--text-primary)" }}>{value}</span>

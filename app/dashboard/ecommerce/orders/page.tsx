@@ -148,7 +148,7 @@ export default async function OrdersPage() {
 
       <SectionHeading hint={tr("recentHint")}>{tr("recent")}</SectionHeading>
 
-      <div className="card-shadow overflow-hidden rounded-2xl border border-border bg-surface">
+      <div className="card-shadow overflow-hidden card">
         <DataTable headers={[tr("colOrder"), tr("colCustomer"), tr("colDate"), tr("colValue"), tr("colState"), tr("colPayment"), tr("colRisk")]}>
           {quality.recent.map((o) => {
             const state = STATE_META[o.state] ?? STATE_META.PLACED;

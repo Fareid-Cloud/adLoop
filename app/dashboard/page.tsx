@@ -41,6 +41,7 @@ import { buildTodaySummary } from "@/lib/todaySummary";
 import { TodaySummaryCard } from "@/app/components/TodaySummaryCard";
 import { taskTitle } from "@/lib/taskTitle";
 import { itemTitle } from "@/lib/localizedRecord";
+import { costPerVerified } from "@/lib/kpiEngine";
 
 const AD_PLATFORMS = ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS", "SNAPCHAT_ADS"];
 
@@ -168,7 +169,7 @@ export default async function GlancePage({
     const cost = p._sum.cost ?? 0;
     const verified = p._sum.verifiedConversions ?? 0;
     const raw = p._sum.rawConversions ?? 0;
-    const cplV = verified > 0 ? Math.round((cost / verified) * 10) / 10 : null;
+    const cplV = costPerVerified(cost, verified);
     const prev: any = prevByPlatform.get(p.platform);
     const prevV = prev?.verifiedConversions ?? 0;
     const prevCplV = prevV > 0 ? (prev?.cost ?? 0) / prevV : 0;
@@ -298,7 +299,7 @@ export default async function GlancePage({
     <div className="mx-auto max-w-5xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">{tr("greeting", { name: firstName })}</h1>
+        <h1 className="page-title">{tr("greeting", { name: firstName })}</h1>
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         {/* نفس عدّاد صفحة صحة الحساب بحجم الرأس - كان سطراً رمادياً طويلاً
             بلا وزن بصري ("درجة الصحة — التتبّع وحده مُقاساً حتى الآن")، فلا
@@ -370,7 +371,7 @@ export default async function GlancePage({
 
           {/* هيرو طبقة الحقيقة - المعلن مقابل المتحقّق منه فعلاً */}
           <div className="mb-4 grid gap-3 lg:grid-cols-[1.4fr_1fr]">
-            <div className="rounded-2xl card-shadow border border-border bg-surface p-6">
+            <div className="card pad-lg">
               <div className="mb-4 text-[13px] font-medium text-text-muted">{tr("truthHero")}</div>
               <div className="flex flex-wrap items-end gap-8">
                 <div>
@@ -397,7 +398,7 @@ export default async function GlancePage({
             {/* العدّاد نسبة، والشريط أرقام مطلقة - متكاملان لا مكرّران.
                 `min-w-0` على الشريط ضروري: بدونه يرفض عنصر flex أن يضيق
                 عن محتواه فيدفع العدّاد خارج البطاقة على الشاشات الضيّقة. */}
-            <div className="flex items-center gap-5 rounded-2xl card-shadow border border-border bg-surface p-6">
+            <div className="flex items-center gap-5 card pad-lg">
               <TrackingAccuracyGauge verified={totalVerified} raw={totalRaw} locale={locale} />
               <div className="min-w-0 flex-1">
                 <ReportedVsActualBars reported={totalRaw} actual={totalVerified} locale={locale} />
@@ -409,7 +410,7 @@ export default async function GlancePage({
               مقروءاً على محور الزمن: اللقطة تقول «كم الفارق الآن»، والمنحنى
               يقول «يتّسع أم يضيق». كان أسفل الصفحة كلها حيث لا يراه أحد. */}
           {trendData.length > 1 && (
-            <div className="mb-4 rounded-2xl card-shadow border border-border bg-surface p-6">
+            <div className="mb-4 card pad-lg">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[13px] text-text-muted">{tr("trend14")}</span>
                 {/* مفتاح الألوان: منحنيان بلا تسمية يتركان القارئ يخمّن
@@ -485,7 +486,7 @@ export default async function GlancePage({
               <a
                 key={item.id}
                 href="/dashboard/actions"
-                className="flex items-center gap-2.5 rounded-xl card-shadow border border-border bg-surface px-3.5 py-3 text-[13.5px] text-text-primary no-underline transition-colors hover:bg-surface-raised"
+                className="flex items-center gap-2.5 card px-3.5 py-3 text-[13.5px] text-text-primary no-underline transition-colors hover:bg-surface-raised"
               >
                 <PriorityDot priority={item.severity} />
                 <span>{itemTitle(locale, item)}</span>
@@ -504,7 +505,7 @@ export default async function GlancePage({
             <a
               key={task.id}
               href="/dashboard/diagnostics"
-              className="flex items-center gap-2.5 rounded-xl card-shadow border border-border bg-surface px-3.5 py-3 text-[13.5px] text-text-primary no-underline transition-colors hover:bg-surface-raised"
+              className="flex items-center gap-2.5 card px-3.5 py-3 text-[13.5px] text-text-primary no-underline transition-colors hover:bg-surface-raised"
             >
               <PriorityDot priority={task.priority} />
               <span>{taskTitle(locale, task)}</span>

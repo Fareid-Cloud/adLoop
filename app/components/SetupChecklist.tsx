@@ -26,10 +26,10 @@ export function SetupChecklist({
   const pct = Math.round((progress.completedCount / progress.total) * 100);
 
   return (
-    <section className="card-shadow mb-6 overflow-hidden rounded-2xl border border-border bg-surface">
+    <section className="card-shadow mb-6 overflow-hidden card">
       <div className="border-b border-border p-5">
         <div className="mb-2 flex items-center justify-between gap-3">
-          <h2 className="text-[15px] font-semibold text-text-primary">
+          <h2 className="section-title">
             {ar ? t(locale, "ui.setupTitle") : "Finish setting up"}
           </h2>
           <span className="font-mono text-[13px] text-text-muted">

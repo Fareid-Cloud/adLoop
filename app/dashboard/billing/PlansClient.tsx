@@ -80,7 +80,7 @@ export function PlansClient({
         <h1 className="text-[30px] font-semibold tracking-tight text-text-primary">{tr("title")}</h1>
         <p className="mx-auto mt-2 max-w-xl text-[13.5px] leading-relaxed text-text-muted">{tr("subtitle")}</p>
 
-        <div className="mt-5 inline-flex items-center gap-1 rounded-xl border border-border bg-surface p-1">
+        <div className="mt-5 inline-flex items-center gap-1 card p-1">
           {(["monthly", "yearly"] as const).map((c) => (
             <button
               key={c}
@@ -151,14 +151,14 @@ export function PlansClient({
       <div className="mt-8">
         <button
           onClick={() => setShowCompare((v) => !v)}
-          className="mx-auto flex items-center gap-2 rounded-xl border border-border bg-surface px-5 py-2.5 text-[13px] font-medium text-text-primary"
+          className="mx-auto flex items-center gap-2 card px-5 py-2.5 text-[13px] font-medium text-text-primary"
         >
           {tr("compareAll")}
           <ChevronDown size={15} className={`transition-transform ${showCompare ? "rotate-180" : ""}`} />
         </button>
 
         {showCompare && (
-          <div className="card-shadow mt-4 overflow-x-auto rounded-2xl border border-border bg-surface">
+          <div className="card-shadow mt-4 overflow-x-auto card">
             <table className="w-full min-w-[720px] text-start text-[13px]">
               <thead>
                 <tr className="border-b border-border">
@@ -324,7 +324,7 @@ function CreditsModal({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="pop-shadow w-full max-w-md rounded-2xl border border-border bg-surface p-5">
+      <div onClick={(e) => e.stopPropagation()} className="pop-shadow w-full max-w-md card pad-md">
         <div className="mb-1 flex items-center justify-between">
           <h2 className="flex items-center gap-1.5 text-[16px] font-semibold text-text-primary">
             <Zap size={16} className="text-accent" /> {tr("buyCredits")}
@@ -333,7 +333,7 @@ function CreditsModal({
         </div>
         <p className="mb-4 text-[12.5px] leading-relaxed text-text-muted">{tr("creditsHint")}</p>
 
-        <div className="mb-3 grid grid-cols-3 gap-2">
+        <div className="mb-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {CREDIT_PACKS.map((p) => (
             <button
               key={p.credits}
@@ -355,7 +355,7 @@ function CreditsModal({
           max={MAX_CUSTOM_CREDITS}
           value={credits}
           onChange={(e) => setCredits(Number(e.target.value))}
-          className="mb-3 w-full rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-[14px] tabular-nums text-text-primary outline-none focus:border-accent"
+          className="mb-3 w-full card-inset px-3 py-2.5 text-[14px] tabular-nums text-text-primary outline-none focus:border-accent"
         />
 
         {/* المعادلة صريحة: كم كريدت = كم بالعملة، تتغيّر مع كل رقم */}

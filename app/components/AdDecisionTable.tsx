@@ -28,7 +28,7 @@ export function AdDecisionTable({
 }) {
   if (decisions.length === 0) {
     return (
-      <p className="rounded-xl border border-border bg-surface p-4 text-xs text-text-muted">
+      <p className="card pad-md text-xs text-text-muted">
         {t(locale, "adDecision.empty")}
       </p>
     );
@@ -45,7 +45,7 @@ export function AdDecisionTable({
       {/* مجموعة واحدة مقسّمة بفواصل، لا ثلاث شارات عائمة: الأرقام الثلاثة
           تقسيم لمجموع واحد فتُقرأ معاً. **عرض لا فلتر** - جعلها قابلة
           للنقر كان سيُخفي صفوفاً دون أن يُدرك المستخدم أنه أخفاها. */}
-      <div className="mb-3 inline-flex flex-wrap items-stretch overflow-hidden rounded-xl border border-border bg-surface">
+      <div className="mb-3 inline-flex flex-wrap items-stretch overflow-hidden card">
         <Summary icon={TrendingUp} count={counts.SCALE} label={t(locale, "adDecision.scale")} tone="success" />
         <Summary icon={PauseCircle} count={counts.PAUSE} label={t(locale, "adDecision.pause")} tone="danger" />
         <Summary icon={MinusCircle} count={counts.HOLD} label={t(locale, "adDecision.hold")} tone="muted" />

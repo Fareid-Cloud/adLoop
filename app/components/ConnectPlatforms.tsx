@@ -41,13 +41,13 @@ function Card({
 
   return (
     <div
-      className="card-shadow relative overflow-hidden rounded-2xl border border-border bg-surface p-5 transition-all hover:-translate-y-0.5"
+      className="card-shadow relative overflow-hidden card pad-md transition-all hover:-translate-y-0.5"
       style={{ ["--pc" as string]: meta.color } as React.CSSProperties}
     >
       <span className="absolute inset-x-0 top-0 h-1" style={{ background: meta.color }} />
       <div className="mb-3 flex items-center gap-2.5">
         <PlatformLogo platform={s.platform} size={26} />
-        <span className="text-[15px] font-semibold text-text-primary">{meta.label}</span>
+        <span className="section-title">{meta.label}</span>
         {s.connected && (
           <span className="ms-auto inline-flex items-center gap-1 rounded-full bg-verified/12 px-2 py-0.5 text-[11px] font-medium text-verified">
             <Check size={11} /> {tr("connected")}
@@ -74,7 +74,7 @@ function Card({
             connectedPlatforms={[s.platform as AdPlatform]}
             locale={locale}
             label={tr("selectCampaigns")}
-            className="card-shadow inline-flex w-full items-center justify-center rounded-xl border border-border bg-surface-raised py-2.5 text-sm font-medium text-text-primary"
+            className="card-shadow inline-flex w-full items-center justify-center card-inset py-2.5 text-sm font-medium text-text-primary"
           />
         </>
       ) : (
@@ -86,7 +86,7 @@ function Card({
             connectedPlatforms={[s.platform as AdPlatform]}
             locale={locale}
             label={tr("addAccount")}
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-surface-raised py-2 text-[12.5px] font-medium text-text-muted"
+            className="inline-flex w-full items-center justify-center gap-1.5 card-inset py-2 text-[12.5px] font-medium text-text-muted"
           />
         </>
       )}
@@ -114,7 +114,7 @@ export function ConnectPlatforms({
 
   return (
     <section className="mb-6">
-      <h2 className="mb-1 text-[15px] font-semibold text-text-primary">
+      <h2 className="mb-1 section-title">
         {title ?? t(locale, "setup.connectTitle")}
       </h2>
       <p className="mb-3 text-[13px] text-text-muted">

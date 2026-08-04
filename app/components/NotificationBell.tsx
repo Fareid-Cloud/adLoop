@@ -116,7 +116,7 @@ export function NotificationBell({ locale = "ar" }: { locale?: Locale }) {
       </button>
 
       {open && (
-        <div className="pop-shadow absolute end-0 top-11 z-50 max-h-[70vh] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl card-shadow border border-border bg-surface">
+        <div className="pop-shadow absolute end-0 top-11 z-50 max-h-[70vh] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto card">
           <div className="sticky top-0 flex items-center justify-between border-b border-border bg-surface px-4 py-3">
             <span className="text-sm font-semibold text-text-primary">{t(locale, "notif.title")}</span>
             {unreadCount > 0 && (

@@ -55,7 +55,7 @@ export default async function ActionsPage() {
     <div className="mx-auto max-w-4xl pb-10">
       <div className="mb-5">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="text-[28px] font-semibold tracking-tight text-text-primary">{t(locale, "actions.title")}</h1>
+        <h1 className="page-title">{t(locale, "actions.title")}</h1>
         <p className="mt-1 text-[13px] text-text-muted">{t(locale, "actions.subtitle")}</p>
       </div>
 

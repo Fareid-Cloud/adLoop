@@ -59,7 +59,7 @@ export default async function DeviceGeoPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.geoTitle")}</h1>
+      <h1 className="mb-2 page-title">{t(locale, "campPages.geoTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">
         {t(locale, "campPages.geoIntro")}
       </p>

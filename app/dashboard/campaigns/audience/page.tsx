@@ -59,7 +59,7 @@ export default async function AudiencePage({
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.audTitle")}</h1>
+      <h1 className="mb-2 page-title">{t(locale, "campPages.audTitle")}</h1>
       <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
 
       <div className="mb-6 rounded-2xl bg-gap/10 p-4 text-xs text-gap">

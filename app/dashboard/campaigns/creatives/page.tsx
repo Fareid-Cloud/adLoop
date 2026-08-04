@@ -16,6 +16,7 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds } from "@/lib/dateRange";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { costPerVerified } from "@/lib/kpiEngine";
 
 export default async function CreativesPage({
   searchParams,
@@ -54,7 +55,10 @@ export default async function CreativesPage({
   for (const row of dailySnapshotsForFatigue) {
     if (!row.verifiedConversions || row.verifiedConversions === 0) continue; // مفيش CPL نقدر نحسبه من غير تحويلات
     const arr = dailyCplByAdId.get(row.adId) ?? [];
-    arr.push({ date: row.date.toISOString().slice(0, 10), value: row.cost / row.verifiedConversions });
+    // 🔴 كانت قسمة بلا حارس: إعلان أنفق ولم يتحقّق له عميل ينتج
+    // `Infinity` يدخل سلسلة الاتجاه ويسمّم كلّ حساب تعب مبنيّ عليها.
+    const cpl = costPerVerified(row.cost, row.verifiedConversions);
+    if (cpl !== null) arr.push({ date: row.date.toISOString().slice(0, 10), value: cpl });
     dailyCplByAdId.set(row.adId, arr);
   }
   const cplFatiguedAdIds = new Set<string>();
@@ -66,7 +70,7 @@ export default async function CreativesPage({
     return (
       <div className="mx-auto max-w-4xl">
         <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="mb-6 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.crTitle")}</h1>
+        <h1 className="mb-6 page-title">{t(locale, "campPages.crTitle")}</h1>
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <EmptyState
           title={t(locale, "campPages.crNone")}
@@ -96,7 +100,7 @@ export default async function CreativesPage({
   return (
     <div className="mx-auto max-w-6xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-6 text-[26px] font-semibold text-text-primary">{tr("title")}</h1>
+      <h1 className="mb-6 page-title">{tr("title")}</h1>
 
       <SectionTitle>{t(locale, "campPages.crDecision")}</SectionTitle>
       <p className="mb-3 text-xs text-text-faint">
@@ -152,7 +156,7 @@ function CreativeGrid({
   }
 
   return (
-    <div className="mb-4 grid grid-cols-3 gap-2">
+    <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
       {items.map((item) => (
         <div key={item.adId} className="rounded-2xl bg-surface p-3">
           {item.headline && (

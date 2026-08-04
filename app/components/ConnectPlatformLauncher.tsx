@@ -35,9 +35,9 @@ export function ConnectPlatformLauncher({
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
              onClick={() => setOpen(false)}>
           <div onClick={(e) => e.stopPropagation()}
-               className="pop-shadow w-full max-w-sm rounded-2xl border border-border bg-surface p-5">
+               className="pop-shadow w-full max-w-sm card pad-md">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-[15px] font-semibold text-text-primary">
+              <h3 className="section-title">
                 {ar ? t(locale, "ui.pickPlatformToConnect") : "Choose a platform"}
               </h3>
               <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-text-muted hover:bg-surface-raised">
@@ -54,7 +54,7 @@ export function ConnectPlatformLauncher({
             <div className="flex flex-col gap-2">
               {PLATFORMS.map((p) => (
                 <a key={p.id} href={p.start}
-                   className="flex items-center gap-3 rounded-xl border border-border bg-surface-raised p-3 no-underline hover:border-accent">
+                   className="flex items-center gap-3 card-inset pad-sm no-underline hover:border-accent">
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl"
                         style={{ background: `${p.color}1A` }}>
                     <PlatformLogo platform={p.id} size={19} />

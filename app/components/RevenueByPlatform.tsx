@@ -48,7 +48,7 @@ export function RevenueByPlatform({
 
   if (withRevenue.length === 0) {
     return (
-      <div className="card-shadow rounded-2xl border border-border bg-surface p-4">
+      <div className="card pad-md">
         <div className="mb-2 flex items-center gap-2 text-[13px] font-medium text-text-muted">
           <ShoppingBag size={15} />
           {tr("title")}
@@ -66,7 +66,7 @@ export function RevenueByPlatform({
   const totalCost = sorted.reduce((s, r) => s + r.cost, 0);
 
   return (
-    <div className="card-shadow rounded-2xl border border-border bg-surface p-4">
+    <div className="card pad-md">
       <div className="mb-1 flex items-center justify-between gap-2">
         <span className="flex items-center gap-2 text-[13px] font-medium text-text-muted">
           <ShoppingBag size={15} />

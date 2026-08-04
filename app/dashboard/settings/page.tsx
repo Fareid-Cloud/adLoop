@@ -29,6 +29,7 @@ export default async function SettingsPage() {
         themeMode: user.themeMode,
         timezone: user.timezone,
         businessScale: user.businessScale,
+        marketingOptOut: user.marketingOptOut,
       }}
       // تعيين صريح بدل تمرير الكائن كاملاً: مساحة العمل صارت تحمل توكنات
       // مشفّرة (CAPI)، وتمريرها كما هي يضعها في حزمة العميل بلا داعٍ.
@@ -39,6 +40,7 @@ export default async function SettingsPage() {
         tiktokCapiToken: undefined,
         hasMetaCapiToken: !!w.metaCapiToken,
         hasTiktokCapiToken: !!w.tiktokCapiToken,
+        emailEnabled: !!process.env.RESEND_API_KEY,
       }))}
       connectedPlatforms={connectedPlatforms.map((c: { platform: string; connectedAt: Date; expiresAt: Date | null }) => ({
         platform: c.platform,

@@ -133,7 +133,7 @@ export function OnboardingFlow({
 
         {/* الخطوة 2 - اختيار الحملات (تظهر فقط بعد ربط منصة) */}
         {step1Done && (
-          <div className="card-shadow mb-3 rounded-2xl border border-border bg-surface p-4">
+          <div className="card-shadow mb-3 card pad-md">
             {step2Done ? (
               <div className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-2 text-[13.5px] font-medium text-verified">
@@ -168,7 +168,7 @@ export function OnboardingFlow({
 
         {/* الخطوة 3 - مزامنة فورية، في مكانها لا في الإعدادات */}
         {step1Done && step2Done && (
-          <div className="card-shadow mb-3 rounded-2xl border border-border bg-surface p-4">
+          <div className="card-shadow mb-3 card pad-md">
             <div className="mb-2 text-[13.5px] text-text-primary">
               {ar ? "اسحب بياناتك الآن" : "Pull your data now"}
             </div>
@@ -180,7 +180,7 @@ export function OnboardingFlow({
             <SyncNowButton locale={locale}
               workspaceId={workspaceId}
               label={ar ? "مزامنة الآن" : "Sync now"}
-              className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-surface-raised px-4 py-2.5 text-[13px] font-medium text-text-primary disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-1.5 card-inset px-4 py-2.5 text-[13px] font-medium text-text-primary disabled:opacity-60"
             />
           </div>
         )}

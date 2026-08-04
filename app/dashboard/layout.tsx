@@ -30,6 +30,10 @@ import { DemoBadge } from "@/app/components/DemoBadge";
 import { getMonthlyAiUsage } from "@/lib/aiRateLimit";
 import { ThemeModeToggle } from "@/app/components/ThemeModeToggle";
 import { getNavBadges } from "@/lib/navBadges";
+import { LegalLinks } from "@/app/components/LegalLinks";
+import { MobileNavButton } from "@/app/components/MobileNavButton";
+import { isDemoExpired } from "@/lib/demo";
+import { DemoExpiredGate } from "@/app/components/DemoExpiredGate";
 // next/font/google بيحمّل ملف الخط فعلياً وقت الـ build ويربطه بمتغير CSS -
 // ده الفرق عن مجرد كتابة اسم الخط في font-family من غير ما يكون مستورد
 // فعلياً (المشكلة اللي حصلت في المعاينة السابقة)
@@ -154,6 +158,20 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     ? Math.max(0, Math.ceil((demoWs.demoExpiresAt.getTime() - Date.now()) / 86_400_000))
     : null;
 
+  // 🔴 العدّاد كان يصل إلى صفر ولا يحدث شيء: `isDemoExpired` مبنيّة ولا
+  // تُستدعى من أيّ مكان، فالعرض التجريبي مفتوح إلى الأبد. أرقام أمثلة
+  // تبقى معروضة كأنها حقيقية هي أسوأ حالة ممكنة في منتج جوهره التحقّق.
+  if (demoWs && activeWorkspace && (await isDemoExpired(activeWorkspace.id))) {
+    return (
+      <DemoExpiredGate
+        locale={locale}
+        accent={accent}
+        mode={mode}
+        fontVars={`${display.variable} ${numeric.variable}`}
+      />
+    );
+  }
+
   // حالة الربط تُقرأ فقط حين تظهر البوابة فعلاً - استعلامان لكل تحميل
   // صفحة لمستخدم أنهى الإعداد هدر بلا مقابل.
   let onboardingState: {
@@ -217,7 +235,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         {/* ارتفاع ثابت ٦٨ بكسل مطابق لصفّ الشعار في القائمة الجانبية، فيصير
             الحدّان السفليّان خطّاً واحداً متّصلاً. الارتفاع الحرّ السابق كان
             يتبع محتواه فينكسر الخطّ عند حدّ العمودين. */}
-        <div className="sticky top-0 z-40 mb-5 flex h-[68px] items-center gap-3 border-b border-border bg-bg px-10">
+        <div className="sticky top-0 z-40 mb-5 flex h-[68px] items-center gap-2 border-b border-border bg-bg px-4 sm:gap-3 sm:px-6 lg:px-10">
+          <MobileNavButton locale={locale} />
           <TopSearch locale={locale} />
           {demoWs && (
             <DemoBadge
@@ -252,7 +271,13 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           )}
           </div>
         </div>
-        <div className="px-10 pb-10">{children}</div>
+        <div className="px-4 pb-10 sm:px-6 lg:px-10">{children}</div>
+
+        {/* تذييل قانوني في كلّ صفحة داخل اللوحة: الصفحات الثلاث كانت
+            مبنيّة بلا رابط واحد إليها في المنتج كلّه. */}
+        <footer className="border-t border-border px-4 py-6 sm:px-6 lg:px-10">
+          <LegalLinks locale={locale} variant="inline" />
+        </footer>
       </main>
       </div>
       {/* حُذف شريط الديمو الذي كان هنا: كان يحتلّ عرض الشاشة أسفل الرأس

@@ -51,7 +51,7 @@ export default async function AttributionPathPage({
   if (conversions.length === 0) {
     return (
       <div className="mx-auto max-w-2xl">
-        <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.pathTitle")}</h1>
+        <h1 className="mb-2 page-title">{t(locale, "campPages.pathTitle")}</h1>
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <EmptyState title={t(locale, "campPages.pathNoneTitle")} description={t(locale, "campPages.pathNoneBody")} />
       </div>
@@ -96,7 +96,7 @@ export default async function AttributionPathPage({
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 text-[26px] font-semibold text-text-primary">{t(locale, "campPages.pathTitle")}</h1>
+      <h1 className="mb-2 page-title">{t(locale, "campPages.pathTitle")}</h1>
       <p className="mb-6 text-xs text-text-faint">{t(locale, "campPages.pathIntro")}</p>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2">

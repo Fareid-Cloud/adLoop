@@ -235,7 +235,7 @@ function ScanResults({ report, scores, scanId, locale }: { report: any; scores: 
       </div>
 
       {/* الدرجات العامة */}
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2">
         <ScoreCard label={tr("overall")} score={scores.overallScore} large />
         <ScoreCard label={tr("technicalSeo")} score={scores.technicalSEOScore} />
         <ScoreCard label={tr("domainTrust")} score={scores.domainTrustScore} />
@@ -252,7 +252,7 @@ function ScanResults({ report, scores, scanId, locale }: { report: any; scores: 
       {primary.performance && (
         <div className="rounded-2xl bg-surface p-4">
           <div className="mb-3 text-sm font-medium text-text-primary">{tr("coreVitals")}</div>
-          <div className="grid grid-cols-4 gap-2 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-center">
             <VitalStat label="LCP" value={primary.performance.coreWebVitals.lcp} unit={tr("unitSec")} good={2.5} />
             <VitalStat label="CLS" value={primary.performance.coreWebVitals.cls} unit="" good={0.1} />
             <VitalStat label="FCP" value={primary.performance.coreWebVitals.fcp} unit={tr("unitSec")} good={1.8} />
@@ -320,7 +320,7 @@ function ScanResults({ report, scores, scanId, locale }: { report: any; scores: 
       {competitorComparison && (
         <Section title={tr("competitorCompare")}>
           <p className="text-sm text-text-primary">{competitorComparison}</p>
-          <div className="mt-2 grid grid-cols-2 gap-2">
+          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
             {report.competitors.map((c: any, i: number) => (
               <div key={i} className="rounded-xl bg-surface-raised p-3">
                 <div className="truncate text-xs text-text-faint">{c.url}</div>

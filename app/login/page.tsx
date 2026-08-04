@@ -6,8 +6,17 @@ import { redirect } from "next/navigation";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { LoginForm } from "./LoginForm";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
+  // مسار داخلي فقط: قبول أيّ قيمة يجعل الرابط أداة تحويل إلى موقع خارجي
+  // بعد تسجيل دخول ناجح (open redirect).
+  const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+
   const user = await getSessionUserFromCookies();
-  if (user) redirect("/dashboard");
-  return <LoginForm />;
+  if (user) redirect(safeNext);
+  return <LoginForm nextPath={safeNext} />;
 }
