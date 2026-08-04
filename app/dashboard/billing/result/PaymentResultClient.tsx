@@ -86,7 +86,7 @@ export function PaymentResultClient({
           </p>
           <Link
             href="/dashboard"
-            className="mt-6 flex items-center gap-1.5 rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-medium text-white no-underline"
+            className="btn btn-primary mt-6"
           >
             {tr("goDashboard")}
             <ArrowLeft size={15} className="rtl:rotate-0 ltr:rotate-180" />
@@ -96,14 +96,14 @@ export function PaymentResultClient({
 
       {phase === "failed" && (
         <>
-          <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-critical/12">
+          <span className="btn btn-danger mb-4 h-14 w-14 rounded-full bg-critical/12">
             <XCircle size={30} className="text-critical" />
           </span>
           <h1 className="page-title">{tr("failedTitle")}</h1>
           <p className="mt-2 text-[13.5px] leading-relaxed text-text-muted">{tr("failedBody")}</p>
           <Link
             href="/dashboard/billing"
-            className="mt-6 rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-medium text-white no-underline"
+            className="btn btn-primary mt-6"
           >
             {tr("retry")}
           </Link>
@@ -123,7 +123,7 @@ export function PaymentResultClient({
           </p>
           <Link
             href="/dashboard/billing"
-            className="mt-6 card px-5 py-2.5 text-[13.5px] text-text-primary no-underline"
+            className="btn btn-secondary mt-6"
           >
             {tr("backToPlans")}
           </Link>

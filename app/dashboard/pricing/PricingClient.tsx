@@ -110,7 +110,7 @@ export function PricingClient({
       <div className="mb-4 flex justify-end">
         <button
           onClick={() => setShowForm((s) => !s)}
-          className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-xs text-white"
+          className="btn btn-primary btn-sm rounded-full"
         >
           <Plus size={14} />
           {editingId ? tr("edit") : tr("new")}
@@ -173,7 +173,7 @@ export function PricingClient({
           <button
             type="submit"
             disabled={saving}
-            className="mt-3 rounded-full bg-accent px-4 py-1.5 text-xs text-white disabled:opacity-50"
+            className="btn btn-primary btn-sm mt-3 rounded-full"
           >
             {saving ? tr("adding") : tr("add")}
           </button>

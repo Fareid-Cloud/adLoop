@@ -134,7 +134,7 @@ export function SidebarNav({
           href="/dashboard"
           className={`flex w-full items-center gap-2 no-underline ${collapsed ? "justify-center px-0" : "px-2"}`}
         >
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent text-white">
+          <span className="btn btn-primary h-7 w-7 shrink-0">
             <ListChecks size={16} />
           </span>
           {!collapsed && (
@@ -167,7 +167,7 @@ export function SidebarNav({
               <div className="px-2.5 py-2 text-[13px] text-text-faint">{t(locale, "sidebar.noResults")}</div>
             ) : (
               searchResults.map((r) => (
-                <a key={r.href} href={r.href} className="flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13.5px] text-text-muted no-underline transition-colors hover:bg-surface-raised hover:text-text-primary">
+                <a key={r.href} href={r.href} className="btn btn-secondary py-[7px]">
                   {r.platform ? <PlatformLogo platform={r.platform} size={15} /> : <Search size={14} className="opacity-60" />}
                   <span className="truncate">{r.text}</span>
                 </a>
@@ -292,7 +292,7 @@ export function SidebarNav({
         <button
           onClick={toggleCollapse}
           title={collapsed ? (ar ? t(locale, "sidebar.expandMenu") : "Expand") : (ar ? t(locale, "sidebar.collapseMenu") : "Collapse")}
-          className="mt-2 flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13.5px] text-text-faint transition-colors hover:bg-surface-raised hover:text-text-primary"
+          className="btn btn-secondary mt-2 py-[7px] text-text-faint"
         >
           {collapsed ? <PanelLeftOpen size={16} strokeWidth={1.75} /> : <PanelLeftClose size={16} strokeWidth={1.75} />}
           {!collapsed && <span>{ar ? t(locale, "sidebar.collapseMenu") : "Collapse"}</span>}

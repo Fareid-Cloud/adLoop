@@ -23,14 +23,14 @@ export function ReportActions({ workspaceId, locale = "ar" }: { workspaceId: str
     <div className="no-print flex gap-2">
       <button
         onClick={handleShareLink}
-        className="flex items-center gap-1.5 rounded-full bg-surface px-4 py-1.5 text-xs text-text-muted hover:text-text-primary"
+        className="btn btn-ghost btn-sm"
       >
         <Link2 size={14} />
         {copied ? t(locale, "ui.copied") : t(locale, "ui.shareLink")}
       </button>
       <a
         href={`/api/workspaces/${workspaceId}/export-csv`}
-        className="flex items-center gap-1.5 rounded-full bg-surface px-4 py-1.5 text-xs text-text-muted no-underline hover:text-text-primary"
+        className="btn btn-ghost btn-sm"
       >
         <Download size={14} />
         {t(locale, "ui.export")} CSV

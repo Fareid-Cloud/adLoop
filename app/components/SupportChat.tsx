@@ -106,7 +106,7 @@ export function SupportChat({
             الاسم الافتراضي من القاموس، والتمرير يبقى متاحاً لمن يريده. */}
         <span className="truncate">{label ?? tr("sidebarLabel")}</span>
         {unread > 0 && (
-          <span className="ms-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-critical px-1 text-[10px] font-bold text-white">{unread}</span>
+          <span className="btn btn-danger ms-auto h-4 min-w-4 rounded-full font-bold">{unread}</span>
         )}
       </button>
     );
@@ -182,7 +182,7 @@ export function SupportChat({
             {thread ? (
               <div className="flex items-center gap-2">
                 <input className={INPUT} placeholder={tr("replyPlaceholder")} value={reply} onChange={(e) => setReply(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendReply()} />
-                <button onClick={sendReply} disabled={busy} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-white disabled:opacity-50"><Send size={15} /></button>
+                <button onClick={sendReply} disabled={busy} className="btn btn-primary btn-icon"><Send size={15} /></button>
               </div>
             ) : (
               <div className="flex items-center justify-between gap-2">
@@ -193,10 +193,10 @@ export function SupportChat({
                   <button
                     onClick={() => setStep(step + 1)}
                     disabled={(step === 0 && (!form.name.trim() || !form.email.trim())) || (step === 1 && !form.subject.trim())}
-                    className="rounded-xl bg-accent px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
+                    className="btn btn-primary"
                   >{tr("next")}</button>
                 ) : (
-                  <button onClick={submitIntake} disabled={busy || !form.text.trim()} className="rounded-xl bg-accent px-5 py-2 text-sm font-medium text-white disabled:opacity-50">
+                  <button onClick={submitIntake} disabled={busy || !form.text.trim()} className="btn btn-primary">
                     {busy ? tr("sending") : tr("send")}
                   </button>
                 )}
@@ -205,7 +205,7 @@ export function SupportChat({
           </div>
         </div>
       ) : (
-        <button onClick={() => setOpen(true)} className="relative flex h-12 w-12 items-center justify-center rounded-full bg-accent text-white shadow-lg transition-transform hover:scale-105">
+        <button onClick={() => setOpen(true)} className="btn btn-primary relative h-12 w-12 rounded-full shadow-lg hover:scale-105">
           <MessageCircle size={20} />
           {unread > 0 && <span className="absolute -end-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-critical px-1 text-[10px] font-bold text-white">{unread}</span>}
         </button>

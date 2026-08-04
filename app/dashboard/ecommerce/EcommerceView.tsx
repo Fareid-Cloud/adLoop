@@ -242,7 +242,7 @@ export function EcommerceView({
           <div className="flex items-center gap-2 border-b border-border p-4">
             <TrendingDown size={16} className="text-critical" />
             <h2 className="section-title">{tr("losingProducts")}</h2>
-            <span className="rounded-full bg-critical/12 px-2 py-0.5 font-mono text-[11px] font-medium text-critical">
+            <span className="btn btn-danger rounded-full bg-critical/12 font-mono text-critical">
               {losing.length}
             </span>
           </div>
@@ -258,7 +258,7 @@ export function EcommerceView({
                     {num(p.totalProfit)} {currency}
                   </span>
                   <a href="/dashboard/pricing"
-                     className="flex items-center gap-1 card-inset px-3 py-1.5 text-[12px] text-text-primary no-underline">
+                     className="btn btn-secondary btn-sm">
                     {tr("fixPricing")}
                     <ChevronLeft size={12} className="rtl:rotate-0 ltr:rotate-180" />
                   </a>

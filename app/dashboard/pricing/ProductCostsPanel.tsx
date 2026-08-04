@@ -138,7 +138,7 @@ export function ProductCostsPanel({
           <button
             onClick={pull}
             disabled={busy !== null}
-            className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-accent py-2 text-[12.5px] font-medium text-white disabled:opacity-50"
+            className="btn btn-primary btn-block"
           >
             {busy === "sync" ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
             {busy === "sync" ? tr("pulling") : tr("pull")}

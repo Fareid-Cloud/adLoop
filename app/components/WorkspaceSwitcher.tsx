@@ -139,7 +139,7 @@ export function WorkspaceSwitcher({
                   {error && <p className="mb-2 text-[11.5px] leading-relaxed text-critical">{error}</p>}
                   <div className="flex gap-1.5">
                     <button onClick={create} disabled={busy || !name.trim()}
-                            className="flex-1 rounded-lg bg-accent px-2 py-1.5 text-[12px] font-medium text-white disabled:opacity-45">
+                            className="btn btn-primary btn-sm flex-1">
                       {busy ? tr("creating") : tr("create")}
                     </button>
                     <button onClick={() => { setCreating(false); setError(null); }}
@@ -159,7 +159,7 @@ export function WorkspaceSwitcher({
                     {tr("limitReached", { limit: limit === 1 ? tr("limitOne") : tr("limitN", { n: limit }) })}
                   </p>
                   <a href="/dashboard/billing"
-                     className="block rounded-lg bg-accent px-2.5 py-1.5 text-center text-[12px] font-medium text-white no-underline">
+                     className="btn btn-primary btn-sm block text-center">
                     {tr("upgrade")}
                   </a>
                 </div>

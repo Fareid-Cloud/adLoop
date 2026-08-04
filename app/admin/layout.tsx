@@ -25,7 +25,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <div className="mx-auto max-w-5xl">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-critical/15 px-3 py-1 text-xs font-medium text-critical">
+            <span className="btn btn-danger btn-sm rounded-full bg-critical/15 text-critical">
               لوحة المالك
             </span>
             <span className="text-xs text-text-faint">ليست جزءاً من واجهة العميل</span>

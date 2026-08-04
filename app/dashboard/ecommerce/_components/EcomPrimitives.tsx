@@ -119,7 +119,7 @@ export function RecommendedActions({
               {a.href && (
                 <Link
                   href={a.href}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-2 text-[12.5px] font-medium text-text-primary no-underline transition-colors hover:bg-surface-raised"
+                  className="btn btn-secondary btn-sm shrink-0"
                 >
                   {a.hrefLabel ?? t(locale, "common.open")}
                   <ArrowLeft size={13} />

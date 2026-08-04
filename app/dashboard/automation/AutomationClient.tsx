@@ -54,7 +54,7 @@ export function AutomationClient({ workspaceId, rules, locale = "ar" }: { worksp
       <div className="mb-4 flex justify-end">
         <button
           onClick={() => setShowTemplates((s) => !s)}
-          className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-xs text-white"
+          className="btn btn-primary btn-sm rounded-full"
         >
           <Plus size={14} />
           {tr("newRule")}

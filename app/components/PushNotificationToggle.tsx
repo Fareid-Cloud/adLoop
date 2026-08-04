@@ -62,7 +62,7 @@ export function PushNotificationToggle({ locale = "ar" }: { locale?: Locale }) {
   return (
     <button
       onClick={handleEnable}
-      className="flex items-center gap-1.5 rounded-full bg-surface-raised px-3.5 py-1.5 text-xs text-text-primary"
+      className="btn btn-secondary btn-sm"
     >
       <Bell size={13} /> {t(locale, "push.enable")}
     </button>

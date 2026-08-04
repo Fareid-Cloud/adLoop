@@ -72,7 +72,7 @@ export function DemoBadge({
 
           <Link
             href="/dashboard/billing"
-            className="flex items-center justify-between gap-2 rounded-xl bg-accent px-3.5 py-2.5 text-[12.5px] font-medium text-white no-underline transition-opacity hover:opacity-90"
+            className="btn btn-primary justify-between"
           >
             {tr("upgrade")}
             <ArrowLeft size={14} className="ltr:rotate-180" />
@@ -81,7 +81,7 @@ export function DemoBadge({
           {hasRealWorkspace && (
             <Link
               href="/dashboard"
-              className="mt-2 block card-inset px-3.5 py-2 text-center text-[12px] text-text-muted no-underline"
+              className="btn btn-secondary btn-sm mt-2 block text-center"
             >
               {tr("backToReal")}
             </Link>

@@ -195,7 +195,7 @@ export function DiagnosticsView({
               أُزيل عند إعادة بناء هذه الصفحة، فأصبحت غير قابلة للوصول تماماً */}
           <a
             href="/dashboard/diagnostics/tracking-coverage"
-            className="flex items-center gap-1.5 card px-3.5 py-2.5 text-[13px] text-text-primary no-underline"
+            className="btn btn-secondary"
           >
             <Radar size={15} className="text-text-muted" />
             {tr("trackingCoverage")}
@@ -203,7 +203,7 @@ export function DiagnosticsView({
           <button
             onClick={runScan}
             disabled={busy}
-            className="flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-[13px] font-medium text-white disabled:opacity-60"
+            className="btn btn-primary"
           >
             {busy ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
             {busy ? tr("scanning") : tp("runScan")}
@@ -283,7 +283,7 @@ export function DiagnosticsView({
         <section className="card-shadow overflow-hidden card">
           <div className="flex items-center gap-2 border-b border-border p-4">
             <h2 className="section-title">{tp("issuesTitle")}</h2>
-            <span className="rounded-full bg-critical/12 px-2 py-0.5 font-mono text-[11px] font-medium text-critical">
+            <span className="btn btn-danger rounded-full bg-critical/12 font-mono text-critical">
               {topIssues.length}
             </span>
           </div>
@@ -328,7 +328,7 @@ export function DiagnosticsView({
 
                     {c.actionHref && (
                       <a href={c.actionHref}
-                         className="shrink-0 card-inset px-3 py-1.5 text-[12px] text-text-primary no-underline">
+                         className="btn btn-secondary btn-sm shrink-0">
                         {tr("resolve")}
                       </a>
                     )}
@@ -555,7 +555,7 @@ export function DiagnosticsView({
                               </ol>
                               {c.actionHref && (
                                 <a href={c.actionHref}
-                                   className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-accent px-3.5 py-2 text-[12px] font-medium text-white no-underline">
+                                   className="btn btn-primary btn-sm mt-3">
                                   {tr("goResolve")}
                                   <ChevronLeft size={12} className="rtl:rotate-0 ltr:rotate-180" />
                                 </a>

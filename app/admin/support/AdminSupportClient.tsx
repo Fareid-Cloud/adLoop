@@ -134,7 +134,7 @@ export function AdminSupportClient({ threads: initial }: { threads: Thread[] }) 
             <button
               onClick={sendReply}
               disabled={busy || uploading || (!reply.trim() && images.length === 0)}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-white disabled:opacity-50"
+              className="btn btn-primary btn-icon"
             >
               <Send size={15} />
             </button>

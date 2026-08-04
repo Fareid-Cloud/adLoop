@@ -164,7 +164,7 @@ export function WelcomeGate({
                       <Check size={13} /> {tr("connected")}
                     </span>
                   ) : (
-                    <span className="rounded-lg bg-accent px-3 py-1 text-[12px] font-medium text-white">{tr("connect")}</span>
+                    <span className="btn btn-primary btn-sm">{tr("connect")}</span>
                   )}
                 </a>
               );
@@ -190,7 +190,7 @@ export function WelcomeGate({
                   <span className="flex-1 text-[13.5px] font-medium text-text-primary">
                     {tr("pickFrom", { platform: PLATFORMS.find((p) => p.id === s.platform)?.label ?? s.platform })}
                   </span>
-                  <span className="rounded-lg bg-accent px-3 py-1 text-[12px] font-medium text-white">{tr("pick")}</span>
+                  <span className="btn btn-primary btn-sm">{tr("pick")}</span>
                 </button>
               ))
             )}
@@ -220,7 +220,7 @@ export function WelcomeGate({
             onClick={next}
             disabled={blockedReason !== null}
             title={blockedReason ?? undefined}
-            className="flex items-center gap-1.5 rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="btn btn-primary"
           >
             {i === ORDER.length - 1 ? tr("finish") : tr("next")}
             <ArrowLeft size={15} className="rtl:rotate-0 ltr:rotate-180" />

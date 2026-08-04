@@ -200,7 +200,7 @@ export function CampaignPickerModal({
             >
               {ar ? tr("activeOnly") : "Active only"}
             </button>
-            <button onClick={toggleAll} className="card-inset px-3 py-2 text-[12px] text-text-muted hover:text-text-primary">
+            <button onClick={toggleAll} className="btn btn-secondary btn-sm">
               {ar ? tr("selectAll") : "Select all"}
             </button>
           </div>
@@ -220,11 +220,11 @@ export function CampaignPickerModal({
               <AlertCircle size={28} className="text-critical" />
               <p className="max-w-sm text-[13px] leading-relaxed text-text-primary">{error}</p>
               <div className="flex gap-2">
-                <button onClick={load} className="card-inset px-4 py-2 text-[13px] text-text-primary">
+                <button onClick={load} className="btn btn-secondary">
                   {ar ? tr("retry") : "Try again"}
                 </button>
                 <button onClick={diagnose} disabled={diagnosing}
-                        className="rounded-xl bg-accent px-4 py-2 text-[13px] font-medium text-white disabled:opacity-50">
+                        className="btn btn-primary">
                   {diagnosing ? (ar ? tr("testing") : "Testing...") : ar ? tr("testConnection") : "Test connection"}
                 </button>
               </div>
@@ -261,7 +261,7 @@ export function CampaignPickerModal({
               {accounts.length === 0 && (
                 <div className="mt-3">
                   <button onClick={diagnose} disabled={diagnosing}
-                          className="rounded-xl bg-accent px-4 py-2 text-[12.5px] font-medium text-white disabled:opacity-50">
+                          className="btn btn-primary">
                     {diagnosing ? (ar ? tr("testing") : "Testing...") : ar ? tr("testConnection") : "Test connection"}
                   </button>
                 </div>
@@ -306,13 +306,13 @@ export function CampaignPickerModal({
             {ar ? tr("selectedCount", { n: selected.size }) : `${selected.size} selected`}
           </span>
           <div className="flex gap-2">
-            <button onClick={onClose} className="card-inset px-4 py-2 text-[13px] text-text-muted hover:text-text-primary">
+            <button onClick={onClose} className="btn btn-secondary">
               {ar ? tr("later") : "Later"}
             </button>
             <button
               onClick={save}
               disabled={saving || selected.size === 0}
-              className="rounded-xl bg-accent px-5 py-2 text-[13px] font-medium text-white disabled:opacity-45"
+              className="btn btn-primary"
             >
               {saving ? (ar ? tr("saving") : "Saving...") : ar ? tr("save") : "Save & continue"}
             </button>

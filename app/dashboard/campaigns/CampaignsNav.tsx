@@ -86,7 +86,7 @@ export function CampaignsNav({ locale = "ar" }: { locale?: Locale }) {
                 <a
                   key={link.href}
                   href={link.href}
-                  className="rounded-lg card-shadow border border-border bg-surface-raised px-3 py-1.5 text-xs text-text-muted no-underline transition-colors hover:border-[var(--pc)] hover:text-text-primary"
+                  className="btn btn-secondary btn-sm card-shadow hover:border-[var(--pc)]"
                 >
                   {t(locale, `campNav.${link.key}`)}
                 </a>

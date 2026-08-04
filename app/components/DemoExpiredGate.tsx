@@ -40,14 +40,14 @@ export function DemoExpiredGate({
         <div className="flex flex-col gap-2">
           <Link
             href="/dashboard/integrations"
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-[13px] font-medium text-white no-underline"
+            className="btn btn-primary"
           >
             <Link2 size={14} />
             {t(locale, "demoGate.demoExpiredConnect")}
           </Link>
           <Link
             href="/dashboard/billing"
-            className="card-inset inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-[13px] font-medium text-text-primary no-underline"
+            className="btn btn-secondary"
           >
             <CreditCard size={14} />
             {t(locale, "demoGate.demoExpiredPlans")}

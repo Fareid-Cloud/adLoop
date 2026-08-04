@@ -363,8 +363,8 @@ function RuleConfigModal({
         </div>
 
         <div className="flex justify-end gap-2 border-t border-border p-4">
-          <button onClick={onClose} className="card-inset px-4 py-2 text-[13px] text-text-muted">{tr("cancel")}</button>
-          <button onClick={save} disabled={saving} className="rounded-xl bg-accent px-5 py-2 text-[13px] font-medium text-white disabled:opacity-50">
+          <button onClick={onClose} className="btn btn-secondary">{tr("cancel")}</button>
+          <button onClick={save} disabled={saving} className="btn btn-primary">
             {saving ? tr("saving") : tr("activateRule")}
           </button>
         </div>

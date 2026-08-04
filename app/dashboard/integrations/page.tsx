@@ -54,7 +54,7 @@ export default async function IntegrationsPage({
   return (
     <>
       {connectionResult && (
-        <div className="mx-auto mb-4 max-w-[1400px] rounded-2xl border border-critical/35 bg-critical/[0.06] p-4 text-[13px] leading-relaxed text-text-primary">
+        <div className="btn btn-danger mx-auto mb-4 max-w-[1400px] border border-critical/35 bg-critical/[0.06] p-4 leading-relaxed text-text-primary">
           {t(locale, `integrations.${connectionResult}`)}
         </div>
       )}

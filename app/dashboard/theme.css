@@ -566,3 +566,58 @@ html, body { overflow-x: clip; }
 
 /* حقل مضغوط للفلاتر وأشرطة الأدوات */
 .field-sm { padding: 0.4375rem 0.75rem; font-size: 12.5px; border-radius: 10px; }
+
+/* ── الأزرار ────────────────────────────────────────────────────────
+ * أربعة أدوار لا أربعة أشكال. الدور يقرّر الشكل، فلا يُختار اللون
+ * بالذوق في كلّ صفحة:
+ *   .btn-primary    الإجراء الأساسي في الشاشة - واحد لا أكثر
+ *   .btn-secondary  إجراء بديل - مرئي بلا منافسة
+ *   .btn-ghost      إجراء ثانوي أو إلغاء - بلا وزن بصري
+ *   .btn-danger     فعل لا يُلغى (حذف، إيقاف نهائي)
+ *
+ * كانت الأزرار تحمل أكثر من عشرين تركيباً: نصف قطر مختلف وحشوة مختلفة
+ * ومقاس خطّ مختلف لنفس الدور. زرّان بالدور نفسه وشكلين مختلفين يجعلان
+ * المستخدم يتردّد قبل الضغط - وهو أغلى ما يمكن أن يكلّفه التصميم.
+ * ─────────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 0.625rem 1.125rem;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease,
+              color .15s ease, opacity .15s ease, transform .1s ease;
+}
+.btn:active:not(:disabled) { transform: scale(.985); }
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-dim); }
+
+.btn-primary   { background: var(--accent); color: #fff; }
+.btn-primary:hover:not(:disabled)   { opacity: .9; }
+
+.btn-secondary { background: var(--surface); border-color: var(--border); color: var(--text-primary); }
+.btn-secondary:hover:not(:disabled) { border-color: var(--border-visible); background: var(--surface-raised); }
+
+.btn-ghost     { background: transparent; color: var(--text-muted); }
+.btn-ghost:hover:not(:disabled)     { background: var(--surface-raised); color: var(--text-primary); }
+
+.btn-danger    { background: var(--critical); color: #fff; }
+.btn-danger:hover:not(:disabled)    { opacity: .9; }
+
+/* المقاسات - الدور ثابت والمقاس يتبع المكان */
+.btn-sm { padding: 0.4375rem 0.8125rem; font-size: 12.5px; border-radius: 10px; gap: 0.3125rem; }
+.btn-lg { padding: 0.8125rem 1.5rem; font-size: 14.5px; }
+.btn-block { display: flex; width: 100%; }
+
+/* زرّ أيقونة مربّع - يرث الدور نفسه */
+.btn-icon { width: 2.25rem; height: 2.25rem; padding: 0; flex-shrink: 0; }
+.btn-icon.btn-sm { width: 2rem; height: 2rem; }

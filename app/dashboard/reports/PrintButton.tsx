@@ -9,7 +9,7 @@ export function PrintButton({ locale = "ar" }: { locale?: Locale }) {
   return (
     <button
       onClick={() => window.print()}
-      className="no-print flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-xs text-white"
+      className="btn btn-primary btn-sm no-print rounded-full"
     >
       <Printer size={14} />
       {t(locale, "ui.print")}

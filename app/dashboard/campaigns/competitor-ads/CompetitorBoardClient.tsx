@@ -101,7 +101,7 @@ export function CompetitorBoardClient({
         </div>
         <button
           onClick={() => setAddingCompetitor(true)}
-          className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-[13px] font-medium text-white"
+          className="btn btn-primary"
         >
           <Plus size={15} /> {tr("addCompetitor")}
         </button>
@@ -197,14 +197,14 @@ export function CompetitorBoardClient({
                       href={adLibraryUrl(c.name, c.country)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 card-inset px-3 py-2 text-[12px] text-text-primary no-underline"
+                      className="btn btn-secondary btn-sm"
                       title={tr("findNewHint")}
                     >
                       <ExternalLink size={13} /> {tr("findNew")}
                     </a>
                     <button
                       onClick={() => setAddingAdFor(c.id)}
-                      className="flex items-center gap-1.5 rounded-xl bg-accent px-3 py-2 text-[12px] font-medium text-white"
+                      className="btn btn-primary btn-sm"
                     >
                       <Plus size={13} /> {tr("addAd")}
                     </button>
@@ -608,8 +608,8 @@ function Actions({
 }) {
   return (
     <div className="mt-4 flex justify-end gap-2">
-      <button onClick={onCancel} className="card px-4 py-2 text-[12.5px] text-text-muted">{tr("cancel")}</button>
-      <button onClick={onSave} disabled={busy || disabled} className="rounded-xl bg-accent px-4 py-2 text-[12.5px] font-medium text-white disabled:opacity-50">
+      <button onClick={onCancel} className="btn btn-secondary btn-sm">{tr("cancel")}</button>
+      <button onClick={onSave} disabled={busy || disabled} className="btn btn-primary">
         {busy ? tr("saving") : tr("save")}
       </button>
     </div>
@@ -622,7 +622,7 @@ function EmptyBoard({ tr, onAdd }: { tr: (k: string) => string; onAdd: () => voi
       <Search size={26} className="mx-auto mb-3 text-text-faint" />
       <p className="text-[14px] font-medium text-text-primary">{tr("emptyTitle")}</p>
       <p className="mx-auto mt-1 max-w-md text-[12.5px] leading-relaxed text-text-muted">{tr("emptyBody")}</p>
-      <button onClick={onAdd} className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-[13px] font-medium text-white">
+      <button onClick={onAdd} className="btn btn-primary mt-4">
         <Plus size={15} /> {tr("addCompetitor")}
       </button>
     </div>

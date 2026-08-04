@@ -486,7 +486,7 @@ export default async function GlancePage({
               <a
                 key={item.id}
                 href="/dashboard/actions"
-                className="flex items-center gap-2.5 card px-3.5 py-3 text-[13.5px] text-text-primary no-underline transition-colors hover:bg-surface-raised"
+                className="btn btn-secondary"
               >
                 <PriorityDot priority={item.severity} />
                 <span>{itemTitle(locale, item)}</span>
@@ -505,7 +505,7 @@ export default async function GlancePage({
             <a
               key={task.id}
               href="/dashboard/diagnostics"
-              className="flex items-center gap-2.5 card px-3.5 py-3 text-[13.5px] text-text-primary no-underline transition-colors hover:bg-surface-raised"
+              className="btn btn-secondary"
             >
               <PriorityDot priority={task.priority} />
               <span>{taskTitle(locale, task)}</span>

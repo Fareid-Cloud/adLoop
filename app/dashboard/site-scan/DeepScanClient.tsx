@@ -166,7 +166,7 @@ export function DeepScanClient({ workspaceId, pastScans, locale = "ar" }: { work
         <button
           type="submit"
           disabled={starting || isRunning}
-          className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-accent py-2.5 text-sm text-white disabled:opacity-50"
+          className="btn btn-primary btn-block"
         >
           {isRunning ? (
             <>
@@ -204,7 +204,7 @@ export function DeepScanClient({ workspaceId, pastScans, locale = "ar" }: { work
       )}
 
       {scan?.status === "FAILED" && (
-        <div className="mb-4 rounded-2xl bg-critical/10 p-4 text-sm text-critical">
+        <div className="btn btn-danger mb-4 bg-critical/10 p-4 text-critical">
           {tr("scanFailed", { error: scan.errorMessage ?? "" })}
         </div>
       )}
@@ -227,7 +227,7 @@ function ScanResults({ report, scores, scanId, locale }: { report: any; scores: 
           href={`/api/site-scan/${scanId}/print`}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 rounded-full bg-surface px-4 py-1.5 text-xs text-text-muted no-underline hover:text-text-primary"
+          className="btn btn-ghost btn-sm"
         >
           <Printer size={13} />
           {tr("printable")}
@@ -243,7 +243,7 @@ function ScanResults({ report, scores, scanId, locale }: { report: any; scores: 
       </div>
 
       {/* الملخص التنفيذي */}
-      <div className="rounded-2xl bg-accent-dim p-4 text-sm text-text-primary">
+      <div className="btn btn-primary bg-accent-dim p-4 text-text-primary">
         <strong className="text-accent">{tr("execSummary")}</strong>
         {synthesis.executiveSummary}
       </div>

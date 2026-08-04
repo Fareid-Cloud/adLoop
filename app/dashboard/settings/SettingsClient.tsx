@@ -493,7 +493,7 @@ function DisconnectButton({ platform }: { platform: string }) {
         <button
           onClick={handleDisconnect}
           disabled={disconnecting}
-          className="rounded-full bg-critical px-3 py-1 text-xs text-white"
+          className="btn btn-danger btn-sm rounded-full"
         >
           {disconnecting ? tr("disconnecting") : tr("disconnect")}
         </button>
@@ -541,7 +541,7 @@ function AccountsTab({ connectedPlatforms }: { connectedPlatforms: ConnectedPlat
             ) : (
               <a
                 href={`/api/oauth/${platform === "GOOGLE_ADS" ? "google-ads" : platform === "META_ADS" ? "meta" : "tiktok"}/start`}
-                className="rounded-full bg-accent px-4 py-1.5 text-xs text-white no-underline"
+                className="btn btn-primary btn-sm rounded-full"
               >
                 {tr("connectAccount")}
               </a>
@@ -828,7 +828,7 @@ function TrackerAdLink({
             navigator.clipboard.writeText(link);
             onCopied();
           }}
-          className="shrink-0 rounded-lg bg-accent px-3 py-2 text-[11.5px] font-medium text-white"
+          className="btn btn-primary shrink-0"
         >
           {copied ? tr("waCopied") : tr("waCopy")}
         </button>
@@ -916,7 +916,7 @@ function CampaignPicker({ workspaceId }: { workspaceId: string }) {
         <button
           onClick={loadCampaigns}
           disabled={loading}
-          className="rounded-full bg-surface-raised px-4 py-1.5 text-xs text-text-primary"
+          className="btn btn-secondary btn-sm"
         >
           {loading ? tr("loadingCampaigns") : tr("loadCampaigns")}
         </button>
@@ -998,7 +998,7 @@ function CampaignPickerList({
           </div>
         );
       })}
-      <button onClick={saveCampaigns} className="mt-2 rounded-full bg-accent px-4 py-1.5 text-xs text-white">
+      <button onClick={saveCampaigns} className="btn btn-primary btn-sm mt-2 rounded-full">
         {saved ? tr("savedTick") : tr("saveSelection")}
       </button>
       <p className="mt-2 text-xs text-text-faint">
@@ -1277,7 +1277,7 @@ function MfaSection() {
             <button
               onClick={handleDisable}
               disabled={loading}
-              className="rounded-full bg-critical px-4 py-1.5 text-xs text-white disabled:opacity-50"
+              className="btn btn-danger btn-sm rounded-full"
             >
               {tr("mfaConfirmDisable")}
             </button>
@@ -1302,7 +1302,7 @@ function MfaSection() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-full bg-accent px-4 py-1.5 text-xs text-white disabled:opacity-50"
+            className="btn btn-primary btn-sm rounded-full"
           >
             {loading ? tr("mfaVerifying") : tr("mfaEnable")}
           </button>
@@ -1311,7 +1311,7 @@ function MfaSection() {
         <button
           onClick={startSetup}
           disabled={loading}
-          className="rounded-full bg-accent px-4 py-1.5 text-xs text-white disabled:opacity-50"
+          className="btn btn-primary btn-sm rounded-full"
         >
           {loading ? tr("mfaLoading") : tr("mfaTurnOn")}
         </button>
@@ -1338,7 +1338,7 @@ function DangerZoneTab({ workspaces }: { workspaces: WorkspaceData[] }) {
 
   return (
     <SettingsSection>
-      <div className="rounded-xl bg-critical/10 p-4">
+      <div className="btn btn-danger bg-critical/10 p-4">
         <div className="mb-2 text-sm font-medium text-critical">{tr("dzDeleteWorkspace")}</div>
         <p className="mb-3 text-xs text-text-muted">
           {tr("dzDeleteWorkspaceHint")}
@@ -1359,7 +1359,7 @@ function DangerZoneTab({ workspaces }: { workspaces: WorkspaceData[] }) {
         <button
           onClick={handleDelete}
           disabled={confirmText !== target?.name}
-          className="mt-2 rounded-full bg-critical px-4 py-1.5 text-xs text-white disabled:opacity-40"
+          className="btn btn-danger btn-sm mt-2 rounded-full"
         >
           {tr("dzDeleteForever")}
         </button>
@@ -1372,7 +1372,7 @@ function DangerZoneTab({ workspaces }: { workspaces: WorkspaceData[] }) {
         </p>
         <a
           href="/api/account/export-data"
-          className="inline-block rounded-full bg-surface-raised px-4 py-1.5 text-xs text-text-primary no-underline"
+          className="btn btn-secondary btn-sm inline-block"
         >
           {tr("dzDownload")}
         </a>
@@ -1405,7 +1405,7 @@ function DeleteAccountSection() {
   }
 
   return (
-    <div className="mt-4 rounded-xl bg-critical/10 p-4">
+    <div className="btn btn-danger mt-4 bg-critical/10 p-4">
       <div className="mb-2 text-sm font-medium text-critical">{tr("dzDeleteAccount")}</div>
       <p className="mb-3 text-xs text-text-muted">
         {tr("dzDeleteAccountHint")}
@@ -1413,7 +1413,7 @@ function DeleteAccountSection() {
       {!confirming ? (
         <button
           onClick={() => setConfirming(true)}
-          className="rounded-full bg-critical px-4 py-1.5 text-xs text-white"
+          className="btn btn-danger btn-sm rounded-full"
         >
           {tr("dzDeleteMine")}
         </button>
@@ -1430,7 +1430,7 @@ function DeleteAccountSection() {
           <div className="flex gap-2">
             <button
               onClick={handleDeleteAccount}
-              className="rounded-full bg-critical px-4 py-1.5 text-xs text-white"
+              className="btn btn-danger btn-sm rounded-full"
             >
               {tr("dzConfirmDelete")}
             </button>
@@ -1708,7 +1708,7 @@ function SaveButton({ onClick, saving }: { onClick: () => void; saving: boolean 
     <button
       onClick={onClick}
       disabled={saving}
-      className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
+      className="btn btn-primary rounded-full"
     >
       {saving ? tr("savingShort") : tr("saveChanges")}
     </button>

@@ -30,7 +30,7 @@ export function DataConsistencyCheck({ workspaceId,
         <button
           onClick={runCheck}
           disabled={loading}
-          className="flex items-center gap-1.5 rounded-full bg-surface-raised px-3 py-1 text-xs text-text-muted disabled:opacity-50"
+          className="btn btn-secondary btn-sm"
         >
           <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
           {loading ? t(locale, "consistency.checking") : t(locale, "consistency.check")}

@@ -222,7 +222,7 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
           )}
           <div className="flex justify-end gap-2">
             <button onClick={() => setEditing(false)} className="card px-3 py-1.5 text-[12px] text-text-muted">{tr("cancel")}</button>
-            <button onClick={save} disabled={busy} className="rounded-lg bg-accent px-3.5 py-1.5 text-[12px] font-medium text-white disabled:opacity-50">
+            <button onClick={save} disabled={busy} className="btn btn-primary btn-sm">
               {busy ? tr("saving") : tr("save")}
             </button>
           </div>
@@ -230,13 +230,13 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
       )}
 
       {confirmDelete && (
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-critical/35 bg-critical/[0.06] p-3">
+        <div className="btn btn-danger mb-3 flex-wrap justify-between border border-critical/35 bg-critical/[0.06] p-3">
           <span className="flex items-center gap-2 text-[12.5px] text-text-primary">
             <AlertTriangle size={14} className="text-critical" /> {tr("confirmDelete")}
           </span>
           <div className="flex gap-2">
             <button onClick={() => setConfirmDelete(false)} className="card px-3 py-1.5 text-[12px] text-text-muted">{tr("cancel")}</button>
-            <button onClick={remove} disabled={busy} className="rounded-lg bg-critical px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-50">
+            <button onClick={remove} disabled={busy} className="btn btn-danger btn-sm">
               {busy ? tr("deleting") : tr("del")}
             </button>
           </div>
@@ -395,8 +395,8 @@ function ManualExperimentModal({
         </div>
 
         <div className="flex justify-end gap-2 border-t border-border p-4">
-          <button onClick={onClose} className="card-inset px-4 py-2 text-[13px] text-text-muted">{tr("cancel")}</button>
-          <button onClick={save} disabled={saving} className="rounded-xl bg-accent px-5 py-2 text-[13px] font-medium text-white disabled:opacity-50">
+          <button onClick={onClose} className="btn btn-secondary">{tr("cancel")}</button>
+          <button onClick={save} disabled={saving} className="btn btn-primary">
             {saving ? tr("saving") : tr("startMeasuring")}
           </button>
         </div>

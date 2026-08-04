@@ -125,7 +125,7 @@ export function IntegrationsView({
           </div>
           <button
             onClick={() => setTab("available")}
-            className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-[13px] font-medium text-white"
+            className="btn btn-primary"
           >
             <Plus size={15} /> {tr("addIntegration")}
           </button>
@@ -551,7 +551,7 @@ function AvailableCard({
       ) : (
         <button
           onClick={onPick}
-          className="rounded-xl bg-accent py-2.5 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+          className="btn btn-primary"
         >
           {tr("connect")}
         </button>

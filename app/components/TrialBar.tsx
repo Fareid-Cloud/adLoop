@@ -83,7 +83,7 @@ export function TrialBar({
 
       <Link
         href="/dashboard/billing"
-        className="flex shrink-0 items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-[12.5px] font-medium text-white no-underline"
+        className="btn btn-primary shrink-0"
       >
         <Zap size={14} />
         {state === "TRIAL" ? tr("upgrade") : tr("subscribe")}

@@ -63,7 +63,7 @@ export default async function ShoppingProductsPage() {
               <div className="mb-2 text-sm font-semibold text-critical">{t(locale, "campPages.shopRejected")}</div>
               <div className="flex flex-col gap-2">
                 {rejectedProducts.map((p: any) => (
-                  <div key={p.id} className="rounded-2xl bg-critical/10 p-4">
+                  <div key={p.id} className="btn btn-danger bg-critical/10 p-4">
                     <div className="mb-1 text-sm text-text-primary">{p.title ?? p.itemId}</div>
                     <div className="text-xs text-text-faint">{p.issuesDetail}</div>
                   </div>

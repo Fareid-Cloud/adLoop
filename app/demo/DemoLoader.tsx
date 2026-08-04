@@ -42,7 +42,7 @@ export function DemoLoader({ locale }: { locale: Locale }) {
           <p className="text-[14px] text-text-primary">{tr("failed")}</p>
           <button
             onClick={() => window.location.reload()}
-            className="rounded-xl bg-accent px-5 py-2.5 text-[13px] font-medium text-white"
+            className="btn btn-primary"
           >
             {tr("retry")}
           </button>

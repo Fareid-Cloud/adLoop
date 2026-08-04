@@ -112,7 +112,7 @@ export function PlansClient({
           </div>
           <button
             onClick={() => setCreditsOpen(true)}
-            className="flex shrink-0 items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-[12.5px] font-medium text-white"
+            className="btn btn-primary shrink-0"
           >
             <Zap size={14} /> {tr("buyCredits")}
           </button>
@@ -120,7 +120,7 @@ export function PlansClient({
       )}
 
       {error && (
-        <p className="mb-4 rounded-xl border border-critical/35 bg-critical/[0.06] p-3 text-center text-[13px] text-critical">
+        <p className="btn btn-danger mb-4 border border-critical/35 bg-critical/[0.06] p-3 text-center text-critical">
           {error}
         </p>
       )}
@@ -371,7 +371,7 @@ function CreditsModal({
         <button
           onClick={buy}
           disabled={busy}
-          className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-accent py-2.5 text-[13.5px] font-medium text-white disabled:opacity-60"
+          className="btn btn-primary btn-block"
         >
           {busy ? <Loader2 size={15} className="animate-spin" /> : null}
           {busy ? tr("opening") : tr("continueToPayment")}

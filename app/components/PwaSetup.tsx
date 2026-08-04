@@ -94,7 +94,7 @@ export function PwaSetup({ locale }: { locale: Locale }) {
         </div>
         <button
           onClick={install}
-          className="shrink-0 rounded-xl bg-accent px-3 py-2 text-[12.5px] font-medium text-white"
+          className="btn btn-primary shrink-0"
         >
           {t(locale, "pwa.installAction")}
         </button>

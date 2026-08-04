@@ -177,7 +177,7 @@ export function ActiveRulesList({
             </div>
 
             {confirmDelete === rule.id && (
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-critical/35 bg-critical/[0.06] p-3">
+              <div className="btn btn-danger mt-3 flex-wrap justify-between border border-critical/35 bg-critical/[0.06] p-3">
                 <span className="flex items-center gap-2 text-[12.5px] text-text-primary">
                   <AlertTriangle size={14} className="text-critical" />
                   {tr("confirmDelete")}
@@ -188,7 +188,7 @@ export function ActiveRulesList({
                     {tr("cancel")}
                   </button>
                   <button onClick={() => remove(rule.id)} disabled={busy === rule.id}
-                          className="rounded-lg bg-critical px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-50">
+                          className="btn btn-danger btn-sm">
                     {busy === rule.id ? tr("deleting") : tr("del")}
                   </button>
                 </div>
@@ -247,7 +247,7 @@ function EditRow({
             ...(rule.actionValue !== null ? { actionValue } : {}),
           })}
           disabled={busy}
-          className="flex items-center gap-1 rounded-lg bg-accent px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-50"
+          className="btn btn-primary btn-sm"
         >
           <Check size={13} /> {tr("save")}
         </button>

@@ -316,7 +316,7 @@ export async function PlatformHub({
             <a
               key={link.href}
               href={link.href}
-              className="card-shadow flex items-center gap-2.5 card px-3.5 py-3 text-[12.5px] text-text-primary no-underline"
+              className="btn btn-secondary btn-sm card-shadow"
             >
               <span
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"

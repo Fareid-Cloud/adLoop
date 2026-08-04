@@ -109,7 +109,7 @@ export function SetupProgressPanel({
       {progress.nextStep && (
         <Link
           href={ctaHref}
-          className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-accent py-2.5 text-[13px] font-medium text-white no-underline"
+          className="btn btn-primary btn-block"
         >
           {tr("continueSetup")}
           <ArrowLeft size={14} className="rtl:rotate-0 ltr:rotate-180" />

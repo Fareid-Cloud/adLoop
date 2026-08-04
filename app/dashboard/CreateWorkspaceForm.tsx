@@ -116,7 +116,7 @@ export function CreateWorkspaceForm({ locale = "ar" }: { locale?: Locale }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl bg-accent py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+          className="btn btn-primary btn-block"
         >
           {loading ? tr("creating") : tr("create")}
         </button>

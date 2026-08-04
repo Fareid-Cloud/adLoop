@@ -293,7 +293,7 @@ export function DateRangePicker({
               <button onClick={() => setOpen(false)} className="card px-3.5 py-2 text-[12.5px] text-text-muted">
                 {tr("cancel")}
               </button>
-              <button onClick={apply} className="rounded-xl bg-accent px-4 py-2 text-[12.5px] font-medium text-white">
+              <button onClick={apply} className="btn btn-primary">
                 {tr("apply")}
               </button>
             </div>

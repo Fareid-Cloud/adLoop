@@ -158,7 +158,7 @@ export function ProductFocusView({
             </p>
           </div>
           <div className="flex shrink-0 gap-1.5">
-            <button onClick={onEdit} className="flex items-center gap-1.5 card-inset px-3 py-2 text-[12.5px] text-text-primary">
+            <button onClick={onEdit} className="btn btn-secondary btn-sm">
               <Pencil size={13} /> {tr("edit")}
             </button>
             <button onClick={onClose} className="rounded-lg p-2 text-text-muted hover:bg-surface-raised"><X size={17} /></button>
@@ -167,7 +167,7 @@ export function ProductFocusView({
 
         {/* التحذير - يظهر بحركة تنبيه ثم يهدأ، ولا يختفي لأن الخسارة قائمة */}
         {losing && (
-          <div className="flex items-start gap-2.5 border-b border-critical/30 bg-critical/[0.07] p-4">
+          <div className="btn btn-danger items-start border-b border-critical/30 bg-critical/[0.07] p-4">
             <AlertTriangle size={18} className="mt-0.5 shrink-0 animate-pulse-attention text-critical" />
             <div>
               <p className="text-[13.5px] font-bold text-critical">{tr("losingTitle")}</p>
@@ -357,7 +357,7 @@ export function ProductFocusView({
               التمرير إلى أسفل النافذة للوصول إلى الإجراء الأساسي */}
           <div className="mt-auto">
             {error && (
-              <p className="mb-2 rounded-xl border border-critical/35 bg-critical/[0.07] p-2.5 text-[12px] text-critical">
+              <p className="btn btn-danger btn-sm mb-2 border border-critical/35 bg-critical/[0.07] p-2.5 text-critical">
                 {error}
               </p>
             )}

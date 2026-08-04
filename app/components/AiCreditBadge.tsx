@@ -28,7 +28,7 @@ export function AiCreditBadge({
       <Link
         href="/dashboard/billing"
         title={ar ? t(locale, "aiCredit.label") : "This month's AI analysis credit"}
-        className="flex items-center gap-1.5 card px-2.5 py-1.5 no-underline"
+        className="btn btn-secondary btn-sm"
       >
         <Sparkles size={14} style={{ color: tone }} />
         <span className="font-mono text-[12.5px] font-medium" style={{ color: tone }}>

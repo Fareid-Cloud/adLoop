@@ -87,7 +87,7 @@ export function AuthShell({
             موضوعها. الشعار وحده يبقى في الأعلى بموضع مطلق. */}
         <div className="absolute inset-x-0 top-0 z-10 p-10 xl:p-12">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-[15px] font-bold text-white">
+            <span className="btn btn-primary btn-icon font-bold">
               A
             </span>
             <span className="text-[19px] font-bold tracking-tight text-white">AdLoop</span>

@@ -26,7 +26,7 @@ export default function DashboardError({
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-critical/15 text-critical">
+      <div className="btn btn-danger mb-4 h-12 w-12 rounded-full bg-critical/15 text-critical">
         <AlertTriangle size={22} />
       </div>
       <h1 className="mb-1.5 text-lg font-semibold text-text-primary">
@@ -38,13 +38,13 @@ export default function DashboardError({
       <div className="flex gap-2">
         <button
           onClick={reset}
-          className="rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
+          className="btn btn-primary"
         >
           {t(locale, "errPage.retry")}
         </button>
         <a
           href="/dashboard"
-          className="rounded-xl bg-surface-raised px-5 py-2.5 text-sm text-text-primary no-underline"
+          className="btn btn-secondary"
         >
           {t(locale, "errPage.home")}
         </a>

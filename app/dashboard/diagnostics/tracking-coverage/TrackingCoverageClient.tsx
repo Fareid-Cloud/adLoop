@@ -148,13 +148,13 @@ export function TrackingCoverageClient({
         {error && <p className="mb-2 text-[12.5px] text-critical">{error}</p>}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <button type="submit" disabled={adding || !url.trim()}
-                  className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-[13px] font-medium text-white disabled:opacity-45">
+                  className="btn btn-primary">
             <Plus size={14} /> {adding ? tr("covAdding") : tr("covAdd")}
           </button>
 
           {pages.length > 0 && (
             <button type="button" onClick={recheckAll} disabled={busyId === "all"}
-                    className="flex items-center gap-1.5 card-inset px-4 py-2 text-[13px] text-text-primary disabled:opacity-50">
+                    className="btn btn-secondary">
               {busyId === "all" ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
               {busyId === "all" ? tr("covCheckingAll") : tr("covCheckAll")}
             </button>
@@ -252,7 +252,7 @@ export function TrackingCoverageClient({
                 </div>
 
                 {confirmDelete === p.id && (
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-critical/35 bg-critical/[0.06] p-3">
+                  <div className="btn btn-danger mt-3 flex-wrap justify-between border border-critical/35 bg-critical/[0.06] p-3">
                     <span className="text-[12.5px] text-text-primary">{tr("covConfirmDelete")}</span>
                     <div className="flex gap-2">
                       <button onClick={() => setConfirmDelete(null)}
@@ -260,7 +260,7 @@ export function TrackingCoverageClient({
                         {tr("covCancel")}
                       </button>
                       <button onClick={() => remove(p.id)} disabled={busyId === p.id}
-                              className="rounded-lg bg-critical px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-50">
+                              className="btn btn-danger btn-sm">
                         {tr("covRemove")}
                       </button>
                     </div>

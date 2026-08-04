@@ -56,7 +56,7 @@ export function TopSearch({ locale }: { locale: "ar" | "en" }) {
             <div className="px-4 py-4 text-center text-[13px] text-text-faint">{ar ? t(locale, "ui.noResults") : "No results"}</div>
           ) : (
             results.map((r) => (
-              <a key={r.href} href={r.href} className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-text-primary no-underline transition-colors hover:bg-surface-raised">
+              <a key={r.href} href={r.href} className="btn btn-secondary">
                 {r.platform ? <PlatformLogo platform={r.platform} size={15} /> : <Search size={13} className="text-text-faint" />}
                 {r.text}
               </a>

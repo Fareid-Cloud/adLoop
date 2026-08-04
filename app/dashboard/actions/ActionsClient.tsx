@@ -237,7 +237,7 @@ export function ActionsClient({
       </div>
 
       {error && (
-        <div className="mb-3 rounded-2xl border border-critical/35 bg-critical/[0.06] p-3 text-[12.5px] text-critical">
+        <div className="btn btn-danger mb-3 border border-critical/35 bg-critical/[0.06] p-3 text-critical">
           {tr("applyFailed", { error })}
         </div>
       )}
@@ -342,7 +342,7 @@ export function ActionsClient({
                             <button
                               onClick={() => handleApplyClick(item.id)}
                               disabled={processing === item.id}
-                              className="flex h-8 items-center gap-1 rounded-full bg-critical/15 px-3 text-[11.5px] font-medium text-critical disabled:opacity-40"
+                              className="btn btn-danger h-8 rounded-full bg-critical/15 text-critical"
                             >
                               {processing === item.id ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
                               {tr("confirm")}

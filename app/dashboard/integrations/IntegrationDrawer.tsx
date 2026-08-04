@@ -253,7 +253,7 @@ export function IntegrationDrawer({
         )}
 
         {confirming ? (
-          <div className="rounded-xl border border-critical/35 bg-critical/[0.06] p-3">
+          <div className="btn btn-danger border border-critical/35 bg-critical/[0.06] p-3">
             <p className="mb-2 text-[12px] leading-relaxed text-text-primary">{tr("confirmDisconnect")}</p>
             <div className="flex gap-2">
               <button
@@ -265,7 +265,7 @@ export function IntegrationDrawer({
               <button
                 onClick={onDisconnect}
                 disabled={busy}
-                className="flex-1 rounded-lg bg-critical py-1.5 text-[12px] font-medium text-white disabled:opacity-50"
+                className="btn btn-danger btn-sm flex-1"
               >
                 {busy ? tr("disconnecting") : tr("disconnect")}
               </button>
@@ -274,7 +274,7 @@ export function IntegrationDrawer({
         ) : (
           <button
             onClick={() => setConfirming(true)}
-            className="rounded-xl border border-critical/30 bg-critical/[0.06] py-2.5 text-[12.5px] font-medium text-critical"
+            className="btn btn-danger border border-critical/30 bg-critical/[0.06] text-critical"
           >
             {tr("disconnect")}
           </button>

@@ -78,7 +78,7 @@ export function SetupChecklist({
                 <ConnectPlatformLauncher
                   label={ar ? s.ctaAr : s.ctaEn}
                   locale={locale}
-                  className="flex shrink-0 items-center gap-1.5 rounded-xl bg-accent px-3.5 py-2 text-[12.5px] font-medium text-white"
+                  className="btn btn-primary shrink-0"
                 />
               ) : !s.done && isNext && s.id === "campaigns" && connectedPlatforms.length > 0 ? (
                 <CampaignPickerLauncher
@@ -86,7 +86,7 @@ export function SetupChecklist({
                   connectedPlatforms={connectedPlatforms}
                   locale={locale}
                   label={ar ? s.ctaAr : s.ctaEn}
-                  className="shrink-0 rounded-xl bg-accent px-3.5 py-2 text-[12.5px] font-medium text-white"
+                  className="btn btn-primary shrink-0"
                 />
               ) : !s.done && isNext && s.id === "data" ? (
                 <div className="w-56 shrink-0">
@@ -94,13 +94,13 @@ export function SetupChecklist({
                     workspaceId={workspaceId}
                     locale={locale}
                     label={ar ? s.ctaAr : s.ctaEn}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-accent px-3.5 py-2 text-[12.5px] font-medium text-white disabled:opacity-60"
+                    className="btn btn-primary btn-block"
                   />
                 </div>
               ) : !s.done && isNext ? (
                 <a
                   href={s.ctaHref}
-                  className="flex shrink-0 items-center gap-1.5 rounded-xl bg-accent px-3.5 py-2 text-[12.5px] font-medium text-white no-underline transition-opacity hover:opacity-90"
+                  className="btn btn-primary shrink-0"
                 >
                   {ar ? s.ctaAr : s.ctaEn}
                   <ArrowLeft size={13} className="rtl:rotate-0 ltr:rotate-180" />

@@ -122,7 +122,7 @@ export function OnboardingFlow({
                     <Check size={14} /> {c.connected}
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 rounded-xl bg-accent px-3.5 py-1.5 text-[12.5px] font-medium text-white">
+                  <span className="btn btn-primary btn-sm">
                     {c.connect}
                   </span>
                 )}
@@ -154,7 +154,7 @@ export function OnboardingFlow({
                     <button
                       key={s.platform}
                       onClick={() => setPicking(s.platform as Platform)}
-                      className="flex items-center gap-2 rounded-xl bg-accent px-3.5 py-2 text-[12.5px] font-medium text-white"
+                      className="btn btn-primary"
                     >
                       <PlatformLogo platform={s.platform} size={15} />
                       {c.pick}
@@ -195,7 +195,7 @@ export function OnboardingFlow({
           {step1Done && step2Done && (
             <a
               href="/dashboard"
-              className="flex items-center gap-1.5 rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-medium text-white no-underline"
+              className="btn btn-primary"
             >
               {c.finish}
               <ArrowLeft size={15} className="rtl:rotate-0 ltr:rotate-180" />

@@ -195,7 +195,7 @@ export function ReportsClient({
                     `${initial.range.from} — ${initial.range.to}`
                   )
                 }
-                className="flex items-center gap-1.5 rounded-xl bg-accent px-3.5 py-2.5 text-[13px] font-medium text-white"
+                className="btn btn-primary"
               >
                 <Download size={15} /> {t(locale, "reportDoc.downloadHtml")}
               </button>
@@ -384,7 +384,7 @@ export function ReportsClient({
             <button
               onClick={() => run()}
               disabled={metrics.length === 0 || pending}
-              className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-[13px] font-medium text-white disabled:opacity-50"
+              className="btn btn-primary"
             >
               <Play size={14} /> {tr("generate")}
             </button>
@@ -709,8 +709,8 @@ function SaveViewModal({
         className="field mb-4 w-full text-[13px]"
       />
       <div className="flex justify-end gap-2">
-        <button onClick={onClose} className="card px-4 py-2 text-[12.5px] text-text-muted">{tr("cancel")}</button>
-        <button onClick={save} disabled={busy || !name.trim()} className="rounded-xl bg-accent px-4 py-2 text-[12.5px] font-medium text-white disabled:opacity-50">
+        <button onClick={onClose} className="btn btn-secondary btn-sm">{tr("cancel")}</button>
+        <button onClick={save} disabled={busy || !name.trim()} className="btn btn-primary">
           {busy ? tr("saving") : tr("save")}
         </button>
       </div>
@@ -754,8 +754,8 @@ function EmailModal({
       {state === "error" && <p className="mb-2 text-[12px] text-critical">{tr("emailFailed")}</p>}
       {state === "sent" && <p className="mb-2 text-[12px] text-verified">{tr("emailSent")}</p>}
       <div className="flex justify-end gap-2">
-        <button onClick={onClose} className="card px-4 py-2 text-[12.5px] text-text-muted">{tr("cancel")}</button>
-        <button onClick={send} disabled={state === "sending"} className="rounded-xl bg-accent px-4 py-2 text-[12.5px] font-medium text-white disabled:opacity-50">
+        <button onClick={onClose} className="btn btn-secondary btn-sm">{tr("cancel")}</button>
+        <button onClick={send} disabled={state === "sending"} className="btn btn-primary">
           {state === "sending" ? tr("emailSending") : tr("emailSend")}
         </button>
       </div>
@@ -791,11 +791,11 @@ function EmptyDataModal({
       <div className="flex justify-end gap-2">
         <a
           href="/dashboard/integrations"
-          className="card px-4 py-2 text-[12.5px] text-text-primary no-underline"
+          className="btn btn-secondary btn-sm"
         >
           {tr("goConnect")}
         </a>
-        <button onClick={onClose} className="rounded-xl bg-accent px-4 py-2 text-[12.5px] font-medium text-white">
+        <button onClick={onClose} className="btn btn-primary">
           {tr("ok")}
         </button>
       </div>
