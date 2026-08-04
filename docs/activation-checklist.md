@@ -252,8 +252,8 @@ Neon**، فالبناء وقف قبل ما يبدأ يبني الكود أصلا
 1. افتح [Google Cloud Console](https://console.cloud.google.com) ← اختر مشروعك
    (نفس مشروع Google Ads عادي).
 2. **APIs & Services ← OAuth consent screen**: نوع External، واملأ اسم التطبيق
-   وبريد الدعم وسياسة الخصوصية (استخدم `https://<دومينك>/legal/privacy`) وشروط
-   الاستخدام (`https://<دومينك>/legal/terms`).
+   وبريد الدعم وسياسة الخصوصية (استخدم `https://<دومينك>/privacy`) وشروط
+   الاستخدام (`https://<دومينك>/terms`).
 3. **Credentials ← Create Credentials ← OAuth client ID ← Web application**.
 4. في **Authorized redirect URIs** ضِف بالظبط:
    ```

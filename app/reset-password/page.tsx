@@ -1,12 +1,27 @@
 // app/reset-password/page.tsx
+//
+// تعيين كلمة مرور جديدة من رابط الاستعادة.
+//
+// **لماذا أُعيد بناؤها:** كانت بطاقة معزولة على شاشة فارغة، فتبدو صفحة من
+// منتج آخر في اللحظة التي يكون فيها المستخدم أكثر حذراً — وهي بالضبط
+// اللحظة التي يجب أن يتعرّف فيها على المنتج فوراً. صارت على `AuthShell`
+// نفسها التي تحمل الدخول والتسجيل.
+//
+// **ثلاث حالات لا حالتان:** رابط غير صالح، ونموذج، ونجاح. كلٌّ منها يقول
+// ما حدث وما الخطوة التالية — «الرابط غير صالح» وحدها تترك المستخدم عالقاً
+// بلا طريق.
 
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { t, Locale } from "@/lib/i18n/dictionary";
+import { ShieldCheck, ShieldAlert, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { t } from "@/lib/i18n/dictionary";
 import { useAuthLocale } from "@/app/components/useAuthLocale";
 import { PasswordRequirements } from "@/app/components/PasswordRequirements";
+import { AuthShell } from "@/app/components/AuthShell";
+import { FIELD, PRIMARY_BTN } from "@/app/components/AuthControls";
 
 function ResetPasswordInner() {
   const searchParams = useSearchParams();
@@ -14,9 +29,11 @@ function ResetPasswordInner() {
   const token = searchParams.get("token");
   const [locale, setLocale] = useAuthLocale();
   const [newPassword, setNewPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const tr = (k: string) => t(locale, `auth.${k}`);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,60 +51,112 @@ function ResetPasswordInner() {
       return;
     }
     setSuccess(true);
-    setTimeout(() => router.push("/login"), 2000);
+    setTimeout(() => router.push("/login"), 2200);
   }
 
+  // ── رابط غير صالح أو منتهٍ ──────────────────────────────────────
   if (!token) {
-    return <p className="text-center text-sm text-critical">{t(locale, "auth.invalidLink")}</p>;
+    return (
+      <AuthShell locale={locale} onLocaleChange={setLocale} headline={tr("resetInvalidTitle")}>
+        <div className="card pad-lg text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-critical/12 text-critical">
+            <ShieldAlert size={22} />
+          </div>
+          <h2 className="mb-2 text-[17px] font-semibold text-text-primary">{tr("invalidLink")}</h2>
+          <p className="mb-5 text-[13.5px] leading-relaxed text-text-muted">{tr("resetInvalidBody")}</p>
+          <Link
+            href="/forgot-password"
+            className={`${PRIMARY_BTN} inline-flex items-center justify-center gap-1.5 no-underline`}
+          >
+            {tr("sendResetLink")}
+            <ArrowRight size={15} className="rtl:rotate-180" />
+          </Link>
+        </div>
+      </AuthShell>
+    );
   }
 
-  return (
-    <>
-      <div className="mb-6 text-center">
-        <div className="text-lg font-bold tracking-tight text-text-primary">AdLoop</div>
-        <div className="mt-1 text-sm text-text-muted">{t(locale, "auth.resetTitle")}</div>
-      </div>
-      {success ? (
-        <p className="text-center text-sm text-verified">{t(locale, "auth.resetSuccess")}</p>
-      ) : (
-        <form onSubmit={handleSubmit}>
-          <input
-            type="password"
-            placeholder={t(locale, "auth.newPassword")}
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            required
-            minLength={8}
-            className="mb-1 block w-full card-inset px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-faint outline-none transition-colors focus:border-accent"
-          />
-          <PasswordRequirements password={newPassword} locale={locale} />
-          {error && <p className="mb-2 text-xs text-critical">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-accent py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+  // ── تمّ التعيين ─────────────────────────────────────────────────
+  if (success) {
+    return (
+      <AuthShell locale={locale} onLocaleChange={setLocale} headline={tr("resetDoneTitle")}>
+        <div className="card pad-lg text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-verified/12 text-verified">
+            <ShieldCheck size={22} />
+          </div>
+          <h2 className="mb-2 text-[17px] font-semibold text-text-primary">{tr("resetSuccess")}</h2>
+          <p className="mb-5 text-[13.5px] leading-relaxed text-text-muted">{tr("resetDoneBody")}</p>
+          <Link
+            href="/login"
+            className={`${PRIMARY_BTN} inline-flex items-center justify-center gap-1.5 no-underline`}
           >
-            {loading ? t(locale, "auth.saving") : t(locale, "auth.savePassword")}
+            {tr("backToLogin")}
+            <ArrowRight size={15} className="rtl:rotate-180" />
+          </Link>
+        </div>
+      </AuthShell>
+    );
+  }
+
+  // ── النموذج ─────────────────────────────────────────────────────
+  return (
+    <AuthShell
+      locale={locale}
+      onLocaleChange={setLocale}
+      headline={tr("resetTitle")}
+      sub={tr("resetSub")}
+    >
+      <div className="card pad-lg">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <div className="relative">
+            <input
+              type={showPw ? "text" : "password"}
+              placeholder={tr("newPassword")}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              minLength={8}
+              autoFocus
+              className={`${FIELD} pe-10`}
+            />
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => setShowPw((v) => !v)}
+              aria-label={tr("newPassword")}
+              className="absolute inset-y-0 end-3 flex items-center text-text-faint transition-colors hover:text-text-primary"
+            >
+              {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+
+          <PasswordRequirements password={newPassword} locale={locale} />
+
+          {error && <p className="text-[12.5px] text-critical">{error}</p>}
+
+          <button type="submit" disabled={loading} className={PRIMARY_BTN}>
+            {loading ? tr("saving") : tr("savePassword")}
           </button>
         </form>
-      )}
-    </>
+
+        <div className="mt-4 border-t border-border pt-4 text-center">
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-1.5 text-[12.5px] text-text-muted no-underline transition-colors hover:text-text-primary"
+          >
+            <ArrowRight size={13} className="rtl:rotate-180" />
+            {tr("backToLogin")}
+          </Link>
+        </div>
+      </div>
+    </AuthShell>
   );
 }
 
 export default function ResetPasswordPage() {
   return (
-    <div
-      dir="rtl"
-      data-accent="blue"
-      data-mode="light"
-      className="flex min-h-screen items-center justify-center bg-bg px-4 font-display"
-    >
-      <div className="w-full max-w-sm card pad-lg">
-        <Suspense fallback={<div />}>
-          <ResetPasswordInner />
-        </Suspense>
-      </div>
-    </div>
+    <Suspense fallback={<div className="min-h-screen bg-bg" />}>
+      <ResetPasswordInner />
+    </Suspense>
   );
 }

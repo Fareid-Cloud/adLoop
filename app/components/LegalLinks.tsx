@@ -2,8 +2,8 @@
 //
 // روابط الصفحات القانونية.
 //
-// **ما كان:** الصفحات الثلاث مبنيّة بالكامل (`/legal/terms`, `/legal/privacy`,
-// `/legal/cookies`) و**صفر رابط إليها في المنتج كلّه** — لا في التسجيل ولا
+// **ما كان:** الصفحات الثلاث مبنيّة بالكامل (`/terms`, `/privacy`,
+// `/cookies`) و**صفر رابط إليها في المنتج كلّه** — لا في التسجيل ولا
 // في الإعدادات ولا في أيّ تذييل. وجودها بلا مدخل يعني أنّها غير موجودة
 // عملياً: لا يصلها إلّا من يعرف المسار ويكتبه بيده.
 //
@@ -14,9 +14,9 @@ import Link from "next/link";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const PAGES = [
-  { href: "/legal/terms", key: "legal.linkTerms" },
-  { href: "/legal/privacy", key: "legal.linkPrivacy" },
-  { href: "/legal/cookies", key: "legal.linkCookies" },
+  { href: "/terms", key: "legal.linkTerms" },
+  { href: "/privacy", key: "legal.linkPrivacy" },
+  { href: "/cookies", key: "legal.linkCookies" },
 ] as const;
 
 export function LegalLinks({

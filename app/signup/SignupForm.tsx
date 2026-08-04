@@ -200,11 +200,11 @@ export function SignupForm() {
             />
             <span>
               {L("أوافق على ", "I agree to the ")}
-              <a href="/legal/terms" target="_blank" rel="noreferrer" className="text-accent underline underline-offset-2">
+              <a href="/terms" target="_blank" rel="noreferrer" className="text-accent underline underline-offset-2">
                 {L("شروط الاستخدام", "Terms of Use")}
               </a>
               {L(" و", " and ")}
-              <a href="/legal/privacy" target="_blank" rel="noreferrer" className="text-accent underline underline-offset-2">
+              <a href="/privacy" target="_blank" rel="noreferrer" className="text-accent underline underline-offset-2">
                 {L("سياسة الخصوصية", "Privacy Policy")}
               </a>
               {L("، وعلى استخدام ملفّات تعريف الارتباط الضرورية لتشغيل الحساب.", ", and to the cookies required to run the account.")}
