@@ -57,7 +57,7 @@ function ResetPasswordInner() {
   // ── رابط غير صالح أو منتهٍ ──────────────────────────────────────
   if (!token) {
     return (
-      <AuthShell locale={locale} onLocaleChange={setLocale} headline={tr("resetInvalidTitle")}>
+      <AuthShell locale={locale} onLocaleChange={setLocale}>
         <div className="card pad-lg text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-critical/12 text-critical">
             <ShieldAlert size={22} />
@@ -79,7 +79,7 @@ function ResetPasswordInner() {
   // ── تمّ التعيين ─────────────────────────────────────────────────
   if (success) {
     return (
-      <AuthShell locale={locale} onLocaleChange={setLocale} headline={tr("resetDoneTitle")}>
+      <AuthShell locale={locale} onLocaleChange={setLocale}>
         <div className="card pad-lg text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-verified/12 text-verified">
             <ShieldCheck size={22} />
@@ -103,7 +103,6 @@ function ResetPasswordInner() {
     <AuthShell
       locale={locale}
       onLocaleChange={setLocale}
-      headline={tr("resetTitle")}
       sub={tr("resetSub")}
     >
       <div className="card pad-lg">

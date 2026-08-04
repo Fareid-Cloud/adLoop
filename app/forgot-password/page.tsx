@@ -8,8 +8,8 @@
 // ومبدّل اللغة والتذييل القانوني.
 //
 // **حالة الإرسال ليست سطراً أخضر:** الشاشة الثانية هي كلّ ما يراه من طلب
-// الاستعادة، فتحمل ما يحتاجه فعلاً — إلى أيّ بريد أُرسل، ومدّة صلاحية
-// الرابط، وماذا يفعل إن لم يصل، وطريق العودة.
+// الاستعادة، فتحمل ما يحتاجه فعلاً — إلى أيّ بريد أُرسل، ومدّة الصلاحية،
+// وطريق العودة.
 
 "use client";
 
@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
     await fetch("/api/auth/forgot-password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, locale }),
     });
     setLoading(false);
     // نفس النتيجة دائماً سواء وُجد البريد أم لا: التفريق بينهما يكشف
@@ -46,7 +46,6 @@ export default function ForgotPasswordPage() {
     <AuthShell
       locale={locale}
       onLocaleChange={setLocale}
-      headline={sent ? tr("forgotSentTitle") : tr("forgotTitle")}
       sub={sent ? undefined : tr("forgotSub")}
     >
       {sent ? (
@@ -66,10 +65,11 @@ export default function ForgotPasswordPage() {
             </span>
           </p>
 
-          <div className="card-inset pad-sm mb-5 flex flex-col gap-1.5 text-start text-[12.5px] leading-relaxed text-text-muted">
-            <p>• {tr("forgotHintExpiry")}</p>
-            <p>• {tr("forgotHintSpam")}</p>
-            <p>• {tr("forgotHintNoEmail")}</p>
+          {/* بلون الهويّة لا رمادي: الصندوق الرمادي يُقرأ كتحذير، وهذه
+              معلومة مساعدة لا تنبيه. */}
+          <div className="mb-5 flex flex-col gap-1.5 rounded-xl border border-accent/25 bg-accent/[0.07] px-3.5 py-3 text-start text-[12.5px] leading-relaxed text-text-muted">
+            <p>{tr("forgotHintExpiry")}</p>
+            <p>{tr("forgotHintSpam")}</p>
           </div>
 
           <div className="flex flex-col gap-2">

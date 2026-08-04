@@ -96,6 +96,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     subject: sanitizeHeader(`[${workspace.name}] ${title} — ${period.range.from} → ${period.range.to}`),
     html: renderEmail({
       locale,
+      art: "report",
       eyebrow: `${workspace.name} · ${period.range.from} → ${period.range.to}`,
       title,
       blocks: [

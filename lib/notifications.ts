@@ -64,6 +64,7 @@ export async function sendUrgentNotificationEmail(params: {
       subject: sanitizeEmailHeader(`[${params.workspaceName}] ${params.title}`),
       html: renderEmail({
         locale,
+        art: "alert",
         // «سياق ثمّ عنوان»: اسم مساحة العمل فوق بحرف صغير بدل حشره في
         // العنوان بين أقواس - العنوان يبقى للرسالة نفسها.
         eyebrow: params.workspaceName,

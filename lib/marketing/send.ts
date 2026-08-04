@@ -97,6 +97,7 @@ export async function runMarketingCampaigns(): Promise<MarketingRunResult> {
         subject: built.subject.replace(/[\r\n]/g, " "),
         html: renderEmail({
           locale: ctx.locale,
+          art: "loop",
           eyebrow: built.eyebrow,
           title: built.title,
           subtitle: built.subtitle,

@@ -11,45 +11,46 @@
 // الصورة: ضع ملفك في public/auth-visual.png (لو غير موجود يظهر تدرّج أنيق).
 
 import type { ReactNode } from "react";
-import { Search, ShieldCheck, TrendingUp } from "lucide-react";
+import { Search, ShieldCheck, RefreshCw } from "lucide-react";
 import type { Locale } from "@/lib/i18n/dictionary";
 import { LegalLinks } from "@/app/components/LegalLinks";
 
-// نصّ تسويقي قصير: العنوان وعدٌ من كلمتين، والفقرة تشرحه في ثلاثة أفعال
-// (اربط، التقط، قرّر)، والأيقونات تختصر الرحلة نفسها. أطول من ذلك لا
-// يُقرأ على شاشة تسجيل - المستخدم جاء ليكتب لا ليقرأ.
-// نصّ تسويقي بوعدٍ لا وصف: الجملة الأولى تقول ما يخسره اليوم، والثانية
-// تقول ما نعطيه. الكلمة الملوّنة هي المفتاح - «تدفع» و«ثبت» - لأن اللون
-// يقع على ما نريده أن يُقرأ أوّلاً حين تمرّ العين سريعاً.
+// نصّ شاشة الحساب: المستخدم هنا **قرّر بالفعل** - جاء ليكتب لا ليقرأ.
+// فالنصّ تذكيرٌ بما اشترك لأجله، لا صفحة بيع مصغَّرة.
+//
+// **الموضع:** الحلقة كاملة - من النقرة إلى العميل ثمّ **إعادة النتيجة إلى
+// المنصّات**. الوقوف عند «قرار على دليل» يبيع لوحة أرقام؛ الحلقة تبيع
+// تحسيناً فعلياً في الإعلان. وهي اسم المنتج نفسه.
+//
+// اللون يقع على الكلمة المفتاح لأنّ العين تمرّ سريعاً على شاشة تسجيل.
 const COPY = {
   en: {
-    lead: "You pay for every click.",
-    accent: "You should pay for customers.",
-    sub: "Platforms report the conversions that flatter them. We check every one against a real conversation, and show you the gap - so your budget follows what actually happened.",
-    pillars: ["Capture every click", "Verify against reality", "Decide on proof"],
+    lead: "From click to customer,",
+    accent: "the loop closes.",
+    sub: "Track every click. Verify every sale against a real conversation. Send that back to Google, Meta and TikTok — so they optimize on your actual customers.",
+    pillars: ["Track every click", "Verify every customer", "Sync back to the platforms"],
   },
   ar: {
-    lead: "تدفع مقابل كل نقرة.",
-    accent: "والأولى أن تدفع مقابل العملاء.",
-    sub: "المنصّات تُبلغ عن التحويلات التي تُجمّلها. نحن نفحص كلّ واحد منها مقابل محادثة حقيقية، ونُريك الفارق - لتتبع ميزانيتُك ما حدث فعلاً.",
-    pillars: ["التقاط كل نقرة", "تحقّق من الواقع", "قرار على دليل"],
+    lead: "من النقرة إلى العميل،",
+    accent: "تكتمل الحلقة.",
+    sub: "نتتبّع كل نقرة، ونتحقّق من كل تحويل بمحادثة حقيقية، ونعيد النتيجة إلى جوجل وميتا وتيك توك — فتُحسّن حملاتك على عملائك الفعليين.",
+    pillars: ["تتبّع كل نقرة", "تحقّق من كل عميل", "مزامنة إلى المنصّات"],
   },
 };
 
-const PILLAR_ICONS = [Search, ShieldCheck, TrendingUp];
+const PILLAR_ICONS = [Search, ShieldCheck, RefreshCw];
 
 export function AuthShell({
   children,
   locale = "en",
   onLocaleChange,
-  headline,
   sub,
   wide = false,
 }: {
   children: ReactNode;
   locale?: Locale;
   onLocaleChange?: (l: Locale) => void;
-  headline?: string;
+  /** يغطّي الفقرة التوضيحية وحدها - العنوان ثابت دائماً */
   sub?: string;
   wide?: boolean;
 }) {
@@ -96,15 +97,13 @@ export function AuthShell({
         <div className="relative z-10 flex h-full flex-col justify-end p-10 xl:p-12">
           <div>
             <h2 className="mb-4 text-[34px] font-bold leading-[1.14] tracking-tight text-white xl:text-[40px]">
-              {headline ? (
-                headline
-              ) : (
-                <>
-                  {copy.lead}
-                  <br />
-                  <span className="text-accent">{copy.accent}</span>
-                </>
-              )}
+              {/* الوعد ثابت في كلّ شاشات الحساب. كان `headline` يغطّيه،
+                  فيرى المستخدم «إعادة تعيين كلمة المرور» مكان الرسالة
+                  التسويقية - أي أنّ اللوحة تكرّر عنوان النموذج الذي أمامه
+                  بدل أن تقول شيئاً جديداً. */}
+              {copy.lead}
+              <br />
+              <span className="text-accent">{copy.accent}</span>
             </h2>
             <p className="max-w-md text-[15px] leading-relaxed text-white/70">{sub ?? copy.sub}</p>
 

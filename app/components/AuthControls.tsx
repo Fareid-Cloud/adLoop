@@ -5,8 +5,11 @@
 
 import type { ReactNode } from "react";
 
+// حدّ فقط بلا ظلّ: الظلّ حول حقل إدخال يوحي بأنّه مرتفع فوق السطح، وهو
+// ليس كذلك - الحقل مستوى مُحفَر لا بطاقة. عند التركيز تظهر حلقة بلون
+// الهويّة بدل تغيير الحدّ وحده، فيُرى الحقل النشط من طرف الشاشة.
 export const FIELD =
-  "block w-full card px-3.5 py-3 text-sm text-text-primary placeholder:text-text-faint outline-none transition-colors focus:border-accent";
+  "block w-full rounded-xl border border-border bg-surface px-3.5 py-3 text-sm text-text-primary placeholder:text-text-faint outline-none transition-[border-color,box-shadow] focus:border-accent focus:ring-4 focus:ring-accent/15";
 
 export const PRIMARY_BTN =
   "w-full rounded-xl bg-accent py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50";

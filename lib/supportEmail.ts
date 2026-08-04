@@ -34,6 +34,7 @@ export async function notifyOwnerNewSupport(t: {
       // بريد المالك. `renderEmail` يهرّب كلّ قيمة تمرّ به.
       html: renderEmail({
         locale: "ar",
+        art: "none",
         eyebrow: t.isReply ? "ردّ على محادثة قائمة" : "رسالة جديدة",
         title: t.subject,
         blocks: [

@@ -43,7 +43,15 @@ export async function POST(req: NextRequest) {
       data: { resetPasswordToken: token, resetPasswordTokenExpiresAt: expiresAt },
     });
 
-    const isAr = (user.preferredLocale ?? "ar") === "ar";
+    // 🔴 كان يقرأ `preferredLocale` من قاعدة البيانات وحدها، وافتراضه
+    // العربية - بينما شاشات الحساب تفتح بالإنجليزية افتراضاً وتحفظ
+    // اختيار الزائر في المتصفّح لا في حسابه. فمن يتصفّح بالإنجليزية
+    // تصله الرسالة بالعربية.
+    //
+    // لغة الطلب أولى: من نسي كلمة مروره لا يستطيع الدخول ليصحّح تفضيله،
+    // واللغة التي يقرأ بها الآن هي الإشارة الوحيدة الصادقة عمّا يفهمه.
+    const requested = rawBody?.locale === "ar" || rawBody?.locale === "en" ? rawBody.locale : null;
+    const isAr = (requested ?? user.preferredLocale ?? "en") === "ar";
     const resetUrl = `${getAppUrl()}/reset-password?token=${token}`;
 
     if (resend) {
@@ -54,6 +62,7 @@ export async function POST(req: NextRequest) {
           subject: isAr ? "إعادة تعيين كلمة المرور - AdLoop" : "Reset your password - AdLoop",
           html: renderEmail({
             locale: isAr ? "ar" : "en",
+            art: "lock",
             title: isAr ? "إعادة تعيين كلمة المرور" : "Reset your password",
             blocks: [
               {

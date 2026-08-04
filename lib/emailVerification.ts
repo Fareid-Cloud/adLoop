@@ -38,6 +38,7 @@ export async function sendVerificationEmail(params: {
       subject: isAr ? "تأكيد بريدك الإلكتروني - AdLoop" : "Verify your email - AdLoop",
       html: renderEmail({
         locale,
+        art: "verify",
         title: isAr ? "أهلاً بك في AdLoop" : "Welcome to AdLoop",
         blocks: [
           {
