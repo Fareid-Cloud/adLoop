@@ -275,7 +275,7 @@ export function DateRangePicker({
                     setDraftCmpMode(m);
                     if (m !== "custom") setDraftCmp(resolveCompare(draft, m));
                   }}
-                  className="card-inset px-2 py-1 text-[12px] text-text-primary outline-none"
+                  className="field field-sm"
                 >
                   {COMPARE_MODES.map((m) => (
                     <option key={m} value={m}>{tr(`cmp_${m}`)}</option>

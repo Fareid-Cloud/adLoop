@@ -167,7 +167,7 @@ export function CompetitorBoardClient({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={tr("searchCompetitor")}
-                className="w-52 card py-2 text-[12.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+                className="field w-52"
                 style={{ paddingInlineStart: 32, paddingInlineEnd: 12 }}
               />
             </div>
@@ -291,12 +291,12 @@ function QuickSearch({
           value={brand}
           onChange={(e) => setBrand(e.target.value)}
           placeholder={tr("quickPlaceholder")}
-          className="min-w-[200px] flex-1 card-inset px-3.5 py-2.5 text-[13.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+          className="field min-w-[200px] flex-1"
         />
         <select
           value={country}
           onChange={(e) => setCountry(e.target.value)}
-          className="card-inset px-3 py-2.5 text-[13px] text-text-primary outline-none"
+          className="field text-[13px]"
         >
           {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>

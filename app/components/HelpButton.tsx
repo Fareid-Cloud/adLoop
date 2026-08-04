@@ -50,7 +50,7 @@ export function HelpButton({ locale }: { locale: "ar" | "en" }) {
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder={ar ? tr("search") : "Search help..."}
-                  className="card-shadow w-full card-inset py-2 ps-9 pe-3 text-[13px] text-text-primary placeholder:text-text-faint outline-none focus:border-accent"
+                  className="field w-full ps-9 pe-3"
                 />
               </div>
             </div>

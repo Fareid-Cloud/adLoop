@@ -119,7 +119,7 @@ export function IntegrationsView({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={tr("search")}
-              className="w-56 card py-2.5 text-[13px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+              className="field w-56"
               style={{ paddingInlineStart: 32, paddingInlineEnd: 12 }}
             />
           </div>
@@ -172,7 +172,7 @@ export function IntegrationsView({
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="card px-3 py-2 text-[12.5px] text-text-primary outline-none"
+            className="field"
           >
             <option value="all">{tr("allCategories")}</option>
             {INTEGRATION_CATEGORIES.map((c) => (

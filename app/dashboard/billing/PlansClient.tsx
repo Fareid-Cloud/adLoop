@@ -355,7 +355,7 @@ function CreditsModal({
           max={MAX_CUSTOM_CREDITS}
           value={credits}
           onChange={(e) => setCredits(Number(e.target.value))}
-          className="mb-3 w-full card-inset px-3 py-2.5 text-[14px] tabular-nums text-text-primary outline-none focus:border-accent"
+          className="field mb-3 w-full text-[14px] tabular-nums"
         />
 
         {/* المعادلة صريحة: كم كريدت = كم بالعملة، تتغيّر مع كل رقم */}

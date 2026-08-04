@@ -82,13 +82,13 @@ export function CreateWorkspaceForm({ locale = "ar" }: { locale?: Locale }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          className="mb-3 block w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
+          className="field mb-3 w-full"
         />
 
         <select
           value={vertical}
           onChange={(e) => setVertical(e.target.value)}
-          className="mb-3 block w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
+          className="field mb-3 w-full"
         >
           <option value="">{tr("verticalPlaceholder")}</option>
           {VERTICALS.map((v) => (
@@ -101,7 +101,7 @@ export function CreateWorkspaceForm({ locale = "ar" }: { locale?: Locale }) {
         <select
           value={businessScale}
           onChange={(e) => setBusinessScale(e.target.value)}
-          className="mb-4 block w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
+          className="field mb-4 w-full"
         >
           <option value="">{tr("scalePlaceholder")}</option>
           {BUSINESS_SCALES.map((s) => (

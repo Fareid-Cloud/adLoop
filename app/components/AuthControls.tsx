@@ -5,11 +5,19 @@
 
 import type { ReactNode } from "react";
 
-// حدّ فقط بلا ظلّ: الظلّ حول حقل إدخال يوحي بأنّه مرتفع فوق السطح، وهو
-// ليس كذلك - الحقل مستوى مُحفَر لا بطاقة. عند التركيز تظهر حلقة بلون
-// الهويّة بدل تغيير الحدّ وحده، فيُرى الحقل النشط من طرف الشاشة.
+// **ثلاث حالات، حدٌّ واحد في كلٍّ منها:**
+//   ساكن  - حدّ محايد
+//   تحويم - الحدّ يغمق فيُعرف أنّه قابل للكتابة قبل النقر
+//   تركيز - الحدّ يأخذ لون الهويّة، ومعه هالة بعشر المعتمة
+//
+// الهالة `3px` بشفافية 10٪ (`--accent-dim`) لا حلقة `4px` بـ15٪: الحلقة
+// السميكة تُقرأ **حدّاً ثانياً** بجانب الحدّ الملوّن، فيبدو الحقل بإطارين.
+// الهالة الخفيفة تُقرأ عمقاً لا خطّاً.
+//
+// وبلا ظلّ ساكن: الظلّ حول حقل إدخال يوحي بأنّه مرتفع فوق السطح، وهو ليس
+// كذلك - الحقل مستوى مُحفَر لا بطاقة.
 export const FIELD =
-  "block w-full rounded-xl border border-border bg-surface px-3.5 py-3 text-sm text-text-primary placeholder:text-text-faint outline-none transition-[border-color,box-shadow] focus:border-accent focus:ring-4 focus:ring-accent/15";
+  "block w-full rounded-xl border border-border bg-surface px-3.5 py-3 text-sm text-text-primary placeholder:text-text-faint outline-none transition-[border-color,box-shadow] duration-150 hover:border-border-visible focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-dim)]";
 
 export const PRIMARY_BTN =
   "w-full rounded-xl bg-accent py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50";

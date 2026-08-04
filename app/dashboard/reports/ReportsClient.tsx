@@ -303,7 +303,7 @@ export function ReportsClient({
                 <select
                   value={dimension}
                   onChange={(e) => setDimension(e.target.value as Dimension)}
-                  className="w-full card-inset px-3 py-2 text-[12.5px] text-text-primary outline-none"
+                  className="field w-full"
                 >
                   {DIMENSIONS.map((d) => (
                     <option key={d} value={d}>{tr(`dim${d[0].toUpperCase()}${d.slice(1)}`)}</option>
@@ -352,7 +352,7 @@ export function ReportsClient({
                       value={campaignQuery}
                       onChange={(e) => setCampaignQuery(e.target.value)}
                       placeholder={tr("searchCampaigns")}
-                      className="mb-1.5 w-full card-inset px-2.5 py-1.5 text-[12px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+                      className="field mb-1.5 w-full px-2.5 py-1.5 text-[12px]"
                     />
                     <div className="max-h-[132px] overflow-y-auto pe-1">
                       {visibleCampaigns.map((c) => {
@@ -706,7 +706,7 @@ function SaveViewModal({
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder={tr("saveViewPlaceholder")}
-        className="mb-4 w-full card-inset px-3 py-2 text-[13px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+        className="field mb-4 w-full text-[13px]"
       />
       <div className="flex justify-end gap-2">
         <button onClick={onClose} className="card px-4 py-2 text-[12.5px] text-text-muted">{tr("cancel")}</button>
@@ -748,7 +748,7 @@ function EmailModal({
         value={email}
         onChange={(e) => { setEmail(e.target.value); setState("idle"); }}
         placeholder={tr("emailPlaceholder")}
-        className="mb-2 w-full card-inset px-3 py-2 text-[13px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+        className="field mb-2 w-full text-[13px]"
       />
       {state === "invalid" && <p className="mb-2 text-[12px] text-critical">{tr("emailInvalid")}</p>}
       {state === "error" && <p className="mb-2 text-[12px] text-critical">{tr("emailFailed")}</p>}

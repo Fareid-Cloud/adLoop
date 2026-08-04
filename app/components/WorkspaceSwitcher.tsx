@@ -134,7 +134,7 @@ export function WorkspaceSwitcher({
                     value={name} onChange={(e) => setName(e.target.value)} autoFocus
                     onKeyDown={(e) => e.key === "Enter" && create()}
                     placeholder={tr("namePlaceholder")}
-                    className="mb-2 w-full card-inset px-2.5 py-2 text-[12.5px] text-text-primary outline-none focus:border-accent"
+                    className="field field-sm mb-2 w-full"
                   />
                   {error && <p className="mb-2 text-[11.5px] leading-relaxed text-critical">{error}</p>}
                   <div className="flex gap-1.5">

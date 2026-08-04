@@ -198,7 +198,7 @@ export function SettingsClient({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={tr("searchPlaceholder")}
-          className="w-full rounded-xl bg-surface py-2 ps-9 pe-3 text-sm text-text-primary outline-none"
+          className="field w-full ps-9 pe-3"
         />
         {searchResults.length > 0 && (
           <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl bg-surface-raised shadow-lg">
@@ -418,7 +418,7 @@ function PreferencesTab({ user }: { user: UserData }) {
       <select
         value={timezone}
         onChange={(e) => setTimezone(e.target.value)}
-        className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
+        className="field mb-4 w-full"
       >
         {/* مجموعات بدل قائمة مسطّحة: القائمة صارت أطول من أن تُمسح بالعين */}
         <optgroup label={tr("tzGroupGulf")}>
@@ -631,7 +631,7 @@ function WorkspaceTab({
       <select
         value={currency}
         onChange={(e) => setCurrency(e.target.value)}
-        className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
+        className="field mb-4 w-full"
       >
         <option value="SAR">{tr("curSar")}</option>
         <option value="EGP">{tr("curEgp")}</option>
@@ -649,7 +649,7 @@ function WorkspaceTab({
       <select
         value={targetLocation}
         onChange={(e) => setTargetLocation(e.target.value)}
-        className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
+        className="field mb-4 w-full"
       >
         <option value="">{tr("marketNone")}</option>
         <option value="SA">{tr("marketSa")}</option>
@@ -669,7 +669,7 @@ function WorkspaceTab({
         value={profitMarginPct}
         onChange={(e) => setProfitMarginPct(e.target.value)}
         placeholder={tr("egPlaceholder", { value: 30 })}
-        className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
+        className="field mb-4 w-full"
       />
 
       <FieldLabel>{tr("bidCeiling")}</FieldLabel>
@@ -682,7 +682,7 @@ function WorkspaceTab({
         max="200"
         value={monthlyChangeCeilingPct}
         onChange={(e) => setMonthlyChangeCeilingPct(e.target.value)}
-        className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
+        className="field mb-4 w-full"
       />
 
       <FieldLabel>{tr("fbPageId")}</FieldLabel>
@@ -694,7 +694,7 @@ function WorkspaceTab({
         value={facebookPageId}
         onChange={(e) => setFacebookPageId(e.target.value)}
         placeholder={tr("egPlaceholder", { value: "123456789012345" })}
-        className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
+        className="field mb-4 w-full"
       />
 
       <div className="mb-2 mt-6 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("waSection")}</div>
@@ -707,7 +707,7 @@ function WorkspaceTab({
         value={waPhoneNumberId}
         onChange={(e) => setWaPhoneNumberId(e.target.value)}
         placeholder={tr("egPlaceholder", { value: "109876543210987" })}
-        className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
+        className="field mb-4 w-full"
       />
 
       <FieldLabel>{tr("waBusinessPhone")}</FieldLabel>
@@ -718,7 +718,7 @@ function WorkspaceTab({
         onChange={(e) => setWaBusinessPhone(e.target.value)}
         placeholder={tr("egPlaceholder", { value: "9665XXXXXXXX" })}
         dir="ltr"
-        className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-start text-sm text-text-primary outline-none"
+        className="field mb-4 w-full text-start"
       />
 
       <FieldLabel>{tr("waGoogleCustomerId")}</FieldLabel>
@@ -729,7 +729,7 @@ function WorkspaceTab({
         onChange={(e) => setGoogleAdsCustomerId(e.target.value)}
         placeholder={tr("egPlaceholder", { value: "1234567890" })}
         dir="ltr"
-        className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-start text-sm text-text-primary outline-none"
+        className="field mb-4 w-full text-start"
       />
 
       {/* الرابط يُولَّد هنا بمعرّف المساحة مدموجاً - نسخه ولصقه في الإعلان
@@ -1271,7 +1271,7 @@ function MfaSection() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mb-2 w-full rounded-xl bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none"
+              className="field mb-2 w-full"
             />
             {error && <p className="mb-2 text-xs text-critical">{error}</p>}
             <button
@@ -1296,7 +1296,7 @@ function MfaSection() {
             value={code}
             onChange={(e) => setCode(e.target.value)}
             required
-            className="mb-2 w-full rounded-xl bg-surface-raised px-3 py-2 text-center text-lg tracking-widest text-text-primary outline-none"
+            className="field mb-2 w-full text-center text-lg tracking-widest"
           />
           {error && <p className="mb-2 text-xs text-critical">{error}</p>}
           <button
@@ -1346,7 +1346,7 @@ function DangerZoneTab({ workspaces }: { workspaces: WorkspaceData[] }) {
         <select
           value={targetId}
           onChange={(e) => setTargetId(e.target.value)}
-          className="mb-2 w-full rounded-xl bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none"
+          className="field mb-2 w-full"
         >
           {workspaces.map((w) => (
             <option key={w.id} value={w.id}>
@@ -1424,7 +1424,7 @@ function DeleteAccountSection() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mb-2 w-full rounded-xl bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none"
+            className="field mb-2 w-full"
           />
           {error && <p className="mb-2 text-xs text-critical">{error}</p>}
           <div className="flex gap-2">
@@ -1629,7 +1629,7 @@ function TextInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="mb-4 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
+      className="field mb-4 w-full"
     />
   );
 }
@@ -1696,7 +1696,7 @@ function NumberRow({
         step={step}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-20 rounded-lg bg-surface-raised px-2 py-1 text-end text-sm text-text-primary outline-none"
+        className="field w-20 px-2 py-1 text-end"
       />
     </div>
   );

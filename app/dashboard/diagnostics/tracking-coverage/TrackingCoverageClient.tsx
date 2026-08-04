@@ -137,12 +137,12 @@ export function TrackingCoverageClient({
           <input
             value={url} onChange={(e) => setUrl(e.target.value)}
             placeholder={tr("covUrlPlaceholder")}
-            className="card-inset px-3.5 py-2.5 text-[13.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+            className="field"
           />
           <input
             value={label} onChange={(e) => setLabel(e.target.value)}
             placeholder={tr("covLabelPlaceholder")}
-            className="card-inset px-3.5 py-2.5 text-[13.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+            className="field"
           />
         </div>
         {error && <p className="mb-2 text-[12.5px] text-critical">{error}</p>}

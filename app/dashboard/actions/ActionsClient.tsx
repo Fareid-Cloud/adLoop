@@ -220,7 +220,7 @@ export function ActionsClient({
           <select
             value={groupBy}
             onChange={(e) => setGroupBy(e.target.value as GroupBy)}
-            className="card px-3 py-1.5 text-[12px] text-text-primary outline-none"
+            className="field field-sm"
           >
             <option value="source">{tr("groupBySource")}</option>
             <option value="severity">{tr("groupBySeverity")}</option>
@@ -228,7 +228,7 @@ export function ActionsClient({
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortBy)}
-            className="card px-3 py-1.5 text-[12px] text-text-primary outline-none"
+            className="field field-sm"
           >
             <option value="impact">{tr("sortImpact")}</option>
             <option value="newest">{tr("sortNewest")}</option>

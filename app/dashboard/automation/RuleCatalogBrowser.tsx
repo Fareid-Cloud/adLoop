@@ -249,7 +249,7 @@ function RuleConfigModal({
               type="number"
               value={threshold}
               onChange={(e) => setThreshold(Number(e.target.value))}
-              className="w-32 card-inset px-3 py-2 font-mono text-[14px] text-text-primary outline-none focus:border-accent"
+              className="field w-32 font-mono text-[14px]"
             />
             <span className="text-[13px] text-text-muted">
               {template.unit === "currency" ? currency : UNIT_SUFFIX[template.unit] || ""}
@@ -261,7 +261,7 @@ function RuleConfigModal({
           <input
             type="number" min={1} max={30} value={days}
             onChange={(e) => setDays(Number(e.target.value))}
-            className="mb-4 w-32 card-inset px-3 py-2 font-mono text-[14px] text-text-primary outline-none focus:border-accent"
+            className="field mb-4 w-32 font-mono text-[14px]"
           />
 
           {/* قيمة الإجراء */}
@@ -273,7 +273,7 @@ function RuleConfigModal({
               <input
                 type="number" value={actionValue}
                 onChange={(e) => setActionValue(Number(e.target.value))}
-                className="mb-4 w-32 card-inset px-3 py-2 font-mono text-[14px] text-text-primary outline-none focus:border-accent"
+                className="field mb-4 w-32 font-mono text-[14px]"
               />
             </>
           )}

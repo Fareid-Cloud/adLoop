@@ -221,18 +221,18 @@ function EditRow({
       <label className="flex flex-col gap-1">
         <span className="text-[11px] text-text-muted">{tr("threshold")}</span>
         <input type="number" value={threshold} onChange={(e) => setThreshold(Number(e.target.value))}
-               className="w-24 card px-2.5 py-1.5 font-mono text-[13px] text-text-primary outline-none focus:border-accent" />
+               className="field field-sm w-24 font-mono" />
       </label>
       <label className="flex flex-col gap-1">
         <span className="text-[11px] text-text-muted">{tr("daysRow")}</span>
         <input type="number" min={1} max={30} value={days} onChange={(e) => setDays(Number(e.target.value))}
-               className="w-20 card px-2.5 py-1.5 font-mono text-[13px] text-text-primary outline-none focus:border-accent" />
+               className="field field-sm w-20 font-mono" />
       </label>
       {rule.actionValue !== null && (
         <label className="flex flex-col gap-1">
           <span className="text-[11px] text-text-muted">{tr("actionPct")}</span>
           <input type="number" value={actionValue} onChange={(e) => setActionValue(Number(e.target.value))}
-                 className="w-20 card px-2.5 py-1.5 font-mono text-[13px] text-text-primary outline-none focus:border-accent" />
+                 className="field field-sm w-20 font-mono" />
         </label>
       )}
       <label className="flex items-center gap-2 pb-1.5 text-[12px] text-text-primary">

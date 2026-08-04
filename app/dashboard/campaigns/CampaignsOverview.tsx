@@ -154,12 +154,12 @@ export function CampaignsOverview({
 
           <div className="flex flex-wrap items-center gap-2">
             <select value={platform} onChange={(e) => setPlatform(e.target.value)}
-                    className="card-inset px-3 py-2 text-[12.5px] text-text-primary outline-none">
+                    className="field">
               <option value="all">{tr("ovAllPlatforms")}</option>
               {platforms.map((p) => <option key={p} value={p}>{platformLabel(locale, p)}</option>)}
             </select>
             <select value={state} onChange={(e) => setState(e.target.value as any)}
-                    className="card-inset px-3 py-2 text-[12.5px] text-text-primary outline-none">
+                    className="field">
               <option value="all">{tr("ovAllStates")}</option>
               <option value="critical">{tr("ovStCritical")} ({counts.critical})</option>
               <option value="watch">{tr("ovStWatch")} ({counts.watch})</option>
@@ -168,7 +168,7 @@ export function CampaignsOverview({
             <div className="relative">
               <Search size={14} className="absolute top-1/2 -translate-y-1/2 text-text-faint" style={{ insetInlineStart: 10 }} />
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tr("ovSearch")}
-                     className="w-44 card-inset py-2 text-[12.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+                     className="field w-44"
                      style={{ paddingInlineStart: 30, paddingInlineEnd: 10 }} />
             </div>
           </div>

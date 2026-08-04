@@ -125,13 +125,13 @@ export function PricingClient({
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
-              className="col-span-2 rounded-xl bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none"
+              className="field col-span-2"
             />
             <input
               placeholder={tr("sku")}
               value={form.sku}
               onChange={(e) => setForm({ ...form, sku: e.target.value })}
-              className="col-span-2 rounded-xl bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none"
+              className="field col-span-2"
             />
             <input
               placeholder={tr("price")}
@@ -139,35 +139,35 @@ export function PricingClient({
               value={form.currentPrice}
               onChange={(e) => setForm({ ...form, currentPrice: e.target.value })}
               required
-              className="rounded-xl bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none"
+              className="field"
             />
             <input
               placeholder={tr("cogs")}
               type="number"
               value={form.cogs}
               onChange={(e) => setForm({ ...form, cogs: e.target.value })}
-              className="rounded-xl bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none"
+              className="field"
             />
             <input
               placeholder={tr("shipping")}
               type="number"
               value={form.outboundShippingCost}
               onChange={(e) => setForm({ ...form, outboundShippingCost: e.target.value })}
-              className="rounded-xl bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none"
+              className="field"
             />
             <input
               placeholder={tr("returnRate")}
               type="number"
               value={form.rtoRatePct}
               onChange={(e) => setForm({ ...form, rtoRatePct: e.target.value })}
-              className="rounded-xl bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none"
+              className="field"
             />
             <input
               placeholder={tr("adCost")}
               type="number"
               value={form.avgAdCostPerOrder}
               onChange={(e) => setForm({ ...form, avgAdCostPerOrder: e.target.value })}
-              className="rounded-xl bg-surface-raised px-3 py-2 text-sm text-text-primary outline-none"
+              className="field"
             />
           </div>
           <button

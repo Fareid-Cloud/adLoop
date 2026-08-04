@@ -109,7 +109,7 @@ export function DeepScanClient({ workspaceId, pastScans, locale = "ar" }: { work
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           required
-          className="mb-1 w-full rounded-xl bg-surface-raised px-3 py-2.5 text-sm text-text-primary outline-none"
+          className="field mb-1 w-full"
         />
         <datalist id="final-urls-suggestions">
           {suggestedUrls.map((u) => (
@@ -144,7 +144,7 @@ export function DeepScanClient({ workspaceId, pastScans, locale = "ar" }: { work
                 placeholder={tr("competitorPlaceholder")}
                 value={newCompetitor}
                 onChange={(e) => setNewCompetitor(e.target.value)}
-                className="flex-1 rounded-xl bg-surface-raised px-3 py-2 text-xs text-text-primary outline-none"
+                className="field flex-1 text-xs"
               />
               <button
                 type="button"

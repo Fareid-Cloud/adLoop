@@ -413,7 +413,7 @@ export function DiagnosticsView({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <select value={category} onChange={(e) => setCategory(e.target.value as any)}
-                    className="card-inset px-3 py-2 text-[12.5px] text-text-primary outline-none">
+                    className="field">
               <option value="all">{tp("allCategories")} ({categoryCounts.all ?? 0})</option>
               {(Object.keys(CATEGORY_META) as CheckCategory[]).filter((k) => categoryCounts[k]).map((k) => (
                 <option key={k} value={k}>{ar ? CATEGORY_META[k].ar : CATEGORY_META[k].en} ({categoryCounts[k]})</option>
@@ -428,7 +428,7 @@ export function DiagnosticsView({
               </button>
             )}
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)}
-                    className="card-inset px-3 py-2 text-[12.5px] text-text-primary outline-none">
+                    className="field">
               <option value="all">{tp("allStatuses")}</option>
               {(Object.keys(STATUS_TONE) as CheckStatus[]).map((k) => (
                 <option key={k} value={k}>{tp(STATUS_KEY[k])}</option>
@@ -437,7 +437,7 @@ export function DiagnosticsView({
             <div className="relative">
               <Search size={14} className="absolute top-1/2 -translate-y-1/2 text-text-faint" style={{ insetInlineStart: 10 }} />
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tp("searchChecks")}
-                     className="w-44 card-inset py-2 text-[12.5px] text-text-primary outline-none placeholder:text-text-faint focus:border-accent"
+                     className="field w-44"
                      style={{ paddingInlineStart: 30, paddingInlineEnd: 10 }} />
             </div>
           </div>
