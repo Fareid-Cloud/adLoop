@@ -9,7 +9,7 @@
 // اللوحة الجانبية لصيقة باليمين ولا تُغطّي الصفحة: المقارنة بين المنصات
 // جزء من القرار، فإخفاء القائمة خلف طبقة معتمة يقطعها.
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Link2, AlertTriangle, RefreshCw, BarChart3, Layers, Search,
@@ -48,6 +48,15 @@ export function IntegrationsView({
   );
   const [pickerPlatform, setPickerPlatform] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+
+  // 🔴 «إدارة» كان يفتح اللوحة في موضعٍ خارج ما يراه المستخدم إن كان قد
+  // مرّر داخل قائمة طويلة، فيبدو أنّ الزرّ لا يفعل شيئاً. السَّوق إليها
+  // يجعل أثر الضغطة مرئياً - وهو ما يجب أن يفعله كلّ زرّ يفتح شيئاً.
+  const drawerRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!selectedKey) return;
+    drawerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [selectedKey]);
 
   const selected = overview.active.find((a) => a.key === selectedKey) ?? null;
 
@@ -179,8 +188,12 @@ export function IntegrationsView({
               <option key={c.key} value={c.key}>{locale === "en" ? c.labelEn : c.labelAr}</option>
             ))}
           </select>
-          <div className="flex overflow-hidden rounded-xl border border-border">
+          {/* مبدّل طريقة العرض: `h-full items-stretch` ليطابق ارتفاع القوائم
+              المنسدلة بجانبه بدل أن يقف أقصر منها في الصفّ نفسه، وفاصل بين
+              الشقّين فيُقرأ كمبدّل من موضعين لا كزرّ واحد عريض. */}
+          <div className="flex h-full items-stretch overflow-hidden rounded-xl border border-border">
             <IconToggle active={view === "list"} onClick={() => setView("list")} icon={List} title={tr("viewList")} />
+            <span className="w-px shrink-0 bg-border" aria-hidden />
             <IconToggle active={view === "grid"} onClick={() => setView("grid")} icon={LayoutGrid} title={tr("viewGrid")} />
           </div>
         </div>
@@ -254,7 +267,18 @@ export function IntegrationsView({
           />
         )}
         {selected && tab !== "available" && (
-          <div className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-border bg-surface xl:static xl:z-auto xl:max-h-none xl:overflow-visible xl:rounded-none xl:border-t-0 xl:bg-transparent">
+          // 🔴 من `xl` فصاعداً يصير عموداً جنبياً عادياً - وإن كان المستخدم
+          // قد مرّر إلى منتصف قائمة طويلة، تُفتح اللوحة عند **أعلى** العمود
+          // خارج ما يراه، فيبدو أنّ «إدارة» لم تفعل شيئاً. `sticky` يبقيها
+          // في مجاله البصريّ، و`scrollIntoView` أدناه يسوقه إليها في المرّة
+          // الأولى. تحت `xl` هي لوحة سفلية عائمة فلا تحتاج شيئاً من هذا.
+          // ⚠️ الدرس المدفوع ثمنه في الشريط الجانبيّ: تحويل `fixed` إلى
+          // `sticky` **يجب أن يُبطل `inset` معه**، وإلّا بقي `inset-x-0`
+          // و`bottom-0` ساريين فخرج العنصر من عمود التدفّق تماماً.
+          <div
+            ref={drawerRef}
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-border bg-surface xl:sticky xl:inset-x-auto xl:bottom-auto xl:top-20 xl:z-auto xl:max-h-[calc(100dvh-7rem)] xl:self-start xl:rounded-none xl:border-t-0 xl:bg-transparent"
+          >
           <IntegrationDrawer
             integration={selected}
             locale={locale}
@@ -343,7 +367,9 @@ function IconToggle({
       title={title}
       aria-label={title}
       aria-pressed={active}
-      className={`px-2.5 py-2 ${active ? "bg-accent text-white" : "bg-surface text-text-muted hover:text-text-primary"}`}
+      className={`flex items-center justify-center px-3 transition-colors ${
+        active ? "bg-accent text-white" : "bg-surface text-text-muted hover:text-text-primary"
+      }`}
     >
       <Icon size={15} />
     </button>
