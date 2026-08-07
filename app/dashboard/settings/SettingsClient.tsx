@@ -1338,7 +1338,7 @@ function DangerZoneTab({ workspaces }: { workspaces: WorkspaceData[] }) {
 
   return (
     <SettingsSection>
-      <div className="btn btn-danger bg-critical/10 p-4">
+      <div className="note border-critical/35 bg-critical/10 p-4">
         <div className="mb-2 text-sm font-medium text-critical">{tr("dzDeleteWorkspace")}</div>
         <p className="mb-3 text-xs text-text-muted">
           {tr("dzDeleteWorkspaceHint")}
@@ -1405,7 +1405,7 @@ function DeleteAccountSection() {
   }
 
   return (
-    <div className="btn btn-danger mt-4 bg-critical/10 p-4">
+    <div className="note mt-4 border-critical/35 bg-critical/10 p-4">
       <div className="mb-2 text-sm font-medium text-critical">{tr("dzDeleteAccount")}</div>
       <p className="mb-3 text-xs text-text-muted">
         {tr("dzDeleteAccountHint")}

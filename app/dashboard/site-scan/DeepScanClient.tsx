@@ -204,7 +204,7 @@ export function DeepScanClient({ workspaceId, pastScans, locale }: { workspaceId
       )}
 
       {scan?.status === "FAILED" && (
-        <div className="btn btn-danger mb-4 bg-critical/10 p-4 text-critical">
+        <div className="note mb-4 border-critical/35 bg-critical/10 p-4 text-critical">
           {tr("scanFailed", { error: scan.errorMessage ?? "" })}
         </div>
       )}
@@ -243,7 +243,7 @@ function ScanResults({ report, scores, scanId, locale }: { report: any; scores: 
       </div>
 
       {/* الملخص التنفيذي */}
-      <div className="btn btn-primary bg-accent-dim p-4 text-text-primary">
+      <div className="note border-accent/35 bg-accent/10 p-4 text-text-primary">
         <strong className="text-accent">{tr("execSummary")}</strong>
         {synthesis.executiveSummary}
       </div>

@@ -167,7 +167,7 @@ export function ProductFocusView({
 
         {/* التحذير - يظهر بحركة تنبيه ثم يهدأ، ولا يختفي لأن الخسارة قائمة */}
         {losing && (
-          <div className="btn btn-danger items-start border-b border-critical/30 bg-critical/[0.07] p-4">
+          <div className="note items-start rounded-none border-x-0 border-t-0 border-b-critical/30 bg-critical/[0.07] p-4">
             <AlertTriangle size={18} className="mt-0.5 shrink-0 animate-pulse-attention text-critical" />
             <div>
               <p className="text-[13.5px] font-bold text-critical">{tr("losingTitle")}</p>
@@ -357,7 +357,7 @@ export function ProductFocusView({
               التمرير إلى أسفل النافذة للوصول إلى الإجراء الأساسي */}
           <div className="mt-auto">
             {error && (
-              <p className="btn btn-danger btn-sm mb-2 border border-critical/35 bg-critical/[0.07] p-2.5 text-critical">
+              <p className="note mb-2 border-critical/35 bg-critical/[0.07] p-2.5 text-critical">
                 {error}
               </p>
             )}

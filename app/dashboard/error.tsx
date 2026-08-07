@@ -26,7 +26,7 @@ export default function DashboardError({
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-      <div className="btn btn-danger mb-4 h-12 w-12 rounded-full bg-critical/15 text-critical">
+      <div className="icon-badge mb-4 h-12 w-12 bg-critical/15 text-critical">
         <AlertTriangle size={22} />
       </div>
       <h1 className="mb-1.5 text-lg font-semibold text-text-primary">

@@ -8,6 +8,7 @@ import { createContext, useContext, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Beaker, Plus, TrendingUp, TrendingDown, Minus, X, Check, Clock, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { OptionGroup } from "@/app/components/ui/OptionGroup";
 import { EXPERIMENT_METRICS } from "@/lib/experimentMetrics";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
@@ -208,15 +209,16 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
                  className="field" />
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder={tr("notePlaceholder")}
                  className="field" />
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11.5px] text-text-muted">{tr("window")}</span>
-            {[3, 7, 14, 30].map((d) => (
-              <button key={d} onClick={() => setWin(d)}
-                      className={`rounded-lg border px-2.5 py-1 text-[11.5px] ${win === d ? "border-accent bg-accent/10 text-accent" : "border-border bg-surface text-text-muted"}`}>
-                {tr("daysN", { n: d })}
-              </button>
-            ))}
-          </div>
+          {/* كان العنوان في صفّ الخيارات نفسه وأعرضتها تتبع أطوال نصوصها،
+              فيبدو العنوان خياراً خامساً و«٣ أيام» أصغر شأناً من «٣٠ يوماً».
+              القاعدة العامّة الآن في `OptionGroup`. */}
+          <OptionGroup
+            label={tr("window")}
+            size="sm"
+            value={win}
+            onChange={setWin}
+            options={[3, 7, 14, 30].map((d) => ({ value: d, label: tr("daysN", { n: d }) }))}
+          />
           {win !== exp.windowDays && exp.status !== "RUNNING" && (
             <p className="text-[11.5px] text-gap">{tr("windowWarn")}</p>
           )}
@@ -229,8 +231,12 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
         </div>
       )}
 
+      {/* 🔴 نفس فخّ «`.btn` على `div`» المتكرّر: `.btn-danger` تفرض خلفيةً
+          حمراء صريحة تهزم `bg-critical/[0.06]`، و`.btn` تفرض `nowrap` -
+          فيصير صفّ التأكيد شريطاً أحمر ممتلئاً يبدو زرّاً واحداً ضخماً
+          بينما فيه زرّان حقيقيّان بداخله. */}
       {confirmDelete && (
-        <div className="btn btn-danger mb-3 flex-wrap justify-between border border-critical/35 bg-critical/[0.06] p-3">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-critical/35 bg-critical/[0.06] p-3">
           <span className="flex items-center gap-2 text-[12.5px] text-text-primary">
             <AlertTriangle size={14} className="text-critical" /> {tr("confirmDelete")}
           </span>
@@ -365,15 +371,13 @@ function ManualExperimentModal({
           <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2}
                     className="field mb-4 w-full resize-none" />
 
-          <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("windowLabel")}</label>
-          <div className="mb-4 flex gap-2">
-            {[3, 7, 14, 30].map((d) => (
-              <button key={d} onClick={() => setWindowDays(d)}
-                      className={`flex-1 rounded-xl border px-3 py-2 text-[12.5px] ${windowDays === d ? "border-accent bg-accent/10 text-accent" : "border-border bg-surface-raised text-text-muted"}`}>
-                {tr("daysN", { n: d })}
-              </button>
-            ))}
-          </div>
+          <OptionGroup
+            className="mb-4"
+            label={tr("windowLabel")}
+            value={windowDays}
+            onChange={setWindowDays}
+            options={[3, 7, 14, 30].map((d) => ({ value: d, label: tr("daysN", { n: d }) }))}
+          />
 
           <label className="mb-1.5 block text-[12.5px] text-text-muted">
             {tr("metricsCompared", { n: metrics.length })}

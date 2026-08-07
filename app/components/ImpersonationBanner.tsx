@@ -15,7 +15,7 @@ export function ImpersonationBanner({ locale }: { locale: Locale }) {
   }
 
   return (
-    <div className="btn btn-danger btn-sm justify-between">
+    <div className="note justify-between bg-critical text-white">
       <span>{t(locale, "ui.impersonating")}</span>
       <button
         onClick={handleReturn}

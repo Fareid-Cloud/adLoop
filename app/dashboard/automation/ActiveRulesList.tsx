@@ -177,7 +177,7 @@ export function ActiveRulesList({
             </div>
 
             {confirmDelete === rule.id && (
-              <div className="btn btn-danger mt-3 flex-wrap justify-between border border-critical/35 bg-critical/[0.06] p-3">
+              <div className="note mt-3 justify-between border-critical/35 bg-critical/[0.06]">
                 <span className="flex items-center gap-2 text-[12.5px] text-text-primary">
                   <AlertTriangle size={14} className="text-critical" />
                   {tr("confirmDelete")}

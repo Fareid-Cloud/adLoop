@@ -120,7 +120,7 @@ export function PlansClient({
       )}
 
       {error && (
-        <p className="btn btn-danger mb-4 border border-critical/35 bg-critical/[0.06] p-3 text-center text-critical">
+        <p className="note mb-4 justify-center border-critical/35 bg-critical/[0.06] text-center text-critical">
           {error}
         </p>
       )}

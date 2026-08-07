@@ -250,7 +250,7 @@ export function ActionsClient({
       </div>
 
       {error && (
-        <div className="btn btn-danger mb-3 border border-critical/35 bg-critical/[0.06] p-3 text-critical">
+        <div className="note mb-3 border-critical/35 bg-critical/[0.06] text-critical">
           {tr("applyFailed", { error })}
         </div>
       )}

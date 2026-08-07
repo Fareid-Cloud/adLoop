@@ -253,7 +253,7 @@ export function IntegrationDrawer({
         )}
 
         {confirming ? (
-          <div className="btn btn-danger border border-critical/35 bg-critical/[0.06] p-3">
+          <div className="note border-critical/35 bg-critical/[0.06]">
             <p className="mb-2 text-[12px] leading-relaxed text-text-primary">{tr("confirmDisconnect")}</p>
             <div className="flex gap-2">
               <button

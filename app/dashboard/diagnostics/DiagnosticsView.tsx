@@ -287,7 +287,7 @@ export function DiagnosticsView({
         <section className="card-shadow overflow-hidden card">
           <div className="flex items-center gap-2 border-b border-border p-4">
             <h2 className="section-title">{tp("issuesTitle")}</h2>
-            <span className="btn btn-danger rounded-full bg-critical/12 font-mono text-critical">
+            <span className="chip bg-critical/12 font-mono text-critical">
               {topIssues.length}
             </span>
           </div>

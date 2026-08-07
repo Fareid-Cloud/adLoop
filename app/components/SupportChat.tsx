@@ -107,7 +107,7 @@ export function SupportChat({
             الاسم الافتراضي من القاموس، والتمرير يبقى متاحاً لمن يريده. */}
         <span className="truncate">{label ?? tr("sidebarLabel")}</span>
         {unread > 0 && (
-          <span className="btn btn-danger ms-auto h-4 min-w-4 rounded-full font-bold">{unread}</span>
+          <span className="chip ms-auto min-w-[18px] bg-critical text-white">{unread}</span>
         )}
       </button>
     );

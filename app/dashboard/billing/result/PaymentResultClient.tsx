@@ -96,7 +96,7 @@ export function PaymentResultClient({
 
       {phase === "failed" && (
         <>
-          <span className="btn btn-danger mb-4 h-14 w-14 rounded-full bg-critical/12">
+          <span className="icon-badge mb-4 h-14 w-14 bg-critical/12 text-critical">
             <XCircle size={30} className="text-critical" />
           </span>
           <h1 className="page-title">{tr("failedTitle")}</h1>

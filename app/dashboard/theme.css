@@ -703,6 +703,58 @@ html, body { overflow-x: clip; }
 .btn-icon { width: 2.25rem; height: 2.25rem; padding: 0; flex-shrink: 0; }
 .btn-icon.btn-sm { width: 2rem; height: 2rem; }
 
+/* ── ما ليس زرّاً ─────────────────────────────────────────────────────
+ * 🔴 وُجد هذان بعد اكتشاف **ثلاثة وعشرين** موضعاً في المنتج تستعمل
+ * `btn btn-danger` على `<div>` أو `<span>` لتحصل على شارة أو صندوق تنبيه.
+ * والنتيجة عكس المقصود تماماً في كلّ مرّة:
+ *
+ *   `.btn-danger` تكتب `background: var(--critical)` و`color: #fff` كقاعدة
+ *   CSS عادية، وهي **تغلب** `bg-critical/12` و`text-critical` لأنّ أدوات
+ *   Tailwind تعيش في طبقة `utilities` وهذا الملفّ خارجها. فالمكتوب «تينت
+ *   خفيف ونصّ أحمر» يظهر **أحمر مصمتاً بنصّ أبيض**. ومعه `white-space:
+ *   nowrap` من `.btn` فيصطفّ كلّ ما في الصندوق سطراً واحداً لا ينكسر.
+ *
+ *   هذا بالضبط سبب الشريط الأحمر الممتلئ الذي بدا زرّاً ضخماً ميّتاً في
+ *   صفحة منتجات التسوّق وفي صفحة التجارب وفي إحدى وعشرين صفحة غيرهما.
+ *
+ * القاعدة: `.btn` للأزرار وحدها. الشارة `.chip`، وصندوق التنبيه `.note`،
+ * وكلاهما لا يفرض لوناً - يأتي اللون من أدوات Tailwind الدلالية فتعمل.
+ * ─────────────────────────────────────────────────────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3125rem;
+  border-radius: 999px;
+  padding: 0.125rem 0.5rem;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.55;
+  white-space: nowrap;
+}
+
+.note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  padding: 0.75rem 0.875rem;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+/* مربّع أيقونة دائريّ - كان يُكتب `btn btn-danger h-12 w-12` فيخرج أحمر
+   مصمتاً بأيقونة بيضاء بدل دائرة بتينت خفيف. */
+.icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
 /* شريط التمرير يتبع الثيم. بلا هذا يرسم المتصفّح شريطاً فاتحاً على صفحة
    غامقة - خطٌّ أبيض على حافة كلّ لوحة ونافذة. `color-scheme` يخبر المتصفّح
    بالثيم فيرسم شريطه ومربّعات النماذج الأصلية بما يوافقه. */

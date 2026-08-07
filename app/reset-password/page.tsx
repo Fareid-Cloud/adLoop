@@ -59,7 +59,7 @@ function ResetPasswordInner() {
     return (
       <AuthShell locale={locale} onLocaleChange={setLocale}>
         <div className="card pad-lg text-center">
-          <div className="btn btn-danger mx-auto mb-4 h-12 w-12 bg-critical/12 text-critical">
+          <div className="icon-badge mx-auto mb-4 h-12 w-12 bg-critical/12 text-critical">
             <ShieldAlert size={22} />
           </div>
           <h2 className="mb-2 text-[17px] font-semibold text-text-primary">{tr("invalidLink")}</h2>

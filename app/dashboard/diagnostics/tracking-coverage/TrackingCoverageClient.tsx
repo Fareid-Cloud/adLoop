@@ -252,7 +252,7 @@ export function TrackingCoverageClient({
                 </div>
 
                 {confirmDelete === p.id && (
-                  <div className="btn btn-danger mt-3 flex-wrap justify-between border border-critical/35 bg-critical/[0.06] p-3">
+                  <div className="note mt-3 flex-wrap justify-between border-critical/35 bg-critical/[0.06] p-3">
                     <span className="text-[12.5px] text-text-primary">{tr("covConfirmDelete")}</span>
                     <div className="flex gap-2">
                       <button onClick={() => setConfirmDelete(null)}

@@ -242,7 +242,7 @@ export function EcommerceView({
           <div className="flex items-center gap-2 border-b border-border p-4">
             <TrendingDown size={16} className="text-critical" />
             <h2 className="section-title">{tr("losingProducts")}</h2>
-            <span className="btn btn-danger rounded-full bg-critical/12 font-mono text-critical">
+            <span className="chip bg-critical/12 font-mono text-critical">
               {losing.length}
             </span>
           </div>
