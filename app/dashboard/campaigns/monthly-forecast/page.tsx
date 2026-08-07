@@ -9,6 +9,8 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { CalendarRange } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export default async function MonthlyForecastPage() {
   const user = await getSessionUserFromCookies();
@@ -26,7 +28,12 @@ export default async function MonthlyForecastPage() {
   if (!workspace.monthlyBudgetTarget) {
     return (
       <div className="mx-auto max-w-2xl">
-        <h1 className="mb-2 page-title">{t(locale, "campPages.mfTitle")}</h1>
+        <PageHeader
+          icon={CalendarRange}
+          tone="accent"
+          eyebrow={workspace.name}
+          title={t(locale, "campPages.mfTitle")}
+        />
         <EmptyState
           title={t(locale, "campPages.mfNoBudget")}
           description={t(locale, "campPages.mfNoBudgetBody")}
@@ -64,31 +71,33 @@ export default async function MonthlyForecastPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.mfTitle")}</h1>
-      <p className="mb-6 text-xs text-text-faint">
-        {t(locale, "campPages.mfIntro")}
-      </p>
+      <PageHeader
+        icon={CalendarRange}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.mfTitle")}
+        description={t(locale, "campPages.mfIntro")}
+      />
 
-      <div className="mb-4 rounded-2xl bg-surface p-5 text-center">
+      <div className="card mb-4 p-5 text-center">
         <div className={`font-mono text-3xl ${statusConfig.color}`}>{projectedPct}%</div>
         <div className={`mt-1 text-sm ${statusConfig.color}`}>{t(locale, `campPages.${statusConfig.key}`)}</div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-surface p-4">
+        <div className="card p-4">
           <div className="text-xs text-text-faint">{t(locale, "campPages.mfSpent")}</div>
           <div className="font-mono text-lg text-text-primary">{spentSoFar.toLocaleString()}</div>
         </div>
-        <div className="rounded-2xl bg-surface p-4">
+        <div className="card p-4">
           <div className="text-xs text-text-faint">{t(locale, "campPages.mfProjected")}</div>
           <div className="font-mono text-lg text-text-primary">{Math.round(projectedTotal).toLocaleString()}</div>
         </div>
-        <div className="rounded-2xl bg-surface p-4">
+        <div className="card p-4">
           <div className="text-xs text-text-faint">{t(locale, "campPages.mfTarget")}</div>
           <div className="font-mono text-lg text-text-primary">{target.toLocaleString()}</div>
         </div>
-        <div className="rounded-2xl bg-surface p-4">
+        <div className="card p-4">
           <div className="text-xs text-text-faint">{t(locale, "campPages.mfDaysLeft")}</div>
           <div className="font-mono text-lg text-text-primary">{daysRemaining}</div>
         </div>

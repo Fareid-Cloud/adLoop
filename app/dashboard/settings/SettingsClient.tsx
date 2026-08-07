@@ -201,7 +201,7 @@ export function SettingsClient({
           className="field w-full ps-9 pe-3"
         />
         {searchResults.length > 0 && (
-          <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl bg-surface-raised shadow-lg">
+          <div className="card absolute z-10 mt-1 w-full overflow-hidden bg-surface-raised shadow-lg">
             {searchResults.map((r) => (
               <button
                 key={r.labelKey}
@@ -523,7 +523,7 @@ function AccountsTab({ connectedPlatforms }: { connectedPlatforms: ConnectedPlat
       {(["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"] as const).map((platform) => {
         const connection = connectedMap.get(platform);
         return (
-          <div key={platform} className="mb-2 rounded-xl bg-surface-raised px-4 py-3">
+          <div key={platform} className="card mb-2 bg-surface-raised px-4 py-3">
             <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <PlatformLogo platform={platform} size={18} />
@@ -1250,7 +1250,7 @@ function MfaSection() {
   if (enabled === null) return null;
 
   return (
-    <div className="mb-4 rounded-xl bg-surface p-4">
+    <div className="card mb-4 p-4">
       <div className="mb-2 text-sm font-medium text-text-primary">{tr("mfaTitle")}</div>
       <p className="mb-3 text-xs text-text-muted">
         {tr("mfaHint")}
@@ -1365,7 +1365,7 @@ function DangerZoneTab({ workspaces }: { workspaces: WorkspaceData[] }) {
         </button>
       </div>
 
-      <div className="mt-4 rounded-xl bg-surface p-4">
+      <div className="card mt-4 p-4">
         <div className="mb-2 text-sm font-medium text-text-primary">{tr("dzExport")}</div>
         <p className="mb-3 text-xs text-text-muted">
           {tr("dzExportHint")}
@@ -1607,7 +1607,7 @@ function ReadyChip({ label, ready }: { label: string; ready: boolean }) {
 }
 
 function SettingsSection({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-2xl bg-surface p-6">{children}</div>;
+  return <div className="card p-6">{children}</div>;
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {

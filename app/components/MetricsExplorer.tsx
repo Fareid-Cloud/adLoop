@@ -124,7 +124,7 @@ export function MetricsExplorer({ workspaceId, locale = "ar" }: { workspaceId: s
   }
 
   return (
-    <div className="rounded-2xl bg-surface p-6">
+    <div className="card p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <span className="section-title">{tr("title")}</span>
         <div className="flex flex-wrap items-center gap-1.5">

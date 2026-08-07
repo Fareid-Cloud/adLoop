@@ -11,6 +11,8 @@ import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds } from "@/lib/dateRange";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { Calculator } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 
 export default async function BudgetSimulatorPage({
@@ -69,8 +71,12 @@ export default async function BudgetSimulatorPage({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.simTitle")}</h1>
+      <PageHeader
+        icon={Calculator}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.simTitle")}
+      />
       <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">{t(locale, "campPages.simIntro")}</p>
 
@@ -81,7 +87,7 @@ export default async function BudgetSimulatorPage({
         />
       ) : (
         <div className="flex flex-col gap-3">
-          <div className="rounded-2xl bg-surface p-4">
+          <div className="card p-4">
             <div className="mb-2 text-sm font-semibold text-text-primary">{t(locale, "campPages.simCurrentCpa")}</div>
             {platforms.map((p: any) => (
               <div key={p.platform} className="flex items-center justify-between py-1 text-xs text-text-faint">

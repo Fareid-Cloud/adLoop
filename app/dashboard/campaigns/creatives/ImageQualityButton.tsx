@@ -47,7 +47,7 @@ export function ImageQualityButton({
 
   if (result) {
     return (
-      <div className="mt-2 rounded-xl bg-surface-raised p-2 text-[10px] text-text-muted">
+      <div className="card mt-2 bg-surface-raised p-2 text-[10px] text-text-muted">
         <div className="mb-1 font-mono text-xs text-text-primary">{t(locale, "imgQuality.label")} {result.score}/100</div>
         <p>{result.textOverlayAssessment}</p>
         <p className="mt-1">{result.recommendation}</p>

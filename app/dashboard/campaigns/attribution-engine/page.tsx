@@ -15,6 +15,8 @@ import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds } from "@/lib/dateRange";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { applyModeledAttribution, type RawMetrics } from "@/lib/metricsEngine";
+import { GitMerge } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 
 export default async function AttributionEnginePage({
@@ -60,8 +62,12 @@ export default async function AttributionEnginePage({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.attrTitle")}</h1>
+      <PageHeader
+        icon={GitMerge}
+        tone="verified"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.attrTitle")}
+      />
       <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">{t(locale, "campPages.attrIntro")}</p>
 
@@ -72,7 +78,7 @@ export default async function AttributionEnginePage({
         />
       ) : (
         <>
-          <div className="mb-4 flex items-center justify-center rounded-2xl bg-surface p-6">
+          <div className="card mb-4 flex items-center justify-center p-6">
             <TrackingAccuracyGauge verified={summary.verifiedCount} raw={total} locale={locale} />
           </div>
 
@@ -99,7 +105,7 @@ export default async function AttributionEnginePage({
             />
           </div>
 
-          <div className="rounded-2xl bg-surface p-4">
+          <div className="card p-4">
             <div className="mb-1 text-sm font-semibold text-text-primary">{t(locale, "campPages.attrByPlatform")}</div>
             <div className="mb-2.5 text-[11.5px] text-text-faint">
               {t(locale, useModeled ? "campPages.attrModeledOn" : "campPages.attrModeledOff")}

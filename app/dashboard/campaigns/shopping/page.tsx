@@ -10,6 +10,8 @@ import { EmptyState } from "@/app/components/ui/EmptyState";
 import { getRelativeSpendThreshold } from "@/lib/relativeSpendThreshold";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { ShoppingBag } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export default async function ShoppingProductsPage() {
   const user = await getSessionUserFromCookies();
@@ -45,11 +47,13 @@ export default async function ShoppingProductsPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.shopTitle")}</h1>
-      <p className="mb-6 text-xs text-text-faint">
-        {t(locale, "campPages.shopIntro")}
-      </p>
+      <PageHeader
+        icon={ShoppingBag}
+        tone="gap"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.shopTitle")}
+        description={t(locale, "campPages.shopIntro")}
+      />
 
       {!hasAnyData ? (
         <EmptyState

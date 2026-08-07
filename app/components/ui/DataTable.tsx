@@ -55,7 +55,7 @@ export function DataTable<T>({ columns, rows, rowKey, onRowClick, locale = "ar" 
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl bg-surface">
+    <div className="card overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border">

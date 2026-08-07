@@ -162,7 +162,7 @@ export function DataGate({
   const cta = hrefLabel ?? t(locale, "store.connectStore");
   return (
     <div className="card pad-lg text-center">
-      <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-surface-raised">
+      <div className="card mx-auto mb-3 flex h-11 w-11 items-center justify-center bg-surface-raised">
         <Info size={20} className="text-text-muted" />
       </div>
       <h3 className="text-[15px] font-medium text-text-primary">{title}</h3>

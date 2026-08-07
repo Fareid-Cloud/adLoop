@@ -67,7 +67,7 @@ export function AutomationClient({ workspaceId, rules, locale = "ar" }: { worksp
             <button
               key={t.name}
               onClick={() => createFromTemplate(t)}
-              className="rounded-2xl bg-surface p-4 text-start hover:bg-surface-raised"
+              className="card p-4 text-start hover:bg-surface-raised"
             >
               <div className="mb-1 text-sm text-text-primary">{t.name}</div>
               <div className="text-xs text-text-faint">
@@ -85,7 +85,7 @@ export function AutomationClient({ workspaceId, rules, locale = "ar" }: { worksp
       ) : (
         <div className="flex flex-col gap-2">
           {rules.map((rule) => (
-            <div key={rule.id} className="rounded-2xl bg-surface p-4">
+            <div key={rule.id} className="card p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm text-text-primary">{rule.name}</div>

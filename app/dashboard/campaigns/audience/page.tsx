@@ -10,6 +10,8 @@ import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds } from "@/lib/dateRange";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { Users } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export default async function AudiencePage({
   searchParams,
@@ -58,8 +60,12 @@ export default async function AudiencePage({
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.audTitle")}</h1>
+      <PageHeader
+        icon={Users}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.audTitle")}
+      />
       <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
 
       <div className="mb-6 rounded-2xl bg-gap/10 p-4 text-xs text-gap">
@@ -74,7 +80,7 @@ export default async function AudiencePage({
       ) : (
         <div className="flex flex-col gap-1">
           {segments.map((s) => (
-            <div key={s.criterionId} className="flex items-center justify-between rounded-2xl bg-surface p-4">
+            <div key={s.criterionId} className="card flex items-center justify-between p-4">
               <div>
                 <div className="text-sm text-text-primary">{s.criterionType ?? t(locale, "campPages.audUnspecified")}</div>
                 <div className="text-xs text-text-faint">{t(locale, "campPages.audStat", { conversions: s.conversions, cost: s.cost.toLocaleString() })}</div>

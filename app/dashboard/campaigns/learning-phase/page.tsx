@@ -12,6 +12,8 @@ import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds, daysBetween } from "@/lib/dateRange";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { GraduationCap } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 // الخريطة تحمل **مفاتيح** لا نصوصاً: تُعرَّف على مستوى الوحدة حيث لا
 // وجود لـ`locale`، فتُترجَم وقت العرض.
@@ -62,8 +64,12 @@ export default async function LearningPhasePage({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.learnTitle")}</h1>
+      <PageHeader
+        icon={GraduationCap}
+        tone="gap"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.learnTitle")}
+      />
       <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">
         {t(locale, "campPages.learnIntro")}{" "}
@@ -78,7 +84,7 @@ export default async function LearningPhasePage({
       ) : (
         <div className="flex flex-col gap-2">
           {estimates.map((e: any) => (
-            <div key={e.adSetId} className="rounded-2xl bg-surface p-4">
+            <div key={e.adSetId} className="card p-4">
               <div className="mb-1 flex items-center justify-between">
                 <span className="text-sm font-medium text-text-primary">{e.adSetName ?? e.adSetId}</span>
                 <span className={`text-xs font-medium ${STATUS_CONFIG[e.status as keyof typeof STATUS_CONFIG].color}`}>

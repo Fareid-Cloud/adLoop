@@ -183,7 +183,7 @@ export async function PlatformHub({
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
           <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-          <h1 className="flex items-center gap-2.5 text-[26px] font-semibold tracking-tight text-text-primary">
+          <h1 className="flex items-center gap-2.5 page-title">
             <PlatformLogo platform={platform} size={26} />
             {platformLabel}
           </h1>

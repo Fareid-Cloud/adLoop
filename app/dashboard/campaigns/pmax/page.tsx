@@ -8,6 +8,8 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { Boxes } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 const CHANNEL_LABELS: Record<string, string> = {
   SEARCH: "pmSearch",
@@ -55,8 +57,12 @@ export default async function PmaxPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.pmaxTitle")}</h1>
+      <PageHeader
+        icon={Boxes}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.pmaxTitle")}
+      />
       <p className="mb-6 text-xs text-text-faint">
         {t(locale, "campPages.pmaxIntro", { year: "2025" })}
       </p>
@@ -69,7 +75,7 @@ export default async function PmaxPage() {
       ) : (
         <div className="flex flex-col gap-2">
           {results.map((r: any) => (
-            <div key={r.channel} className="flex items-center justify-between rounded-2xl bg-surface p-4">
+            <div key={r.channel} className="card flex items-center justify-between p-4">
               <span className="text-sm font-medium text-text-primary">
                 {/* المفتاح يمرّ على `t()` - كان يُطبع خاماً (pmSearch) */}
                 {CHANNEL_LABELS[r.channel]

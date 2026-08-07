@@ -10,6 +10,8 @@ import { detectTikTokFatigue } from "@/lib/syncTikTokAds";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { BatteryLow } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 const STATUS_CONFIG = {
   HEALTHY: { color: "text-verified", key: "tfHealthy" },
@@ -67,11 +69,13 @@ export default async function TikTokFatiguePage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.tfTitle")}</h1>
-      <p className="mb-6 text-xs text-text-faint">
-        {t(locale, "campPages.tfIntro2")}
-      </p>
+      <PageHeader
+        icon={BatteryLow}
+        tone="gap"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.tfTitle")}
+        description={t(locale, "campPages.tfIntro2")}
+      />
 
       {sorted.length === 0 ? (
         <EmptyState
@@ -81,7 +85,7 @@ export default async function TikTokFatiguePage() {
       ) : (
         <div className="flex flex-col gap-2">
           {sorted.map((r) => (
-            <div key={r.adId} className="rounded-2xl bg-surface p-4">
+            <div key={r.adId} className="card p-4">
               <div className="mb-1 flex items-center justify-between">
                 <span className="text-sm font-medium text-text-primary">{r.adName ?? r.adId}</span>
                 <span className={`text-xs font-medium ${STATUS_CONFIG[r.status].color}`}>

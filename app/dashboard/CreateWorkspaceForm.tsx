@@ -69,7 +69,7 @@ export function CreateWorkspaceForm({ locale = "ar" }: { locale?: Locale }) {
   }
 
   return (
-    <div className="mx-auto mt-20 max-w-md rounded-2xl bg-surface p-7">
+    <div className="card mx-auto mt-20 max-w-md p-7">
       <h1 className="mb-1.5 text-xl font-semibold text-text-primary">{tr("title")}</h1>
       <p className="mb-5 text-sm text-text-muted">
         {tr("intro")}

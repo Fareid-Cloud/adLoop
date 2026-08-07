@@ -20,7 +20,7 @@ export function MobileNavButton({ locale }: { locale: Locale }) {
       title={t(locale, "nav.openMenu")}
       // 44×44 هو الحدّ الأدنى لمساحة اللمس المريحة على الهاتف - أصغر منه
       // يُخطئه الإصبع باستمرار.
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-text-muted transition-colors hover:bg-surface-raised hover:text-text-primary lg:hidden"
+      className="card flex h-11 w-11 shrink-0 items-center justify-center text-text-muted transition-colors hover:bg-surface-raised hover:text-text-primary lg:hidden"
     >
       <Menu size={20} />
     </button>

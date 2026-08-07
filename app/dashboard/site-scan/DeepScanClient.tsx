@@ -101,7 +101,7 @@ export function DeepScanClient({ workspaceId, pastScans, locale = "ar" }: { work
 
   return (
     <div>
-      <form onSubmit={startScan} className="mb-4 rounded-2xl bg-surface p-5">
+      <form onSubmit={startScan} className="card mb-4 p-5">
         <input
           type="url"
           list="final-urls-suggestions"
@@ -154,7 +154,7 @@ export function DeepScanClient({ workspaceId, pastScans, locale = "ar" }: { work
                     setNewCompetitor("");
                   }
                 }}
-                className="flex items-center gap-1 rounded-xl bg-surface-raised px-3 text-xs text-text-muted"
+                className="card flex items-center gap-1 bg-surface-raised px-3 text-xs text-text-muted"
               >
                 <Plus size={13} />
                 {tr("add")}
@@ -190,7 +190,7 @@ export function DeepScanClient({ workspaceId, pastScans, locale = "ar" }: { work
               <button
                 key={p.id}
                 onClick={() => viewPastScan(p.id)}
-                className="flex items-center justify-between rounded-xl bg-surface px-3.5 py-2.5 text-start text-xs text-text-muted hover:bg-surface-raised"
+                className="card flex items-center justify-between px-3.5 py-2.5 text-start text-xs text-text-muted hover:bg-surface-raised"
               >
                 <span className="truncate">{p.url}</span>
                 <span className="ms-2 flex shrink-0 items-center gap-2">
@@ -250,7 +250,7 @@ function ScanResults({ report, scores, scanId, locale }: { report: any; scores: 
 
       {/* Core Web Vitals - أداء حقيقي من PageSpeed */}
       {primary.performance && (
-        <div className="rounded-2xl bg-surface p-4">
+        <div className="card p-4">
           <div className="mb-3 text-sm font-medium text-text-primary">{tr("coreVitals")}</div>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-center">
             <VitalStat label="LCP" value={primary.performance.coreWebVitals.lcp} unit={tr("unitSec")} good={2.5} />
@@ -290,7 +290,7 @@ function ScanResults({ report, scores, scanId, locale }: { report: any; scores: 
       {synthesis.rootCauses.length > 0 && (
         <Section title={tr("rootCauses")}>
           {synthesis.rootCauses.map((rc: any, i: number) => (
-            <div key={i} className="mb-2 rounded-xl bg-surface-raised p-3 text-xs">
+            <div key={i} className="card mb-2 bg-surface-raised p-3 text-xs">
               <strong className="text-text-primary">{rc.rootCause}</strong>
               <p className="text-text-faint">{tr("appearsIn", { list: rc.manifestsIn.join(locale === "en" ? ", " : "، ") })}</p>
               <p className="mt-1 text-text-muted">{rc.explanation}</p>
@@ -322,7 +322,7 @@ function ScanResults({ report, scores, scanId, locale }: { report: any; scores: 
           <p className="text-sm text-text-primary">{competitorComparison}</p>
           <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
             {report.competitors.map((c: any, i: number) => (
-              <div key={i} className="rounded-xl bg-surface-raised p-3">
+              <div key={i} className="card bg-surface-raised p-3">
                 <div className="truncate text-xs text-text-faint">{c.url}</div>
                 <div className="font-mono text-lg text-text-primary">{c.overallScore}</div>
               </div>
@@ -342,7 +342,7 @@ function ScanResults({ report, scores, scanId, locale }: { report: any; scores: 
 
 function ScoreCard({ label, score, large }: { label: string; score: number | null; large?: boolean }) {
   return (
-    <div className="rounded-2xl bg-surface p-3 text-center">
+    <div className="card p-3 text-center">
       <div className={`font-mono ${large ? "text-2xl" : "text-lg"} text-verified`}>{score ?? "—"}</div>
       <div className="text-[10px] text-text-faint">{label}</div>
     </div>

@@ -7,6 +7,8 @@ import { TrackingCoverageClient } from "./TrackingCoverageClient";
 import { getAppUrl } from "@/lib/appUrl";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { Radar } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export default async function TrackingCoveragePage() {
   const user = await getSessionUserFromCookies();
@@ -28,9 +30,13 @@ export default async function TrackingCoveragePage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "tagInstall.covTitle")}</h1>
-      <p className="mb-6 text-xs text-text-faint">{t(locale, "tagInstall.covIntro")}</p>
+      <PageHeader
+        icon={Radar}
+        tone="verified"
+        eyebrow={workspace.name}
+        title={t(locale, "tagInstall.covTitle")}
+        description={t(locale, "tagInstall.covIntro")}
+      />
 
       <TrackingCoverageClient
         workspaceId={workspace.id}

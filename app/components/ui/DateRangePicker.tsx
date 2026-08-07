@@ -196,7 +196,7 @@ export function DateRangePicker({
             {/* التقويمان */}
             <div className="min-w-0 flex-1 p-3">
               {cmpOn && (
-                <div className="mb-2 flex gap-1 rounded-xl bg-surface-raised p-1">
+                <div className="card mb-2 flex gap-1 bg-surface-raised p-1">
                   <SegBtn active={picking === "main"} onClick={() => { setPicking("main"); setAnchor(null); }} label={tr("editMain")} />
                   <SegBtn active={picking === "compare"} onClick={() => { setPicking("compare"); setAnchor(null); }} label={tr("editCompare")} />
                 </div>

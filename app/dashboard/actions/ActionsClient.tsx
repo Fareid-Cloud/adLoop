@@ -333,7 +333,7 @@ export function ActionsClient({
                         {/* التفاصيل محتوى حقيقي في مكانها - لا زرّ يقود
                             لصفحة أخرى تبدأ من الصفر */}
                         {expanded === item.id && item.description && (
-                          <div className="mt-2 rounded-xl bg-surface-raised/70 p-3">
+                          <div className="card mt-2 bg-surface-raised/70 p-3">
                             <p className="text-[12.5px] leading-relaxed text-text-muted">{itemDescription(locale, item)}</p>
                             <div className="mt-2 flex flex-wrap items-center gap-3">
                               <span className={`text-[11px] ${item.executable ? "text-verified" : "text-text-faint"}`}>

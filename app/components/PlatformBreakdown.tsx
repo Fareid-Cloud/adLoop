@@ -34,7 +34,7 @@ export function PlatformBreakdown({
   );
 
   return (
-    <div className="rounded-2xl bg-surface p-6">
+    <div className="card p-6">
       <div className="mb-5 flex items-center justify-between">
         <span className="text-[13px] text-text-muted">
           {t(locale, "ui.splitHeading", {

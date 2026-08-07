@@ -17,6 +17,8 @@ import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds } from "@/lib/dateRange";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { costPerVerified } from "@/lib/kpiEngine";
+import { Image } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export default async function CreativesPage({
   searchParams,
@@ -69,8 +71,12 @@ export default async function CreativesPage({
   if (performances.length === 0) {
     return (
       <div className="mx-auto max-w-4xl">
-        <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="mb-6 page-title">{t(locale, "campPages.crTitle")}</h1>
+      <PageHeader
+        icon={Image}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.crTitle")}
+      />
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <EmptyState
           title={t(locale, "campPages.crNone")}
@@ -158,7 +164,7 @@ function CreativeGrid({
   return (
     <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
       {items.map((item) => (
-        <div key={item.adId} className="rounded-2xl bg-surface p-3">
+        <div key={item.adId} className="card p-3">
           {item.headline && (
             <p className="mb-2 line-clamp-2 text-xs text-text-primary">{item.headline}</p>
           )}

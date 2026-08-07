@@ -653,7 +653,7 @@ function SavedViews({
       ) : (
         <ul className="flex flex-col gap-1.5">
           {views.map((v) => (
-            <li key={v.id} className="flex items-center gap-2 rounded-xl bg-surface-raised/60 px-3 py-2">
+            <li key={v.id} className="card flex items-center gap-2 bg-surface-raised/60 px-3 py-2">
               {v.isFavorite && <Star size={12} className="shrink-0 text-gap" />}
               <button onClick={() => onOpen(v)} className="min-w-0 flex-1 truncate text-start text-[12.5px] text-text-primary">
                 {v.name}
@@ -777,7 +777,7 @@ function EmptyDataModal({
     <Modal onClose={onClose}>
       <h2 className="mb-1 section-title">{tr("emptyTitle")}</h2>
       <p className="mb-3 text-[12.5px] leading-relaxed text-text-muted">{tr("emptyBody")}</p>
-      <div className="mb-4 rounded-xl bg-surface-raised/70 p-3">
+      <div className="card mb-4 bg-surface-raised/70 p-3">
         <div className="mb-1.5 text-[11.5px] font-medium text-text-primary">{tr("emptyWhy")}</div>
         <ul className="flex flex-col gap-1">
           {["emptyR1", "emptyR2", "emptyR3"].map((k) => (

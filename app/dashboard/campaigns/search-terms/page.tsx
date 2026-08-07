@@ -8,6 +8,8 @@ import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds } from "@/lib/dateRange";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { Search } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export default async function SearchTermsPage({
   searchParams,
@@ -44,8 +46,12 @@ export default async function SearchTermsPage({
   if (snapshots.length === 0) {
     return (
       <div className="mx-auto max-w-3xl">
-        <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="mb-6 page-title">{t(locale, "campPages.stTitle")}</h1>
+      <PageHeader
+        icon={Search}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.stTitle")}
+      />
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <EmptyState title={t(locale, "campPages.stNone")} description={t(locale, "campPages.stNoneBody")} />
       </div>
@@ -79,7 +85,7 @@ export default async function SearchTermsPage({
       ) : (
         <div className="flex flex-col gap-1">
           {wasteful.map((term) => (
-            <div key={term.searchTerm} className="rounded-2xl bg-surface p-4">
+            <div key={term.searchTerm} className="card p-4">
               <div className="mb-1 flex items-center justify-between">
                 <span className="text-sm text-text-primary">"{term.searchTerm}"</span>
                 <span className="font-mono text-sm text-critical">{Math.round(term.cost * 100) / 100}</span>

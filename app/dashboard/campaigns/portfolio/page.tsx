@@ -8,6 +8,8 @@ import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds, daysBetween } from "@/lib/dateRange";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { LayoutGrid } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export default async function PortfolioPage({
   searchParams,
@@ -76,15 +78,17 @@ export default async function PortfolioPage({
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.pfTitle")}</h1>
-      <p className="mb-6 text-xs text-text-faint">
-        {t(locale, "campPages.pfIntro")}
-      </p>
+      <PageHeader
+        icon={LayoutGrid}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.pfTitle")}
+        description={t(locale, "campPages.pfIntro")}
+      />
 
       <div className="flex flex-col gap-2">
         {result.allocations.map((a) => (
-          <div key={a.campaignId} className="rounded-2xl bg-surface p-4">
+          <div key={a.campaignId} className="card p-4">
             <div className="mb-1 flex items-center justify-between">
               <span className="text-sm text-text-primary">{a.campaignName}</span>
               <span

@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { MonitorPlay } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export default async function YoutubePage() {
   const user = await getSessionUserFromCookies();
@@ -45,11 +47,13 @@ export default async function YoutubePage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.ytTitle")}</h1>
-      <p className="mb-6 text-xs text-text-faint">
-        {t(locale, "campPages.ytIntro")}
-      </p>
+      <PageHeader
+        icon={MonitorPlay}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.ytTitle")}
+        description={t(locale, "campPages.ytIntro")}
+      />
 
       {results.length === 0 ? (
         <EmptyState
@@ -59,7 +63,7 @@ export default async function YoutubePage() {
       ) : (
         <div className="flex flex-col gap-2">
           {results.map((r: any) => (
-            <div key={r.campaignId} className="rounded-2xl bg-surface p-4">
+            <div key={r.campaignId} className="card p-4">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium text-text-primary">{r.name}</span>
                 <span className="font-mono text-sm text-verified">{t(locale, "campPages.ytViewRate", { n: r.viewRate })}</span>

@@ -12,6 +12,8 @@ import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds, daysBetween } from "@/lib/dateRange";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { TrendingUp } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export default async function SeasonalTrendPage({
   searchParams,
@@ -66,8 +68,12 @@ export default async function SeasonalTrendPage({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.seasonTitle")}</h1>
+      <PageHeader
+        icon={TrendingUp}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.seasonTitle")}
+      />
       <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">
         {t(locale, "campPages.seasonNote")}
@@ -80,7 +86,7 @@ export default async function SeasonalTrendPage({
           description={t(locale, "campPages.seasonNoneBody")}
         />
       ) : (
-        <div className="rounded-2xl bg-surface p-5 text-center">
+        <div className="card p-5 text-center">
           <div className={`font-mono text-3xl ${changePct! > 0 ? "text-critical" : "text-verified"}`}>
             {changePct! > 0 ? "+" : ""}{changePct}%
           </div>

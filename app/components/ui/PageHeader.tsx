@@ -1,25 +1,71 @@
 // app/components/ui/PageHeader.tsx
 //
-// كل صفحة كانت بتكتب عنوانها يدوي بأنماط مختلفة شوية - ده الشكل الموحّد
-// الوحيد، بيتكرر في كل الأقسام (مبدأ §4 و§11 في الـ ADR).
+// رأس الصفحة - الهوية البصرية المشتركة لكلّ صفحة داخل اللوحة.
+//
+// **ما كان:** ثلاثون صفحة تفتح باسم مساحة العمل، ثمّ `<h1>` عارٍ، ثمّ سطر
+// رمادي صغير - ثمّ جدول. لا أيقونة ولا لون ولا أيّ شيء يفرّق صفحة عن أخرى.
+// المستخدم ينتقل بين خمس صفحات فتبدو له الخمس صفحةً واحدةً تغيّر محتواها،
+// ولا يعرف أين هو إلا بقراءة العنوان في كلّ مرّة.
+//
+// **الأيقونة ليست زينة:** مربّع ملوّن ثابت لكلّ صفحة هو ما يجعلها تُميَّز
+// من طرف العين قبل قراءة كلمة - وهذا بالضبط ما يفعله شريط التنقّل الجانبي
+// بالفعل، فالصفحة تكرّر أيقونتها لا تخترع واحدة.
+//
+// **اللون دلاليّ لا عشوائيّ:** يتبع `tone` - محايد للاستكشاف، تحذيريّ لصفحة
+// تعرض مشكلة، متحقَّق لصفحة تعرض ما تأكّد. هذا هو الفرق عن قوالب SaaS التي
+// تلوّن لتُبهج.
 
-import type { ReactNode } from "react";
-import { t, type Locale } from "@/lib/i18n/dictionary";
+import type { LucideIcon } from "lucide-react";
 
-interface PageHeaderProps {
-  eyebrow?: string; // نص صغير فوق العنوان (زي t(locale, "ui.workspace"))
+export type HeaderTone = "neutral" | "accent" | "verified" | "gap" | "critical";
+
+const TONE: Record<HeaderTone, string> = {
+  neutral: "bg-text-muted/10 text-text-muted",
+  accent: "bg-accent/12 text-accent",
+  verified: "bg-verified/12 text-verified",
+  gap: "bg-gap/12 text-gap",
+  critical: "bg-critical/12 text-critical",
+};
+
+export function PageHeader({
+  icon: Icon,
+  tone = "accent",
+  eyebrow,
+  title,
+  description,
+  actions,
+}: {
+  icon?: LucideIcon;
+  tone?: HeaderTone;
+  /** اسم مساحة العمل عادةً - يجيب «أرقام مَن هذه؟» قبل أن تُقرأ الأرقام */
+  eyebrow?: string;
   title: string;
-  action?: ReactNode; // زرار أو عنصر تفاعلي على الجهة التانية من العنوان
-}
-
-export function PageHeader({ eyebrow, title, action }: PageHeaderProps) {
+  description?: string;
+  /** أزرار الصفحة - تصطفّ مع العنوان لا تحته، فلا تُدفع خارج الشاشة الأولى */
+  actions?: React.ReactNode;
+}) {
   return (
-    <header className="mb-6 flex items-start justify-between">
-      <div>
-        {eyebrow && <div className="mb-1 text-sm text-text-muted">{eyebrow}</div>}
-        <h1 className="text-2xl font-semibold text-text-primary">{title}</h1>
+    // `flex-wrap` لا شبكة ثابتة: على الهاتف تنزل الأزرار سطراً كاملاً بدل
+    // أن تضغط العنوان حتى ينكسر.
+    <header className="mb-6 flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+      <div className="flex min-w-0 items-start gap-3">
+        {Icon && (
+          <span
+            className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${TONE[tone]}`}
+            aria-hidden
+          >
+            <Icon size={19} />
+          </span>
+        )}
+        <div className="min-w-0">
+          {eyebrow && <div className="mb-0.5 truncate text-[12.5px] text-text-muted">{eyebrow}</div>}
+          <h1 className="page-title">{title}</h1>
+          {description && (
+            <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-text-muted">{description}</p>
+          )}
+        </div>
       </div>
-      {action && <div>{action}</div>}
+      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </header>
   );
 }

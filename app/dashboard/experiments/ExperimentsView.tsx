@@ -167,7 +167,7 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
         {/* الشعار كتلة مربّعة تُثبّت بداية الصفّ - كان أيقونة ١٥ بكسل
             سابحة بين النصوص لا تُميَّز بلمحة */}
         {exp.platform && (
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-raised">
+          <span className="card flex h-10 w-10 shrink-0 items-center justify-center bg-surface-raised">
             <PlatformLogo platform={exp.platform} size={20} />
           </span>
         )}

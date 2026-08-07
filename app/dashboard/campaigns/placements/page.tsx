@@ -10,6 +10,8 @@ import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds } from "@/lib/dateRange";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { SquareStack } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 const PLACEMENT_KEYS: Record<string, string> = {
   FACEBOOK: "plFacebook",
@@ -99,8 +101,12 @@ export default async function PlacementsPage({
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.placeTitle")}</h1>
+      <PageHeader
+        icon={SquareStack}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.placeTitle")}
+      />
       <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">
         {t(locale, "campPages.placeIntro")}
@@ -114,7 +120,7 @@ export default async function PlacementsPage({
       ) : (
         <div className="flex flex-col gap-3">
           {platformGroups.map((group) => (
-            <div key={group.platform} className="rounded-2xl bg-surface p-4">
+            <div key={group.platform} className="card p-4">
               <div className="mb-3 text-sm font-semibold text-text-primary">
                 {placementName(locale, group.platform)}
               </div>
@@ -122,7 +128,7 @@ export default async function PlacementsPage({
                 {group.details.map((d) => (
                   <div
                     key={`${d.placementBreakdown}-${d.placementDetail}`}
-                    className="flex items-center justify-between rounded-xl bg-surface-raised px-3 py-2"
+                    className="card flex items-center justify-between bg-surface-raised px-3 py-2"
                   >
                     <span className="text-xs text-text-muted">
                       {placementName(locale, d.placementDetail)}

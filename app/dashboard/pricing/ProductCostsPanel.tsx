@@ -180,7 +180,7 @@ export function ProductCostsPanel({
       </div>
 
       {lines.length > 0 && (
-        <ul className="mt-3 flex flex-col gap-1.5 rounded-xl bg-surface-raised/70 p-3">
+        <ul className="card mt-3 flex flex-col gap-1.5 bg-surface-raised/70 p-3">
           {lines.map((l, i) => (
             <li key={i} className="flex items-start gap-2 text-[12.5px] leading-relaxed">
               <span

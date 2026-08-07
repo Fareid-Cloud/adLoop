@@ -8,6 +8,8 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { Anchor } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 function pctColor(rate: number, good: number, bad: number): string {
   if (rate >= good) return "text-verified";
@@ -35,11 +37,13 @@ export default async function TikTokHookRatePage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.hkTitle")}</h1>
-      <p className="mb-6 text-xs text-text-faint">
-        {t(locale, "campPages.hkIntro")}
-      </p>
+      <PageHeader
+        icon={Anchor}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.hkTitle")}
+        description={t(locale, "campPages.hkIntro")}
+      />
 
       {videos.length === 0 ? (
         <EmptyState
@@ -49,7 +53,7 @@ export default async function TikTokHookRatePage() {
       ) : (
         <div className="flex flex-col gap-2">
           {videos.map((v: any) => (
-            <div key={v.adId} className="rounded-2xl bg-surface p-4">
+            <div key={v.adId} className="card p-4">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium text-text-primary">{v.adName ?? v.adId}</span>
                 <span className={`font-mono text-lg ${pctColor(v.hookRate, 0.3, 0.15)}`}>

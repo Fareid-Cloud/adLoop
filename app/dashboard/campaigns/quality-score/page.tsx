@@ -8,6 +8,8 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { Gauge } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 const COMPONENT_KEYS: Record<string, string> = {
   BELOW_AVERAGE: "qsBelowAvg",
@@ -45,11 +47,13 @@ export default async function QualityScorePage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.qsTitle")}</h1>
-      <p className="mb-6 text-xs text-text-faint">
-        {t(locale, "campPages.qsIntro")}
-      </p>
+      <PageHeader
+        icon={Gauge}
+        tone="critical"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.qsTitle")}
+        description={t(locale, "campPages.qsIntro")}
+      />
 
       {rows.length === 0 ? (
         <EmptyState
@@ -59,7 +63,7 @@ export default async function QualityScorePage() {
       ) : (
         <div className="flex flex-col gap-2">
           {rows.map((row: any) => (
-            <div key={row.id} className="rounded-2xl bg-surface p-4">
+            <div key={row.id} className="card p-4">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium text-text-primary">
                   {row.keywordText ?? row.criterionId}

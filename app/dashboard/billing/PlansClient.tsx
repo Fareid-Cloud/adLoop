@@ -77,7 +77,7 @@ export function PlansClient({
   return (
     <div className="mx-auto max-w-[1200px] pb-16">
       <header className="mb-7 text-center">
-        <h1 className="text-[30px] font-semibold tracking-tight text-text-primary">{tr("title")}</h1>
+        <h1 className="page-title">{tr("title")}</h1>
         <p className="mx-auto mt-2 max-w-xl text-[13.5px] leading-relaxed text-text-muted">{tr("subtitle")}</p>
 
         <div className="mt-5 inline-flex items-center gap-1 card p-1">
@@ -264,7 +264,7 @@ function PlanCard({
       </div>
 
       {/* ما يفتحه فعلاً - قبل القائمة الطويلة، لأنه سبب الشراء */}
-      <p className="mb-3 rounded-xl bg-surface-raised/70 p-2.5 text-[12px] leading-relaxed text-text-primary">
+      <p className="card mb-3 bg-surface-raised/70 p-2.5 text-[12px] leading-relaxed text-text-primary">
         {tr(`unlock_${plan.key}`)}
       </p>
 
@@ -359,7 +359,7 @@ function CreditsModal({
         />
 
         {/* المعادلة صريحة: كم كريدت = كم بالعملة، تتغيّر مع كل رقم */}
-        <div className="mb-4 flex items-center justify-between rounded-xl bg-surface-raised/70 p-3">
+        <div className="card mb-4 flex items-center justify-between bg-surface-raised/70 p-3">
           <span className="text-[12.5px] text-text-muted">
             {tr("creditsEquals", { n: clamped })}
           </span>

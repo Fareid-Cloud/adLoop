@@ -8,6 +8,8 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { MapPin } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 const DEVICE_KEYS: Record<string, string> = {
   MOBILE: "devMobile",
@@ -58,11 +60,13 @@ export default async function DeviceGeoPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.geoTitle")}</h1>
-      <p className="mb-6 text-xs text-text-faint">
-        {t(locale, "campPages.geoIntro")}
-      </p>
+      <PageHeader
+        icon={MapPin}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.geoTitle")}
+        description={t(locale, "campPages.geoIntro")}
+      />
 
       <div className="mb-6">
         <div className="mb-2 text-sm font-semibold text-text-primary">{t(locale, "campPages.geoByDevice")}</div>
@@ -71,7 +75,7 @@ export default async function DeviceGeoPage() {
         ) : (
           <div className="flex flex-col gap-2">
             {devices.map((d: any) => (
-              <div key={d.device} className="flex items-center justify-between rounded-2xl bg-surface p-4">
+              <div key={d.device} className="card flex items-center justify-between p-4">
                 <span className="text-sm text-text-primary">{deviceName(locale, d.device)}</span>
                 <div className="flex items-center gap-3 text-xs text-text-faint">
                   <span>{t(locale, "campPages.geoClicks", { n: d.clicks.toLocaleString() })}</span>
@@ -90,7 +94,7 @@ export default async function DeviceGeoPage() {
         ) : (
           <div className="flex flex-col gap-2">
             {geos.map((g: any) => (
-              <div key={g.geoTarget} className="flex items-center justify-between rounded-2xl bg-surface p-4">
+              <div key={g.geoTarget} className="card flex items-center justify-between p-4">
                 <span className="text-xs text-text-muted">{g.geoTarget}</span>
                 <div className="flex items-center gap-3 text-xs text-text-faint">
                   <span>{g.clicks.toLocaleString()} {t(locale, "campPages.unitClicks")}</span>

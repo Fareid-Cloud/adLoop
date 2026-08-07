@@ -9,6 +9,8 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { PackageSearch } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export default async function CatalogAdsPage() {
   const user = await getSessionUserFromCookies();
@@ -38,11 +40,13 @@ export default async function CatalogAdsPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.catalogTitle")}</h1>
-      <p className="mb-6 text-xs text-text-faint">
-        {t(locale, "campPages.catalogIntro")}
-      </p>
+      <PageHeader
+        icon={PackageSearch}
+        tone="gap"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.catalogTitle")}
+        description={t(locale, "campPages.catalogIntro")}
+      />
 
       {campaigns.length === 0 ? (
         <EmptyState
@@ -52,7 +56,7 @@ export default async function CatalogAdsPage() {
       ) : (
         <div className="flex flex-col gap-2">
           {campaigns.map((c: any) => (
-            <div key={c.campaignId} className="rounded-2xl bg-surface p-4">
+            <div key={c.campaignId} className="card p-4">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium text-text-primary">
                   {nameMap.get(c.campaignId) ?? c.campaignId}

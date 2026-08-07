@@ -8,6 +8,8 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { Crosshair } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 const MATCH_TYPE_LABELS: Record<string, string> = {
   BROAD: "mtBroad",
@@ -52,11 +54,13 @@ export default async function MatchTypesPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.mtTitle")}</h1>
-      <p className="mb-6 text-xs text-text-faint">
-        {t(locale, "campPages.mtIntro")}
-      </p>
+      <PageHeader
+        icon={Crosshair}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.mtTitle")}
+        description={t(locale, "campPages.mtIntro")}
+      />
 
       {results.length === 0 ? (
         <EmptyState

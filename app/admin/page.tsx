@@ -77,7 +77,7 @@ export default async function AdminDashboard() {
 
       {/* صحة النظام */}
       <SectionTitle>صحة النظام (آخر مزامنة يومية)</SectionTitle>
-      <div className="mb-6 rounded-2xl bg-surface p-4">
+      <div className="card mb-6 p-4">
         {lastCronRun ? (
           <div className="flex items-center justify-between text-sm">
             <span className="text-text-primary">
@@ -98,7 +98,7 @@ export default async function AdminDashboard() {
 
       {/* المشتركين */}
       <SectionTitle>المشتركين</SectionTitle>
-      <div className="mb-6 overflow-x-auto rounded-2xl bg-surface">
+      <div className="card mb-6 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-start text-xs text-text-faint">
@@ -138,7 +138,7 @@ export default async function AdminDashboard() {
         {workspaces.map((w: any) => {
           const issueCount = issuesMap.get(w.id) ?? 0;
           return (
-            <div key={w.id} className="flex items-center justify-between rounded-2xl bg-surface p-4">
+            <div key={w.id} className="card flex items-center justify-between p-4">
               <div>
                 <div className="text-sm text-text-primary">{w.name}</div>
                 <div className="text-xs text-text-faint">{w.user.email} — {w.industryVertical ?? "غير محدد"}</div>
@@ -158,7 +158,7 @@ export default async function AdminDashboard() {
       ) : (
         <div className="mb-6 flex flex-col gap-2">
           {recentFeedback.map((f: any) => (
-            <div key={f.id} className="rounded-2xl bg-surface p-4">
+            <div key={f.id} className="card p-4">
               <div className="mb-1 flex items-center justify-between">
                 <span className="text-xs text-text-faint">{f.user.email}</span>
                 <span className="text-xs text-text-faint">
@@ -178,7 +178,7 @@ export default async function AdminDashboard() {
       ) : (
         <div className="flex flex-col gap-1">
           {recentAuditLog.map((log: any) => (
-            <div key={log.id} className="rounded-xl bg-surface px-4 py-2 text-xs text-text-faint">
+            <div key={log.id} className="card px-4 py-2 text-xs text-text-faint">
               {new Date(log.createdAt).toLocaleString("ar")} — {log.action} — {log.details}
             </div>
           ))}

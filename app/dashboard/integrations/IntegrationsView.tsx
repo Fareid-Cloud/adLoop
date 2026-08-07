@@ -308,7 +308,7 @@ function Kpi({
   return (
     // خلفية خفيفة بلون الثيم عند المرور: تفاعل بصري يؤكّد أن المؤشّر
     // عنصر حيّ لا نصّ مطبوع، بلا حركة ولا إطار صارخ.
-    <div className="group flex items-start gap-3 rounded-xl bg-surface-raised/60 p-3.5 transition-colors hover:bg-accent/[0.07]">
+    <div className="card group flex items-start gap-3 bg-surface-raised/60 p-3.5 transition-colors hover:bg-accent/[0.07]">
       <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-105 ${TONE_BG[tone] ?? TONE_BG.muted}`}>
         <Icon size={17} />
       </span>

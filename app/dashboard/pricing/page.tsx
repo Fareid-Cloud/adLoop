@@ -13,6 +13,8 @@ import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds } from "@/lib/dateRange";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { Tag } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export default async function PricingPage({
   searchParams,
@@ -86,8 +88,12 @@ export default async function PricingPage({
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-6 page-title">{t(locale, "campPages.pricingTitle")}</h1>
+      <PageHeader
+        icon={Tag}
+        tone="critical"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.pricingTitle")}
+      />
       <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
 
       {roasGapInsight && (

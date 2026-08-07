@@ -10,6 +10,8 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { Sparkles } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 function classify(identityType: string | null): "SPARK" | "DARK_POST" | "UNKNOWN" {
   if (identityType === "AUTH_CODE" || identityType === "TT_USER") return "SPARK";
@@ -50,11 +52,13 @@ export default async function TikTokSparkAdsPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.spTitle")}</h1>
-      <p className="mb-6 text-xs text-text-faint">
-        {t(locale, "campPages.spIntro")}
-      </p>
+      <PageHeader
+        icon={Sparkles}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.spTitle")}
+        description={t(locale, "campPages.spIntro")}
+      />
 
       {!hasComparison ? (
         <EmptyState
@@ -64,7 +68,7 @@ export default async function TikTokSparkAdsPage() {
       ) : (
         <div className="flex flex-col gap-3">
           {(["SPARK", "DARK_POST"] as const).map((type) => (
-            <div key={type} className="rounded-2xl bg-surface p-4">
+            <div key={type} className="card p-4">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium text-text-primary">
                   {type === "SPARK" ? "Spark Ads" : t(locale, "campPages.sparkOrganic")}

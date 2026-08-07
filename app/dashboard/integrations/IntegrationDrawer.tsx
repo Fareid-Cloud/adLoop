@@ -154,7 +154,7 @@ export function IntegrationDrawer({
             )}
 
             {/* سبب الحالة مكتوب دائماً - لا شارة بلا تفسير */}
-            <p className="mt-3 rounded-xl bg-surface-raised/70 p-3 text-[12px] leading-relaxed text-text-muted">
+            <p className="card mt-3 bg-surface-raised/70 p-3 text-[12px] leading-relaxed text-text-muted">
               {t(locale, `integrations.${integration.healthReason.key}`, resolveVars(locale, integration.healthReason.vars))}
             </p>
           </div>
@@ -167,7 +167,7 @@ export function IntegrationDrawer({
                 <li className="text-[12.5px] text-text-muted">{tr("hrNoCampaigns")}</li>
               ) : (
                 integration.accounts.map((a) => (
-                  <li key={a.id} className="flex items-center justify-between gap-2 rounded-xl bg-surface-raised/70 px-3 py-2">
+                  <li key={a.id} className="card flex items-center justify-between gap-2 bg-surface-raised/70 px-3 py-2">
                     <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-text-primary" title={a.label}>
                       {a.label}
                     </span>
@@ -216,7 +216,7 @@ export function IntegrationDrawer({
               <li className="text-[12.5px] text-text-muted">{tr("noRuns")}</li>
             ) : (
               integration.recentRuns.map((run) => (
-                <li key={run.id} className="rounded-xl bg-surface-raised/70 px-3 py-2">
+                <li key={run.id} className="card bg-surface-raised/70 px-3 py-2">
                   <div className="flex items-center justify-between text-[12px]">
                     <span
                       className={

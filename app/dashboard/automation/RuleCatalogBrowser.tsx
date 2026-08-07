@@ -56,7 +56,8 @@ export function RuleCatalogBrowser({
   return (
     <div>
       {/* المنصة */}
-      <div className="mb-4 flex flex-wrap gap-1.5">
+      <Step n={1} label={tr("stepPlatform")} done={platform !== null} />
+      <div className="mb-5 flex flex-wrap gap-1.5">
         {PLATFORM_TABS.map((tab) => {
           const active = platform === tab.id;
           return (
@@ -78,6 +79,7 @@ export function RuleCatalogBrowser({
       <div className="grid gap-4 lg:grid-cols-[230px_1fr]">
         {/* الفئات */}
         <aside className="flex flex-col gap-1">
+          <Step n={2} label={tr("stepCategory")} done={category !== null} />
           {RULE_CATEGORIES.map((cat) => {
             const Icon = (Icons as any)[cat.icon] ?? Icons.Circle;
             const active = category === cat.id;
@@ -105,6 +107,7 @@ export function RuleCatalogBrowser({
 
         {/* القرارات */}
         <div>
+          <Step n={3} label={tr("stepRule")} />
           <p className="mb-3 text-[12.5px] text-text-muted">
             {locale === "en"
               ? RULE_CATEGORIES.find((c) => c.id === category)?.descEn
@@ -369,6 +372,24 @@ function RuleConfigModal({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** رقم الخطوة: الشاشة كانت ثلاث مجموعات أزرار متجاورة تُقرأ كفلاتر مستقلّة،
+ *  فلا يعرف المستخدم أنّ عليه المرور بها بالترتيب ولا أين هو منها. الترقيم
+ *  يحوّل الشيء نفسه إلى مسار - بلا تغيير في المنطق ولا خطوات جديدة. */
+function Step({ n, label, done }: { n: number; label: string; done?: boolean }) {
+  return (
+    <div className="mb-2 flex items-center gap-2">
+      <span
+        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
+          done ? "bg-accent text-white" : "bg-surface-raised text-text-muted"
+        }`}
+      >
+        {n}
+      </span>
+      <span className="text-[12.5px] font-medium text-text-muted">{label}</span>
     </div>
   );
 }

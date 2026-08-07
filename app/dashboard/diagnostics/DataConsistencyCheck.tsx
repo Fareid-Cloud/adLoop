@@ -24,7 +24,7 @@ export function DataConsistencyCheck({ workspaceId,
   }
 
   return (
-    <div className="rounded-2xl bg-surface p-4">
+    <div className="card p-4">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-sm text-text-primary">{t(locale, "consistency.title")}</span>
         <button

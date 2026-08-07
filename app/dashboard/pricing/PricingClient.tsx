@@ -118,7 +118,7 @@ export function PricingClient({
       </div>
 
       {showForm && (
-        <form onSubmit={handleAdd} className="mb-4 rounded-2xl bg-surface p-5">
+        <form onSubmit={handleAdd} className="card mb-4 p-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input
               placeholder={tr("name")}

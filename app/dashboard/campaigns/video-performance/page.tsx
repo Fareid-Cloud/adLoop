@@ -12,6 +12,8 @@ import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds } from "@/lib/dateRange";
 import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { Video } from "lucide-react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 const PLATFORM_LABELS: Record<string, string> = {
   GOOGLE_ADS: "vidGoogleYt",
@@ -46,8 +48,12 @@ export default async function VideoPerformancePage({
   if (byPlatform.length === 0) {
     return (
       <div className="mx-auto max-w-4xl">
-        <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="mb-6 page-title">{t(locale, "campPages.vidTitle")}</h1>
+        <PageHeader
+          icon={Video}
+          tone="accent"
+          eyebrow={workspace.name}
+          title={t(locale, "campPages.vidTitle")}
+        />
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <EmptyState
           title={t(locale, "campPages.vidNone")}
@@ -76,19 +82,21 @@ export default async function VideoPerformancePage({
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.vidTitle")}</h1>
-      <p className="mb-6 text-xs text-text-faint">
-        {t(locale, "campPages.vidIntro")}
-      </p>
+      <PageHeader
+        icon={Video}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.vidTitle")}
+        description={t(locale, "campPages.vidIntro")}
+      />
 
       {ranked.length >= 2 && (
-        <div className="mb-4 rounded-2xl bg-surface p-4 text-[13px] text-text-muted">💡 {insight}</div>
+        <div className="card mb-4 p-4 text-[13px] text-text-muted">💡 {insight}</div>
       )}
 
       <div className="flex flex-col gap-2">
         {withMetrics.map((m: any) => (
-          <div key={m.platform} className="rounded-2xl bg-surface p-5">
+          <div key={m.platform} className="card p-5">
             <div className="mb-3 text-sm font-semibold text-text-primary">
               {platformName(locale, m.platform)}
             </div>

@@ -56,7 +56,7 @@ export function InstallTagPanel({
       {open && (
         <div className="border-t border-accent/25 p-4">
           {/* لماذا يهمّ - قبل الكود لا بعده */}
-          <p className="mb-4 rounded-xl bg-surface/70 p-3 text-[12.5px] leading-relaxed text-text-muted">
+          <p className="card mb-4 bg-surface/70 p-3 text-[12.5px] leading-relaxed text-text-muted">
             {tr("why")}
           </p>
 
@@ -70,7 +70,7 @@ export function InstallTagPanel({
 
           <Step n={3} title={tr("s3Title")} body={tr("s3Body")} last />
 
-          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl bg-surface/70 p-3">
+          <div className="card mt-4 flex flex-wrap items-center gap-3 bg-surface/70 p-3">
             <span className="text-[12px] text-text-muted">{tr("wsIdLabel")}</span>
             <code className="rounded-lg bg-surface-raised px-2 py-1 font-mono text-[11.5px] text-text-primary">{workspaceId}</code>
             <button onClick={() => copy(workspaceId, "ws")} className="flex items-center gap-1 text-[11.5px] text-accent">
