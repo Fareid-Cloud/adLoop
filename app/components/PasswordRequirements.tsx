@@ -72,10 +72,10 @@ function RuleMark({ done }: { done: boolean }) {
 
 export function PasswordRequirements({
   password,
-  locale = "ar",
+  locale,
 }: {
   password: string;
-  locale?: Locale;
+  locale: Locale;
 }) {
   return (
     <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1.5">
@@ -107,11 +107,11 @@ export function PasswordRequirements({
 export function PasswordMatch({
   password,
   confirm,
-  locale = "ar",
+  locale,
 }: {
   password: string;
   confirm: string;
-  locale?: Locale;
+  locale: Locale;
 }) {
   // يصمت حتى يبدأ المستخدم كتابة التأكيد: إظهار «غير متطابقتين» على حقل
   // فارغ يقرأ كخطأ ارتكبه قبل أن يكتب حرفاً واحداً.

@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
-export function ImpersonationBanner({ locale = "ar" }: { locale?: Locale }) {
+export function ImpersonationBanner({ locale }: { locale: Locale }) {
   const [returning, setReturning] = useState(false);
 
   async function handleReturn() {

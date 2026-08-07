@@ -27,14 +27,14 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 import { TH } from "@/app/components/ui/tableStyles";
 
 export function PlansClient({
-  locale = "ar",
+  locale,
   currency,
   currentPlan,
   creditsLeft,
   creditsAllowance,
   openCreditsOnLoad = false,
 }: {
-  locale?: Locale;
+  locale: Locale;
   currency: BillingCurrency;
   currentPlan: PlanKey;
   creditsLeft: number;

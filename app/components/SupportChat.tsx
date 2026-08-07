@@ -21,13 +21,13 @@ export function SupportChat({
   email,
   variant = "floating",
   label,
-  locale = "ar",
+  locale,
 }: {
   name: string;
   email: string;
   variant?: "floating" | "sidebar";
   label?: string;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `supportChat.${k}`, vars);
   const [open, setOpen] = useState(false);
@@ -114,7 +114,10 @@ export function SupportChat({
   }
 
   return (
-    <div className={variant === "sidebar" ? "fixed bottom-6 left-6 z-50" : "fixed bottom-6 left-6 z-50"}>
+    // 🔴 `z-60` لا `z-50`: البطاقات العابرة أسفل الشاشة (دعوة تثبيت
+    // التطبيق، الإشعار المنبثق) كانت على الطبقة نفسها، فتطفو فوق زرّ
+    // الدعم وتحجبه - وهو زرّ دائم لا عابر. الدائم فوق العابر دائماً.
+    <div className="fixed bottom-6 left-6 z-[60]">
       {open ? (
         <div className="flex h-[520px] w-[360px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden card shadow-2xl">
           <div className="flex items-center justify-between border-b border-border bg-surface-raised px-4 py-3">

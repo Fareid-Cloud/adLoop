@@ -7,9 +7,9 @@ import { RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export function DataConsistencyCheck({ workspaceId,
-  locale = "ar",
+  locale,
 }: { workspaceId: string
-  locale?: Locale;
+  locale: Locale;
 }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{

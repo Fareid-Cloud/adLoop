@@ -19,11 +19,11 @@ interface Step {
 }
 
 export function ConnectionTester({
-  platform, compact = false, locale = "ar",
+  platform, compact = false, locale,
 }: {
   platform: "GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS";
   compact?: boolean;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `connTest.${k}`, v);
   const [busy, setBusy] = useState(false);

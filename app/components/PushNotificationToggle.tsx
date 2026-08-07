@@ -7,7 +7,7 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 // تفعيل إشعارات الموبايل (Web Push) - يشتغل من المتصفح مباشرة على
 // أندرويد بالكامل. آيفون محتاج المستخدم يضيف الموقع للشاشة الرئيسية
 // كـ"تطبيق" الأول (قيد من نظام آبل نفسه، مش حاجة نقدر نتحكم فيها).
-export function PushNotificationToggle({ locale = "ar" }: { locale?: Locale }) {
+export function PushNotificationToggle({ locale }: { locale: Locale }) {
   const [status, setStatus] = useState<"loading" | "unsupported" | "granted" | "denied" | "default">("loading");
 
   useEffect(() => {

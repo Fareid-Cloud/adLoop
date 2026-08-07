@@ -25,13 +25,13 @@ export function PricingClient({
   records,
   currency,
   salesStats,
-  locale = "ar",
+  locale,
 }: {
   workspaceId: string;
   products: ProductHealthRow[];
   records: ProductRecord[];
   currency: string;
-  locale?: Locale;
+  locale: Locale;
   salesStats: Record<string, SalesStats>;
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) =>

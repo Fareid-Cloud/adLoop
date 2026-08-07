@@ -9,12 +9,12 @@ export function TrackingAccuracyGauge({
   verified,
   raw,
   size = 140,
-  locale = "ar",
+  locale,
 }: {
   verified: number;
   raw: number;
   size?: number;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const pct = raw > 0 ? Math.min(100, Math.round((verified / raw) * 100)) : 0;
   const radius = (size - 16) / 2;

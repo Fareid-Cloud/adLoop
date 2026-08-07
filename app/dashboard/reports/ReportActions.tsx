@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Link2, Download } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
-export function ReportActions({ workspaceId, locale = "ar" }: { workspaceId: string; locale?: Locale }) {
+export function ReportActions({ workspaceId, locale }: { workspaceId: string; locale: Locale }) {
   const [copied, setCopied] = useState(false);
 
   async function handleShareLink() {

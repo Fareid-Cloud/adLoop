@@ -18,7 +18,7 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 export type Decision = "SCALE" | "HOLD" | "PAUSE";
 
 export interface AdDecisionCellProps {
-  locale?: Locale;
+  locale: Locale;
   workspaceId: string;
   adId: string;
   decision: Decision;

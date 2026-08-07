@@ -18,13 +18,13 @@ export function AdDecisionTable({
   workspaceId,
   currency,
   showPlatform = true,
-  locale = "ar",
+  locale,
 }: {
   decisions: AdDecisionView[];
   workspaceId: string;
   currency: string;
   showPlatform?: boolean;
-  locale?: Locale;
+  locale: Locale;
 }) {
   if (decisions.length === 0) {
     return (

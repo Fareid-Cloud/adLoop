@@ -65,11 +65,11 @@ type GroupBy = "source" | "severity";
 type SortBy = "impact" | "newest";
 
 export function ActionsClient({
-  items, currency, locale = "ar",
+  items, currency, locale,
 }: {
   items: ActionItemData[];
   currency: string;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `actions.${k}`, v);
   const router = useRouter();

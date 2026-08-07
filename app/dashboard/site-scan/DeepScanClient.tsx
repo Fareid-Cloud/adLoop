@@ -25,7 +25,7 @@ interface PastScan {
   scannedAt: string;
 }
 
-export function DeepScanClient({ workspaceId, pastScans, locale = "ar" }: { workspaceId: string; pastScans: PastScan[]; locale?: Locale }) {
+export function DeepScanClient({ workspaceId, pastScans, locale }: { workspaceId: string; pastScans: PastScan[]; locale: Locale }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `deepScan.${k}`, v);
   const [url, setUrl] = useState("");
   const [suggestedUrls, setSuggestedUrls] = useState<string[]>([]);

@@ -14,11 +14,11 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 export function ReportedVsActualBars({
   reported,
   actual,
-  locale = "ar",
+  locale,
 }: {
   reported: number;
   actual: number;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const safeReported = Math.max(reported, 0);
   const verifiedPct = safeReported > 0 ? Math.min(100, (actual / safeReported) * 100) : 0;

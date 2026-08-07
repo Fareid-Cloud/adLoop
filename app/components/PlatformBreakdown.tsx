@@ -19,11 +19,11 @@ interface PlatformData {
 
 export function PlatformBreakdown({
   platforms,
-  locale = "ar",
+  locale,
   days = 30,
 }: {
   platforms: PlatformData[];
-  locale?: Locale;
+  locale: Locale;
   days?: number;
 }) {
   const [separated, setSeparated] = useState(false);

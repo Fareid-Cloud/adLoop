@@ -19,7 +19,7 @@ interface GapMeterProps {
   reportedValue: number;
   unit?: string;
   size?: "sm" | "lg";
-  locale?: Locale;
+  locale: Locale;
 }
 
 export function GapMeter({
@@ -28,7 +28,7 @@ export function GapMeter({
   reportedValue,
   unit = "",
   size = "sm",
-  locale = "ar",
+  locale,
 }: GapMeterProps) {
   const [animated, setAnimated] = useState(false);
   const ref = useRef<HTMLDivElement>(null);

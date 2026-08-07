@@ -78,7 +78,7 @@ function Spark({ data, tone }: { data: number[]; tone: string }) {
 
 
 export function DiagnosticsView({
-  workspaceName, healthScore, scoreTrend, counts, checks, activity, totalMonthlyImpact, currency, lastScanAt, locale = "ar",
+  workspaceName, healthScore, scoreTrend, counts, checks, activity, totalMonthlyImpact, currency, lastScanAt, locale,
 }: {
   workspaceName: string;
   healthScore: number;
@@ -89,7 +89,7 @@ export function DiagnosticsView({
   totalMonthlyImpact: number;
   currency: string;
   lastScanAt: string | null;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const ar = locale === "ar";
   // مساحتان مختلفتان في القاموس: نصوص الصفحة، ونصوص هذا العرض

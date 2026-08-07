@@ -17,10 +17,10 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export function PlatformDonut({
   data,
-  locale = "ar",
+  locale,
 }: {
   data: { platform: string; value: number }[];
-  locale?: Locale;
+  locale: Locale;
 }) {
   const rows = data
     .filter((d) => d.value > 0)

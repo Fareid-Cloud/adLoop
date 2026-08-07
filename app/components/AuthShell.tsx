@@ -43,12 +43,12 @@ const PILLAR_ICONS = [Search, ShieldCheck, RefreshCw];
 
 export function AuthShell({
   children,
-  locale = "en",
+  locale,
   onLocaleChange,
   wide = false,
 }: {
   children: ReactNode;
-  locale?: Locale;
+  locale: Locale;
   onLocaleChange?: (l: Locale) => void;
   wide?: boolean;
 }) {

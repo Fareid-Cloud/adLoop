@@ -207,6 +207,9 @@ function StatCard({
       value={value.toLocaleString("en-US")}
       icon={icon}
       tone={critical ? "critical" : "accent"}
+      // استثناء مقصود لا سهو: لوحة المالك عربية بالكامل (عناوينها مكتوبة
+      // عربياً أعلاه)، وليست واجهة عميل تتبع تفضيل لغته.
+      locale="ar"
     />
   );
 }

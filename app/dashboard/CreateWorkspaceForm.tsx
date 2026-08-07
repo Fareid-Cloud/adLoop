@@ -26,7 +26,7 @@ const BUSINESS_SCALES = [
   { value: "50_plus", key: "s50_plus" },
 ];
 
-export function CreateWorkspaceForm({ locale = "ar" }: { locale?: Locale }) {
+export function CreateWorkspaceForm({ locale }: { locale: Locale }) {
   const tr = (k: string) => t(locale, `newWorkspace.${k}`);
   const router = useRouter();
   const [name, setName] = useState("");

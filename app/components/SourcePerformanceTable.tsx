@@ -40,10 +40,10 @@ function TrendBadge({ pct, lowerIsBetter }: { pct: number | null; lowerIsBetter?
 
 export function SourcePerformanceTable({
   rows,
-  locale = "ar",
+  locale,
 }: {
   rows: SourceRow[];
-  locale?: Locale;
+  locale: Locale;
 }) {
   const tr = (k: string) => t(locale, `sourceTable.${k}`);
   const sorted = [...rows].sort((a, b) => b.cost - a.cost);

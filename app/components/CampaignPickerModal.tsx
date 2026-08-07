@@ -29,14 +29,14 @@ export function CampaignPickerModal({
   open,
   onClose,
   onSaved,
-  locale = "ar",
+  locale,
 }: {
   workspaceId: string;
   platform: Platform;
   open: boolean;
   onClose: () => void;
   onSaved?: (count: number) => void;
-  locale?: "ar" | "en";
+  locale: "ar" | "en";
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) =>
     t(locale, `picker.${k}`, vars);

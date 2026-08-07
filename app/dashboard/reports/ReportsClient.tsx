@@ -76,7 +76,7 @@ export interface CampaignOption {
 }
 
 export function ReportsClient({
-  locale = "ar",
+  locale,
   workspaceId,
   currency,
   platforms,
@@ -85,7 +85,7 @@ export function ReportsClient({
   initial,
   result,
 }: {
-  locale?: Locale;
+  locale: Locale;
   workspaceId: string;
   currency: string;
   platforms: string[];

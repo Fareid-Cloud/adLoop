@@ -15,11 +15,11 @@ import { FlaskConical, Database, Lock, Sparkles, ArrowLeft } from "lucide-react"
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export function DemoBadge({
-  locale = "ar",
+  locale,
   daysLeft,
   hasRealWorkspace,
 }: {
-  locale?: Locale;
+  locale: Locale;
   daysLeft: number | null;
   hasRealWorkspace: boolean;
 }) {

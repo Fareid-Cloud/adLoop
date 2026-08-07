@@ -65,7 +65,7 @@ interface MetricCardProps {
    * يُفترض أن يبني عليه قراراً.
    */
   explainKey?: string;
-  locale?: Locale;
+  locale: Locale;
   /** علامة التحقّق - جوهر المنتج: رقم متحقّق منه مقابل رقم معلَن */
   verified?: boolean;
   /**
@@ -107,7 +107,7 @@ export function MetricCard(props: MetricCardProps) {
   const {
     label, value, unit, subLabel, href, icon: Icon,
     delta, bar, caption, trend, hint, verified, onClick, selected,
-    explainKey, locale = "ar",
+    explainKey, locale,
   } = props;
   const tone: MetricTone = props.tone ?? props.color ?? "default";
 
@@ -202,14 +202,36 @@ export function MetricCard(props: MetricCardProps) {
 
   if (onClick) {
     return (
-      <button
-        type="button"
+      // 🔴🔴 أخطر باگ تخطيط في المنتج، وهذا سببه بالضبط:
+      //
+      // كان الغلاف `<button>`، وبداخله أيقونة الشرح `<button>` أخرى. و**HTML
+      // يمنع زرّاً داخل زرّ**: محلّل المتصفّح يُغلق الزرّ الخارجيّ تلقائياً
+      // عند أوّل زرّ داخليّ. فينتهي `<div class="card">` عند أيقونة الشرح،
+      // ويخرج **الرقم والتعليق** من البطاقة إلى جذر الصفحة بعرضها كاملاً.
+      //
+      // النتيجة التي رآها المالك: بطاقة تحوي الأيقونة والعنوان فقط، والرقم
+      // «٠» وسطر «Review these this week» ملقيان على حافة الصفحة تحتها -
+      // صفحة التشخيص كلّها تبدو منهارة. ولا يظهر إلّا حين تجتمع الخاصّيتان
+      // (`onClick` + `explainKey`)، وهو ما يفسّر ظهوره في صفحة دون أخرى.
+      //
+      // `div` بدور زرّ لا `button`: يحتفظ بالنقر ولوحة المفاتيح وقارئ الشاشة،
+      // ويسمح بعناصر تفاعلية بداخله - وهو النمط القياسيّ لبطاقة قابلة للنقر
+      // تحوي أزراراً.
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick();
+          }
+        }}
         aria-pressed={selected}
-        className="block h-full w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-2xl"
+        className="block h-full w-full cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
       >
         {content}
-      </button>
+      </div>
     );
   }
 

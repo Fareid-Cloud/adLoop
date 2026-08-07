@@ -6,7 +6,7 @@
 import { Printer } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
-export function PrintButton({ label, locale = "ar" }: { label?: string; locale?: Locale }) {
+export function PrintButton({ label, locale }: { label?: string; locale: Locale }) {
   const text = label ?? t(locale, "ui.print");
   return (
     <button

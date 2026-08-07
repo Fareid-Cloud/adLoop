@@ -28,11 +28,11 @@ type ViewMode = "list" | "grid";
 export function IntegrationsView({
   overview,
   workspaceId,
-  locale = "ar",
+  locale,
 }: {
   overview: IntegrationsOverview;
   workspaceId: string;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) =>
     t(locale, `integrations.${k}`, vars);

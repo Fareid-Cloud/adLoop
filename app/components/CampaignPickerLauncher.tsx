@@ -16,13 +16,13 @@ export function CampaignPickerLauncher({
   connectedPlatforms,
   label,
   className,
-  locale = "ar",
+  locale,
 }: {
   workspaceId: string;
   connectedPlatforms: Platform[];
   label: string;
   className?: string;
-  locale?: "ar" | "en";
+  locale: "ar" | "en";
 }) {
   const router = useRouter();
   const ar = locale === "ar";

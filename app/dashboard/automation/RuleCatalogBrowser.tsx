@@ -38,12 +38,12 @@ export function RuleCatalogBrowser({
   workspaceId,
   campaigns,
   currency,
-  locale = "ar",
+  locale,
 }: {
   workspaceId: string;
   campaigns: { id: string; name: string; platform: string }[];
   currency: string;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `autoRules.${k}`, vars);
   const [platform, setPlatform] = useState<RulePlatform | null>(null);

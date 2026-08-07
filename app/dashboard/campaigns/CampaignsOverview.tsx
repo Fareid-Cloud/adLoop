@@ -43,11 +43,11 @@ function classify(r: CampaignRow): { key: "critical" | "watch" | "healthy"; tone
 }
 
 export function CampaignsOverview({
-  rows, currency, locale = "ar",
+  rows, currency, locale,
 }: {
   rows: CampaignRow[];
   currency: string;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `campPages.${k}`, vars);
   const [query, setQuery] = useState("");

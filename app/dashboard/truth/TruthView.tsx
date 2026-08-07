@@ -18,7 +18,7 @@ import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { AttributionModelTable } from "./AttributionModelTable";
 import type { TruthSnapshot } from "@/lib/truthKpis";
-import { t, type Locale } from "@/lib/i18n/dictionary";
+import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 
 const PLATFORM_META: Record<string, { name: string; color: string }> = {
   GOOGLE_ADS: { name: "Google Ads", color: "#4285F4" },
@@ -51,13 +51,13 @@ export function TruthView({
   workspaceName,
   currency,
   snapshot,
-  locale = "ar",
+  locale,
   periodSlot,
 }: {
   workspaceName: string;
   currency: string;
   snapshot: TruthSnapshot;
-  locale?: Locale;
+  locale: Locale;
   /** منتقي الفترة الموحَّد - يُبنى في الصفحة (خادم) ويُمرَّر إلى هنا */
   periodSlot?: React.ReactNode;
 }) {
@@ -473,7 +473,12 @@ export function TruthView({
                         <span key={j} className="flex items-center gap-1.5">
                           {j > 0 && <span className="text-text-faint">←</span>}
                           <span className="rounded-md bg-surface-raised px-2 py-0.5 text-[12px] text-text-primary">
-                            {PLATFORM_META[step]?.name ?? channelName(locale, step)}
+                            {/* رمز منصّة يُترجَم بلغة القارئ، وما عداه اسم
+                                قناة له مفتاحه. `PLATFORM_META` هو اختبار
+                                «هل هذا رمز منصّة» لا مصدر الاسم - اسمه فيه
+                                إنجليزيّ ثابت، وكان يفرض «Meta Ads» على
+                                الواجهة العربية. */}
+                            {PLATFORM_META[step] ? platformLabel(locale, step) : channelName(locale, step)}
                           </span>
                         </span>
                       ))}

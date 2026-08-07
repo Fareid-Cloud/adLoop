@@ -15,11 +15,11 @@ import { Copy, Check, ChevronDown, ExternalLink } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export function InstallTagPanel({
-  workspaceId, appUrl, locale = "ar", defaultOpen = false,
+  workspaceId, appUrl, locale, defaultOpen = false,
 }: {
   workspaceId: string;
   appUrl: string;
-  locale?: Locale;
+  locale: Locale;
   defaultOpen?: boolean;
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `tagInstall.${k}`, v);

@@ -58,7 +58,7 @@ const TYPE_ICON: Record<string, typeof Zap> = {
 
 const AUTO_DISMISS_MS = 8000;
 
-export function NotificationToast({ locale = "ar" }: { locale?: Locale }) {
+export function NotificationToast({ locale }: { locale: Locale }) {
   const [queue, setQueue] = useState<ToastNotification[]>([]);
   const lastCheckRef = useRef<string>(new Date().toISOString());
 
@@ -94,7 +94,9 @@ export function NotificationToast({ locale = "ar" }: { locale?: Locale }) {
   return (
     // `left-1/2 -translate-x-1/2` ينقلب في RTL فيدفع البطاقة خارج الشاشة
     // يميناً. `inset-x-0 mx-auto` يتمركز بلا اعتماد على الاتجاه إطلاقاً.
-    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 mx-auto w-full max-w-sm px-4">
+    // `floating-bottom` يحجز الزاوية السفلية اليسرى لزرّ الدعم - راجع
+    // القاعدة في `theme.css`.
+    <div className="floating-bottom pointer-events-none fixed inset-x-0 bottom-6 z-50 mx-auto w-full max-w-sm px-4">
       <div className="flex items-start gap-3 card pad-md shadow-lg">
         <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
           <Icon size={16} />

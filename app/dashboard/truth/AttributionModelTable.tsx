@@ -32,7 +32,7 @@ export function AttributionModelTable({
   pathCoveragePct,
   conversionsWithoutTouches,
   unbackedClaims,
-  locale = "ar",
+  locale,
 }: {
   rows: ModelComparisonRow[];
   channelRows: ModelComparisonRow[];
@@ -40,7 +40,7 @@ export function AttributionModelTable({
   pathCoveragePct: number;
   conversionsWithoutTouches: number;
   unbackedClaims: number;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `campPages.${k}`, vars);
   const [dimension, setDimension] = useState<"platform" | "channel">("platform");

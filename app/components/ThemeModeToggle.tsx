@@ -15,10 +15,10 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export function ThemeModeToggle({
   initialMode,
-  locale = "ar",
+  locale,
 }: {
   initialMode: string;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const [mode, setMode] = useState(initialMode === "dark" ? "dark" : "light");
 

@@ -65,8 +65,6 @@ export const dictionary = {
     dashboard: {
       workspaces: "مساحات العمل",
       newWorkspace: "مساحة عمل جديدة",
-      tryDemo: "جرّب على بيانات عرض",
-      tryDemoHint: "أرقام أمثلة - لا تربط حساباً",
       metrics: {
         impressions: "مرات الظهور",
         clicks: "النقرات",
@@ -2176,7 +2174,12 @@ export const dictionary = {
       shopNone: "لا توجد بيانات تسوّق بعد",
       shopNoneBody: "إمّا لا يوجد حساب Merchant Center مربوط، أو لم تُسحب البيانات بعد.",
       shopRejected: "منتجات مرفوضة أو مقيَّدة",
+      shopRejectedHint: "منتج مرفوض لا يظهر في نتائج التسوّق إطلاقاً، ولا يخبرك Google Ads بذلك. سبب الرفض يُصلَح داخل Merchant Center.",
+      shopFixInMc: "فتح Merchant Center",
       shopNoConv: "صرف دون تحويلات",
+      shopNoConvHint: "منتجات ظاهرة وتصرف فعلاً، لكن لم يُنتج أيٌّ منها تحويلاً محقَّقاً خلال الفترة.",
+      shopNoIssueDetail: "مرفوض دون سبب مفصَّل من المنصّة",
+      shopSpendLabel: "الإنفاق",
       dpTitle: "أماكن ظهور الشبكة الإعلانية",
       dpIntro: "مواقع أو مقاطع أنفقت عليها دون أي تحويل - أوّل المرشّحين للاستبعاد.",
       dpNote: "ملاحظة: تجمع جوجل الأماكن منخفضة النشاط في صفّ واحد.",
@@ -2570,6 +2573,11 @@ export const dictionary = {
       limitN: "{n} مساحات",
       limitReached: "وصلت إلى حدّ باقتك ({limit}).",
       upgrade: "ترقية الباقة",
+      // 🔴 كانتا تحت `dashboard` بينما `WorkspaceSwitcher` يقرأ من `wsSwitch`،
+      // فيرى المستخدم العربيّ `wsSwitch.tryDemo` نصّاً خاماً مكان اسم الديمو.
+      // كشفه `scripts/checkTranslations.mjs` لا عينُ مستخدم.
+      tryDemo: "جرّب على بيانات عرض",
+      tryDemoHint: "أرقام أمثلة - لا تربط حساباً",
     },
     // ==== نموذج المنتج والتسعير ====
     productForm: {
@@ -6202,7 +6210,12 @@ export const dictionary = {
       shopNone: "No shopping data yet",
       shopNoneBody: "Either no Merchant Center account is linked, or the data has not been pulled yet.",
       shopRejected: "Rejected or restricted products",
+      shopRejectedHint: "A rejected product never appears in Shopping results, and Google Ads does not tell you. The reason is fixed inside Merchant Center.",
+      shopFixInMc: "Open Merchant Center",
       shopNoConv: "Spend without conversions",
+      shopNoConvHint: "These products are live and taking spend, but none produced a verified conversion in the period.",
+      shopNoIssueDetail: "Rejected without a detailed reason from the platform",
+      shopSpendLabel: "Spend",
       dpIntro: "Sites and videos you spent on with no conversions at all - first in line for exclusion.",
       dpNote: "Note: Google groups low-activity placements into a single row.",
       dpNone: "No wasted placements right now",

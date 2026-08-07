@@ -24,10 +24,10 @@ const POLL_MS = 2_000;
 const MAX_ATTEMPTS = 20;
 
 export function PaymentResultClient({
-  intentId, locale = "ar",
+  intentId, locale,
 }: {
   intentId: string;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `payResult.${k}`, v);
   const [phase, setPhase] = useState<Phase>("checking");

@@ -83,7 +83,9 @@ export function PwaSetup({ locale }: { locale: Locale }) {
   if (!visible) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+    // `floating-bottom` يحجز الزاوية السفلية اليسرى لزرّ الدعم فلا تغطّيه
+    // هذه البطاقة على الشاشات الضيّقة - راجع القاعدة في `theme.css`.
+    <div className="floating-bottom pointer-events-none fixed inset-x-0 bottom-0 z-50 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
       <div className="card pad-sm pointer-events-auto mx-auto flex max-w-sm items-center gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/12 text-accent">
           <Download size={17} />

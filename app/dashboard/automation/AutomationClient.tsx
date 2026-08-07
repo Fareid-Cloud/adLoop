@@ -25,7 +25,7 @@ export interface RuleRow {
 
 const TEMPLATES = RULE_TEMPLATES;
 
-export function AutomationClient({ workspaceId, rules, locale = "ar" }: { workspaceId: string; rules: RuleRow[]; locale?: Locale }) {
+export function AutomationClient({ workspaceId, rules, locale }: { workspaceId: string; rules: RuleRow[]; locale: Locale }) {
   const tr = (k: string) => t(locale, `autoRules.${k}`);
   const router = useRouter();
   const [showTemplates, setShowTemplates] = useState(false);

@@ -55,12 +55,12 @@ const STATE_TONE: Record<PageState, string> = {
 };
 
 export function TrackingCoverageClient({
-  workspaceId, appUrl, pages, locale = "ar",
+  workspaceId, appUrl, pages, locale,
 }: {
   workspaceId: string;
   appUrl: string;
   pages: PageRow[];
-  locale?: Locale;
+  locale: Locale;
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `tagInstall.${k}`, v);
   const router = useRouter();

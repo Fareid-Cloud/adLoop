@@ -62,7 +62,11 @@ export async function getSetupProgress(workspaceId: string, userId: string): Pro
       descAr: "اربط Google أو Meta أو TikTok لنبدأ سحب بياناتك تلقائياً.",
       descEn: "Connect Google, Meta or TikTok so we can pull your data automatically.",
       done: connections > 0,
-      ctaHref: "/dashboard",
+      // 🔴 كانت `/dashboard` - أي الصفحة نفسها التي تُعرض فيها البطاقة.
+      // فيضغط المستخدم «أكمل الإعداد» على الرئيسية فلا يحدث شيء إطلاقاً:
+      // رابطٌ إلى المكان الذي هو فيه. الخطوة تحيل الآن إلى صفحة ربط
+      // المنصّات حيث يُربط الحساب فعلاً.
+      ctaHref: "/dashboard/integrations",
       ctaAr: "ربط حساب",
       ctaEn: "Connect",
     },

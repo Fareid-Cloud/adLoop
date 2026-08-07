@@ -18,7 +18,7 @@ const PARAM_TO_PLATFORM: Record<string, Platform> = {
   tiktok_ads: "TIKTOK_ADS",
 };
 
-export function PostConnectCampaignPrompt({ workspaceId, locale = "ar" }: { workspaceId: string; locale?: "ar" | "en" }) {
+export function PostConnectCampaignPrompt({ workspaceId, locale }: { workspaceId: string; locale: "ar" | "en" }) {
   const params = useSearchParams();
   const router = useRouter();
   const [platform, setPlatform] = useState<Platform | null>(null);

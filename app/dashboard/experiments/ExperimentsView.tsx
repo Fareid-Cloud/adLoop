@@ -52,12 +52,12 @@ const CONFIDENCE_TONE: Record<string, { key: string; tone: string }> = {
 };
 
 export function ExperimentsView({
-  workspaceId, experiments, campaigns, locale = "ar",
+  workspaceId, experiments, campaigns, locale,
 }: {
   workspaceId: string;
   experiments: ExperimentRow[];
   campaigns: { id: string; name: string; platform: string }[];
-  locale?: Locale;
+  locale: Locale;
 }) {
   return (
     <LabLocaleContext.Provider value={locale}>

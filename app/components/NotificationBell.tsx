@@ -29,7 +29,7 @@ const SEVERITY_COLOR: Record<string, string> = {
   URGENT: "bg-critical",
 };
 
-export function NotificationBell({ locale = "ar" }: { locale?: Locale }) {
+export function NotificationBell({ locale }: { locale: Locale }) {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);

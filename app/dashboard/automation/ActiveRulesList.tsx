@@ -45,12 +45,12 @@ const ACTION_TONE: Record<string, string> = {
 
 
 export function ActiveRulesList({
-  workspaceId, rules, campaigns, locale = "ar",
+  workspaceId, rules, campaigns, locale,
 }: {
   workspaceId: string;
   rules: RuleRow[];
   campaigns: { id: string; name: string; platform: string }[];
-  locale?: Locale;
+  locale: Locale;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState<string | null>(null);

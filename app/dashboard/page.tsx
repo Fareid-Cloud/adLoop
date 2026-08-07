@@ -332,7 +332,7 @@ export default async function GlancePage({
 
       {/* اختيار الحملات يفتح تلقائياً فور العودة من ربط المنصة */}
       <Suspense fallback={null}>
-        <PostConnectCampaignPrompt workspaceId={workspace.id} locale="ar" />
+        <PostConnectCampaignPrompt workspaceId={workspace.id} locale={locale} />
       </Suspense>
 
       {/* الإعداد والنشاط جنباً إلى جنب: القائمة الطويلة السابقة كانت تدفع
@@ -375,7 +375,7 @@ export default async function GlancePage({
       {!hasAnyData ? null : (
         <>
           {/* مؤشرات الأداء القابلة للاختيار - رسم صغير تحت كل مؤشر */}
-          <KpiSection all={allKpis} currency={workspace.currency} locale="ar" />
+          <KpiSection all={allKpis} currency={workspace.currency} locale={locale} />
 
           {/* هيرو طبقة الحقيقة - المعلن مقابل المتحقّق منه فعلاً */}
           <div className="mb-4 grid gap-3 lg:grid-cols-[1.4fr_1fr]">

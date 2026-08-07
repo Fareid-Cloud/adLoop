@@ -18,11 +18,11 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 import type { SubscriptionState } from "@/lib/entitlements";
 
 export function TrialBar({
-  state, trialDaysLeft, locale = "ar", planKey,
+  state, trialDaysLeft, locale, planKey,
 }: {
   state: SubscriptionState;
   trialDaysLeft: number | null;
-  locale?: Locale;
+  locale: Locale;
   planKey: string;
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `trialBar.${k}`, v);

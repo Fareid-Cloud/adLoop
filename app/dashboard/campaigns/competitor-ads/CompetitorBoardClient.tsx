@@ -27,11 +27,11 @@ const FORMAT_ICON: Record<AdFormat, typeof ImageIcon> = {
 const COUNTRIES = ["EG", "SA", "AE", "KW", "QA", "OM", "BH", "JO", "MA"];
 
 export function CompetitorBoardClient({
-  workspaceId, board, locale = "ar",
+  workspaceId, board, locale,
 }: {
   workspaceId: string;
   board: BoardSummary;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `competitors.${k}`, v);
   const router = useRouter();

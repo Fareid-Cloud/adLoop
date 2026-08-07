@@ -36,11 +36,11 @@ interface ImportResponse {
 type Line = { text: string; tone: "positive" | "negative" | "neutral" };
 
 export function ProductCostsPanel({
-  workspaceId, missingCount, locale = "ar",
+  workspaceId, missingCount, locale,
 }: {
   workspaceId: string;
   missingCount: number;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `cogs.${k}`, v);
   const router = useRouter();

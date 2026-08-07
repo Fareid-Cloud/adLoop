@@ -13,12 +13,12 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 interface Outcome { platform: string; ok: boolean; error?: string }
 
 export function SyncNowButton({
-  workspaceId, label, className, locale = "ar",
+  workspaceId, label, className, locale,
 }: {
   workspaceId: string;
   label: string;
   className?: string;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const tr = (k: string) => t(locale, `setup.${k}`);
   const router = useRouter();

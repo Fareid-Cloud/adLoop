@@ -5,7 +5,7 @@
 import { Printer } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
-export function PrintButton({ locale = "ar" }: { locale?: Locale }) {
+export function PrintButton({ locale }: { locale: Locale }) {
   return (
     <button
       onClick={() => window.print()}

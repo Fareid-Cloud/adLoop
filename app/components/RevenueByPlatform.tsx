@@ -35,13 +35,13 @@ export function RevenueByPlatform({
   rows,
   currency,
   breakEvenRoas,
-  locale = "ar",
+  locale,
 }: {
   rows: RevenuePlatformRow[];
   currency: string;
   /** نقطة التعادل الحقيقية من هامش الربح - إن وُجدت، تصبح الحكم لا المتوسط */
   breakEvenRoas: number | null;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `revenue.${k}`, vars);
   const withRevenue = rows.filter((r) => r.revenue > 0);

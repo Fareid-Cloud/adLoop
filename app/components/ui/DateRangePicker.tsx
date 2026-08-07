@@ -21,7 +21,7 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 const COMPARE_MODES: CompareMode[] = ["previous", "sameWeekday", "previousYear", "custom"];
 
 export function DateRangePicker({
-  locale = "ar",
+  locale,
   range,
   compare,
   preset,
@@ -29,7 +29,7 @@ export function DateRangePicker({
   allowCompare = true,
   onApply,
 }: {
-  locale?: Locale;
+  locale: Locale;
   range: DateRange;
   compare: DateRange | null;
   preset: PresetKey;

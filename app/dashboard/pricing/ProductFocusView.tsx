@@ -68,14 +68,14 @@ const money = (n: number, c: string) =>
   `${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${c}`;
 
 export function ProductFocusView({
-  product, currency, sales, onClose, onEdit, locale = "ar",
+  product, currency, sales, onClose, onEdit, locale,
 }: {
   product: ProductRecord;
   currency: string;
   sales?: SalesStats | null;
   onClose: () => void;
   onEdit: () => void;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `focus.${k}`, v);
   const router = useRouter();

@@ -11,11 +11,11 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 export function AiCreditBadge({
   remaining,
   total,
-  locale = "ar",
+  locale,
 }: {
   remaining: number;
   total: number;
-  locale?: "ar" | "en";
+  locale: "ar" | "en";
 }) {
   const ar = locale === "ar";
   const pct = total > 0 ? (remaining / total) * 100 : 0;

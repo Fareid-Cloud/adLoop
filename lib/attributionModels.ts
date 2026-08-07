@@ -426,11 +426,14 @@ export function computeJourneyStats(paths: ConversionPath[], topN = 5): JourneyS
 
     // نضغط التكرار المتتالي لنفس القناة: زيارتان متتاليتان من نفس المصدر
     // رحلة واحدة لا نمطان مختلفان
+    // 🔴 كان `platformLabel("ar", ...)` هنا: الاسم يُترجَم **وقت الحساب**
+    // فيُخزَّن نصّاً عربياً في البيانات، فيقرأه المستخدم الإنجليزيّ «ميتا»
+    // بجانب «Other» الإنجليزية في البطاقة نفسها. الرمز الخام هو ما يُحفظ،
+    // والترجمة تقع عند العرض بلغة القارئ - نفس قاعدة `titleKey` في التنبيهات.
     const seq: string[] = [];
     for (const t of p.touches) {
-      // المنصّة تُعرض باسمها؛ القناة نصّ داخلي أصلاً فتبقى كما هي
-  const label = t.platform ? platformLabel("ar", t.platform) : t.channel;
-      if (seq[seq.length - 1] !== label) seq.push(label);
+      const token = t.platform || t.channel;
+      if (seq[seq.length - 1] !== token) seq.push(token);
     }
     const seqKey = seq.join(" → ");
     const cur = sequences.get(seqKey) ?? { sequence: seq, count: 0, revenue: 0 };

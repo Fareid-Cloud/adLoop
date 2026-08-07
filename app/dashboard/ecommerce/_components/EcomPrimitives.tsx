@@ -81,11 +81,11 @@ export interface RecommendedAction {
 export function RecommendedActions({
   actions,
   empty,
-  locale = "ar",
+  locale,
 }: {
   actions: RecommendedAction[];
   empty?: string;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const fallbackEmpty = empty ?? t(locale, "common.noActions");
   return (
@@ -151,13 +151,13 @@ export function DataGate({
   reason,
   href = "/dashboard/integrations",
   hrefLabel,
-  locale = "ar",
+  locale,
 }: {
   title: string;
   reason: string;
   href?: string;
   hrefLabel?: string;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const cta = hrefLabel ?? t(locale, "store.connectStore");
   return (
@@ -182,11 +182,11 @@ export function DataGate({
 
 export function LimitsNote({
   items,
-  locale = "ar",
+  locale,
 }: {
   /** مفاتيح لا نصوص - تُترجَم هنا بلغة القارئ */
   items: Array<{ key: string; vars?: Record<string, string | number> }>;
-  locale?: Locale;
+  locale: Locale;
 }) {
   if (items.length === 0) return null;
   return (

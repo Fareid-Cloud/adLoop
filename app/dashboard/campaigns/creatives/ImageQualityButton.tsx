@@ -17,13 +17,13 @@ interface QualityResult {
 export function ImageQualityButton({
   imageUrl,
   platform, workspaceId,
-  locale = "ar",
+  locale,
 }: {
   imageUrl: string;
   platform: string;
   /** لازم للخادم ليعرف أنّ الطلب من مساحة عرض تجريبية فيمنع النداء المدفوع */
   workspaceId: string;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<QualityResult | null>(null);

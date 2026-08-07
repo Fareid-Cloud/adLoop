@@ -18,14 +18,14 @@ export interface WorkspaceOption {
 }
 
 export function WorkspaceSwitcher({
-  current, workspaces, canAddMore, limit, collapsed = false, locale = "ar",
+  current, workspaces, canAddMore, limit, collapsed = false, locale,
 }: {
   current: WorkspaceOption;
   workspaces: WorkspaceOption[];
   canAddMore: boolean;
   limit: number;
   collapsed?: boolean;
-  locale?: "ar" | "en";
+  locale: "ar" | "en";
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) =>
     t(locale, `wsSwitch.${k}`, vars);

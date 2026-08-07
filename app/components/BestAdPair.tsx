@@ -15,12 +15,12 @@ export function BestAdPair({
   pick,
   currency,
   scopeLabel,
-  locale = "ar",
+  locale,
 }: {
   pick: TopCreativePick;
   currency: string;
   scopeLabel: string;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `bestAd.${k}`, vars);
   if (!pick.best) {

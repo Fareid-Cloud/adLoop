@@ -14,12 +14,12 @@ export function SetupChecklist({
   progress,
   workspaceId,
   connectedPlatforms = [],
-  locale = "ar",
+  locale,
 }: {
   progress: SetupProgress;
   workspaceId: string;
   connectedPlatforms?: Array<"GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS">;
-  locale?: "ar" | "en";
+  locale: "ar" | "en";
 }) {
   if (progress.allDone) return null;
   const ar = locale === "ar";

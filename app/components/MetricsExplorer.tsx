@@ -55,7 +55,7 @@ const RANGE_PRESETS = [
 
 const MAX_METRICS = SERIES_COLORS.length;
 
-export function MetricsExplorer({ workspaceId, locale = "ar" }: { workspaceId: string; locale?: Locale }) {
+export function MetricsExplorer({ workspaceId, locale }: { workspaceId: string; locale: Locale }) {
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `explorer.${k}`, vars);
   const [rangeDays, setRangeDays] = useState(30);
   // هل الرقم الحالي مدى مخصّص؟ يميّزه بصرياً عن الاختصارات

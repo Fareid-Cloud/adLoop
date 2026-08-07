@@ -12,12 +12,12 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 export function TrustNumber({
   value,
   verified,
-  locale = "ar",
+  locale,
   className = "",
 }: {
   value: string | number;
   verified: boolean;
-  locale?: Locale;
+  locale: Locale;
   className?: string;
 }) {
   if (verified) {

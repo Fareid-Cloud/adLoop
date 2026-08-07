@@ -63,7 +63,7 @@ const SECTIONS: Array<{ labelKey?: string; labelRaw?: string; color?: string; li
   },
 ];
 
-export function CampaignsNav({ locale = "ar" }: { locale?: Locale }) {
+export function CampaignsNav({ locale }: { locale: Locale }) {
   return (
     <div className="mb-8 flex flex-col gap-3">
       {SECTIONS.map((section) => {

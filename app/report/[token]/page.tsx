@@ -55,6 +55,7 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
             icon={Wallet}
             tone="accent"
             explainKey="cost"
+            locale={locale}
             />
           <MetricCard
             label={t(locale, "publicReport.cpaVerified")}
@@ -63,6 +64,7 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
             tone="verified"
             verified
             explainKey="cpaVerified"
+            locale={locale}
             />
         </div>
 

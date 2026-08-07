@@ -97,14 +97,14 @@ function Card({
 export function ConnectPlatforms({
   states,
   workspaceId,
-  locale = "ar",
+  locale,
   title,
   subtitle,
   onlyUnconnected = false,
 }: {
   states: ConnectState[];
   workspaceId: string;
-  locale?: Locale;
+  locale: Locale;
   title?: string;
   subtitle?: string;
   onlyUnconnected?: boolean;
@@ -131,11 +131,11 @@ export function ConnectPlatforms({
 
 /** كارت مفرد - لصفحة منصة بعينها */
 export function ConnectSinglePlatform({
-  state, workspaceId, locale = "ar",
+  state, workspaceId, locale,
 }: {
   state: ConnectState;
   workspaceId: string;
-  locale?: Locale;
+  locale: Locale;
 }) {
   return (
     <div className="mx-auto max-w-md">

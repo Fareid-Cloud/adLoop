@@ -16,11 +16,11 @@ const PLATFORMS = [
 ];
 
 export function ConnectPlatformLauncher({
-  label, className, locale = "ar",
+  label, className, locale,
 }: {
   label: string;
   className?: string;
-  locale?: "ar" | "en";
+  locale: "ar" | "en";
 }) {
   const ar = locale === "ar";
   const [open, setOpen] = useState(false);

@@ -61,7 +61,7 @@ const num = (n: number) => Math.round(n).toLocaleString("en-US");
 
 export function EcommerceView({
   workspaceName, products, winner, runnerUp, losing, totals,
-  windowDays, hasStoreConnection, storePlatform, currency, locale = "ar",
+  windowDays, hasStoreConnection, storePlatform, currency, locale,
 }: {
   workspaceName: string;
   products: ProductRow[];
@@ -73,7 +73,7 @@ export function EcommerceView({
   hasStoreConnection: boolean;
   storePlatform: string | null;
   currency: string;
-  locale?: Locale;
+  locale: Locale;
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `productsPage.${k}`, v);
   // جدول المنتجات له مساحة مفاتيح خاصة - أعمدته مشتركة مع أقسام أخرى

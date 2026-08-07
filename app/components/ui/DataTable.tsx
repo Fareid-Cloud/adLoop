@@ -24,10 +24,10 @@ interface DataTableProps<T> {
   rows: T[];
   rowKey: (row: T) => string;
   onRowClick?: (row: T) => void;
-  locale?: Locale;
+  locale: Locale;
 }
 
-export function DataTable<T>({ columns, rows, rowKey, onRowClick, locale = "ar" }: DataTableProps<T>) {
+export function DataTable<T>({ columns, rows, rowKey, onRowClick, locale }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
