@@ -30,9 +30,15 @@ export interface CampaignSummary {
 }
 
 export interface AIInsightResult {
-  whatsWorking: string[];   // أهم 2-3 نقاط إيجابية
-  whatsLeaking: string[];   // أهم 2-3 مشاكل بتسرّب فلوس
-  nextAction: string;       // اقتراح واحد بس، الأهم
+  /** ٣-٥ نقاط، كلٌّ منها برقم من البيانات لا وصف عامّ */
+  whatsWorking: string[];
+  /** ٣-٥ مشكلات مرتَّبة بالأثر المالي، الأكبر أوّلاً */
+  whatsLeaking: string[];
+  /** قراءة الفارق بين المُعلَن والمتحقَّق - جوهر المنتج، ولم يكن يُطلَب من
+   *  النموذج أصلاً رغم أنّ البيانات المُرسَلة تحمله. */
+  gapReading: string;
+  /** اقتراح واحد فقط: قائمة إجراءات لا تُنفَّذ أفضلُ منها واحدٌ يُنفَّذ */
+  nextAction: string;
   rawResponse: string;
 }
 
@@ -48,18 +54,27 @@ export async function generateInsights(
 اكتب بالعربية الفصحى الواضحة والمباشرة، دون مقدمات، وبأسلوب عملي قابل للتنفيذ.
 أجب بصيغة JSON فقط بالشكل التالي دون أي نص إضافي قبله أو بعده:
 {
-  "whatsWorking": ["نقطة 1", "نقطة 2"],
-  "whatsLeaking": ["مشكلة 1", "مشكلة 2"],
+  "whatsWorking": ["٣ إلى ٥ نقاط، كلٌّ منها برقم من البيانات لا وصف عامّ"],
+  "whatsLeaking": ["٣ إلى ٥ مشكلات، مرتّبة بالأثر المالي: الأكبر أولاً"],
+  "gapReading": "جملة أو جملتان عن الفارق بين ما تعلنه المنصات وما تأكّد فعلياً، وما يعنيه للقرار",
   "nextAction": "اقتراح واحد محدد وقابل للتنفيذ فوراً"
-}`
+}
+
+قواعد: كلّ نقطة تحمل رقماً من البيانات المعطاة - لا تكتب نقطةً بلا رقم.
+لا تخترع أرقاماً غير موجودة. إن كانت البيانات لا تكفي لمحور، أعده مصفوفةً فارغة.`
       : `You are a professional advertising performance analyst helping a media buyer understand their data quickly.
 Write in clear, direct, professional English. No preamble, keep it actionable.
 Respond in JSON format only, exactly as follows, with no additional text before or after:
 {
-  "whatsWorking": ["point 1", "point 2"],
-  "whatsLeaking": ["issue 1", "issue 2"],
+  "whatsWorking": ["3-5 points, each carrying a number from the data, not a general description"],
+  "whatsLeaking": ["3-5 issues, ordered by financial impact, largest first"],
+  "gapReading": "one or two sentences on the gap between what the platforms report and what was actually verified, and what it means for the decision",
   "nextAction": "one specific, immediately actionable suggestion"
-}`;
+}
+
+Rules: every point must carry a number from the data given - never write a
+point without one. Do not invent figures. If the data cannot support an
+axis, return it as an empty array.`;
 
   const userPrompt =
     userLanguage === "ar"
@@ -68,7 +83,9 @@ Respond in JSON format only, exactly as follows, with no additional text before 
 
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 1000,
+    // ١٠٠٠ كانت تكفي نقطتين لكلّ محور بالكاد. المدى صار ٣-٥ ومعه محور
+    // رابع، والقطع في منتصف JSON يُفقد الردّ كلّه لا آخر نقطة فيه.
+    max_tokens: 1600,
     system: systemPrompt,
     messages: [{ role: "user", content: userPrompt }],
   });
@@ -82,12 +99,13 @@ Respond in JSON format only, exactly as follows, with no additional text before 
     return {
       whatsWorking: parsed.whatsWorking ?? [],
       whatsLeaking: parsed.whatsLeaking ?? [],
+      gapReading: parsed.gapReading ?? "",
       nextAction: parsed.nextAction ?? "",
       rawResponse,
     };
   } catch {
     // لو الرد مش JSON صحيح لأي سبب، نرجع نص خام بدل ما نكسر الصفحة
-    return { whatsWorking: [], whatsLeaking: [], nextAction: rawResponse, rawResponse };
+    return { whatsWorking: [], whatsLeaking: [], gapReading: "", nextAction: rawResponse, rawResponse };
   }
 }
 

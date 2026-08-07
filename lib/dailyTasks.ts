@@ -171,8 +171,7 @@ export async function runDailyDiagnosticsForWorkspace(workspaceId: string, local
     // التحديث اليدوي) - سقف واحد حقيقي، مش اتنين منفصلين
     const quota = await checkAndConsumeAIRefreshQuota(workspace.userId);
     if (quota.allowed) {
-      const aiTask = await generateAITask(summaries);
-      if (aiTask) aiTasks = [aiTask];
+      aiTasks = await generateAITask(summaries);
     }
   }
 
@@ -368,17 +367,36 @@ import { generateInsights } from "@/lib/aiInsights";
 
 export async function generateAITask(
   campaigns: CampaignSummary[]
-): Promise<{ title: string; category: string; priority: string } | null> {
-  if (campaigns.length === 0) return null;
+): Promise<Array<{ title: string; category: string; priority: string }>> {
+  if (campaigns.length === 0) return [];
 
   const insights = await generateInsights(campaigns);
-  if (!insights.nextAction) return null;
 
-  return {
-    title: insights.nextAction,
-    category: "ANOMALY",
-    priority: "HIGH",
-  };
+  // 🔴 كان يأخذ `nextAction` وحده ويهمل الباقي: النداء نفسه يستهلك رصيد
+  // المستخدم المحدود ويعيد أربعة محاور، فكان ثلاثة أرباع ما دُفع ثمنه
+  // يُرمى في كلّ تشغيل يوميّ. الأولوية تتبع طبيعة المحور لا مصدره:
+  // ما يستنزف الميزانية عاجل، وقراءة الفارق سياق يُقرأ لا إجراء يُنفَّذ.
+  // الفئة `ANOMALY` للجميع: هي فئة اكتشاف الذكاء الاصطناعي الوحيدة في
+  // `TaskCategory`، والتمييز يقع على الأولوية - وإضافة قيمة جديدة للتعداد
+  // تعني ترحيلاً لقاعدة البيانات لا يستحقّه فرقٌ يؤدّيه الترتيب أصلاً.
+  const tasks: Array<{ title: string; category: string; priority: string }> = [];
+
+  if (insights.nextAction) {
+    tasks.push({ title: insights.nextAction, category: "ANOMALY", priority: "HIGH" });
+  }
+  // الأكبر أثراً أوّلاً - المصفوفة مرتَّبة بالأثر المالي من النموذج نفسه،
+  // واثنتان تكفيان: قائمة يومية طويلة تُقرأ كضجيج فتُتجاهَل كاملةً.
+  for (const leak of insights.whatsLeaking.slice(0, 2)) {
+    tasks.push({ title: leak, category: "ANOMALY", priority: "HIGH" });
+  }
+  if (insights.gapReading) {
+    tasks.push({ title: insights.gapReading, category: "ANOMALY", priority: "MEDIUM" });
+  }
+  for (const win of insights.whatsWorking.slice(0, 1)) {
+    tasks.push({ title: win, category: "ANOMALY", priority: "LOW" });
+  }
+
+  return tasks;
 }
 
 export async function generateAndStoreDailyTasks(
