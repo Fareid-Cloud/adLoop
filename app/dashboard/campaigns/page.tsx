@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { CampaignsOverview, type CampaignRow } from "./CampaignsOverview";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { CampaignsNav } from "./CampaignsNav";
+import { AiAsk } from "@/app/components/AiAsk";
 import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, toDateBounds } from "@/lib/dateRange";
@@ -103,6 +104,8 @@ export default async function CampaignsPage({
       </div>
 
       <CampaignsNav locale={locale} />
+
+      <AiAsk scope="campaigns" locale={locale} />
 
       {rows.length === 0 ? (
         <EmptyState

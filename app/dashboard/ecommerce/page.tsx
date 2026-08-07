@@ -4,6 +4,7 @@
 // ثمانية مؤشّرات تجارية فقط، ثم أكبر الفرص وأكبر تسريب، ثم إجراءات.
 
 import { getSessionUserFromCookies } from "@/lib/auth";
+import { AiAsk } from "@/app/components/AiAsk";
 import { prisma } from "@/lib/prisma";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import {
@@ -98,6 +99,8 @@ export default async function EcommerceOverviewPage() {
         subtitle={`${tr("subtitle")} ${tc("lastNDays", { days: 30 })}.`}
         storeName={workspace.name}
       />
+
+      <AiAsk scope="store" locale={locale} />
 
       <SectionHeading hint={tr("storeStatusHint")}>{tr("storeStatus")}</SectionHeading>
 

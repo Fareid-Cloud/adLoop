@@ -2705,6 +2705,21 @@ export const dictionary = {
       home: "لوحة التحكّم",
     },
     // ==== رصيد التحليلات ====
+    // ==== مربّع السؤال ====
+    // النصّ فصحى بلا عامّية: قاعدة أسلوب المشروع لكلّ ما يراه المستخدم.
+    aiAsk: {
+      placeholder_home: "اسأل عن أرقام حسابك… مثال: أي منصّة تجيب عملاء أرخص؟",
+      placeholder_campaigns: "اسأل عن حملاتك… مثال: أي حملة تصرف بلا تحويل مؤكَّد؟",
+      placeholder_store: "اسأل عن متجرك… مثال: هل الإعلان يغطّي تكلفة البيع؟",
+      send: "إرسال السؤال",
+      costNote: "كلّ سؤال يُخصم من رصيد التحليلات الشهريّ، والجواب مبنيّ على أرقام حسابك وحدها.",
+      upgrade: "ترقية الباقة",
+      errBadQuestion: "اكتب سؤالاً واضحاً (٣ أحرف على الأقلّ، ٤٠٠ كحدّ أقصى).",
+      errNoData: "لا توجد أرقام كافية للإجابة بعد. شغّل المزامنة أوّلاً لتصل بيانات حملاتك.",
+      errHourly: "بلغت حدّ الأسئلة في هذه الساعة. جرّب بعد {n} دقيقة.",
+      errMonthly: "نفد رصيد التحليلات لهذا الشهر. يتجدّد أوّل الشهر القادم، أو ترقّي الباقة الآن.",
+      errFailed: "تعذّرت الإجابة الآن. حاول مرّة أخرى - لم يُخصم من رصيدك شيء.",
+    },
     aiCredit: {
       label: "رصيد التحليلات الذكية لهذا الشهر",
       buyOrUpgrade: "شراء رصيد أو ترقية الباقة",
@@ -5049,6 +5064,19 @@ export const dictionary = {
       home: "Dashboard",
     },
     // ==== AI credits ====
+    aiAsk: {
+      placeholder_home: "Ask about your numbers… e.g. which platform brings cheaper customers?",
+      placeholder_campaigns: "Ask about your campaigns… e.g. which one spends with no verified conversion?",
+      placeholder_store: "Ask about your store… e.g. is the ad covering the cost of the sale?",
+      send: "Send question",
+      costNote: "Each question uses one of your monthly analyses, and the answer is built only from your account figures.",
+      upgrade: "Upgrade plan",
+      errBadQuestion: "Write a clear question (at least 3 characters, 400 max).",
+      errNoData: "Not enough figures to answer yet. Run a sync first so your campaign data arrives.",
+      errHourly: "You have hit this hour's question limit. Try again in {n} minutes.",
+      errMonthly: "You are out of analyses for this month. It renews next month, or upgrade now.",
+      errFailed: "Could not answer right now. Try again — nothing was deducted from your balance.",
+    },
     aiCredit: {
       label: "AI analysis credit for this month",
       buyOrUpgrade: "Buy credit or upgrade your plan",

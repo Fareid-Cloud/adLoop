@@ -33,6 +33,7 @@ import { TrackingAccuracyGauge } from "@/app/components/ui/TrackingAccuracyGauge
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { ReportedVsActualBars } from "@/app/components/ui/ReportedVsActualBars";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { AiAsk } from "@/app/components/AiAsk";
 import { periodFromParams, toDateBounds, daysBetween } from "@/lib/dateRange";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { HealthGauge } from "@/app/components/ui/HealthGauge";
@@ -329,6 +330,11 @@ export default async function GlancePage({
           </span>
         </Link>
       </div>
+
+      {/* مربّع السؤال تحت الرأس مباشرةً: أوّل ما يفكّر فيه المستخدم عند
+          فتح اللوحة سؤال، لا صفٌّ من البطاقات. ولا يظهر قبل وصول بيانات:
+          سؤالٌ عن أرقام غير موجودة يُهدر رصيداً ويرجع بلا شيء. */}
+      {hasAnyData && <AiAsk scope="home" locale={locale} />}
 
       {/* اختيار الحملات يفتح تلقائياً فور العودة من ربط المنصة */}
       <Suspense fallback={null}>

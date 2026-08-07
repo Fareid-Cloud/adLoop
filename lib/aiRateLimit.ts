@@ -106,6 +106,72 @@ export async function checkAndConsumeAIRefreshQuota(
   };
 }
 
+// ==================== مربّع السؤال ====================
+//
+// **الرصيد الشهريّ نفسه، والحدّ الساعيّ مختلف.**
+//
+// نداء Claude واحد بتكلفة واحدة، فجيبٌ ثانٍ للرصيد الشهريّ كان سيكسر
+// الوعد المعلَن في صفحة الباقات («س تحليلاً في الشهر») بأن يجعل الرقم
+// الحقيقيّ أكبر ممّا بيع - وهو نقيض ما اتُّفق عليه.
+//
+// أمّا الحدّ الساعيّ فمرّتان لا تصلح هنا: مَن يسأل سؤالاً ثمّ يستوضح ثمّ
+// يسأل عن حملة أخرى قد استنفد ساعته وهو في منتصف تفكيره. اثنتا عشرة
+// تكفي محادثةً حقيقية وتظلّ توقف أيّ حلقة جامحة.
+const CHAT_HOURLY_LIMIT = 12;
+
+export async function checkAndConsumeChatQuota(userId: string): Promise<QuotaResult> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      aiRefreshMonthlyCount: true,
+      aiRefreshMonthlyReset: true,
+      aiChatHourlyCount: true,
+      aiChatHourlyReset: true,
+    },
+  });
+  if (!user) return { allowed: false, remainingThisMonth: 0 };
+
+  const credits = await checkCredits(userId, 0);
+  const effectiveMonthly = credits.left;
+  const now = new Date();
+
+  const isNewMonth =
+    now.getMonth() !== user.aiRefreshMonthlyReset.getMonth() ||
+    now.getFullYear() !== user.aiRefreshMonthlyReset.getFullYear();
+  const monthlyCount = isNewMonth ? 0 : user.aiRefreshMonthlyCount;
+
+  if (monthlyCount >= effectiveMonthly) {
+    return { allowed: false, remainingThisMonth: 0, reason: "monthly_exhausted" };
+  }
+
+  const hourDiffMs = now.getTime() - user.aiChatHourlyReset.getTime();
+  const isNewHour = hourDiffMs >= 60 * 60 * 1000;
+  const hourlyCount = isNewHour ? 0 : user.aiChatHourlyCount;
+
+  if (hourlyCount >= CHAT_HOURLY_LIMIT) {
+    return {
+      allowed: false,
+      remainingThisMonth: effectiveMonthly - monthlyCount,
+      reason: "hourly_exhausted",
+      retryAfterMinutes: Math.ceil((60 * 60 * 1000 - hourDiffMs) / 60000),
+    };
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      aiRefreshMonthlyCount: monthlyCount + 1,
+      aiRefreshMonthlyReset: isNewMonth ? now : user.aiRefreshMonthlyReset,
+      aiChatHourlyCount: hourlyCount + 1,
+      aiChatHourlyReset: isNewHour ? now : user.aiChatHourlyReset,
+    },
+  });
+
+  await consumePurchasedCreditIfNeeded(userId, monthlyCount + 1);
+
+  return { allowed: true, remainingThisMonth: effectiveMonthly - (monthlyCount + 1) };
+}
+
 // ==================== فحص جودة صور الإعلانات ====================
 // كانت من غير أي حد أقصى خالص - ثغرة مالية حقيقية. 30/شهر، 5/ساعة
 // (سقف أعلى نسبياً - فحص إعلانات كتير مرة واحدة استخدام شرعي متوقّع)

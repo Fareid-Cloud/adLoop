@@ -1,0 +1,87 @@
+// app/api/ai/chat/route.ts
+//
+// نقطة مربّع السؤال.
+//
+// **الترتيب هنا ليس اعتباطياً:** كلّ فحصٍ يسبق النداء المدفوع، والأرخص
+// أوّلاً. جلسة ← مساحة ← ديمو ← رصيد ← ثمّ Claude. فحصٌ بعد النداء يعني
+// أنّنا دفعنا ثمن طلبٍ كان يجب أن يُرفض.
+
+import { NextRequest, NextResponse } from "next/server";
+import { getSessionUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { blockAiInDemo } from "@/lib/demo";
+import { checkAndConsumeChatQuota } from "@/lib/aiRateLimit";
+import { planModelFor } from "@/lib/plans";
+import { buildCampaignSummaries } from "@/lib/aiInsights";
+import { answerWorkspaceQuestion, type ChatScope } from "@/lib/aiChat";
+import { t } from "@/lib/i18n/dictionary";
+
+export const maxDuration = 60;
+
+const SCOPES: ChatScope[] = ["home", "campaigns", "store"];
+/** سؤالٌ أطول من هذا ليس سؤالاً - وطولُه يُدفَع ثمنُه توكناتٍ */
+const MAX_QUESTION = 400;
+
+export async function POST(req: NextRequest) {
+  const user = await getSessionUser(req);
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const locale = (user.preferredLocale as "ar" | "en") ?? "ar";
+  const body = await req.json().catch(() => null);
+  const question = String(body?.question ?? "").trim();
+  const scope: ChatScope = SCOPES.includes(body?.scope) ? body.scope : "home";
+
+  if (question.length < 3 || question.length > MAX_QUESTION) {
+    return NextResponse.json({ error: t(locale, "aiAsk.errBadQuestion") }, { status: 400 });
+  }
+
+  const workspace = await getActiveWorkspace(user.id);
+  if (!workspace) return NextResponse.json({ error: t(locale, "common.noWorkspace") }, { status: 404 });
+
+  const demoBlock = await blockAiInDemo(workspace.id, locale);
+  if (demoBlock) return demoBlock;
+
+  // البيانات **قبل** خصم الرصيد: حسابٌ بلا أرقام كافية لا يستحقّ أن يُخصم
+  // منه رصيد مقابل جوابٍ لا يمكن أن يكون فيه شيء.
+  const since = new Date();
+  since.setDate(since.getDate() - 30);
+  const campaigns = await buildCampaignSummaries(workspace.id, since, 25);
+
+  if (campaigns.length === 0) {
+    return NextResponse.json({ error: t(locale, "aiAsk.errNoData") }, { status: 422 });
+  }
+
+  const quota = await checkAndConsumeChatQuota(user.id);
+  if (!quota.allowed) {
+    return NextResponse.json(
+      {
+        error:
+          quota.reason === "hourly_exhausted"
+            ? t(locale, "aiAsk.errHourly", { n: quota.retryAfterMinutes ?? 60 })
+            : t(locale, "aiAsk.errMonthly"),
+        upgradeUrl: quota.reason === "monthly_exhausted" ? "/dashboard/billing" : undefined,
+      },
+      { status: 429 }
+    );
+  }
+
+  try {
+    const result = await answerWorkspaceQuestion({
+      question,
+      campaigns,
+      currency: workspace.currency,
+      scope,
+      locale,
+      model: await planModelFor(user.id),
+    });
+    return NextResponse.json({ answer: result.answer, remaining: quota.remainingThisMonth });
+  } catch (err) {
+    console.error("[ai/chat] فشل النداء:", err);
+    // الرصيد خُصم قبل النداء، وفشلُ النداء ليس ذنب المستخدم - يُردّ إليه.
+    await prisma.user
+      .update({ where: { id: user.id }, data: { aiRefreshMonthlyCount: { decrement: 1 } } })
+      .catch(() => {});
+    return NextResponse.json({ error: t(locale, "aiAsk.errFailed") }, { status: 502 });
+  }
+}
