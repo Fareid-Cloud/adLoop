@@ -73,7 +73,17 @@ Respond in JSON only:
 
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 800,
+    max_tokens: 1800,
+    // التفكير التلقائي: النموذج يقرّر عمقه بنفسه حسب صعوبة المدخل، و`effort`
+    // يحدّ سقف ذلك العمق. الحقل كان غائباً لا مُطفأً - وغيابه على Sonnet 4.6
+    // يعني ألّا يفكّر، فكانت النيّة معلّقةً على افتراضيّ النموذج لا مكتوبة.
+    //
+    // ⚠️ توكنات التفكير تُحاسَب كإخراج، و`max_tokens` سقفٌ على التفكير والردّ
+    // **معاً** - فأيّ رفع لـ`effort` هنا يقتطع من مساحة الردّ قبل أن يزيد
+    // الفاتورة. راجع `docs/claude-api-usage-map.md` قبل تغيير أيّ مستوى.
+    thinking: { type: "adaptive" },
+    // حكم إدراكيّ على صورة واحدة: لا سلسلة استدلال تُبنى، فالعمق هدر
+    output_config: { effort: "low" },
     system: systemPrompt,
     messages: [
       {

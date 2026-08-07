@@ -393,7 +393,17 @@ Respond in JSON format only, exactly as follows:
 
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 3000,
+    max_tokens: 4200,
+    // التفكير التلقائي: النموذج يقرّر عمقه بنفسه حسب صعوبة المدخل، و`effort`
+    // يحدّ سقف ذلك العمق. الحقل كان غائباً لا مُطفأً - وغيابه على Sonnet 4.6
+    // يعني ألّا يفكّر، فكانت النيّة معلّقةً على افتراضيّ النموذج لا مكتوبة.
+    //
+    // ⚠️ توكنات التفكير تُحاسَب كإخراج، و`max_tokens` سقفٌ على التفكير والردّ
+    // **معاً** - فأيّ رفع لـ`effort` هنا يقتطع من مساحة الردّ قبل أن يزيد
+    // الفاتورة. راجع `docs/claude-api-usage-map.md` قبل تغيير أيّ مستوى.
+    thinking: { type: "adaptive" },
+    // فحص عناصر صفحة واحدة - وصفيّ أكثر منه استدلاليّاً
+    output_config: { effort: "low" },
     system: systemPrompt,
     messages: [
       {
@@ -557,7 +567,10 @@ Respond in JSON format only, exactly as follows:
 
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 2500,
+    max_tokens: 4000,
+    thinking: { type: "adaptive" },
+    // تجميع فحوص متعدّدة في حكم واحد: أثقل النداءات الأربعة استدلالاً
+    output_config: { effort: "medium" },
     system: systemPrompt,
     messages: [{ role: "user", content: locale === "ar" ? "حلّل الترابط ورتّب الأولويات." : "Analyze the interconnections and prioritize." }],
   });
