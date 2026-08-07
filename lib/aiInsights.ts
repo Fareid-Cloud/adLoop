@@ -5,6 +5,7 @@
 // النهاردة. بتستخدم Claude API فعلياً (مش قالب نصوص ثابت).
 
 import Anthropic from "@anthropic-ai/sdk";
+import { prisma } from "@/lib/prisma";
 
 // timeout صريح - من غيره، لو خدمة Claude اتأخرت لأي سبب، الطلب ممكن يفضل
 // معلّق لدقائق بدل ما يفشل بسرعة برسالة واضحة للمستخدم
@@ -18,6 +19,13 @@ export interface CampaignSummary {
   platform: string;
   campaignName: string;
   cost: number;
+  /** النقرات والظهور: بهما يُميَّز ضعف الجذب (نقر منخفض) من ضعف التحويل
+   *  (نقر جيّد وتحويل معدوم) - وبدونهما كلّ ضعفٍ يبدو سبباً واحداً. */
+  clicks?: number;
+  impressions?: number;
+  /** ما تعلنه المنصّة، وما تأكّد فعلاً. الطرفان معاً أو لا فارق يُقرأ. */
+  rawConversions?: number;
+  verifiedConversions?: number;
   // بيانات lead-gen (لو موجودة)
   cplVerified?: number;
   inflationRate?: number;
@@ -61,7 +69,16 @@ export async function generateInsights(
 }
 
 قواعد: كلّ نقطة تحمل رقماً من البيانات المعطاة - لا تكتب نقطةً بلا رقم.
-لا تخترع أرقاماً غير موجودة. إن كانت البيانات لا تكفي لمحور، أعده مصفوفةً فارغة.`
+لا تخترع أرقاماً غير موجودة. إن كانت البيانات لا تكفي لمحور، أعده مصفوفةً فارغة.
+
+كلّ صفّ حملة يحمل: الاسم، والإنفاق، والنقرات، والظهور، وrawConversions (ما
+تعلنه المنصّة)، وverifiedConversions (ما تأكّد عبر محادثة حقيقية)،
+وinflationRate (نسبة الفارق بينهما). استعملها هكذا:
+- سمِّ الحملة باسمها في كلّ نقطة - لا تقل «إحدى الحملات».
+- inflationRate المرتفع مع إنفاق كبير هو أخطر ما في البيانات: المنصّة تُحصي
+  تحويلات لم تحدث، والميزانية تُوزَّع على رقم غير حقيقي.
+- ميّز ضعف الجذب من ضعف التحويل: نقر منخفض مقابل الظهور = الإعلان لا يجذب،
+  ونقر جيّد مع تحويل معدوم = صفحة الهبوط أو العرض هو الخلل.`
       : `You are a professional advertising performance analyst helping a media buyer understand their data quickly.
 Write in clear, direct, professional English. No preamble, keep it actionable.
 Respond in JSON format only, exactly as follows, with no additional text before or after:
@@ -74,7 +91,18 @@ Respond in JSON format only, exactly as follows, with no additional text before 
 
 Rules: every point must carry a number from the data given - never write a
 point without one. Do not invent figures. If the data cannot support an
-axis, return it as an empty array.`;
+axis, return it as an empty array.
+
+Each campaign row carries: name, spend, clicks, impressions, rawConversions
+(what the platform reports), verifiedConversions (what was confirmed by a real
+conversation), and inflationRate (the gap between them). Use them like this:
+- Name the campaign in every point — never "one of the campaigns".
+- A high inflationRate on heavy spend is the most dangerous thing in the data:
+  the platform is counting conversions that did not happen, and the budget is
+  being allocated against a number that is not real.
+- Separate weak pull from weak conversion: low clicks against impressions means
+  the ad does not attract; healthy clicks with no conversions means the landing
+  page or the offer is where it breaks.`;
 
   const userPrompt =
     userLanguage === "ar"
@@ -134,4 +162,65 @@ export function detectCreativeFatigue(
 
 function average(nums: number[]): number {
   return nums.length > 0 ? nums.reduce((a, b) => a + b, 0) / nums.length : 0;
+}
+
+/**
+ * الحمولة المُرسَلة إلى النموذج، مبنيّةً من لقطات الأداء.
+ *
+ * **لماذا دالّة مشتركة:** كان البناء مكرَّراً حرفياً في المسار اليومي وفي
+ * زرّ التحديث اليدوي - ونسختان تحملان العيب نفسه تُصلَحان مرّةً وتبقى
+ * الأخرى. الأسوأ أنّ العيب كان في *ما لا يُرسَل*: تجميع بالمنصّة لا
+ * بالحملة، و`rawConversions` يُجمَع ثمّ يُرمى، فيُطلَب من النموذج أن يقرأ
+ * فارقاً لا يملك أحد طرفيه.
+ */
+export async function buildCampaignSummaries(
+  workspaceId: string,
+  sinceDate: Date,
+  /** حدّ أعلى للصفوف: الحمولة تُدفَع ثمناً بالتوكن، والذيل الرخيص لا يحمل خبراً */
+  limit = 25,
+): Promise<CampaignSummary[]> {
+  const [agg, links] = await Promise.all([
+    prisma.metricSnapshot.groupBy({
+      by: ["platform", "campaignId"],
+      where: { workspaceId, date: { gte: sinceDate } },
+      _sum: {
+        cost: true,
+        verifiedConversions: true,
+        rawConversions: true,
+        clicks: true,
+        impressions: true,
+      },
+    }),
+    // الاسم لا المعرّف: «حملة abc123 تستنزف ميزانيتك» لا يُتصرَّف بناءً عليها.
+    prisma.campaignLink.findMany({
+      where: { workspaceId },
+      select: { externalCampaignId: true, campaignName: true },
+    }),
+  ]);
+
+  const nameById = new Map(links.map((l) => [l.externalCampaignId, l.campaignName]));
+
+  return agg
+    .map((c) => {
+      const cost = c._sum.cost ?? 0;
+      const raw = c._sum.rawConversions ?? 0;
+      const verified = c._sum.verifiedConversions ?? 0;
+      return {
+        platform: c.platform,
+        campaignName: nameById.get(c.campaignId) ?? c.campaignId,
+        cost,
+        clicks: c._sum.clicks ?? 0,
+        impressions: c._sum.impressions ?? 0,
+        rawConversions: raw,
+        verifiedConversions: verified,
+        cplVerified: verified > 0 ? cost / verified : undefined,
+        // نسبة ما تعلنه المنصّة فوق ما تأكّد - الحقل كان معرَّفاً في
+        // `CampaignSummary` منذ البداية ولا أحد يملؤه.
+        inflationRate: raw > 0 ? ((raw - verified) / raw) * 100 : undefined,
+      };
+    })
+    // صفر إنفاق لا يحمل خبراً، ويزاحم ما يحمله على مساحة الحمولة.
+    .filter((s) => s.cost > 0)
+    .sort((a, b) => b.cost - a.cost)
+    .slice(0, limit);
 }

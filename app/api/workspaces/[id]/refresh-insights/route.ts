@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { toUserFacingAiError, quotaExhaustedError } from "@/lib/aiErrors";
 import { checkAndConsumeAIRefreshQuota } from "@/lib/aiRateLimit";
-import { generateInsights } from "@/lib/aiInsights";
+import { generateInsights, buildCampaignSummaries } from "@/lib/aiInsights";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { t, Locale } from "@/lib/i18n/dictionary";
@@ -56,18 +56,7 @@ export async function POST(
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-  const campaignAgg = await prisma.metricSnapshot.groupBy({
-    by: ["platform"],
-    where: { workspaceId: workspace.id, date: { gte: sevenDaysAgo } },
-    _sum: { cost: true, verifiedConversions: true, rawConversions: true },
-  });
-
-  const campaigns = campaignAgg.map((c: any) => ({
-    platform: c.platform,
-    campaignName: c.platform,
-    cost: c._sum.cost ?? 0,
-    cplVerified: c._sum.verifiedConversions > 0 ? (c._sum.cost ?? 0) / c._sum.verifiedConversions : undefined,
-  }));
+  const campaigns = await buildCampaignSummaries(workspace.id, sevenDaysAgo);
 
   if (campaigns.length === 0) {
     // مفيش بيانات كافية لسه - رجوع رأي حقيقي فاضي أحسن من استدعاء AI

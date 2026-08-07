@@ -154,17 +154,7 @@ export async function runDailyDiagnosticsForWorkspace(workspaceId: string, local
 
   let aiTasks: Array<{ title: string; category: string; priority: string }> = [];
   if (workspace.enableAIInsights) {
-    const campaignAgg = await prisma.metricSnapshot.groupBy({
-      by: ["platform"],
-      where: { workspaceId, date: { gte: sevenDaysAgo } },
-      _sum: { cost: true, verifiedConversions: true, rawConversions: true },
-    });
-    const summaries: CampaignSummary[] = campaignAgg.map((c: any) => ({
-      platform: c.platform,
-      campaignName: c.platform,
-      cost: c._sum.cost ?? 0,
-      cplVerified: c._sum.verifiedConversions > 0 ? (c._sum.cost ?? 0) / c._sum.verifiedConversions : undefined,
-    }));
+    const summaries = await buildCampaignSummaries(workspaceId, sevenDaysAgo);
     // 🔴 إصلاح ثغرة مالية حقيقية: الاستدعاء التلقائي ده كان بيتنفّذ من غير
     // أي حد أقصى خالص - لو المستخدم عنده كذا Workspace، كل واحد كان بيستهلك
     // Claude يومياً بلا سقف. بقى بياخد من نفس رصيد المستخدم المشترك (زرار
@@ -363,7 +353,7 @@ function daysSince(date: Date | null): number | null {
 // بتحول أهم اقتراح من generateInsights() (lib/aiInsights.ts) لمهمة فعلية
 // في القائمة اليومية، بدل ما يفضل مجرد جملة في تقرير محدش بيرجعله.
 
-import { generateInsights } from "@/lib/aiInsights";
+import { generateInsights, buildCampaignSummaries } from "@/lib/aiInsights";
 
 export async function generateAITask(
   campaigns: CampaignSummary[]
