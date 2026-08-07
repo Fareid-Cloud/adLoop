@@ -54,6 +54,14 @@ export default async function TruthPage({
       currency={workspace.currency}
       snapshot={snapshot}
       locale={(user.preferredLocale as "ar" | "en") ?? "ar"}
+      periodSlot={
+        <PeriodBar
+          locale={(user.preferredLocale as "ar" | "en") ?? "ar"}
+          preset={period.preset}
+          range={period.range}
+          compare={period.compare}
+        />
+      }
     />
   );
 }

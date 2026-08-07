@@ -58,7 +58,15 @@ export function PageHeader({
           </span>
         )}
         <div className="min-w-0">
-          {eyebrow && <div className="mb-0.5 truncate text-[12.5px] text-text-muted">{eyebrow}</div>}
+          {eyebrow && (
+            /* 🔴 اسم مساحة عمل عربيّ داخل واجهة إنجليزية كان يُحاذى إلى
+               الجهة المقابلة للعنوان تحته، فيبدو السطران غير مرتبطين.
+               `dir="ltr"` على الصندوق يثبّت المحاذاة باتّجاه الصفحة، و`bdi`
+               يعزل النصّ فتبقى قراءته الداخلية صحيحة بلغته. */
+            <div dir="ltr" className="mb-0.5 truncate text-start text-[12.5px] text-text-muted">
+              <bdi>{eyebrow}</bdi>
+            </div>
+          )}
           <h1 className="page-title">{title}</h1>
           {description && (
             <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-text-muted">{description}</p>

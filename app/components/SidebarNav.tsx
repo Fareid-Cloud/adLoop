@@ -122,7 +122,7 @@ export function SidebarNav({
       // على الموبايل درج منزلق فوق المحتوى لا عمود بجانبه: عرض 240px من
       // شاشة 375px يعني ثلثي الشاشة للقائمة وثلثاً للمنتج - وهو ما كان
       // يجعل اللوحة غير صالحة للاستخدام على الهاتف أصلاً.
-      className={`nav-drawer flex h-screen shrink-0 flex-col overflow-hidden border-e border-border bg-surface ${
+      className={`nav-drawer sticky top-0 flex h-[100dvh] shrink-0 flex-col overflow-hidden border-e border-border bg-surface ${
         mobileOpen ? "is-open" : ""
       } ${collapsed ? "is-collapsed" : ""}`}
     >

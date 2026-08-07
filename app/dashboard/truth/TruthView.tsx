@@ -52,11 +52,14 @@ export function TruthView({
   currency,
   snapshot,
   locale = "ar",
+  periodSlot,
 }: {
   workspaceName: string;
   currency: string;
   snapshot: TruthSnapshot;
   locale?: Locale;
+  /** منتقي الفترة الموحَّد - يُبنى في الصفحة (خادم) ويُمرَّر إلى هنا */
+  periodSlot?: React.ReactNode;
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `truthPage.${k}`, v);
   const router = useRouter();
@@ -64,12 +67,6 @@ export function TruthView({
   const { totals, previousTotals, platforms, journey, sync } = snapshot;
 
   const active = platforms.filter((p) => p.hasData);
-
-  function setDays(d: number) {
-    const next = new URLSearchParams(params.toString());
-    next.set("days", String(d));
-    router.push(`/dashboard/truth?${next.toString()}`);
-  }
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -79,21 +76,11 @@ export function TruthView({
           <ShieldCheck size={24} className="text-verified" />
           {tr("heading")}
         </h1>
-        <div className="flex items-center gap-1 card p-1">
-          {[7, 30, 90].map((d) => (
-            <button
-              key={d}
-              onClick={() => setDays(d)}
-              className={`rounded-lg px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
-                snapshot.days === d
-                  ? "bg-accent/10 text-accent"
-                  : "text-text-muted hover:text-text-primary"
-              }`}
-            >
-              {t(locale, "common.lastNDays", { days: d })}
-            </button>
-          ))}
-        </div>
+        {/* 🔴 كانت ثلاثة أزرار (٧ / ٣٠ / ٩٠) خاصّة بهذه الصفحة وحدها،
+            بينما `PeriodBar` الموحَّد مستورَدٌ في الصفحة ولا يُصيَّر. أداتان
+            تتحكّمان في المدّة نفسها، وواحدةٌ منهما لا تعرف بالأخرى - ولا
+            تسمحان بتحديد تاريخين. الموحَّد وحده يبقى. */}
+        {periodSlot}
       </div>
       <p className="mb-6 max-w-3xl text-[13px] leading-relaxed text-text-muted">
         {tr("lead")}

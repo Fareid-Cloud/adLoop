@@ -687,3 +687,9 @@ html, body { overflow-x: clip; }
 /* زرّ أيقونة مربّع - يرث الدور نفسه */
 .btn-icon { width: 2.25rem; height: 2.25rem; padding: 0; flex-shrink: 0; }
 .btn-icon.btn-sm { width: 2rem; height: 2rem; }
+
+/* شريط التمرير يتبع الثيم. بلا هذا يرسم المتصفّح شريطاً فاتحاً على صفحة
+   غامقة - خطٌّ أبيض على حافة كلّ لوحة ونافذة. `color-scheme` يخبر المتصفّح
+   بالثيم فيرسم شريطه ومربّعات النماذج الأصلية بما يوافقه. */
+:root, [data-mode="dark"] { color-scheme: dark; }
+[data-mode="light"] { color-scheme: light; }

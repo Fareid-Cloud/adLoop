@@ -207,7 +207,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     >
       {isImpersonating && <ImpersonationBanner locale={locale} />}
       <LiveDataProvider>
-      <div className="flex flex-1">
+      {/* 🔴 لون الشريط على الصفّ لا على الشريط وحده: الشريط ملتصق بارتفاع
+          الشاشة، فإذا طالت الصفحة وقف عند حدّه وظهرت خلفية الصفحة تحته
+          كقطعٍ في العمود. الصفّ يمتدّ بطول المحتوى، فما وراء الشريط لونه
+          لونُه دائماً. و`main` يعيد لون الصفحة لنفسه. */}
+      <div className="flex flex-1 bg-surface">
       <SidebarNav
         locale={locale}
         badges={navBadges}
@@ -229,7 +233,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           محتواه، فتظهر صفحة قصيرة (كالتشخيص قبل أوّل فحص) وتذييلها القانوني
           عالقاً في منتصف الشاشة وتحته فراغ - يُقرأ كأنّ الصفحة انتهت هناك
           وما تحته عطل. الآن يدفع المحتوى المرن التذييل إلى الأسفل دائماً. */}
-      <main className="flex min-h-screen min-w-0 flex-1 flex-col">
+      <main className="flex min-h-screen min-w-0 flex-1 flex-col bg-bg">
         {/* الهيدر ثابت أعلى الصفحة عند التمرير - كان يختفي مع النزول
             فيضيع البحث والإشعارات وقائمة الحساب */}
         {/* 🔴 لا backdrop-blur هنا: أي عنصر position:fixed داخل عنصر عليه
