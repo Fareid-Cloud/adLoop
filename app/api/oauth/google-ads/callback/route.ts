@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyOAuthState } from "@/lib/oauthState";
 import { encryptToken } from "@/lib/encryption";
+import { checkPlatformLimit } from "@/lib/entitlements";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -61,6 +62,23 @@ export async function GET(req: NextRequest) {
   }
 
   const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
+  // 🔴 حدّ المنصّات كان معروضاً في جدول الباقات وغير مطبَّق هنا: الباقة
+  // المجّانية تَعِد بمنصّة واحدة، وكان المستخدم يربط الثلاث. الفحص قبل
+  // الحفظ لا بعده - بعده يكون الربط قد تمّ ولا معنى للمنع.
+  //
+  // إعادة ربط منصّة موجودة تمرّ: `checkPlatformLimit` يَعُدّ المنصّات
+  // الفريدة، فتجديد ربطٍ منتهٍ لا يُحسَب منصّةً جديدة.
+  const platCheck = await checkPlatformLimit(verified.userId);
+  if (!platCheck.allowed) {
+    const already = await prisma.connectedPlatform.findUnique({
+      where: { userId_platform: { userId: verified.userId, platform: "GOOGLE_ADS" } },
+      select: { id: true },
+    });
+    if (!already) {
+      return NextResponse.redirect(`${returnUrl}?connection=plan_limit&limit=${platCheck.limit}`);
+    }
+  }
+
 
   await prisma.connectedPlatform.upsert({
     where: { userId_platform: { userId: verified.userId, platform: "GOOGLE_ADS" } },

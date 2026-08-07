@@ -115,6 +115,33 @@ export async function checkStoreLimit(userId: string, workspaceId: string): Prom
   return buildCheck(count, ent.limits.stores, ent.planKey, "stores");
 }
 
+/**
+ * حدّ المنصّات المربوطة.
+ *
+ * 🔴 كان معروضاً في جدول الباقات وغير مطبَّق في أيّ من مسارات OAuth الثلاثة:
+ * جوجل وميتا وتيك توك تحفظ الربط مباشرةً بلا سؤال. وهو الحدّ الذي يفصل
+ * الباقة المجّانية (منصّة واحدة) عن كلّ ما فوقها ("all") - أي أنّ المجّانيّ
+ * كان يربط الثلاث.
+ *
+ * `"all"` تعني بلا حدّ، فتُمثَّل بـ`Infinity` لتمرّ في المقارنة نفسها بدل
+ * فرعٍ منفصل يُنسى تحديثه.
+ *
+ * تُعَدّ المنصّات الفريدة لا الصفوف: إعادة ربط الحساب نفسه ليست منصّةً
+ * جديدة، وإلا منع الحدُّ المستخدمَ من تجديد ربطٍ منتهٍ.
+ */
+export async function checkPlatformLimit(userId: string): Promise<LimitCheck> {
+  const [ent, rows] = await Promise.all([
+    getEntitlements(userId),
+    prisma.connectedPlatform.findMany({
+      where: { userId },
+      select: { platform: true },
+      distinct: ["platform"],
+    }),
+  ]);
+  const limit = ent.limits.platforms === "all" ? Infinity : ent.limits.platforms;
+  return buildCheck(rows.length, limit, ent.planKey, "platforms");
+}
+
 export async function checkAutomationRuleLimit(userId: string, workspaceId: string): Promise<LimitCheck> {
   const [ent, count] = await Promise.all([
     getEntitlements(userId),

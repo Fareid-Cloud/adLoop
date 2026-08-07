@@ -29,6 +29,9 @@ export default async function IntegrationsPage({
     raw === "cancelled" ? "connCancelled"
     : raw === "missing_refresh_token" ? "connMissingRefresh"
     : raw === "error" ? "connError"
+    // حدّ الباقة: الرمز وحده لا يقول شيئاً للمستخدم، فيبقى واقفاً أمام
+    // ربطٍ لم يتمّ بلا سبب معلَن.
+    : raw === "plan_limit" ? "connPlanLimit"
     : null;
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";

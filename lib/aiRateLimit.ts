@@ -6,7 +6,7 @@
 // يستنى شوية بدل ما نمنعه نهائياً.
 
 import { prisma } from "@/lib/prisma";
-import { checkCredits, consumePurchasedCreditIfNeeded } from "@/lib/entitlements";
+import { checkCredits, consumePurchasedCreditIfNeeded, getEntitlements } from "@/lib/entitlements";
 
 // إعادة معايرة عشان نضمن سقف التكلفة الشهري لكل مشترك عبر التلاتة ميزات.
 // ⚠️ الأرقام هنا **عدد نداءات** لا دولارات - وتكلفة النداء الواحد ارتفعت
@@ -167,7 +167,15 @@ export async function checkAndConsumeImageQualityQuota(userId: string): Promise<
 // ==================== الفحص العميق لصفحة الهبوط ====================
 // كانت من غير أي حد أقصى خالص - أغلى ميزة بالمشروع (4 نداءات Claude
 // لكل فحص). 5/شهر، 1/ساعة (فحص عميق فعل نادر ومقصود، مش حاجة تتكرر)
-const SITE_SCAN_MONTHLY_LIMIT = 5;
+// 🔴 كان رقماً مسطّحاً (5) للجميع، بينما `deepScans` في `PlanLimits` تعطي
+// Agency عشرين وPro خمسةً وStarter صفراً. باقةٌ تَعِد بعشرين وتُسلّم خمسةً
+// هي الحدّ نفسه الذي أصلحناه في مساحات العمل، في ميزةٍ أغلى: كلّ فحص نداءُ
+// ذكاءٍ اصطناعيّ بصور. الحدّ يُقرأ من الباقة الآن.
+//
+// ولا يُخصَم من رصيد التحليلات: الفحص العميق ميزةٌ بحدّها الخاصّ في جدول
+// الباقات، فخصمه من رصيدٍ آخر يعني أنّ استعمال ميزةٍ يستهلك حصّة ميزةٍ
+// أخرى - وهو ما لا تقوله صفحة الباقات لأحد.
+
 const SITE_SCAN_HOURLY_LIMIT = 1;
 
 export async function checkAndConsumeSiteScanQuota(userId: string): Promise<QuotaResult> {
@@ -187,8 +195,8 @@ export async function checkAndConsumeSiteScanQuota(userId: string): Promise<Quot
   // يُخصَم منه شيء أبداً. أي أنّ الباقات كانت معروضة بحدود غير موجودة.
   // `checkCredits` هي مصدر الحقيقة لحساب «مخصّص الباقة + المشترى». كتابة
   // الحساب هنا مرّة ثانية تعني رقمين يفترقان عند أوّل تعديل في الباقات.
-  const credits = await checkCredits(userId, 0);
-  const effectiveMonthly = Math.min(MONTHLY_LIMIT, credits.left);
+  const { limits } = await getEntitlements(userId);
+  const monthlyLimit = limits.deepScans;
 
   const now = new Date();
   const isNewMonth =
@@ -196,7 +204,7 @@ export async function checkAndConsumeSiteScanQuota(userId: string): Promise<Quot
     now.getFullYear() !== user.siteScanMonthlyReset.getFullYear();
   const monthlyCount = isNewMonth ? 0 : user.siteScanMonthlyCount;
 
-  if (monthlyCount >= SITE_SCAN_MONTHLY_LIMIT) {
+  if (monthlyCount >= monthlyLimit) {
     return { allowed: false, remainingThisMonth: 0, reason: "monthly_exhausted" };
   }
 
@@ -206,7 +214,7 @@ export async function checkAndConsumeSiteScanQuota(userId: string): Promise<Quot
 
   if (hourlyCount >= SITE_SCAN_HOURLY_LIMIT) {
     const retryAfterMinutes = Math.ceil((60 * 60 * 1000 - hourDiffMs) / 60000);
-    return { allowed: false, remainingThisMonth: SITE_SCAN_MONTHLY_LIMIT - monthlyCount, reason: "hourly_exhausted", retryAfterMinutes };
+    return { allowed: false, remainingThisMonth: monthlyLimit - monthlyCount, reason: "hourly_exhausted", retryAfterMinutes };
   }
 
   await prisma.user.update({
@@ -219,7 +227,7 @@ export async function checkAndConsumeSiteScanQuota(userId: string): Promise<Quot
     },
   });
 
-  return { allowed: true, remainingThisMonth: SITE_SCAN_MONTHLY_LIMIT - (monthlyCount + 1) };
+  return { allowed: true, remainingThisMonth: monthlyLimit - (monthlyCount + 1) };
 }
 
 /**
