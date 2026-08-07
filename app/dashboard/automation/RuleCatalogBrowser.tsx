@@ -46,73 +46,111 @@ export function RuleCatalogBrowser({
   locale: Locale;
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `autoRules.${k}`, vars);
-  const [platform, setPlatform] = useState<RulePlatform | null>(null);
-  const [category, setCategory] = useState<RuleCategoryId>("truth");
+  // 🔴 `undefined` تعني «لم يُختَر بعد»، و`null` تعني «كلّ المنصّات» - وهي
+  // اختيارٌ صحيح. الحالة الواحدة السابقة كانت تخلط بين الاثنين، فيستحيل
+  // معرفة هل بدأ المستخدم أصلاً.
+  const [platform, setPlatform] = useState<RulePlatform | null | undefined>(undefined);
+  const [category, setCategory] = useState<RuleCategoryId | null>(null);
   const [chosen, setChosen] = useState<RuleTemplate | null>(null);
 
-  const counts = countByCategory(platform);
-  const list = templatesFor(platform, category);
+  // خطوة واحدة معروضة في كلّ لحظة. الثلاثة معاً كانت تعرض تسعة عشر خياراً
+  // دفعةً واحدة على من لم يقرّر منصّته بعد - قائمةٌ تُتصفَّح لا مساراً يُقطع.
+  const step = platform === undefined ? 1 : category === null ? 2 : 3;
+
+  const counts = countByCategory(platform ?? null);
+  const list = category ? templatesFor(platform ?? null, category) : [];
+
+  const platformTab = PLATFORM_TABS.find((p) => p.id === (platform ?? null));
+  const categoryDef = RULE_CATEGORIES.find((c) => c.id === category);
 
   return (
     <div>
-      {/* المنصة */}
-      <Step n={1} label={tr("stepPlatform")} done={platform !== null} />
-      <div className="mb-5 flex flex-wrap gap-1.5">
-        {PLATFORM_TABS.map((tab) => {
-          const active = platform === tab.id;
-          return (
-            <button
-              key={tab.id ?? "all"}
-              onClick={() => setPlatform(tab.id)}
-              className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[13px] font-medium transition-colors ${
-                active ? "border-transparent text-white" : "border-border bg-surface text-text-muted hover:text-text-primary"
-              }`}
-              style={active ? { background: tab.color } : undefined}
-            >
-              {tab.id ? <PlatformLogo platform={tab.id} size={15} /> : <Icons.Layers size={14} />}
-              {tab.label ?? tr("allPlatforms")}
-            </button>
-          );
-        })}
+      {/* شريط المسار: ما اخترته يبقى ظاهراً وقابلاً للتغيير بضغطة - فالرجوع
+          لا يحتاج إلغاء ما بعده يدوياً، ولا يضيع المستخدم عن موضعه. */}
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-[12.5px]">
+        <span className="chip bg-accent/12 text-accent">{tr("stepOfTotal", { n: step, total: 3 })}</span>
+        {platform !== undefined && (
+          <Crumb
+            onClick={() => { setPlatform(undefined); setCategory(null); }}
+            label={platformTab?.label ?? tr("allPlatforms")}
+            change={tr("changeChoice")}
+          />
+        )}
+        {category !== null && (
+          <Crumb
+            onClick={() => setCategory(null)}
+            label={(locale === "en" ? categoryDef?.labelEn : categoryDef?.labelAr) ?? ""}
+            change={tr("changeChoice")}
+          />
+        )}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[230px_1fr]">
-        {/* الفئات */}
-        <aside className="flex flex-col gap-1">
-          <Step n={2} label={tr("stepCategory")} done={category !== null} />
-          {RULE_CATEGORIES.map((cat) => {
-            const Icon = (Icons as any)[cat.icon] ?? Icons.Circle;
-            const active = category === cat.id;
-            const n = counts[cat.id] ?? 0;
-            return (
+      {/* ــــ الخطوة ١: المنصّة ــــ */}
+      {step === 1 && (
+        <>
+          <Step n={1} label={tr("stepPlatform")} />
+          <div className="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
+            {PLATFORM_TABS.map((tab) => (
               <button
-                key={cat.id}
-                onClick={() => setCategory(cat.id)}
-                disabled={n === 0}
-                className={`flex items-center gap-2.5 rounded-xl border p-3 text-start transition-colors disabled:opacity-40 ${
-                  active ? "border-accent bg-accent/[0.08]" : "border-border bg-surface hover:border-border-visible"
-                }`}
+                key={tab.id ?? "all"}
+                onClick={() => setPlatform(tab.id)}
+                className="card-shadow flex items-center gap-2.5 card pad-md text-start text-[13px] font-medium text-text-primary transition-colors hover:border-accent"
               >
-                <Icon size={16} className={active ? "text-accent" : "text-text-muted"} />
-                <span className="min-w-0 flex-1">
-                  <span className={`block truncate text-[13px] font-medium ${active ? "text-accent" : "text-text-primary"}`}>
-                    {locale === "en" ? cat.labelEn : cat.labelAr}
-                  </span>
+                <span
+                  className="icon-badge h-8 w-8"
+                  style={{ background: `color-mix(in srgb, ${tab.color} 14%, transparent)`, color: tab.color }}
+                >
+                  {tab.id ? <PlatformLogo platform={tab.id} size={15} /> : <Icons.Layers size={15} />}
                 </span>
-                <span className="shrink-0 rounded-full bg-surface-raised px-1.5 py-0.5 font-mono text-[10.5px] text-text-muted">{n}</span>
+                <span className="min-w-0 truncate">{tab.label ?? tr("allPlatforms")}</span>
               </button>
-            );
-          })}
-        </aside>
+            ))}
+          </div>
+        </>
+      )}
 
-        {/* القرارات */}
+      {/* ــــ الخطوة ٢: نوع القاعدة ــــ */}
+      {step === 2 && (
+        <>
+          <Step n={2} label={tr("stepCategory")} />
+          <div className="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(230px,1fr))]">
+            {RULE_CATEGORIES.map((cat) => {
+              const Icon = (Icons as any)[cat.icon] ?? Icons.Circle;
+              const n = counts[cat.id] ?? 0;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setCategory(cat.id)}
+                  disabled={n === 0}
+                  className="card-shadow flex items-start gap-2.5 card pad-md text-start transition-colors hover:border-accent disabled:opacity-40 disabled:hover:border-border"
+                >
+                  <Icon size={16} className="mt-0.5 shrink-0 text-text-muted" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[13px] font-medium text-text-primary">
+                      {locale === "en" ? cat.labelEn : cat.labelAr}
+                    </span>
+                    <span className="mt-0.5 block text-[11.5px] leading-relaxed text-text-muted">
+                      {locale === "en" ? cat.descEn : cat.descAr}
+                    </span>
+                  </span>
+                  <span className="chip shrink-0 bg-surface-raised font-mono text-text-muted">{n}</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* ــــ الخطوة ٣: القاعدة ــــ */}
+      {step === 3 && (
         <div>
           <Step n={3} label={tr("stepRule")} />
           <p className="mb-3 text-[12.5px] text-text-muted">
-            {locale === "en"
-              ? RULE_CATEGORIES.find((c) => c.id === category)?.descEn
-              : RULE_CATEGORIES.find((c) => c.id === category)?.descAr}
+            {locale === "en" ? categoryDef?.descEn : categoryDef?.descAr}
           </p>
+          {list.length === 0 && (
+            <div className="note border-border bg-surface-raised text-text-muted">{tr("emptyCategory")}</div>
+          )}
           <div className="flex flex-col gap-2">
             {list.map((tpl) => (
               <button
@@ -146,14 +184,14 @@ export function RuleCatalogBrowser({
             ))}
           </div>
         </div>
-      </div>
+      )}
 
       {chosen && (
         <RuleConfigModal
           locale={locale}
           workspaceId={workspaceId}
           template={chosen}
-          platform={platform}
+          platform={platform ?? null}
           campaigns={campaigns}
           currency={currency}
           onClose={() => setChosen(null)}
@@ -379,6 +417,25 @@ function RuleConfigModal({
 /** رقم الخطوة: الشاشة كانت ثلاث مجموعات أزرار متجاورة تُقرأ كفلاتر مستقلّة،
  *  فلا يعرف المستخدم أنّ عليه المرور بها بالترتيب ولا أين هو منها. الترقيم
  *  يحوّل الشيء نفسه إلى مسار - بلا تغيير في المنطق ولا خطوات جديدة. */
+/**
+ * خطوة مقطوعة في المسار، قابلة للتراجع بضغطة.
+ *
+ * الرجوع بزرّ «رجوع» وحده يعني خطوةً واحدةً إلى الوراء في كلّ مرّة؛ وهنا
+ * يقفز المستخدم مباشرةً إلى ما يريد تغييره. وإظهار ما اختاره يجعله يعرف
+ * أين هو دون أن يتذكّر - وهو ما ينقص كلّ معالج خطواتٍ سيّئ.
+ */
+function Crumb({ label, change, onClick }: { label: string; change: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="group flex items-center gap-1.5 rounded-full border border-border bg-surface-raised px-2.5 py-1 text-text-primary transition-colors hover:border-accent"
+    >
+      <span className="max-w-[160px] truncate">{label}</span>
+      <span className="text-[11px] text-text-faint transition-colors group-hover:text-accent">{change}</span>
+    </button>
+  );
+}
+
 function Step({ n, label, done }: { n: number; label: string; done?: boolean }) {
   return (
     <div className="mb-2 flex items-center gap-2">
