@@ -68,7 +68,11 @@ export function TrialBar({
         <Icon size={17} />
       </span>
 
-      <div className="min-w-0 flex-1">
+      {/* 🔴 `flex-1` وحدها تنكمش إلى صفر: العناصر الثلاثة إلى جانبها
+          `shrink-0`، فيُخنَق النصّ على الهاتف حتّى يبقى كلمةً في كلّ سطر -
+          عمودٌ من الكلمات لا فقرة. `basis` يفرض عرضاً أدنى للنصّ، فيلتفّ
+          الصفّ كلّه إلى سطر جديد قبل أن يصل النصّ إلى تلك الحال. */}
+      <div className="min-w-0 flex-1 basis-[15rem]">
         <div className="text-[13.5px] font-semibold text-text-primary">{title}</div>
         <div className="mt-0.5 text-[12.5px] leading-relaxed text-text-muted">{body}</div>
       </div>

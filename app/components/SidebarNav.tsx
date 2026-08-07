@@ -284,7 +284,12 @@ export function SidebarNav({
         )}
 
         {/* مبدّل مساحات العمل - عنصر أساسي أسفل القائمة */}
-        {workspaceSlot && <div className="border-t border-border pt-3">{workspaceSlot}</div>}
+        {/* 🔴 كان يُصيَّر في حالة الطيّ أيضاً بينما `supportSlot` تحته يحترمها:
+            مبدّلٌ بعرضه الكامل داخل شريط عرضه ٦٨ بكسل يفيض خارج حدّه ويطفو
+            على المحتوى. الشقّان زرّان عريضان بنصّ، فحكمهما واحد. */}
+        {workspaceSlot && !collapsed && (
+          <div className="border-t border-border pt-3">{workspaceSlot}</div>
+        )}
 
         {/* الدعم الفني كعنصر في القائمة (بدل الزر العائم) */}
         {supportSlot && !collapsed && <div className="border-t border-border pt-3">{supportSlot}</div>}
