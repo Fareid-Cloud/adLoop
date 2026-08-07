@@ -34,12 +34,18 @@ export default async function ActionsPage() {
 
   const rows: ActionItemData[] = items.map((i: {
     id: string; type: string; severity: string; title: string;
+    titleKey: string | null; titleVars: unknown;
+    descKey: string | null; descVars: unknown;
     description: string | null; source: string; estimatedImpact: number | null;
     linkUrl: string | null; actionType: string | null; createdAt: Date;
   }) => ({
     id: i.id,
     type: i.type,
     severity: i.severity,
+    titleKey: i.titleKey,
+    titleVars: i.titleVars,
+    descKey: i.descKey,
+    descVars: i.descVars,
     title: i.title,
     description: i.description,
     source: i.source,

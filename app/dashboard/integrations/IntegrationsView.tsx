@@ -225,7 +225,7 @@ export function IntegrationsView({
               ))}
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="sym-grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {rows.map((item) => (
                 <IntegrationCard
                   key={item.key}
@@ -242,7 +242,19 @@ export function IntegrationsView({
           )}
         </div>
 
+        {/* 🔴 تحت `xl` كان الدرج عموداً ثانياً يسقط *أسفل* القائمة كاملةً -
+            فيضغط المستخدم «إدارة» ولا يرى شيئاً يحدث، والدرج مفتوح فعلاً
+            على بُعد شاشة كاملة تحته. صار على الشاشات الأضيق طبقةً عائمة
+            فوق المحتوى بستارة تُغلقه، ويعود عموداً جنبياً من `xl` فصاعداً. */}
         {selected && tab !== "available" && (
+          <div
+            onClick={() => setSelectedKey(null)}
+            className="fixed inset-0 z-40 bg-black/45 xl:hidden"
+            aria-hidden
+          />
+        )}
+        {selected && tab !== "available" && (
+          <div className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-border bg-surface xl:static xl:z-auto xl:max-h-none xl:overflow-visible xl:rounded-none xl:border-t-0 xl:bg-transparent">
           <IntegrationDrawer
             integration={selected}
             locale={locale}
@@ -252,6 +264,7 @@ export function IntegrationsView({
             onDisconnect={() => disconnect(selected.key)}
             onManageCampaigns={() => selected.platform && setPickerPlatform(selected.platform)}
           />
+          </div>
         )}
       </div>
 
@@ -443,7 +456,7 @@ function IntegrationCard({
   return (
     <button
       onClick={onOpen}
-      className={`card-shadow rounded-2xl border bg-surface p-4 text-start ${selected ? "border-accent" : "border-border"}`}
+      className={`sym-card card-shadow rounded-2xl border bg-surface p-4 text-start ${selected ? "border-accent" : "border-border"}`}
     >
       <div className="mb-2 flex items-center gap-2.5">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: `color-mix(in srgb, ${item.color} 12%, transparent)` }}>
@@ -487,7 +500,7 @@ function AvailableGrid({
           <section key={cat.key}>
             <h3 className="section-title">{locale === "en" ? cat.labelEn : cat.labelAr}</h3>
             <p className="mb-2.5 mt-0.5 text-[12px] text-text-muted">{locale === "en" ? cat.descriptionEn : cat.descriptionAr}</p>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="sym-grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {live.map((def) => (
                 <AvailableCard key={def.key} def={def} locale={locale} tr={tr} nameOf={nameOf} onPick={() => onPick(def)} />
               ))}

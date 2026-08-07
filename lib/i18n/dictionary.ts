@@ -653,6 +653,8 @@ export const dictionary = {
       openSource: "افتح الصفحة",
       applyFailed: "فشل التنفيذ: {error}",
       genericFail: "فشل التنفيذ",
+      doneApplied: "نُفِّذ",
+      doneDismissed: "تم التجاهل",
 
       emptyTitle: "لا قرارات معلّقة",
       emptyBody: "لا شيء يستحقّ تدخّلك الآن. تُضاف القرارات تلقائياً مع كل فحص يومي.",
@@ -1079,6 +1081,10 @@ export const dictionary = {
     },
     // ==== الفحوصات ====
     diag: {
+      criticalSub: "تحتاج قراراً اليوم",
+      highSub: "راجعها هذا الأسبوع",
+      mediumSub: "تحسينات تستحقّ وقتك",
+      passingSub: "لا شيء يستدعي القلق",
       trackingCoverage: "تغطية التتبّع",
       estimatedImpact: "الأثر المقدَّر للمشاكل القائمة",
       monthly: "شهرياً",
@@ -2451,6 +2457,10 @@ export const dictionary = {
     },
     // ==== صفحة المنتجات ====
     productsPage: {
+      colProduct: "المنتج",
+      colRealProfit: "الربح الحقيقي",
+      colUnitProfit: "ربح الوحدة",
+      colReturns: "المرتجعات",
       title: "المنتجات",
       subtitle: "الحكم هنا على الربح المتحقق بعد المرتجعات والشحن والإعلان — لا على الإيراد. المنتج الأكثر مبيعاً قد يكون الأكثر خسارة.",
       storeLinked: "{store} مرتبط",
@@ -2913,6 +2923,11 @@ export const dictionary = {
       installHint: "فتح أسرع، وإشعارات فورية، ويعمل كتطبيق مستقلّ.",
       installAction: "تثبيت",
       installDismiss: "إغلاق",
+    },
+    blind: {
+      noCustomers: "لا بيانات عملاء بعد — تظهر فور أوّل طلب من متجرك المربوط.",
+      noStore: "لم يُربط متجر إلكتروني، فأرقام الربح غير متاحة.",
+      untracked: "لم تصل إشارة تتبّع من موقعك — الوسم غالباً غير مثبَّت.",
     },
     // ==== قمع الأداء ====
     funnel: {
@@ -4207,6 +4222,8 @@ export const dictionary = {
       openSource: "Open page",
       applyFailed: "Could not apply: {error}",
       genericFail: "Could not apply",
+      doneApplied: "Applied",
+      doneDismissed: "Dismissed",
 
       emptyTitle: "No pending actions",
       emptyBody: "Nothing needs you right now. Actions are added automatically with each daily check.",
@@ -4631,6 +4648,10 @@ export const dictionary = {
     },
     // ==== Diagnostics ====
     diag: {
+      criticalSub: "Decide on these today",
+      highSub: "Review these this week",
+      mediumSub: "Improvements worth your time",
+      passingSub: "Nothing to worry about here",
       trackingCoverage: "Tracking coverage",
       estimatedImpact: "Estimated impact of open issues",
       monthly: "per month",
@@ -5237,6 +5258,11 @@ export const dictionary = {
       installHint: "Opens faster, gets instant alerts, runs as its own app.",
       installAction: "Install",
       installDismiss: "Dismiss",
+    },
+    blind: {
+      noCustomers: "No customer data yet — it appears with the first order from your connected store.",
+      noStore: "No store connected, so profit figures are unavailable.",
+      untracked: "No tracking signal from your site — the tag is most likely not installed.",
     },
     // ==== Performance funnel ====
     funnel: {
@@ -6454,6 +6480,10 @@ export const dictionary = {
     },
     // ==== Products page ====
     productsPage: {
+      colProduct: "Product",
+      colRealProfit: "Real profit",
+      colUnitProfit: "Profit per unit",
+      colReturns: "Returns",
       title: "Products",
       subtitle: "Judged on profit actually realised after returns, shipping, and ads — not on revenue. Your best-selling product may be your biggest loss.",
       storeLinked: "{store} connected",

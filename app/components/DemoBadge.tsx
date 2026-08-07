@@ -38,13 +38,18 @@ export function DemoBadge({
         className="flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/12 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-accent transition-colors hover:bg-accent/20"
       >
         <FlaskConical size={11} />
-        DEMO
+        {/* النصّ يُخفى على الهاتف لا الشارة: الرأس هناك يحمل ستّة عناصر
+            في ٦٨ بكسل، فكان اسم مساحة العمل يُقصّ ليتّسع لكلمة «DEMO».
+            الأيقونة وحدها تكفي كإشارة، واللوحة عند اللمس تشرح الباقي -
+            وإخفاء الشارة كاملةً كان سيُسقط التمييز بين بيانات حقيقية
+            وأمثلة على الشاشة التي يقضي فيها المستخدم أكثر وقته. */}
+        <span className="hidden sm:inline">DEMO</span>
       </button>
 
       {open && (
         // `end-auto start-0` يثبّتها تحت الشارة في الاتجاهين - لوحة تُقصّ
         // خارج الشاشة في العربية عيبٌ رأيناه في الجرس من قبل.
-        <div className="pop-shadow absolute start-0 top-full z-50 mt-2 w-[290px] card pad-md">
+        <div className="pop-shadow fixed inset-x-4 top-16 z-50 card pad-md sm:absolute sm:inset-x-auto sm:start-0 sm:top-full sm:mt-2 sm:w-[290px]">
           <div className="mb-1 flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/12 text-accent">
               <FlaskConical size={16} />

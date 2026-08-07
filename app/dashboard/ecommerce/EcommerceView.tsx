@@ -237,7 +237,7 @@ export function EcommerceView({
 
       {/* المنتجات الخاسرة */}
       {losing.length > 0 && (
-        <section className="reveal card-shadow mb-6 overflow-hidden rounded-2xl border border-critical/35 bg-surface"
+        <section className="reveal card-alert card-shadow mb-6 overflow-hidden rounded-2xl border bg-surface"
                  style={{ animationDelay: "220ms" }}>
           <div className="flex items-center gap-2 border-b border-border p-4">
             <TrendingDown size={16} className="text-critical" />

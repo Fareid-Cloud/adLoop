@@ -225,7 +225,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         supportSlot={user ? <SupportChat name={user.name ?? ""} email={user.email} variant="sidebar" locale={locale} /> : null}
       />
 
-      <main className="min-w-0 flex-1">
+      {/* 🔴 عمود مرن بارتفاع الشاشة: كان `main` صندوقاً عادياً يتبع ارتفاع
+          محتواه، فتظهر صفحة قصيرة (كالتشخيص قبل أوّل فحص) وتذييلها القانوني
+          عالقاً في منتصف الشاشة وتحته فراغ - يُقرأ كأنّ الصفحة انتهت هناك
+          وما تحته عطل. الآن يدفع المحتوى المرن التذييل إلى الأسفل دائماً. */}
+      <main className="flex min-h-screen min-w-0 flex-1 flex-col">
         {/* الهيدر ثابت أعلى الصفحة عند التمرير - كان يختفي مع النزول
             فيضيع البحث والإشعارات وقائمة الحساب */}
         {/* 🔴 لا backdrop-blur هنا: أي عنصر position:fixed داخل عنصر عليه
@@ -235,7 +239,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         {/* ارتفاع ثابت ٦٨ بكسل مطابق لصفّ الشعار في القائمة الجانبية، فيصير
             الحدّان السفليّان خطّاً واحداً متّصلاً. الارتفاع الحرّ السابق كان
             يتبع محتواه فينكسر الخطّ عند حدّ العمودين. */}
-        <div className="sticky top-0 z-40 mb-5 flex h-[68px] items-center gap-2 border-b border-border bg-bg px-4 sm:gap-3 sm:px-6 lg:px-10">
+        <div className="sticky top-0 z-40 mb-5 flex h-[68px] items-center gap-1.5 border-b border-border bg-bg px-3 sm:gap-3 sm:px-6 lg:px-10">
           <MobileNavButton locale={locale} />
           <TopSearch locale={locale} />
           {demoWs && (
@@ -271,7 +275,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           )}
           </div>
         </div>
-        <div className="px-4 pb-10 sm:px-6 lg:px-10">{children}</div>
+        <div className="flex-1 px-4 pb-10 sm:px-6 lg:px-10">{children}</div>
 
         {/* تذييل قانوني في كلّ صفحة داخل اللوحة: الصفحات الثلاث كانت
             مبنيّة بلا رابط واحد إليها في المنتج كلّه. */}

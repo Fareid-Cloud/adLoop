@@ -25,7 +25,7 @@ export function PlatformDonut({
   const rows = data
     .filter((d) => d.value > 0)
     .map((d) => {
-      const meta = platformMeta(d.platform);
+      const meta = platformMeta(d.platform, locale);
       return { ...d, label: meta.label, color: meta.color };
     });
   const total = rows.reduce((s, r) => s + r.value, 0);
@@ -66,6 +66,9 @@ export function PlatformDonut({
                   boxShadow: "0 8px 24px rgb(0 0 0 / 0.18)",
                 }}
                 labelStyle={{ color: "var(--text-muted)" }}
+                // بلا هذا يستعمل recharts أسوده الافتراضي، فيختفي النصّ
+                // على سطح غامق. اللون يتبع الثيم كبقية الشاشة.
+                itemStyle={{ color: "var(--text-primary)" }}
               />
             </PieChart>
           </ResponsiveContainer>

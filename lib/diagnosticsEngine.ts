@@ -37,9 +37,9 @@ export interface DiagnosticCheck {
   /** المنصة المصدر إن كان الفحص خاصاً بمنصة */
   platform?: string | null;
   /** من أين جاء رقم هذا الفحص بالضبط - يُعرض في التفاصيل */
-  sourceAr?: string;
+  source?: string;
   /** خطوات المعالجة الفعلية - لا يُعرض زر تفاصيل بلا محتوى حقيقي */
-  remedyAr?: string[];
+  remedy?: string[];
   lastScanAt: Date;
   actionHref?: string;
 }
@@ -80,7 +80,15 @@ function seriesFrom(rows: any[], key: (r: any) => number, days = 14): number[] {
   return [...byDay.keys()].sort().slice(-days).map((k) => byDay.get(k)!);
 }
 
-export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsReport> {
+export async function runDiagnostics(
+  workspaceId: string,
+  // 🔴 لم تكن تستقبل لغةً إطلاقاً، و`sourceAr`/`remedyAr` يُعرضان مباشرةً -
+  // فيرى مستخدم الواجهة الإنجليزية مصدر كلّ فحص وعلاجه بالعربية.
+  locale: "ar" | "en" = "ar"
+): Promise<DiagnosticsReport> {
+  const ar = locale === "ar";
+  /** يختار النصّ بلغة القارئ - أقصر من ثلاثيّة عند كلّ سطر */
+  const L = (a: string, e: string) => (ar ? a : e);
   const workspace = await prisma.workspace.findUnique({ where: { id: workspaceId } });
   const currency = workspace?.currency ?? "SAR";
   const now = new Date();
@@ -147,12 +155,12 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
         : hasData ? `Data arrived for ${rows.length} of the last 30 days.`
         : "The platform is connected but no data has arrived - check the account permissions.",
       trend: seriesFrom(rows, (r) => r.cost),
-      sourceAr: `جدول لقطات الأداء اليومية، منصة ${label}، آخر 30 يوماً.`,
-      remedyAr: !isLinked
-        ? ["اربط حساب المنصة من صفحة ربط المنصات ثم اختر الحملات التي تريد متابعتها."]
+      source: `${L("جدول لقطات الأداء اليومية، منصة", "Daily performance snapshots,")} ${label}${L("، آخر 30 يوماً.", ", last 30 days.")}`,
+      remedy: !isLinked
+        ? [L("اربط حساب المنصة من صفحة ربط المنصات ثم اختر الحملات التي تريد متابعتها.", "Connect the platform from the Integrations page, then pick the campaigns you want tracked.")]
         : hasData ? undefined
-        : ["تأكد أن حساب الإعلانات ما زال مرتبطاً ولم تنتهِ صلاحيته.",
-           "تأكد أن المستخدم المرتبط يملك صلاحية القراءة على الحساب.",
+        : [L("تأكد أن حساب الإعلانات ما زال مرتبطاً ولم تنتهِ صلاحيته.", "Check that the ad account is still connected and its access has not expired."),
+           L("تأكد أن المستخدم المرتبط يملك صلاحية القراءة على الحساب.", "Check that the connected user still has read access to the account."),
            "المزامنة تعمل يومياً - البيانات الجديدة قد تحتاج دورة واحدة للظهور."],
       lastScanAt: now,
       actionHref: "/dashboard/integrations",
@@ -178,11 +186,11 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       : `Only ${Math.round(verificationRate)}% of reported conversions were verified (${totals.verified} of ${totals.raw}).`,
     monthlyImpact: totals.raw > 0 && verificationRate < 60 ? Math.round(wastedOnUnverified) : null,
     trend: seriesFrom(snapshots, (r) => r.verifiedConversions),
-    sourceAr: "مقارنة rawConversions (ما تعلنه المنصة) بـ verifiedConversions (ما تأكّد عبر محادثة حقيقية) خلال 30 يوماً.",
-    remedyAr: verificationRate >= 60 ? undefined : [
-      "تأكد من تثبيت وسم AdLoop على كل صفحة هبوط تستقبل زيارات إعلانية.",
-      "تأكد أن أزرار واتساب تحمل معرّف التتبع، وإلا تصل المحادثة بلا مصدر.",
-      "اربط رقم واتساب الأعمال أو صفحة ماسنجر لتصل المحادثات إلينا.",
+    source: L("مقارنة rawConversions (ما تعلنه المنصة) بـ verifiedConversions (ما تأكّد عبر محادثة حقيقية) خلال 30 يوماً.", "Comparing rawConversions (what the platform reports) against verifiedConversions (confirmed by a real conversation) over 30 days."),
+    remedy: verificationRate >= 60 ? undefined : [
+      L("تأكد من تثبيت وسم AdLoop على كل صفحة هبوط تستقبل زيارات إعلانية.", "Make sure the AdLoop tag is installed on every landing page that receives ad traffic."),
+      L("تأكد أن أزرار واتساب تحمل معرّف التتبع، وإلا تصل المحادثة بلا مصدر.", "Make sure your WhatsApp buttons carry the tracking id, or the conversation arrives with no source."),
+      L("اربط رقم واتساب الأعمال أو صفحة ماسنجر لتصل المحادثات إلينا.", "Connect your WhatsApp Business number or Messenger page so conversations reach us."),
     ],
     lastScanAt: now,
     actionHref: "/dashboard/diagnostics/tracking-coverage",
@@ -256,11 +264,11 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
         : `Margin is thin: costs of ${Math.round(cost)} ${currency} against a price of ${Math.round(price)} ${currency}.`,
       monthlyImpact: losing ? Math.round((cost - price) * 30) : null,
       trend: [],
-      sourceAr: "تكلفة المنتج + الشحن + تكلفة الإعلان للطلب + التغليف، مقارنة بسعر البيع الحالي.",
-      remedyAr: [
+      source: L("تكلفة المنتج + الشحن + تكلفة الإعلان للطلب + التغليف، مقارنة بسعر البيع الحالي.", "Product cost + shipping + ad cost per order + packaging, against the current selling price."),
+      remedy: [
         `ارفع السعر إلى ما يغطي التكلفة الحقيقية ${Math.round(cost)} ${currency} على الأقل.`,
-        "أو اخفض تكلفة الاكتساب بتحسين استهداف الحملة.",
-        "افتح المنتج في صفحة التسعير لترى انهيار التكلفة وأكبر بند فيها.",
+        L("أو اخفض تكلفة الاكتساب بتحسين استهداف الحملة.", "Or bring the acquisition cost down by tightening the campaign's targeting."),
+        L("افتح المنتج في صفحة التسعير لترى انهيار التكلفة وأكبر بند فيها.", "Open the product in Pricing to see the cost breakdown and its largest line."),
       ],
       lastScanAt: now,
       actionHref: "/dashboard/pricing",
@@ -280,11 +288,11 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
     findingAr: totals.impressions === 0 ? "لا توجد بيانات ظهور بعد." : `معدل النقر ${ctr.toFixed(2)}%.`,
     findingEn: totals.impressions === 0 ? "No impression data yet." : `Click-through rate ${ctr.toFixed(2)}%.`,
     trend: seriesFrom(snapshots, (r) => (r.impressions > 0 ? (r.clicks / r.impressions) * 100 : 0)),
-    sourceAr: "إجمالي النقرات ÷ إجمالي مرات الظهور من لقطات الأداء، آخر 30 يوماً.",
-    remedyAr: ctr >= 2 ? undefined : [
-      "راجع نص الإعلان: هل يذكر عرضاً واضحاً أم وصفاً عاماً؟",
-      "ضيّق الاستهداف - الوصول الواسع يخفض النقر عادةً.",
-      "جرّب صورة أو فيديو جديداً؛ الانحدار قد يكون إرهاقاً إبداعياً.",
+    source: L("إجمالي النقرات ÷ إجمالي مرات الظهور من لقطات الأداء، آخر 30 يوماً.", "Total clicks ÷ total impressions from performance snapshots, last 30 days."),
+    remedy: ctr >= 2 ? undefined : [
+      L("راجع نص الإعلان: هل يذكر عرضاً واضحاً أم وصفاً عاماً؟", "Review the ad copy: does it state a clear offer, or just a general description?"),
+      L("ضيّق الاستهداف - الوصول الواسع يخفض النقر عادةً.", "Tighten the targeting — broad reach usually drags the click rate down."),
+      L("جرّب صورة أو فيديو جديداً؛ الانحدار قد يكون إرهاقاً إبداعياً.", "Try a new image or video; the decline may simply be creative fatigue."),
     ],
     lastScanAt: now,
     actionHref: "/dashboard/campaigns",
@@ -320,12 +328,12 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       findingEn: silentCampaigns.length === 0
         ? `All ${activeByCampaign.size} linked campaigns are serving normally.`
         : `${silentCampaigns.length} linked campaigns recorded no impressions in 7 days.`,
-      sourceAr: "مجموع مرات الظهور لكل حملة من لقطات الأداء، آخر 7 أيام.",
-      remedyAr: silentCampaigns.length === 0 ? undefined : [
-        "تأكد أن الحملة ليست متوقفة أو خارج جدولها الزمني في المنصة.",
-        "راجع حالة الاعتماد: إعلان مرفوض يعني صفر ظهور دون إشعار واضح.",
-        "تحقق من الميزانية اليومية وطريقة الدفع - رصيد منتهٍ يوقف العرض فوراً.",
-        "استهداف ضيق جداً قد يمنع دخول المزادات أصلاً.",
+      source: L("مجموع مرات الظهور لكل حملة من لقطات الأداء، آخر 7 أيام.", "Impressions per campaign from performance snapshots, last 7 days."),
+      remedy: silentCampaigns.length === 0 ? undefined : [
+        L("تأكد أن الحملة ليست متوقفة أو خارج جدولها الزمني في المنصة.", "Check the campaign is not paused or outside its schedule on the platform."),
+        L("راجع حالة الاعتماد: إعلان مرفوض يعني صفر ظهور دون إشعار واضح.", "Check the approval status: a disapproved ad means zero impressions with no clear notice."),
+        L("تحقق من الميزانية اليومية وطريقة الدفع - رصيد منتهٍ يوقف العرض فوراً.", "Check the daily budget and payment method — an exhausted balance stops delivery immediately."),
+        L("استهداف ضيق جداً قد يمنع دخول المزادات أصلاً.", "Targeting that is too narrow can keep you out of the auction altogether."),
       ],
       trend: seriesFrom(snapshots, (r) => r.impressions),
       lastScanAt: now,
@@ -351,11 +359,11 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       findingAr: `${spendingNoConv.length} حملة أنفقت ${Math.round(wasted)} ${currency} خلال 7 أيام بصفر تحويل.`,
       findingEn: `${spendingNoConv.length} campaigns spent ${Math.round(wasted)} ${currency} over 7 days with zero conversions.`,
       monthlyImpact: Math.round((wasted / 7) * 30),
-      sourceAr: "الحملات التي cost > 0 و rawConversions = 0 خلال آخر 7 أيام.",
-      remedyAr: [
-        "تحقّق أولاً من التتبع: تحويلات غير مسجّلة تبدو كصفر تحويل.",
-        "راجع صفحة الهبوط - عدم تطابقها مع وعد الإعلان يقتل التحويل.",
-        "أوقف الحملة مؤقتاً إن تأكد أن التتبع سليم والنتيجة صفر فعلاً.",
+      source: L("الحملات التي cost > 0 و rawConversions = 0 خلال آخر 7 أيام.", "Campaigns with cost > 0 and rawConversions = 0 over the last 7 days."),
+      remedy: [
+        L("تحقّق أولاً من التتبع: تحويلات غير مسجّلة تبدو كصفر تحويل.", "Check tracking first: unrecorded conversions look identical to zero conversions."),
+        L("راجع صفحة الهبوط - عدم تطابقها مع وعد الإعلان يقتل التحويل.", "Review the landing page — a mismatch with the ad's promise kills conversion."),
+        L("أوقف الحملة مؤقتاً إن تأكد أن التتبع سليم والنتيجة صفر فعلاً.", "Pause the campaign if tracking is confirmed sound and the result is genuinely zero."),
       ],
       trend: seriesFrom(snapshots, (r) => r.rawConversions),
       lastScanAt: now,
@@ -377,10 +385,10 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       severity: topShare <= 70 ? "NONE" : "MEDIUM",
       findingAr: `أعلى حملة تستحوذ على ${Math.round(topShare)}% من إجمالي الإنفاق.`,
       findingEn: `Your top campaign takes ${Math.round(topShare)}% of all spend.`,
-      sourceAr: "نصيب أكبر حملة من إجمالي الإنفاق خلال آخر 7 أيام.",
-      remedyAr: topShare <= 70 ? undefined : [
-        "وزّع جزءاً من الميزانية على حملة ثانية مختبَرة لتقليل المخاطرة.",
-        "توقّف حملة واحدة مهيمنة يعني توقّف نتائجك بالكامل.",
+      source: L("نصيب أكبر حملة من إجمالي الإنفاق خلال آخر 7 أيام.", "The largest campaign's share of total spend over the last 7 days."),
+      remedy: topShare <= 70 ? undefined : [
+        L("وزّع جزءاً من الميزانية على حملة ثانية مختبَرة لتقليل المخاطرة.", "Move part of the budget to a second, tested campaign to reduce the risk."),
+        L("توقّف حملة واحدة مهيمنة يعني توقّف نتائجك بالكامل.", "If one dominant campaign stops, your results stop entirely."),
       ],
       trend: seriesFrom(snapshots, (r) => r.cost),
       lastScanAt: now,
@@ -403,11 +411,11 @@ export async function runDiagnostics(workspaceId: string): Promise<DiagnosticsRe
       : `Platforms report ${Math.round(inflation)}% more than was actually verified.`,
     monthlyImpact: inflation > 25 ? Math.round(monthlySpend * (inflation / 100)) : null,
     trend: seriesFrom(snapshots, (r) => (r.rawConversions > 0 ? ((r.rawConversions - r.verifiedConversions) / r.rawConversions) * 100 : 0)),
-    sourceAr: "الفارق بين ما تعلنه المنصات وما تأكّد فعلياً، مقسوماً على المُعلن.",
-    remedyAr: inflation <= 25 ? undefined : [
-      "تضخيم مرتفع قد يعني احتساب المنصة لتحويلات لم تحدث فعلاً (نماذج إحصائية).",
-      "راجع إعداد التحويلات في المنصة: أحداث مكرّرة تُحتسب مرات متعددة.",
-      "استخدم التكلفة الحقيقية لا المُعلنة عند اتخاذ قرارات الميزانية.",
+    source: L("الفارق بين ما تعلنه المنصات وما تأكّد فعلياً، مقسوماً على المُعلن.", "The gap between what platforms report and what was actually verified, divided by the reported figure."),
+    remedy: inflation <= 25 ? undefined : [
+      L("تضخيم مرتفع قد يعني احتساب المنصة لتحويلات لم تحدث فعلاً (نماذج إحصائية).", "High inflation can mean the platform is counting conversions that never happened (statistical modelling)."),
+      L("راجع إعداد التحويلات في المنصة: أحداث مكرّرة تُحتسب مرات متعددة.", "Review the conversion setup on the platform: duplicate events get counted more than once."),
+      L("استخدم التكلفة الحقيقية لا المُعلنة عند اتخاذ قرارات الميزانية.", "Use the verified cost, not the reported one, when making budget decisions."),
     ],
     lastScanAt: now,
     actionHref: "/dashboard/reports",

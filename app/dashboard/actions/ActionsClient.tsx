@@ -30,6 +30,14 @@ export interface ActionItemData {
   id: string;
   type: string;
   severity: string;
+  /** 🔴 كان `title`/`description` وحدهما، فيصل النصّ المُصيَّر عربياً وقت
+   *  الكتابة ويُعرض كما هو لقارئ الواجهة الإنجليزية. المفاتيح موجودة في
+   *  القاعدة منذ ترحيل «النصّ المخزَّن مفتاحٌ لا نصّ» - لكن هذه الصفحة
+   *  كانت تُسقطها قبل أن تصل إلى `itemTitle`، فيسقط الأمر إلى النصّ الخام. */
+  titleKey: string | null;
+  titleVars: unknown;
+  descKey: string | null;
+  descVars: unknown;
   title: string;
   description: string | null;
   source: string;
@@ -67,7 +75,10 @@ export function ActionsClient({
   const router = useRouter();
 
   const [processing, setProcessing] = useState<string | null>(null);
-  const [handled, setHandled] = useState<Set<string>>(new Set());
+  // 🔴 كان `Set<string>` والبند يُحذف من القائمة فور نجاح النداء - فيرى
+  // المستخدم اختفاءً لا نتيجة، ولا يعرف أنُفِّذ فعلاً أم ابتلعت الشاشة ضغطته.
+  // صار يحمل *أيّ* إجراء وقع، فيبقى الصفّ مكانه بحالته النهائية.
+  const [handled, setHandled] = useState<Map<string, "apply" | "dismiss">>(new Map());
   const [error, setError] = useState<string | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -79,7 +90,9 @@ export function ActionsClient({
   const [sortBy, setSortBy] = useState<SortBy>("impact");
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const live = useMemo(() => items.filter((i) => !handled.has(i.id)), [items, handled]);
+  // البنود المنفَّذة تبقى معروضة: `router.refresh()` هو ما يزيلها فعلاً
+  // حين يعود الخادم بالحالة الجديدة - لا اختفاء فوريّ بلا تفسير.
+  const live = items;
 
   const counts = useMemo(() => ({
     urgent: live.filter((i) => i.severity === "URGENT").length,
@@ -140,7 +153,7 @@ export function ActionsClient({
       return;
     }
 
-    setHandled((prev) => new Set(prev).add(id));
+    setHandled((prev) => new Map(prev).set(id, action));
     router.refresh();
   }
 
@@ -336,7 +349,11 @@ export function ActionsClient({
                         )}
                       </div>
 
-                      {item.type === "SUGGESTION" && (
+                      {item.type === "SUGGESTION" && handled.has(item.id) ? (
+                        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11.5px] font-medium ${handled.get(item.id) === "apply" ? "bg-verified/15 text-verified" : "bg-surface-raised text-text-muted"}`}>
+                          {tr(handled.get(item.id) === "apply" ? "doneApplied" : "doneDismissed")}
+                        </span>
+                      ) : item.type === "SUGGESTION" && (
                         <div className="flex shrink-0 items-center gap-1.5">
                           {pendingConfirm === item.id ? (
                             <button

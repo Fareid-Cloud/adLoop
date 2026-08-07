@@ -116,7 +116,11 @@ export function NotificationBell({ locale = "ar" }: { locale?: Locale }) {
       </button>
 
       {open && (
-        <div className="pop-shadow absolute end-0 top-11 z-50 max-h-[70vh] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto card">
+        <div // 🔴 `end-0` يثبّت اللوحة بحافة *الزرّ* لا بحافة الشاشة، والجرس في
+          // العربية يقع يسار الرأس - فتمتدّ اللوحة يساراً وتخرج من الشاشة.
+          // على الموبايل تُثبَّت بالشاشة نفسها بهامش متساوٍ، وتعود مُعلَّقة
+          // بالزرّ من `sm` فصاعداً حيث المساحة تكفي.
+          className="pop-shadow fixed inset-x-4 top-16 z-50 max-h-[70vh] overflow-y-auto card sm:absolute sm:inset-x-auto sm:end-0 sm:top-11 sm:w-[min(20rem,calc(100vw-2rem))]">
           <div className="sticky top-0 flex items-center justify-between border-b border-border bg-surface px-4 py-3">
             <span className="text-sm font-semibold text-text-primary">{t(locale, "notif.title")}</span>
             {unreadCount > 0 && (

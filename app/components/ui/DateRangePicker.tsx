@@ -169,8 +169,10 @@ export function DateRangePicker({
 
       {open && (
         <div
-          className="pop-shadow absolute z-50 mt-2 w-[min(94vw,720px)] overflow-hidden card"
-          style={{ insetInlineEnd: 0 }}
+          // ٧٢٠ بكسل معلَّقةً بحافة الزرّ تخرج من شاشة الهاتف مهما ضاق
+          // العرض، لأنّ `94vw` تحدّد العرض ولا تحدّد أين يبدأ. تُثبَّت
+          // بالشاشة تحت `sm`، وتعود مُعلَّقةً بالزرّ حيث المساحة تكفي.
+          className="pop-shadow fixed inset-x-3 top-20 z-50 max-h-[80vh] overflow-y-auto card sm:absolute sm:inset-x-auto sm:top-auto sm:mt-2 sm:max-h-none sm:w-[min(94vw,720px)] sm:overflow-hidden sm:[inset-inline-end:0]"
         >
           <div className="flex flex-col sm:flex-row">
             {/* الاختصارات */}

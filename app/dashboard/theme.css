@@ -124,6 +124,40 @@
  * الطبقة الأولى (inset فاتحة من أعلى) بتدّي إحساس الحافة المرفوعة، والتانية
  * ظل قريب، والتالتة ظل بعيد ناعم - التلاتة مع بعض بيعملوا العمق الحقيقي
  * بدل ظل مسطّح واحد. */
+/* ── بطاقة تحمل خسارة فعلية ────────────────────────────────────────
+   البطاقة التي تُعلن خسارة نقدية لا يكفيها إطار أحمر: الإطار يُقرأ
+   كتصنيف، والهالة تُقرأ كإنذار - وتُرى قبل قراءة العنوان أصلاً.
+   نبضة ثلاث مرّات ثم سكون: تنبيه دائم الحركة يصير خلفيةً تُتجاهَل،
+   ويُحترَم `prefers-reduced-motion` فتبقى الهالة ثابتة. */
+/* ── تناظر مجموعات الخيارات والنتائج ──────────────────────────────
+   القاعدة: أي مجموعة بطاقات تمثّل *خيارات متكافئة* (منصّات، باقات،
+   نتائج مقارنة) تتساوى ارتفاعاً - لا تتبع كلٌّ منها طول نصّها.
+   بطاقتان جنب بعضهما بارتفاعين مختلفين تُقرآن كأنّ إحداهما أهمّ،
+   والفرق ناتج عن طول جملة لا عن معنى. الشبكة تفرض التساوي،
+   و`.sym-body` يدفع الإجراء إلى القاع فتصطفّ الأزرار على خطّ واحد.
+
+   الاستعمال: `.sym-grid` على الحاوية، و`.sym-card` على كل بطاقة،
+   و`.sym-body` على المنطقة المرنة التي تسبق الإجراء. */
+.sym-grid  { display: grid; gap: 1rem; align-items: stretch; }
+.sym-grid > * { min-width: 0; }
+.sym-card  { display: flex; flex-direction: column; height: 100%; }
+.sym-body  { flex: 1 1 auto; min-height: 0; }
+.sym-foot  { margin-top: auto; padding-top: .75rem; }
+
+.card-alert {
+  border-color: color-mix(in oklab, var(--critical) 45%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--critical) 22%, transparent),
+              0 0 28px -8px color-mix(in oklab, var(--critical) 55%, transparent);
+  animation: alertPulse 2.2s ease-out 3;
+}
+@keyframes alertPulse {
+  0%, 100% { box-shadow: 0 0 0 1px color-mix(in oklab, var(--critical) 22%, transparent),
+                         0 0 28px -8px color-mix(in oklab, var(--critical) 55%, transparent); }
+  50%      { box-shadow: 0 0 0 1px color-mix(in oklab, var(--critical) 38%, transparent),
+                         0 0 42px -6px color-mix(in oklab, var(--critical) 80%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) { .card-alert { animation: none; } }
+
 .card-shadow {
   box-shadow: var(--shadow-card);
   transition: box-shadow .22s ease, transform .22s ease;

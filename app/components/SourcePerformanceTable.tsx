@@ -67,7 +67,7 @@ export function SourcePerformanceTable({
           </thead>
           <tbody>
             {sorted.map((r) => {
-              const meta = platformMeta(r.platform);
+              const meta = platformMeta(r.platform, locale);
               return (
                 <tr key={r.platform} className="border-t border-border transition-colors hover:bg-surface-raised">
                   <td className="px-5 py-3.5">

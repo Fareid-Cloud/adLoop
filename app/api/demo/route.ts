@@ -26,8 +26,13 @@ export async function POST(req: NextRequest) {
   const { allowed } = await checkRateLimit(getClientIp(req), `demo:${user.id}`, 5, 10);
   if (!allowed) return NextResponse.json({ error: "too many requests" }, { status: 429 });
 
-  const locale = (user.preferredLocale as "ar" | "en") ?? "ar";
-  const workspaceId = await seedDemoWorkspace(user.id, locale);
+  // 🔴 كان يُبذَر بلغة المستخدم وقت الإنشاء ويبقى عليها للأبد: من أنشأ
+  // ديموه بالعربية ثمّ بدّل للإنجليزية يرى أسماء حملات ومنتجات عربية في
+  // واجهة إنجليزية كاملة، ولا سبيل لتغييرها.
+  //
+  // الإنجليزية دائماً: أسماء الحملات في المنصّات الإعلانية نفسها إنجليزية
+  // في الغالب، فيقرؤها الطرفان. وهذه بيانات توضيحية لا محتوى المستخدم.
+  const workspaceId = await seedDemoWorkspace(user.id, "en");
 
   const store = await cookies();
   store.set(ACTIVE_WORKSPACE_COOKIE, workspaceId, {

@@ -28,9 +28,10 @@ export interface CheckRow {
   status: CheckStatus;
   severity: CheckSeverity;
   findingAr?: string;
+  findingEn?: string;
   monthlyImpact?: number | null;
-  sourceAr?: string;
-  remedyAr?: string[];
+  source?: string;
+  remedy?: string[];
   trend: number[];
   platform?: string | null;
   lastScanAt: string;
@@ -187,9 +188,12 @@ export function DiagnosticsView({
             {tp("subtitle")}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        {/* `flex-wrap` والنصّ `whitespace-nowrap`: الصفّ كان يضغط «آخر فحص:
+            الآن» حتى ينكسر على سطرين داخل ارتفاع سطر واحد، فيُقرأ نصفه.
+            الآن يلتفّ العنصر كاملاً إلى سطر جديد بدل أن ينكسر النصّ نفسه. */}
+        <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
           {lastScanAt && (
-            <span className="text-[12.5px] text-text-muted">{tp("lastScan")}: {lastScanAt}</span>
+            <span className="whitespace-nowrap text-[12.5px] text-text-muted">{tp("lastScan")}: {lastScanAt}</span>
           )}
           {/* الوصول إلى صفحة الصفحات المراقَبة - كان الرابط الوحيد إليها قد
               أُزيل عند إعادة بناء هذه الصفحة، فأصبحت غير قابلة للوصول تماماً */}
@@ -323,10 +327,10 @@ export function DiagnosticsView({
                           {ar ? CATEGORY_META[c.category].ar : CATEGORY_META[c.category].en}
                         </span>
                       </div>
-                      <p className="text-[12.5px] leading-relaxed text-text-muted">{c.findingAr ?? bi(locale, c.descAr, c.descEn)}</p>
+                      <p className="text-[12.5px] leading-relaxed text-text-muted">{bi(locale, c.findingAr, c.findingEn) ?? bi(locale, c.descAr, c.descEn)}</p>
                     </div>
 
-                    {c.actionHref && (
+                    {c.actionHref && isActionable(c) && (
                       <a href={c.actionHref}
                          className="btn btn-secondary btn-sm shrink-0">
                         {tr("resolve")}
@@ -462,7 +466,7 @@ export function DiagnosticsView({
                 const cat = CATEGORY_META[c.category];
                 const failing = c.status === "FAILED" || c.status === "WARNING";
                 const isOpen = expanded === c.id;
-                const hasDetails = !!(c.sourceAr || (c.remedyAr && c.remedyAr.length > 0));
+                const hasDetails = !!(c.source || (c.remedy && c.remedy.length > 0));
                 return (
                   <Fragment key={c.id}>
                   <tr className={`reveal border-b border-border last:border-0 ${isOpen ? "bg-surface-raised/35" : "hover:bg-surface-raised/45"}`}>
@@ -475,7 +479,7 @@ export function DiagnosticsView({
                         </span>
                         <div className="min-w-0">
                           <div className="text-[13px] font-medium text-text-primary">{bi(locale, c.titleAr, c.titleEn)}</div>
-                          <div className="text-[11.5px] leading-relaxed text-text-muted">{c.findingAr ?? bi(locale, c.descAr, c.descEn)}</div>
+                          <div className="text-[11.5px] leading-relaxed text-text-muted">{bi(locale, c.findingAr, c.findingEn) ?? bi(locale, c.descAr, c.descEn)}</div>
                         </div>
                       </div>
                     </td>
@@ -522,10 +526,10 @@ export function DiagnosticsView({
                           <div>
                             <div className="mb-1 text-[11.5px] font-medium text-text-muted">{tp("whatItMeasures")}</div>
                             <p className="text-[12.5px] leading-relaxed text-text-primary">{c.descAr}</p>
-                            {c.sourceAr && (
+                            {c.source && (
                               <>
                                 <div className="mb-1 mt-3 text-[11.5px] font-medium text-text-muted">{tp("dataSource")}</div>
-                                <p className="text-[12.5px] leading-relaxed text-text-muted">{c.sourceAr}</p>
+                                <p className="text-[12.5px] leading-relaxed text-text-muted">{c.source}</p>
                               </>
                             )}
                             {c.monthlyImpact ? (
@@ -539,11 +543,11 @@ export function DiagnosticsView({
                             ) : null}
                           </div>
 
-                          {c.remedyAr && c.remedyAr.length > 0 && (
+                          {c.remedy && c.remedy.length > 0 && (
                             <div>
                               <div className="mb-2 text-[11.5px] font-medium text-text-muted">{tp("remedySteps")}</div>
                               <ol className="flex flex-col gap-2">
-                                {c.remedyAr.map((step, i) => (
+                                {c.remedy.map((step, i) => (
                                   <li key={i} className="flex gap-2.5 text-[12.5px] leading-relaxed text-text-primary">
                                     <span className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-accent/12 font-mono text-[10px] font-semibold text-accent"
                                           style={{ height: 18, width: 18 }}>
@@ -553,7 +557,7 @@ export function DiagnosticsView({
                                   </li>
                                 ))}
                               </ol>
-                              {c.actionHref && (
+                              {c.actionHref && isActionable(c) && (
                                 <a href={c.actionHref}
                                    className="btn btn-primary btn-sm mt-3">
                                   {tr("goResolve")}
@@ -586,6 +590,12 @@ const SEVERITY_EXPLAIN: Record<string, string | undefined> = {
 };
 
 /** الحقل المطابق للّغة - البيانات تحمل الاثنين، والعرض كان يقرأ العربي دائماً */
-function bi(locale: Locale, ar: string, en: string): string {
+/** هل لهذا الفحص ما يُحَلّ؟ زرّ «حلّ» فوق فحص ناجح يَعِد بشيء غير موجود. */
+function isActionable(c: CheckRow): boolean {
+  return c.status === "WARNING" || c.status === "FAILED";
+}
+
+function bi(locale: Locale, ar?: string, en?: string): string | undefined {
+  if (ar === undefined && en === undefined) return undefined;
   return locale === "en" ? en : ar;
 }

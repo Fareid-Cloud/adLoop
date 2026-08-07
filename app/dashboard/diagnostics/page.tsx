@@ -43,7 +43,7 @@ export default async function DiagnosticsPage() {
     return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
-  const report = await runDiagnostics(workspace.id);
+  const report = await runDiagnostics(workspace.id, locale);
 
   // سجل النشاط من أحداث حقيقية: آخر مزامنات وفحوصات وقرارات
   const [recentActions, recentPages, cronRuns] = await Promise.all([

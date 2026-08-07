@@ -16,7 +16,24 @@ import {
 } from "lucide-react";
 import { KPI_DEFS, type KpiKey, type KpiResult } from "@/lib/kpiEngine";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+
+/** مفاتيح `KPI_DEFS` بـ`snake_case` ومفاتيح الشرح بـ`camelCase` - الجسر
+ *  صريح لا اشتقاق تلقائي، فمؤشّر بلا شرح يظهر هنا بدل أن يعرض نصّاً خاماً.
+ *  البطاقات هنا كانت المجموعة الوحيدة بلا أيقونة شرح رغم أنّها أوّل ما يُقرأ. */
+const EXPLAIN_KEY: Partial<Record<KpiKey, string>> = {
+  cost: "cost",
+  conversions_reported: "reportedConversions",
+  conversions_verified: "verifiedConversions",
+  verification_rate: "verificationRate",
+  cpl_verified: "cpaVerified",
+  cpl_raw: "cpaReported",
+  ctr: "ctr",
+  cpc: "cpc",
+  inflation_rate: "inflationRate",
+  roas: "roas",
+};
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { MetricInfo } from "@/app/components/ui/MetricInfo";
 
 const MIN_KPIS = 4;
 const MAX_KPIS = 10;
@@ -179,8 +196,23 @@ export function KpiStrip({
                 >
                   <Icon size={17} />
                 </span>
-                <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-text-muted">
-                  {ar ? def.labelAr : def.labelEn}
+                <span className="flex min-w-0 flex-1 items-center gap-1 text-[13px] font-medium text-text-muted">
+                  <span className="truncate">{ar ? def.labelAr : def.labelEn}</span>
+                  {EXPLAIN_KEY[def.key] && (
+                    <MetricInfo
+                      explain={{
+                        what: t(locale, `explain.${EXPLAIN_KEY[def.key]}_what`),
+                        how: t(locale, `explain.${EXPLAIN_KEY[def.key]}_how`),
+                        why: t(locale, `explain.${EXPLAIN_KEY[def.key]}_why`),
+                      }}
+                      labels={{
+                        what: t(locale, "explain.labelWhat"),
+                        how: t(locale, "explain.labelHow"),
+                        why: t(locale, "explain.labelWhy"),
+                        close: t(locale, "explain.close"),
+                      }}
+                    />
+                  )}
                 </span>
                 {/* مصدر البيانات: شعارات صغيرة متداخلة قليلاً - تعريف فوري
                     بمصدر الرقم دون أن تسرق مساحة من الرقم نفسه */}

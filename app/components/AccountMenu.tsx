@@ -64,7 +64,9 @@ export function AccountMenu({
       </button>
 
       {open && (
-        <div className="pop-shadow absolute end-0 z-50 mt-2 w-56 card p-1.5">
+        <div // نفس علّة لوحة الإشعارات: التعليق بحافة الزرّ يخرج بالقائمة من
+          // الشاشة في العربية. تُثبَّت بالشاشة على الموبايل فقط.
+          className="pop-shadow fixed inset-x-4 top-16 z-50 card p-1.5 sm:absolute sm:inset-x-auto sm:end-0 sm:top-auto sm:mt-2 sm:w-56">
           <div className="border-b border-border px-3 pb-2 pt-1.5">
             <div className="truncate text-sm text-text-primary" dir="auto">{name ?? "—"}</div>
             <div className="truncate text-xs text-text-faint" dir="auto">{email}</div>

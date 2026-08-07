@@ -251,7 +251,9 @@ export default async function GlancePage({
         { avgLeadToClientRate: valueConfig?.avgLeadToClientRate ?? 0, avgClientValue: valueConfig?.avgClientValue ?? 0 }
       )
     );
-    return comparePlatforms(computed, "ar").insight;
+    // 🔴 كانت `"ar"` مثبّتة، فتصل جملة مقارنة المنصّات عربيةً إلى قارئ
+    // الواجهة الإنجليزية - في الصفحة الأولى التي يفتحها.
+    return comparePlatforms(computed, locale).insight;
   })();
 
   // السلسلة «المُعلنة» تحويلات مُعلنة لا نقرات. جمعُ النقرات هنا كان يرسم
