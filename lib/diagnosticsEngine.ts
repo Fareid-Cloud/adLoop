@@ -84,7 +84,7 @@ export async function runDiagnostics(
   workspaceId: string,
   // 🔴 لم تكن تستقبل لغةً إطلاقاً، و`sourceAr`/`remedyAr` يُعرضان مباشرةً -
   // فيرى مستخدم الواجهة الإنجليزية مصدر كلّ فحص وعلاجه بالعربية.
-  locale: "ar" | "en" = "ar"
+  locale: "ar" | "en"
 ): Promise<DiagnosticsReport> {
   const ar = locale === "ar";
   /** يختار النصّ بلغة القارئ - أقصر من ثلاثيّة عند كلّ سطر */
@@ -418,7 +418,11 @@ export async function runDiagnostics(
       L("استخدم التكلفة الحقيقية لا المُعلنة عند اتخاذ قرارات الميزانية.", "Use the verified cost, not the reported one, when making budget decisions."),
     ],
     lastScanAt: now,
-    actionHref: "/dashboard/reports",
+    // 🔴 كانت `/dashboard/reports`: صفحة تعرض الفجوة نفسها بصياغة أخرى ولا
+    // تُغيّر فيها شيئاً. زرّ اسمه «حلّ» يفتح عرضاً آخر للمشكلة هو أسوأ من
+    // غياب الزرّ - المستخدم يضغط ثمّ يعود بلا شيء. ما يُقلّص التضخيم فعلاً
+    // هو تغطية التتبّع: كلّما زاد ما نتحقّق منه ضاقت الفجوة.
+    actionHref: "/dashboard/diagnostics/tracking-coverage",
   });
 
   // ============ الميزانية ============

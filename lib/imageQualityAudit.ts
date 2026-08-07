@@ -31,7 +31,7 @@ export interface ImageQualityResult {
 export async function auditAdImageQuality(
   imageUrl: string,
   platform: "GOOGLE_ADS" | "META_ADS",
-  locale: Locale = "ar"
+  locale: Locale
 ): Promise<ImageQualityResult | null> {
   let imageBase64: string;
   let mediaType: "image/jpeg" | "image/png";

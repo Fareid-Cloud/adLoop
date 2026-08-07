@@ -212,7 +212,7 @@ export interface RuleTask {
 
 export function generateRuleBasedTasks(
   ctx: RuleCheckContext,
-  locale: Locale = "ar"
+  locale: Locale
 ): RuleTask[] {
   const tasks: RuleTask[] = [];
 

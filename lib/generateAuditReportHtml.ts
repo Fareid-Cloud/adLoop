@@ -18,7 +18,7 @@ export function generateAuditReportHtml(
   report: FullAuditReport,
   synthesis: AuditSynthesis,
   workspaceName: string,
-  locale: Locale = "ar"
+  locale: Locale
 ): string {
   const isRTL = locale === "ar";
   const dir = isRTL ? "rtl" : "ltr";

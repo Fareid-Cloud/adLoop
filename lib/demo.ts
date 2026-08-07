@@ -122,16 +122,24 @@ async function isDemoPopulated(workspaceId: string): Promise<boolean> {
 export async function seedDemoWorkspace(userId: string, locale: "ar" | "en"): Promise<string> {
   const existing = await prisma.workspace.findFirst({
     where: { userId, isDemo: true },
-    select: { id: true },
+    select: { id: true, demoLocale: true },
   });
 
   if (existing) {
-    // البذر يتخطّى المكرّر، فإعادته على مساحة مكتملة لا تُضاعف شيئاً،
-    // وعلى مساحة ناقصة تُكملها بدل تركها فارغة إلى الأبد.
-    if (!(await isDemoPopulated(existing.id))) {
-      await seedDemoData(existing.id, locale);
+    // 🔴 مساحة بُذرت بلغة أخرى: أسماء الحملات والمنتجات والتنبيهات نصوص
+    // مخزَّنة، وإعادة البذر فوقها لا تبدّلها لأنّها تتخطّى المكرّر. الحلّ
+    // حذف المساحة كاملةً وإنشاؤها من جديد - وهو آمن هنا وحده لأنّ بياناتها
+    // أمثلة مولَّدة لا شيء فيها للمستخدم. الحذف يجرّ كلّ صفوفها بالتتالي.
+    if ((existing.demoLocale ?? "ar") !== locale) {
+      await prisma.workspace.delete({ where: { id: existing.id } });
+    } else {
+      // البذر يتخطّى المكرّر، فإعادته على مساحة مكتملة لا تُضاعف شيئاً،
+      // وعلى مساحة ناقصة تُكملها بدل تركها فارغة إلى الأبد.
+      if (!(await isDemoPopulated(existing.id))) {
+        await seedDemoData(existing.id, locale);
+      }
+      return existing.id;
     }
-    return existing.id;
   }
 
   const expiresAt = new Date();
@@ -144,6 +152,7 @@ export async function seedDemoWorkspace(userId: string, locale: "ar" | "en"): Pr
       currency: "SAR",
       isDemo: true,
       demoExpiresAt: expiresAt,
+      demoLocale: locale,
       profitMarginPct: 32,
     },
   });

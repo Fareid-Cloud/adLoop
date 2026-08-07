@@ -114,7 +114,7 @@ export function ruleResultToActionFeedItem(
   ruleName: string,
   result: RuleEvaluationResult,
   requireApproval: boolean,
-  locale: Locale = "ar",
+  locale: Locale,
   // الهدف الفعلي على المنصة. بدونه يبقى الاقتراح نصياً غير قابل للتنفيذ -
   // وهو ما كان عليه الحال: القواعد تُنتج نصاً فقط ولا تنفّذ شيئاً بالموافقة.
   target?: { platform: string; campaignId: string; campaignName?: string; action: string; changePct?: number }

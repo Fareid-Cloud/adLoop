@@ -33,6 +33,7 @@ import { runDailyDiagnosticsForWorkspace } from "@/lib/dailyTasks";
 import { runAutomationForWorkspace } from "@/lib/automationRules";
 import { checkExpiringConnections } from "@/lib/connectionHealthCheck";
 import { purgeExpiredData } from "@/lib/dataRetention";
+import { ownerLocaleFor } from "@/lib/workspaceLocale";
 
 // أزواج العملات المدعومة في اختيار "العملة" بصفحة الإعدادات - بنسجل
 // سعرها يومياً كلهم مع بعض، بدل ما نحاول نحدد عملة فوترة كل حساب Google
@@ -178,7 +179,7 @@ export async function GET(req: NextRequest) {
       await checkScaleKillDecisionsForWorkspace(workspaceId);
       // فحص التسعير لم يعد هنا - يعمل الآن لكل مساحة عندها منتجات، بمعزل
       // عن المنصات الإعلانية (انظر الحلقة المستقلة بعد هذه الحلقة).
-      await runAutomationForWorkspace(workspaceId);
+      await runAutomationForWorkspace(workspaceId, await ownerLocaleFor(workspaceId));
       // قياس التجارب التي اكتملت نافذتها - نتيجة كل قرار نُفِّذ فعلاً
       await measurePendingExperiments(workspaceId);
       results.push({ workspaceId, status: "ok" });

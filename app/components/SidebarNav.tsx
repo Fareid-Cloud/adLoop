@@ -41,11 +41,15 @@ export function SidebarNav({
   locale,
   supportSlot,
   workspaceSlot,
+  brandSlot,
   badges = {},
 }: {
   locale: "ar" | "en";
   supportSlot?: React.ReactNode;
   workspaceSlot?: React.ReactNode;
+  /** شارة بجانب الشعار - شارة العرض التجريبيّ اليوم. كانت في رأس الصفحة
+   *  فتزاحم البحث واسم المستخدم على عرض الهاتف الضيّق. */
+  brandSlot?: React.ReactNode;
   /** عدد ما ينتظر المستخدم في كل قسم، مفتاحه مسار القسم */
   badges?: Record<string, number>;
 }) {
@@ -143,10 +147,10 @@ export function SidebarNav({
       {/* صفّ الشعار بارتفاع رأس الصفحة نفسه (SHELL_HEADER_H) وبنفس الحدّ
           السفلي، فيمتدّ الخطّان كخطّ واحد عبر الشاشة. كان ارتفاع هذا الصفّ
           حرّاً يتبع محتواه، فينكسر الخطّ عند الحدّ بين العمودين. */}
-      <div className="flex h-[68px] shrink-0 items-center border-b border-border px-3">
+      <div className="flex h-[68px] shrink-0 items-center gap-2 border-b border-border px-3">
         <a
           href="/dashboard"
-          className={`flex w-full items-center gap-2 no-underline ${collapsed ? "justify-center px-0" : "px-2"}`}
+          className={`flex min-w-0 items-center gap-2 no-underline ${collapsed ? "w-full justify-center px-0" : "px-2"}`}
         >
           {/* الشعار من `public/` لا مرسوماً بالكود: كان مربّعاً أزرق بأيقونة
               قائمة مهامّ لا علاقة لها بالعلامة، بينما ملفّ الشعار الحقيقيّ
@@ -156,6 +160,10 @@ export function SidebarNav({
             <span className="text-[16px] font-bold tracking-tight text-text-primary">AdLoop</span>
           )}
         </a>
+        {/* موضع الشارة هنا لا في الرأس: صفّ الشعار فيه متّسع دائماً، ورأس
+            الهاتف لا يتّسع. وهي بجانب اسم المنتج فتُقرأ كوصفٍ للمساحة
+            المفتوحة - وهو ما تعنيه فعلاً. */}
+        {brandSlot && !collapsed && <div className="ms-auto shrink-0">{brandSlot}</div>}
       </div>
 
       {/* البحث خارج منطقة التمرير: `shrink-0` داخل عمود `h-screen` يعني أنه

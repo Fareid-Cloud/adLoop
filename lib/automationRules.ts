@@ -38,7 +38,7 @@ export function evaluateRule(
   rule: RuleDefinition,
   recentValues: DailyMetricValue[], // آخر N يوم للمقياس ده، من الأحدث للأقدم
   lastExecutedAt: Date | null = null,
-  locale: Locale = "ar"
+  locale: Locale
 ): RuleEvaluationResult {
   const sorted = [...recentValues].sort((a, b) => b.date.localeCompare(a.date));
 
@@ -87,7 +87,7 @@ export function evaluateRule(
   };
 }
 
-function describeAction(rule: RuleDefinition, locale: Locale = "ar"): string {
+function describeAction(rule: RuleDefinition, locale: Locale): string {
   switch (rule.action) {
     case "PAUSE_CAMPAIGN":
       return t(locale, "automation.pauseCampaign");
@@ -107,7 +107,7 @@ function describeAction(rule: RuleDefinition, locale: Locale = "ar"): string {
 // نفس الاكتشاف بالظبط بتاع dailyTasks.ts: القواعد كانت بتتعمل من الواجهة،
 // لكن محدش كان بيقيّمها ضد بيانات حقيقية ولا بيدفع النتيجة لـ Action Feed.
 
-export async function runAutomationForWorkspace(workspaceId: string, locale: Locale = "ar") {
+export async function runAutomationForWorkspace(workspaceId: string, locale: Locale) {
   const workspace = await prisma.workspace.findUnique({ where: { id: workspaceId } });
   if (!workspace || !workspace.enableAutomationRules) return;
 

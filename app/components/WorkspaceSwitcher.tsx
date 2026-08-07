@@ -118,8 +118,12 @@ export function WorkspaceSwitcher({
         {open && !collapsed && (
           <div className="pop-shadow absolute bottom-full mb-2 w-full overflow-hidden card">
             <div className="max-h-56 overflow-y-auto p-1.5">
+              {/* الدخول إلى مساحة العرض يمرّ بـ`/demo` لا بالتبديل العاديّ:
+                  هناك وحدها يقع فحص لغة البذرة، فمن بذر ديموه بالعربية ثمّ
+                  بدّل الواجهة للإنجليزية تُعاد بذرته. التبديل المباشر كان
+                  يُدخله على أسماء عربية إلى الأبد. */}
               {workspaces.map((w) => (
-                <button key={w.id} onClick={() => switchTo(w.id)}
+                <button key={w.id} onClick={() => (w.isDemo ? (window.location.href = "/demo") : switchTo(w.id))}
                         className={`flex w-full items-center gap-2 rounded-lg p-2.5 text-start text-[12.5px] ${
                           w.id === current.id ? "bg-accent/10 text-accent" : "text-text-primary hover:bg-surface-raised"
                         }`}>

@@ -6,6 +6,7 @@
 // أبداً - المستخدم كان لازم يفتح الصفحة بإيده عشان يعرف. دي الحلقة المفقودة.
 
 import { prisma } from "@/lib/prisma";
+import { ownerLocaleFor } from "@/lib/workspaceLocale";
 import {
   runPricingHealthCheck,
   runFullPricingSafetyNet,
@@ -31,7 +32,7 @@ export async function getWorkspacePricing(
   currency: string,
   // العرض يتبع لغة القارئ. كانت مثبّتة على العربية، فكان مستخدم الواجهة
   // الإنجليزية يرى رسائل التسعير عربيةً مهما فعل.
-  locale: Locale = "ar"
+  locale: Locale
 ): Promise<{ rows: PricingRow[]; roasGapInsight: string | null }> {
   const products = await prisma.product.findMany({ where: { workspaceId }, orderBy: { createdAt: "desc" } });
   if (products.length === 0) return { rows: [], roasGapInsight: null };
@@ -74,7 +75,7 @@ export async function getWorkspacePricing(
       avgShippingCostAllProducts: avgShippingAll,
     };
 
-    const result = runPricingHealthCheck(p.name, p.currentPrice, pricingInputsOf(p), marginDiagnosisInput, locale);
+    const result = runPricingHealthCheck(p.name, p.currentPrice, pricingInputsOf(p), locale, marginDiagnosisInput);
 
     const events = byProduct.get(p.id) ?? [];
     let actualLossAlert: string | null = null;
@@ -139,7 +140,7 @@ export async function checkPricingHealthAlertsForWorkspace(workspaceId: string) 
   if (!ws) return;
 
   const currency = ws.currency;
-  const { rows } = await getWorkspacePricing(workspaceId, currency);
+  const { rows } = await getWorkspacePricing(workspaceId, currency, await ownerLocaleFor(workspaceId));
 
   const cooldownStart = new Date();
   cooldownStart.setDate(cooldownStart.getDate() - COOLDOWN_DAYS);

@@ -151,7 +151,7 @@ export async function checkTrackingPresence(rawUrl: string): Promise<TrackingChe
 }
 
 /** رسالة تشرح النتيجة بدقة - بما فيها الحد الحقيقي لهذا الفحص. */
-export function explainTrackingResult(r: TrackingCheckResult, locale: "ar" | "en" = "ar"): string {
+export function explainTrackingResult(r: TrackingCheckResult, locale: "ar" | "en"): string {
   const ar = locale === "ar";
 
   if (r.error) return r.error;

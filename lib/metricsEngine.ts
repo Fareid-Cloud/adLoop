@@ -82,7 +82,7 @@ import { t, Locale, platformLabel } from "@/lib/i18n/dictionary";
 // الأداء الحقيقي (CPL Verified) مش حسب أرقام المنصة الخام
 export function comparePlatforms(
   metricsPerPlatform: ComputedMetrics[],
-  locale: Locale = "ar"
+  locale: Locale
 ): {
   ranked: ComputedMetrics[];
   bestPlatform: ComputedMetrics | null;

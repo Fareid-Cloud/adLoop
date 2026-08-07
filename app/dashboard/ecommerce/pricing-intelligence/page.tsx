@@ -166,7 +166,12 @@ export default async function PricingIntelligencePage() {
       {raiseOps.length > 0 && (
         <>
           <SectionHeading hint={tr("belowBreakEvenHint")}>{tr("belowBreakEven")}</SectionHeading>
-          <div className="card-shadow mb-8 overflow-hidden rounded-2xl border border-critical/30 bg-surface">
+          {/* `card-alert` لا حدٌّ أحمر وحده: هذه خسارة مؤكَّدة محسوبة لا
+              اقتراح تحسين - كلّ وحدة تُباع تُكلّف المالك مالاً الآن. الحدّ
+              الرفيع يمرّ عليه البصر كأيّ بطاقة. القاعدة تعطي توهّجاً خافتاً
+              ونبضةً تتوقّف بعد ثلاث دورات: تلفت ولا تُلحّ، ولا تعمل أصلاً
+              لمن يطلب تقليل الحركة. */}
+          <div className="card-alert card-shadow mb-8 overflow-hidden rounded-2xl border bg-surface">
             <DataTable
               headers={[tc("product"), tr("colCurrentPrice"), tr("colUnitLoss"), tr("colSold30", { days: 30 }), tr("colMonthlyBleed"), tr("colNeededRaise")]}
             >

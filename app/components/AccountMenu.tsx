@@ -59,8 +59,14 @@ export function AccountMenu({
             {AvatarIcon ? <AvatarIcon size={15} /> : <span className="text-xs font-medium">{initial}</span>}
           </div>
         )}
-        <span className="max-w-[120px] truncate text-[13px] text-text-muted" dir="auto">{display}</span>
-        <ChevronDown size={14} className={`text-text-faint transition-transform ${open ? "rotate-180" : ""}`} />
+        {/* الاسم يختفي تحت `sm` لا يُقصّ: رأس الهاتف يحمل ستّة عناصر في
+            ٦٨ بكسل، و«Abdul-Rahman M. …» المقصوص لا يفيد أحداً بينما يأكل
+            عرض البحث. وفوق `lg` يتّسع الحدّ لاسمٍ كامل بدل قصّه بلا داعٍ
+            على شاشة فيها متّسع. */}
+        <span className="hidden max-w-[130px] truncate text-[13px] text-text-muted sm:inline lg:max-w-[190px]" dir="auto">
+          {display}
+        </span>
+        <ChevronDown size={14} className={`hidden text-text-faint transition-transform sm:block ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (

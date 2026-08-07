@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const demoBlock = await blockAiInDemo(workspace.id, (user.preferredLocale as "ar" | "en") ?? "ar");
   if (demoBlock) return demoBlock;
 
-  const result = await auditAdImageQuality(imageUrl, platform);
+  const result = await auditAdImageQuality(imageUrl, platform, (user.preferredLocale as "ar" | "en") ?? "ar");
   if (!result) {
     return NextResponse.json({ error: "تعذّر تحليل الصورة (رابط منتهي أو غير متاح)" }, { status: 422 });
   }

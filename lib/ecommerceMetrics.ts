@@ -63,7 +63,7 @@ export function computeEcommerceMetrics(
 // (displacedRoas) والرقم اللي فعلاً بيقول له يستمر ولا يوقف الكامبين (trueRoas)
 export function explainRoasGap(
   m: ComputedEcommerceMetrics,
-  locale: Locale = "ar"
+  locale: Locale
 ): string {
   if (m.displacedRoas <= 0) return t(locale, "insights.noData");
 
@@ -117,7 +117,7 @@ export interface MarginDiagnosisResult {
 
 export function diagnoseMarginIssue(
   input: MarginDiagnosisInput,
-  locale: Locale = "ar"
+  locale: Locale
 ): MarginDiagnosisResult {
   const ruledOut: MarginIssueCause[] = [];
 
@@ -247,8 +247,8 @@ export function runPricingHealthCheck(
   productName: string,
   currentPrice: number,
   pricingInputs: PricingInputs,
-  marginDiagnosisInput?: MarginDiagnosisInput,
-  locale: Locale = "ar"
+  locale: Locale,
+  marginDiagnosisInput?: MarginDiagnosisInput
 ): PricingHealthCheckResult {
   const suggestion = suggestOptimalPrice(pricingInputs, currentPrice);
   const gapPct = round2(
@@ -296,10 +296,10 @@ export function auditFullCatalogPricing(
     pricingInputs: PricingInputs;
     marginDiagnosisInput?: MarginDiagnosisInput;
   }>,
-  locale: Locale = "ar"
+  locale: Locale
 ): PricingHealthCheckResult[] {
   const results = products.map((p) =>
-    runPricingHealthCheck(p.name, p.currentPrice, p.pricingInputs, p.marginDiagnosisInput, locale)
+    runPricingHealthCheck(p.name, p.currentPrice, p.pricingInputs, locale, p.marginDiagnosisInput)
   );
 
   return results
@@ -329,15 +329,15 @@ export function runFullPricingSafetyNet(
   pricingInputs: PricingInputs,
   actualMetrics: RawEcommerceMetrics,
   marginDiagnosisInput: MarginDiagnosisInput,
-  locale: Locale = "ar"
+  locale: Locale
 ): FullPricingSafetyNetResult {
   // الطبقة 1: الفحص الاستباقي (قبل) - بيشتغل دايماً بغض النظر عن النتيجة الفعلية
   const before = runPricingHealthCheck(
     productName,
     currentPrice,
     pricingInputs,
-    marginDiagnosisInput,
-    locale
+    locale,
+    marginDiagnosisInput
   );
 
   // الطبقة 2: هل الخسارة حصلت فعلياً رغم الفحص الاستباقي؟

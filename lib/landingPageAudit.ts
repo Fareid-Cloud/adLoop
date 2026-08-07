@@ -316,7 +316,7 @@ export async function auditVisualAndCopy(
   screenshotBase64: string,
   pageTextContent: string,
   industryVertical: string | null,
-  locale: Locale = "ar"
+  locale: Locale
 ): Promise<VisualAuditResult> {
   const verticalContext = industryVertical
     ? locale === "ar"
@@ -517,7 +517,7 @@ export interface AuditSynthesis {
 
 export async function synthesizeAuditReport(
   report: FullAuditReport,
-  locale: Locale = "ar"
+  locale: Locale
 ): Promise<AuditSynthesis> {
   // بنجمع كل النتايج التفصيلية في نص واحد عشان الـ AI يقدر يفكر فيها مع بعض
   const allFindings = {

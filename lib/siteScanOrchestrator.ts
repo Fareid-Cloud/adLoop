@@ -93,7 +93,7 @@ export async function runDeepSiteScan(
   url: string,
   competitorUrls: string[],
   industryVertical: string | null,
-  locale: Locale = "ar"
+  locale: Locale
 ): Promise<DeepSiteScanResult> {
   const primary = await scanSinglePage(url, industryVertical, locale);
 

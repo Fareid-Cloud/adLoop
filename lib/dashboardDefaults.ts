@@ -56,6 +56,6 @@ export function computeSmartDefaults(
 // يديك عنوان المقياس باللغة المطلوبة - يُستخدم في الواجهة عند بناء قائمة
 // "اختار المقاييس اللي عايز تشوفها". بيسحب من القاموس المركزي (dictionary.ts)
 // بدل نص ثابت، عشان يشتغل بالعربي والإنجليزي زي باقي النظام.
-export function getMetricLabel(key: MetricKey, locale: Locale = "ar"): string {
+export function getMetricLabel(key: MetricKey, locale: Locale): string {
   return t(locale, `metricLabels.${key}`);
 }

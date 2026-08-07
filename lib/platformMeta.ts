@@ -28,7 +28,7 @@ export const PLATFORM_META: Record<
 
 export function platformMeta(
   platform: string,
-  locale: "ar" | "en" = "ar",
+  locale: "ar" | "en",
 ): { label: string; color: string } {
   const m = PLATFORM_META[platform];
   if (!m) return { label: platform, color: "#64748B" };

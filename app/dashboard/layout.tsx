@@ -215,6 +215,17 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <SidebarNav
         locale={locale}
         badges={navBadges}
+        // انتقلت من رأس الصفحة: الرأس على الهاتف يحمل ستّة عناصر في ٦٨
+        // بكسل، وهذه كانت تدفع البحث واسم المستخدم حتى يُقصّا معاً.
+        brandSlot={
+          demoWs ? (
+            <DemoBadge
+              locale={locale}
+              daysLeft={demoDaysLeft}
+              hasRealWorkspace={allWorkspaces.length > 1}
+            />
+          ) : null
+        }
         workspaceSlot={
           activeWorkspace ? (
             <WorkspaceSwitcher
@@ -246,23 +257,20 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         <div className="sticky top-0 z-40 mb-5 flex h-[68px] items-center gap-1.5 border-b border-border bg-bg px-3 sm:gap-3 sm:px-6 lg:px-10">
           <MobileNavButton locale={locale} />
           <TopSearch locale={locale} />
-          {demoWs && (
-            <DemoBadge
-              locale={locale}
-              daysLeft={demoDaysLeft}
-              hasRealWorkspace={allWorkspaces.length > 1}
-            />
-          )}
           <div className="flex flex-1 items-center justify-end gap-1.5">
           {/* شارة واحدة للرصيد. كانت اثنتين لنفس الرقم: واحدة تقرأ حدّاً
               ثابتاً وتتجاهل الباقة والرصيد المشترى، وأخرى تكرّرها. تُخفى
-              في الديمو لأن الذكاء الاصطناعي معطَّل هناك. */}
+              في الديمو لأن الذكاء الاصطناعي معطَّل هناك.
+              وتُخفى على الهاتف: رقمٌ إعلاميّ لا يُتخذ عنده قرار، ومكانه
+              الطبيعيّ صفحة الاشتراك - بينما عرضه هنا يزاحم عناصر تُستعمل. */}
           {entitlements && !demoWs && (
-            <AiCreditBadge
-              remaining={creditsLeft}
-              total={entitlements.limits.aiCredits + entitlements.purchasedCredits}
-              locale={locale}
-            />
+            <span className="hidden sm:inline-flex">
+              <AiCreditBadge
+                remaining={creditsLeft}
+                total={entitlements.limits.aiCredits + entitlements.purchasedCredits}
+                locale={locale}
+              />
+            </span>
           )}
           <ThemeModeToggle initialMode={mode} locale={locale} />
           <HelpButton locale={locale} />

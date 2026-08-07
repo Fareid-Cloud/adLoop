@@ -591,8 +591,17 @@ const SEVERITY_EXPLAIN: Record<string, string | undefined> = {
 
 /** الحقل المطابق للّغة - البيانات تحمل الاثنين، والعرض كان يقرأ العربي دائماً */
 /** هل لهذا الفحص ما يُحَلّ؟ زرّ «حلّ» فوق فحص ناجح يَعِد بشيء غير موجود. */
+/**
+ * هل يستحقّ هذا البند زرّ «حلّ»؟
+ *
+ * القاعدة: الزرّ يَعِد بفعل. بندٌ سليم لا شيء فيه يُحلّ، ووجهةٌ هي الصفحة
+ * التي يقف عليها المستخدم الآن تجعل الضغطة بلا أثر مرئيّ - وهو ما يُقرأ
+ * كعطل لا كتصميم. حيث لا وجهة تُغيّر شيئاً، لا زرّ أصلاً؛ التشخيص وحده
+ * يكفي والنصّ يشرح.
+ */
 function isActionable(c: CheckRow): boolean {
-  return c.status === "WARNING" || c.status === "FAILED";
+  if (c.status !== "WARNING" && c.status !== "FAILED") return false;
+  return !!c.actionHref && c.actionHref !== "/dashboard/diagnostics";
 }
 
 function bi(locale: Locale, ar?: string, en?: string): string | undefined {

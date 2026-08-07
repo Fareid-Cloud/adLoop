@@ -51,7 +51,7 @@ export function computeExperimentImpact(
   isLowerBetter: boolean,
   measurement: ExperimentMeasurement,
   metricLabel: string,
-  locale: Locale = "ar"
+  locale: Locale
 ): ImpactResult {
   const confidence = computeExperimentConfidence(measurement);
 

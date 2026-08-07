@@ -60,7 +60,7 @@ import { t, Locale, platformLabel } from "@/lib/i18n/dictionary";
 // بدل CPV العادي، لأن CPV ممكن يكون رخيص لكن مفيش حد شاف الفيديو فعلاً
 export function compareVideoPerformance(
   metrics: (RawVideoMetrics & ComputedVideoMetrics)[],
-  locale: Locale = "ar"
+  locale: Locale
 ): { ranked: (RawVideoMetrics & ComputedVideoMetrics)[]; insight: string } {
   const withData = metrics.filter((m) => m.costPerThruPlay > 0);
   const ranked = [...withData].sort((a, b) => a.costPerThruPlay - b.costPerThruPlay);
