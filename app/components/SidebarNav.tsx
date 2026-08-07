@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Megaphone, Tag, ScanSearch, Stethoscope, ListChecks,
   FlaskConical, Bot, FileBarChart, Settings as SettingsIcon, CreditCard,
-  ChevronDown, PanelLeftClose, PanelLeftOpen, Search,
+  ChevronDown, PanelLeftClose, PanelLeftOpen, Search, PlayCircle,
 } from "lucide-react";
 import * as Icons from "lucide-react";
 import { NAV_GROUPS, type NavItem } from "@/lib/navConfig";
@@ -122,7 +122,12 @@ export function SidebarNav({
       // على الموبايل درج منزلق فوق المحتوى لا عمود بجانبه: عرض 240px من
       // شاشة 375px يعني ثلثي الشاشة للقائمة وثلثاً للمنتج - وهو ما كان
       // يجعل اللوحة غير صالحة للاستخدام على الهاتف أصلاً.
-      className={`nav-drawer sticky top-0 flex h-[100dvh] shrink-0 flex-col overflow-hidden border-e border-border bg-surface ${
+      // 🔴 `z-30` على سطح المكتب لا `z-auto`: الشريط والرأس كلاهما `sticky
+      // top-0` في عمودين متجاورين، فحين تنزل الصفحة يثبت الشريط ويتحرّك
+      // الرأس، فيبدو صفّ شعار الشريط طافياً *فوق* الرأس الرئيسيّ. الرأس
+      // `z-40`، فوضع الشريط تحته يجعل الحدّ بينهما خطّاً واحداً كما يجب.
+      // على الهاتف تبقى `z-50` من `.nav-drawer` لأنّه درجٌ فوق المحتوى.
+      className={`nav-drawer sticky top-0 flex h-[100dvh] shrink-0 flex-col overflow-hidden border-e border-border bg-surface lg:z-30 ${
         mobileOpen ? "is-open" : ""
       } ${collapsed ? "is-collapsed" : ""}`}
     >
@@ -134,8 +139,12 @@ export function SidebarNav({
           href="/dashboard"
           className={`flex w-full items-center gap-2 no-underline ${collapsed ? "justify-center px-0" : "px-2"}`}
         >
-          <span className="btn btn-primary h-7 w-7 shrink-0">
-            <ListChecks size={16} />
+          {/* 🔴 كان `btn btn-primary h-7 w-7` بلا `btn-icon`: و`.btn` تحمل
+              حشوةً أفقيةً ١٫١٥rem، أي ٣٧ بكسل داخل مربّع عرضه ٢٨ - فتُدفع
+              الأيقونة خارج حدّه ويبقى مربّعٌ أزرق فارغ. `btn-icon` تصفّر
+              الحشوة، وهي موجودة في نظام التصميم لهذه الحالة بالذات. */}
+          <span className="btn btn-primary btn-icon h-7 w-7">
+            <ListChecks size={15} />
           </span>
           {!collapsed && (
             <span className="text-[16px] font-bold tracking-tight text-text-primary">AdLoop</span>
@@ -267,7 +276,14 @@ export function SidebarNav({
                                   activeChild ? "bg-accent/12 font-medium text-accent" : "text-text-faint hover:text-text-primary"
                                 }`}
                               >
-                                {!child.nested && plat && <PlatformLogo platform={plat} size={14} />}
+                                {/* أداء الفيديو مربوطٌ بيوتيوب ولا شعار له في
+                                    `PlatformLogo`، فيأخذ أيقونتها مباشرةً بدل
+                                    أن يبقى الرابط الوحيد بلا علامة. */}
+                                {!child.nested && child.href.endsWith("/video-performance") ? (
+                                  <PlayCircle size={14} className="shrink-0 text-critical" />
+                                ) : !child.nested && plat ? (
+                                  <PlatformLogo platform={plat} size={14} />
+                                ) : null}
                                 {child.nested && <span className="h-1 w-1 shrink-0 rounded-full bg-text-faint" />}
                                 <span className="truncate">{label(child)}</span>
                               </a>
