@@ -7,12 +7,13 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { MessageCircle, X, Paperclip, Send } from "lucide-react";
 import { useLive } from "@/app/components/LiveData";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { countriesForDisplay } from "@/lib/countries";
 
 interface Msg { id: string; fromSupport: boolean; body: string; imageUrls: string[]; createdAt: string; }
 interface Thread { id: string; subject: string; status: string; messages: Msg[]; }
 
-const COUNTRIES_AR = ["السعودية", "مصر", "الإمارات", "الكويت", "قطر", "البحرين", "عُمان", "الأردن", "المغرب", "أخرى"];
-const COUNTRIES_EN = ["Saudi Arabia", "Egypt", "UAE", "Kuwait", "Qatar", "Bahrain", "Oman", "Jordan", "Morocco", "Other"];
+// نفس مصدر التسجيل: نسختان من قائمة الدول تفترقان حتماً بعد أوّل تعديل
+// على إحداهما، ومن يفتح الدعم من خارج المنطقة كان لا يجد بلده أيضاً.
 const INPUT = "w-full card px-3 py-2 text-sm text-text-primary placeholder:text-text-faint outline-none focus:border-accent";
 
 export function SupportChat({
@@ -41,7 +42,7 @@ export function SupportChat({
   const [thread, setThread] = useState<Thread | null>(null);
   const [unread, setUnread] = useState(0);
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState({ name, email, phone: "", country: COUNTRIES_AR[0], subject: "", text: "" });
+  const [form, setForm] = useState({ name, email, phone: "", country: "", subject: "", text: "" });
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -154,7 +155,10 @@ export function SupportChat({
                 {step === 1 && (
                   <>
                     <select className={INPUT} value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })}>
-                      {(locale === "en" ? COUNTRIES_EN : COUNTRIES_AR).map((c) => <option key={c} value={c}>{c}</option>)}
+                      <option value="">{locale === "en" ? "Country" : "الدولة"}</option>
+                      {countriesForDisplay(locale).map((c) => (
+                        <option key={c.code} value={c.code}>{locale === "en" ? c.en : c.ar}</option>
+                      ))}
                     </select>
                     <input className={INPUT} placeholder={tr("subject")} value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
                   </>

@@ -19,6 +19,7 @@ import { generateVerificationToken, sendVerificationEmail } from "@/lib/emailVer
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { signupSchema, validateOrError } from "@/lib/validation/schemas";
 import { CSRF_COOKIE_NAME, generateCsrfToken } from "@/lib/csrf";
+import { isCountryCode } from "@/lib/countries";
 
 export async function POST(req: NextRequest) {
   // حد استخدام إضافي فوق الكابتشا (دفاع متعدد الطبقات) - حتى لو حد لقى
@@ -108,7 +109,9 @@ export async function POST(req: NextRequest) {
       birthDate: birthDate ? new Date(String(birthDate)) : null,
       howHeard: howHeard || null,
       referralSource: referralSource ? String(referralSource).trim() : null,
-      country: country || null,
+      // الحقل صار رمز ISO من قائمة مغلقة، فيُتحقَّق منه بدل تخزين ما يصل:
+      // نداء مصوغ يدوياً كان سيكتب أيّ نصّ في عمود يُعرض في لوحة الدعم.
+      country: isCountryCode(country) ? String(country) : null,
       adSpendMonthly: adSpendMonthly || null,
       businessScale: businessScale || null,
     },

@@ -133,7 +133,7 @@ export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className={`${FIELD} pe-10`}
+                className={`${FIELD} field-icon-end`}
               />
               <button
                 type="button"

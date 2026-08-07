@@ -16,7 +16,7 @@
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ShieldCheck, ShieldAlert, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ShieldCheck, ShieldAlert, ArrowRight, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { t } from "@/lib/i18n/dictionary";
 import { useAuthLocale } from "@/app/components/useAuthLocale";
 import { PasswordRequirements } from "@/app/components/PasswordRequirements";
@@ -105,6 +105,14 @@ function ResetPasswordInner() {
       onLocaleChange={setLocale}
     >
       <div className="card pad-lg">
+        {/* 🔴 كانت البطاقة تبدأ بحقل كلمة المرور مباشرةً بلا عنوان: يصل
+            المستخدم من رابط في بريده فيجد مربّعاً عارياً لا يقول ما هذه
+            الشاشة ولا لماذا هو فيها - وهي شاشة حسّاسة أصلاً يُفترض أن
+            يتعرّف عليها فوراً. المفتاحان `resetTitle`/`resetSub` موجودان
+            في القاموس باللغتين منذ البداية ولم يكن أحد يستدعيهما. */}
+        <h2 className="mb-1.5 text-center text-[19px] font-bold text-text-primary">{tr("resetTitle")}</h2>
+        <p className="mb-6 text-center text-[13px] leading-relaxed text-text-muted">{tr("resetSub")}</p>
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div className="relative">
             <input
@@ -115,7 +123,7 @@ function ResetPasswordInner() {
               required
               minLength={8}
               autoFocus
-              className={`${FIELD} pe-10`}
+              className={`${FIELD} field-icon-end`}
             />
             <button
               type="button"
@@ -142,7 +150,7 @@ function ResetPasswordInner() {
             href="/login"
             className="inline-flex items-center gap-1.5 text-[12.5px] text-text-muted no-underline transition-colors hover:text-text-primary"
           >
-            <ArrowRight size={13} className="rtl:rotate-180" />
+            <ArrowLeft size={13} className="rtl:rotate-180" />
             {tr("backToLogin")}
           </Link>
         </div>

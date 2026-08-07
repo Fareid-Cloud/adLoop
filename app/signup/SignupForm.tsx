@@ -8,14 +8,15 @@ import { useAuthLocale } from "@/app/components/useAuthLocale";
 import { PasswordRequirements, PasswordMatch } from "@/app/components/PasswordRequirements";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { AuthShell } from "@/app/components/AuthShell";
+import { countriesForDisplay, PRIORITY_COUNTRY_CODES } from "@/lib/countries";
 import { SocialButton, FIELD as F, PRIMARY_BTN as PB } from "@/app/components/AuthControls";
 
 const FIELD = F;
 const PRIMARY_BTN = PB;
 
 const GENDERS = [{ v: "male", ar: "ذكر", en: "Male" }, { v: "female", ar: "أنثى", en: "Female" }];
-const COUNTRIES = ["السعودية", "مصر", "الإمارات", "الكويت", "قطر", "البحرين", "عُمان", "الأردن", "المغرب", "أخرى"];
-const COUNTRIES_EN = ["Saudi Arabia", "Egypt", "UAE", "Kuwait", "Qatar", "Bahrain", "Oman", "Jordan", "Morocco", "Other"];
+// الدول من `lib/countries.ts`: كانت تسع دول عربية مكتوبة هنا، فمن يفتح
+// المنتج من خارج المنطقة لا يجد بلده أصلاً.
 const AD_SPEND = [
   { v: "lt_500", ar: "أقل من 500$", en: "< $500" },
   { v: "500_2k", ar: "500$ – 2000$", en: "$500 – $2K" },
@@ -132,11 +133,11 @@ export function SignupForm() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="relative">
-              <input className={`${FIELD} pe-10`} type={showPw ? "text" : "password"} placeholder={L("كلمة المرور *", "Password *")} value={f.password} onChange={(e) => set("password", e.target.value)} required minLength={8} />
+              <input className={`${FIELD} field-icon-end`} type={showPw ? "text" : "password"} placeholder={L("كلمة المرور *", "Password *")} value={f.password} onChange={(e) => set("password", e.target.value)} required minLength={8} />
               <button type="button" tabIndex={-1} onClick={() => setShowPw((v) => !v)} className="absolute inset-y-0 end-2.5 flex items-center text-text-faint hover:text-text-primary">{showPw ? <EyeOff size={16} /> : <Eye size={16} />}</button>
             </div>
             <div className="relative">
-              <input className={`${FIELD} pe-10`} type={showPw2 ? "text" : "password"} placeholder={L("تأكيد كلمة المرور *", "Confirm password *")} value={f.confirm} onChange={(e) => set("confirm", e.target.value)} required minLength={8} />
+              <input className={`${FIELD} field-icon-end`} type={showPw2 ? "text" : "password"} placeholder={L("تأكيد كلمة المرور *", "Confirm password *")} value={f.confirm} onChange={(e) => set("confirm", e.target.value)} required minLength={8} />
               <button type="button" tabIndex={-1} onClick={() => setShowPw2((v) => !v)} className="absolute inset-y-0 end-2.5 flex items-center text-text-faint hover:text-text-primary">{showPw2 ? <EyeOff size={16} /> : <Eye size={16} />}</button>
             </div>
           </div>
@@ -167,7 +168,18 @@ export function SignupForm() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <select className={FIELD} value={f.country} onChange={(e) => set("country", e.target.value)} required>
               <option value="">{L("الدولة *", "Country *")}</option>
-              {COUNTRIES.map((c, i) => <option key={c} value={c}>{ar ? c : COUNTRIES_EN[i]}</option>)}
+              {/* مجموعتان لا قائمة واحدة: مئتا خيار بلا فاصل تُخفي الأسواق
+                  التي يأتي منها أغلب المسجّلين خلف تمرير طويل. */}
+              <optgroup label={L("الأكثر شيوعاً", "Most common")}>
+                {countriesForDisplay(locale).slice(0, PRIORITY_COUNTRY_CODES.length).map((c) => (
+                  <option key={c.code} value={c.code}>{ar ? c.ar : c.en}</option>
+                ))}
+              </optgroup>
+              <optgroup label={L("كل الدول", "All countries")}>
+                {countriesForDisplay(locale).slice(PRIORITY_COUNTRY_CODES.length).map((c) => (
+                  <option key={c.code} value={c.code}>{ar ? c.ar : c.en}</option>
+                ))}
+              </optgroup>
             </select>
             <select className={FIELD} value={f.adSpendMonthly} onChange={(e) => set("adSpendMonthly", e.target.value)} required>
               <option value="">{L("الإنفاق الإعلاني الشهري *", "Ad spend / month *")}</option>

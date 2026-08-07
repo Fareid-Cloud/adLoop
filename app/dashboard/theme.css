@@ -592,6 +592,17 @@ html, body { overflow-x: clip; }
   outline: none;
   transition: border-color .15s ease, box-shadow .15s ease;
 }
+/* ── حقل يحمل أيقونة ────────────────────────────────────────────────
+   🔴 `padding` في `.field` مختصرة، وهذا الملفّ خارج طبقات أدوات Tailwind -
+   فتغلب أيّ `pl-10`/`pe-10` وتُلغيها بصمت. النتيجة: النصّ يبدأ من ٠٫٨٧٥rem
+   وهو المكان نفسه الذي تجلس فيه الأيقونة، فيتراكبان (كان يحدث في حقل
+   البريد بصفحة الاستعادة، وحقول كلمة المرور الثلاثة).
+   مُعدِّلان في نظام التصميم: يشاركان `.field` الملفّ نفسه فيفوزان بالترتيب،
+   و`padding-inline-*` يتبع اتّجاه الحقل نفسه لا اتّجاه الصفحة - وهذا يهمّ
+   لأنّ حقل البريد `dir="ltr"` دائماً داخل صفحة عربية. */
+.field-icon-start { padding-inline-start: 2.5rem; }
+.field-icon-end   { padding-inline-end: 2.5rem; }
+
 .field::placeholder { color: var(--text-faint); }
 .field:hover:not(:disabled) { border-color: var(--border-hover); }
 /* `outline` على كلّ حالات التركيز: المتصفّح يرسم إطاره الخاصّ على

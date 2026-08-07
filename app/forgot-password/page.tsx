@@ -15,7 +15,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MailCheck, ArrowRight, RotateCcw, Mail } from "lucide-react";
+import { MailCheck, ArrowRight, ArrowLeft, RotateCcw, Mail } from "lucide-react";
 import { t } from "@/lib/i18n/dictionary";
 import { useAuthLocale } from "@/app/components/useAuthLocale";
 import { AuthShell } from "@/app/components/AuthShell";
@@ -110,7 +110,7 @@ export default function ForgotPasswordPage() {
                 required
                 autoFocus
                 dir="ltr"
-                className={`${FIELD} pl-10 text-left`}
+                className={`${FIELD} field-icon-start text-left`}
               />
             </div>
 
@@ -131,7 +131,10 @@ export default function ForgotPasswordPage() {
           </div>
 
           <Link href="/login" className="btn btn-secondary btn-lg btn-block no-underline">
-            <ArrowRight size={15} className="rtl:rotate-180" />
+            {/* سهم إلى الخلف لا إلى الأمام: `ArrowRight` فوق كلمة «رجوع»
+                يشير إلى عكس ما يفعله الرابط. `ArrowLeft` يشير يساراً في
+                الإنجليزية ويُقلب في العربية - فيبقى «خلفاً» في الاتّجاهين. */}
+            <ArrowLeft size={15} className="rtl:rotate-180" />
             {tr("backToLogin")}
           </Link>
         </div>

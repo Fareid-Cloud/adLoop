@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { Send, ImagePlus, X, Loader2 } from "lucide-react";
+// الرمز المخزَّن (SA/EG/…) لا يُعرض خاماً: `countryName` يعيد الاسم،
+// ويعيد الرمز كما هو إن كان مجهولاً - فلا يختفي صفّ قديم بالاسم العربي.
+import { countryName } from "@/lib/countries";
 
 interface Msg { id: string; fromSupport: boolean; body: string; imageUrls: string[]; createdAt: string; }
 interface Thread {
@@ -81,7 +84,7 @@ export function AdminSupportClient({ threads: initial }: { threads: Thread[] }) 
           <div className="border-b border-border p-4 text-sm">
             <div className="font-semibold text-text-primary">{selected.subject}</div>
             <div className="mt-1 text-xs text-text-muted">
-              {selected.name} · {selected.email}{selected.phone ? ` · ${selected.phone}` : ""}{selected.country ? ` · ${selected.country}` : ""}
+              {selected.name} · {selected.email}{selected.phone ? ` · ${selected.phone}` : ""}{selected.country ? ` · ${countryName(selected.country, "ar")}` : ""}
             </div>
           </div>
           <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto p-4">
