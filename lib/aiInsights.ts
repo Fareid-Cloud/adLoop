@@ -52,7 +52,10 @@ export interface AIInsightResult {
 
 export async function generateInsights(
   campaigns: CampaignSummary[],
-  userLanguage: "ar" | "en" = "ar"
+  userLanguage: "ar" | "en" = "ar",
+  /** نموذج الباقة. الافتراضيّ هو نموذج الباقات الأدنى: نداءٌ نسي تمريره
+   *  يكلّف أقلّ ويحلّل أضعف - لا العكس. */
+  model: string = "claude-sonnet-4-6",
 ): Promise<AIInsightResult> {
   const dataForPrompt = JSON.stringify(campaigns, null, 2);
 
@@ -110,7 +113,7 @@ conversation), and inflationRate (the gap between them). Use them like this:
       : `Here is the current campaign data:\n${dataForPrompt}\n\nAnalyze this data and identify: what's working well, what's leaking budget, and the most important action to take right now.`;
 
   const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
+    model,
     // ١٠٠٠ كانت تكفي نقطتين لكلّ محور بالكاد. المدى صار ٣-٥ ومعه محور
     // رابع، والقطع في منتصف JSON يُفقد الردّ كلّه لا آخر نقطة فيه.
     max_tokens: 3200,

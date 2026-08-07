@@ -11,6 +11,8 @@ import { generateInsights, buildCampaignSummaries } from "@/lib/aiInsights";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { t, Locale } from "@/lib/i18n/dictionary";
+import { planModelFor } from "@/lib/plans";
+import { blockAiInDemo } from "@/lib/demo";
 
 export async function POST(
   req: NextRequest,
@@ -27,6 +29,9 @@ export async function POST(
     where: { id: id, userId: user.id },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
+
+  const demoBlock = await blockAiInDemo(workspace.id, (user.preferredLocale as Locale) ?? "ar");
+  if (demoBlock) return demoBlock;
 
   const locale = (user.preferredLocale as Locale) ?? "ar";
 
@@ -71,7 +76,7 @@ export async function POST(
   // بلا هذا الالتفاف كانت استجابة المزوّد الخام تصل إلى المشترك كما هي،
   // بما فيها رسائل الفوترة الخاصة بحسابنا ومعرّف الطلب الداخلي.
   try {
-    const insights = await generateInsights(campaigns, locale);
+    const insights = await generateInsights(campaigns, locale, await planModelFor(user.id));
     return NextResponse.json({
       insights,
       remainingThisMonth: quota.remainingThisMonth,

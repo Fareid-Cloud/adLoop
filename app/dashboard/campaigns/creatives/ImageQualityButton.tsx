@@ -16,11 +16,13 @@ interface QualityResult {
 
 export function ImageQualityButton({
   imageUrl,
-  platform,
+  platform, workspaceId,
   locale = "ar",
 }: {
   imageUrl: string;
   platform: string;
+  /** لازم للخادم ليعرف أنّ الطلب من مساحة عرض تجريبية فيمنع النداء المدفوع */
+  workspaceId: string;
   locale?: Locale;
 }) {
   const [loading, setLoading] = useState(false);
@@ -33,7 +35,7 @@ export function ImageQualityButton({
     const res = await fetch("/api/creatives/quality-check", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageUrl, platform }),
+      body: JSON.stringify({ imageUrl, platform, workspaceId }),
     });
 
     if (res.ok) {

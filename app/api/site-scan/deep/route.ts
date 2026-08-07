@@ -12,6 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { runDeepSiteScan } from "@/lib/siteScanOrchestrator";
 import { checkAndConsumeSiteScanQuota } from "@/lib/aiRateLimit";
+import { blockAiInDemo } from "@/lib/demo";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
@@ -38,6 +39,11 @@ export async function POST(req: NextRequest) {
     where: { id: workspaceId, userId: user.id },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
+
+  // نداء ذكاء اصطناعي حقيقيّ يُصرَف من مساحة عرض: يشتري رأياً في
+  // بيانات مخترعة ويخصم من رصيد المشترك.
+  const demoBlock = await blockAiInDemo(workspace.id, (user.preferredLocale as "ar" | "en") ?? "ar");
+  if (demoBlock) return demoBlock;
 
   const scan = await prisma.siteScanResult.create({
     data: {

@@ -122,22 +122,22 @@ export default async function CreativesPage({
       </div>
 
       <SectionTitle>{tr("best")}</SectionTitle>
-      <CreativeGrid items={ranking.best} accentColor="verified" locale={locale} />
+      <CreativeGrid items={ranking.best} accentColor="verified" locale={locale} workspaceId={workspace.id} />
 
       <SectionTitle>{tr("worst")}</SectionTitle>
-      <CreativeGrid items={ranking.worst} accentColor="critical" locale={locale} />
+      <CreativeGrid items={ranking.worst} accentColor="critical" locale={locale} workspaceId={workspace.id} />
 
       {ranking.fatigued.length > 0 && (
         <>
           <SectionTitle>{tr("fatigued")}</SectionTitle>
-          <CreativeGrid items={ranking.fatigued} accentColor="gap" locale={locale} />
+          <CreativeGrid items={ranking.fatigued} accentColor="gap" locale={locale} workspaceId={workspace.id} />
         </>
       )}
 
       {cplFatiguedAdIds.size > 0 && (
         <>
           <SectionTitle>{tr("lateFatigue")}</SectionTitle>
-          <CreativeGrid items={performances.filter((p) => cplFatiguedAdIds.has(p.adId))} accentColor="gap" locale={locale} />
+          <CreativeGrid items={performances.filter((p) => cplFatiguedAdIds.has(p.adId))} accentColor="gap" locale={locale} workspaceId={workspace.id} />
         </>
       )}
     </div>
@@ -152,10 +152,14 @@ function CreativeGrid({
   items,
   accentColor,
   locale,
+  workspaceId,
 }: {
   items: CreativePerformance[];
   accentColor: "verified" | "critical" | "gap";
   locale: Locale;
+  /** يُمرَّر إلى زرّ فحص الجودة: الخادم يحتاجه ليتحقّق من الملكيّة ويمنع
+   *  النداء المدفوع في مساحة العرض التجريبية. */
+  workspaceId: string;
 }) {
   if (items.length === 0) {
     return <p className="mb-4 text-xs text-text-faint">{t(locale, "creativesPage.notEnough")}</p>;
@@ -172,7 +176,7 @@ function CreativeGrid({
           <div className="text-[10px] text-text-faint">{t(locale, "campPages.crCpaReported")} {!item.usingVerifiedData && ""}</div>
           <div className="mt-1 text-[10px] text-text-faint">CTR: {item.ctr}%</div>
           {item.thumbnailUrl && (
-            <ImageQualityButton imageUrl={item.thumbnailUrl} platform={item.platform} locale={locale} />
+            <ImageQualityButton imageUrl={item.thumbnailUrl} platform={item.platform} workspaceId={workspaceId} locale={locale} />
           )}
         </div>
       ))}

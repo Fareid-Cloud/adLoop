@@ -162,3 +162,34 @@ export async function isDemoExpired(workspaceId: string): Promise<boolean> {
   if (!ws?.isDemo) return false;
   return !!ws.demoExpiresAt && ws.demoExpiresAt < new Date();
 }
+
+/**
+ * ردّ موحَّد لمنع نداء الذكاء الاصطناعي في مساحة العرض التجريبية.
+ *
+ * أرقام العرض أمثلة، فتحليلها بنداء مدفوع يشتري رأياً في بيانات مخترعة
+ * ويخصم من رصيد المشترك. يُعاد `null` حين يُسمح بالمتابعة، وإلّا استجابة
+ * جاهزة تُعاد كما هي.
+ *
+ * **لماذا رسالة لا صمت:** الزرّ يبقى ظاهراً في العرض - فزرٌّ يُضغَط ولا
+ * يردّ أسوأ من زرٍّ يقول سببه ويدلّ على الخطوة التالية.
+ */
+export async function blockAiInDemo(
+  workspaceId: string,
+  locale: "ar" | "en",
+): Promise<Response | null> {
+  const ws = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { isDemo: true },
+  });
+  if (!ws?.isDemo) return null;
+
+  return Response.json(
+    {
+      error:
+        locale === "en"
+          ? "AI analysis is disabled in the demo workspace — its figures are examples, not real data. Connect an ad account to run it on yours."
+          : "تحليل الذكاء الاصطناعي معطَّل في مساحة العرض التجريبية - أرقامها أمثلة لا بيانات حقيقية. اربط حساب إعلانات لتشغيله على أرقامك.",
+    },
+    { status: 403 },
+  );
+}

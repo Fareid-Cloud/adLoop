@@ -27,6 +27,9 @@ export interface PlanLimits {
   stores: number;
   aiCredits: number;
   deepScans: number;
+  /** نموذج Claude لهذه الباقة. الباقات الأعلى على الأحدث - الفرق يظهر في
+   *  عمق التحليل، وهو ما تدفع الباقة الأعلى من أجله. */
+  aiModel: string;
   savedViews: number;
   scheduledReports: boolean;
 }
@@ -53,7 +56,7 @@ export const PLANS: Plan[] = [
     limits: {
       workspaces: 1, platforms: 1, monthlySpendUsd: 2_000, verifiedConversions: 200,
       historyMonths: 1, conversionSync: "none", automationRules: 0, scaleKill: "view",
-      stores: 0, aiCredits: 0, deepScans: 0, savedViews: 1, scheduledReports: false,
+      stores: 0, aiCredits: 0, deepScans: 0, aiModel: "claude-sonnet-4-6", savedViews: 1, scheduledReports: false,
     },
   },
   {
@@ -64,7 +67,7 @@ export const PLANS: Plan[] = [
     limits: {
       workspaces: 1, platforms: "all", monthlySpendUsd: 15_000, verifiedConversions: 2_000,
       historyMonths: 12, conversionSync: "one", automationRules: 3, scaleKill: "apply",
-      stores: 1, aiCredits: 50, deepScans: 0, savedViews: 5, scheduledReports: true,
+      stores: 1, aiCredits: 50, deepScans: 0, aiModel: "claude-sonnet-4-6", savedViews: 5, scheduledReports: true,
     },
   },
   {
@@ -77,7 +80,7 @@ export const PLANS: Plan[] = [
     limits: {
       workspaces: 3, platforms: "all", monthlySpendUsd: 60_000, verifiedConversions: 10_000,
       historyMonths: 24, conversionSync: "all", automationRules: 15, scaleKill: "apply",
-      stores: 3, aiCredits: 200, deepScans: 5, savedViews: -1, scheduledReports: true,
+      stores: 3, aiCredits: 200, deepScans: 5, aiModel: "claude-sonnet-5", savedViews: -1, scheduledReports: true,
     },
   },
   {
@@ -88,7 +91,7 @@ export const PLANS: Plan[] = [
     limits: {
       workspaces: 15, platforms: "all", monthlySpendUsd: 250_000, verifiedConversions: 50_000,
       historyMonths: 24, conversionSync: "all", automationRules: -1, scaleKill: "apply",
-      stores: 15, aiCredits: 600, deepScans: 20, savedViews: -1, scheduledReports: true,
+      stores: 15, aiCredits: 600, deepScans: 20, aiModel: "claude-sonnet-5", savedViews: -1, scheduledReports: true,
     },
   },
 ];
@@ -166,4 +169,21 @@ export function planPrice(plan: Plan, currency: BillingCurrency, cycle: BillingC
 /** ما يُقارَن به السعر السنوي في الواجهة - قيمة الخصم لا نسبته المجرّدة */
 export function yearlySaving(plan: Plan, currency: BillingCurrency): number {
   return plan.price[currency] * (12 - YEARLY_MONTHS_CHARGED);
+}
+
+/**
+ * نموذج Claude الذي تستحقّه باقة هذا المستخدم.
+ *
+ * الباقات الأعلى على النموذج الأحدث: الفرق يظهر في عمق التحليل، وهو جزء
+ * ممّا تدفع الباقة الأعلى ثمنه. والباقة المجهولة تقع على الأدنى لا الأعلى -
+ * خطأ القراءة يجب أن يكلّف أقلّ، لا أن يمنح ما لم يُدفع فيه.
+ */
+export async function planModelFor(userId: string): Promise<string> {
+  const { prisma } = await import("@/lib/prisma");
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { subscriptionPlan: true },
+  });
+  const plan = PLAN_BY_KEY.get((user?.subscriptionPlan as PlanKey) ?? "starter");
+  return plan?.limits.aiModel ?? "claude-sonnet-4-6";
 }

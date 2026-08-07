@@ -49,7 +49,13 @@ export async function checkAndConsumeAIRefreshQuota(
   // `checkCredits` هي مصدر الحقيقة لحساب «مخصّص الباقة + المشترى». كتابة
   // الحساب هنا مرّة ثانية تعني رقمين يفترقان عند أوّل تعديل في الباقات.
   const credits = await checkCredits(userId, 0);
-  const effectiveMonthly = Math.min(MONTHLY_LIMIT, credits.left);
+  // 🔴 كان `Math.min(MONTHLY_LIMIT, credits.left)`: سقف مسطّح ٨٠ فوق كلّ
+  // باقة. فباقة Agency تَعِد بستّمئة تحليل وتُسلّم ثمانين - أي أنّ ما يدفع
+  // فيه العميل رقمٌ لا يصل إليه. الرصيد المُعلَن صار هو الرصيد الفعليّ.
+  //
+  // الحماية من الاستنزاف لم تسقط، انتقلت إلى محلّها: حدّ **معدّل** بالساعة
+  // (تحت) يوقف الحلقة الجامحة، بينما السقف الشهريّ يحترم ما بيع فعلاً.
+  const effectiveMonthly = credits.left;
 
   const now = new Date();
 

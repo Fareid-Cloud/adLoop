@@ -159,9 +159,13 @@ export async function runDailyDiagnosticsForWorkspace(workspaceId: string, local
     // أي حد أقصى خالص - لو المستخدم عنده كذا Workspace، كل واحد كان بيستهلك
     // Claude يومياً بلا سقف. بقى بياخد من نفس رصيد المستخدم المشترك (زرار
     // التحديث اليدوي) - سقف واحد حقيقي، مش اتنين منفصلين
-    const quota = await checkAndConsumeAIRefreshQuota(workspace.userId);
+    // مساحة العمل التجريبية لا تُنفق شيئاً حقيقياً: أرقامها أمثلة، فتحليلها
+    // بنداء مدفوع يشتري رأياً في بيانات مخترعة. العرض يبقى، الإنفاق لا.
+    const quota = workspace.isDemo
+      ? { allowed: false as const }
+      : await checkAndConsumeAIRefreshQuota(workspace.userId);
     if (quota.allowed) {
-      aiTasks = await generateAITask(summaries);
+      aiTasks = await generateAITask(summaries, await planModelFor(workspace.userId));
     }
   }
 
@@ -354,13 +358,15 @@ function daysSince(date: Date | null): number | null {
 // في القائمة اليومية، بدل ما يفضل مجرد جملة في تقرير محدش بيرجعله.
 
 import { generateInsights, buildCampaignSummaries } from "@/lib/aiInsights";
+import { planModelFor } from "@/lib/plans";
 
 export async function generateAITask(
-  campaigns: CampaignSummary[]
+  campaigns: CampaignSummary[],
+  model?: string,
 ): Promise<Array<{ title: string; category: string; priority: string }>> {
   if (campaigns.length === 0) return [];
 
-  const insights = await generateInsights(campaigns);
+  const insights = await generateInsights(campaigns, "ar", model);
 
   // 🔴 كان يأخذ `nextAction` وحده ويهمل الباقي: النداء نفسه يستهلك رصيد
   // المستخدم المحدود ويعيد أربعة محاور، فكان ثلاثة أرباع ما دُفع ثمنه
