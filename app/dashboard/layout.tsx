@@ -119,13 +119,13 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   const workspaceLimit = entitlements?.limits.workspaces ?? 1;
 
-  let allWorkspaces: Array<{ id: string; name: string; currency: string }> = [];
+  let allWorkspaces: Array<{ id: string; name: string; currency: string; isDemo: boolean }> = [];
   if (user) {
     try {
       allWorkspaces = await prisma.workspace.findMany({
         where: { userId: user.id },
         orderBy: { createdAt: "asc" },
-        select: { id: true, name: true, currency: true },
+        select: { id: true, name: true, currency: true, isDemo: true },
       });
     } catch (err) {
       console.error("[layout] تعذّر جلب مساحات العمل:", err);

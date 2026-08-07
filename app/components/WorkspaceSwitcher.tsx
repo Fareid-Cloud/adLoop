@@ -6,13 +6,15 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronsUpDown, Plus, Check, ShieldCheck, X, Loader2, Sparkles } from "lucide-react";
+import { ChevronsUpDown, Plus, Check, ShieldCheck, X, Loader2, Sparkles , FlaskConical } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export interface WorkspaceOption {
   id: string;
   name: string;
   currency: string;
+  /** مساحة عرض تجريبية: أرقامها أمثلة لا بيانات حقيقية */
+  isDemo?: boolean;
 }
 
 export function WorkspaceSwitcher({
@@ -163,6 +165,24 @@ export function WorkspaceSwitcher({
                     {tr("upgrade")}
                   </a>
                 </div>
+              )}
+
+              {/* 🔴 مدخل الديمو: الآلية كاملةً موجودة (`/demo` وبذرتها) ولا
+                  رابط إليها من أيّ موضع في المنتج، فكانت ميزةً مبنيّةً لا
+                  يصل إليها أحد. تظهر لمن لا يملك مساحة عرض بعد فقط: مَن
+                  جرّبها لا يحتاج الرابط، ووجوده يزدحم عليه بلا فائدة.
+                  وهي خارج حدّ الباقة لأنّها ليست مساحة عمل يُنتَج فيها. */}
+              {!workspaces.some((w) => w.isDemo) && (
+                <a
+                  href="/demo"
+                  className="flex items-center gap-2 border-t border-border p-2.5 text-[12.5px] text-text-muted no-underline hover:bg-surface-raised hover:text-text-primary"
+                >
+                  <FlaskConical size={14} className="shrink-0 text-accent" />
+                  <span className="min-w-0">
+                    <span className="block truncate">{tr("tryDemo")}</span>
+                    <span className="block truncate text-[11px] text-text-faint">{tr("tryDemoHint")}</span>
+                  </span>
+                </a>
               )}
             </div>
           </div>

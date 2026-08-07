@@ -65,6 +65,8 @@ export const dictionary = {
     dashboard: {
       workspaces: "مساحات العمل",
       newWorkspace: "مساحة عمل جديدة",
+      tryDemo: "جرّب على بيانات عرض",
+      tryDemoHint: "أرقام أمثلة - لا تربط حساباً",
       metrics: {
         impressions: "مرات الظهور",
         clicks: "النقرات",
@@ -4897,6 +4899,8 @@ export const dictionary = {
       creating: "Creating...",
       create: "Create",
       newWorkspace: "New workspace",
+      tryDemo: "Try it on demo data",
+      tryDemoHint: "Example figures, no account to connect",
       limitOne: "one workspace",
       limitN: "{n} workspaces",
       limitReached: "You have reached your plan's limit ({limit}).",
