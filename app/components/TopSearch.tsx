@@ -46,7 +46,7 @@ export function TopSearch({ locale }: { locale: "ar" | "en" }) {
         onFocus={() => setOpen(true)}
         onChange={(e) => { setQ(e.target.value); setOpen(true); }}
         placeholder={ar ? t(locale, "ui.searchPlaceholder") : "Search campaigns, sources, or metrics..."}
-        className="field card-shadow w-full ps-9 pe-14"
+        className="field field-icon-start field-icon-end card-shadow w-full"
       />
       <span className="pointer-events-none absolute inset-y-0 end-2.5 my-auto flex h-5 items-center rounded-md border border-border px-1.5 text-[10px] text-text-faint">⌘ K</span>
 

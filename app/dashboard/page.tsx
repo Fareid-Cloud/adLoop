@@ -299,7 +299,13 @@ export default async function GlancePage({
 
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
+      {/* 🔴 اسم مساحة العمل يُخفى حين يطابق اسم المستخدم: المساحة الافتراضية
+          تُسمّى باسم صاحبها عند التسجيل، فيظهر «عبد الرحمن محمد فريد» سطراً
+          فوق «أهلاً عبد الرحمن» - تكرارٌ يُقرأ كخلل لا كسياق. السطر مفيدٌ
+          فقط حين يميّز: مَن يملك أكثر من مساحة يحتاج أن يعرف في أيّها هو. */}
+      {workspace.name !== user.name && (
+        <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
+      )}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="page-title">{tr("greeting", { name: firstName })}</h1>
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />

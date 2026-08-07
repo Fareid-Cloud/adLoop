@@ -82,7 +82,12 @@ export function SetupProgressPanel({
                   s.done ? "bg-verified text-white" : isNext ? "bg-accent text-white" : "border border-border bg-surface-raised text-text-faint"
                 }`}
               >
-                {s.done ? <Check size={11} /> : i + 1}
+                {/* 🔴 كانت `s.done ? <Check/> : i + 1`، فيبتلع المكتملُ رقمَه
+                    ويُقرأ التسلسل ١ ٢ ٣ ٤ ٥ ✓ ٧ - رقمٌ ضائع يبدو خطأً في
+                    الترقيم لا خطوةً منجَزة. الرقم موضعٌ في المسار والعلامة
+                    حالة: معلومتان مختلفتان، والشارة كانت تحمل واحدةً فقط.
+                    الرقم يبقى، والخلفية الخضراء وحدها تقول إنّها تمّت. */}
+                {i + 1}
               </span>
               <span className="min-w-0 flex-1">
                 <span className={`block truncate text-[12.5px] font-medium ${s.done ? "text-text-muted" : "text-text-primary"}`}>
