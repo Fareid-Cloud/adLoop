@@ -13,6 +13,7 @@
 import type { ReactNode } from "react";
 import { Search, ShieldCheck, RefreshCw } from "lucide-react";
 import type { Locale } from "@/lib/i18n/dictionary";
+import { BrandMark } from "@/app/components/BrandMark";
 import { LegalLinks } from "@/app/components/LegalLinks";
 
 // نصّ شاشة الحساب: المستخدم هنا **قرّر بالفعل** - جاء ليكتب لا ليقرأ.
@@ -84,9 +85,9 @@ export function AuthShell({
             موضوعها. الشعار وحده يبقى في الأعلى بموضع مطلق. */}
         <div className="absolute inset-x-0 top-0 z-10 p-10 xl:p-12">
           <div className="flex items-center gap-2.5">
-            <span className="btn btn-primary btn-icon font-bold">
-              A
-            </span>
+            {/* كان حرف «A» مكتوباً نصّاً داخل مربّع - علامة مرسومة بالكود
+                لا تتطابق مع ملفّ الشعار ولا تتغيّر بتغيّره. */}
+            <BrandMark size={36} />
             <span className="text-[19px] font-bold tracking-tight text-white">AdLoop</span>
           </div>
         </div>

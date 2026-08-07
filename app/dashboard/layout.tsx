@@ -279,6 +279,23 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           )}
           </div>
         </div>
+        {/* 🔴 شريط الاشتراك كان **تحت** صفّ العمودين لا داخله، وهذا سببُ
+            عطلين معاً: (١) يمتدّ بعرض الشاشة كلّها فيمرّ تحت الشريط الجانبيّ
+            لا داخل عمود المحتوى، (٢) والأهمّ: عنصر `sticky` يتوقّف عند حدّ
+            حاوِيه، فوجودُ أيّ شيء أسفل الصفّ يعني أنّ الصفّ ينتهي قبل نهاية
+            الصفحة - فيُدفع الشريط الجانبيّ إلى أعلى بمقدار ارتفاع هذا الشريط
+            عند الوصول لآخر الصفحة، ويظهر أسفله قطعٌ بلون الخلفية.
+            القاعدة: لا شيء في التدفّق بعد صفّ العمودين. */}
+        {entitlements && !demoWs && (
+          <div className="px-4 pb-1 sm:px-6 lg:px-10">
+            <TrialBar
+              state={entitlements.state}
+              trialDaysLeft={entitlements.trialDaysLeft}
+              planKey={entitlements.planKey}
+              locale={locale}
+            />
+          </div>
+        )}
         <div className="flex-1 px-4 pb-10 sm:px-6 lg:px-10">{children}</div>
 
         {/* تذييل قانوني في كلّ صفحة داخل اللوحة: الصفحات الثلاث كانت
@@ -293,18 +310,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           دخل المستخدم ليراه - نقيض غرض الديمو. صار شارة `DEMO` جنب
           الشعار، وتفاصيلها عند المرور عليها. */}
 
-      {/* شريط الاشتراك لا يظهر داخل الديمو: بيع اشتراك فوق بيانات وهمية
-          يخلط رسالتين لا علاقة بينهما */}
-      {entitlements && !demoWs && (
-        <div className="px-10 pt-4">
-          <TrialBar
-            state={entitlements.state}
-            trialDaysLeft={entitlements.trialDaysLeft}
-            planKey={entitlements.planKey}
-            locale={locale}
-          />
-        </div>
-      )}
+      {/* شريط الاشتراك انتقل إلى داخل عمود المحتوى أعلاه. لا يظهر داخل
+          الديمو: بيع اشتراك فوق بيانات أمثلة يخلط رسالتين لا علاقة بينهما. */}
 
       {showOnboarding && activeWorkspace && onboardingState && (
         <WelcomeGate

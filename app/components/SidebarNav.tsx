@@ -3,12 +3,15 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Megaphone, Tag, ScanSearch, Stethoscope, ListChecks,
-  FlaskConical, Bot, FileBarChart, Settings as SettingsIcon, CreditCard,
-  ChevronDown, PanelLeftClose, PanelLeftOpen, Search, PlayCircle,
+  // `LayoutDashboard` مستوردة كنوعٍ فقط (توقيع `resolveIcon`). بقيّة الأسماء
+  // هنا مستعملة في JSX - ما عداها كان بقايا خريطة الأيقونات اليدوية القديمة.
+  LayoutDashboard,
+  ChevronDown, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
+  Search, PlayCircle,
 } from "lucide-react";
 import * as Icons from "lucide-react";
 import { NAV_GROUPS, type NavItem } from "@/lib/navConfig";
+import { BrandMark } from "@/app/components/BrandMark";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
@@ -83,6 +86,12 @@ export function SidebarNav({
 
   const label = (o: { labelAr: string; labelEn: string }) => (ar ? o.labelAr : o.labelEn);
 
+  // أيقونة الطيّ تتبع جهة الشريط لا لغةً بعينها: في العربية هو على اليمين،
+  // فأيقونة «لوحة يسرى» تشير إلى الجهة الخطأ وتقرأ عكس ما يفعله الزرّ.
+  const CollapseIcon = ar
+    ? collapsed ? PanelRightOpen : PanelRightClose
+    : collapsed ? PanelLeftOpen : PanelLeftClose;
+
   function isItemActiveOrInside(item: NavItem): boolean {
     if (pathname === item.href) return true;
     return item.children?.some((c) => pathname === c.href || pathname.startsWith(c.href + "/")) ?? false;
@@ -139,13 +148,10 @@ export function SidebarNav({
           href="/dashboard"
           className={`flex w-full items-center gap-2 no-underline ${collapsed ? "justify-center px-0" : "px-2"}`}
         >
-          {/* 🔴 كان `btn btn-primary h-7 w-7` بلا `btn-icon`: و`.btn` تحمل
-              حشوةً أفقيةً ١٫١٥rem، أي ٣٧ بكسل داخل مربّع عرضه ٢٨ - فتُدفع
-              الأيقونة خارج حدّه ويبقى مربّعٌ أزرق فارغ. `btn-icon` تصفّر
-              الحشوة، وهي موجودة في نظام التصميم لهذه الحالة بالذات. */}
-          <span className="btn btn-primary btn-icon h-7 w-7">
-            <ListChecks size={15} />
-          </span>
+          {/* الشعار من `public/` لا مرسوماً بالكود: كان مربّعاً أزرق بأيقونة
+              قائمة مهامّ لا علاقة لها بالعلامة، بينما ملفّ الشعار الحقيقيّ
+              موجود ولا يستعمله شيء - فتعديله لا يظهر. راجع `BrandMark`. */}
+          <BrandMark size={28} />
           {!collapsed && (
             <span className="text-[16px] font-bold tracking-tight text-text-primary">AdLoop</span>
           )}
@@ -310,13 +316,18 @@ export function SidebarNav({
         {/* الدعم الفني كعنصر في القائمة (بدل الزر العائم) */}
         {supportSlot && !collapsed && <div className="border-t border-border pt-3">{supportSlot}</div>}
 
+        {/* 🔴 نفس فخّ `.btn` الذي تكرّر في المنتج: حشوتها الأفقية ١٫١٥rem
+            (٣٧ بكسل للجانبين) داخل شريط مطويّ عرضه ٦٨ ناقص حشوته ٢٤ = ٤٤
+            بكسل متاحة، فتُسحق الأيقونة وتُقصّ. `btn-icon` تصفّر الحشوة وتثبّت
+            المربّع - وهي الحالة التي وُضعت لها في نظام التصميم. */}
         <button
           onClick={toggleCollapse}
-          title={collapsed ? (ar ? t(locale, "sidebar.expandMenu") : "Expand") : (ar ? t(locale, "sidebar.collapseMenu") : "Collapse")}
-          className="btn btn-secondary mt-2 py-[7px] text-text-faint"
+          title={t(locale, collapsed ? "sidebar.expandMenu" : "sidebar.collapseMenu")}
+          aria-label={t(locale, collapsed ? "sidebar.expandMenu" : "sidebar.collapseMenu")}
+          className={`btn btn-secondary mt-2 text-text-faint ${collapsed ? "btn-icon mx-auto" : "py-[7px]"}`}
         >
-          {collapsed ? <PanelLeftOpen size={16} strokeWidth={1.75} /> : <PanelLeftClose size={16} strokeWidth={1.75} />}
-          {!collapsed && <span>{ar ? t(locale, "sidebar.collapseMenu") : "Collapse"}</span>}
+          <CollapseIcon size={16} strokeWidth={1.75} />
+          {!collapsed && <span>{t(locale, "sidebar.collapseMenu")}</span>}
         </button>
       </nav>
     </aside>
