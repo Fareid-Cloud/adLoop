@@ -9,6 +9,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { getUsageState } from "@/lib/usageCaps";
+import { t } from "@/lib/i18n/dictionary";
 
 export const maxDuration = 60;
 
@@ -39,6 +41,33 @@ export async function POST(
     return NextResponse.json(
       { error: "لا توجد حملات مرتبطة بعد. اختر حملاتك أولاً ثم شغّل المزامنة." },
       { status: 400 }
+    );
+  }
+
+  // 🛑 السقف يسري على الزرّ اليدويّ كما يسري على الكرون. بدون هذا يصير
+  // «الزرّ» بابَ التفافٍ يُبطل الحدّ كلّه: من بلغ سقفه يضغط مزامنة فتعمل.
+  //
+  // الرسالة تقول ما توقّف والرقم الذي أوقفه وما الذي يعيده، وترافقها وجهةٌ
+  // جاهزة - القاعدة الحاكمة: نقطةٌ تمنع المستخدم تحمل معها الحلّ.
+  const usage = await getUsageState(user.id);
+  if (usage.blocked) {
+    const locale = (user.preferredLocale as "ar" | "en") ?? "ar";
+    return NextResponse.json(
+      {
+        error: t(
+          locale,
+          usage.reason === "spend" ? "alerts.usageBlockedSpendBody" : "alerts.usageBlockedConvBody",
+          {
+            spend: usage.spendUsd.toLocaleString("en-US"),
+            spendLimit: usage.spendLimitUsd.toLocaleString("en-US"),
+            conv: usage.verifiedConversions.toLocaleString("en-US"),
+            convLimit: usage.verifiedLimit.toLocaleString("en-US"),
+          }
+        ),
+        limit: "usage",
+        upgradeUrl: "/dashboard/billing",
+      },
+      { status: 402 }
     );
   }
 

@@ -2764,6 +2764,14 @@ export const dictionary = {
       expirySoonBody: "بقي {days} يوماً على انتهاء اشتراكك - جدّده حتى لا تتوقّف الميزات.",
       expiredTitle: "انتهى اشتراكك",
       expiredBody: "جدّد اشتراكك لتعود إلى استخدام AdLoop بكامل ميزاته.",
+      // ==== سقفا الاستهلاك الشهريّ ====
+      // النصّ يقول ما توقّف، وبأيّ رقم، وما الذي يُعيده - لا «بلغتَ الحدّ»
+      // مجرّدةً تترك المستخدم يبحث عن معناها.
+      usageWarnTitle: "اقتربت من حدّ باقتك الشهريّ",
+      usageWarnBody: "استهلكت {pct}% من حدّ هذا الشهر. عند بلوغ الحدّ تتوقّف مزامنة بياناتك الجديدة حتى بداية الشهر القادم أو حتى ترقية الباقة. وكلّ ما وصل حتى الآن يبقى معروضاً كما هو.",
+      usageBlockedTitle: "توقّفت مزامنة بياناتك الجديدة",
+      usageBlockedSpendBody: "بلغ الإنفاق المُدار {spend} دولاراً من {spendLimit} في باقتك هذا الشهر، فتوقّف سحب البيانات الجديدة. بياناتك المحفوظة كلّها باقية ولم يُحذف منها شيء. تعود المزامنة تلقائياً مع بداية الشهر القادم، أو فور ترقية الباقة.",
+      usageBlockedConvBody: "بلغت التحويلات المتحقَّقة {conv} من {convLimit} في باقتك هذا الشهر، فتوقّف سحب البيانات الجديدة. بياناتك المحفوظة كلّها باقية ولم يُحذف منها شيء. تعود المزامنة تلقائياً مع بداية الشهر القادم، أو فور ترقية الباقة.",
       paymentFailedTitle: "فشل الدفع - حدّث بيانات الدفع",
       paymentFailedBody: "فشلت آخر محاولة تجديد. حدّث طريقة الدفع سريعاً قبل أن يتوقّف اشتراكك تلقائياً.",
       singleTouchTitle: "نسبة اللمسة الواحدة ارتفعت بشكل ملحوظ",
@@ -5100,6 +5108,11 @@ export const dictionary = {
       expirySoonBody: "{days} days left on your subscription - renew so nothing stops working.",
       expiredTitle: "Your subscription has expired",
       expiredBody: "Renew your subscription to get AdLoop's full feature set back.",
+      usageWarnTitle: "You are close to your monthly plan limit",
+      usageWarnBody: "You have used {pct}% of this month's limit. Once you reach it, syncing new data pauses until next month starts or you upgrade. Everything already collected stays exactly as it is.",
+      usageBlockedTitle: "Syncing new data has paused",
+      usageBlockedSpendBody: "Managed spend reached ${spend} of ${spendLimit} on your plan this month, so pulling new data has paused. All of your stored data remains untouched. Syncing resumes automatically when the next month begins, or the moment you upgrade.",
+      usageBlockedConvBody: "Verified conversions reached {conv} of {convLimit} on your plan this month, so pulling new data has paused. All of your stored data remains untouched. Syncing resumes automatically when the next month begins, or the moment you upgrade.",
       paymentFailedTitle: "Payment failed - update your payment details",
       paymentFailedBody: "The last renewal attempt failed. Update your payment method soon, before your subscription stops automatically.",
       singleTouchTitle: "Single-touch share has risen noticeably",

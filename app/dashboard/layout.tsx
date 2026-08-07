@@ -26,6 +26,8 @@ import { SidebarNav } from "@/app/components/SidebarNav";
 import { WorkspaceSwitcher } from "@/app/components/WorkspaceSwitcher";
 import { getEntitlements } from "@/lib/entitlements";
 import { TrialBar } from "@/app/components/TrialBar";
+import { UsageCapBar } from "@/app/components/UsageCapBar";
+import { getUsageState } from "@/lib/usageCaps";
 import { DemoBadge } from "@/app/components/DemoBadge";
 import { getMonthlyAiUsage } from "@/lib/aiRateLimit";
 import { ThemeModeToggle } from "@/app/components/ThemeModeToggle";
@@ -153,6 +155,16 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   // عدّادات الأقسام - استعلام واحد خفيف، وفشله يُخفيها ولا يُسقط اللوحة
   const navBadges = await getNavBadges(activeWorkspace?.id ?? null);
+
+  // حالة سقف الاستهلاك: قراءة صفّ واحد بمفتاحه (القياس نفسه يجري في الكرون
+  // مرّةً يومياً، لا هنا). فشلها يُخفي الشريط ولا يُسقط اللوحة - وهذا الملفّ
+  // يلفّ كلّ صفحات المنتج، فأيّ خطأ يُرمى منه يُسقطها جميعاً.
+  const usage = user
+    ? await getUsageState(user.id).catch((err) => {
+        console.error("[layout] تعذّرت قراءة حالة سقف الاستهلاك:", err);
+        return null;
+      })
+    : null;
 
   const demoDaysLeft = demoWs?.demoExpiresAt
     ? Math.max(0, Math.ceil((demoWs.demoExpiresAt.getTime() - Date.now()) / 86_400_000))
@@ -294,6 +306,14 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             الصفحة - فيُدفع الشريط الجانبيّ إلى أعلى بمقدار ارتفاع هذا الشريط
             عند الوصول لآخر الصفحة، ويظهر أسفله قطعٌ بلون الخلفية.
             القاعدة: لا شيء في التدفّق بعد صفّ العمودين. */}
+        {/* سقف الاستهلاك فوق شريط الاشتراك: توقّف المزامنة يعني أن كل رقم
+            تحته لم يعد يتحدّث - وهي معلومة تسبق كلّ ما في الصفحة. لا يظهر
+            داخل الديمو: أرقامه أمثلة لا تُقاس ولا تُحاسَب. */}
+        {usage && !demoWs && (
+          <div className="px-4 pt-1 sm:px-6 lg:px-10">
+            <UsageCapBar state={usage} locale={locale} />
+          </div>
+        )}
         {entitlements && !demoWs && (
           <div className="px-4 pb-1 sm:px-6 lg:px-10">
             <TrialBar

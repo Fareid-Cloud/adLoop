@@ -34,6 +34,7 @@ import { runAutomationForWorkspace } from "@/lib/automationRules";
 import { checkExpiringConnections } from "@/lib/connectionHealthCheck";
 import { purgeExpiredData } from "@/lib/dataRetention";
 import { ownerLocaleFor } from "@/lib/workspaceLocale";
+import { isSyncBlocked, refreshUsageAndNotify } from "@/lib/usageCaps";
 
 // أزواج العملات المدعومة في اختيار "العملة" بصفحة الإعدادات - بنسجل
 // سعرها يومياً كلهم مع بعض، بدل ما نحاول نحدد عملة فوترة كل حساب Google
@@ -104,13 +105,34 @@ export async function GET(req: NextRequest) {
     distinct: ["workspaceId"],
   });
 
-  const results: Array<{ workspaceId: string; status: "ok" | "failed"; error?: string }> = [];
+  // مالك كلّ مساحة: سقفا الاستهلاك على المستخدم لا على المساحة (الاشتراك
+  // على المستخدم، وباقة الوكالات تجمع خمس عشرة مساحة تحت سقف واحد).
+  const owners = new Map<string, string>();
+  for (const { workspaceId } of workspaceIds) {
+    const ws = await prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { userId: true },
+    });
+    if (ws) owners.set(workspaceId, ws.userId);
+  }
+
+  const results: Array<{ workspaceId: string; status: "ok" | "failed" | "capped"; error?: string }> = [];
 
   // بالتتابع مش بالتوازي - عشان منضربش Google Ads API بحمل زيادة، وعشان
   // لو حساب واحد فشل، الباقي يكمل عادي من غير ما نستهلك كل الوقت المتاح
   // للـ function في محاولات فاشلة متوازية
   for (const { workspaceId } of workspaceIds) {
     try {
+      // 🛑 سقف الاستهلاك يسبق كلّ شيء: مساحةٌ لمستخدمٍ بلغ سقفه لا تُزامَن
+      // إطلاقاً هذه الدورة. الفحص هنا لا داخل كلّ دالّة مزامنة على حدة -
+      // فحصٌ واحد يغطّي الأربعين نداءً تحته، ولا يمكن أن يُنسى في نداءٍ
+      // جديد يُضاف لاحقاً. القراءة من قيمة مخزَّنة فلا تكلّف تجميعاً.
+      const ownerId = owners.get(workspaceId);
+      if (ownerId && (await isSyncBlocked(ownerId))) {
+        results.push({ workspaceId, status: "capped" });
+        continue;
+      }
+
       // الترتيب مهم: المزامنة الأول (بيانات جديدة)، بعدين التشخيص (بيبني
       // على البيانات دي)، بعدين الأتمتة (بتبني على نتيجة التشخيص أحياناً)
       //
@@ -215,8 +237,22 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // ===== قياس الاستهلاك الشهريّ =====
+  // **بعد المزامنة لا قبلها:** القياس على بيانات ما قبل التشغيل يجعل
+  // التجاوز يظهر بعد يومٍ كامل من وقوعه، فيُسحب إنفاق يومٍ زائد عن السقف
+  // قبل أن يعرف أحد. وهنا أيضاً تُطلق تنبيهات الاقتراب والتوقّف.
+  const uniqueOwners = new Set(owners.values());
+  for (const userId of uniqueOwners) {
+    try {
+      await refreshUsageAndNotify(userId);
+    } catch (err) {
+      console.error(`فشل قياس استهلاك المستخدم ${userId}:`, err);
+    }
+  }
+
   const succeeded = results.filter((r) => r.status === "ok").length;
   const failed = results.filter((r) => r.status === "failed").length;
+  const capped = results.filter((r) => r.status === "capped").length;
 
   await prisma.cronRunLog.create({
     data: {
@@ -230,5 +266,5 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  return NextResponse.json({ processed: results.length, pricingChecked, results });
+  return NextResponse.json({ processed: results.length, capped, pricingChecked, results });
 }
