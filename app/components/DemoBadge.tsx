@@ -47,9 +47,18 @@ export function DemoBadge({
       </button>
 
       {open && (
-        // `end-auto start-0` يثبّتها تحت الشارة في الاتجاهين - لوحة تُقصّ
-        // خارج الشاشة في العربية عيبٌ رأيناه في الجرس من قبل.
-        <div className="pop-shadow fixed inset-x-4 top-16 z-50 card pad-md sm:absolute sm:inset-x-auto sm:start-0 sm:top-full sm:mt-2 sm:w-[290px]">
+        // 🔴 `fixed` في كلّ المقاسات، ولا `absolute` بعد `sm`.
+        //
+        // الشارة تعيش الآن داخل صفّ شعار الشريط الجانبيّ، و`<aside>` عليه
+        // `overflow-hidden` (يلزمه: بدونه يفيض محتوى القائمة خارج حدّه).
+        // فاللوحة الموضوعة `absolute` نسبةً إلى الشارة تُقصّ عند حدّ الشريط
+        // ولا يظهر منها إلّا ما يسع عرضه. والعنصر المثبَّت بالشاشة لا يقصّه
+        // `overflow` أيّ سلفٍ له - وهي القاعدة نفسها التي حلّت قصَّ لوحتَي
+        // الإشعارات والحساب من قبل.
+        //
+        // الموضع: تحت صفّ الشعار مباشرةً (٦٨ بكسل + فراغ)، وعند حافّة
+        // البداية - وهي حافّة الشريط نفسه في الاتّجاهين معاً.
+        <div className="pop-shadow fixed top-[76px] z-50 w-[min(290px,calc(100vw-1.5rem))] card pad-md" style={{ insetInlineStart: 12 }}>
           <div className="mb-1 flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/12 text-accent">
               <FlaskConical size={16} />
