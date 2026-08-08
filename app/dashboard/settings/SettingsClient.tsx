@@ -14,7 +14,6 @@ import { Bot, Cpu, Sparkles, Terminal, Brain, Zap, Upload, Search } from "lucide
 import { getCsrfHeader } from "@/lib/csrfClient";
 import { PushNotificationToggle } from "@/app/components/PushNotificationToggle";
 import { t, type Locale } from "@/lib/i18n/dictionary";
-import { LegalLinks } from "@/app/components/LegalLinks";
 
 // سياق اللغة بدل تمريرها كخاصية عبر أربعة عشر مكوّناً فرعياً. الملف واحد
 // وشجرته كلها في العميل، فالسياق هنا أنظف وأقل عرضة للخطأ من تمرير
@@ -402,10 +401,10 @@ function PreferencesTab({ user }: { user: UserData }) {
         ))}
       </div>
 
-      <div className="mb-2 mt-6 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("legalSectionTitle")}</div>
-      <p className="mb-2.5 text-xs text-text-faint">{tr("legalSectionHint")}</p>
-      <LegalLinks locale={locale as Locale} variant="stacked" className="mb-2" />
-
+      {/* 🔴 حُذف من هنا بند «المستندات القانونية»: الروابط الثلاثة نفسها
+          في تذييل **كلّ** صفحة داخل اللوحة، ونسخةٌ ثانيةٌ منها في
+          التفضيلات لا تضيف وصولاً - تضيف بنداً يمرّ عليه المستخدم وهو
+          يبحث عن إعداد. الإعدادات لما يُضبَط، لا لما يُقرأ. */}
       <div className="mb-2 mt-6 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("marketingTitle")}</div>
       <p className="mb-2 text-xs text-text-faint">{tr("marketingHint")}</p>
       <ToggleRow

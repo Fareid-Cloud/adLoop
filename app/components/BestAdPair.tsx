@@ -9,6 +9,7 @@
 import { Trophy, Medal, Info } from "lucide-react";
 import type { TopCreativePick } from "@/lib/creativeAnalysis";
 import type { CreativePerformance } from "@/lib/creativeAnalysis";
+import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export function BestAdPair({
@@ -98,8 +99,12 @@ function AdCard({
           <Icon size={17} />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[13px] font-medium text-text-muted">
+          <div className="flex items-center gap-1.5 text-[13px] font-medium text-text-muted">
             {rank === 1 ? tr("first") : tr("second")}
+            {/* شعار المنصّة إلى جانب الترتيب: البطاقة تُعرض الآن عبر
+                المنصّات مجتمعةً كما تُعرض داخل منصّة واحدة، و«الأوّل» بلا
+                منصّة لا يعني شيئاً حين يكون المتنافسان من منصّتين. */}
+            <PlatformLogo platform={item.platform} size={13} />
           </div>
           <div className="truncate text-[13px] text-text-primary" title={item.adName ?? item.adId}>
             {item.adName ?? item.adId}

@@ -6,7 +6,8 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
-import { rankCreatives, CreativePerformance, getWorkspaceCreativePerformances } from "@/lib/creativeAnalysis";
+import { rankCreatives, selectTopTwoCreatives, CreativePerformance, getWorkspaceCreativePerformances } from "@/lib/creativeAnalysis";
+import { BestAdPair } from "@/app/components/BestAdPair";
 import { ImageQualityButton } from "./ImageQualityButton";
 import { detectCreativeFatigue } from "@/lib/aiInsights";
 import { buildAdDecisions } from "@/lib/adDecisions";
@@ -107,6 +108,20 @@ export default async function CreativesPage({
     <div className="mx-auto max-w-6xl">
       <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
       <h1 className="mb-6 page-title">{tr("title")}</h1>
+
+      {/* أفضل إعلانين **عبر المنصّات مجتمعةً**. كانت البطاقة تُعرض داخل
+          صفحة كلّ منصّة وحدها، فيعرف المستخدم أفضل إعلان في جوجل وأفضل
+          إعلان في ميتا ولا يعرف أيّهما أفضل فعلاً - وهو السؤال الذي يقرّر
+          أين تذهب الميزانية. المعيار واحد (تكلفة العميل المتحقَّقة)،
+          فالمقارنة عبر المنصّات صحيحة لا مجازية. */}
+      <div className="mb-8">
+        <BestAdPair
+          pick={selectTopTwoCreatives(performances, daysActiveByAdId, fatiguedAdIds)}
+          currency={workspace.currency}
+          scopeLabel={t(locale, "campNav.crossPlatform")}
+          locale={locale}
+        />
+      </div>
 
       <SectionTitle>{t(locale, "campPages.crDecision")}</SectionTitle>
       <p className="mb-3 text-xs text-text-faint">
