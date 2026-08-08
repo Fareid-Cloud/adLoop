@@ -462,6 +462,24 @@ export async function syncPendingConversions(workspaceId: string): Promise<SyncR
   if (workspace.tiktokPixelCode && workspace.tiktokCapiToken) targets.push("TIKTOK_ADS");
   if (targets.length === 0) return summary;
 
+  // ── حدّ الباقة: رفع التحويلات ─────────────────────────────────────
+  //
+  // 🔴 كان `conversionSync` معروضاً في جدول الباقات («لا / منصّة واحدة /
+  // كلّ المنصّات») ولا يُفحص في أيّ موضع - فالباقة المجّانية التي تَعِد
+  // بـ«لا رفع» كانت ترفع إلى الثلاث.
+  //
+  // والفحص **هنا** لا عند العرض: هذه هي اللحظة التي يُرسَل فيها الحدث
+  // فعلاً إلى المنصّة. حدٌّ يُفحص في الواجهة وحدها يمرّ من أوّل نداءٍ آليّ.
+  const { getEntitlements } = await import("@/lib/entitlements");
+  const allowance = (await getEntitlements(workspace.userId)).limits.conversionSync;
+
+  if (allowance === "none") return summary;
+  if (allowance === "one" && targets.length > 1) {
+    // المنصّة الواحدة تُختار بالترتيب أعلاه لا عشوائياً، فيبقى الاختيار
+    // نفسه بين تشغيلٍ وآخر - وإلّا رُفع الحدث إلى منصّة اليوم وأخرى غداً.
+    targets.length = 1;
+  }
+
   const events = await prisma.conversionEvent.findMany({
     where: {
       workspaceId,

@@ -187,6 +187,33 @@ export async function applyActionFeedItem(itemId: string) {
     return;
   }
 
+  // ── حدّ الباقة: التوسيع والإيقاف ──────────────────────────────────
+  //
+  // 🔴 `scaleKill` كان معروضاً في جدول الباقات («عرض» مقابل «تنفيذ»)
+  // ولا يُفحص في أيّ موضع: الباقة المجّانية التي تَعِد بالعرض وحده كانت
+  // توقف إعلاناً حقيقياً بضغطة.
+  //
+  // الفحص عند التنفيذ لا عند العرض - عمداً: الاقتراح نفسه يبقى مرئياً
+  // لصاحب الباقة المجّانية، فهو **قيمة** المنتج وأصدق دعوةٍ للترقية من
+  // أيّ لافتة. ما يُمنَع هو الفعل وحده.
+  const APPLY_GATED_ACTIONS = ["PAUSE_AD_GOOGLE", "PAUSE_AD_META", "PAUSE_AD_TIKTOK"];
+  if (APPLY_GATED_ACTIONS.includes(item.actionType)) {
+    const ws = await prisma.workspace.findUnique({
+      where: { id: item.workspaceId },
+      select: { userId: true },
+    });
+    if (ws) {
+      const { getEntitlements } = await import("@/lib/entitlements");
+      const ent = await getEntitlements(ws.userId);
+      if (ent.limits.scaleKill !== "apply") {
+        // خطأ مقروء لا صمت: الواجهة تعرضه كما هو، فيعرف المستخدم أنّ
+        // الضغطة لم تُنفَّذ ولماذا - لا أن يظنّ إعلانه متوقّفاً وهو يعمل.
+        const locale = await (await import("@/lib/workspaceLocale")).ownerLocaleFor(item.workspaceId);
+        throw new Error(t(locale, "limits.scaleKillLocked"));
+      }
+    }
+  }
+
   // تنفيذ حقيقي - لو فشل، مبنسجلش APPLIED خالص، عشان المستخدم يعرف
   // إن التنفيذ فعلاً فشل ويقدر يحاول تاني، مش يفتكر إنه اتنفذ وهو معملش حاجة
   const payload = item.actionPayload as any;

@@ -1179,6 +1179,7 @@ export const dictionary = {
     },
     // ==== حدود الباقة ====
     limits: {
+      scaleKillLocked: "باقتك الحالية تعرض هذه القرارات ولا تُنفّذها. رقِّ باقتك لتنفيذ الإيقاف والتوسيع تلقائياً، أو نفّذه بنفسك داخل المنصّة.",
       reachedWorkspaces: "بلغت حدّ مساحات العمل في باقتك ({limit}).",
       reachedStores: "بلغت حدّ المتاجر المربوطة في باقتك ({limit}).",
       reachedRules: "بلغت حدّ قواعد الأتمتة في باقتك ({limit}).",
@@ -4798,6 +4799,7 @@ export const dictionary = {
     },
     // ==== Plan limits ====
     limits: {
+      scaleKillLocked: "Your current plan shows these decisions but does not apply them. Upgrade to apply pausing and scaling automatically, or make the change yourself inside the platform.",
       reachedWorkspaces: "You have reached your plan's workspace limit ({limit}).",
       reachedStores: "You have reached your plan's connected store limit ({limit}).",
       reachedRules: "You have reached your plan's automation rule limit ({limit}).",
