@@ -53,8 +53,8 @@ export default async function VideoPerformancePage({
           tone="accent"
           eyebrow={workspace.name}
           title={t(locale, "campPages.vidTitle")}
-        />
-        <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
+        actions={<PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />}
+      />
         <EmptyState
           title={t(locale, "campPages.vidNone")}
           description={t(locale, "campPages.vidNoneBody")}

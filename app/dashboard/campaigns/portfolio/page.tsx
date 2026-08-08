@@ -44,9 +44,16 @@ export default async function PortfolioPage({
   if (campaignLinks.length === 0) {
     return (
       <div className="mx-auto max-w-3xl">
-        <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="mb-6 page-title">{t(locale, "campPages.pfTitle")}</h1>
-        <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
+        {/* الرأس نفسه في فرع الفراغ: صفحة بلا حملات لا تفقد هويّتها -
+            بدونه تبدو صفحةً أخرى، وهي القاعدة التي وُجد لها هذا المكوّن. */}
+        <PageHeader
+          icon={LayoutGrid}
+          tone="accent"
+          eyebrow={workspace.name}
+          title={t(locale, "campPages.pfTitle")}
+          description={t(locale, "campPages.pfIntro")}
+          actions={<PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />}
+        />
         <EmptyState title={t(locale, "common.noCampaigns")} description={t(locale, "common.noCampaignsHint")} />
       </div>
     );
@@ -84,6 +91,7 @@ export default async function PortfolioPage({
         eyebrow={workspace.name}
         title={t(locale, "campPages.pfTitle")}
         description={t(locale, "campPages.pfIntro")}
+        actions={<PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />}
       />
 
       <div className="flex flex-col gap-2">

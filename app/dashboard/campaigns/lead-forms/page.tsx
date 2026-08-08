@@ -79,8 +79,8 @@ export default async function LeadFormsPage({
         tone="accent"
         eyebrow={workspace.name}
         title={t(locale, "campPages.lfTitle")}
+        actions={<PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />}
       />
-      <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">
         {t(locale, "campPages.lfIntro")}
       </p>

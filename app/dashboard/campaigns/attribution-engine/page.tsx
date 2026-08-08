@@ -67,8 +67,8 @@ export default async function AttributionEnginePage({
         tone="verified"
         eyebrow={workspace.name}
         title={t(locale, "campPages.attrTitle")}
+        actions={<PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />}
       />
-      <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">{t(locale, "campPages.attrIntro")}</p>
 
       {total === 0 ? (

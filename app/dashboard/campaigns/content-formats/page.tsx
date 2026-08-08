@@ -77,8 +77,8 @@ export default async function ContentFormatsPage({
         tone="accent"
         eyebrow={workspace.name}
         title={t(locale, "campPages.cfTitle")}
+        actions={<PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />}
       />
-      <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
       <p className="mb-6 text-xs text-text-faint">
         {t(locale, "campPages.cfIntro")}
       </p>

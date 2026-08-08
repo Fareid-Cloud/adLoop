@@ -65,8 +65,8 @@ export default async function AudiencePage({
         tone="accent"
         eyebrow={workspace.name}
         title={t(locale, "campPages.audTitle")}
+        actions={<PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />}
       />
-      <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
 
       <div className="mb-6 rounded-2xl bg-gap/10 p-4 text-xs text-gap">
         {t(locale, "campPages.audIntro")}

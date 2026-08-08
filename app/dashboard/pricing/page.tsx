@@ -93,8 +93,8 @@ export default async function PricingPage({
         tone="critical"
         eyebrow={workspace.name}
         title={t(locale, "campPages.pricingTitle")}
+        actions={<PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />}
       />
-      <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
 
       {roasGapInsight && (
         <div className="mb-4 card pad-md text-[13px] text-text-muted">

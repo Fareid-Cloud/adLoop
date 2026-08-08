@@ -45,35 +45,52 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    // `flex-wrap` لا شبكة ثابتة: على الهاتف تنزل الأزرار سطراً كاملاً بدل
-    // أن تضغط العنوان حتى ينكسر.
-    <header className="mb-6 flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-      <div className="flex min-w-0 items-start gap-3">
-        {Icon && (
-          <span
-            className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${TONE[tone]}`}
-            aria-hidden
-          >
-            <Icon size={19} />
-          </span>
-        )}
-        <div className="min-w-0">
-          {eyebrow && (
-            /* 🔴 اسم مساحة عمل عربيّ داخل واجهة إنجليزية كان يُحاذى إلى
-               الجهة المقابلة للعنوان تحته، فيبدو السطران غير مرتبطين.
-               `dir="ltr"` على الصندوق يثبّت المحاذاة باتّجاه الصفحة، و`bdi`
-               يعزل النصّ فتبقى قراءته الداخلية صحيحة بلغته. */
-            <div dir="ltr" className="mb-0.5 truncate text-start text-[12.5px] text-text-muted">
-              <bdi>{eyebrow}</bdi>
-            </div>
+    // 🔴 ترتيب ثابت لكلّ صفحة في المنتج - وهذا هو الغرض من المكوّن:
+    //
+    //   اسم مساحة العمل
+    //   [أيقونة] العنوان ................... [منتقي الفترة / الأزرار]
+    //   الوصف بعرض السطر كاملاً
+    //
+    // **الوصف خارج العمود الأيسر لا داخله:** حين كان بداخله كان يُحصر في
+    // عرض ما تبقّى بعد الأزرار، فينكسر سطراً بعد ثلاث كلمات في صفحة وسطراً
+    // واحداً في أخرى - وهو أحد وجهَي الاختلال الذي رآه المالك في «تسعين
+    // بالمئة من الأقسام».
+    //
+    // **والوجه الآخر أنّ منتقي الفترة كان يُصيَّر *بعد* هذا المكوّن** في
+    // ثلاث عشرة صفحة، فينزل سطراً مستقلّاً تحت الرأس بدل أن يحاذي العنوان.
+    // مكانه الآن `actions` - وهو ما تفعله صفحة «مركز الحقيقة» التي اتّخذها
+    // المالك مرجعاً.
+    <header className="mb-6">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 items-start gap-3">
+          {Icon && (
+            <span
+              className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${TONE[tone]}`}
+              aria-hidden
+            >
+              <Icon size={19} />
+            </span>
           )}
-          <h1 className="page-title">{title}</h1>
-          {description && (
-            <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-text-muted">{description}</p>
-          )}
+          <div className="min-w-0">
+            {eyebrow && (
+              /* 🔴 اسم مساحة عمل عربيّ داخل واجهة إنجليزية كان يُحاذى إلى
+                 الجهة المقابلة للعنوان تحته، فيبدو السطران غير مرتبطين.
+                 `dir="ltr"` على الصندوق يثبّت المحاذاة باتّجاه الصفحة، و`bdi`
+                 يعزل النصّ فتبقى قراءته الداخلية صحيحة بلغته. */
+              <div dir="ltr" className="mb-0.5 truncate text-start text-[12.5px] text-text-muted">
+                <bdi>{eyebrow}</bdi>
+              </div>
+            )}
+            <h1 className="page-title">{title}</h1>
+          </div>
         </div>
+        {/* `items-center` لا `items-start`: منتقي الفترة زرٌّ بارتفاعٍ قريب
+            من ارتفاع العنوان، فمحاذاته بالأعلى تتركه معلّقاً فوق خطّ العنوان. */}
+        {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+      {description && (
+        <p className="mt-2 max-w-3xl text-[13px] leading-relaxed text-text-muted">{description}</p>
+      )}
     </header>
   );
 }

@@ -51,8 +51,8 @@ export default async function SearchTermsPage({
         tone="accent"
         eyebrow={workspace.name}
         title={t(locale, "campPages.stTitle")}
+        actions={<PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />}
       />
-        <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <EmptyState title={t(locale, "campPages.stNone")} description={t(locale, "campPages.stNoneBody")} />
       </div>
     );

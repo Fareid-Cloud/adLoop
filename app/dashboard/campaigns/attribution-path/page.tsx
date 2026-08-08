@@ -58,8 +58,8 @@ export default async function AttributionPathPage({
           tone="accent"
           eyebrow={workspace.name}
           title={t(locale, "campPages.pathTitle")}
-        />
-        <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
+        actions={<PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />}
+      />
         <EmptyState title={t(locale, "campPages.pathNoneTitle")} description={t(locale, "campPages.pathNoneBody")} />
       </div>
     );

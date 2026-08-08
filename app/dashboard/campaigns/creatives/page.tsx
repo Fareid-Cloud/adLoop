@@ -77,8 +77,8 @@ export default async function CreativesPage({
         tone="accent"
         eyebrow={workspace.name}
         title={t(locale, "campPages.crTitle")}
+        actions={<PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />}
       />
-        <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         <EmptyState
           title={t(locale, "campPages.crNone")}
           description={t(locale, "campPages.crNoneBody")}
