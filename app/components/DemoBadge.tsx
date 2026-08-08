@@ -12,6 +12,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FlaskConical, Database, Lock, Sparkles, ArrowLeft } from "lucide-react";
+import { Portal } from "@/app/components/ui/Portal";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export function DemoBadge({
@@ -58,7 +59,8 @@ export function DemoBadge({
         //
         // الموضع: تحت صفّ الشعار مباشرةً (٦٨ بكسل + فراغ)، وعند حافّة
         // البداية - وهي حافّة الشريط نفسه في الاتّجاهين معاً.
-        <div className="pop-shadow fixed top-[76px] z-50 w-[min(290px,calc(100vw-1.5rem))] card pad-md" style={{ insetInlineStart: 12 }}>
+        <Portal>
+        <div className="pop-shadow fixed top-[76px] z-[70] w-[min(290px,calc(100vw-1.5rem))] card pad-md" style={{ insetInlineStart: 12 }}>
           <div className="mb-1 flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/12 text-accent">
               <FlaskConical size={16} />
@@ -101,6 +103,7 @@ export function DemoBadge({
             </Link>
           )}
         </div>
+        </Portal>
       )}
     </div>
   );

@@ -81,17 +81,21 @@ function ExperimentsBody({
 
   return (
     <div>
+      {/* 🔴 كان العنوان والنصّ والزرّ في صفٍّ واحد: الزرّ لا يتقلّص
+          (`shrink-0`) فيأكل من عرض عمود النصّ حتى يبقى له نحو مئة بكسل،
+          فينزل الشرح **كلمةً في كلّ سطر** ويصير الكارت أطول من الصفحة
+          التي يشرحها. الرأس صفٌّ يلتفّ، والشرح تحته بعرض السطر كاملاً. */}
       <div className="card-shadow mb-5 card pad-md">
-        <div className="flex items-start gap-3">
-          <Beaker size={18} className="mt-0.5 shrink-0 text-accent" />
-          <div className="flex-1">
-            <h2 className="mb-1 section-title">{tr("howItWorks")}</h2>
-            <p className="text-[12.5px] leading-relaxed text-text-muted">{tr("howItWorksBody")}</p>
-          </div>
-          <button onClick={() => setAdding(true)} className="flex shrink-0 items-center gap-1.5 card-inset px-3 py-2 text-[12.5px] text-text-primary">
+        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <h2 className="flex items-center gap-2 section-title">
+            <Beaker size={17} className="shrink-0 text-accent" />
+            {tr("howItWorks")}
+          </h2>
+          <button onClick={() => setAdding(true)} className="btn btn-secondary btn-sm shrink-0">
             <Plus size={14} /> {tr("manualBtn")}
           </button>
         </div>
+        <p className="max-w-3xl text-[12.5px] leading-relaxed text-text-muted">{tr("howItWorksBody")}</p>
       </div>
 
       {experiments.length === 0 && (

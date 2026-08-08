@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { MessageCircle, X, Paperclip, Send } from "lucide-react";
 import { useLive } from "@/app/components/LiveData";
+import { Portal } from "@/app/components/ui/Portal";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { countriesForDisplay } from "@/lib/countries";
 
@@ -114,9 +115,15 @@ export function SupportChat({
   }
 
   return (
-    // 🔴 `z-60` لا `z-50`: البطاقات العابرة أسفل الشاشة (دعوة تثبيت
-    // التطبيق، الإشعار المنبثق) كانت على الطبقة نفسها، فتطفو فوق زرّ
-    // الدعم وتحجبه - وهو زرّ دائم لا عابر. الدائم فوق العابر دائماً.
+    // 🔴 بوّابة إلى `<body>` لا `fixed` وحدها: في وضع القائمة الجانبية
+    // يُصيَّر هذا من داخل `<aside>`، وعليه `transform` (ليعمل درجاً على
+    // الهاتف) - و`transform` على سلفٍ يجعل المثبَّت يُحسب منه ويُقصّ
+    // بحدوده. فكانت نافذة الدعم تظهر مقطوعة عند حافّة الشريط مهما رفعنا
+    // `z-index`. البوّابة تخرج من الشجرة كلّها فلا سلف يقصّها.
+    //
+    // `z-60` لا `z-50`: البطاقات العابرة أسفل الشاشة (دعوة تثبيت التطبيق،
+    // الإشعار المنبثق) كانت على الطبقة نفسها فتطفو فوق زرّ الدعم الدائم.
+    <Portal>
     <div className="fixed bottom-6 left-6 z-[60]">
       {open ? (
         <div className="flex h-[520px] w-[360px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden card shadow-2xl">
@@ -218,5 +225,6 @@ export function SupportChat({
         </button>
       )}
     </div>
+    </Portal>
   );
 }

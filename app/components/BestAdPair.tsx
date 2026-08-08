@@ -88,36 +88,69 @@ function AdCard({
   locale: Locale;
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `bestAd.${k}`, vars);
-  const Icon = rank === 1 ? Trophy : Medal;
-  const tone = rank === 1 ? "text-verified" : "text-text-muted";
-  const bg = rank === 1 ? "bg-verified/10" : "bg-surface-raised";
+  const first = rank === 1;
+  const Icon = first ? Trophy : Medal;
 
   return (
-    <div className="card pad-md">
+    // إطار ذهبيّ خفيف للأوّل وحده: لونٌ لا يحمل معنًى دلالياً في هذا المنتج
+    // (الأخضر «متحقَّق» والأحمر «حرج»)، فهو حرٌّ ليعني «الفائز» بلا لبس.
+    // والتوهّج ظلٌّ واحدٌ خافت لا حلقة صارخة - الصفحة تُقرأ ساعاتٍ يومياً.
+    <div
+      className="card pad-md"
+      style={
+        first
+          ? {
+              borderColor: "rgba(212,175,55,.55)",
+              boxShadow: "0 0 0 1px rgba(212,175,55,.22), 0 0 26px -10px rgba(212,175,55,.75)",
+            }
+          : undefined
+      }
+    >
       <div className="mb-3 flex items-center gap-2.5">
-        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${bg} ${tone}`}>
-          <Icon size={17} />
+        <span
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+          style={
+            first
+              ? { background: "rgba(212,175,55,.14)", color: "#D4AF37" }
+              : undefined
+          }
+        >
+          <Icon size={19} className={first ? "" : "text-text-muted"} />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 text-[13px] font-medium text-text-muted">
-            {rank === 1 ? tr("first") : tr("second")}
+          <div className="flex items-center gap-1.5">
+            <span
+              className={first ? "text-[13px] font-bold tracking-wide" : "text-[13px] font-medium text-text-muted"}
+              style={first ? { color: "#D4AF37" } : undefined}
+            >
+              {first ? tr("first") : tr("second")}
+            </span>
             {/* شعار المنصّة إلى جانب الترتيب: البطاقة تُعرض الآن عبر
                 المنصّات مجتمعةً كما تُعرض داخل منصّة واحدة، و«الأوّل» بلا
                 منصّة لا يعني شيئاً حين يكون المتنافسان من منصّتين. */}
             <PlatformLogo platform={item.platform} size={13} />
           </div>
-          <div className="truncate text-[13px] text-text-primary" title={item.adName ?? item.adId}>
+          {/* 🔴 كان يُطبع اسم الإعلان هنا **وعنوانه تحته**، وهما في أغلب
+              الحسابات النصّ نفسه - فيُقرأ السطر مرّتين بلا فائدة. الاسم
+              أعرض وزناً لأنّه ما يُبحث عنه في المنصّة، والعنوان لا يظهر
+              إلّا إن كان مختلفاً فعلاً. */}
+          <div
+            className={`truncate ${first ? "text-[14.5px] font-semibold" : "text-[13.5px] font-medium"} text-text-primary`}
+            title={item.adName ?? item.adId}
+          >
             {item.adName ?? item.adId}
           </div>
         </div>
       </div>
 
-      {item.headline && (
+      {item.headline && item.headline !== item.adName && (
         <p className="mb-3 line-clamp-2 text-[12px] leading-relaxed text-text-faint">{item.headline}</p>
       )}
 
       <div className="flex items-baseline gap-1.5">
-        <span className="text-[26px] font-semibold leading-none tracking-tight tabular-nums text-text-primary">
+        <span
+          className={`${first ? "text-[32px] font-bold" : "text-[26px] font-semibold"} leading-none tracking-tight tabular-nums text-text-primary`}
+        >
           {Math.round(item.cpa).toLocaleString("en-US")}
         </span>
         <span className="text-[13px] font-medium text-text-muted">{currency}</span>
@@ -126,9 +159,14 @@ function AdCard({
         {item.usingVerifiedData ? tr("cpaVerified") : tr("cpaReported")}
       </div>
 
-      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 border-t border-border pt-3 text-[12px]">
+      {/* 🔴 كانت شبكة تنهار عموداً واحداً على الهاتف، فتصير ثلاثة مؤشّرات
+          ثلاثة أسطر وتطول البطاقة بلا سبب. صفٌّ واحد دائماً بأعمدة متساوية
+          وفاصل رأسيّ بينها - أرقامٌ قصيرة تسع العرض في كلّ مقاس. */}
+      <div className="mt-3 flex items-stretch border-t border-border pt-3 text-[12px]">
         <Stat label={tr("ctr")} value={`${item.ctr}%`} />
+        <span className="mx-1 w-px shrink-0 self-stretch bg-border" aria-hidden />
         <Stat label={tr("roas")} value={item.roas !== null ? `${item.roas}x` : "—"} />
+        <span className="mx-1 w-px shrink-0 self-stretch bg-border" aria-hidden />
         <Stat label={tr("spend")} value={Math.round(item.cost).toLocaleString("en-US")} />
       </div>
     </div>
@@ -137,9 +175,9 @@ function AdCard({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <div className="text-text-faint">{label}</div>
-      <div className="mt-0.5 font-medium tabular-nums text-text-primary">{value}</div>
+    <div className="min-w-0 flex-1 px-1 text-center">
+      <div className="truncate text-[11px] text-text-faint">{label}</div>
+      <div className="mt-0.5 truncate font-semibold tabular-nums text-text-primary">{value}</div>
     </div>
   );
 }
