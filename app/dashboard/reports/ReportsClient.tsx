@@ -470,40 +470,127 @@ function ResultBlock({
 
   const cols = metrics.length > 0 ? metrics : (["cost", "conversions", "cpa"] as MetricKey[]);
 
+  /**
+   * اسم الطرف كما يُقرأ.
+   *
+   * 🔴 حين يكون البُعد منصّةً، كان المحرّك يُرجع الرمز الخام - فتظهر
+   * `META_ADS` بشرطتها السفلية وحروفها الكبيرة في بطاقة نتيجة يقرؤها
+   * عميل. الرمز يبقى في البيانات، والاسم يُترجَم هنا بلغة القارئ.
+   */
+  const nameOf = (label: string | null, platform: string | null) =>
+    platform ? platformLabel(locale, platform) : label ?? "—";
+
+  // الحكم الرئيسيّ: صاحب أكبر أثرٍ ماليّ لا أوّل ما في المصفوفة. المستخدم
+  // ينظر إلى أكبر رقم أوّلاً، فالترتيب البصريّ يتبع الأهمّية لا الترتيب
+  // الذي صدف أن يخرج به المحرّك.
+  const ranked = [...result.verdicts].sort(
+    (a, b) => (b.financialImpact ?? 0) - (a.financialImpact ?? 0)
+  );
+  const headline = ranked[0] ?? null;
+  const rest = ranked.slice(1);
+
+  /** تنزيل الجدول كما هو معروض - نفس الأعمدة والصفوف والترتيب */
+  function downloadCsv() {
+    const head = ["", ...cols.map((m) => tr(metricLabelKey(m)))];
+    const lines = [head, ...result.rows.map((r) => [
+      nameOf(r.label, r.platform),
+      ...cols.map((m) => {
+        const v = r.values[m];
+        return v === null || v === undefined ? "" : String(v);
+      }),
+    ])];
+    // BOM عمداً: بدونه يفتح Excel على ويندوز ملفّ UTF-8 بترميز خاطئ
+    // فتظهر العربية رموزاً - وهو أوّل ما سيحدث لأغلب من يضغط هذا الزرّ.
+    const csv = "﻿" + lines
+      .map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `adloop-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      {/* الحكم */}
-      {result.verdicts.length > 0 && (
+      {/* ══════════ الحكم ══════════
+          🔴 كان صفّاً من مربّعات متطابقة، في كلّ واحد «الفائز» و«الفارق»
+          بلا وزن يفرّق أهمّها عن أقلّها - ونتيجةٌ واحدةٌ فيها أثرٌ ماليّ
+          بمئات الآلاف تُعرض بحجم نتيجةٍ فرقُها ثلاثة بالمئة.
+
+          البنية الآن على درجتين: **حكمٌ رئيسيّ** لصاحب أكبر أثرٍ ماليّ
+          يُقرأ من مسافة، ثمّ **لوحة نتائج** لبقيّة المؤشّرات. وهو ترتيبٌ
+          يتبع ما يفعله المستخدم فعلاً: ينظر إلى أكبر رقم، ثمّ يتحقّق. */}
+      {headline && (
+        <section className="card-alert card-shadow overflow-hidden card">
+          <div className="flex flex-wrap items-start justify-between gap-4 p-5">
+            <div className="min-w-0 flex-1">
+              <div className="mb-1.5 flex items-center gap-2 text-[12px] font-medium uppercase tracking-wide text-text-faint">
+                <Sparkles size={13} className="text-accent" /> {tr("verdictTitle")}
+              </div>
+              <h2 className="text-[21px] font-semibold leading-snug text-text-primary">
+                {tr("verdictLead", {
+                  winner: nameOf(headline.winnerLabel, headline.winnerPlatform),
+                  pct: Math.round(headline.differencePct ?? 0),
+                  metric: tr(metricLabelKey(headline.metric)),
+                })}
+              </h2>
+              <p className="mt-1 text-[13px] text-text-muted">
+                {tr("verdictVs", { loser: nameOf(headline.loserLabel, headline.loserPlatform) })}
+              </p>
+            </div>
+
+            {/* شعار الفائز بحجمٍ يُقرأ: هو الإجابة، فلا يُدفن في سطر نصّ */}
+            {headline.winnerPlatform && (
+              <span className="icon-badge h-14 w-14 shrink-0 bg-surface-raised">
+                <PlatformLogo platform={headline.winnerPlatform} size={30} />
+              </span>
+            )}
+          </div>
+
+          {headline.financialImpact !== null && headline.financialImpact > 0 && (
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-border bg-verified/[0.07] px-5 py-3.5">
+              <span className="text-[12px] text-text-muted">
+                {headline.impactKind === "saving" ? tr("impactSaving") : tr("impactGain")}
+                {" · "}
+                {tr("verdictImpactMonthly")}
+              </span>
+              <span className="num text-[24px] font-semibold leading-none text-verified">
+                {fmtNumber(headline.financialImpact)}{" "}
+                <span className="text-[14px] font-medium">{currency}</span>
+              </span>
+            </div>
+          )}
+        </section>
+      )}
+
+      {rest.length > 0 && (
         <section className="card pad-md">
-          <h2 className="mb-3 flex items-center gap-2 section-title">
-            <Sparkles size={16} className="text-accent" /> {tr("verdictTitle")}
-          </h2>
-          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-            {result.verdicts.map((v) => (
-              <div key={v.metric} className="bg-surface-raised p-3">
-                <div className="mb-1.5 text-[11.5px] font-medium uppercase tracking-wide text-text-faint">
+          <h2 className="mb-3 section-title">{tr("scoreboard")}</h2>
+          <div className="grid gap-2.5 [grid-template-columns:repeat(auto-fit,minmax(230px,1fr))]">
+            {rest.map((v) => (
+              <div key={v.metric} className="card-inset flex flex-col gap-2 p-3.5">
+                <div className="text-[11.5px] font-medium uppercase tracking-wide text-text-faint">
                   {tr(metricLabelKey(v.metric))}
                 </div>
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[11px] text-text-muted">{tr("winner")}</span>
-                  <span className="truncate text-[13px] font-semibold text-verified">{v.winnerLabel}</span>
-                </div>
-                {v.differencePct !== null && (
-                  <div className="mt-1 flex items-baseline justify-between gap-2">
-                    <span className="text-[11px] text-text-muted">{tr("difference")}</span>
-                    <span className="tabular-nums text-[13px] font-medium text-text-primary">
-                      {Math.round(v.differencePct)}%
+                <div className="flex items-center gap-2">
+                  {v.winnerPlatform && <PlatformLogo platform={v.winnerPlatform} size={16} />}
+                  <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-text-primary">
+                    {nameOf(v.winnerLabel, v.winnerPlatform)}
+                  </span>
+                  {v.differencePct !== null && (
+                    <span className="chip bg-verified/12 text-verified">
+                      +{Math.round(v.differencePct)}%
                     </span>
-                  </div>
-                )}
+                  )}
+                </div>
                 {v.financialImpact !== null && v.financialImpact > 0 && (
-                  <div className="mt-2 rounded-lg bg-verified/10 px-2.5 py-1.5">
-                    <div className="text-[10.5px] text-text-muted">
-                      {v.impactKind === "saving" ? tr("impactSaving") : tr("impactGain")}
-                    </div>
-                    <div className="tabular-nums text-[13.5px] font-semibold text-verified">
+                  <div className="num text-[12.5px] text-text-muted">
+                    {v.impactKind === "saving" ? tr("impactSaving") : tr("impactGain")}:{" "}
+                    <span className="font-semibold text-verified">
                       {fmtNumber(v.financialImpact)} {currency}
-                    </div>
+                    </span>
                   </div>
                 )}
               </div>
@@ -516,10 +603,19 @@ function ResultBlock({
       <section className="card-shadow overflow-hidden card">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <h2 className="section-title">{tr("resultTitle")}</h2>
-          <span className="text-[11.5px] text-text-faint">
-            {tr(source === "REPORTED" ? "srcReported" : source === "VERIFIED" ? "srcVerified" : "srcBoth")}
-            {hasCompare && ` · ${tr("vsCompare")}`}
-          </span>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-[11.5px] text-text-faint">
+              {tr(source === "REPORTED" ? "srcReported" : source === "VERIFIED" ? "srcVerified" : "srcBoth")}
+              {hasCompare && ` · ${tr("vsCompare")}`}
+            </span>
+            {/* التنزيل بجانب الجدول لا في شريط الصفحة: هو فعلٌ على **هذا**
+                الجدول بأعمدته وصفوفه كما هي الآن، لا على «التقارير» عموماً. */}
+            {result.rows.length > 0 && (
+              <button onClick={downloadCsv} className="btn btn-secondary btn-sm">
+                <Download size={13} /> {tr("downloadCsv")}
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="overflow-x-auto">

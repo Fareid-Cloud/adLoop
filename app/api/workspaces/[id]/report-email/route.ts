@@ -11,7 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { runReport, METRICS, type DataSource, type Dimension, type MetricKey } from "@/lib/reports/reportEngine";
 import { periodFromParams } from "@/lib/dateRange";
-import { t, type Locale } from "@/lib/i18n/dictionary";
+import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 import { renderEmail, EMAIL_BRAND } from "@/lib/emailTemplate";
 import { getAppUrl } from "@/lib/appUrl";
 
@@ -78,13 +78,40 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .slice(0, 25)
     .map(
       (r) => `<tr>
-        <td style="padding:8px 10px;border-bottom:1px solid #E5E7EB;">${escapeHtml(r.label)}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #E5E7EB;">${escapeHtml(r.platform ? platformLabel(locale, r.platform) : r.label)}</td>
         ${metrics
           .map((m) => `<td style="padding:8px 10px;border-bottom:1px solid #E5E7EB;text-align:${locale === "ar" ? "left" : "right"};">${fmt(r.values[m])}</td>`)
           .join("")}
       </tr>`
     )
     .join("");
+
+  // 🔴 الحكم لم يكن في البريد إطلاقاً: يصل جدولٌ من أرقام بلا الجملة التي
+  // تلخّصه - وهي أوّل ما يُقرأ في الصفحة نفسها. مَن يفتح البريد على هاتفه
+  // يريد النتيجة، لا أن يستخرجها من ستّة صفوف.
+  const topVerdict = [...result.verdicts].sort(
+    (a, b) => (b.financialImpact ?? 0) - (a.financialImpact ?? 0)
+  )[0];
+
+  const verdictHtml = topVerdict?.winnerLabel
+    ? `<div style="border:1px solid ${EMAIL_BRAND.line};border-radius:12px;padding:16px 18px;">
+        <div style="color:${EMAIL_BRAND.faint};font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">${escapeHtml(t(locale, "reports.verdictTitle"))}</div>
+        <div style="color:${EMAIL_BRAND.ink};font-size:17px;font-weight:600;line-height:1.5;">${escapeHtml(
+          t(locale, "reports.verdictLead", {
+            winner: topVerdict.winnerPlatform ? platformLabel(locale, topVerdict.winnerPlatform) : topVerdict.winnerLabel,
+            pct: Math.round(topVerdict.differencePct ?? 0),
+            metric: t(locale, `reports.m${topVerdict.metric[0].toUpperCase()}${topVerdict.metric.slice(1)}`),
+          })
+        )}</div>
+        ${
+          topVerdict.financialImpact && topVerdict.financialImpact > 0
+            ? `<div style="margin-top:10px;color:${EMAIL_BRAND.muted};font-size:13px;">${escapeHtml(
+                t(locale, topVerdict.impactKind === "saving" ? "reports.impactSaving" : "reports.impactGain")
+              )}: <strong style="color:#16A34A;">${fmt(topVerdict.financialImpact)} ${escapeHtml(workspace.currency)}</strong></div>`
+            : ""
+        }
+      </div>`
+    : "";
 
   const summary = result.summary
     .map((line) => `<li style="margin-bottom:6px;">${escapeHtml(t(locale, `reports.${line.key}`, line.vars))}</li>`)
@@ -100,6 +127,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       eyebrow: `${workspace.name} · ${period.range.from} → ${period.range.to}`,
       title,
       blocks: [
+        ...(verdictHtml ? [{ html: verdictHtml }] : []),
         // الجدول markup جاهز - كلّ قيمة فيه مرّت بـ`escapeHtml` عند بنائها
         {
           html: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"

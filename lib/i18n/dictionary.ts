@@ -547,6 +547,11 @@ export const dictionary = {
       noRowsHint: "وسّع الفترة أو خفّف التصفية.",
       vsCompare: "مقابل فترة المقارنة",
 
+      verdictLead: "{winner} يتفوّق بـ{pct}% في {metric}",
+      verdictVs: "مقابل {loser}",
+      verdictImpactMonthly: "الأثر على الفترة المختارة",
+      downloadCsv: "تنزيل الجدول (CSV)",
+      scoreboard: "لوحة النتائج",
       verdictTitle: "الحكم",
       winner: "الفائز",
       difference: "الفارق",
@@ -4163,6 +4168,11 @@ export const dictionary = {
       noRowsHint: "Widen the period or loosen the filters.",
       vsCompare: "vs comparison period",
 
+      verdictLead: "{winner} leads by {pct}% on {metric}",
+      verdictVs: "against {loser}",
+      verdictImpactMonthly: "Impact over the selected period",
+      downloadCsv: "Download table (CSV)",
+      scoreboard: "Scoreboard",
       verdictTitle: "Verdict",
       winner: "Winner",
       difference: "Difference",

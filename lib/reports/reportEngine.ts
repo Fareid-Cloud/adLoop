@@ -112,6 +112,16 @@ export interface ComparisonVerdict {
   winnerKey: string | null;
   winnerLabel: string | null;
   loserLabel: string | null;
+  /**
+   * رمز المنصّة للطرفين حين يكون البُعد منصّةً - ليُعرض الشعار والاسم
+   * المترجَم بدل الرمز الخام.
+   *
+   * 🔴 كان `winnerLabel` يحمل الرمز نفسه (`META_ADS`) حين يكون البُعد
+   * منصّةً، فيقرأ المستخدم شرطةً سفلية وحروفاً كبيرة في بطاقة نتيجة. وهي
+   * أيضاً قاعدة المشروع: المحرّك يُرجع الرمز والعرضُ يترجمه بلغة القارئ.
+   */
+  winnerPlatform: string | null;
+  loserPlatform: string | null;
   differencePct: number | null;
   /**
    * الأثر المالي: كم كنت ستوفّر أو تكسب لو كان الأداء الأضعف مثل الأقوى،
@@ -306,6 +316,7 @@ function judge(metric: MetricKey, a: ReportRow, b: ReportRow): ComparisonVerdict
 
   const base: ComparisonVerdict = {
     metric, winnerKey: null, winnerLabel: null, loserLabel: null,
+    winnerPlatform: null, loserPlatform: null,
     differencePct: null, financialImpact: null, impactKind: null,
   };
   if (va === null || va === undefined || vb === null || vb === undefined) return base;
@@ -348,6 +359,8 @@ function judge(metric: MetricKey, a: ReportRow, b: ReportRow): ComparisonVerdict
     winnerKey: winner.key,
     winnerLabel: winner.label,
     loserLabel: loser.label,
+    winnerPlatform: winner.platform,
+    loserPlatform: loser.platform,
     differencePct,
     financialImpact,
     impactKind,
