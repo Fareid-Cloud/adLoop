@@ -154,10 +154,14 @@ export function MetricCard(props: MetricCardProps) {
         )}
       </div>
 
-      {/* الرقم - أرقام جدولية حتى تصطفّ رأسياً بين البطاقات ولا ترقص عند التحديث */}
+      {/* الرقم - أرقام جدولية حتى تصطفّ رأسياً بين البطاقات ولا ترقص عند التحديث.
+          `28px/bold` لا `26px/semibold`: البطاقة كانت تعرض الاسم والرقم
+          بوزنين متقاربين، فتُقرأ ككتلة نصّ واحدة ولا يقفز الرقم إلى العين -
+          وهو الشيء الوحيد الذي جاء المستخدم لأجله. الفارق في الوزن هو ما
+          يجعل صفّاً من ستّ بطاقات يُمسح بنظرة بدل أن يُقرأ بطاقةً بطاقة. */}
       <div className="flex items-baseline gap-1.5">
         <span
-          className={`text-[26px] font-semibold leading-none tracking-tight tabular-nums text-text-primary ${
+          className={`text-[28px] font-bold leading-none tracking-tight tabular-nums text-text-primary ${
             verified === false ? "border-b border-dashed border-text-faint pb-0.5 opacity-90" : ""
           }`}
         >
