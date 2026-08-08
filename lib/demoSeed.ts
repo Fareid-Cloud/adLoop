@@ -31,14 +31,55 @@ interface SeedCampaign {
   aov: number;
 }
 
+/**
+ * 🔴 لماذا أُعيدت معايرة هذه الأرقام (٨ أغسطس ٢٠٢٦):
+ *
+ * كانت مساحة العرض تُظهر **صافي ربح -٦٢٬١٨٥ ريالاً** و«متجرك يخسر بعد
+ * احتساب كلّ التكاليف». والسبب لم يكن رقماً واحداً خاطئاً، بل **عالمين
+ * منفصلين في البذرة نفسها**:
+ *
+ *   • الحملات كانت تُنتج ~٧٢ تحويلاً متحقَّقاً في اليوم وتصرف ٢٬٧٧٥ ريالاً.
+ *   • والمتجر كان يُبذَر بمئة وستّين طلباً موزّعةً على ستّين يوماً - أي
+ *     **٢٫٧ طلبات في اليوم**.
+ *
+ * و`getProfitJourney` تأخذ الإيراد من **الطلبات** (لأنّها موجودة) والإنفاق
+ * الإعلانيّ من **لقطات الحملات**. فتُقارَن ميزانية حسابٍ كبير بإيراد متجرٍ
+ * صغير: إنفاقٌ يفوق إيراد المتجر كلّه ضعفين وثلثاً. الخسارة كانت نتيجةً
+ * حسابيةً صحيحة لمُدخَلات لا يمكن أن تتعايش.
+ *
+ * **المعايرة تربط العالمين بدل أن ترفع رقماً:** حجم الحملات نزل إلى ثلثه
+ * فصار يُنتج ~٢٤ تحويلاً في اليوم، وعدد الطلبات ارتفع ليطابقه - فالطلب
+ * الآن نتيجةُ تحويلٍ لا رقمٌ موازٍ له. والتحقّق من الترابط: إيراد لقطات
+ * الحملات (التحويلات × متوسّط قيمة الطلب) ≈ ١١٬٢٤٠ في اليوم، وإيراد
+ * الطلبات ≈ ١٠٬٩٠٠ - رقمان يصفان الشيء نفسه فيتقاربان كما يجب.
+ *
+ * **وتبقى المشكلات القابلة للإصلاح كما هي، فهي المنتج:** «جمهور واسع»
+ * يصرف بصفر تحويل متحقَّق، وفجوة التضخيم قائمة، ومنتج يُباع بخسارة. ما
+ * تغيّر أنّ المحصّلة صارت حساباً رابحاً فيه ما يُحسَّن - لا حساباً ينزف
+ * مبلغاً لا يصبر عليه أحد.
+ */
 export const DEMO_CAMPAIGNS: SeedCampaign[] = [
-  { id: "demo-g-search", nameAr: "بحث — طلب عرض سعر", nameEn: "Search — Request a quote", platform: "GOOGLE_ADS", account: "482-119-7730", baseCost: 640, baseClicks: 148, baseRaw: 21, verifyRate: 0.85, aov: 520 },
-  { id: "demo-g-brand", nameAr: "بحث — اسم العلامة", nameEn: "Search — Brand terms", platform: "GOOGLE_ADS", account: "482-119-7730", baseCost: 180, baseClicks: 96, baseRaw: 14, verifyRate: 0.78, aov: 610 },
-  { id: "demo-m-retarget", nameAr: "ميتا — إعادة استهداف", nameEn: "Meta — Retargeting", platform: "META_ADS", account: "act_609183472", baseCost: 520, baseClicks: 310, baseRaw: 34, verifyRate: 0.44, aov: 470 },
-  { id: "demo-m-awareness", nameAr: "ميتا — وعي بالعلامة", nameEn: "Meta — Brand awareness", platform: "META_ADS", account: "act_609183472", baseCost: 730, baseClicks: 690, baseRaw: 58, verifyRate: 0.31, aov: 390 },
-  { id: "demo-t-video", nameAr: "تيك توك — فيديو المنتج", nameEn: "TikTok — Product video", platform: "TIKTOK_ADS", account: "7291043118", baseCost: 410, baseClicks: 540, baseRaw: 46, verifyRate: 0.22, aov: 330 },
-  { id: "demo-t-broad", nameAr: "تيك توك — جمهور واسع", nameEn: "TikTok — Broad audience", platform: "TIKTOK_ADS", account: "7291043118", baseCost: 295, baseClicks: 380, baseRaw: 12, verifyRate: 0, aov: 0 },
+  { id: "demo-g-search", nameAr: "بحث — طلب عرض سعر", nameEn: "Search — Request a quote", platform: "GOOGLE_ADS", account: "482-119-7730", baseCost: 530, baseClicks: 148, baseRaw: 7, verifyRate: 0.85, aov: 520 },
+  { id: "demo-g-brand", nameAr: "بحث — اسم العلامة", nameEn: "Search — Brand terms", platform: "GOOGLE_ADS", account: "482-119-7730", baseCost: 150, baseClicks: 96, baseRaw: 5, verifyRate: 0.78, aov: 610 },
+  { id: "demo-m-retarget", nameAr: "ميتا — إعادة استهداف", nameEn: "Meta — Retargeting", platform: "META_ADS", account: "act_609183472", baseCost: 430, baseClicks: 310, baseRaw: 11, verifyRate: 0.44, aov: 470 },
+  { id: "demo-m-awareness", nameAr: "ميتا — وعي بالعلامة", nameEn: "Meta — Brand awareness", platform: "META_ADS", account: "act_609183472", baseCost: 605, baseClicks: 690, baseRaw: 19, verifyRate: 0.31, aov: 390 },
+  { id: "demo-t-video", nameAr: "تيك توك — فيديو المنتج", nameEn: "TikTok — Product video", platform: "TIKTOK_ADS", account: "7291043118", baseCost: 340, baseClicks: 540, baseRaw: 15, verifyRate: 0.22, aov: 330 },
+  // الحملة الخاسرة عمداً: تصرف بلا تحويل متحقَّق واحد. تبقى كما هي - هي
+  // نفسها ما يبيعه المنتج، وحذفها يجعل الديمو حساباً لا مشكلة فيه.
+  { id: "demo-t-broad", nameAr: "تيك توك — جمهور واسع", nameEn: "TikTok — Broad audience", platform: "TIKTOK_ADS", account: "7291043118", baseCost: 245, baseClicks: 380, baseRaw: 4, verifyRate: 0, aov: 0 },
 ];
+
+/**
+ * عدد الطلبات اليوميّ في المتجر - **مشتقّ من التحويلات المتحقَّقة أعلاه
+ * لا مختار**. مجموع (`baseRaw` × `verifyRate`) للحملات الستّ ≈ ٢٤، والطلب
+ * هو نتيجة التحويل، فالرقمان واحد.
+ *
+ * أيّ تعديل على أرقام الحملات يجب أن يمرّ على هذا الرقم، وإلّا عاد
+ * الانفصال الذي أنتج خسارة الستّين ألفاً.
+ */
+const ORDERS_PER_DAY = 24;
+/** أفق الطلبات - أوسع من نافذة العرض (٣٠ يوماً) لتصحّ المقارنة بالفترة السابقة */
+const ORDER_DAYS = 60;
 
 interface SeedAd {
   adId: string;
@@ -87,6 +128,16 @@ export const DEMO_PRODUCTS = [
   { sku: "SKU-104", nameAr: "غسول لطيف", nameEn: "Gentle cleanser", price: 129, cogs: 41, ship: 18, rto: 6, margin: 40 },
   { sku: "SKU-105", nameAr: "واقي شمس ٥٠", nameEn: "SPF 50 sunscreen", price: 169, cogs: 62, ship: 18, rto: 9, margin: 36 },
 ];
+
+/**
+ * إصدار البذرة. **يُرفَع مع أيّ تعديل على أرقامها** - أسماءً كانت أو
+ * أحجاماً أو معادلات. `seedDemoWorkspace` تقارنه بالمخزَّن على المساحة
+ * وتُعيد البذر عند الاختلاف، فيصل التصحيح إلى من أنشأ ديموه قبله.
+ *
+ * ٢ = معايرة الربحية (٨ أغسطس ٢٠٢٦): ربط عدد الطلبات بالتحويلات المتحقَّقة
+ *     بعد أن كان صافي الربح -٦٢ ألفاً لانفصالهما.
+ */
+export const DEMO_SEED_VERSION = 2;
 
 const DAYS = 90;
 
@@ -401,7 +452,12 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
     ? ["الرياض", "جدة", "الدمام", "مكة", "المدينة"]
     : ["Riyadh", "Jeddah", "Dammam", "Mecca", "Medina"];
 
-  const customers = Array.from({ length: 40 }, (_, ci) => ({
+  // 🔴 كانوا أربعين عميلاً لمئة وستّين طلباً. بعد معايرة حجم المتجر صاروا
+  // يحملون ألفاً وأربعمئة طلب - ستّة وثلاثون طلباً للعميل الواحد في شهرين،
+  // وهو رقمٌ لا يوجد في متجر حقيقيّ. العدد يتبع الطلبات: ~٣ طلبات لكلّ
+  // عميل، وهو معدّل تكرارٍ معقول لمتجر عناية بالبشرة.
+  const CUSTOMER_COUNT = Math.round((ORDERS_PER_DAY * ORDER_DAYS) / 3);
+  const customers = Array.from({ length: CUSTOMER_COUNT }, (_, ci) => ({
     workspaceId,
     platform: "SALLA" as const,
     externalCustomerId: `demo-cust-${ci}`,
@@ -411,7 +467,9 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
     // عملاء متكرّرون عمداً: قسم العملاء بلا تكرار لا يعرض شيئاً ذا معنى
     ordersCount: ci % 7 === 0 ? 4 : ci % 3 === 0 ? 2 : 1,
     totalSpent: 0,
-    firstOrderAt: day(60 - ci),
+    // `60 - ci` كان يصير سالباً بعد العميل الستّين، أي تاريخ أوّل طلب في
+    // **المستقبل**. الباقي يبقيه داخل الأفق مهما كبر العدد.
+    firstOrderAt: day(ORDER_DAYS - (ci % ORDER_DAYS)),
     lastOrderAt: day(ci % 20),
   }));
   await prisma.customer.createMany({ data: customers, skipDuplicates: true });
@@ -422,7 +480,10 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
   });
 
   const orders: Prisma.OrderCreateManyInput[] = [];
-  for (let oi = 0; oi < 160; oi++) {
+  // العدد مشتقّ لا مكتوب: `ORDERS_PER_DAY` تتبع التحويلات المتحقَّقة من
+  // الحملات، و`oi % ORDER_DAYS` توزّعها بالتساوي على الأفق - فيخرج بالضبط
+  // ما تُنتجه الحملات في اليوم، لا رقماً موازياً لها.
+  for (let oi = 0; oi < ORDERS_PER_DAY * ORDER_DAYS; oi++) {
     const cust = savedCustomers[oi % savedCustomers.length];
     const p = products[oi % products.length];
     const qty = (oi % 3) + 1;
@@ -433,7 +494,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
       workspaceId, platform: "SALLA",
       externalOrderId: `demo-order-${oi}`,
       customerId: cust.id,
-      orderedAt: day(oi % 60),
+      orderedAt: day(oi % ORDER_DAYS),
       total, shippingCost: 22, currency: "SAR",
       state: returned ? "RETURNED" : "FULFILLED",
       isReturned: returned,
