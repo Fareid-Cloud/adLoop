@@ -2708,9 +2708,17 @@ export const dictionary = {
     // ==== مربّع السؤال ====
     // النصّ فصحى بلا عامّية: قاعدة أسلوب المشروع لكلّ ما يراه المستخدم.
     aiAsk: {
-      placeholder_home: "اسأل عن أرقام حسابك… مثال: أي منصّة تجيب عملاء أرخص؟",
-      placeholder_campaigns: "اسأل عن حملاتك… مثال: أي حملة تصرف بلا تحويل مؤكَّد؟",
-      placeholder_store: "اسأل عن متجرك… مثال: هل الإعلان يغطّي تكلفة البيع؟",
+      // ثلاثة أسئلة لكلّ سياق: تُكتب حرفاً حرفاً وتتبدّل، فيفهم المستخدم
+      // **نوع** ما يصحّ أن يسأله بدل أن يقرأ مثالاً واحداً ثابتاً.
+      ph_home_1: "أيّ منصّة تجيب عملاء أرخص؟",
+      ph_home_2: "أين يذهب أكبر إنفاق بلا نتيجة؟",
+      ph_home_3: "ما الفرق بين ما تُعلنه المنصّات وما تحقّق فعلاً؟",
+      ph_campaigns_1: "أيّ حملة تصرف بلا تحويل مؤكَّد؟",
+      ph_campaigns_2: "أيّ حملة تستحقّ زيادة ميزانيتها؟",
+      ph_campaigns_3: "قارن تكلفة العميل بين حملاتي.",
+      ph_store_1: "هل الإعلان يغطّي تكلفة البيع؟",
+      ph_store_2: "أيّ منتج يبتلع الإنفاق بلا ربح؟",
+      ph_store_3: "كم يكلّفني العميل الواحد فعلياً؟",
       send: "إرسال السؤال",
       costNote: "كلّ سؤال يُخصم من رصيد التحليلات الشهريّ، والجواب مبنيّ على أرقام حسابك وحدها.",
       upgrade: "ترقية الباقة",
@@ -5063,9 +5071,15 @@ export const dictionary = {
     },
     // ==== AI credits ====
     aiAsk: {
-      placeholder_home: "Ask about your numbers… e.g. which platform brings cheaper customers?",
-      placeholder_campaigns: "Ask about your campaigns… e.g. which one spends with no verified conversion?",
-      placeholder_store: "Ask about your store… e.g. is the ad covering the cost of the sale?",
+      ph_home_1: "Which platform brings cheaper customers?",
+      ph_home_2: "Where is the largest spend going with no result?",
+      ph_home_3: "What is the gap between reported and verified?",
+      ph_campaigns_1: "Which campaign spends with no verified conversion?",
+      ph_campaigns_2: "Which campaign deserves more budget?",
+      ph_campaigns_3: "Compare cost per customer across my campaigns.",
+      ph_store_1: "Is the ad covering the cost of the sale?",
+      ph_store_2: "Which product eats spend without profit?",
+      ph_store_3: "What does one customer actually cost me?",
       send: "Send question",
       costNote: "Each question uses one of your monthly analyses, and the answer is built only from your account figures.",
       upgrade: "Upgrade plan",

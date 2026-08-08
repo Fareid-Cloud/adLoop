@@ -100,8 +100,6 @@ export default async function EcommerceOverviewPage() {
         storeName={workspace.name}
       />
 
-      <AiAsk scope="store" locale={locale} />
-
       <SectionHeading hint={tr("storeStatusHint")}>{tr("storeStatus")}</SectionHeading>
 
       <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -258,6 +256,11 @@ export default async function EcommerceOverviewPage() {
       )}
 
       <RecommendedActions locale={locale} actions={actions} />
+
+      {/* مربّع السؤال في آخر المحتوى: هو `sticky` فيطفو فوق الصفحة في كلّ
+          موضع تمرير، وموضعه هنا هو حيث يرسو - فوق التذييل مباشرةً حين
+          يبلغ المستخدم الآخر. */}
+      <AiAsk scope="store" locale={locale} />
     </div>
   );
 }

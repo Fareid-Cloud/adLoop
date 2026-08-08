@@ -105,8 +105,6 @@ export default async function CampaignsPage({
 
       <CampaignsNav locale={locale} />
 
-      <AiAsk scope="campaigns" locale={locale} />
-
       {rows.length === 0 ? (
         <EmptyState
           title={t(locale, "campPages.noneTitle")}
@@ -115,6 +113,11 @@ export default async function CampaignsPage({
       ) : (
         <CampaignsOverview rows={rows} currency={workspace.currency} locale={locale} />
       )}
+
+      {/* مربّع السؤال في آخر المحتوى: هو `sticky` فيطفو فوق الصفحة في كلّ
+          موضع تمرير، وموضعه هنا هو حيث يرسو - فوق التذييل مباشرةً حين
+          يبلغ المستخدم الآخر. */}
+      <AiAsk scope="campaigns" locale={locale} />
     </div>
   );
 }

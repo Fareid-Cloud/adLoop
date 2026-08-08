@@ -331,11 +331,6 @@ export default async function GlancePage({
         </Link>
       </div>
 
-      {/* مربّع السؤال تحت الرأس مباشرةً: أوّل ما يفكّر فيه المستخدم عند
-          فتح اللوحة سؤال، لا صفٌّ من البطاقات. ولا يظهر قبل وصول بيانات:
-          سؤالٌ عن أرقام غير موجودة يُهدر رصيداً ويرجع بلا شيء. */}
-      {hasAnyData && <AiAsk scope="home" locale={locale} />}
-
       {/* اختيار الحملات يفتح تلقائياً فور العودة من ربط المنصة */}
       <Suspense fallback={null}>
         <PostConnectCampaignPrompt workspaceId={workspace.id} locale={locale} />
@@ -533,6 +528,11 @@ export default async function GlancePage({
           <MetricsExplorer workspaceId={workspace.id} locale={locale} />
         </div>
       )}
+
+      {/* مربّع السؤال في آخر المحتوى: هو `sticky` فيطفو فوق الصفحة في كلّ
+          موضع تمرير، وموضعه هنا هو حيث يرسو - فوق التذييل مباشرةً حين
+          يبلغ المستخدم الآخر. */}
+      {hasAnyData && <AiAsk scope="home" locale={locale} />}
     </div>
   );
 }
