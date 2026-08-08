@@ -12,6 +12,7 @@ import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { ReportsClient, type SavedView } from "./ReportsClient";
+import { clampRangeForUser } from "@/lib/historyWindow";
 import { runReport, METRICS, type DataSource, type Dimension, type MetricKey } from "@/lib/reports/reportEngine";
 import { periodFromParams, type CompareMode } from "@/lib/dateRange";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -91,7 +92,7 @@ export default async function ReportsPage({
             platforms: selectedPlatforms.length ? selectedPlatforms : undefined,
             campaignIds: selectedCampaigns.length ? selectedCampaigns : undefined,
           },
-          range: period.range,
+          range: await clampRangeForUser(period.range),
           compare: period.compare,
         },
         { currency: workspace.currency, campaignNames }

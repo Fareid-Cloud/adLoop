@@ -34,7 +34,8 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 import { ReportedVsActualBars } from "@/app/components/ui/ReportedVsActualBars";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { AiAsk } from "@/app/components/AiAsk";
-import { periodFromParams, toDateBounds, daysBetween } from "@/lib/dateRange";
+import { periodFromParams, daysBetween } from "@/lib/dateRange";
+import { toDateBoundsForUser } from "@/lib/historyWindow";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { HealthGauge } from "@/app/components/ui/HealthGauge";
 import Link from "next/link";
@@ -60,7 +61,7 @@ export default async function GlancePage({
   const platformFilter = platformParam && AD_PLATFORMS.includes(platformParam) ? platformParam : "";
   // الفترة صارت اختياراً حراً بدل ثلاثة أزرار ثابتة (٧/٣٠/٩٠)
   const period = periodFromParams(sp);
-  const bounds = toDateBounds(period.range);
+  const bounds = await toDateBoundsForUser(period.range);
   const days = daysBetween(period.range.from, period.range.to);
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";

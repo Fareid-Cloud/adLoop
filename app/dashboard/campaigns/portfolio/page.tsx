@@ -5,7 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { computeOptimalAllocation } from "@/lib/portfolioAllocation";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
-import { periodFromParams, toDateBounds, daysBetween } from "@/lib/dateRange";
+import { periodFromParams, daysBetween } from "@/lib/dateRange";
+import { toDateBoundsForUser } from "@/lib/historyWindow";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { LayoutGrid } from "lucide-react";
@@ -17,7 +18,7 @@ export default async function PortfolioPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const period = periodFromParams(await searchParams);
-  const bounds = toDateBounds(period.range);
+  const bounds = await toDateBoundsForUser(period.range);
 
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";

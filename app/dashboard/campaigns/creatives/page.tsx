@@ -15,7 +15,8 @@ import { AdDecisionTable } from "@/app/components/AdDecisionTable";
 import { getFrequencyByPlatform } from "@/lib/frequencyCheck";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
-import { periodFromParams, toDateBounds } from "@/lib/dateRange";
+import { periodFromParams } from "@/lib/dateRange";
+import { toDateBoundsForUser } from "@/lib/historyWindow";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { costPerVerified } from "@/lib/kpiEngine";
 import { Image } from "lucide-react";
@@ -29,7 +30,7 @@ export default async function CreativesPage({
   const tr = (k: string, vars?: Record<string, string | number>) =>
     t(locale, `creativesPage.${k}`, vars);
   const period = periodFromParams(await searchParams);
-  const bounds = toDateBounds(period.range);
+  const bounds = await toDateBoundsForUser(period.range);
 
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";

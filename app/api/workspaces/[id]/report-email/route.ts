@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { runReport, METRICS, type DataSource, type Dimension, type MetricKey } from "@/lib/reports/reportEngine";
 import { periodFromParams } from "@/lib/dateRange";
+import { clampRangeForUser } from "@/lib/historyWindow";
 import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 import { renderEmail, EMAIL_BRAND } from "@/lib/emailTemplate";
 import { getAppUrl } from "@/lib/appUrl";
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       dimension,
       metrics: metrics.length ? metrics : (["cost", "conversions", "cpa"] as MetricKey[]),
       filters: { platforms: asRecord.pf ? asRecord.pf.split(",") : undefined },
-      range: period.range,
+      range: await clampRangeForUser(period.range),
       compare: period.compare,
     },
     { currency: workspace.currency, campaignNames }

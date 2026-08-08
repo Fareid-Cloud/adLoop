@@ -253,6 +253,10 @@ async function loadSnapshots(
   range: DateRange,
   filters: ReportFilters
 ): Promise<SnapshotLike[]> {
+  // ⚠️ لا استيراد لحدّ التاريخ هنا: هذا الملفّ يُستورَد من `ReportsClient`
+  // (مكوّن متصفّح) للأنواع والثوابت، فاستيراد `next/headers` عبره يكسر
+  // البناء - وهو نفس ما وقع مع `automationRules` من قبل. المدى يصل إلى
+  // هنا **مقصوصاً** من مستدعيه، وكلاهما على الخادم.
   const bounds = toDateBounds(range);
   // placementBreakdown="ALL" فقط عدا تقارير الأماكن: الصفوف التفصيلية
   // تكرّر نفس الإنفاق مقسَّماً، فجمعها مع المجمّع يضاعف كل رقم.

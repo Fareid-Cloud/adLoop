@@ -11,7 +11,8 @@ import { countGenuineLeads } from "@/lib/messengerLeadQuality";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { MessageCircle, MousePointerClick, Clock } from "lucide-react";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
-import { periodFromParams, toDateBounds } from "@/lib/dateRange";
+import { periodFromParams } from "@/lib/dateRange";
+import { toDateBoundsForUser } from "@/lib/historyWindow";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { ClipboardList } from "lucide-react";
@@ -23,7 +24,7 @@ export default async function LeadFormsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const period = periodFromParams(await searchParams);
-  const bounds = toDateBounds(period.range);
+  const bounds = await toDateBoundsForUser(period.range);
 
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
