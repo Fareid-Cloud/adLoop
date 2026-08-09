@@ -2,19 +2,23 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOfRequest } from "@/lib/apiLocale";
 
 export async function POST(req: NextRequest) {
+  // لا جلسة بعد في هذا المسار، فاللغة من ترويسة المتصفّح
+  const locale = localeOfRequest(req);
   const { token } = await req.json();
-  if (!token) return NextResponse.json({ error: "الرمز مطلوب" }, { status: 400 });
+  if (!token) return NextResponse.json({ error: t(locale, "apiErr.tokenRequired") }, { status: 400 });
 
   const user = await prisma.user.findUnique({ where: { verificationToken: token } });
 
   if (!user) {
-    return NextResponse.json({ error: "رابط التحقق غير صالح" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.verifyLinkInvalid") }, { status: 400 });
   }
 
   if (user.verificationTokenExpiresAt && user.verificationTokenExpiresAt < new Date()) {
-    return NextResponse.json({ error: "انتهت صلاحية رابط التحقق - اطلب رابط جديد" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.verifyLinkExpired") }, { status: 400 });
   }
 
   await prisma.user.update({

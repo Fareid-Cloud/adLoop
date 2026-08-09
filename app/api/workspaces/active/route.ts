@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 // ملفات route في Next.js لا تسمح بتصدير أي شيء غير معالِجات HTTP -
 // التصدير هنا كان يُفشل البناء. الثابت محلي، ويُقرأ في مكانه بالاسم نفسه.
@@ -15,10 +17,11 @@ const ACTIVE_WORKSPACE_COOKIE = "adloop_workspace";
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   const body = await req.json().catch(() => null);
   const workspaceId = typeof body?.workspaceId === "string" ? body.workspaceId : "";
-  if (!workspaceId) return NextResponse.json({ error: "workspaceId مطلوب." }, { status: 400 });
+  if (!workspaceId) return NextResponse.json({ error: t(locale, "apiErr.workspaceIdRequired") }, { status: 400 });
 
   // الملكية تُتحقّق دائماً: بدونها يمكن تمرير معرّف مساحة عمل لمستخدم آخر
   const workspace = await prisma.workspace.findFirst({

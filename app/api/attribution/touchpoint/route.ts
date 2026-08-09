@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "طلب غير صالح" }, { status: 400 });
+    return NextResponse.json({ error: "invalid request body" }, { status: 400 });
   }
 
   const workspaceId = str(body.workspaceId);
@@ -29,10 +29,10 @@ export async function POST(req: NextRequest) {
   const kind = str(body.kind) ?? "SITE_VISIT";
 
   if (!workspaceId || !visitorId) {
-    return NextResponse.json({ error: "workspaceId و visitorId مطلوبان" }, { status: 400 });
+    return NextResponse.json({ error: "workspaceId and visitorId are required" }, { status: 400 });
   }
   if (!VALID_KINDS.has(kind)) {
-    return NextResponse.json({ error: "نوع لمسة غير معروف" }, { status: 400 });
+    return NextResponse.json({ error: "unknown touchpoint channel" }, { status: 400 });
   }
 
   try {
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("فشل تسجيل اللمسة:", err);
-    return NextResponse.json({ error: "تعذّر تسجيل اللمسة" }, { status: 500 });
+    return NextResponse.json({ error: "could not record the touchpoint" }, { status: 500 });
   }
 }
 

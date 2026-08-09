@@ -8,6 +8,8 @@ import { decryptMfaSecret, verifyMfaCode } from "@/lib/mfa";
 import { validateOrError } from "@/lib/validation/schemas";
 import { CSRF_COOKIE_NAME, generateCsrfToken } from "@/lib/csrf";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOfRequest } from "@/lib/apiLocale";
 
 const schema = z.object({
   pendingToken: z.string().min(1),
@@ -15,13 +17,15 @@ const schema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // لا جلسة بعد في هذا المسار، فاللغة من ترويسة المتصفّح
+  const locale = localeOfRequest(req);
   // إصلاح حرج من اختبار الاختراق: كود MFA (6 أرقام = مليون احتمال بس)
   // كان بدون أي حد استخدام - قابل للتخمين بالقوة الغاشمة فعلياً. حد
   // صارم جداً هنا (5 محاولات/10 دقايق لكل IP) بيقفل الباب عملياً
   const ip = getClientIp(req);
   const { allowed } = await checkRateLimit(ip, "mfa-verify", 5, 10);
   if (!allowed) {
-    return NextResponse.json({ error: "محاولات كثيرة — حاول مرة أخرى بعد قليل" }, { status: 429 });
+    return NextResponse.json({ error: t(locale, "apiErr.tooManyAttempts") }, { status: 429 });
   }
   const rawBody = await req.json();
   const validation = validateOrError(schema, rawBody);
@@ -32,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   const userId = verifyMfaPendingToken(pendingToken);
   if (!userId) {
-    return NextResponse.json({ error: "انتهت صلاحية الجلسة المؤقتة — سجّل الدخول مرة أخرى" }, { status: 401 });
+    return NextResponse.json({ error: t(locale, "apiErr.mfaSessionExpired") }, { status: 401 });
   }
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -44,13 +48,13 @@ export async function POST(req: NextRequest) {
   const isValid = await verifyMfaCode(secret, code);
 
   if (!isValid) {
-    return NextResponse.json({ error: "الكود غير صحيح" }, { status: 401 });
+    return NextResponse.json({ error: t(locale, "apiErr.codeInvalid") }, { status: 401 });
   }
 
   // منع إعادة الاستخدام (Replay): نفس الكود لو نجح قبل كده، مرفوض تاني
   // حتى لو لسه صالح داخل نافذة الوقت (30-90 ثانية تقريباً)
   if (user.mfaLastUsedCode === code) {
-    return NextResponse.json({ error: "هذا الرمز مُستخدَم من قبل — انتظر رمزاً جديداً" }, { status: 401 });
+    return NextResponse.json({ error: t(locale, "apiErr.codeUsed") }, { status: 401 });
   }
 
   await prisma.user.update({ where: { id: user.id }, data: { mfaLastUsedCode: code } });

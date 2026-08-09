@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { notifyOwnerNewSupport } from "@/lib/supportEmail";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 export async function GET(req: NextRequest) {
   const user = await getSessionUser(req);
@@ -26,6 +28,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   const body = await req.json();
   const imageUrls: string[] = Array.isArray(body.imageUrls) ? body.imageUrls.slice(0, 6) : [];
@@ -34,7 +37,7 @@ export async function POST(req: NextRequest) {
   if (body.threadId) {
     const thread = await prisma.supportThread.findFirst({ where: { id: body.threadId, userId: user.id } });
     if (!thread) return NextResponse.json({ error: "not found" }, { status: 404 });
-    if (!body.text?.trim()) return NextResponse.json({ error: "الرسالة فارغة" }, { status: 400 });
+    if (!body.text?.trim()) return NextResponse.json({ error: t(locale, "apiErr.messageEmpty") }, { status: 400 });
 
     const msg = await prisma.supportMessage.create({
       data: { threadId: thread.id, fromSupport: false, body: body.text.trim(), imageUrls, readByUser: true },
@@ -50,7 +53,7 @@ export async function POST(req: NextRequest) {
   // فتح محادثة جديدة
   const { name, email, phone, country, subject, text } = body;
   if (!name?.trim() || !email?.trim() || !subject?.trim() || !text?.trim()) {
-    return NextResponse.json({ error: "الاسم والبريد والموضوع والتفاصيل مطلوبة" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.supportFields") }, { status: 400 });
   }
 
   const thread = await prisma.supportThread.create({

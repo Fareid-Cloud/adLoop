@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { EXPERIMENT_METRICS } from "@/lib/experimentEngine";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 const ALLOWED_METRICS: string[] = EXPERIMENT_METRICS.map((m) => m.key);
 const ALLOWED_TYPES = ["BUDGET", "AD_COPY", "CREATIVE", "LANDING_PAGE", "TARGETING", "BID_STRATEGY", "PAUSE", "OTHER"];
@@ -25,6 +27,7 @@ export async function PATCH(
   const { id, experimentId } = await params;
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   const experiment = await assertOwnership(id, experimentId, user.id);
   if (!experiment) return NextResponse.json({ error: "not found" }, { status: 404 });
@@ -45,7 +48,7 @@ export async function PATCH(
       (m: unknown) => typeof m === "string" && ALLOWED_METRICS.includes(m)
     );
     if (metrics.length === 0) {
-      return NextResponse.json({ error: "اختر مؤشراً واحداً على الأقل." }, { status: 400 });
+      return NextResponse.json({ error: t(locale, "apiErr.pickOneMetricShort") }, { status: 400 });
     }
     data.trackedMetrics = metrics;
   }
@@ -63,7 +66,7 @@ export async function PATCH(
   }
 
   if (Object.keys(data).length === 0) {
-    return NextResponse.json({ error: "لا يوجد أي حقل صالح للتعديل." }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.noEditableField") }, { status: 400 });
   }
 
   const updated = await prisma.experimentLog.update({ where: { id: experimentId }, data });

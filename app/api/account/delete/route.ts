@@ -12,10 +12,13 @@ import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { deleteAccountSchema, validateOrError } from "@/lib/validation/schemas";
 import { verifyCsrfToken } from "@/lib/csrf";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   if (!verifyCsrfToken(req)) {
     return NextResponse.json({ error: "csrf validation failed" }, { status: 403 });
@@ -38,7 +41,7 @@ export async function POST(req: NextRequest) {
     ? await bcrypt.compare(password ?? "", fullUser.passwordHash)
     : true;
   if (!isValid) {
-    return NextResponse.json({ error: "كلمة المرور غير صحيحة" }, { status: 401 });
+    return NextResponse.json({ error: t(locale, "apiErr.wrongPassword") }, { status: 401 });
   }
 
   // Cascade في الـ schema بيمسح كل البيانات المرتبطة (مساحات العمل،

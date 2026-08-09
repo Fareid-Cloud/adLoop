@@ -13,6 +13,7 @@ import { getSessionUser } from "@/lib/auth";
 import { syncPriceToStore } from "@/lib/ecommerce/priceSync";
 import { recordExperiment } from "@/lib/experimentEngine";
 import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 export async function POST(
   req: NextRequest,
@@ -21,6 +22,7 @@ export async function POST(
   const { id } = await params;
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   const product = await prisma.product.findFirst({
     where: { id, workspace: { userId: user.id } },
@@ -31,7 +33,7 @@ export async function POST(
   const body = await req.json().catch(() => null);
   const newPrice = Number(body?.price);
   if (!Number.isFinite(newPrice) || newPrice <= 0) {
-    return NextResponse.json({ error: "السعر المُرسل غير صالح." }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.priceInvalid") }, { status: 400 });
   }
 
   const previousPrice = product.currentPrice;

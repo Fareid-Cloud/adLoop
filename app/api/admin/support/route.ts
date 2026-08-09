@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 function isOwner(user: { isAdmin: boolean; email: string }): boolean {
   return user.isAdmin || user.email === process.env.OWNER_EMAIL;
@@ -22,6 +24,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user || !isOwner(user)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  const locale = localeOf(user);
 
   const body = await req.json();
   const threadId: string | undefined = body.threadId;
@@ -31,7 +34,7 @@ export async function POST(req: NextRequest) {
 
   // صورة وحدها ردّ صالح - اشتراط النصّ كان يمنع إرسال لقطة شاشة بلا تعليق.
   if (!threadId || (!text && imageUrls.length === 0)) {
-    return NextResponse.json({ error: "بيانات ناقصة" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.missingFields") }, { status: 400 });
   }
 
   const thread = await prisma.supportThread.findUnique({ where: { id: threadId } });

@@ -3,6 +3,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 export async function GET(
   req: NextRequest,
@@ -32,6 +34,7 @@ export async function POST(
   const { id } = await params;
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   const workspace = await prisma.workspace.findFirst({
     where: { id: id, userId: user.id },
@@ -40,7 +43,7 @@ export async function POST(
 
   const body = await req.json();
   if (!body.name || typeof body.currentPrice !== "number") {
-    return NextResponse.json({ error: "الاسم والسعر الحالي مطلوبين" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.nameAndPriceRequired") }, { status: 400 });
   }
 
   const product = await prisma.product.create({

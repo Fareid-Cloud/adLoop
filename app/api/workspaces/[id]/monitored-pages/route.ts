@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { checkTrackingPresence } from "@/lib/trackingCoverage";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 export async function GET(
   req: NextRequest,
@@ -33,6 +35,7 @@ export async function POST(
   const { id } = await params;
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   const workspace = await prisma.workspace.findFirst({
     where: { id: id, userId: user.id },
@@ -40,7 +43,7 @@ export async function POST(
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const { url, label } = await req.json();
-  if (!url) return NextResponse.json({ error: "الرابط مطلوب" }, { status: 400 });
+  if (!url) return NextResponse.json({ error: t(locale, "apiErr.urlRequired") }, { status: 400 });
 
   // بنفحص فوراً وقت الإضافة، مش بنستنى الجدولة الدورية عشان المستخدم
   // يشوف النتيجة فوراً

@@ -11,26 +11,29 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { applyAdDecision, type Decision } from "@/lib/adDecisions";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 const ALLOWED: Decision[] = ["SCALE", "HOLD", "PAUSE"];
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   let body: { workspaceId?: string; adId?: string; decision?: string };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "طلب غير صالح" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.badRequest") }, { status: 400 });
   }
 
   const { workspaceId, adId, decision } = body;
   if (!workspaceId || !adId || !decision) {
-    return NextResponse.json({ error: "بيانات ناقصة" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.missingFields") }, { status: 400 });
   }
   if (!ALLOWED.includes(decision as Decision)) {
-    return NextResponse.json({ error: "قرار غير معروف" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.unknownDecision") }, { status: 400 });
   }
 
   const workspace = await prisma.workspace.findFirst({

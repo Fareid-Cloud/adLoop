@@ -6,10 +6,13 @@ import { auditAdImageQuality } from "@/lib/imageQualityAudit";
 import { checkAndConsumeImageQualityQuota } from "@/lib/aiRateLimit";
 import { blockAiInDemo } from "@/lib/demo";
 import { prisma } from "@/lib/prisma";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   // إصلاح ثغرة مالية حقيقية: كانت الميزة دي من غير أي حد أقصى خالص
   const quota = await checkAndConsumeImageQualityQuota(user.id);
@@ -23,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   const { imageUrl, platform, workspaceId } = await req.json();
   if (!imageUrl || !platform || !workspaceId) {
-    return NextResponse.json({ error: "imageUrl و platform و workspaceId مطلوبين" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.qualityCheckFields") }, { status: 400 });
   }
 
   // ملكيّة المساحة تُتحقَّق قبل أيّ نداء: المعرّف يصل من العميل، فقبوله كما
@@ -40,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   const result = await auditAdImageQuality(imageUrl, platform, (user.preferredLocale as "ar" | "en") ?? "ar");
   if (!result) {
-    return NextResponse.json({ error: "تعذّر تحليل الصورة (رابط منتهي أو غير متاح)" }, { status: 422 });
+    return NextResponse.json({ error: t(locale, "apiErr.imageUnreadable") }, { status: 422 });
   }
 
   return NextResponse.json(result);

@@ -25,20 +25,20 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "طلب غير صالح" }, { status: 400 });
+    return NextResponse.json({ error: "invalid request body" }, { status: 400 });
   }
 
   const workspaceId = str(body.workspaceId);
   const externalId = str(body.externalId);
   if (!workspaceId || !externalId) {
-    return NextResponse.json({ error: "workspaceId و externalId مطلوبان" }, { status: 400 });
+    return NextResponse.json({ error: "workspaceId and externalId are required" }, { status: 400 });
   }
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
     select: { currency: true, targetLocation: true },
   });
-  if (!workspace) return NextResponse.json({ error: "مساحة العمل غير موجودة" }, { status: 404 });
+  if (!workspace) return NextResponse.json({ error: "workspace not found" }, { status: 404 });
 
   // رمز الدولة الافتراضي لتطبيع الهاتف إلى E.164 - رقم بصيغة محلية لن
   // يطابق شيئاً لدى المنصة مهما كان التهشيم سليماً
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error("فشل تسجيل حدث التحويل:", err);
-    return NextResponse.json({ error: "تعذّر تسجيل الحدث" }, { status: 500 });
+    return NextResponse.json({ error: "could not record the event" }, { status: 500 });
   }
 }
 

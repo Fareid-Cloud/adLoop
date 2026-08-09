@@ -12,22 +12,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { integrationByKey } from "@/lib/integrationsCatalog";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 const AD_PLATFORMS = new Set(["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS", "SNAPCHAT_ADS"]);
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   let body: { workspaceId?: string; key?: string };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "طلب غير صالح" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.badRequest") }, { status: 400 });
   }
 
   const { workspaceId, key } = body;
-  if (!workspaceId || !key) return NextResponse.json({ error: "بيانات ناقصة" }, { status: 400 });
+  if (!workspaceId || !key) return NextResponse.json({ error: t(locale, "apiErr.missingFields") }, { status: 400 });
 
   const workspace = await prisma.workspace.findFirst({
     where: { id: workspaceId, userId: user.id },
@@ -37,7 +40,7 @@ export async function POST(req: NextRequest) {
 
   const def = integrationByKey(key);
   if (!def?.platform) {
-    return NextResponse.json({ error: "هذا التكامل لا يدعم الفصل من هنا" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.integrationNotDisconnectable") }, { status: 400 });
   }
 
   try {

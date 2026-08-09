@@ -13,10 +13,13 @@ import { getSessionUser } from "@/lib/auth";
 import { runDeepSiteScan } from "@/lib/siteScanOrchestrator";
 import { checkAndConsumeSiteScanQuota } from "@/lib/aiRateLimit";
 import { blockAiInDemo } from "@/lib/demo";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   // إصلاح ثغرة مالية حقيقية: أغلى ميزة في المشروع (4 نداءات Claude لكل
   // فحص) كانت من غير أي حد أقصى على الإطلاق. الفحص هنا قبل أي شغل خالص، عشان
@@ -32,7 +35,7 @@ export async function POST(req: NextRequest) {
 
   const { workspaceId, url, competitorUrls } = await req.json();
   if (!workspaceId || !url) {
-    return NextResponse.json({ error: "workspaceId و url مطلوبين" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.scanFields") }, { status: 400 });
   }
 
   const workspace = await prisma.workspace.findFirst({

@@ -10,12 +10,15 @@ import { prisma } from "@/lib/prisma";
 import { logAdminAction } from "@/lib/adminAudit";
 import { impersonateSchema, validateOrError } from "@/lib/validation/schemas";
 import { verifyCsrfToken } from "@/lib/csrf";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 export async function POST(req: NextRequest) {
   const admin = await getSessionUserFromCookies();
   if (!admin || !admin.isAdmin) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  const locale = localeOf(admin);
 
   if (!verifyCsrfToken(req)) {
     return NextResponse.json({ error: "csrf validation failed" }, { status: 403 });
@@ -34,7 +37,7 @@ export async function POST(req: NextRequest) {
   // اتنازل عن جلسته (اختراق مثلاً)، ده كان هيسمح بتصعيد إضافي أو إخفاء
   // الأثر عن طريق "لبس" هوية أدمن تاني
   if (targetUser.isAdmin) {
-    return NextResponse.json({ error: "لا يمكن انتحال حساب مسؤول آخر" }, { status: 403 });
+    return NextResponse.json({ error: t(locale, "apiErr.cantImpersonateAdmin") }, { status: 403 });
   }
 
   await logAdminAction({

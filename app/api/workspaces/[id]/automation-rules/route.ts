@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { checkAutomationRuleLimit } from "@/lib/entitlements";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 export async function GET(
   req: NextRequest,
@@ -33,6 +35,7 @@ export async function POST(
   const { id } = await params;
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   const workspace = await prisma.workspace.findFirst({
     where: { id: id, userId: user.id },
@@ -83,16 +86,16 @@ const body = await req.json().catch(() => null);
   const ALLOWED_PLATFORMS = ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"];
 
   if (typeof body.name !== "string" || !body.name.trim()) {
-    return NextResponse.json({ error: "اسم القاعدة مطلوب." }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.ruleNameRequired") }, { status: 400 });
   }
   if (!ALLOWED_ACTIONS.includes(body.action)) {
-    return NextResponse.json({ error: "الإجراء المحدد غير معروف." }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.unknownAction") }, { status: 400 });
   }
   if (!ALLOWED_OPERATORS.includes(body.operator)) {
-    return NextResponse.json({ error: "الشرط المحدد غير معروف." }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.unknownCondition") }, { status: 400 });
   }
   if (typeof body.threshold !== "number" || Number.isNaN(body.threshold)) {
-    return NextResponse.json({ error: "قيمة العتبة غير صالحة." }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.thresholdInvalid") }, { status: 400 });
   }
 
   const appliesTo = ALLOWED_SCOPES.includes(body.appliesTo) ? body.appliesTo : "ALL_CAMPAIGNS";
@@ -103,7 +106,7 @@ const body = await req.json().catch(() => null);
     ? body.specificCampaignIds.filter((c: unknown) => typeof c === "string")
     : [];
   if (appliesTo === "SPECIFIC_CAMPAIGNS" && campaignIds.length === 0) {
-    return NextResponse.json({ error: "اختر حملة واحدة على الأقل عند تحديد النطاق." }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.scopeNeedsCampaign") }, { status: 400 });
   }
 
   // الحدّ يُفحص على الخادم: الواجهة تخفي الزرّ، لكن طلباً مباشراً يتجاوزها

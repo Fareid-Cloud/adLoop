@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { getUsageState } from "@/lib/usageCaps";
 import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 export const maxDuration = 60;
 
@@ -27,6 +28,7 @@ export async function POST(
   const { id } = await params;
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   const workspace = await prisma.workspace.findFirst({ where: { id, userId: user.id } });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
@@ -39,7 +41,7 @@ export async function POST(
 
   if (links.length === 0) {
     return NextResponse.json(
-      { error: "لا توجد حملات مرتبطة بعد. اختر حملاتك أولاً ثم شغّل المزامنة." },
+      { error: t(locale, "apiErr.noCampaignsLinked") },
       { status: 400 }
     );
   }

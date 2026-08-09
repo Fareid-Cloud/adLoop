@@ -5,15 +5,19 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { resetPasswordSchema, validateOrError } from "@/lib/validation/schemas";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOfRequest } from "@/lib/apiLocale";
 
 export async function POST(req: NextRequest) {
+  // لا جلسة بعد في هذا المسار، فاللغة من ترويسة المتصفّح
+  const locale = localeOfRequest(req);
   // اكتشاف من الفحص النهائي قبل اختبار القوة الغاشمة: مفيش حد استخدام
   // على الـ endpoint ده خالص - التوكن صعب التخمين (32 بايت عشوائي) لكن
   // دفاع متعدد الطبقات أفضل من الاعتماد على صعوبة التخمين بس
   const ip = getClientIp(req);
   const { allowed } = await checkRateLimit(ip, "reset-password", 5, 15);
   if (!allowed) {
-    return NextResponse.json({ error: "محاولات كثيرة — حاول مرة أخرى بعد قليل" }, { status: 429 });
+    return NextResponse.json({ error: t(locale, "apiErr.tooManyAttempts") }, { status: 429 });
   }
 
   const rawBody = await req.json();
@@ -26,11 +30,11 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.findUnique({ where: { resetPasswordToken: token } });
 
   if (!user) {
-    return NextResponse.json({ error: "رابط إعادة التعيين غير صالح" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.resetLinkInvalid") }, { status: 400 });
   }
 
   if (!user.resetPasswordTokenExpiresAt || user.resetPasswordTokenExpiresAt < new Date()) {
-    return NextResponse.json({ error: "انتهت صلاحية الرابط - اطلب رابط جديد" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.resetLinkExpired") }, { status: 400 });
   }
 
   const passwordHash = await bcrypt.hash(newPassword, 12);

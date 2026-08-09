@@ -9,6 +9,8 @@ import { getSessionUser } from "@/lib/auth";
 import { encryptToken } from "@/lib/encryption";
 import { PLATFORM_LABEL, type EcommercePlatform } from "@/lib/ecommerce/types";
 import { checkStoreLimit } from "@/lib/entitlements";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 const ALLOWED: EcommercePlatform[] = ["SALLA", "SHOPIFY", "ZID", "WOOCOMMERCE", "EASY_ORDERS"];
 
@@ -40,6 +42,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   const workspace = await prisma.workspace.findFirst({ where: { id, userId: user.id } });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
@@ -66,11 +69,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   if (!ALLOWED.includes(body.platform)) {
-    return NextResponse.json({ error: "منصة غير مدعومة." }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.platformUnsupported") }, { status: 400 });
   }
   if (typeof body.webhookSecret !== "string" || body.webhookSecret.trim().length < 8) {
     return NextResponse.json(
-      { error: "سرّ الويب هوك مطلوب (8 أحرف على الأقل) - بدونه لا يمكن التحقق من صحة الطلبات الواردة." },
+      { error: t(locale, "apiErr.webhookSecretRequired") },
       { status: 400 }
     );
   }
@@ -114,6 +117,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params;
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   const workspace = await prisma.workspace.findFirst({ where: { id, userId: user.id } });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
@@ -121,7 +125,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { searchParams } = new URL(req.url);
   const platform = searchParams.get("platform");
   if (!platform || !ALLOWED.includes(platform as EcommercePlatform)) {
-    return NextResponse.json({ error: "منصة غير معروفة." }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.platformUnknown") }, { status: 400 });
   }
 
   await prisma.ecommerceConnection.deleteMany({

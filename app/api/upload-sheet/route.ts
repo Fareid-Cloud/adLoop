@@ -17,10 +17,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { readSheet } from "read-excel-file/node";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
@@ -28,7 +31,7 @@ export async function POST(req: NextRequest) {
   const sourceLabel = (formData.get("sourceLabel") as string) || "Manual Source";
 
   if (!file || !workspaceId) {
-    return NextResponse.json({ error: "الملف أو الـ workspace ناقص" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.uploadFields") }, { status: 400 });
   }
 
   const workspace = await prisma.workspace.findFirst({
@@ -41,14 +44,14 @@ export async function POST(req: NextRequest) {
   // إغراق السيرفر بملف ضخم أو ملف مش Excel أصلاً (Resource Exhaustion)
   const MAX_FILE_SIZE = 5 * 1024 * 1024;
   if (file.size > MAX_FILE_SIZE) {
-    return NextResponse.json({ error: "الملف كبير جداً - الحد الأقصى 5 ميجابايت" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.fileTooLarge") }, { status: 400 });
   }
   const validTypes = [
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "application/vnd.ms-excel",
   ];
   if (file.type && !validTypes.includes(file.type)) {
-    return NextResponse.json({ error: "الملف لازم يكون Excel (.xlsx أو .xls)" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.fileMustBeExcel") }, { status: 400 });
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -58,13 +61,13 @@ export async function POST(req: NextRequest) {
     rawRows = await readSheet(buffer);
   } catch (err) {
     return NextResponse.json(
-      { error: "تعذّر قراءة الملف - تأكد إنه ملف Excel صحيح" },
+      { error: t(locale, "apiErr.fileUnreadable") },
       { status: 400 }
     );
   }
 
   if (rawRows.length < 2) {
-    return NextResponse.json({ error: "الملف فاضي أو مفيهوش صفوف بيانات" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.fileEmpty") }, { status: 400 });
   }
 
   const headers = rawRows[0].map((h) => String(h ?? "").trim());

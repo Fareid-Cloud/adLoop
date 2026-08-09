@@ -9,6 +9,8 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { computeSmartDefaults } from "@/lib/dashboardDefaults";
 import { checkWorkspaceLimit, getEntitlements } from "@/lib/entitlements";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 // الحدود من `lib/entitlements` حصراً. كان هنا جدول ثالث مستقلّ فيه باقة
 // `growth` لا وجود لها - ثلاثة جداول للحدود يعني أن اثنين منها يكذبان.
@@ -35,11 +37,12 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   const { name, industryVertical } = await req.json();
 
   if (!name || typeof name !== "string" || name.trim().length === 0) {
-    return NextResponse.json({ error: "الاسم مطلوب" }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.nameRequired") }, { status: 400 });
   }
 
   const check = await checkWorkspaceLimit(user.id);

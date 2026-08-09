@@ -13,6 +13,7 @@ import { loginSchema, validateOrError } from "@/lib/validation/schemas";
 import { CSRF_COOKIE_NAME, generateCsrfToken } from "@/lib/csrf";
 
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { localeOf, localeOfRequest } from "@/lib/apiLocale";
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
@@ -21,6 +22,11 @@ const LOCKOUT_MINUTES = 15;
 const DUMMY_HASH_FOR_TIMING_SAFETY = "$2a$12$K9Jk3z8QwXvN5tR7yLmF4uH2bC1dE6fG8iJ0kL2mN4oP6qR8sT0uV";
 
 export async function POST(req: NextRequest) {
+  // اللغة تُعرَف على مرحلتين هنا وحدها: رسالتان تسبقان معرفة المستخدم
+  // (حدّ المحاولات وفحص الحقول)، فتُقرأ من ترويسة المتصفّح؛ ثمّ تُرفَّع إلى
+  // تفضيله المحفوظ فور إيجاده - وهو أصدق ما نملك.
+  let locale: Locale = localeOfRequest(req);
+
   // إصلاح حرج من الاختبار العدائي: القفل الموجود كان على مستوى الحساب
   // الواحد بس - مهاجم عنده باسورد واحد يقدر يجربه ضد آلاف الإيميلات
   // المختلفة من نفس الـ IP من غير ما يقفل حساب واحد (Credential Stuffing).
@@ -29,7 +35,7 @@ export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   const { allowed } = await checkRateLimit(ip, "login", 10, 15);
   if (!allowed) {
-    return NextResponse.json({ error: "محاولات دخول كثيرة من الجهاز نفسه — حاول مرة أخرى بعد قليل" }, { status: 429 });
+    return NextResponse.json({ error: t(locale, "apiErr.tooManyLoginAttempts") }, { status: 429 });
   }
   const rawBody = await req.json();
   const validation = validateOrError(loginSchema, rawBody);
@@ -40,13 +46,13 @@ export async function POST(req: NextRequest) {
 
   if (!email || !password) {
     return NextResponse.json(
-      { error: "Email/البريد الإلكتروني وكلمة المرور/password مطلوبين" },
+      { error: t(locale, "apiErr.emailPasswordRequired") },
       { status: 400 }
     );
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
-  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  if (user) locale = localeOf(user);
 
   // إصلاح من اختبار الاختراق: كان الرد بيرجع فوراً لو الإيميل مش موجود
   // (من غير ما ننده bcrypt.compare)، لكن بيستنى وقت bcrypt الحقيقي (بطيء

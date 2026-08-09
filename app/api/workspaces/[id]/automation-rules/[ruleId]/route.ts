@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 const ALLOWED_SCOPES = ["ALL_CAMPAIGNS", "SPECIFIC_CAMPAIGNS"];
 const ALLOWED_PLATFORMS = ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"];
@@ -24,6 +26,7 @@ export async function PATCH(
   const { id, ruleId } = await params;
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   const rule = await assertOwnership(id, ruleId, user.id);
   if (!rule) return NextResponse.json({ error: "not found" }, { status: 404 });
@@ -53,14 +56,14 @@ export async function PATCH(
       ? body.specificCampaignIds.filter((c: unknown) => typeof c === "string")
       : [];
     if (body.appliesTo === "SPECIFIC_CAMPAIGNS" && ids.length === 0) {
-      return NextResponse.json({ error: "اختر حملة واحدة على الأقل عند تحديد النطاق." }, { status: 400 });
+      return NextResponse.json({ error: t(locale, "apiErr.scopeNeedsCampaign") }, { status: 400 });
     }
     data.appliesTo = body.appliesTo;
     data.specificCampaignIds = body.appliesTo === "SPECIFIC_CAMPAIGNS" ? ids : [];
   }
 
   if (Object.keys(data).length === 0) {
-    return NextResponse.json({ error: "لا يوجد أي حقل صالح للتعديل." }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.noEditableField") }, { status: 400 });
   }
 
   const updated = await prisma.automationRule.update({ where: { id: ruleId }, data });

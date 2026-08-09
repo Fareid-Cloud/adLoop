@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { generateAuditReportHtml } from "@/lib/generateAuditReportHtml";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 export async function GET(
   req: NextRequest,
@@ -15,6 +17,7 @@ export async function GET(
   const { id } = await params;
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   const scan = await prisma.siteScanResult.findFirst({
     where: { id: id, workspace: { userId: user.id } },
@@ -22,7 +25,7 @@ export async function GET(
   });
 
   if (!scan || scan.status !== "COMPLETED" || !scan.fullReport) {
-    return NextResponse.json({ error: "الفحص غير مكتمل أو غير موجود" }, { status: 404 });
+    return NextResponse.json({ error: t(locale, "apiErr.scanIncomplete") }, { status: 404 });
   }
 
   const report = scan.fullReport as any;

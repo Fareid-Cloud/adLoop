@@ -11,6 +11,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { recordExperiment, EXPERIMENT_METRICS } from "@/lib/experimentEngine";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 
 const ALLOWED_TYPES = ["BUDGET", "AD_COPY", "CREATIVE", "LANDING_PAGE", "TARGETING", "BID_STRATEGY", "PAUSE", "OTHER"];
 const ALLOWED_METRICS: string[] = EXPERIMENT_METRICS.map((m) => m.key);
@@ -43,6 +45,7 @@ export async function POST(
   const { id } = await params;
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const locale = localeOf(user);
 
   const workspace = await prisma.workspace.findFirst({
     where: { id: id, userId: user.id },
@@ -53,17 +56,17 @@ export async function POST(
   if (!body) return NextResponse.json({ error: "invalid body" }, { status: 400 });
 
   if (typeof body.description !== "string" || !body.description.trim()) {
-    return NextResponse.json({ error: "وصف التغيير مطلوب." }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.changeDescRequired") }, { status: 400 });
   }
   if (!ALLOWED_TYPES.includes(body.changeType)) {
-    return NextResponse.json({ error: "نوع التغيير غير معروف." }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.unknownChangeType") }, { status: 400 });
   }
 
   const trackedMetrics = Array.isArray(body.trackedMetrics)
     ? body.trackedMetrics.filter((m: unknown) => typeof m === "string" && ALLOWED_METRICS.includes(m))
     : [];
   if (trackedMetrics.length === 0) {
-    return NextResponse.json({ error: "اختر مؤشراً واحداً على الأقل للمقارنة." }, { status: 400 });
+    return NextResponse.json({ error: t(locale, "apiErr.pickOneMetric") }, { status: 400 });
   }
 
   const windowDays = [3, 7, 14, 30].includes(Number(body.windowDays)) ? Number(body.windowDays) : 7;
@@ -74,7 +77,7 @@ export async function POST(
     const link = await prisma.campaignLink.findFirst({
       where: { workspaceId: id, externalCampaignId: body.campaignId },
     });
-    if (!link) return NextResponse.json({ error: "الحملة غير مرتبطة بمساحة العمل." }, { status: 400 });
+    if (!link) return NextResponse.json({ error: t(locale, "apiErr.campaignNotLinked") }, { status: 400 });
     campaignId = body.campaignId;
   }
 

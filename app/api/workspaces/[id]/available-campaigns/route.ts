@@ -141,7 +141,7 @@ async function getGoogleCampaigns(userId: string, locale: Locale) {
 
   if (!connection.refreshToken) {
     return NextResponse.json(
-      { error: "صلاحية الوصول إلى Google Ads منتهية. أعد ربط الحساب." },
+      { error: t(locale, "apiErr.googleTokenExpired") },
       { status: 400 }
     );
   }
@@ -169,7 +169,7 @@ async function getGoogleCampaigns(userId: string, locale: Locale) {
 
     if (accessibleIds.length === 0) {
       return NextResponse.json(
-        { error: "لا توجد حسابات Google Ads مرتبطة بهذا الحساب.", accounts: [] },
+        { error: t(locale, "apiErr.noGoogleAccounts"), accounts: [] },
         { status: 200 }
       );
     }
