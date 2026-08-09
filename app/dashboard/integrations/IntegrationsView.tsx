@@ -211,9 +211,39 @@ export function IntegrationsView({
               nameOf={nameOf}
               onPick={(def) => {
                 // القاعدة: لا توجيه إلى الإعدادات. الربط إمّا OAuth مباشر،
-                // أو نافذة اختيار حملات تُفتح في مكانها.
-                if (def.connectPath?.startsWith("/api/")) window.location.href = def.connectPath;
-                else if (def.platform) setPickerPlatform(def.platform);
+                // أو نافذة تُفتح في مكانها.
+                if (def.connectPath?.startsWith("/api/")) {
+                  window.location.href = def.connectPath;
+                  return;
+                }
+
+                // 🔴 **اختيار الحملات لمنصّات الإعلان وحدها.**
+                //
+                // كان الشرط `def.platform` فقط، ولمتجرٍ مثل شوبيفاي حقلُ
+                // `platform` مملوء (`"SHOPIFY"`) وإن لم يكن منصّة إعلان -
+                // فتُفتح نافذة اختيار الحملات على متجر، وتردّ بأن لا حملات
+                // فيه. رسالةٌ صحيحة في نافذةٍ ما كان يصحّ أن تُفتح أصلاً.
+                //
+                // الفصل بالفئة لا بامتلاء الحقل - وهي نفس العلّة التي
+                // أُصلحت في `IntegrationDrawer` حين كان يميّز المتجر
+                // باسم حقلٍ آخر بدل فئته.
+                if (def.category === "AD_PLATFORM" && def.platform) {
+                  setPickerPlatform(def.platform);
+                  return;
+                }
+
+                // ما عداها: درجُه إن كان مربوطاً بالفعل - فيه إعداداته.
+                //
+                // ⚠️ **وإن لم يكن مربوطاً فلا شيء يُفتح، وهذه فجوة معروفة
+                // غير مصلَحة:** ربط متجرٍ يحتاج نموذجاً خاصّاً به (سرّ
+                // الويب هوك ومعرّف المتجر)، ولا وجود له في الواجهة بعد -
+                // وصفحة المتجر نفسها تحيل إلى هنا، فتدور الإحالة على
+                // نفسها. أُصلح هنا فتحُ نافذةٍ خاطئة، لا غيابُ النموذج.
+                const isConnected = overview.active.some((a) => a.key === def.key);
+                if (isConnected) {
+                  setSelectedKey(def.key);
+                  setTab("connected");
+                }
               }}
             />
           ) : rows.length === 0 ? (

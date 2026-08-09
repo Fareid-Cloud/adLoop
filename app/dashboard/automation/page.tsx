@@ -7,6 +7,8 @@ import { ActiveRulesList } from "./ActiveRulesList";
 import { RuleCatalogBrowser } from "./RuleCatalogBrowser";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { PageHeader } from "@/app/components/ui/PageHeader";
+import { Workflow } from "lucide-react";
 
 export default async function AutomationPage() {
   const user = await getSessionUserFromCookies();
@@ -34,8 +36,12 @@ export default async function AutomationPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-6 page-title">{t(locale, "autoPage.title")}</h1>
+      <PageHeader
+        icon={Workflow}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "autoPage.title")}
+      />
 
       {!workspace.enableAutomationRules && (
         <div className="mb-4 rounded-2xl bg-gap/10 p-4 text-xs text-gap">

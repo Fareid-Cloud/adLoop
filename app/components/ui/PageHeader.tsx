@@ -61,35 +61,40 @@ export function PageHeader({
     // مكانه الآن `actions` - وهو ما تفعله صفحة «مركز الحقيقة» التي اتّخذها
     // المالك مرجعاً.
     <header className="mb-6">
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-        <div className="flex min-w-0 items-start gap-3">
+      {/* 🔴 **اسم المساحة سطرٌ مستقلّ فوق الكلّ، والأيقونة مع العنوان وحده.**
+          كانت الأيقونة أختاً للصندوق الذي يضمّ السطرين معاً، فتمتدّ بطولهما
+          وتستقرّ **بينهما** - أيقونةٌ لا تخصّ أيّ سطر منهما، وهو ما رآه
+          المالك مكسوراً. الآن هي في صفّ العنوان بمحاذاة مركزية، فتُقرأ
+          كأيقونة القسم لا كفاصل بين سطرين. */}
+      {eyebrow && (
+        /* اسم مساحة عمل عربيّ داخل واجهة إنجليزية كان يُحاذى إلى الجهة
+           المقابلة للعنوان تحته، فيبدو السطران غير مرتبطين. `dir="ltr"`
+           على الصندوق يثبّت المحاذاة باتّجاه الصفحة، و`bdi` يعزل النصّ
+           فتبقى قراءته الداخلية صحيحة بلغته. */
+        <div dir="ltr" className="mb-1.5 truncate text-start text-[12.5px] text-text-muted">
+          <bdi>{eyebrow}</bdi>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 items-center gap-3">
           {Icon && (
             <span
-              className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${TONE[tone]}`}
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${TONE[tone]}`}
               aria-hidden
             >
               <Icon size={19} />
             </span>
           )}
-          <div className="min-w-0">
-            {eyebrow && (
-              /* 🔴 اسم مساحة عمل عربيّ داخل واجهة إنجليزية كان يُحاذى إلى
-                 الجهة المقابلة للعنوان تحته، فيبدو السطران غير مرتبطين.
-                 `dir="ltr"` على الصندوق يثبّت المحاذاة باتّجاه الصفحة، و`bdi`
-                 يعزل النصّ فتبقى قراءته الداخلية صحيحة بلغته. */
-              <div dir="ltr" className="mb-0.5 truncate text-start text-[12.5px] text-text-muted">
-                <bdi>{eyebrow}</bdi>
-              </div>
-            )}
-            <h1 className="page-title">{title}</h1>
-          </div>
+          <h1 className="page-title min-w-0">{title}</h1>
         </div>
         {/* `items-center` لا `items-start`: منتقي الفترة زرٌّ بارتفاعٍ قريب
             من ارتفاع العنوان، فمحاذاته بالأعلى تتركه معلّقاً فوق خطّ العنوان. */}
         {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
       </div>
+
       {description && (
-        <p className="mt-2 max-w-3xl text-[13px] leading-relaxed text-text-muted">{description}</p>
+        <p className="mt-2.5 max-w-3xl text-[13px] leading-relaxed text-text-muted">{description}</p>
       )}
     </header>
   );

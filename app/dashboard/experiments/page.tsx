@@ -12,6 +12,8 @@ import { estimateLearningPhaseDuration, findStabilizationDay } from "@/lib/perio
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { itemDescription } from "@/lib/localizedRecord";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { PageHeader } from "@/app/components/ui/PageHeader";
+import { FlaskConical } from "lucide-react";
 
 export default async function ExperimentsPage() {
   const user = await getSessionUserFromCookies();
@@ -86,8 +88,12 @@ export default async function ExperimentsPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-5 page-title">{t(locale, "lab.pageTitle")}</h1>
+      <PageHeader
+        icon={FlaskConical}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "lab.pageTitle")}
+      />
 
       <div className="card-shadow mb-5 card pad-md">
         <div className="mb-1 text-[13.5px] text-text-primary">

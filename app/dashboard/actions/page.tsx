@@ -9,6 +9,8 @@ import { EmptyState } from "@/app/components/ui/EmptyState";
 import { ActionsClient, type ActionItemData } from "./ActionsClient";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { PageHeader } from "@/app/components/ui/PageHeader";
+import { ListChecks } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -59,11 +61,13 @@ export default async function ActionsPage() {
 
   return (
     <div className="mx-auto max-w-4xl pb-10">
-      <div className="mb-5">
-        <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="page-title">{t(locale, "actions.title")}</h1>
-        <p className="mt-1 text-[13px] text-text-muted">{t(locale, "actions.subtitle")}</p>
-      </div>
+      <PageHeader
+        icon={ListChecks}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "actions.title")}
+        description={t(locale, "actions.subtitle")}
+      />
 
       <ActionsClient items={rows} currency={workspace.currency} locale={locale} />
     </div>
