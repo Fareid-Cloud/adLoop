@@ -27,13 +27,22 @@ export async function GET(
   const { searchParams } = new URL(req.url);
   const platform = searchParams.get("platform") ?? "GOOGLE_ADS";
 
-  if (platform === "META_ADS") {
-    return getMetaCampaigns(user.id, locale);
-  }
-  if (platform === "TIKTOK_ADS") {
-    return getTikTokCampaigns(user.id, locale);
-  }
-  return getGoogleCampaigns(user.id, locale);
+  if (platform === "META_ADS") return getMetaCampaigns(user.id, locale);
+  if (platform === "TIKTOK_ADS") return getTikTokCampaigns(user.id, locale);
+  if (platform === "GOOGLE_ADS") return getGoogleCampaigns(user.id, locale);
+
+  // 🔴 كان هذا السطر `return getGoogleCampaigns(...)` بلا شرط - أي أنّ **كلّ**
+  // منصّة غير معروفة تسقط على جوجل بصمت. فمن فتح «اختر الحملات» من تكامل
+  // متجر (شوبيفاي مثلاً) كان يُسأل عن حملات جوجل، ويُقال له إنّ جوجل غير
+  // مربوط - رسالةٌ عن منصّة لم يذكرها أحد، تجعل التكامل يبدو معطّلاً وهو
+  // ليس كذلك: المتاجر لا حملات إعلانية لها أصلاً.
+  //
+  // الافتراضيّ الصامت أخطر من الخطأ الصريح: الأوّل يُنتج جواباً خاطئاً عن
+  // سؤال لم يُطرح، والثاني يقول ما حدث.
+  return NextResponse.json(
+    { error: t(locale, "adCell.noCampaignsForPlatform", { platform }) },
+    { status: 400 }
+  );
 }
 
 const TIKTOK_API_VERSION = "v1.3";

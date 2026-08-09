@@ -38,7 +38,16 @@ export function IntegrationDrawer({
   const [tab, setTab] = useState<DrawerTab>("overview");
   const [confirming, setConfirming] = useState(false);
 
-  const isStore = integration.entityLabelKey === "webhooks";
+  // 🔴 كان `integration.entityLabelKey === "webhooks"` - دلالة غير مباشرة
+  // على نوع التكامل بدل نوعه المصرَّح. أيّ تكامل متجر لا يحمل هذا المفتاح
+  // بالحرف يُعامَل كمنصّة إعلانية، فيظهر له زرّ «اختر الحملات»؛ والضغط
+  // عليه يرسل رمز متجر إلى مسار الحملات، فيقع في الافتراضيّ الصامت هناك
+  // ويعود بـ«Google Ads غير مربوط» - رسالة عن منصّة لم يذكرها أحد، عن
+  // تكامل لا حملات له أصلاً.
+  //
+  // `category` هي التصنيف المصرَّح في الكتالوج، وهي مصدر الحقيقة. الاستدلال
+  // بخاصّية أخرى يصحّ حتى أوّل تكامل يخالفه - وقد خالفه.
+  const isStore = integration.category === "ECOMMERCE";
   const tone =
     integration.health === "HEALTHY"
       ? { chip: "bg-verified/12 text-verified", bar: "var(--verified)" }
