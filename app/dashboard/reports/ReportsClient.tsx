@@ -481,25 +481,79 @@ function ResultBlock({
   const nameOf = (label: string | null, platform: string | null) =>
     platform ? platformLabel(locale, platform) : label ?? "—";
 
-  // الحكم الرئيسيّ: صاحب أكبر أثرٍ ماليّ لا أوّل ما في المصفوفة. المستخدم
-  // ينظر إلى أكبر رقم أوّلاً، فالترتيب البصريّ يتبع الأهمّية لا الترتيب
-  // الذي صدف أن يخرج به المحرّك.
+  // نفس ترتيب `VerdictBoard`: الأثر الماليّ أوّلاً. يلزم هنا للتصدير
+  // والبريد، فيُشتقّ من النتيجة نفسها لا يُنسخ من المكوّن.
   const ranked = [...result.verdicts].sort(
-    (a, b) => (b.financialImpact ?? 0) - (a.financialImpact ?? 0)
+    (a, b) => (b.financialImpact ?? 0) - (a.financialImpact ?? 0),
   );
   const headline = ranked[0] ?? null;
-  const rest = ranked.slice(1);
 
-  /** تنزيل الجدول كما هو معروض - نفس الأعمدة والصفوف والترتيب */
+  /**
+   * تنزيل التقرير كما هو معروض - الجدول، ومعه **الحكم ولوحة الأداء
+   * والخلاصة**.
+   *
+   * 🔴 كان يُصدَّر الجدول وحده، فيصل إلى من يفتح الملفّ أرقامٌ بلا الحكم
+   * الذي بُني عليها ولا الخلاصة التي تشرحه - وهي أهمّ ما في الصفحة. مَن
+   * ينزّل تقريراً يريد ما قرأه، لا جزءاً منه.
+   */
   function downloadCsv() {
     const head = ["", ...cols.map((m) => tr(metricLabelKey(m)))];
-    const lines = [head, ...result.rows.map((r) => [
+    const lines: string[][] = [];
+
+    if (headline) {
+      lines.push([tr("verdictTitle")]);
+      lines.push([
+        `${nameOf(headline.winnerLabel, headline.winnerPlatform)} — ${tr("vHigher", {
+          pct: Math.round(headline.differencePct ?? 0),
+          metric: tr(metricLabelKey(headline.metric)),
+        })} ${tr("vThan", { loser: nameOf(headline.loserLabel, headline.loserPlatform) })}`,
+      ]);
+      if (headline.impactBasisKey && headline.impactBasisVars) {
+        lines.push([tr(headline.impactBasisKey, {
+          ...headline.impactBasisVars,
+          winner: nameOf(headline.winnerLabel, headline.winnerPlatform),
+          loser: nameOf(headline.loserLabel, headline.loserPlatform),
+          currency,
+        })]);
+        lines.push([tr("basisNote")]);
+      }
+      lines.push([]);
+
+      // لوحة الأداء: مؤشّر، فقيمة كلّ طرف، فالفائز - نفس أعمدة الشاشة
+      lines.push([tr("vScoreboard")]);
+      lines.push([
+        tr("vMetric"),
+        ...result.rows.map((r) => nameOf(r.label, r.platform)),
+        tr("vWinner"),
+      ]);
+      for (const v of ranked) {
+        lines.push([
+          tr(metricLabelKey(v.metric)),
+          ...result.rows.map((r) => {
+            const val = r.values[v.metric];
+            return val === null || val === undefined ? "" : String(val);
+          }),
+          nameOf(v.winnerLabel, v.winnerPlatform),
+        ]);
+      }
+      lines.push([]);
+    }
+
+    if (result.summary.length > 0) {
+      lines.push([tr("summaryTitle")]);
+      for (const line of result.summary) lines.push([tr(line.key, line.vars)]);
+      lines.push([]);
+    }
+
+    lines.push([tr("resultTitle")]);
+    lines.push(head);
+    lines.push(...result.rows.map((r) => [
       nameOf(r.label, r.platform),
       ...cols.map((m) => {
         const v = r.values[m];
         return v === null || v === undefined ? "" : String(v);
       }),
-    ])];
+    ]));
     // BOM عمداً: بدونه يفتح Excel على ويندوز ملفّ UTF-8 بترميز خاطئ
     // فتظهر العربية رموزاً - وهو أوّل ما سيحدث لأغلب من يضغط هذا الزرّ.
     const csv = "﻿" + lines

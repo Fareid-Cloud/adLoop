@@ -563,6 +563,15 @@ export const dictionary = {
       verdictNeedTwo: "الحكم يظهر عند المقارنة بين طرفين بالضبط.",
 
       // ==== لوحة الحكم ====
+      // ==== أساس الأثر الماليّ ====
+      // الرقم بلا افتراضه لا يُقرأ: «كسب محتمل ٧٥٬٨١٥» تُسأل عنها «من أين؟»
+      // وهي حسابٌ على ما مضى - ماذا كان سيحدث لو أدّى الأضعفُ كأداء الأقوى
+      // بأرقامه هو في هذه الفترة. تُقال الجملة كاملةً أو لا يُقال الرقم.
+      basisRoas: "لو حقّق {loser} عائد {winner} ({roasWin}×) على إنفاقه نفسه ({cost} {currency}) في هذه الفترة بدل {roasLose}×، لأنتج {value} {currency} إضافية.",
+      basisCpa: "لو اشترى {loser} تحويلاته الـ{conv} بتكلفة {winner} ({cpaWin} {currency}) بدل {cpaLose}، لوفّر {value} {currency} في هذه الفترة.",
+      basisRate: "لو حوّل {loser} نقراته الـ{clicks} بمعدّل {winner} ({rateWin}%)، لأضاف {extra} تحويلاً — تعادل {value} {currency} بتكلفة تحويله الحالية.",
+      basisSaving: "لو بلغ {loser} مستوى {winner} في هذا المؤشّر، لوفّر {value} {currency} من إنفاق هذه الفترة.",
+      basisNote: "حسابٌ على ما مضى بأرقام هذه الفترة — لا توقّعٌ لما سيأتي.",
       vHigher: "أعلى بـ{pct}% في {metric}",
       vThan: "من {loser}",
       vPotentialProfit: "الربح المحتمل على الفترة",
@@ -4307,6 +4316,11 @@ export const dictionary = {
       verdictTie: "No meaningful difference.",
       verdictNeedTwo: "The verdict appears when exactly two things are compared.",
 
+      basisRoas: "Had {loser} returned {winner}'s {roasWin}× on the same {cost} {currency} it already spent this period, instead of {roasLose}×, it would have produced {value} {currency} more.",
+      basisCpa: "Had {loser} bought its {conv} conversions at {winner}'s {cpaWin} {currency} instead of {cpaLose}, it would have saved {value} {currency} this period.",
+      basisRate: "Had {loser} converted its {clicks} clicks at {winner}'s {rateWin}% rate, it would have added {extra} conversions — worth {value} {currency} at its own cost per conversion.",
+      basisSaving: "Had {loser} reached {winner}'s level on this metric, it would have saved {value} {currency} of this period's spend.",
+      basisNote: "Computed backwards over this period's own figures — not a forecast.",
       vHigher: "{pct}% higher {metric}",
       vThan: "than {loser}",
       vPotentialProfit: "Potential profit over the period",

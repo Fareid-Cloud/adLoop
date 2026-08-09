@@ -90,6 +90,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // 🔴 الحكم لم يكن في البريد إطلاقاً: يصل جدولٌ من أرقام بلا الجملة التي
   // تلخّصه - وهي أوّل ما يُقرأ في الصفحة نفسها. مَن يفتح البريد على هاتفه
   // يريد النتيجة، لا أن يستخرجها من ستّة صفوف.
+  const verdictName = (platform: string | null, label: string | null) =>
+    platform ? platformLabel(locale, platform) : label ?? "—";
+
   const topVerdict = [...result.verdicts].sort(
     (a, b) => (b.financialImpact ?? 0) - (a.financialImpact ?? 0)
   )[0];
@@ -111,8 +114,61 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
               )}: <strong style="color:#16A34A;">${fmt(topVerdict.financialImpact)} ${escapeHtml(workspace.currency)}</strong></div>`
             : ""
         }
+        ${
+          // الافتراض يسافر مع الرقم: رقمٌ في بريدٍ بلا ما بُني عليه لا
+          // يُسأل عنه أحد - يُصدَّق أو يُهمَل، وكلاهما خطأ.
+          topVerdict.impactBasisKey && topVerdict.impactBasisVars
+            ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid ${EMAIL_BRAND.line};color:${EMAIL_BRAND.muted};font-size:12.5px;line-height:1.7;">${escapeHtml(
+                t(locale, `reports.${topVerdict.impactBasisKey}`, {
+                  ...topVerdict.impactBasisVars,
+                  winner: verdictName(topVerdict.winnerPlatform, topVerdict.winnerLabel),
+                  loser: verdictName(topVerdict.loserPlatform, topVerdict.loserLabel),
+                  currency: workspace.currency,
+                })
+              )}<br><span style="color:${EMAIL_BRAND.faint};font-size:11.5px;">${escapeHtml(t(locale, "reports.basisNote"))}</span></div>`
+            : ""
+        }
       </div>`
     : "";
+
+  /**
+   * لوحة الأداء في البريد: مؤشّر، فقيمة كلّ طرف، فالفائز.
+   *
+   * كان يصل الجدول التفصيليّ وحده - وهو مرتَّب بالصفوف لا بالمؤشّرات، فلا
+   * يُقرأ منه «مَن الأفضل في ماذا». وهذه هي الطاولة التي يقرؤها صاحب
+   * الحساب أوّلاً في الصفحة، فلا معنى لأن تسقط من نسخته البريدية.
+   */
+  const scoreboardHtml =
+    result.rows.length === 2 && result.verdicts.length > 0
+      ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="border-collapse:collapse;width:100%;font-size:13px;">
+          <thead><tr>
+            <th style="text-align:${dir === "rtl" ? "right" : "left"};padding:9px 10px;border-bottom:1px solid ${EMAIL_BRAND.line};color:${EMAIL_BRAND.faint};font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;">${escapeHtml(t(locale, "reports.vMetric"))}</th>
+            ${result.rows
+              .map(
+                (r) =>
+                  `<th style="text-align:${dir === "rtl" ? "right" : "left"};padding:9px 10px;border-bottom:1px solid ${EMAIL_BRAND.line};color:${EMAIL_BRAND.ink};font-weight:600;font-size:11.5px;">${escapeHtml(verdictName(r.platform, r.label))}</th>`
+              )
+              .join("")}
+            <th style="text-align:${dir === "rtl" ? "left" : "right"};padding:9px 10px;border-bottom:1px solid ${EMAIL_BRAND.line};color:${EMAIL_BRAND.faint};font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;">${escapeHtml(t(locale, "reports.vWinner"))}</th>
+          </tr></thead>
+          <tbody>${[...result.verdicts]
+            .sort((a, b) => (b.financialImpact ?? 0) - (a.financialImpact ?? 0))
+            .map(
+              (v) => `<tr>
+                <td style="padding:8px 10px;border-bottom:1px solid ${EMAIL_BRAND.line};color:${EMAIL_BRAND.muted};">${escapeHtml(t(locale, `reports.m${v.metric[0].toUpperCase()}${v.metric.slice(1)}`))}</td>
+                ${result.rows
+                  .map(
+                    (r) =>
+                      `<td style="padding:8px 10px;border-bottom:1px solid ${EMAIL_BRAND.line};color:${EMAIL_BRAND.ink};text-align:${dir === "rtl" ? "right" : "left"};">${fmt(r.values[v.metric])}</td>`
+                  )
+                  .join("")}
+                <td style="padding:8px 10px;border-bottom:1px solid ${EMAIL_BRAND.line};color:${EMAIL_BRAND.ink};font-weight:600;text-align:${dir === "rtl" ? "left" : "right"};">${escapeHtml(verdictName(v.winnerPlatform, v.winnerLabel))}</td>
+              </tr>`
+            )
+            .join("")}</tbody>
+        </table>`
+      : "";
 
   const summary = result.summary
     .map((line) => `<li style="margin-bottom:6px;">${escapeHtml(t(locale, `reports.${line.key}`, line.vars))}</li>`)
@@ -129,6 +185,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       title,
       blocks: [
         ...(verdictHtml ? [{ html: verdictHtml }] : []),
+        ...(scoreboardHtml
+          ? [{ heading: t(locale, "reports.vScoreboard") }, { html: scoreboardHtml }]
+          : []),
+        { heading: t(locale, "reports.resultTitle") },
         // الجدول markup جاهز - كلّ قيمة فيه مرّت بـ`escapeHtml` عند بنائها
         {
           html: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"

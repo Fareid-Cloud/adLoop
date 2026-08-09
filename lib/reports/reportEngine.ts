@@ -140,6 +140,20 @@ export interface ComparisonVerdict {
    */
   financialImpact: number | null;
   impactKind: "saving" | "gain" | null;
+  /**
+   * **الافتراض الذي بُني عليه الرقم، مصوغاً جملةً.**
+   *
+   * 🔴 كان يُعرَض «كسب محتمل · الأثر على الفترة المختارة: ٧٥٬٨١٥» وحده،
+   * وسأل المالك بحقّ: كسبٌ من أين؟ لو فعلتُ ماذا؟ أم لو استمرّ الحال؟
+   * الرقم بلا افتراضه لا يُقرأ - وهو **حسابٌ على ما مضى**: ماذا كان
+   * سيحدث لو أنّ الطرف الأضعف أدّى كأداء الأقوى، بإنفاقه ونقراته
+   * وتحويلاته نفسها في هذه الفترة بالذات. لا توقّع ولا وعد.
+   *
+   * المفتاح ومتغيّراته لا الجملة الجاهزة: يُعرَض في الواجهة وفي البريد
+   * وفي الملفّ المصدَّر، ولكلٍّ لغةُ قارئه.
+   */
+  impactBasisKey: string | null;
+  impactBasisVars: Record<string, number> | null;
 }
 
 
@@ -359,6 +373,7 @@ function judge(metric: MetricKey, a: ReportRow, b: ReportRow): ComparisonVerdict
     metric, winnerKey: null, winnerLabel: null, loserLabel: null,
     winnerPlatform: null, loserPlatform: null,
     differencePct: null, financialImpact: null, impactKind: null,
+    impactBasisKey: null, impactBasisVars: null,
   };
   if (va === null || va === undefined || vb === null || vb === undefined) return base;
   if (va === vb) return base;
@@ -375,24 +390,39 @@ function judge(metric: MetricKey, a: ReportRow, b: ReportRow): ComparisonVerdict
   let financialImpact: number | null = null;
   let impactKind: "saving" | "gain" | null = null;
 
+  let impactBasisKey: string | null = null;
+  let impactBasisVars: Record<string, number> | null = null;
+
   if (metric === "cpa" && wv > 0) {
     const loserConv = loser.values.conversions ?? 0;
     financialImpact = Math.max(0, (lv - wv) * loserConv);
     impactKind = "saving";
+    impactBasisKey = "basisCpa";
+    impactBasisVars = { conv: round(loserConv), cpaWin: round(wv), cpaLose: round(lv), value: round(financialImpact) };
   } else if (metric === "roas") {
     const loserCost = loser.values.cost ?? 0;
     financialImpact = Math.max(0, (wv - lv) * loserCost);
     impactKind = "gain";
+    impactBasisKey = "basisRoas";
+    impactBasisVars = { roasWin: round(wv), roasLose: round(lv), cost: round(loserCost), value: round(financialImpact) };
   } else if (metric === "conversionRate") {
     const loserClicks = loser.values.clicks ?? 0;
     const extraConv = ((wv - lv) / 100) * loserClicks;
     const loserCpa = loser.values.cpa;
     financialImpact = loserCpa ? Math.max(0, extraConv * loserCpa) : null;
     impactKind = "gain";
+    if (financialImpact !== null) {
+      impactBasisKey = "basisRate";
+      // التحويلات الإضافية تُقوَّم بتكلفة التحويل عند الطرف الأضعف: هي
+      // ما كان سيدفعه ليحصل عليها، فقيمتُها ما وفّره بالحصول عليها مجّاناً.
+      impactBasisVars = { clicks: round(loserClicks), rateWin: round(wv), extra: Math.round(extraConv), value: round(financialImpact) };
+    }
   } else if (metric === "wastedSpend" || metric === "inflationRate") {
     const loserCost = loser.values.cost ?? 0;
     financialImpact = metric === "wastedSpend" ? Math.max(0, lv - wv) : Math.max(0, ((lv - wv) / 100) * loserCost);
     impactKind = "saving";
+    impactBasisKey = "basisSaving";
+    impactBasisVars = { value: round(financialImpact) };
   }
 
   return {
@@ -405,6 +435,8 @@ function judge(metric: MetricKey, a: ReportRow, b: ReportRow): ComparisonVerdict
     differencePct,
     financialImpact,
     impactKind,
+    impactBasisKey,
+    impactBasisVars,
   };
 }
 

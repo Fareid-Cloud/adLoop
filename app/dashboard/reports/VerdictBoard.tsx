@@ -183,20 +183,32 @@ function HeroVerdict({
         )}
       </div>
 
-      <div className="flex flex-wrap items-end justify-between gap-4 border-t border-border bg-verified/[0.07] px-5 py-4">
-        <div className="min-w-0">
-          <div className="text-[12px] text-text-muted">
-            {v.impactKind === "saving" ? tr("impactSaving") : tr("impactGain")} · {tr("vPotentialProfit")}
+      <div className="border-t border-border bg-verified/[0.07] px-5 py-4">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-[12px] text-text-muted">
+              {v.impactKind === "saving" ? tr("impactSaving") : tr("impactGain")} · {tr("vPotentialProfit")}
+            </div>
+            <div className="num mt-0.5 text-[26px] font-bold leading-none text-verified">
+              {fmt(v.financialImpact ?? 0)} <span className="text-[15px] font-medium">{currency}</span>
+            </div>
           </div>
-          <div className="num mt-0.5 text-[26px] font-bold leading-none text-verified">
-            {fmt(v.financialImpact ?? 0)} <span className="text-[15px] font-medium">{currency}</span>
-          </div>
+          {/* لا تنفيذ من هنا - المحاكاة تُري الأثر قبل القرار */}
+          <Link href="/dashboard/budget-simulator" className="btn btn-primary btn-sm shrink-0">
+            {tr("vOpenSimulator")}
+            <ArrowUpRight size={14} />
+          </Link>
         </div>
-        {/* لا تنفيذ من هنا - المحاكاة تُري الأثر قبل القرار */}
-        <Link href="/dashboard/budget-simulator" className="btn btn-primary btn-sm shrink-0">
-          {tr("vOpenSimulator")}
-          <ArrowUpRight size={14} />
-        </Link>
+
+        {/* 🔴 الافتراض مكتوب تحت الرقم لا مطويّ في تلميح: «كسب محتمل
+            ٧٥٬٨١٥» وحدها تُسأل عنها «من أين؟ ولو فعلتُ ماذا؟» - وهو
+            بالضبط ما سأله المالك. الرقم بلا افتراضه ليس رقماً. */}
+        {v.impactBasisKey && v.impactBasisVars && (
+          <p className="mt-2.5 border-t border-verified/20 pt-2.5 text-[12px] leading-relaxed text-text-muted">
+            {tr(v.impactBasisKey, { ...v.impactBasisVars, winner: winnerName, loser: loserName, currency })}
+            <span className="mt-0.5 block text-[11px] text-text-faint">{tr("basisNote")}</span>
+          </p>
+        )}
       </div>
     </section>
   );
