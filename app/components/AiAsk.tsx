@@ -84,6 +84,9 @@ export function AiAsk({
   const sentinelRef = useRef<HTMLDivElement>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
+  /** هل في اللوحة ما يُقرأ؟ يُحسب هنا لأنّ الكتابة التدريجية تقرؤه */
+  const open = !!answer || !!error || !!note || !!asked || steps.length > 0;
+
   // مؤقّتات الاستعراض تعيش أطول من ضغطة الزرّ: مغادرة الصفحة أثناءها كانت
   // ستحدّث حالة مكوّنٍ أُزيل. تُجمع لتُلغى دفعةً واحدة.
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -108,7 +111,9 @@ export function AiAsk({
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     if (reduce) { setTyped(examples[0]); setExampleIndex(0); return; }
-    if (focused || value) return;
+    // ومتى فُتحت المحادثة كذلك: مثالٌ يُكتب أسفل سؤالٍ أُرسل فعلاً يُقرأ
+    // كأنّ المربّع لم يستقبل شيئاً.
+    if (focused || value || open) return;
 
     let i = 0;
     let ch = 0;
@@ -140,7 +145,7 @@ export function AiAsk({
     timer = setTimeout(step, 400);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focused, value, scope, locale]);
+  }, [focused, value, open, scope, locale]);
 
   function reset() {
     timers.current.forEach(clearTimeout);
@@ -230,7 +235,6 @@ export function AiAsk({
 
   // يُعتم كاملاً متى رسا، أو متى كان فيه ما يُقرأ، أو أثناء الكتابة -
   // الشفافية لحالة السكون وحدها.
-  const open = !!answer || !!error || !!note || !!asked || steps.length > 0;
   const solid = docked || focused || open || !!value;
 
   return (
@@ -240,6 +244,87 @@ export function AiAsk({
           solid ? "opacity-100" : "opacity-[0.85] hover:opacity-100"
         }`}
       >
+        {/* ── لوحة المحادثة ──────────────────────────────────────
+            🔴 **فوق المربّع لا تحته، وعلى سطحٍ معتم لا شفّاف.**
+
+            كانت تُرسَم داخل الحاوية اللاصقة وتحت المربّع بلا خلفية، فتمرّ
+            كلماتُها **فوق الرسم البيانيّ** ويُقرأ الاثنان متشابكين - نصٌّ
+            على محور تواريخ. الحاوية طافية بطبيعتها، وكلّ ما يوضع فيها
+            يحتاج سطحه الخاصّ، وإلّا ظهر ما تحته من خلاله.
+
+            وفوقه لأنّ المربّع مرساه أسفل الشاشة: جوابٌ تحته يخرج عن
+            الحافة، وفوقه ينمو إلى أعلى حيث المساحة. وهو ترتيب المحادثة
+            الطبيعيّ كذلك - السؤال والجواب فوق، وموضع الكتابة أسفلهما.
+
+            وسقفُ الارتفاع يمنع جواباً طويلاً من ابتلاع الشاشة: يتمرّر
+            داخل اللوحة وحدها، وما تحته من الصفحة يبقى ظاهراً. */}
+        {open && (
+          <div className="card-shadow mb-2 max-h-[min(62vh,540px)] min-w-0 overflow-y-auto rounded-2xl border border-border bg-surface p-3.5">
+            {error && (
+              <div className="note border-critical/35 bg-critical/[0.06] text-critical">
+                <span className="min-w-0 flex-1">{error}</span>
+                {upgradeUrl && (
+                  <a href={upgradeUrl} className="btn btn-primary btn-sm shrink-0">{tr("upgrade")}</a>
+                )}
+              </div>
+            )}
+
+            {/* أيّ منعٍ يحمل معه بديله: قائمة الأمثلة تحته هي الخطوة التالية */}
+            {note && (
+              <div className="note border-border bg-surface-2 text-text-secondary">
+                <span className="min-w-0 flex-1">{note}</span>
+              </div>
+            )}
+
+            {/* الشكل من مرجعٍ اختاره المالك: السؤال فقاعةٌ داكنة في جهة
+                صاحبه، والجواب إلى جانب علامة المنتج بلا إطارٍ حوله - الإطار
+                للبيانات وحدها. وضعُ الجواب كلّه في بطاقةٍ كان يجعل الجملة
+                والجدول شيئاً واحداً، وهما شيئان: قولٌ ودليلُه. */}
+            {(steps.length > 0 || answer || asked) && (
+              <div className="min-w-0 space-y-3">
+                {asked && (
+                  <div className="flex min-w-0 items-start justify-end gap-2">
+                    <p className="max-w-[85%] rounded-2xl bg-text-primary px-3.5 py-2 text-[13px] leading-relaxed text-bg">
+                      {asked}
+                    </p>
+                    <button
+                      onClick={reset}
+                      aria-label={t(locale, "ui.close")}
+                      className="mt-1 shrink-0 rounded-lg p-1 text-text-faint transition-colors hover:text-text-primary"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
+
+                {(steps.length > 0 || answer) && (
+                  <div className="flex min-w-0 items-start gap-2.5">
+                    <span className="icon-badge mt-0.5 h-7 w-7 shrink-0 bg-accent/12 text-accent">
+                      <Sparkles size={13} />
+                    </span>
+                    <div className="min-w-0 flex-1 space-y-3">
+                      {/* الخطوات تبقى بعد وصول الجواب: هي التي تُري **كيف**
+                          وصل إليه، واختفاؤها يحوّل الاستعراض إلى جوابٍ ظهر
+                          من العدم. */}
+                      {steps.length > 0 && (
+                        <ul className="space-y-1.5 border-s-2 border-accent/25 ps-3">
+                          {steps.map((s, n) => (
+                            <li key={n} className="text-[12px] leading-relaxed text-text-muted">
+                              {s}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {answer && <MarkdownAnswer text={answer} />}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <div
           className={`flex items-center gap-2 rounded-full border px-2 py-1.5 backdrop-blur-md transition-colors ${
             solid ? "border-accent/45 bg-surface" : "border-border bg-surface/95"
@@ -255,7 +340,10 @@ export function AiAsk({
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
             onKeyDown={(e) => { if (e.key === "Enter") ask(); }}
-            placeholder={focused || value ? "" : typed}
+            // متى فُتحت المحادثة توقّفت الكتابة التدريجية، فيتجمّد المثال
+            // في منتصف حرفه («Why is my cost per») ويُقرأ كأنّه عطل. يُستبدَل
+            // بدعوةٍ صريحة إلى سؤالٍ آخر - وهي الحالة الصحيحة بعد جوابٍ وصل.
+            placeholder={focused || value ? "" : open ? tr("followUp") : typed}
             maxLength={400}
             disabled={busy}
             spellCheck={false}
@@ -281,69 +369,6 @@ export function AiAsk({
             وفي مساحة العرض لا يُخصم شيء، فلا يُقال إنّه يُخصم. */}
         {solid && !open && !demo && (
           <p className="mt-1.5 px-4 text-[11px] text-text-faint">{tr("costNote")}</p>
-        )}
-
-        {error && (
-          <div className="note mt-2 border-critical/35 bg-critical/[0.06] text-critical">
-            <span className="min-w-0 flex-1">{error}</span>
-            {upgradeUrl && (
-              <a href={upgradeUrl} className="btn btn-primary btn-sm shrink-0">{tr("upgrade")}</a>
-            )}
-          </div>
-        )}
-
-        {/* أيّ منعٍ يحمل معه بديله: القائمة تحته هي الخطوة التالية جاهزة */}
-        {note && (
-          <div className="note mt-2 border-border bg-surface-2 text-text-secondary">
-            <span className="min-w-0 flex-1">{note}</span>
-          </div>
-        )}
-
-        {/* ── المحادثة ────────────────────────────────────────────
-            الشكل من مرجعٍ اختاره المالك: السؤال فقاعةٌ داكنة في جهة صاحبه،
-            والجواب إلى جانب علامة المنتج بلا إطارٍ حوله - الإطار للبيانات
-            وحدها. وضعُ الجواب كلّه في بطاقةٍ كان يجعل الجملة والجدول شيئاً
-            واحداً، وهما شيئان: قولٌ ودليلُه. */}
-        {(steps.length > 0 || answer || asked) && (
-          <div className="mt-3 min-w-0 space-y-3">
-            {asked && (
-              <div className="flex min-w-0 items-start justify-end gap-2">
-                <p className="max-w-[85%] rounded-2xl bg-text-primary px-3.5 py-2 text-[13px] leading-relaxed text-bg">
-                  {asked}
-                </p>
-                <button
-                  onClick={reset}
-                  aria-label={t(locale, "ui.close")}
-                  className="mt-1 shrink-0 rounded-lg p-1 text-text-faint transition-colors hover:text-text-primary"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            )}
-
-            {(steps.length > 0 || answer) && (
-              <div className="flex min-w-0 items-start gap-2.5">
-                <span className="icon-badge mt-0.5 h-7 w-7 shrink-0 bg-accent/12 text-accent">
-                  <Sparkles size={13} />
-                </span>
-                <div className="min-w-0 flex-1 space-y-3">
-                  {/* الخطوات تبقى بعد وصول الجواب: هي التي تُري **كيف** وصل
-                      إليه، واختفاؤها يحوّل الاستعراض إلى جوابٍ ظهر من العدم. */}
-                  {steps.length > 0 && (
-                    <ul className="space-y-1.5 border-s-2 border-accent/25 ps-3">
-                      {steps.map((s, n) => (
-                        <li key={n} className="text-[12px] leading-relaxed text-text-muted">
-                          {s}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  {answer && <MarkdownAnswer text={answer} />}
-                </div>
-              </div>
-            )}
-          </div>
         )}
 
         {/* أمثلة مساحة العرض: ما يعمل عليه الاستعراض معروضٌ صراحةً بدل أن

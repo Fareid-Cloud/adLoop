@@ -2742,6 +2742,7 @@ export const dictionary = {
       ph_store_2: "كم يكلّفني العميل الواحد فعلياً بعد التحقّق؟",
       ph_store_3: "أيّ منتج يبتلع الإنفاق بلا ربح؟",
       send: "إرسال السؤال",
+      followUp: "اسأل سؤالاً آخر…",
       // ==== الاستعراض في مساحة العرض ====
       demoWorking: "يعمل الآن…",
       demoHint: "اضغط سهم الإرسال أثناء كتابة المثال ليعمل الوكيل عليه. اختر مثالاً:",
@@ -5193,6 +5194,7 @@ export const dictionary = {
       ph_store_2: "What does one customer truly cost after verification?",
       ph_store_3: "Which product eats spend without profit?",
       send: "Send question",
+      followUp: "Ask another question…",
       demoWorking: "Working…",
       demoHint: "Press send while an example is being typed and the agent will work on it. Or pick one:",
       demoUnmatched:
