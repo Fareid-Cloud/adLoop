@@ -189,7 +189,7 @@ export function CampaignsOverview({
               ) : filtered.map((r) => (
                 <tr key={`${r.platform}-${r.campaignId}`} className="border-b border-border last:border-0 hover:bg-surface-raised/45">
                   <td className="px-4 py-3.5">
-                    <div className="flex items-start gap-2.5">
+                    <div className="flex min-w-0 items-start gap-2.5">
                       <PlatformLogo platform={r.platform} size={16} />
                       <div className="min-w-0">
                         <div className="truncate text-[13px] font-medium text-text-primary">{r.campaignName}</div>

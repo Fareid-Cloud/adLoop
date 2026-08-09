@@ -57,6 +57,9 @@ export const NAV_GROUPS: NavGroup[] = [
         labelAr: "الحملات",
         labelEn: "Campaigns",
         iconName: "Megaphone",
+        // مربّع السؤال يعيش هنا، وهو نداء Claude حقيقيّ يُخصم من الرصيد -
+        // فالشارة تقول أين يُصرَف الرصيد قبل أن يُصرَف، لا بعده.
+        usesAi: true,
         // صفحات كل منصة تظهر مباشرةً في القائمة الجانبية عند الدخول إليها،
         // بدل الاضطرار إلى العودة لصفحة الحملات لاختيار تحليل آخر.
         children: [
@@ -83,13 +86,13 @@ export const NAV_GROUPS: NavGroup[] = [
           { href: "/dashboard/campaigns/tiktok-spark-ads", labelAr: "Spark Ads", labelEn: "Spark Ads", platform: "TIKTOK_ADS", nested: true },
         ],
       },
-      { href: "/dashboard/truth", labelAr: "مركز الحقيقة", labelEn: "Truth Center", iconName: "ShieldCheck" },
+      { href: "/dashboard/truth", labelAr: "مركز الحقيقة", labelEn: "Truth Center", iconName: "ShieldCheck", usesAi: true },
       { href: "/dashboard/pricing", labelAr: "التسعير", labelEn: "Pricing", iconName: "Tag" },
       {
         // الترتيب يتبع طريقة تفكير صاحب المتجر لا نوع البيانات: يبدأ بالوضع
         // العام، ثم أين يذهب المال، ثم ما يبيعه، ثم كيف يسعّره، ثم ما لديه،
         // ثم من يشتري، ثم كيف تصل الطلبات، ثم ما يفعله بعد ذلك.
-        href: "/dashboard/ecommerce", labelAr: "متجري الإلكتروني", labelEn: "My Store", iconName: "ShoppingBag",
+        href: "/dashboard/ecommerce", labelAr: "متجري الإلكتروني", labelEn: "My Store", iconName: "ShoppingBag", usesAi: true,
         children: [
           { href: "/dashboard/ecommerce", labelAr: "ملخّص المتجر", labelEn: "Overview" },
           { href: "/dashboard/ecommerce/profit", labelAr: "الأرباح", labelEn: "Profit" },

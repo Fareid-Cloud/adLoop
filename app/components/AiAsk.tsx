@@ -21,8 +21,9 @@
 // يمرّ فوق أرقام تُقرأ، فإعتامه الكامل أثناء التمرير يحجب ما جاء المستخدم
 // ليراه. وحين يرسو لم يعد فوق شيء، فلا سبب لإخفاء أيّ جزء منه.
 //
-// والنسبة رُفعت من ٦٢٪ إلى ٨٨٪ بطلب المالك: عند ٦٢٪ كان المربّع نفسه يصير
-// باهتاً حتى يُشكّ في كونه معطَّلاً - والغرض ألّا يحجب ما تحته، لا أن يختفي.
+// والنسبة رُفعت مرّتين بطلب المالك: ٦٢٪ ← ٨٨٪ ← ٩٦٪. الشفافية بقيت
+// إشارةً إلى أنّه طافٍ لا أكثر، والوضوح صار الأصل: مربّعٌ باهتٌ فوق
+// أرقام يُقرأ كأنّه معطَّل، وهو نقيض غرضه.
 //
 // **سؤال وجواب لا محادثة:** لا سجلّ ولا سياق متراكم - كلّ سؤال نداءٌ
 // مستقلّ يُخصم من الرصيد المعلَن. سلسلةٌ تحمل تاريخها تضاعف التوكنات مع
@@ -141,12 +142,12 @@ export function AiAsk({ scope, locale }: { scope: AiAskScope; locale: Locale }) 
     <>
       <div
         className={`sticky bottom-5 z-30 mt-6 transition-opacity duration-300 ${
-          solid ? "opacity-100" : "opacity-[0.88] hover:opacity-100"
+          solid ? "opacity-100" : "opacity-[0.96] hover:opacity-100"
         }`}
       >
         <div
           className={`flex items-center gap-2 rounded-full border px-2 py-1.5 backdrop-blur-md transition-colors ${
-            solid ? "border-accent/45 bg-surface" : "border-border/70 bg-surface/80"
+            solid ? "border-accent/45 bg-surface" : "border-border bg-surface/95"
           }`}
         >
           <span className="icon-badge ms-1 h-7 w-7 bg-accent/12 text-accent">

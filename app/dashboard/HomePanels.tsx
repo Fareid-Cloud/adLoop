@@ -173,7 +173,16 @@ export function RecentActivityPanel({
                   style={{ background: r.ok ? "var(--verified)" : "var(--critical)" }}
                 />
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5">
+                  {/* 🔴 `min-w-0` هنا أيضاً لا على الأب وحده: عنصر المرونة
+                      يأخذ `min-width: auto` افتراضياً، أي أنّه **يرفض أن
+                      يضيق دون عرض محتواه**. فالـ`truncate` على الابن لا
+                      يعمل - لا شيء يسمح له بالضيق - ويتمدّد الصفّ حتى يدفع
+                      عمود الشبكة كلّه خارج الشاشة. وهذا سبب «البطاقات
+                      مقطوعة» على سطح المكتب والهاتف معاً: القصّ ليس في
+                      البطاقة بل في صفٍّ داخلها لا يقبل الانكماش.
+                      القاعدة: كلّ سلف بين `truncate` وحدّ الشاشة يحتاج
+                      `min-w-0` - واحد يفوت يُبطل السلسلة كلّها. */}
+                  <span className="flex min-w-0 items-center gap-1.5">
                     {r.platform ? <PlatformLogo platform={r.platform} size={13} /> : <Icon size={12} style={{ color: tone }} />}
                     <span className="truncate text-[12.5px] font-medium text-text-primary">{r.title}</span>
                   </span>

@@ -586,7 +586,7 @@ function ResultBlock({
                 <div className="text-[11.5px] font-medium uppercase tracking-wide text-text-faint">
                   {tr(metricLabelKey(v.metric))}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                   {v.winnerPlatform && <PlatformLogo platform={v.winnerPlatform} size={16} />}
                   <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-text-primary">
                     {nameOf(v.winnerLabel, v.winnerPlatform)}
@@ -644,7 +644,7 @@ function ResultBlock({
               {result.rows.map((row) => (
                 <tr key={row.key} className="border-b border-border/50 last:border-0">
                   <td className="px-4 py-3">
-                    <span className="flex items-center gap-2 font-medium text-text-primary">
+                    <span className="flex min-w-0 items-center gap-2 font-medium text-text-primary">
                       {row.platform && <PlatformLogo platform={row.platform} size={14} />}
                       <span className="max-w-[220px] truncate" title={row.label}>
                         {row.platform && row.label === row.key ? platformLabel(locale, row.platform) : row.label}
