@@ -86,7 +86,9 @@ export const NAV_GROUPS: NavGroup[] = [
           { href: "/dashboard/campaigns/tiktok-spark-ads", labelAr: "Spark Ads", labelEn: "Spark Ads", platform: "TIKTOK_ADS", nested: true },
         ],
       },
-      { href: "/dashboard/truth", labelAr: "مركز الحقيقة", labelEn: "Truth Center", iconName: "ShieldCheck", usesAi: true },
+      // بلا `usesAi`: مركز الحقيقة يقارن المُعلَن بالمتحقَّق بحسابٍ ثابت لا
+      // بنموذج لغويّ. شارةٌ هنا كانت تَعِد بذكاءٍ لا يعمل في الصفحة.
+      { href: "/dashboard/truth", labelAr: "مركز الحقيقة", labelEn: "Truth Center", iconName: "ShieldCheck" },
       { href: "/dashboard/pricing", labelAr: "التسعير", labelEn: "Pricing", iconName: "Tag" },
       {
         // الترتيب يتبع طريقة تفكير صاحب المتجر لا نوع البيانات: يبدأ بالوضع

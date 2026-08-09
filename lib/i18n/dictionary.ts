@@ -2723,16 +2723,31 @@ export const dictionary = {
     aiAsk: {
       // ثلاثة أسئلة لكلّ سياق: تُكتب حرفاً حرفاً وتتبدّل، فيفهم المستخدم
       // **نوع** ما يصحّ أن يسأله بدل أن يقرأ مثالاً واحداً ثابتاً.
-      ph_home_1: "أيّ منصّة تجيب عملاء أرخص؟",
-      ph_home_2: "أين يذهب أكبر إنفاق بلا نتيجة؟",
-      ph_home_3: "ما الفرق بين ما تُعلنه المنصّات وما تحقّق فعلاً؟",
-      ph_campaigns_1: "أيّ حملة تصرف بلا تحويل مؤكَّد؟",
-      ph_campaigns_2: "أيّ حملة تستحقّ زيادة ميزانيتها؟",
-      ph_campaigns_3: "قارن تكلفة العميل بين حملاتي.",
-      ph_store_1: "هل الإعلان يغطّي تكلفة البيع؟",
-      ph_store_2: "أيّ منتج يبتلع الإنفاق بلا ربح؟",
-      ph_store_3: "كم يكلّفني العميل الواحد فعلياً؟",
+      //
+      // **وكلّها تسأل «لماذا» و«أيّهما» لا «كم».** سؤالٌ يُجاب برقمٍ ظاهرٍ
+      // على الشاشة أصلاً («هل الإعلان رابح؟») لا يحتاج وكيلاً - والمثال
+      // الذي يُعرَض يُعلّم المستخدم سقف ما يصحّ أن يطلبه. فإن كانت الأمثلة
+      // سطحيةً ظنّ أنّ هذا كلّ ما يُحسنه.
+      //
+      // ترتيبها ليس حرّاً: `demoAgentShowcase.ts` يربط إجابته المحفوظة
+      // برقم المثال (`home_1`…) لا بنصّه. أيّ إعادة ترتيب هنا تقلب
+      // الإجابات في مساحة العرض.
+      ph_home_1: "لماذا ترتفع تكلفة العميل مع ثبات الإنفاق؟",
+      ph_home_2: "أين يذهب المال الذي لا يُنتج مبيعاً؟",
+      ph_home_3: "أيّ منصّة هي الفائزة فعلاً بعد التحقّق؟",
+      ph_campaigns_1: "أيّ حملة هي الفائزة، ولماذا هي لا غيرها؟",
+      ph_campaigns_2: "لماذا انهارت نتائج حملةٍ هذا الأسبوع؟",
+      ph_campaigns_3: "أيّ إعلان أوسّع ميزانيته الآن؟",
+      ph_store_1: "لماذا يرتفع الإيراد ولا يرتفع الربح؟",
+      ph_store_2: "كم يكلّفني العميل الواحد فعلياً بعد التحقّق؟",
+      ph_store_3: "أيّ منتج يبتلع الإنفاق بلا ربح؟",
       send: "إرسال السؤال",
+      // ==== الاستعراض في مساحة العرض ====
+      demoBadge: "مثال محفوظ",
+      demoWorking: "يعمل الآن…",
+      demoHint: "اضغط سهم الإرسال أثناء كتابة المثال ليعمل الوكيل عليه. اختر مثالاً:",
+      demoUnmatched:
+        "هذا استعراض محفوظ داخل مساحة العرض، يعمل على الأمثلة أدناه. اربط حسابك الحقيقيّ لتسأل عمّا تشاء عن أرقامك أنت.",
       costNote: "كلّ سؤال يُخصم من رصيد التحليلات الشهريّ، والجواب مبنيّ على أرقام حسابك وحدها.",
       upgrade: "ترقية الباقة",
       errBadQuestion: "اكتب سؤالاً واضحاً (٣ أحرف على الأقلّ، ٤٠٠ كحدّ أقصى).",
@@ -3227,6 +3242,14 @@ export const dictionary = {
       curBhd: "دينار بحريني (BHD)",
       curEur: "يورو (EUR)",
       curGbp: "جنيه إسترليني (GBP)",
+      // تُقال العلّة والحلّ معاً: «مقفلة» وحدها تترك المستخدم يبحث عن سببٍ
+      // يظنّه عطلاً، وهو في الحقيقة قيدٌ من المنصّة لا منّا.
+      currencyLockedNote:
+        "هذه عملة حسابك الإعلانيّ، وبها تصل كلّ الأرقام. المنصّة تُثبّتها عند إنشاء الحساب ولا تسمح بتغييرها، فعرضُها بعملة أخرى كان سيُغيّر اللافتة دون الرقم.",
+      currencyOpenNote:
+        "تُضبط الآن يدوياً. عند ربط أوّل حساب إعلانيّ تُؤخذ عملته تلقائياً، لأنّ الأرقام تصل بها.",
+      currencyDemoNote:
+        "أرقام العرض التجريبيّ تُولَّد من جديد بالعملة المختارة — تتحوّل فعلياً لا اسماً. الحفظ يستغرق بضع ثوانٍ.",
       tzNewYork: "نيويورك (GMT-5)",
       tzChicago: "شيكاغو (GMT-6)",
       tzLosAngeles: "لوس أنجلوس (GMT-8)",
@@ -5097,16 +5120,21 @@ export const dictionary = {
     },
     // ==== AI credits ====
     aiAsk: {
-      ph_home_1: "Which platform brings cheaper customers?",
-      ph_home_2: "Where is the largest spend going with no result?",
-      ph_home_3: "What is the gap between reported and verified?",
-      ph_campaigns_1: "Which campaign spends with no verified conversion?",
-      ph_campaigns_2: "Which campaign deserves more budget?",
-      ph_campaigns_3: "Compare cost per customer across my campaigns.",
-      ph_store_1: "Is the ad covering the cost of the sale?",
-      ph_store_2: "Which product eats spend without profit?",
-      ph_store_3: "What does one customer actually cost me?",
+      ph_home_1: "Why is my cost per customer rising while spend is flat?",
+      ph_home_2: "Where is the money going that produces no sale?",
+      ph_home_3: "Which platform actually wins once verified?",
+      ph_campaigns_1: "Which campaign is the winner, and why that one?",
+      ph_campaigns_2: "Why did a campaign collapse this week?",
+      ph_campaigns_3: "Which ad should I scale right now?",
+      ph_store_1: "Why is revenue up but profit is not?",
+      ph_store_2: "What does one customer truly cost after verification?",
+      ph_store_3: "Which product eats spend without profit?",
       send: "Send question",
+      demoBadge: "Saved example",
+      demoWorking: "Working…",
+      demoHint: "Press send while an example is being typed and the agent will work on it. Or pick one:",
+      demoUnmatched:
+        "This is a saved demonstration inside the demo workspace, and it works on the examples below. Connect your real account to ask anything about your own figures.",
       costNote: "Each question uses one of your monthly analyses, and the answer is built only from your account figures.",
       upgrade: "Upgrade plan",
       errBadQuestion: "Write a clear question (at least 3 characters, 400 max).",
@@ -6843,6 +6871,12 @@ export const dictionary = {
       curBhd: "Bahraini dinar (BHD)",
       curEur: "Euro (EUR)",
       curGbp: "Pound sterling (GBP)",
+      currencyLockedNote:
+        "This is your ad account's currency, and every figure arrives in it. The platform fixes it when the account is created and does not allow it to change, so showing another currency would relabel the number without converting it.",
+      currencyOpenNote:
+        "Set manually for now. When you connect your first ad account its currency is taken automatically, because the figures arrive in it.",
+      currencyDemoNote:
+        "Demo figures are regenerated in the currency you pick — genuinely converted, not relabelled. Saving takes a few seconds.",
       tzNewYork: "New York (GMT-5)",
       tzChicago: "Chicago (GMT-6)",
       tzLosAngeles: "Los Angeles (GMT-8)",

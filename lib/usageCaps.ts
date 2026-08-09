@@ -151,7 +151,7 @@ async function measureUser(userId: string): Promise<Measured> {
     // المساحة التجريبية خارج القياس: أرقامها مولَّدة، ومحاسبة المستخدم
     // على إنفاقٍ لم يُنفَق أسوأ من عدم القياس أصلاً.
     where: { userId, isDemo: false },
-    select: { id: true, currency: true },
+    select: { id: true, currency: true, dataCurrency: true },
   });
   if (workspaces.length === 0) return { spendUsd: 0, verifiedConversions: 0 };
 
@@ -194,19 +194,25 @@ async function measureUser(userId: string): Promise<Measured> {
     }
 
     // التكلفة مخزَّنة بعملة الحساب الإعلانيّ، والسقف بالدولار.
-    if (ws.currency === "USD") {
+    //
+    // `dataCurrency` أوّلاً لا `currency`: الأولى تأتي من المنصّة نفسها،
+    // والثانية كانت قائمةً حرّة يبدّلها المستخدم - فتبديلُها كان يبدّل
+    // قياس السقف على إنفاقٍ لم يتغيّر. صارتا تتطابقان بالبناء اليوم،
+    // والصريح هنا يمنع عودة الالتباس.
+    const dataCurrency = ws.dataCurrency ?? ws.currency;
+    if (dataCurrency === "USD") {
       spendUsd += cost;
       continue;
     }
-    if (!rateCache.has(ws.currency)) {
+    if (!rateCache.has(dataCurrency)) {
       const snap = await prisma.exchangeRateSnapshot.findFirst({
-        where: { fromCurrency: "USD", toCurrency: ws.currency },
+        where: { fromCurrency: "USD", toCurrency: dataCurrency },
         orderBy: { date: "desc" },
         select: { rate: true },
       });
-      rateCache.set(ws.currency, snap?.rate && snap.rate > 0 ? snap.rate : null);
+      rateCache.set(dataCurrency, snap?.rate && snap.rate > 0 ? snap.rate : null);
     }
-    const rate = rateCache.get(ws.currency);
+    const rate = rateCache.get(dataCurrency);
     if (rate) {
       spendUsd += cost / rate;
     } else {
@@ -214,7 +220,7 @@ async function measureUser(userId: string): Promise<Measured> {
       // معاملة الجنيه كأنّه دولار - وهو ما كان سيوقف مزامنة عميلٍ لم
       // يقترب من سقفه أصلاً. الكرون يسجّل سعر الصرف يومياً، فهذه حالة
       // أوّل يوم لا حالة دائمة.
-      console.warn(`[usageCaps] لا سعر صرف USD/${ws.currency} - أُسقط إنفاق المساحة ${ws.id} من القياس`);
+      console.warn(`[usageCaps] لا سعر صرف USD/${dataCurrency} - أُسقط إنفاق المساحة ${ws.id} من القياس`);
     }
   }
 

@@ -16,6 +16,7 @@ import { decryptToken } from "@/lib/encryption";
 import { pushToActionFeed } from "@/lib/actionFeed";
 import { t } from "@/lib/i18n/dictionary";
 import { assertNotDemo } from "@/lib/demo";
+import { recordDataCurrency } from "@/lib/dataCurrency";
 
 const META_API_VERSION = "v25.0";
 const ROLLING_WINDOW_DAYS = 28; // نفس نافذة إغلاق الإسناد بتاعة ميتا نفسها
@@ -451,6 +452,14 @@ export async function syncMetaAccountHealthForWorkspace(workspaceId: string) {
         `https://graph.facebook.com/${META_API_VERSION}/act_${accountId}?fields=spend_cap,amount_spent,currency&access_token=${accessToken}`
       );
       const accountData = await accountRes.json();
+
+      // عملة الحساب: الحقل مطلوبٌ في هذا النداء أصلاً (`currency` أعلاه)،
+      // فالتقاطُه هنا بلا نداءٍ إضافيّ. **وخارج شرط `spend_cap` عمداً**:
+      // حسابٌ بلا سقف إنفاق له عملة كغيره، وربطُهما كان سيترك أغلب
+      // الحسابات بلا عملة مكتشَفة.
+      if (accountRes.ok) {
+        await recordDataCurrency(workspaceId, "META_ADS", accountData.currency);
+      }
 
       if (accountRes.ok && accountData.spend_cap) {
         const spendCap = Number(accountData.spend_cap) / 100; // سنت → وحدة أساسية

@@ -11,6 +11,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { Prisma, type Platform, type TouchpointChannel } from "@prisma/client";
+import { demoCurrencyScale, roundForCurrency } from "@/lib/demoCurrency";
 
 // ==================== القصّة ====================
 //
@@ -136,8 +137,14 @@ export const DEMO_PRODUCTS = [
  *
  * ٢ = معايرة الربحية (٨ أغسطس ٢٠٢٦): ربط عدد الطلبات بالتحويلات المتحقَّقة
  *     بعد أن كان صافي الربح -٦٢ ألفاً لانفصالهما.
+ *
+ * ٣ = تحويل العملة (٩ أغسطس ٢٠٢٦): صارت كلّ مبالغ البذرة تمرّ بمحوّلٍ
+ *     يتبع عملة المساحة، بعد أن كان تبديل العملة يبدّل اللافتة وحدها.
+ *     الرفع لازم هنا لا اختياريّ: المساحات القائمة `demoCurrency` فيها
+ *     فارغة، فلا يلتقط فحصُ العملة اختلافاً ويبقى أصحابها على أرقامٍ
+ *     بعملةٍ واحدة إلى الأبد.
  */
-export const DEMO_SEED_VERSION = 2;
+export const DEMO_SEED_VERSION = 3;
 
 const DAYS = 90;
 
@@ -152,9 +159,24 @@ function weekend(d: Date): number {
 
 // ==================== البذر ====================
 
-export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Promise<void> {
+export async function seedDemoData(
+  workspaceId: string,
+  locale: "ar" | "en",
+  currency = "SAR",
+): Promise<void> {
   const ar = locale === "ar";
   const name = <T extends { nameAr: string; nameEn: string }>(x: T) => (ar ? x.nameAr : x.nameEn);
+
+  // ---------- العملة ----------
+  //
+  // 🔴 **العلّة التي عالجها هذا:** تبديل العملة في الإعدادات كان يبدّل
+  // اللافتة وحدها - يقرأ المستخدم «69,000 ج.م» والرقم ريالات كما هو. أي
+  // أنّنا كنّا نُعيد تسمية المال لا تحويله، وهو أسوأ من منع التبديل أصلاً.
+  //
+  // ومساحة العرض وحدها هي التي **تُحوَّل** فعلاً، لأنّ أرقامها من صنعنا.
+  // الحساب الحقيقيّ لا يمرّ من هنا: عملته عملة حسابه الإعلانيّ، تأتي من
+  // المنصّة ولا نختارها له - راجع `dataCurrency` في `SettingsClient`.
+  const m = (v: number) => roundForCurrency(v * demoCurrencyScale(currency), currency);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -188,11 +210,11 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
 
     DEMO_CAMPAIGNS.forEach((c, ci) => {
       const w = wave(i, ci * 3) * wf;
-      const cost = Math.round(c.baseCost * w);
+      const cost = m(c.baseCost * w);
       const clicks = Math.round(c.baseClicks * w);
       const raw = Math.max(0, Math.round(c.baseRaw * w));
       const verified = Math.round(raw * c.verifyRate);
-      const revenue = verified > 0 ? Math.round(verified * c.aov) : null;
+      const revenue = verified > 0 ? m(verified * c.aov) : null;
 
       snapshots.push({
         workspaceId, platform: c.platform, campaignId: c.id, date,
@@ -200,8 +222,8 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
         rawConversions: raw, verifiedConversions: verified,
         revenue, ordersCount: verified > 0 ? verified : null,
         returnedOrdersCount: verified > 0 ? Math.round(verified * 0.11) : null,
-        cogs: revenue ? Math.round(revenue * 0.36) : null,
-        shippingCost: verified > 0 ? verified * 22 : null,
+        cogs: revenue ? Math.round(revenue * 0.36) : null, // نسبة من إيرادٍ محوَّل أصلاً
+        shippingCost: verified > 0 ? m(verified * 22) : null,
         // مقاييس الفيديو للمنصّات التي تُرجعها فعلاً
         videoViews: c.platform !== "GOOGLE_ADS" ? Math.round(clicks * 8.4 * w) : null,
         videoViewRate: c.platform !== "GOOGLE_ADS" ? Math.round(24 * w * 10) / 10 : null,
@@ -213,7 +235,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
       // ثلاثون يوماً تكفي: كل قرارات مستوى الإعلان (توسيع/إيقاف/إجهاد)
       // تنظر إلى الأيام الأخيرة، وتسعون منها ثلاثة أضعاف الصفوف بلا فائدة.
       for (const ad of i > 30 ? [] : DEMO_ADS.filter((a) => a.campaignId === c.id)) {
-        const adCost = Math.round(cost * ad.share);
+        const adCost = Math.round(cost * ad.share); // حصّة من تكلفةٍ محوَّلة
         const adClicks = Math.round(clicks * ad.share);
         // `i` عدد الأيام إلى الوراء، فـ`recency` صفر عند أقدم يوم وواحد
         // عند اليوم. الاتجاه ينحرف بها ±٣٥٪ - قدر يكفي ليقرأه كاشف
@@ -242,7 +264,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
           clicks: adClicks, cost: adCost,
           rawConversions: adRaw,
           verifiedConversions: Math.round(adRaw * c.verifyRate),
-          conversionsValue: c.aov > 0 ? Math.round(adRaw * c.verifyRate * c.aov) : null,
+          conversionsValue: c.aov > 0 ? m(adRaw * c.verifyRate * c.aov) : null,
         });
       }
     });
@@ -269,7 +291,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
         date: day(back),
         impressions: Math.round(420 * (1 + ti * 0.2)),
         clicks: Math.round(38 * (1 + ti * 0.15)),
-        cost: Math.round(96 * (1 + ti * 0.18)),
+        cost: m(96 * (1 + ti * 0.18)),
         conversions: Math.round(6 * (q as number)),
       }))
     ),
@@ -280,10 +302,11 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
   await prisma.product.createMany({
     data: DEMO_PRODUCTS.map((p) => ({
       workspaceId, name: name(p), sku: p.sku,
-      currentPrice: p.price, cogs: p.cogs,
-      outboundShippingCost: p.ship, returnShippingCost: p.ship,
-      avgAdCostPerOrder: 46, rtoRatePct: p.rto,
-      paymentGatewayFeePct: 2.75, paymentGatewayFixedFee: 1,
+      currentPrice: m(p.price), cogs: m(p.cogs),
+      outboundShippingCost: m(p.ship), returnShippingCost: m(p.ship),
+      avgAdCostPerOrder: m(46), rtoRatePct: p.rto,
+      // النسبة لا تُحوَّل، والرسم الثابت يُحوَّل - وهذا الفرق بعينه
+      paymentGatewayFeePct: 2.75, paymentGatewayFixedFee: m(1),
       desiredMarginPct: p.margin,
     })),
     skipDuplicates: true,
@@ -364,8 +387,8 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
         workspaceId, type: "ALERT" as const, severity: "HIGH" as const,
         title: ar ? "«مجموعة العناية الكاملة» تُباع بخسارة" : "\"Complete care set\" is sold at a loss",
         description: ar
-          ? "التكلفة الحقيقية للطلب تتجاوز سعر البيع بـ٤١ ريالاً."
-          : "The true cost per order exceeds the selling price by SAR 41.",
+          ? `التكلفة الحقيقية للطلب تتجاوز سعر البيع بـ${m(41)} ${currency}.`
+          : `The true cost per order exceeds the selling price by ${m(41)} ${currency}.`,
         linkUrl: "/dashboard/pricing",
       },
     ],
@@ -384,12 +407,12 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
   // المنصّة والقناة نوعان مُعدّدان لا نصّان حرّان: كتابتهما `string` هي
   // ما سمح لخطأ حقلٍ غير موجود بأن يمرّ إلى وقت التشغيل من قبل.
   const JOURNEYS: Array<{ path: Array<[Platform, string]>; value: number }> = [
-    { path: [["META_ADS", "demo-m-awareness"], ["GOOGLE_ADS", "demo-g-brand"]], value: 520 },
-    { path: [["TIKTOK_ADS", "demo-t-video"], ["META_ADS", "demo-m-retarget"], ["GOOGLE_ADS", "demo-g-brand"]], value: 690 },
-    { path: [["GOOGLE_ADS", "demo-g-search"]], value: 480 },
-    { path: [["META_ADS", "demo-m-retarget"]], value: 410 },
-    { path: [["META_ADS", "demo-m-awareness"], ["META_ADS", "demo-m-retarget"]], value: 455 },
-    { path: [["TIKTOK_ADS", "demo-t-video"], ["GOOGLE_ADS", "demo-g-search"]], value: 610 },
+    { path: [["META_ADS", "demo-m-awareness"], ["GOOGLE_ADS", "demo-g-brand"]], value: m(520) },
+    { path: [["TIKTOK_ADS", "demo-t-video"], ["META_ADS", "demo-m-retarget"], ["GOOGLE_ADS", "demo-g-brand"]], value: m(690) },
+    { path: [["GOOGLE_ADS", "demo-g-search"]], value: m(480) },
+    { path: [["META_ADS", "demo-m-retarget"]], value: m(410) },
+    { path: [["META_ADS", "demo-m-awareness"], ["META_ADS", "demo-m-retarget"]], value: m(455) },
+    { path: [["TIKTOK_ADS", "demo-t-video"], ["GOOGLE_ADS", "demo-g-search"]], value: m(610) },
   ];
 
   const CHANNEL: Partial<Record<Platform, TouchpointChannel>> = {
@@ -495,7 +518,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
       externalOrderId: `demo-order-${oi}`,
       customerId: cust.id,
       orderedAt: day(oi % ORDER_DAYS),
-      total, shippingCost: 22, currency: "SAR",
+      total, shippingCost: m(22), currency,
       state: returned ? "RETURNED" : "FULFILLED",
       isReturned: returned,
       itemCount: qty,
@@ -574,7 +597,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
       clicks: 210 + i * 45,
       impressions: 4_800 + i * 900,
       conversions: i === 2 ? 0 : 12 + i * 4,
-      cost: 640 + i * 130,
+      cost: m(640 + i * 130),
     })),
     skipDuplicates: true,
   });
@@ -621,7 +644,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
         placementType: p.type, date: when,
         impressions: Math.round(2_400 * w * (0.5 + p.q)),
         clicks: Math.round(60 * w * (0.5 + p.q)),
-        cost: Math.round(95 * w * (1.4 - p.q * 0.5)),
+        cost: m(95 * w * (1.4 - p.q * 0.5)),
         conversions: Math.round(6 * w * p.q),
       });
     }
@@ -631,7 +654,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
         workspaceId, campaignId: "demo-g-search", date: when, device: dev.d,
         impressions: Math.round(5_200 * dev.share * w),
         clicks: Math.round(190 * dev.share * w),
-        cost: Math.round(430 * dev.share * w),
+        cost: m(430 * dev.share * w),
         conversions: Math.round(22 * dev.share * dev.q * w),
       });
     }
@@ -641,7 +664,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
         workspaceId, campaignId: "demo-g-search", date: when, geoTarget: g.g,
         impressions: Math.round(5_200 * g.s * w),
         clicks: Math.round(190 * g.s * w),
-        cost: Math.round(430 * g.s * w),
+        cost: m(430 * g.s * w),
         conversions: Math.round(22 * g.s * w),
       });
     }
@@ -652,7 +675,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
       videoViews: Math.round(3_100 * w),
       videoViewRate: 0.33,
       engagementRate: 0.041,
-      cost: Math.round(210 * w),
+      cost: m(210 * w),
       conversions: Math.round(7 * w),
     });
 
@@ -664,18 +687,20 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
         criterionType: name, date: when,
         impressions: Math.round(3_200 * w * (1 - ai * 0.22)),
         clicks: Math.round(105 * w * (1 - ai * 0.2)),
-        cost: Math.round(140 * w * (1 - ai * 0.18)),
+        cost: m(140 * w * (1 - ai * 0.18)),
         conversions: Math.round(9 * w * (1 + ai * 0.35)),
       });
     }
 
-    for (const m of MATCH) {
+    // `mt` لا `m`: الأخيرة صارت محوّل العملة أعلى الدالة، واسمُ متغيّر
+    // الحلقة كان يحجبها هنا وحدها - فيمرّ الرقم بلا تحويل بلا خطأ أنواع.
+    for (const mt of MATCH) {
       matchTypes.push({
-        workspaceId, campaignId: "demo-g-search", matchType: m.m, date: when,
-        impressions: Math.round(5_200 * m.s * w),
-        clicks: Math.round(190 * m.s * w),
-        cost: Math.round(430 * m.s * w),
-        conversions: Math.round(22 * m.s * m.q * w),
+        workspaceId, campaignId: "demo-g-search", matchType: mt.m, date: when,
+        impressions: Math.round(5_200 * mt.s * w),
+        clicks: Math.round(190 * mt.s * w),
+        cost: m(430 * mt.s * w),
+        conversions: Math.round(22 * mt.s * mt.q * w),
       });
     }
 
@@ -684,7 +709,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
         workspaceId, campaignId: "demo-g-brand", date: when, channel: ch,
         impressions: Math.round(4_100 * w * (1 - ci * 0.18)),
         clicks: Math.round(130 * w * (1 - ci * 0.2)),
-        cost: Math.round(180 * w * (1 - ci * 0.15)),
+        cost: m(180 * w * (1 - ci * 0.15)),
         conversions: Math.round(8 * w * (1 - ci * 0.22)),
       });
     });
@@ -711,7 +736,7 @@ export async function seedDemoData(workspaceId: string, locale: "ar" | "en"): Pr
         confidenceLevel: "RELIABLE" as const, windowDays: 14,
         trackedMetrics: ["cost", "conversions_verified", "cpl_verified"],
         metricResults: {
-          cost: { before: 8960, after: 10740, changePct: 19.9 },
+          cost: { before: m(8960), after: m(10740), changePct: 19.9 },
           conversions_verified: { before: 249, after: 322, changePct: 29.3 },
           cpl_verified: { before: 36, after: 33.4, changePct: -7.2 },
         },

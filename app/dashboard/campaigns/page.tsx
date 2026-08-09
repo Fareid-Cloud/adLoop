@@ -118,7 +118,7 @@ export default async function CampaignsPage({
       {/* مربّع السؤال في آخر المحتوى: هو `sticky` فيطفو فوق الصفحة في كلّ
           موضع تمرير، وموضعه هنا هو حيث يرسو - فوق التذييل مباشرةً حين
           يبلغ المستخدم الآخر. */}
-      <AiAsk scope="campaigns" locale={locale} />
+      <AiAsk scope="campaigns" locale={locale} currency={workspace.currency} demo={workspace.isDemo} />
     </div>
   );
 }

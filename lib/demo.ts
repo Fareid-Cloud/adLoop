@@ -76,10 +76,15 @@ async function isDemoPopulated(workspaceId: string): Promise<boolean> {
   return snapshots > 0 && creatives > 0 && products > 0;
 }
 
-export async function seedDemoWorkspace(userId: string, locale: "ar" | "en"): Promise<string> {
+export async function seedDemoWorkspace(
+  userId: string,
+  locale: "ar" | "en",
+  /** عملة العرض. اختلافها عن المبذورة يُعيد البذر بأرقامٍ محوَّلة فعلاً. */
+  currency = "SAR",
+): Promise<string> {
   const existing = await prisma.workspace.findFirst({
     where: { userId, isDemo: true },
-    select: { id: true, demoLocale: true, demoSeedVersion: true },
+    select: { id: true, demoLocale: true, demoSeedVersion: true, demoCurrency: true },
   });
 
   if (existing) {
@@ -89,14 +94,17 @@ export async function seedDemoWorkspace(userId: string, locale: "ar" | "en"): Pr
     // أمثلة مولَّدة لا شيء فيها للمستخدم. الحذف يجرّ كلّ صفوفها بالتتالي.
     if (
       (existing.demoLocale ?? "ar") !== locale ||
-      (existing.demoSeedVersion ?? 1) !== DEMO_SEED_VERSION
+      (existing.demoSeedVersion ?? 1) !== DEMO_SEED_VERSION ||
+      // العملة كاللغة تماماً: الأرقام مخزَّنة لا محسوبة عند العرض، فتبديلُها
+      // بلا إعادة بذرٍ يترك الأرقام كما هي ويبدّل لافتتها وحدها.
+      (existing.demoCurrency ?? "SAR") !== currency
     ) {
       await prisma.workspace.delete({ where: { id: existing.id } });
     } else {
       // البذر يتخطّى المكرّر، فإعادته على مساحة مكتملة لا تُضاعف شيئاً،
       // وعلى مساحة ناقصة تُكملها بدل تركها فارغة إلى الأبد.
       if (!(await isDemoPopulated(existing.id))) {
-        await seedDemoData(existing.id, locale);
+        await seedDemoData(existing.id, locale, currency);
       }
       return existing.id;
     }
@@ -109,16 +117,17 @@ export async function seedDemoWorkspace(userId: string, locale: "ar" | "en"): Pr
     data: {
       userId,
       name: locale === "en" ? DEMO_WORKSPACE_NAME_EN : DEMO_WORKSPACE_NAME_AR,
-      currency: "SAR",
+      currency,
       isDemo: true,
       demoExpiresAt: expiresAt,
       demoLocale: locale,
       demoSeedVersion: DEMO_SEED_VERSION,
+      demoCurrency: currency,
       profitMarginPct: 32,
     },
   });
 
-  await seedDemoData(workspace.id, locale);
+  await seedDemoData(workspace.id, locale, currency);
 
   return workspace.id;
 }

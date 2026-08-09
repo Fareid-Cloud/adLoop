@@ -260,7 +260,7 @@ export default async function EcommerceOverviewPage() {
       {/* مربّع السؤال في آخر المحتوى: هو `sticky` فيطفو فوق الصفحة في كلّ
           موضع تمرير، وموضعه هنا هو حيث يرسو - فوق التذييل مباشرةً حين
           يبلغ المستخدم الآخر. */}
-      <AiAsk scope="store" locale={locale} />
+      <AiAsk scope="store" locale={locale} currency={workspace.currency} demo={workspace.isDemo} />
     </div>
   );
 }

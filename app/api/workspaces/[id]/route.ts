@@ -46,6 +46,10 @@ const ALLOWED_FIELDS = [
 // قاعدة البيانات - نفس نوع الثغرة التي أُصلحت في توكنات OAuth.
 const ENCRYPTED_FIELDS = ["metaCapiToken", "tiktokCapiToken"] as const;
 
+// تبديل عملة مساحة العرض يُعيد بذرها كاملةً (~١٥ ثانية على Neon)، وهو
+// أطول من الحدّ الافتراضيّ - فكان الطلب يُقطع وتبقى مساحة نصف مبذورة.
+export const maxDuration = 60;
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -64,6 +68,48 @@ export async function PATCH(
   const data: Record<string, any> = {};
   for (const field of ALLOWED_FIELDS) {
     if (field in body) data[field] = body[field];
+  }
+
+  // ── العملة ───────────────────────────────────────────────
+  //
+  // 🔴 **ما كان يحدث:** القائمة تُبدَّل، فتُكتب `currency` وتتبدّل اللافتة
+  // فوق أرقامٍ لم يمسّها أحد. أي أنّ الحقل كان يُعيد **تسمية** المال لا
+  // تحويله - وهو تضليل، لا خيارٌ ناقص.
+  //
+  // والعلاج ليس واحداً للحالتين، لأنّ مصدر الرقم مختلف:
+  //
+  //   • **حسابٌ حقيقيّ:** الأرقام تصل من جوجل/ميتا بعملة الحساب الإعلانيّ،
+  //     وهي مثبَّتة عند إنشائه ولا تُغيَّر من المنصّة نفسها. فلا يجوز أن
+  //     يختارها المستخدم هنا - تُثبَّت على `dataCurrency` ويُرفض ما عداها.
+  //   • **مساحة عرض:** الأرقام من صنعنا، فتُعاد ولادتها بالعملة المطلوبة
+  //     محوَّلةً فعلاً. هذا هو الموضع الوحيد الذي «يتحوّل» فيه المال حقّاً.
+  if ("currency" in data && data.currency !== workspace.currency) {
+    if (workspace.dataCurrency && data.currency !== workspace.dataCurrency) {
+      delete data.currency;
+    } else if (workspace.isDemo) {
+      const { seedDemoWorkspace } = await import("@/lib/demo");
+      // إعادة البذر تحذف المساحة وتنشئها من جديد، فيتغيّر معرّفها - ويُكتب
+      // فوراً في كوكي المساحة النشطة، وإلّا أشار الكوكي إلى صفّ محذوف وسقط
+      // المستخدم إلى مساحةٍ أخرى بلا أن يفهم لماذا.
+      //
+      // وما عدا العملة من تعديلاتٍ في الحفظة نفسها يعود إلى قيم البذرة:
+      // المساحة تُولَد من جديد بالكامل. وهذا مقبول هنا وحده لأنّها أمثلة
+      // مولَّدة، ولا يُقبل في مساحةٍ حقيقية أبداً.
+      const newId = await seedDemoWorkspace(
+        user.id,
+        (workspace.demoLocale as "ar" | "en") ?? "en",
+        String(data.currency),
+      );
+      const { cookies } = await import("next/headers");
+      (await cookies()).set("adloop_workspace", newId, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+      });
+      return NextResponse.json({ workspace: { id: newId }, reseeded: true });
+    }
   }
 
   // معرّفات رقمية تُنظَّف على الخادم لا في الواجهة وحدها: نسخها من واتساب

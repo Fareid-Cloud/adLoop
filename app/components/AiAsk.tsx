@@ -4,55 +4,87 @@
 //
 // مربّع السؤال - سطرٌ واحد يسأل فيه صاحب الحساب عن أرقامه.
 //
-// ثلاثة قرارات في شكله، كلّها من طلب المالك وكلّها لها سبب:
+// أربعة قرارات في شكله، كلّها من طلب المالك وكلّها لها سبب:
 //
 // **١) الأسئلة تُكتب حرفاً حرفاً وتتبدّل.** مثالٌ واحد ثابت يُقرأ مرّةً ثمّ
 // يصير جزءاً من الأثاث. ثلاثة تتعاقب تُعلّم المستخدم **نوع** ما يصحّ أن
 // يسأله - وهو السؤال الحقيقيّ أمام مربّع فارغ: «أسأله عن ماذا أصلاً؟».
 // تتوقّف فور أن يلمس المربّع، ولا تعمل إطلاقاً لمن يطلب تقليل الحركة.
 //
-// **٢) عائم يرسو.** `position: sticky` مع `bottom` لا `fixed`: يطفو فوق
+// **٢) والمثال المكتوب يُرسَل بضغطة السهم.** كان يُقرأ ولا يُلتقط: مَن أعجبه
+// اقتراحٌ يمرّ أمامه اضطرّ إلى إعادة كتابته بيده. الآن ضغطة السهم تُكمل
+// المثال في المربّع وترسله - **تُكمله ولا تقصّه**: سؤالٌ مبتور («لماذا
+// ترتفع تكلفة الع») جوابُه مبتور، وفي حسابٍ حقيقيّ يُخصم ثمنه من الرصيد.
+// فالمرسَل هو ما يراه المستخدم في اللحظة نفسها، مكتملاً لا ناقصاً.
+//
+// **٣) عائم يرسو.** `position: sticky` مع `bottom` لا `fixed`: يطفو فوق
 // المحتوى في كلّ موضع تمرير، ثمّ **يستقرّ في مكانه الطبيعيّ** فوق التذييل
 // حين تبلغ آخر الصفحة - وهو بالضبط ما طُلب، بلا سطر JavaScript واحد
 // لحساب الموضع. و`fixed` كانت ستفرض حساب إزاحة الشريط الجانبيّ يدوياً
 // وتتبع حالة طيّه؛ اللاصق يبقى داخل عمود المحتوى فيحاذيه من تلقائه.
 //
-// **٣) شفّاف قليلاً وهو يطفو، معتم وهو راسٍ.** الشفافية ليست زينة: المربّع
+// **٤) شفّاف قليلاً وهو يطفو، معتم وهو راسٍ.** الشفافية ليست زينة: المربّع
 // يمرّ فوق أرقام تُقرأ، فإعتامه الكامل أثناء التمرير يحجب ما جاء المستخدم
 // ليراه. وحين يرسو لم يعد فوق شيء، فلا سبب لإخفاء أيّ جزء منه.
 //
-// والنسبة رُفعت مرّتين بطلب المالك: ٦٢٪ ← ٨٨٪ ← ٩٦٪. الشفافية بقيت
-// إشارةً إلى أنّه طافٍ لا أكثر، والوضوح صار الأصل: مربّعٌ باهتٌ فوق
-// أرقام يُقرأ كأنّه معطَّل، وهو نقيض غرضه.
+// والنسبة عُدِّلت بطلب المالك مرّةً بعد مرّة: ٦٢٪ ← ٨٨٪ ← ٩٦٪ ← ٨٥٪.
+// استقرّت حيث يُقرأ المربّع بوضوح ويبقى ظاهراً أنّه طافٍ فوق المحتوى لا
+// جزءاً منه - فالشفافية إشارةٌ إلى حالته، لا زينة ولا إخفاء.
 //
 // **سؤال وجواب لا محادثة:** لا سجلّ ولا سياق متراكم - كلّ سؤال نداءٌ
 // مستقلّ يُخصم من الرصيد المعلَن. سلسلةٌ تحمل تاريخها تضاعف التوكنات مع
-// كلّ رسالة، فيدفع المستخدم ثمن ما سبق في كلّ مرّة.
+// كلّ رسالة، فيدفع المستخدم ثمن ما سبق في كلّ مرّة. والقسم المستقلّ
+// (`docs/ai-agent-plan.md`) هو ما يحمل السجلّ حين يُبنى.
 
 import { useState, useRef, useEffect } from "react";
 import { Sparkles, ArrowUp, Loader2, X } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { MarkdownAnswer } from "@/app/components/MarkdownAnswer";
+import { showcaseFor, fillShowcaseMoney } from "@/lib/demoAgentShowcase";
 
 export type AiAskScope = "home" | "campaigns" | "store";
 
 const TYPE_MS = 45;
 const ERASE_MS = 22;
 const HOLD_MS = 1900;
+/** مهلة بين خطوة عملٍ وأختها - تُقرأ ولا تُنتظر */
+const STEP_MS = 780;
 
-export function AiAsk({ scope, locale }: { scope: AiAskScope; locale: Locale }) {
+export function AiAsk({
+  scope,
+  locale,
+  currency = "SAR",
+  demo = false,
+}: {
+  scope: AiAskScope;
+  locale: Locale;
+  /** عملة المساحة - تُحوَّل إليها مبالغ الاستعراض المحفوظ */
+  currency?: string;
+  /** مساحة عرض تجريبية: استعراض محفوظ بدل نداء مدفوع */
+  demo?: boolean;
+}) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `aiAsk.${k}`, v);
   const examples = [1, 2, 3].map((n) => tr(`ph_${scope}_${n}`));
 
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [answer, setAnswer] = useState<string | null>(null);
+  const [steps, setSteps] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [upgradeUrl, setUpgradeUrl] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const [typed, setTyped] = useState("");
+  /** المثال الجاري كتابته - به يُعرف أيّ استعراضٍ محفوظ يُشغَّل */
+  const [exampleIndex, setExampleIndex] = useState(0);
   const [docked, setDocked] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  // مؤقّتات الاستعراض تعيش أطول من ضغطة الزرّ: مغادرة الصفحة أثناءها كانت
+  // ستحدّث حالة مكوّنٍ أُزيل. تُجمع لتُلغى دفعةً واحدة.
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   // ── الرسوّ ──────────────────────────────────────────────
   // حارسٌ يقع مباشرةً تحت المربّع: ظهورُه في الشاشة يعني أنّ المربّع بلغ
@@ -73,7 +105,7 @@ export function AiAsk({ scope, locale }: { scope: AiAskScope; locale: Locale }) 
     const reduce =
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) { setTyped(examples[0]); return; }
+    if (reduce) { setTyped(examples[0]); setExampleIndex(0); return; }
     if (focused || value) return;
 
     let i = 0;
@@ -98,6 +130,7 @@ export function AiAsk({ scope, locale }: { scope: AiAskScope; locale: Locale }) 
         if (ch <= 0) {
           erasing = false;
           i = (i + 1) % examples.length;
+          setExampleIndex(i);
         }
         timer = setTimeout(step, ERASE_MS);
       }
@@ -107,14 +140,63 @@ export function AiAsk({ scope, locale }: { scope: AiAskScope; locale: Locale }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focused, value, scope, locale]);
 
-  async function ask() {
-    const q = value.trim();
-    if (q.length < 3 || busy) return;
-    setBusy(true);
+  function reset() {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
     setError(null);
+    setNote(null);
     setAnswer(null);
+    setSteps([]);
     setUpgradeUrl(null);
+  }
 
+  /** أيّ مثالٍ يطابق هذا النصّ - تطابقاً تامّاً أو بادئةً منه */
+  function matchExample(text: string): number {
+    const q = text.trim();
+    if (!q) return -1;
+    return examples.findIndex((e) => e === q || e.startsWith(q));
+  }
+
+  // ── الاستعراض المحفوظ ───────────────────────────────────
+  // خطوات تتابع ثمّ جواب. لا نداء ولا خصم - `blockAiInDemo` تمنع النداء
+  // من الديمو أصلاً، وهذا ما يُريه بدل رسالة منع لا تُظهر شيئاً.
+  function runShowcase(index: number) {
+    const entry = showcaseFor(scope, index);
+    if (!entry) { setNote(tr("demoUnmatched")); return; }
+
+    setBusy(true);
+    const list = entry.steps[locale === "en" ? "en" : "ar"];
+    list.forEach((s, n) => {
+      timers.current.push(setTimeout(() => setSteps((prev) => [...prev, s]), n * STEP_MS));
+    });
+    timers.current.push(
+      setTimeout(() => {
+        setAnswer(fillShowcaseMoney(entry.answer[locale === "en" ? "en" : "ar"], currency));
+        setBusy(false);
+      }, list.length * STEP_MS + 320),
+    );
+  }
+
+  async function ask() {
+    if (busy) return;
+
+    // المربّع فارغ والمثال يُكتب: تُكمَل الجملة في المربّع ثمّ تُرسل، فيرى
+    // المستخدم ما أرسله كاملاً لا مبتوراً عند الحرف الذي وقف عنده.
+    const usingExample = !value.trim();
+    const index = usingExample ? exampleIndex : matchExample(value);
+    const q = usingExample ? examples[exampleIndex] : value.trim();
+    if (q.length < 3) return;
+
+    reset();
+    if (usingExample) setValue(q);
+
+    if (demo) {
+      if (index < 0) { setNote(tr("demoUnmatched")); return; }
+      runShowcase(index);
+      return;
+    }
+
+    setBusy(true);
     const res = await fetch("/api/ai/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -134,15 +216,23 @@ export function AiAsk({ scope, locale }: { scope: AiAskScope; locale: Locale }) 
     setValue("");
   }
 
-  // يُعتم كاملاً متى رسا، أو متى كان فيه ما يُقرأ (جواب أو خطأ)، أو أثناء
-  // الكتابة - الشفافية لحالة السكون وحدها.
-  const solid = docked || focused || !!answer || !!error || !!value;
+  function pick(index: number) {
+    reset();
+    setValue(examples[index]);
+    if (demo) runShowcase(index);
+    else inputRef.current?.focus();
+  }
+
+  // يُعتم كاملاً متى رسا، أو متى كان فيه ما يُقرأ، أو أثناء الكتابة -
+  // الشفافية لحالة السكون وحدها.
+  const open = !!answer || !!error || !!note || steps.length > 0;
+  const solid = docked || focused || open || !!value;
 
   return (
     <>
       <div
         className={`sticky bottom-5 z-30 mt-6 transition-opacity duration-300 ${
-          solid ? "opacity-100" : "opacity-[0.96] hover:opacity-100"
+          solid ? "opacity-100" : "opacity-[0.85] hover:opacity-100"
         }`}
       >
         <div
@@ -170,7 +260,9 @@ export function AiAsk({ scope, locale }: { scope: AiAskScope; locale: Locale }) 
           />
           <button
             onClick={ask}
-            disabled={busy || value.trim().length < 3}
+            // لا شرط على طول المُدخَل: المربّع الفارغ يرسل المثال المعروض،
+            // وتعطيلُه حينها كان يجعل السهم يبدو معطوباً وقتَ أنفع ضغطة فيه.
+            disabled={busy}
             aria-label={tr("send")}
             className="btn btn-primary btn-icon btn-sm rounded-full disabled:opacity-35"
           >
@@ -180,8 +272,9 @@ export function AiAsk({ scope, locale }: { scope: AiAskScope; locale: Locale }) 
 
         {/* سطر التكلفة: النداء يُخصم من الرصيد المعلَن، وإخفاء ذلك حتى ينفد
             الرصيد هو ما يجعل الحدّ يبدو مفاجأةً لا شرطاً معروفاً. يظهر عند
-            الرسوّ أو التركيز فقط - سطرٌ دائم يطفو فوق المحتوى ضجيج. */}
-        {solid && !answer && !error && (
+            الرسوّ أو التركيز فقط - سطرٌ دائم يطفو فوق المحتوى ضجيج.
+            وفي مساحة العرض لا يُخصم شيء، فلا يُقال إنّه يُخصم. */}
+        {solid && !open && !demo && (
           <p className="mt-1.5 px-4 text-[11px] text-text-faint">{tr("costNote")}</p>
         )}
 
@@ -194,21 +287,63 @@ export function AiAsk({ scope, locale }: { scope: AiAskScope; locale: Locale }) 
           </div>
         )}
 
-        {answer && (
-          <div className="card pad-md mt-2 flex items-start gap-3">
-            <span className="icon-badge mt-0.5 h-7 w-7 shrink-0 bg-accent/12 text-accent">
-              <Sparkles size={13} />
-            </span>
-            <p className="min-w-0 flex-1 whitespace-pre-wrap text-[13px] leading-relaxed text-text-primary">
-              {answer}
-            </p>
-            <button
-              onClick={() => { setAnswer(null); inputRef.current?.focus(); }}
-              aria-label={t(locale, "ui.close")}
-              className="shrink-0 rounded-lg p-1 text-text-faint transition-colors hover:text-text-primary"
-            >
-              <X size={14} />
-            </button>
+        {/* أيّ منعٍ يحمل معه بديله: القائمة تحته هي الخطوة التالية جاهزة */}
+        {note && (
+          <div className="note mt-2 border-border bg-surface-2 text-text-secondary">
+            <span className="min-w-0 flex-1">{note}</span>
+          </div>
+        )}
+
+        {(steps.length > 0 || answer) && (
+          <div className="card pad-md mt-2 min-w-0">
+            <div className="mb-2 flex min-w-0 items-center gap-2">
+              <span className="icon-badge h-7 w-7 shrink-0 bg-accent/12 text-accent">
+                <Sparkles size={13} />
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-text-secondary">
+                {busy ? tr("demoWorking") : demo ? tr("demoBadge") : ""}
+              </span>
+              <button
+                onClick={reset}
+                aria-label={t(locale, "ui.close")}
+                className="shrink-0 rounded-lg p-1 text-text-faint transition-colors hover:text-text-primary"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            {/* الخطوات تبقى بعد وصول الجواب: هي التي تُري **كيف** وصل إليه،
+                واختفاؤها يحوّل الاستعراض إلى جوابٍ ظهر من العدم. */}
+            {steps.length > 0 && (
+              <ul className="mb-3 space-y-1.5 border-s-2 border-accent/25 ps-3">
+                {steps.map((s, n) => (
+                  <li key={n} className="text-[12px] leading-relaxed text-text-secondary">
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {answer && <MarkdownAnswer text={answer} />}
+          </div>
+        )}
+
+        {/* أمثلة مساحة العرض: ما يعمل عليه الاستعراض معروضٌ صراحةً بدل أن
+            يُنتظر مرورُه في الكتابة التدريجية. */}
+        {demo && !open && solid && (
+          <div className="mt-2 space-y-1.5">
+            <p className="px-1 text-[11px] text-text-faint">{tr("demoHint")}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {examples.map((e, n) => (
+                <button
+                  key={n}
+                  onClick={() => pick(n)}
+                  className="chip max-w-full border border-border bg-surface text-text-secondary transition-colors hover:border-accent/45 hover:text-text-primary"
+                >
+                  <span className="truncate">{e}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>

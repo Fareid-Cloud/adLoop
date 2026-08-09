@@ -13,6 +13,7 @@ import { GoogleAdsApi } from "google-ads-api";
 import { prisma } from "@/lib/prisma";
 import type { CampaignLink, ConnectedPlatform } from "@prisma/client";
 import { decryptToken } from "@/lib/encryption";
+import { recordDataCurrency } from "@/lib/dataCurrency";
 import { t } from "@/lib/i18n/dictionary";
 import { assertNotDemo } from "@/lib/demo";
 
@@ -61,6 +62,16 @@ export async function syncGoogleAdsForWorkspace(
     });
 
     const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
+
+    // عملة الحساب: استعلامٌ مستقلّ لا حقلٌ مضاف إلى استعلام المقاييس. ضمّه
+    // هناك كان يخاطر بأهمّ استعلام في المنتج مقابل حقلٍ واحد - وهذا رخيص
+    // (صفٌّ واحد) ويفشل وحده إن فشل.
+    try {
+      const [me] = await customer.query(`SELECT customer.currency_code FROM customer LIMIT 1`);
+      await recordDataCurrency(workspaceId, "GOOGLE_ADS", me?.customer?.currency_code);
+    } catch (err) {
+      console.error("[syncGoogleAds] تعذّر قراءة عملة الحساب:", err);
+    }
 
     // استعلام واحد بمدى تاريخ كامل (مش لوب على كل يوم لوحده) - جوجل
     // بترجع صف لكل يوم لكل كامبين تلقائياً لو استخدمنا segments.date

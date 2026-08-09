@@ -65,6 +65,9 @@ interface WorkspaceData {
   id: string;
   name: string;
   currency: string;
+  /** عملة الحساب الإعلانيّ المربوط - `null` قبل أوّل مزامنة */
+  dataCurrency: string | null;
+  isDemo: boolean;
   targetLocation: string | null;
   profitMarginPct: number | null;
   monthlyChangeCeilingPct: number;
@@ -596,7 +599,7 @@ function WorkspaceTab({
 
   async function handleSave() {
     setSaving(true);
-    await fetch(`/api/workspaces/${workspace.id}`, {
+    const res = await fetch(`/api/workspaces/${workspace.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -613,6 +616,12 @@ function WorkspaceTab({
         notificationEmail: notificationEmail || null,
       }),
     });
+
+    // تبديل عملة مساحة العرض يُعيد بذرها بمعرّفٍ جديد، فلا يكفي تحديث
+    // البيانات: الصفحة كلّها تُعاد لتقرأ المساحة الجديدة من الكوكي.
+    const out = await res.json().catch(() => null);
+    if (out?.reseeded) { window.location.reload(); return; }
+
     setSaving(false);
     router.refresh();
   }
@@ -626,23 +635,46 @@ function WorkspaceTab({
       <FieldLabel>{tr("idxWorkspaceName")}</FieldLabel>
       <TextInput value={name} onChange={setName} placeholder={tr("wsNamePlaceholder")} />
 
+      {/* ── العملة ────────────────────────────────────────────
+          حالتان لا واحدة، لأنّ مصدر الرقم يختلف:
+
+          • **حسابٌ إعلانيّ مربوط:** العملة وصلت مع البيانات نفسها، وجوجل
+            وميتا تُثبتانها عند إنشاء الحساب ولا تسمحان بتبديلها. فتُعرَض
+            ولا تُحرَّر - وقائمةٌ حرّة هنا كانت تُلصق لافتةً أخرى على المال
+            نفسه بلا أن تحوّل ريالاً واحداً.
+          • **مساحة عرض أو حسابٌ بلا ربط:** لا شيء يناقض الاختيار، فيُختار.
+            وفي مساحة العرض تُعاد ولادة الأرقام بالعملة الجديدة **محوَّلةً**. */}
       <FieldLabel>{tr("idxCurrency")}</FieldLabel>
-      <select
-        value={currency}
-        onChange={(e) => setCurrency(e.target.value)}
-        className="field mb-4 w-full"
-      >
-        <option value="SAR">{tr("curSar")}</option>
-        <option value="EGP">{tr("curEgp")}</option>
-        <option value="AED">{tr("curAed")}</option>
-        <option value="KWD">{tr("curKwd")}</option>
-        <option value="QAR">{tr("curQar")}</option>
-        <option value="OMR">{tr("curOmr")}</option>
-        <option value="BHD">{tr("curBhd")}</option>
-        <option value="USD">{tr("curUsd")}</option>
-        <option value="EUR">{tr("curEur")}</option>
-        <option value="GBP">{tr("curGbp")}</option>
-      </select>
+      {workspace.dataCurrency ? (
+        <div className="mb-4">
+          <div className="note border-border bg-surface-2 text-text-secondary">
+            <span className="chip bg-accent/12 text-accent">{workspace.dataCurrency}</span>
+            <span className="min-w-0 flex-1">{tr("currencyLockedNote")}</span>
+          </div>
+        </div>
+      ) : (
+        <>
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            className="field mb-1.5 w-full"
+          >
+            <option value="SAR">{tr("curSar")}</option>
+            <option value="EGP">{tr("curEgp")}</option>
+            <option value="AED">{tr("curAed")}</option>
+            <option value="KWD">{tr("curKwd")}</option>
+            <option value="QAR">{tr("curQar")}</option>
+            <option value="OMR">{tr("curOmr")}</option>
+            <option value="BHD">{tr("curBhd")}</option>
+            <option value="USD">{tr("curUsd")}</option>
+            <option value="EUR">{tr("curEur")}</option>
+            <option value="GBP">{tr("curGbp")}</option>
+          </select>
+          <p className="mb-4 px-1 text-[11.5px] leading-relaxed text-text-faint">
+            {workspace.isDemo ? tr("currencyDemoNote") : tr("currencyOpenNote")}
+          </p>
+        </>
+      )}
 
       <FieldLabel>{tr("idxMarket")}</FieldLabel>
       <select
@@ -1068,11 +1100,17 @@ function AutomationTab({
 
   async function handleSave() {
     setSaving(true);
-    await fetch(`/api/workspaces/${workspace.id}`, {
+    const res = await fetch(`/api/workspaces/${workspace.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
+
+    // تبديل عملة مساحة العرض يُعيد بذرها بمعرّفٍ جديد، فلا يكفي تحديث
+    // البيانات: الصفحة كلّها تُعاد لتقرأ المساحة الجديدة من الكوكي.
+    const out = await res.json().catch(() => null);
+    if (out?.reseeded) { window.location.reload(); return; }
+
     setSaving(false);
     router.refresh();
   }

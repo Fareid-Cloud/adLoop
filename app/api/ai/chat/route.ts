@@ -13,7 +13,7 @@ import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { blockAiInDemo } from "@/lib/demo";
 import { checkAndConsumeChatQuota } from "@/lib/aiRateLimit";
 import { planModelFor } from "@/lib/plans";
-import { buildCampaignSummaries } from "@/lib/aiInsights";
+import { gatherAgentContext, hasEnoughData } from "@/lib/agentContext";
 import { answerWorkspaceQuestion, type ChatScope } from "@/lib/aiChat";
 import { t } from "@/lib/i18n/dictionary";
 
@@ -44,11 +44,9 @@ export async function POST(req: NextRequest) {
 
   // البيانات **قبل** خصم الرصيد: حسابٌ بلا أرقام كافية لا يستحقّ أن يُخصم
   // منه رصيد مقابل جوابٍ لا يمكن أن يكون فيه شيء.
-  const since = new Date();
-  since.setDate(since.getDate() - 30);
-  const campaigns = await buildCampaignSummaries(workspace.id, since, 25);
+  const context = await gatherAgentContext(workspace.id, workspace.currency);
 
-  if (campaigns.length === 0) {
+  if (!hasEnoughData(context)) {
     return NextResponse.json({ error: t(locale, "aiAsk.errNoData") }, { status: 422 });
   }
 
@@ -69,8 +67,7 @@ export async function POST(req: NextRequest) {
   try {
     const result = await answerWorkspaceQuestion({
       question,
-      campaigns,
-      currency: workspace.currency,
+      context,
       scope,
       locale,
       model: await planModelFor(user.id),

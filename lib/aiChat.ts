@@ -1,22 +1,33 @@
 // lib/aiChat.ts
 //
-// مربّع السؤال - سؤال واحد عن أرقام مساحة العمل، وجواب مبنيّ عليها وحدها.
+// عقل الوكيل - يقرأ أرقام مساحة العمل ويجيب عن سؤال صاحبها.
 //
-// **ليس مساعداً عامّاً.** النموذج لا يُسأل رأيه في الإعلانات، بل يُعطى
-// أرقام هذا الحساب ويُطلب منه أن يقرأها. الفرق ليس تفصيلاً: مساعدٌ عامّ
-// يجيب عن «كم أرفع ميزانيتي؟» بمتوسّطات السوق، وهذا يجيب بما في حسابك -
-// أو يقول إنّ الرقم اللازم غير موجود.
+// **ليس مساعداً عامّاً.** النموذج لا يُسأل رأيه في الإعلانات، بل يُعطى أرقام
+// هذا الحساب ويُطلب منه أن يقرأها. الفرق ليس تفصيلاً: مساعدٌ عامّ يجيب عن
+// «كم أرفع ميزانيتي؟» بمتوسّطات السوق، وهذا يجيب بما في حسابك - أو يقول إنّ
+// الرقم اللازم غير موجود.
 //
 // **القاعدة الحاكمة للردّ: لا رقم من خارج ما أُرسل.** منتجٌ جوهره «نتحقّق
 // بدل أن نصدّق» لا يجوز أن يخترع فيه النموذج رقماً. وحين لا تكفي البيانات
-// فالجواب الصحيح هو قول ما ينقص، لا تعبئة الفراغ بتقدير معقول الشكل.
+// فالجواب الصحيح هو قول ما ينقص، لا تعبئة الفراغ بتقديرٍ معقول الشكل.
+//
+// ── لماذا صار الجواب بأربع طبقات ─────────────────────────────────────
+//
+// كان الردّ فقرةً من ثلاث إلى ستّ جمل. وهذا يكفي سؤالاً بسيطاً («كم صرفت
+// أمس؟») ولا يكفي السؤال الذي يستحقّ نموذجاً أصلاً: «أيّ حملة هي الفائزة؟»
+// جوابُها مقارنةٌ بين ستّ حملات، والمقارنة لا تُقرأ في جملةٍ متلاحقة الأرقام.
+//
+// فالبنية المفروضة: **حكم** يجيب مباشرة، ثمّ **مؤشّرات** تسنده، ثمّ **جدول**
+// يُظهر المقارنة، ثمّ **سبب وخطوة**. وهي ليست تنسيقاً: كلّ طبقة تمنع خطأً
+// بعينه - الحكم يمنع المقدّمات، والمؤشّرات تمنع الرأي بلا رقم، والجدول يمنع
+// سرد الأرقام في نثر، والسبب يمنع تشخيصاً بلا خطوة تالية.
 
 import Anthropic from "@anthropic-ai/sdk";
-import type { CampaignSummary } from "@/lib/aiInsights";
+import type { AgentContext } from "@/lib/agentContext";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
-  timeout: 20_000,
+  timeout: 30_000,
   maxRetries: 2,
 });
 
@@ -29,8 +40,8 @@ const SCOPE_HINT: Record<ChatScope, { ar: string; en: string }> = {
     en: "The question comes from the overview page: start from the whole picture across platforms.",
   },
   campaigns: {
-    ar: "السؤال مطروح من صفحة الحملات: قارن الحملات ببعضها.",
-    en: "The question comes from the campaigns page: compare campaigns against each other.",
+    ar: "السؤال مطروح من صفحة الحملات: قارن الحملات والإعلانات ببعضها.",
+    en: "The question comes from the campaigns page: compare campaigns and ads against each other.",
   },
   store: {
     ar: "السؤال مطروح من صفحة المتجر: اربط الإنفاق الإعلاني بنتيجة البيع.",
@@ -39,22 +50,19 @@ const SCOPE_HINT: Record<ChatScope, { ar: string; en: string }> = {
 };
 
 export interface ChatAnswer {
+  /** Markdown - عناوين وجداول وقوائم. يعرضه `MarkdownAnswer` لا `dangerouslySetInnerHTML` */
   answer: string;
-  /** ما لم تسمح به البيانات - يُعرض تحت الجواب لا داخله */
-  missing: string | null;
 }
 
 export async function answerWorkspaceQuestion({
   question,
-  campaigns,
-  currency,
+  context,
   scope,
   locale,
   model,
 }: {
   question: string;
-  campaigns: CampaignSummary[];
-  currency: string;
+  context: AgentContext;
   scope: ChatScope;
   locale: "ar" | "en";
   model: string;
@@ -65,41 +73,62 @@ export async function answerWorkspaceQuestion({
   const system = ar
     ? `أنت محلّل أداء إعلانيّ داخل منصّة AdLoop. تُجيب عن سؤال صاحب الحساب اعتماداً على أرقام حسابه المرفقة **وحدها**.
 
-القواعد:
+## قواعد الصدق
 - لا تذكر رقماً غير موجود في البيانات المرفقة، ولا تُقدّر رقماً ناقصاً.
-- إن كان السؤال يحتاج بياناتٍ غير مرفقة، قل بوضوح ما الذي ينقص لتُجيب.
-- اربط كلّ جملة برقم. الجملة بلا رقم لا تُكتب.
-- «المُعلَن» ما تقوله المنصّة، و«المتحقَّق» ما تأكّد بمصدر مستقلّ. حين يفترقان، ابنِ على المتحقَّق وقل الفارق.
-- العملة ${currency}. لا تحوّل إلى عملة أخرى.
+- إن كان السؤال يحتاج بياناتٍ غير مرفقة، قل بوضوح ما الذي ينقص لتُجيب، ولا تُكمل بتخمين.
+- «المُعلَن» ما تقوله المنصّة، و«المتحقَّق» ما تأكّد بمصدر مستقلّ. حين يفترقان، ابنِ حكمك على المتحقَّق وسمِّ الفارق صراحةً.
+- العملة ${context.currency}. لا تحوّل إلى عملة أخرى ولا تكتب رمزاً غيرها.
+
+## شكل الجواب - بهذا الترتيب
+1. **الحكم**: سطر واحد يجيب عن السؤال مباشرة بالاسم أو بالرقم. بلا مقدّمة.
+2. **المؤشّرات**: ثلاثة إلى أربعة أسطر قائمة، كلّ سطر مؤشّر ورقمه الذي يسند الحكم.
+3. **الجدول**: جدول Markdown للمقارنة التي بُني عليها الحكم - صفوفه من البيانات المرفقة فقط. أدرجه كلّما كان في السؤال مقارنة بين حملات أو إعلانات أو منصّات أو فترات.
+4. **لماذا، وما الخطوة**: فقرة قصيرة تشرح السبب من الأرقام، وتنتهي بخطوة واحدة قابلة للتنفيذ.
+
+## الأسلوب
 - بالعربية الفصحى. لا عامّية.
-- جوابٌ قصير: ثلاث جمل إلى ستّ. لا مقدّمات ولا خاتمة.
+- اربط كلّ جملة برقم. الجملة بلا رقم لا تُكتب.
+- لا مقدّمات ولا خاتمة ولا اعتذار. ابدأ بالحكم مباشرة.
+- استخدم Markdown: **الغامق** للأرقام الحاسمة، وجداول بصيغة الأنابيب، وقوائم بشرطة.
+
 ${hint}`
     : `You are an ad performance analyst inside AdLoop. You answer the account owner's question using **only** the account figures attached.
 
-Rules:
+## Honesty rules
 - Never state a number that is not in the attached data, and never estimate a missing one.
-- If the question needs data that is not attached, say plainly what is missing.
+- If the question needs data that is not attached, say plainly what is missing, and do not fill the gap with a guess.
+- "Reported" is what the platform claims; "verified" is what an independent source confirmed. When they differ, build your judgement on the verified figure and name the gap explicitly.
+- Currency is ${context.currency}. Do not convert and do not write any other symbol.
+
+## Answer shape - in this order
+1. **Verdict**: one line answering the question directly, by name or by number. No preamble.
+2. **Key figures**: three to four bullet lines, each a metric and the number backing the verdict.
+3. **Table**: a Markdown table of the comparison the verdict rests on - rows from the attached data only. Include it whenever the question compares campaigns, ads, platforms or periods.
+4. **Why, and the next step**: a short paragraph explaining the cause from the numbers, ending in one actionable step.
+
+## Style
 - Tie every sentence to a number. A sentence without one is not written.
-- "Reported" is what the platform claims; "verified" is what an independent source confirmed. When they differ, build on the verified figure and name the gap.
-- Currency is ${currency}. Do not convert.
-- Keep it short: three to six sentences. No preamble, no sign-off.
+- No preamble, no sign-off, no apology. Open with the verdict.
+- Use Markdown: **bold** for the decisive numbers, pipe tables, dashed lists.
+
 ${hint}`;
 
   const message = await anthropic.messages.create({
     model,
-    // سقفٌ لا رسمٌ: يُحاسَب المُنتَج فعلاً. وهو يشمل التفكير والردّ معاً،
-    // فالسقف المنخفض هنا يقصّ التفكير أوّلاً - ولذلك جهدٌ منخفض لا متوسّط:
-    // سؤال واحد عن أرقام مرفقة أخفّ من بناء تحليل كامل من الصفر.
-    max_tokens: 1400,
+    // رُفع من ١٤٠٠ حين صار الجواب يحمل جدولاً: السقف يشمل التفكير والردّ
+    // معاً، وجدولٌ من ستّة صفوف يقتطع من التفكير ما يحتاجه ترتيبُ الصفوف.
+    // والجهد `medium` لا `low` لسبب متّصل: ترتيب حملات بمعيارٍ مركّب
+    // (المتحقَّق لا المُعلَن) عملُ تحليلٍ لا قراءةُ حقل.
+    max_tokens: 2400,
     thinking: { type: "adaptive" },
-    output_config: { effort: "low" },
+    output_config: { effort: "medium" },
     system,
     messages: [
       {
         role: "user",
         content: `${ar ? "السؤال" : "Question"}: ${question}\n\n${
           ar ? "أرقام الحساب" : "Account figures"
-        }:\n${JSON.stringify(campaigns, null, 2)}`,
+        }:\n${JSON.stringify(context, null, 2)}`,
       },
     ],
   });
@@ -110,5 +139,5 @@ ${hint}`;
     .join("\n")
     .trim();
 
-  return { answer: text, missing: null };
+  return { answer: text };
 }
