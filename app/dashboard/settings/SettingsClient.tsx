@@ -200,7 +200,11 @@ export function SettingsClient({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={tr("searchPlaceholder")}
-          className="field w-full ps-9 pe-3"
+          // 🔴 `field-icon-start` لا `ps-9`: حشوة `.field` مكتوبة في
+          // `theme.css` **خارج طبقات Tailwind**، فتغلب أيّ أداة حشو مهما
+          // بلغت أولويّتها - وكانت العدسة تقع فوق نصّ العنصر النائب.
+          // الصنف الجاهز مكتوب في الملفّ نفسه بعدها، فيغلبها بدوره.
+          className="field field-icon-start w-full"
         />
         {searchResults.length > 0 && (
           <div className="card absolute z-10 mt-1 w-full overflow-hidden bg-surface-raised shadow-lg">

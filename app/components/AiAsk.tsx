@@ -49,6 +49,17 @@ const ERASE_MS = 22;
 const HOLD_MS = 1900;
 /** مهلة بين خطوة عملٍ وأختها - تُقرأ ولا تُنتظر */
 const STEP_MS = 780;
+/**
+ * زمن كشف الجواب كاملاً - **ثابت لا سرعةُ حرف**. جوابٌ من ألف حرف
+ * بسرعةٍ ثابتة يستغرق ضعف جوابٍ من خمسمئة، فينتظر القارئ أطول كلّما
+ * كان الجواب أغنى. تثبيت المدّة يجعل عدد الأحرف في النبضة يتبع الطول.
+ *
+ * ورُفع من ٢٤٠٠ إلى ٤٦٠٠ بطلب المالك: «خلّيها هادية، مش كإنّ حدّ بيجري
+ * وراها». والكشف هنا ليس انتظاراً بلا مقابل - هو ما يُري أنّ خلف الجواب
+ * عملاً جرى، فالإسراع فيه يُلغي غرضه.
+ */
+const REVEAL_MS = 4600;
+const REVEAL_TICK_MS = 28;
 
 export function AiAsk({
   scope,
@@ -69,6 +80,8 @@ export function AiAsk({
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [answer, setAnswer] = useState<string | null>(null);
+  /** كم حرفاً من الجواب ظهر حتى الآن - يتصاعد فيُكتب الجواب أمام العين */
+  const [revealed, setRevealed] = useState(0);
   /** السؤال المرسَل - يُعرض فوق الجواب، فيُقرأ الجواب في سياق سؤاله */
   const [asked, setAsked] = useState<string | null>(null);
   const [steps, setSteps] = useState<string[]>([]);
@@ -82,10 +95,13 @@ export function AiAsk({
   const [docked, setDocked] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   /** هل في اللوحة ما يُقرأ؟ يُحسب هنا لأنّ الكتابة التدريجية تقرؤه */
   const open = !!answer || !!error || !!note || !!asked || steps.length > 0;
+  /** الجواب لم يكتمل بعد - خطواتٌ تتوالى أو أحرفٌ تُكشف */
+  const settling = busy || (!!answer && revealed < answer.length);
 
   // مؤقّتات الاستعراض تعيش أطول من ضغطة الزرّ: مغادرة الصفحة أثناءها كانت
   // ستحدّث حالة مكوّنٍ أُزيل. تُجمع لتُلغى دفعةً واحدة.
@@ -102,6 +118,42 @@ export function AiAsk({
     io.observe(el);
     return () => io.disconnect();
   }, []);
+
+  // ── كشف الجواب حرفاً حرفاً ──────────────────────────────
+  //
+  // الجواب يُبنى أمام القارئ: الجملة تُكتب، ثمّ يظهر عنوان البطاقة، ثمّ
+  // ينزل الجدول صفّاً صفّاً. وليست زينةً - جوابٌ يظهر دفعةً واحدة يُقرأ
+  // كصفحةٍ حُمِّلت، وظهورُه متدرّجاً يُري أنّ خلفه عملاً جرى.
+  //
+  // والقصّ يعرف الجداول (`cutSafely` في العارض): بلا ذلك تمرّ لحظةٌ يظهر
+  // فيها رأس الجدول فقرةً فيها أنابيب قبل أن يكتمل سطر المحاذاة تحته.
+  useEffect(() => {
+    if (!answer) { setRevealed(0); return; }
+
+    // مَن يطلب تقليل الحركة يرى الجواب كاملاً فوراً - لا يُحرم منه ولا يُجبَر
+    // على انتظار حركةٍ طلب إيقافها.
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) { setRevealed(answer.length); return; }
+
+    const perTick = Math.max(1, Math.ceil(answer.length / (REVEAL_MS / REVEAL_TICK_MS)));
+    let shown = 0;
+    setRevealed(0);
+    const id = setInterval(() => {
+      shown = Math.min(answer.length, shown + perTick);
+      setRevealed(shown);
+      // اللوحة تتبع آخر ما كُتب، وإلّا نما الجواب أسفل حدّها ولم يُرَ.
+      // وتتوقّف عن ملاحقته إن صعد القارئ بنفسه ليقرأ ما فات - انتزاعُ
+      // موضع القراءة منه أسوأ من إخفاء آخر سطر.
+      const el = panelRef.current;
+      if (el && el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
+        el.scrollTop = el.scrollHeight;
+      }
+      if (shown >= answer.length) clearInterval(id);
+    }, REVEAL_TICK_MS);
+    return () => clearInterval(id);
+  }, [answer]);
 
   // ── الكتابة التدريجية ───────────────────────────────────
   useEffect(() => {
@@ -153,6 +205,7 @@ export function AiAsk({
     setError(null);
     setNote(null);
     setAnswer(null);
+    setRevealed(0);
     setAsked(null);
     setSteps([]);
     setUpgradeUrl(null);
@@ -197,6 +250,14 @@ export function AiAsk({
 
     reset();
     setAsked(q);
+    // 🔴 الحاوية تترك التصاقها الآن (`open`)، فتنتقل من أسفل الشاشة إلى
+    // موضعها الطبيعيّ في الصفحة - وهي قفزةٌ تُقرأ ارتجاجاً. تمريرةٌ لاحقة
+    // إلى الموضع الجديد تجعل الانتقال حركةً مقصودة لا اهتزازاً.
+    // `requestAnimationFrame` لا استدعاءٌ فوريّ: الموضع الجديد لا يوجد
+    // قبل أن يرسم المتصفّح التغيير.
+    requestAnimationFrame(() => {
+      panelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
     // المربّع يُفرَّغ فور الإرسال: السؤال انتقل إلى فقاعته أعلاه، وبقاؤه
     // مكتوباً أسفلها يجعله يبدو غير مرسَل.
     setValue("");
@@ -239,10 +300,16 @@ export function AiAsk({
 
   return (
     <>
+      {/* 🔴 **يطفو وهو فارغ، ويستقرّ في الصفحة متى امتلأ.**
+          المربّع الفارغ دعوةٌ تتبع القارئ أينما مرّر - وهذا سبب التصاقه.
+          أمّا وفيه جوابٌ بجدوله فهو محتوى، ومحتوىً ملتصقٌ يمرّ فوق بقيّة
+          الصفحة ويحجبها (مرّ فوق «مهامّ اليوم» في لقطة المالك). فمتى صار
+          فيه ما يُقرأ عاد إلى مجرى الصفحة يتمرّر معها كأيّ بطاقة، ويبقى
+          تمريره الداخليّ داخله وحده. */}
       <div
-        className={`sticky bottom-5 z-30 mt-6 transition-opacity duration-300 ${
-          solid ? "opacity-100" : "opacity-[0.85] hover:opacity-100"
-        }`}
+        className={`z-30 mt-6 transition-opacity duration-300 ${
+          open ? "relative" : "sticky bottom-5"
+        } ${solid ? "opacity-100" : "opacity-[0.85] hover:opacity-100"}`}
       >
         {/* ── لوحة المحادثة ──────────────────────────────────────
             🔴 **فوق المربّع لا تحته، وعلى سطحٍ معتم لا شفّاف.**
@@ -259,7 +326,17 @@ export function AiAsk({
             وسقفُ الارتفاع يمنع جواباً طويلاً من ابتلاع الشاشة: يتمرّر
             داخل اللوحة وحدها، وما تحته من الصفحة يبقى ظاهراً. */}
         {open && (
-          <div className="card-shadow mb-2 max-h-[min(62vh,540px)] min-w-0 overflow-y-auto rounded-2xl border border-border bg-surface p-3.5">
+          <div
+            ref={panelRef}
+            // 🔴 `min-h` أثناء العمل: الجواب ينمو حرفاً حرفاً، ولوحةٌ
+            // تكبر مع كلّ حرف تدفع ما تحتها في الصفحة أربعين مرّة في
+            // الثانية - وهي الاهتزاز الذي رآه المالك. بارتفاعٍ أدنى
+            // ثابت تبلغ اللوحة حجمها من أوّل لحظة، فيملؤها النصّ بلا
+            // أن يتحرّك شيء حولها.
+            className={`card-shadow mb-2 max-h-[min(62vh,540px)] min-w-0 overflow-y-auto rounded-2xl border border-border bg-surface p-3.5 ${
+              settling ? "min-h-[320px]" : ""
+            }`}
+          >
             {error && (
               <div className="note border-critical/35 bg-critical/[0.06] text-critical">
                 <span className="min-w-0 flex-1">{error}</span>
@@ -316,7 +393,7 @@ export function AiAsk({
                         </ul>
                       )}
 
-                      {answer && <MarkdownAnswer text={answer} />}
+                      {answer && <MarkdownAnswer text={answer} reveal={revealed} />}
                     </div>
                   </div>
                 )}

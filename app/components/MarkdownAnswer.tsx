@@ -21,8 +21,41 @@
 import { Fragment, type ReactNode } from "react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 
-export function MarkdownAnswer({ text }: { text: string }) {
-  return <div className="min-w-0 space-y-3">{render(text)}</div>;
+export function MarkdownAnswer({
+  text,
+  /**
+   * عدد الأحرف المكشوفة - يُظهر الجواب حرفاً حرفاً كما يُكتب. `undefined`
+   * تعني الجواب كاملاً.
+   */
+  reveal,
+}: {
+  text: string;
+  reveal?: number;
+}) {
+  const shown = reveal === undefined ? text : cutSafely(text, reveal);
+  return <div className="min-w-0 space-y-3">{render(shown)}</div>;
+}
+
+/**
+ * يقصّ النصّ عند حرفٍ بعينه **بلا أن يُظهر هيكل جدولٍ نصفَ مبنيّ**.
+ *
+ * الجدول لا يُعرَف إلّا بسطر المحاذاة تحت رأسه. فأثناء الكشف التدريجيّ تمرّ
+ * لحظةٌ يكون فيها الرأس مكتوباً وسطرُ المحاذاة لم يبدأ - فيُقرأ الرأس فقرةً
+ * فيها أنابيب: «| Campaign | Verified |». يُحجب ذيلُ الأنابيب حتى يكتمل
+ * سطر المحاذاة، فيظهر الجدول جدولاً من أوّل لحظة ثمّ تنزل صفوفه واحداً
+ * تلو الآخر.
+ */
+function cutSafely(text: string, at: number): string {
+  const cut = text.slice(0, at);
+  const lines = cut.split("\n");
+
+  let i = lines.length - 1;
+  while (i >= 0 && isPipeRow(lines[i])) i--;
+  const firstPipe = i + 1;
+  if (firstPipe >= lines.length) return cut;
+
+  const hasAlign = firstPipe + 1 < lines.length && isAlignRow(lines[firstPipe + 1]);
+  return hasAlign ? cut : lines.slice(0, firstPipe).join("\n");
 }
 
 // ==================== الكتل ====================
