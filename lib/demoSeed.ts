@@ -60,8 +60,8 @@ interface SeedCampaign {
  * مبلغاً لا يصبر عليه أحد.
  */
 export const DEMO_CAMPAIGNS: SeedCampaign[] = [
-  { id: "demo-g-search", nameAr: "بحث — طلب عرض سعر", nameEn: "Search — Request a quote", platform: "GOOGLE_ADS", account: "482-119-7730", baseCost: 530, baseClicks: 148, baseRaw: 7, verifyRate: 0.85, aov: 520 },
-  { id: "demo-g-brand", nameAr: "بحث — اسم العلامة", nameEn: "Search — Brand terms", platform: "GOOGLE_ADS", account: "482-119-7730", baseCost: 150, baseClicks: 96, baseRaw: 5, verifyRate: 0.78, aov: 610 },
+  { id: "demo-g-search", nameAr: "جوجل — طلب عرض سعر", nameEn: "Google — Request a quote", platform: "GOOGLE_ADS", account: "482-119-7730", baseCost: 530, baseClicks: 148, baseRaw: 7, verifyRate: 0.85, aov: 520 },
+  { id: "demo-g-brand", nameAr: "جوجل — اسم العلامة", nameEn: "Google — Brand terms", platform: "GOOGLE_ADS", account: "482-119-7730", baseCost: 150, baseClicks: 96, baseRaw: 5, verifyRate: 0.78, aov: 610 },
   { id: "demo-m-retarget", nameAr: "ميتا — إعادة استهداف", nameEn: "Meta — Retargeting", platform: "META_ADS", account: "act_609183472", baseCost: 430, baseClicks: 310, baseRaw: 11, verifyRate: 0.44, aov: 470 },
   { id: "demo-m-awareness", nameAr: "ميتا — وعي بالعلامة", nameEn: "Meta — Brand awareness", platform: "META_ADS", account: "act_609183472", baseCost: 605, baseClicks: 690, baseRaw: 19, verifyRate: 0.31, aov: 390 },
   { id: "demo-t-video", nameAr: "تيك توك — فيديو المنتج", nameEn: "TikTok — Product video", platform: "TIKTOK_ADS", account: "7291043118", baseCost: 340, baseClicks: 540, baseRaw: 15, verifyRate: 0.22, aov: 330 },
@@ -138,13 +138,17 @@ export const DEMO_PRODUCTS = [
  * ٢ = معايرة الربحية (٨ أغسطس ٢٠٢٦): ربط عدد الطلبات بالتحويلات المتحقَّقة
  *     بعد أن كان صافي الربح -٦٢ ألفاً لانفصالهما.
  *
+ * ٤ = أسماء حملات جوجل تحمل منصّتها (٩ أغسطس ٢٠٢٦): كانت «بحث — …»
+ *     وحدها بلا اسم منصّتها بين ستّ حملات تحمله، فبقي صفّاها بلا شعار في
+ *     جداول الوكيل - وشعارٌ في أربعة صفوف وفراغٌ في اثنين يُقرأ إهمالاً.
+ *
  * ٣ = تحويل العملة (٩ أغسطس ٢٠٢٦): صارت كلّ مبالغ البذرة تمرّ بمحوّلٍ
  *     يتبع عملة المساحة، بعد أن كان تبديل العملة يبدّل اللافتة وحدها.
  *     الرفع لازم هنا لا اختياريّ: المساحات القائمة `demoCurrency` فيها
  *     فارغة، فلا يلتقط فحصُ العملة اختلافاً ويبقى أصحابها على أرقامٍ
  *     بعملةٍ واحدة إلى الأبد.
  */
-export const DEMO_SEED_VERSION = 3;
+export const DEMO_SEED_VERSION = 4;
 
 const DAYS = 90;
 

@@ -13,6 +13,7 @@ import type { CampaignLink, ConnectedPlatform } from "@prisma/client";
 import { decryptToken } from "@/lib/encryption";
 import { t } from "@/lib/i18n/dictionary";
 import { assertNotDemo } from "@/lib/demo";
+import { recordDataCurrency } from "@/lib/dataCurrency";
 
 const TIKTOK_API_VERSION = "v1.3";
 
@@ -22,6 +23,42 @@ function groupBy<T>(arr: T[], keyFn: (t: T) => string): Record<string, T[]> {
     (acc[key] ??= []).push(item);
     return acc;
   }, {} as Record<string, T[]>);
+}
+
+// ==================== عملة الحساب الإعلانيّ ====================
+//
+// آخر منصّة من الثلاث تُغلق فجوة «العملة لافتة لا رقم»: كانت تُختار من
+// قائمة في الإعدادات بينما الأرقام تصل بعملة الحساب - راجع `dataCurrency.ts`.
+//
+// **نداءٌ مستقلّ لا حقلٌ في التقرير:** `/report/integrated/get` يقبل
+// `metrics` و`dimensions` وحدهما، وخصائص الحساب ليست منهما. و`currency`
+// حقلٌ موثَّق في `/advertiser/info/` إلى جانب `timezone` و`balance`
+// و`name` - **يُطلب صراحةً في `fields` وإلّا لم يعد**.
+//
+// ومعاملاه مصفوفتان بصيغة JSON كبقيّة نداءات تيك توك في هذا الملفّ.
+async function recordTikTokAccountCurrency(
+  workspaceId: string,
+  advertiserId: string,
+  headers: Record<string, string>,
+): Promise<void> {
+  try {
+    const res = await fetch(
+      `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/advertiser/info/` +
+        `?advertiser_ids=${encodeURIComponent(JSON.stringify([advertiserId]))}` +
+        `&fields=${encodeURIComponent(JSON.stringify(["currency"]))}`,
+      { headers },
+    );
+    const data = await res.json();
+    // تيك توك تُرجع 200 مع `code` غير صفريّ عند الفشل - وفحصُ `res.ok`
+    // وحده يمرّر خطأً كأنّه نجاح. نمطٌ متكرّر في هذه الواجهة تحديداً.
+    if (data.code !== 0) {
+      console.error(`[syncTikTokAds] تعذّرت قراءة عملة الحساب ${advertiserId}:`, data.message);
+      return;
+    }
+    await recordDataCurrency(workspaceId, "TIKTOK_ADS", data.data?.list?.[0]?.currency);
+  } catch (err) {
+    console.error(`[syncTikTokAds] تعذّرت قراءة عملة الحساب ${advertiserId}:`, err);
+  }
 }
 
 export async function syncTikTokAdsForWorkspace(workspaceId: string) {
@@ -51,6 +88,8 @@ export async function syncTikTokAdsForWorkspace(workspaceId: string) {
 
   for (const [advertiserId, accountLinks] of Object.entries(byAccount)) {
     const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
+
+    await recordTikTokAccountCurrency(workspaceId, advertiserId, headers);
 
     try {
       const params = new URLSearchParams({

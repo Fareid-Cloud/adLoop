@@ -143,14 +143,20 @@ export function RecentActivityPanel({
 
   return (
     <section className="card pad-md">
-      <div className="mb-3 flex items-center justify-between">
-        <div>
+      {/* العنوان يلتفّ والرابط لا ينكمش: بلا `min-w-0` على الكتلة اليسرى
+          يزاحم العنوانُ الرابطَ فيدفعه خارج البطاقة، وبلا `shrink-0` على
+          الرابط ينضغط «View all» حتى يصير حرفاً واحداً. */}
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <h2 className="section-title">
             {tr("recentActivity")}
           </h2>
           <p className="mt-0.5 text-[12px] text-text-muted">{tr("recentActivityHint")}</p>
         </div>
-        <Link href="/dashboard/actions" className="text-[12px] font-medium text-accent no-underline">
+        <Link
+          href="/dashboard/actions"
+          className="shrink-0 whitespace-nowrap pt-0.5 text-[12px] font-medium text-accent no-underline"
+        >
           {tr("viewAll")}
         </Link>
       </div>

@@ -69,6 +69,8 @@ export function AiAsk({
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [answer, setAnswer] = useState<string | null>(null);
+  /** السؤال المرسَل - يُعرض فوق الجواب، فيُقرأ الجواب في سياق سؤاله */
+  const [asked, setAsked] = useState<string | null>(null);
   const [steps, setSteps] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -146,6 +148,7 @@ export function AiAsk({
     setError(null);
     setNote(null);
     setAnswer(null);
+    setAsked(null);
     setSteps([]);
     setUpgradeUrl(null);
   }
@@ -188,7 +191,10 @@ export function AiAsk({
     if (q.length < 3) return;
 
     reset();
-    if (usingExample) setValue(q);
+    setAsked(q);
+    // المربّع يُفرَّغ فور الإرسال: السؤال انتقل إلى فقاعته أعلاه، وبقاؤه
+    // مكتوباً أسفلها يجعله يبدو غير مرسَل.
+    setValue("");
 
     if (demo) {
       if (index < 0) { setNote(tr("demoUnmatched")); return; }
@@ -213,19 +219,18 @@ export function AiAsk({
       return;
     }
     setAnswer(data.answer);
-    setValue("");
   }
 
   function pick(index: number) {
     reset();
+    if (demo) { setAsked(examples[index]); runShowcase(index); return; }
     setValue(examples[index]);
-    if (demo) runShowcase(index);
-    else inputRef.current?.focus();
+    inputRef.current?.focus();
   }
 
   // يُعتم كاملاً متى رسا، أو متى كان فيه ما يُقرأ، أو أثناء الكتابة -
   // الشفافية لحالة السكون وحدها.
-  const open = !!answer || !!error || !!note || steps.length > 0;
+  const open = !!answer || !!error || !!note || !!asked || steps.length > 0;
   const solid = docked || focused || open || !!value;
 
   return (
@@ -294,37 +299,50 @@ export function AiAsk({
           </div>
         )}
 
-        {(steps.length > 0 || answer) && (
-          <div className="card pad-md mt-2 min-w-0">
-            <div className="mb-2 flex min-w-0 items-center gap-2">
-              <span className="icon-badge h-7 w-7 shrink-0 bg-accent/12 text-accent">
-                <Sparkles size={13} />
-              </span>
-              <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-text-secondary">
-                {busy ? tr("demoWorking") : demo ? tr("demoBadge") : ""}
-              </span>
-              <button
-                onClick={reset}
-                aria-label={t(locale, "ui.close")}
-                className="shrink-0 rounded-lg p-1 text-text-faint transition-colors hover:text-text-primary"
-              >
-                <X size={14} />
-              </button>
-            </div>
-
-            {/* الخطوات تبقى بعد وصول الجواب: هي التي تُري **كيف** وصل إليه،
-                واختفاؤها يحوّل الاستعراض إلى جوابٍ ظهر من العدم. */}
-            {steps.length > 0 && (
-              <ul className="mb-3 space-y-1.5 border-s-2 border-accent/25 ps-3">
-                {steps.map((s, n) => (
-                  <li key={n} className="text-[12px] leading-relaxed text-text-secondary">
-                    {s}
-                  </li>
-                ))}
-              </ul>
+        {/* ── المحادثة ────────────────────────────────────────────
+            الشكل من مرجعٍ اختاره المالك: السؤال فقاعةٌ داكنة في جهة صاحبه،
+            والجواب إلى جانب علامة المنتج بلا إطارٍ حوله - الإطار للبيانات
+            وحدها. وضعُ الجواب كلّه في بطاقةٍ كان يجعل الجملة والجدول شيئاً
+            واحداً، وهما شيئان: قولٌ ودليلُه. */}
+        {(steps.length > 0 || answer || asked) && (
+          <div className="mt-3 min-w-0 space-y-3">
+            {asked && (
+              <div className="flex min-w-0 items-start justify-end gap-2">
+                <p className="max-w-[85%] rounded-2xl bg-text-primary px-3.5 py-2 text-[13px] leading-relaxed text-bg">
+                  {asked}
+                </p>
+                <button
+                  onClick={reset}
+                  aria-label={t(locale, "ui.close")}
+                  className="mt-1 shrink-0 rounded-lg p-1 text-text-faint transition-colors hover:text-text-primary"
+                >
+                  <X size={14} />
+                </button>
+              </div>
             )}
 
-            {answer && <MarkdownAnswer text={answer} />}
+            {(steps.length > 0 || answer) && (
+              <div className="flex min-w-0 items-start gap-2.5">
+                <span className="icon-badge mt-0.5 h-7 w-7 shrink-0 bg-accent/12 text-accent">
+                  <Sparkles size={13} />
+                </span>
+                <div className="min-w-0 flex-1 space-y-3">
+                  {/* الخطوات تبقى بعد وصول الجواب: هي التي تُري **كيف** وصل
+                      إليه، واختفاؤها يحوّل الاستعراض إلى جوابٍ ظهر من العدم. */}
+                  {steps.length > 0 && (
+                    <ul className="space-y-1.5 border-s-2 border-accent/25 ps-3">
+                      {steps.map((s, n) => (
+                        <li key={n} className="text-[12px] leading-relaxed text-text-muted">
+                          {s}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {answer && <MarkdownAnswer text={answer} />}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
