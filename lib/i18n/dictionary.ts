@@ -547,6 +547,7 @@ export const dictionary = {
       noRowsHint: "وسّع الفترة أو خفّف التصفية.",
       vsCompare: "مقابل فترة المقارنة",
 
+      verdictNeedsTwo: "الحكم يقارن طرفين اثنين بالضبط، والنتيجة الحالية فيها {n}. صفِّ الاختيار إلى اثنين ليظهر الفائز والفارق والأثر المالي.",
       verdictLead: "{winner} يتفوّق بـ{pct}% في {metric}",
       verdictVs: "مقابل {loser}",
       verdictImpactMonthly: "الأثر على الفترة المختارة",
@@ -1071,6 +1072,11 @@ export const dictionary = {
     },
     // ==== خلية قرار الإعلان ====
     adCell: {
+      msgPaused: "يُوقَف الإعلان فعلياً على المنصّة.",
+      msgScaledAdSet: "زِيدت الميزانية {pct}% (من {from} إلى {to}). الزيادة على المجموعة الإعلانية، فتشمل باقي إعلاناتها.",
+      msgScaledCampaign: "زِيدت الميزانية {pct}% (من {from} إلى {to}). الزيادة على ميزانية الحملة، فتشمل باقي إعلاناتها.",
+      msgHeld: "أُبقي الإعلان كما هو. لن يُقترح عليه قرار جديد قبل {days} أيام.",
+      notConnected: "{platform} غير مربوط. اربطه أوّلاً من صفحة ربط المنصّات.",
       scale: "توسيع",
       hold: "إبقاء",
       pause: "إيقاف",
@@ -4169,6 +4175,7 @@ export const dictionary = {
       noRowsHint: "Widen the period or loosen the filters.",
       vsCompare: "vs comparison period",
 
+      verdictNeedsTwo: "The verdict compares exactly two, and this result has {n}. Narrow the selection to two to see the winner, the gap and the financial impact.",
       verdictLead: "{winner} leads by {pct}% on {metric}",
       verdictVs: "against {loser}",
       verdictImpactMonthly: "Impact over the selected period",
@@ -4691,6 +4698,11 @@ export const dictionary = {
     },
     // ==== Ad decision cell ====
     adCell: {
+      msgPaused: "The ad is being paused on the platform.",
+      msgScaledAdSet: "Budget raised {pct}% (from {from} to {to}). The increase is on the ad set, so it covers its other ads too.",
+      msgScaledCampaign: "Budget raised {pct}% (from {from} to {to}). The increase is on the campaign budget, so it covers its other ads too.",
+      msgHeld: "The ad stays as it is. No new decision will be suggested for it for {days} days.",
+      notConnected: "{platform} is not connected. Connect it first from the integrations page.",
       scale: "Scale",
       hold: "Hold",
       pause: "Pause",

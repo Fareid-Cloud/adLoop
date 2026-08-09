@@ -112,7 +112,7 @@ export function AdDecisionCell(props: AdDecisionCellProps) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? tr("failed"));
-      setDone(data.message ?? tr("applied"));
+      setDone(data.messageKey ? t(locale, data.messageKey, data.messageVars) : tr("applied"));
     } catch (err) {
       // الفشل يظهر كما هو - إخفاؤه يجعل المستخدم يظن أن التغيير حدث
       setError(err instanceof Error ? err.message : tr("failed"));

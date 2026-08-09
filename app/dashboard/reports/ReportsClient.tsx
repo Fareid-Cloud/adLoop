@@ -565,6 +565,18 @@ function ResultBlock({
         </section>
       )}
 
+      {/* 🔴 الحكم يُبنى في المحرّك حين يكون في النتيجة **صفّان بالضبط** -
+          وهو قرار سليم (إعلان «فائز» على عشرين صفّاً بلا سياق أسوأ من
+          الصمت). لكنّ الصمت نفسه كان هو العطل: مَن يضغط «أنشئ التقرير»
+          على ثلاث منصّات لا يرى الحكم ولا يعرف لماذا، فيظنّ الميزة معطّلة.
+          القاعدة الحاكمة: نقطةٌ تمنع المستخدم تحمل معها الحلّ. */}
+      {!headline && result.rows.length > 2 && (
+        <div className="note border-border bg-surface-raised text-text-muted">
+          <Sparkles size={14} className="shrink-0 text-accent" />
+          <span className="min-w-0 flex-1">{tr("verdictNeedsTwo", { n: result.rows.length })}</span>
+        </div>
+      )}
+
       {rest.length > 0 && (
         <section className="card pad-md">
           <h2 className="mb-3 section-title">{tr("scoreboard")}</h2>

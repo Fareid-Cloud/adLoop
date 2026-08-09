@@ -260,7 +260,16 @@ export function decisionLabelAr(d: Decision): string {
 
 export interface ApplyResult {
   ok: boolean;
-  message: string;
+  /**
+   * 🔴 كان `message` جملةً عربيةً تُبنى هنا وتُعرض كما هي، فيقرأ مستخدم
+   * الواجهة الإنجليزية «أُبقي الإعلان كما هو…» في عمود القرار.
+   *
+   * الخادم لا يعرف بأيّ لغة سيُقرأ ما يكتبه - وهذه قاعدة المشروع نفسها
+   * المطبَّقة في التنبيهات (`titleKey`) ونتائج التقارير: يُخزَّن المفتاح
+   * ومتغيّراته، وتقع الترجمة عند العرض بلغة القارئ.
+   */
+  messageKey: string;
+  messageVars?: Record<string, string | number>;
   previousValue?: number;
   newValue?: number;
   reEvaluateAt: Date;
@@ -290,25 +299,27 @@ export async function applyAdDecision(
 
   let previousValue: number | undefined;
   let newValue: number | undefined;
-  let message: string;
+  let messageKey: string;
+  let messageVars: Record<string, string | number> | undefined;
 
   if (decision === "PAUSE") {
     await executePause(workspaceId, view);
-    message = "يُوقَف الإعلان فعلياً على المنصّة.";
+    messageKey = "adCell.msgPaused";
   } else if (decision === "SCALE") {
     const res = await executeScale(workspaceId, view);
     previousValue = res.previous;
     newValue = res.next;
-    message =
-      `زِيدت الميزانية ${SAFE_SCALE_INCREASE_PCT}% ` +
-      `(من ${round2(res.previous)} إلى ${round2(res.next)}).` +
-      (view.scaleAffectsSiblings
-        ? " الزيادة على المجموعة الإعلانية، فتشمل باقي إعلاناتها."
-        : " الزيادة على ميزانية الحملة، فتشمل باقي إعلاناتها.");
+    messageKey = view.scaleAffectsSiblings ? "adCell.msgScaledAdSet" : "adCell.msgScaledCampaign";
+    messageVars = {
+      pct: SAFE_SCALE_INCREASE_PCT,
+      from: round2(res.previous),
+      to: round2(res.next),
+    };
   } else {
     // Hold قرار حقيقي لا "لا شيء": يُثبّت الوضع ويؤجّل أي اقتراح على هذا
     // الإعلان ٤ أيام، فلا يظلّ يطالب المستخدم بقرار اتّخذه فعلاً
-    message = `أُبقي الإعلان كما هو. لن يُقترح عليه قرار جديد قبل ${DECISION_COOLDOWN_DAYS} أيام.`;
+    messageKey = "adCell.msgHeld";
+    messageVars = { days: DECISION_COOLDOWN_DAYS };
   }
 
   await prisma.adDecisionRecord.create({
@@ -360,7 +371,7 @@ export async function applyAdDecision(
     console.error("تعذّر تسجيل تجربة قرار الإعلان:", err);
   }
 
-  return { ok: true, message, previousValue, newValue, reEvaluateAt };
+  return { ok: true, messageKey, messageVars, previousValue, newValue, reEvaluateAt };
 }
 
 async function executePause(workspaceId: string, view: AdDecisionView) {

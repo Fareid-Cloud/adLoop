@@ -9,6 +9,7 @@ import { GoogleAdsApi } from "google-ads-api";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { decryptToken } from "@/lib/encryption";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const META_API_VERSION = "v25.0";
 
@@ -19,29 +20,32 @@ export async function GET(
   const { id } = await params;
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  // الرسالة تُبنى بلغة القارئ لا بلغة مَن كتب الملفّ - وهي تُعرض كما هي
+  // داخل نافذة اختيار الحملات.
+  const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
 
   const { searchParams } = new URL(req.url);
   const platform = searchParams.get("platform") ?? "GOOGLE_ADS";
 
   if (platform === "META_ADS") {
-    return getMetaCampaigns(user.id);
+    return getMetaCampaigns(user.id, locale);
   }
   if (platform === "TIKTOK_ADS") {
-    return getTikTokCampaigns(user.id);
+    return getTikTokCampaigns(user.id, locale);
   }
-  return getGoogleCampaigns(user.id);
+  return getGoogleCampaigns(user.id, locale);
 }
 
 const TIKTOK_API_VERSION = "v1.3";
 
-async function getTikTokCampaigns(userId: string) {
+async function getTikTokCampaigns(userId: string, locale: Locale) {
   const connection = await prisma.connectedPlatform.findUnique({
     where: { userId_platform: { userId, platform: "TIKTOK_ADS" } },
   });
 
   if (!connection) {
     return NextResponse.json(
-      { error: "TikTok Ads غير مربوط. اربطه الأول من إعدادات الحساب." },
+      { error: t(locale, "adCell.notConnected", { platform: "TikTok Ads" }) },
       { status: 400 }
     );
   }
@@ -114,14 +118,14 @@ async function getTikTokCampaigns(userId: string) {
   return NextResponse.json({ accounts: result });
 }
 
-async function getGoogleCampaigns(userId: string) {
+async function getGoogleCampaigns(userId: string, locale: Locale) {
   const connection = await prisma.connectedPlatform.findUnique({
     where: { userId_platform: { userId, platform: "GOOGLE_ADS" } },
   });
 
   if (!connection) {
     return NextResponse.json(
-      { error: "Google Ads غير مربوط. اربطه الأول من إعدادات الحساب." },
+      { error: t(locale, "adCell.notConnected", { platform: "Google Ads" }) },
       { status: 400 }
     );
   }
@@ -259,14 +263,14 @@ async function getGoogleCampaigns(userId: string) {
   }
 }
 
-async function getMetaCampaigns(userId: string) {
+async function getMetaCampaigns(userId: string, locale: Locale) {
   const connection = await prisma.connectedPlatform.findUnique({
     where: { userId_platform: { userId, platform: "META_ADS" } },
   });
 
   if (!connection) {
     return NextResponse.json(
-      { error: "Meta Ads غير مربوط. اربطه الأول من إعدادات الحساب." },
+      { error: t(locale, "adCell.notConnected", { platform: "Meta Ads" }) },
       { status: 400 }
     );
   }
