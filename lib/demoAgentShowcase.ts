@@ -38,6 +38,41 @@ export interface ShowcaseEntry {
 }
 
 /**
+ * سؤالان يتلوان كلّ جواب - **مفاتيح استعراضٍ أخرى لا نصوص جديدة**.
+ *
+ * جوابٌ ينتهي بلا سؤالٍ تالٍ يُنهي المحادثة عند أوّل ردّ، والمستخدم يعرف
+ * أنّ عنده سؤالاً آخر ولا يعرف صياغته. والسؤالان هنا ليسا «مقترحات» عامّة
+ * بل **ما يسأله ميديا باير فعلاً بعد هذه الإجابة بالذات**: مَن عرف أنّ
+ * تكلفته ارتفعت يسأل تالياً أيّ حملةٍ انهارت، ومَن عرف الفائز يسأل أيّ
+ * إعلانٍ يوسّعه.
+ *
+ * وربطُها بمفاتيح موجودة يضمن أنّ لكلّ سؤالٍ يظهر جواباً محفوظاً - سؤالٌ
+ * يُعرَض ولا يُجاب أسوأ من ألّا يُعرَض.
+ */
+export const FOLLOW_UPS: Record<string, string[]> = {
+  home_1: ["campaigns_2", "campaigns_3"],
+  home_2: ["campaigns_1", "store_2"],
+  home_3: ["campaigns_3", "store_1"],
+  campaigns_1: ["campaigns_3", "store_3"],
+  campaigns_2: ["campaigns_3", "home_2"],
+  campaigns_3: ["campaigns_1", "store_2"],
+  store_1: ["store_3", "home_2"],
+  store_2: ["home_3", "store_1"],
+  store_3: ["store_1", "campaigns_1"],
+};
+
+/** مفاتيح السؤالين التاليين لمثالٍ بعينه */
+export function followUpsFor(scope: ShowcaseScope, exampleIndex: number): string[] {
+  return FOLLOW_UPS[`${scope}_${exampleIndex + 1}`] ?? [];
+}
+
+/** يفكّ المفتاح إلى نطاقه ورقم مثاله - به يُقرأ نصّ السؤال من القاموس */
+export function splitShowcaseKey(key: string): { scope: ShowcaseScope; index: number } | null {
+  const m = /^(home|campaigns|store)_([123])$/.exec(key);
+  return m ? { scope: m[1] as ShowcaseScope, index: Number(m[2]) - 1 } : null;
+}
+
+/**
  * مفتاح كلّ إجابة `<نطاق>_<رقم المثال>` - مطابق لترتيب `aiAsk.ph_*` في
  * القاموس. الربط بالترتيب لا بنصّ السؤال عمداً: نصٌّ مشترك بين ملفّين
  * ينكسر أوّل مرّة تُحرَّر فيها صياغة السؤال في لغةٍ واحدة.

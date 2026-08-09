@@ -27,7 +27,7 @@
 // يمرّ فوق أرقام تُقرأ، فإعتامه الكامل أثناء التمرير يحجب ما جاء المستخدم
 // ليراه. وحين يرسو لم يعد فوق شيء، فلا سبب لإخفاء أيّ جزء منه.
 //
-// والنسبة عُدِّلت بطلب المالك مرّةً بعد مرّة: ٦٢٪ ← ٨٨٪ ← ٩٦٪ ← ٨٥٪.
+// والنسبة عُدِّلت بطلب المالك مرّةً بعد مرّة: ٦٢٪ ← ٨٨٪ ← ٩٦٪ ← ٨٥٪ ← ٩٤٪.
 // استقرّت حيث يُقرأ المربّع بوضوح ويبقى ظاهراً أنّه طافٍ فوق المحتوى لا
 // جزءاً منه - فالشفافية إشارةٌ إلى حالته، لا زينة ولا إخفاء.
 //
@@ -40,7 +40,7 @@ import { useState, useRef, useEffect } from "react";
 import { Sparkles, ArrowUp, Loader2, X } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { MarkdownAnswer } from "@/app/components/MarkdownAnswer";
-import { showcaseFor, fillShowcaseMoney } from "@/lib/demoAgentShowcase";
+import { showcaseFor, fillShowcaseMoney, followUpsFor, splitShowcaseKey } from "@/lib/demoAgentShowcase";
 
 export type AiAskScope = "home" | "campaigns" | "store";
 
@@ -84,6 +84,8 @@ export function AiAsk({
   const [revealed, setRevealed] = useState(0);
   /** السؤال المرسَل - يُعرض فوق الجواب، فيُقرأ الجواب في سياق سؤاله */
   const [asked, setAsked] = useState<string | null>(null);
+  /** رقم المثال الذي أُجيب - منه تُشتقّ أسئلة المتابعة */
+  const [answeredIndex, setAnsweredIndex] = useState<number | null>(null);
   const [steps, setSteps] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -207,6 +209,7 @@ export function AiAsk({
     setAnswer(null);
     setRevealed(0);
     setAsked(null);
+    setAnsweredIndex(null);
     setSteps([]);
     setUpgradeUrl(null);
   }
@@ -222,7 +225,12 @@ export function AiAsk({
   // خطوات تتابع ثمّ جواب. لا نداء ولا خصم - `blockAiInDemo` تمنع النداء
   // من الديمو أصلاً، وهذا ما يُريه بدل رسالة منع لا تُظهر شيئاً.
   function runShowcase(index: number) {
-    const entry = showcaseFor(scope, index);
+    runShowcaseIn(scope, index);
+  }
+
+  function runShowcaseIn(inScope: AiAskScope, index: number) {
+    const entry = showcaseFor(inScope, index);
+    setAnsweredIndex(index);
     if (!entry) { setNote(tr("demoUnmatched")); return; }
 
     setBusy(true);
@@ -238,6 +246,43 @@ export function AiAsk({
     );
   }
 
+
+  /**
+   * سؤالان يتلوان الجواب.
+   *
+   * في مساحة العرض يأتيان من `FOLLOW_UPS` - مربوطان بالجواب نفسه لا
+   * عامّان، ولكلٍّ منهما جوابٌ محفوظ فلا يُعرَض سؤالٌ لا يُجاب. وفي الحساب
+   * الحقيقيّ يُعرَض المثالان الآخران من نطاق الصفحة: هما أصلاً سؤالان
+   * تحليليّان مكتوبان بعناية، وأقرب ما يلي جواباً في السياق نفسه.
+   */
+  function followUps(): Array<{ label: string; run: () => void }> {
+    if (!answer || answeredIndex === null) return [];
+
+    if (demo) {
+      return followUpsFor(scope, answeredIndex)
+        .map((key) => {
+          const parsed = splitShowcaseKey(key);
+          if (!parsed) return null;
+          const label = t(locale, `aiAsk.ph_${parsed.scope}_${parsed.index + 1}`);
+          return {
+            label,
+            run: () => {
+              reset();
+              setAsked(label);
+              setAnsweredIndex(parsed.index);
+              runShowcaseIn(parsed.scope, parsed.index);
+            },
+          };
+        })
+        .filter((x): x is { label: string; run: () => void } => x !== null);
+    }
+
+    return examples
+      .map((e, n) => ({ e, n }))
+      .filter(({ n }) => n !== answeredIndex)
+      .map(({ e }) => ({ label: e, run: () => { setValue(e); inputRef.current?.focus(); } }));
+  }
+
   async function ask() {
     if (busy) return;
 
@@ -250,6 +295,7 @@ export function AiAsk({
 
     reset();
     setAsked(q);
+    if (usingExample || index >= 0) setAnsweredIndex(index >= 0 ? index : exampleIndex);
     // 🔴 الحاوية تترك التصاقها الآن (`open`)، فتنتقل من أسفل الشاشة إلى
     // موضعها الطبيعيّ في الصفحة - وهي قفزةٌ تُقرأ ارتجاجاً. تمريرةٌ لاحقة
     // إلى الموضع الجديد تجعل الانتقال حركةً مقصودة لا اهتزازاً.
@@ -309,7 +355,7 @@ export function AiAsk({
       <div
         className={`z-30 mt-6 transition-opacity duration-300 ${
           open ? "relative" : "sticky bottom-5"
-        } ${solid ? "opacity-100" : "opacity-[0.85] hover:opacity-100"}`}
+        } ${solid ? "opacity-100" : "opacity-[0.94] hover:opacity-100"}`}
       >
         {/* ── لوحة المحادثة ──────────────────────────────────────
             🔴 **فوق المربّع لا تحته، وعلى سطحٍ معتم لا شفّاف.**
@@ -394,6 +440,25 @@ export function AiAsk({
                       )}
 
                       {answer && <MarkdownAnswer text={answer} reveal={revealed} />}
+
+                      {/* لا تظهر قبل اكتمال الجواب: سؤالٌ تالٍ يقفز أمام
+                          جوابٍ لم يُقرأ بعد يسحب الانتباه عنه. */}
+                      {answer && revealed >= answer.length && followUps().length > 0 && (
+                        <div className="space-y-1.5 border-t border-border pt-2.5">
+                          <p className="text-[11px] text-text-faint">{tr("followUpsTitle")}</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {followUps().map((f, n) => (
+                              <button
+                                key={n}
+                                onClick={f.run}
+                                className="chip max-w-full border border-border bg-surface text-text-secondary transition-colors hover:border-accent/45 hover:text-text-primary"
+                              >
+                                <span className="truncate">{f.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -403,9 +468,17 @@ export function AiAsk({
         )}
 
         <div
-          className={`flex items-center gap-2 rounded-full border px-2 py-1.5 backdrop-blur-md transition-colors ${
-            solid ? "border-accent/45 bg-surface" : "border-border bg-surface/95"
+          // هالةٌ خفيفة بلون الهوية حول الحلقة: تفصل المربّع عمّا يمرّ
+          // تحته وهو طافٍ، وتُعلّم أنّه العنصر الحيّ في الصفحة - بلا أن
+          // تصير إطاراً ثقيلاً يزاحم البطاقات على الانتباه.
+          className={`flex items-center gap-2 rounded-full border px-2 py-1.5 backdrop-blur-md transition-all ${
+            solid ? "border-accent/55 bg-surface" : "border-accent/30 bg-surface/95"
           }`}
+          style={{
+            boxShadow: solid
+              ? "0 0 0 3px var(--accent-dim), 0 8px 28px -10px color-mix(in oklab, var(--accent) 55%, transparent)"
+              : "0 0 0 2px var(--accent-dim), 0 6px 22px -12px color-mix(in oklab, var(--accent) 45%, transparent)",
+          }}
         >
           <span className="icon-badge ms-1 h-7 w-7 bg-accent/12 text-accent">
             <Sparkles size={14} />

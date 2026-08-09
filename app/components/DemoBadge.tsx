@@ -9,7 +9,7 @@
 // الشارة تقول ما يكفي بلمحة (أنت في عرض تجريبي)، والتفاصيل - ماذا يعني
 // ذلك، وكم بقي، وكيف تخرج منه - تظهر عند المرور لمن أرادها.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FlaskConical, Database, Lock, Sparkles, ArrowLeft } from "lucide-react";
 import { Portal } from "@/app/components/ui/Portal";
@@ -27,11 +27,31 @@ export function DemoBadge({
   const [open, setOpen] = useState(false);
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `demo.${k}`, v);
 
+  // 🔴 **اللوحة كانت تختفي قبل أن تُبلَغ.**
+  //
+  // هي مرسَلة إلى `<body>` بالبوّابة (للسبب المشروح أسفل)، فليست ابنةً
+  // للشارة في الشجرة. ومغادرةُ المؤشّر الشارةَ - ولو في طريقه إليها -
+  // كانت تُغلقها فوراً، فلا يمكن بلوغ أيّ زرّ داخلها إطلاقاً.
+  //
+  // مهلةُ إغلاق تعبر الفراغ بين الشارة واللوحة، واللوحةُ نفسها تُلغيها
+  // متى دخلها المؤشّر. ولا تعمل واحدةٌ منهما بلا الأخرى: المهلة وحدها
+  // تُغلق بعد لحظة ولو كان المؤشّر داخلها، وإلغاؤها وحده لا يعبر الفراغ.
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelClose = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = null;
+  };
+  const scheduleClose = () => {
+    cancelClose();
+    closeTimer.current = setTimeout(() => setOpen(false), 220);
+  };
+  useEffect(() => cancelClose, []);
+
   return (
     <div
       className="relative"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+      onMouseEnter={() => { cancelClose(); setOpen(true); }}
+      onMouseLeave={scheduleClose}
     >
       <button
         type="button"
@@ -60,7 +80,12 @@ export function DemoBadge({
         // الموضع: تحت صفّ الشعار مباشرةً (٦٨ بكسل + فراغ)، وعند حافّة
         // البداية - وهي حافّة الشريط نفسه في الاتّجاهين معاً.
         <Portal>
-        <div className="pop-shadow fixed top-[76px] z-[70] w-[min(290px,calc(100vw-1.5rem))] card pad-md" style={{ insetInlineStart: 12 }}>
+        <div
+          onMouseEnter={cancelClose}
+          onMouseLeave={scheduleClose}
+          className="pop-shadow fixed top-[76px] z-[70] w-[min(290px,calc(100vw-1.5rem))] card pad-md"
+          style={{ insetInlineStart: 12 }}
+        >
           <div className="mb-1 flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/12 text-accent">
               <FlaskConical size={16} />

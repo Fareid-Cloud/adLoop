@@ -64,6 +64,17 @@ export const METRICS: MetricDef[] = [
   { key: "profit", group: "ecommerce", common: false, lowerIsBetter: false, format: "currency", sourceSensitive: false },
 ];
 
+
+/**
+ * مفتاح ترجمة اسم المؤشّر - يُشتقّ من مفتاحه لا يُكتب جدولاً موازياً.
+ *
+ * كان معرَّفاً داخل `ReportsClient` وحدها، فلمّا احتاجته لوحة الحكم كان
+ * البديل نسخَه. مكانه هنا مع تعريف المؤشّرات نفسها.
+ */
+export function metricLabelKey(k: MetricKey): string {
+  return `m${k[0].toUpperCase()}${k.slice(1)}`;
+}
+
 export const METRIC_BY_KEY = new Map(METRICS.map((m) => [m.key, m]));
 
 export interface ReportFilters {
@@ -131,12 +142,38 @@ export interface ComparisonVerdict {
   impactKind: "saving" | "gain" | null;
 }
 
+
+/**
+ * ما تحتاجه لوحة الحكم زيادةً على النتيجة نفسها: أهو حكمٌ يُبنى عليه،
+ * وكم كبرت عيّنته، وكيف تحرّك الطرفان عبر الأيّام.
+ */
+export interface VerdictContext {
+  /** أيّام الفترة - عيّنةُ يومين لا يُبنى عليها قرار مهما بلغ فارقها */
+  periodDays: number;
+  /** التحويلات التي قام عليها الحكم (الطرفان معاً) */
+  sampleSize: number;
+  /**
+   * درجة ثقة **بقاعدة معلنة لا اختبارٍ إحصائيّ**: تكبر بحجم العيّنة،
+   * وتزيد قليلاً باتّساع الفارق وطول الفترة. تسميتها «احتمالاً» كانت
+   * ستوهم دقّةً لا نملكها - والقاعدة مكتوبة هنا ليقرأها من يشكّ فيها.
+   */
+  confidencePct: number;
+  /** نسبة النقل الآمنة المقترَحة - حدّان لا رقمٌ واحد */
+  shiftPct: { min: number; max: number } | null;
+  /** السلسلة اليومية للطرفين على المؤشّر الحاسم */
+  trend: Array<{ date: string; a: number | null; b: number | null }>;
+  /** ما تغيّر عن الفترة السابقة - يُبنى من `deltaPct` لا من سجلٍّ محفوظ */
+  changes: Array<{ metric: MetricKey; rowKey: string; label: string; platform: string | null; deltaPct: number }>;
+}
+
 export interface ReportResult {
   rows: ReportRow[];
   totals: ReportRow;
   verdicts: ComparisonVerdict[];
   /** ملخّص مكتوب بقواعد ثابتة - صفر استدعاء ذكاء اصطناعي */
   summary: SummaryLine[];
+  /** سياق الحكم - `null` حين لا حكم أصلاً (الصفوف ليست اثنين) */
+  verdictContext: VerdictContext | null;
   currency: string;
   rowCount: number;
 }
@@ -371,6 +408,105 @@ function judge(metric: MetricKey, a: ReportRow, b: ReportRow): ComparisonVerdict
   };
 }
 
+
+// ==================== سياق الحكم ====================
+
+/**
+ * درجة الثقة بقاعدة صريحة.
+ *
+ * **ليست اختباراً إحصائياً ولا تدّعي أن تكون.** ثلاثة عوامل تُقرأ كما
+ * يقرؤها ميديا باير: كم تحويلاً وراء الرقم، وكم اتّسع الفارق، وكم طالت
+ * الفترة. عيّنة صغيرة تخفض الثقة مهما بدا الفارق هائلاً - وهي بالضبط
+ * الحالة التي يُتّخذ فيها أسوأ القرارات.
+ */
+function confidenceOf(sample: number, gapPct: number, days: number): number {
+  let base = sample >= 1000 ? 88 : sample >= 200 ? 78 : sample >= 50 ? 62 : 40;
+  if (gapPct >= 20) base += 4;
+  if (days >= 21) base += 3;
+  return Math.min(95, base);
+}
+
+function buildVerdictContext(args: {
+  snapshots: SnapshotLike[];
+  rows: ReportRow[];
+  verdicts: ComparisonVerdict[];
+  dimension: Dimension;
+  useVerified: boolean;
+  range: DateRange;
+  headline: ComparisonVerdict | null;
+}): VerdictContext | null {
+  const { snapshots, rows, verdicts, dimension, useVerified, range, headline } = args;
+  if (rows.length !== 2 || !headline) return null;
+
+  const bounds = toDateBounds(range);
+  const periodDays = Math.max(
+    1,
+    Math.round((bounds.lte.getTime() - bounds.gte.getTime()) / 86_400_000) + 1,
+  );
+
+  const sampleSize = rows.reduce((n, r) => n + (r.values.conversions ?? 0), 0);
+  const gap = Math.abs(headline.differencePct ?? 0);
+
+  // السلسلة اليومية تُبنى من اللقطات المحمَّلة أصلاً - لا استعلام ثانٍ.
+  // الأيّام قليلة والصفوف في الذاكرة، فالتجميع هنا أرخص من نداء قاعدة.
+  const wantsPlacementDetail = dimension === "placement";
+  const byDay = new Map<string, Map<string, Totals>>();
+  for (const snap of snapshots) {
+    // نفس شرط `aggregate` حرفاً: الصفوف التفصيلية تكرّر الإنفاق مقسَّماً،
+    // وخلطُها بالمجمّع يضاعف كلّ نقطة في الرسم.
+    const isAggregate = snap.placementBreakdown === "ALL";
+    if (wantsPlacementDetail ? isAggregate : !isAggregate) continue;
+
+    const day = snap.date.toISOString().slice(0, 10);
+    const key = bucketKey(snap, dimension);
+    let dayMap = byDay.get(day);
+    if (!dayMap) { dayMap = new Map(); byDay.set(day, dayMap); }
+    const t = dayMap.get(key) ?? { ...EMPTY };
+    addInto(t, snap);
+    dayMap.set(key, t);
+  }
+
+  const metric = headline.metric;
+  const trend = [...byDay.entries()]
+    .sort((x, y) => x[0].localeCompare(y[0]))
+    .map(([date, dayMap]) => {
+      const ta = dayMap.get(rows[0].key);
+      const tb = dayMap.get(rows[1].key);
+      return {
+        date,
+        a: ta ? derive(ta, useVerified)[metric] ?? null : null,
+        b: tb ? derive(tb, useVerified)[metric] ?? null : null,
+      };
+    });
+
+  // «ما تغيّر»: من مقارنة الفترة السابقة لا من سجلٍّ نحتفظ به. أكبر ثلاثة
+  // تحرّكات، فسردُ كلّ مؤشّر تحرّك بواحد بالمئة ضجيجٌ لا خبر.
+  const changes = rows
+    .flatMap((r) =>
+      (verdicts.map((v) => v.metric) as MetricKey[]).map((m) => {
+        const d = r.deltaPct?.[m];
+        return d === null || d === undefined
+          ? null
+          : { metric: m, rowKey: r.key, label: r.label, platform: r.platform, deltaPct: d };
+      }),
+    )
+    .filter((c): c is NonNullable<typeof c> => c !== null && Math.abs(c.deltaPct) >= 3)
+    .sort((a, b) => Math.abs(b.deltaPct) - Math.abs(a.deltaPct))
+    .slice(0, 3);
+
+  return {
+    periodDays,
+    sampleSize,
+    confidencePct: confidenceOf(sampleSize, gap, periodDays),
+    // الحدّان من ممارسة مؤكَّدة لا من تقدير: عشرون بالمئة سقفُ الزيادة
+    // الآمنة في جولة واحدة (`SAFE_SCALE_INCREASE_PCT`)، وخمسة عشر أدناها
+    // كي تُقرأ النتيجة أصلاً. ولا تُقترَح إن كان الفارق أضيق من ذلك.
+    shiftPct: gap >= 15 ? { min: 15, max: 20 } : null,
+    trend,
+    changes,
+  };
+}
+
 // ==================== الملخّص (بقواعد ثابتة) ====================
 
 /**
@@ -531,11 +667,23 @@ export async function runReport(
       ? config.metrics.map((m) => judge(m, rows[0], rows[1])).filter((v) => v.winnerKey !== null)
       : [];
 
+  const headline =
+    [...verdicts].sort((a, b) => (b.financialImpact ?? 0) - (a.financialImpact ?? 0))[0] ?? null;
+
   return {
     rows,
     totals,
     verdicts,
     summary: buildSummary({ rows, totals, verdicts, hasCompare: config.compare !== null }),
+    verdictContext: buildVerdictContext({
+      snapshots: current,
+      rows,
+      verdicts,
+      dimension: config.dimension,
+      useVerified,
+      range: config.range,
+      headline,
+    }),
     currency: labels.currency,
     rowCount: rows.length,
   };

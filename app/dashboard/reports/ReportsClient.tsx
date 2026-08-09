@@ -16,8 +16,9 @@ import {
   TrendingUp, TrendingDown, Minus, Trash2, Star,
 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { VerdictBoard } from "./VerdictBoard";
 import { DateRangePicker } from "@/app/components/ui/DateRangePicker";
-import { METRICS, type DataSource, type Dimension, type MetricKey, type ReportResult } from "@/lib/reports/reportEngine";
+import { METRICS, metricLabelKey, type DataSource, type Dimension, type MetricKey, type ReportResult } from "@/lib/reports/reportEngine";
 import type { DateRange, PresetKey, CompareMode } from "@/lib/dateRange";
 import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 import { TH } from "@/app/components/ui/tableStyles";
@@ -515,100 +516,22 @@ function ResultBlock({
   return (
     <div className="flex flex-col gap-4">
       {/* ══════════ الحكم ══════════
-          🔴 كان صفّاً من مربّعات متطابقة، في كلّ واحد «الفائز» و«الفارق»
-          بلا وزن يفرّق أهمّها عن أقلّها - ونتيجةٌ واحدةٌ فيها أثرٌ ماليّ
-          بمئات الآلاف تُعرض بحجم نتيجةٍ فرقُها ثلاثة بالمئة.
-
-          البنية الآن على درجتين: **حكمٌ رئيسيّ** لصاحب أكبر أثرٍ ماليّ
-          يُقرأ من مسافة، ثمّ **لوحة نتائج** لبقيّة المؤشّرات. وهو ترتيبٌ
-          يتبع ما يفعله المستخدم فعلاً: ينظر إلى أكبر رقم، ثمّ يتحقّق. */}
-      {headline && (
-        <section className="card-alert card-shadow overflow-hidden card">
-          <div className="flex flex-wrap items-start justify-between gap-4 p-5">
-            <div className="min-w-0 flex-1">
-              <div className="mb-1.5 flex items-center gap-2 text-[12px] font-medium uppercase tracking-wide text-text-faint">
-                <Sparkles size={13} className="text-accent" /> {tr("verdictTitle")}
-              </div>
-              <h2 className="text-[21px] font-semibold leading-snug text-text-primary">
-                {tr("verdictLead", {
-                  winner: nameOf(headline.winnerLabel, headline.winnerPlatform),
-                  pct: Math.round(headline.differencePct ?? 0),
-                  metric: tr(metricLabelKey(headline.metric)),
-                })}
-              </h2>
-              <p className="mt-1 text-[13px] text-text-muted">
-                {tr("verdictVs", { loser: nameOf(headline.loserLabel, headline.loserPlatform) })}
-              </p>
-            </div>
-
-            {/* شعار الفائز بحجمٍ يُقرأ: هو الإجابة، فلا يُدفن في سطر نصّ */}
-            {headline.winnerPlatform && (
-              <span className="icon-badge h-14 w-14 shrink-0 bg-surface-raised">
-                <PlatformLogo platform={headline.winnerPlatform} size={30} />
-              </span>
-            )}
-          </div>
-
-          {headline.financialImpact !== null && headline.financialImpact > 0 && (
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-border bg-verified/[0.07] px-5 py-3.5">
-              <span className="text-[12px] text-text-muted">
-                {headline.impactKind === "saving" ? tr("impactSaving") : tr("impactGain")}
-                {" · "}
-                {tr("verdictImpactMonthly")}
-              </span>
-              <span className="num text-[24px] font-semibold leading-none text-verified">
-                {fmtNumber(headline.financialImpact)}{" "}
-                <span className="text-[14px] font-medium">{currency}</span>
-              </span>
-            </div>
-          )}
-        </section>
-      )}
+          أُعيد بناؤه على مرجعٍ بصريّ أرسله المالك: الإجابة أوّلاً بحجمٍ
+          يُقرأ، ثمّ الأرقام التي أنتجتها، وإلى جانبها ما يجيب عن السؤال
+          التالي مباشرةً - «أثق في هذا؟ وماذا أفعل؟». التفاصيل في
+          `VerdictBoard`. */}
+      <VerdictBoard result={result} locale={locale} currency={currency} />
 
       {/* 🔴 الحكم يُبنى في المحرّك حين يكون في النتيجة **صفّان بالضبط** -
           وهو قرار سليم (إعلان «فائز» على عشرين صفّاً بلا سياق أسوأ من
           الصمت). لكنّ الصمت نفسه كان هو العطل: مَن يضغط «أنشئ التقرير»
           على ثلاث منصّات لا يرى الحكم ولا يعرف لماذا، فيظنّ الميزة معطّلة.
           القاعدة الحاكمة: نقطةٌ تمنع المستخدم تحمل معها الحلّ. */}
-      {!headline && result.rows.length > 2 && (
+      {result.rows.length > 2 && (
         <div className="note border-border bg-surface-raised text-text-muted">
           <Sparkles size={14} className="shrink-0 text-accent" />
           <span className="min-w-0 flex-1">{tr("verdictNeedsTwo", { n: result.rows.length })}</span>
         </div>
-      )}
-
-      {rest.length > 0 && (
-        <section className="card pad-md">
-          <h2 className="mb-3 section-title">{tr("scoreboard")}</h2>
-          <div className="grid gap-2.5 [grid-template-columns:repeat(auto-fit,minmax(230px,1fr))]">
-            {rest.map((v) => (
-              <div key={v.metric} className="card-inset flex flex-col gap-2 p-3.5">
-                <div className="text-[11.5px] font-medium uppercase tracking-wide text-text-faint">
-                  {tr(metricLabelKey(v.metric))}
-                </div>
-                <div className="flex min-w-0 items-center gap-2">
-                  {v.winnerPlatform && <PlatformLogo platform={v.winnerPlatform} size={16} />}
-                  <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-text-primary">
-                    {nameOf(v.winnerLabel, v.winnerPlatform)}
-                  </span>
-                  {v.differencePct !== null && (
-                    <span className="chip bg-verified/12 text-verified">
-                      +{Math.round(v.differencePct)}%
-                    </span>
-                  )}
-                </div>
-                {v.financialImpact !== null && v.financialImpact > 0 && (
-                  <div className="num text-[12.5px] text-text-muted">
-                    {v.impactKind === "saving" ? tr("impactSaving") : tr("impactGain")}:{" "}
-                    <span className="font-semibold text-verified">
-                      {fmtNumber(v.financialImpact)} {currency}
-                    </span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
       )}
 
       {/* الجدول */}
@@ -979,10 +902,6 @@ function MiniTab({ active, onClick, label }: { active: boolean; onClick: () => v
 }
 
 // ==================== أدوات ====================
-
-function metricLabelKey(k: MetricKey): string {
-  return `m${k[0].toUpperCase()}${k.slice(1)}`;
-}
 
 function fmtNumber(n: number): string {
   const abs = Math.abs(n);
