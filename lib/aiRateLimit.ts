@@ -244,6 +244,31 @@ export async function checkAndConsumeImageQualityQuota(userId: string): Promise<
 
 const SITE_SCAN_HOURLY_LIMIT = 1;
 
+/**
+ * ردّ فحصٍ خُصِم ثمّ فشل لسببٍ ليس من صنع المستخدم.
+ *
+ * الفحص العميق يُخصَم عند البدء لأنّ عمله يجري في الخلفية بعد ردّ الطلب -
+ * ولا سبيل لتأجيل الخصم إلى ما بعد النجاح دون فتح باب تشغيل متوازٍ بلا
+ * سقف. فالخصم يبقى مقدَّماً، **والردّ هو ما يصحّح الحساب** حين يفشل
+ * الفحص لعطلٍ عندنا أو عند مزوّد خارجيّ.
+ *
+ * الحدّ السفليّ صفر: الفشل مرّتين لا يجعل الرصيد سالباً.
+ */
+export async function refundSiteScanQuota(userId: string): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { siteScanMonthlyCount: true, siteScanHourlyCount: true },
+  });
+  if (!user) return;
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      siteScanMonthlyCount: Math.max(0, user.siteScanMonthlyCount - 1),
+      siteScanHourlyCount: Math.max(0, user.siteScanHourlyCount - 1),
+    },
+  });
+}
+
 export async function checkAndConsumeSiteScanQuota(userId: string): Promise<QuotaResult> {
   const user = await prisma.user.findUnique({
     where: { id: userId },

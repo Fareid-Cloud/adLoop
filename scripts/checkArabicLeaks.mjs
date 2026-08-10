@@ -114,6 +114,37 @@ function scanApiErrors() {
           const { line } = src.getLineAndCharacterOfPosition(node.getStart());
           apiFindings.push({ rel, line: line + 1, text: node.initializer.text.slice(0, 70) });
         }
+
+        // 🔴 **والنصّ المُسنَد إلى متغيّر ثمّ المُمرَّر كخطأ.**
+        // الفحص أعلاه يرى `error: "..."` مباشرةً وحدها، فمرّ من تحته نمطٌ
+        // كامل: `const message = cond ? "نصّ" : \`نصّ\`` ثمّ
+        // `{ error: message }`. وُجد هكذا في مسارَي الفحص العميق وجودة
+        // الصور - رسالتان تُعرضان لكلّ مستخدم إنجليزيّ بالعربية.
+        //
+        // أيّ متغيّر باسمٍ يدلّ على رسالة، قيمتُه نصٌّ عربيّ أو شرطيّةٌ
+        // أحد طرفيها عربيّ، يُعدّ تسريباً.
+        if (
+          ts.isVariableDeclaration(node) &&
+          /^(message|msg|error|errorMessage|reason|text)$/i.test(node.name.getText()) &&
+          node.initializer
+        ) {
+          const parts = ts.isConditionalExpression(node.initializer)
+            ? [node.initializer.whenTrue, node.initializer.whenFalse]
+            : [node.initializer];
+          for (const part of parts) {
+            const raw =
+              ts.isStringLiteral(part) || ts.isNoSubstitutionTemplateLiteral(part)
+                ? part.text
+                : ts.isTemplateExpression(part)
+                  ? part.getText()
+                  : null;
+            if (raw && ARABIC.test(raw)) {
+              const { line } = src.getLineAndCharacterOfPosition(node.getStart());
+              apiFindings.push({ rel, line: line + 1, text: raw.replace(/\s+/g, " ").slice(0, 70) });
+              break;
+            }
+          }
+        }
         ts.forEachChild(node, visit);
       })(src);
     }

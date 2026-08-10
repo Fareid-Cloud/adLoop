@@ -34,6 +34,9 @@ export function DeepScanClient({ workspaceId, pastScans, locale }: { workspaceId
   const [scanId, setScanId] = useState<string | null>(null);
   const [scan, setScan] = useState<ScanRecord | null>(null);
   const [starting, setStarting] = useState(false);
+  /** رفضُ بدء الفحص - منفصلٌ عن فشل فحصٍ بدأ فعلاً (`scan.status`) */
+  const [startError, setStartError] = useState<string | null>(null);
+  const [upgradeUrl, setUpgradeUrl] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // بنجيب روابط الوجهة الفعلية (Final URLs) من الإعلانات المزامنة فعلياً -
@@ -56,6 +59,8 @@ export function DeepScanClient({ workspaceId, pastScans, locale }: { workspaceId
     e.preventDefault();
     setStarting(true);
     setScan(null);
+    setStartError(null);
+    setUpgradeUrl(null);
 
     const res = await fetch("/api/site-scan/deep", {
       method: "POST",
@@ -63,10 +68,20 @@ export function DeepScanClient({ workspaceId, pastScans, locale }: { workspaceId
       body: JSON.stringify({ workspaceId, url, competitorUrls }),
     });
 
-    if (res.ok) {
-      const data = await res.json();
-      setScanId(data.scanId);
+    // 🔴 **كان `if (res.ok)` بلا `else`.**
+    // كلّ رفض - رصيد نفد (٤٢٩)، مساحة عرض (٤٠٣)، حقل ناقص (٤٠٠)، عطل
+    // (٥٠٠) - كان يُبتلَع بصمت: الزرّ يرتدّ إلى حاله ولا شيء يظهر، فيقف
+    // المستخدم أمام زرٍّ «لا يعمل» بلا سبب. وهذا بالضبط ما وقف عنده
+    // المالك: الفحص لم يكن معطّلاً، كان مرفوضاً بلا صوت.
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      setStartError(data?.error ?? tr("startFailed"));
+      // الرفض يحمل مخرجه لا تشخيصه وحده
+      setUpgradeUrl(typeof data?.upgradeUrl === "string" ? data.upgradeUrl : null);
+      setStarting(false);
+      return;
     }
+    setScanId(data.scanId);
     setStarting(false);
   }
 
@@ -200,6 +215,18 @@ export function DeepScanClient({ workspaceId, pastScans, locale }: { workspaceId
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* المنع يحمل حلّه: ما الناقص، ولماذا، والخطوة التالية جاهزة */}
+      {startError && (
+        <div className="note mb-4 flex flex-wrap items-center justify-between gap-3 border-critical/35 bg-critical/10 p-4 text-critical">
+          <span>{startError}</span>
+          {upgradeUrl && (
+            <a href={upgradeUrl} className="btn btn-primary no-underline">
+              {tr("upgradePlan")}
+            </a>
+          )}
         </div>
       )}
 

@@ -11,7 +11,7 @@ import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { runDeepSiteScan } from "@/lib/siteScanOrchestrator";
-import { checkAndConsumeSiteScanQuota } from "@/lib/aiRateLimit";
+import { checkAndConsumeSiteScanQuota, refundSiteScanQuota } from "@/lib/aiRateLimit";
 import { blockAiInDemo } from "@/lib/demo";
 import { t } from "@/lib/i18n/dictionary";
 import { localeOf } from "@/lib/apiLocale";
@@ -20,18 +20,6 @@ export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const locale = localeOf(user);
-
-  // إصلاح ثغرة مالية حقيقية: أغلى ميزة في المشروع (4 نداءات Claude لكل
-  // فحص) كانت من غير أي حد أقصى على الإطلاق. الفحص هنا قبل أي شغل خالص، عشان
-  // طلب مرفوض ميعملش حتى صف PENDING أو يشغّل أي حاجة في الخلفية
-  const quota = await checkAndConsumeSiteScanQuota(user.id);
-  if (!quota.allowed) {
-    const message =
-      quota.reason === "monthly_exhausted"
-        ? "وصلت للحد الأقصى الشهري للفحص العميق."
-        : `بلغت الحدّ المسموح في الساعة — حاول بعد ${quota.retryAfterMinutes} دقيقة.`;
-    return NextResponse.json({ error: message }, { status: 429 });
-  }
 
   const { workspaceId, url, competitorUrls } = await req.json();
   if (!workspaceId || !url) {
@@ -47,6 +35,31 @@ export async function POST(req: NextRequest) {
   // بيانات مخترعة ويخصم من رصيد المشترك.
   const demoBlock = await blockAiInDemo(workspace.id, (user.preferredLocale as "ar" | "en") ?? "ar");
   if (demoBlock) return demoBlock;
+
+  // 🔴 **الخصم آخر خطوة، لا أوّلها.**
+  //
+  // كان الخصم يسبق كلّ شيء: قبل التحقّق من الحقول، وقبل التأكّد من أنّ
+  // مساحة العمل مِلكُ صاحب الطلب، وقبل حارس مساحة العرض. فكانت الطلبات
+  // التي تُرفض بعد ذلك **تُنقص رصيداً مدفوعاً مقابل لا شيء**: معرّف مساحة
+  // خاطئ، أو حقلٌ ناقص، أو ضغطة من مساحة تجريبية - كلّها تحرق فحصاً من
+  // خمسة قبل أن يبدأ أيّ عمل.
+  //
+  // القاعدة الآن في كلّ مسار مدفوع: هويّة ← تحقّق ← ملكيّة ← حارس العرض
+  // ← **ثمّ** الخصم. لا يُخصَم إلّا ما سيُنفَّذ فعلاً.
+  const quota = await checkAndConsumeSiteScanQuota(user.id);
+  if (!quota.allowed) {
+    return NextResponse.json(
+      {
+        error:
+          quota.reason === "hourly_exhausted"
+            ? t(locale, "apiErr.scanQuotaHourly", { n: quota.retryAfterMinutes ?? 60 })
+            : t(locale, "apiErr.scanQuotaMonthly"),
+        // الرفض يحمل مخرجه: باقةٌ نفد رصيدها تُرقَّى، لا تُشرَح فحسب.
+        upgradeUrl: quota.reason === "monthly_exhausted" ? "/dashboard/billing" : undefined,
+      },
+      { status: 429 }
+    );
+  }
 
   const scan = await prisma.siteScanResult.create({
     data: {
@@ -100,6 +113,10 @@ export async function POST(req: NextRequest) {
       });
     } catch (err) {
       console.error(`فشل الفحص العميق للرابط ${url}:`, err);
+      // 🔴 الفحص خُصِم عند البدء، وفشل لسببٍ ليس من صنع المستخدم (خدمة
+      // خارجية، رصيد مزوّد نفد، رابط لا يستجيب). تركُ الخصم قائماً يعني
+      // أنّه دفع من رصيده ثمن عطلٍ عندنا. يُردّ.
+      await refundSiteScanQuota(user.id);
       await prisma.siteScanResult.update({
         where: { id: scan.id },
         data: {
