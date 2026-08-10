@@ -11,7 +11,7 @@ import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { runDeepSiteScan } from "@/lib/siteScanOrchestrator";
-import { checkAndConsumeSiteScanQuota, refundSiteScanQuota } from "@/lib/aiRateLimit";
+import { checkAndConsumeSiteScanQuota, refundSiteScanQuota, isAiConfigured } from "@/lib/aiRateLimit";
 import { blockAiInDemo } from "@/lib/demo";
 import { t } from "@/lib/i18n/dictionary";
 import { localeOf } from "@/lib/apiLocale";
@@ -46,6 +46,11 @@ export async function POST(req: NextRequest) {
   //
   // القاعدة الآن في كلّ مسار مدفوع: هويّة ← تحقّق ← ملكيّة ← حارس العرض
   // ← **ثمّ** الخصم. لا يُخصَم إلّا ما سيُنفَّذ فعلاً.
+  // خدمةٌ غير مضبوطة لا تُخصَم مقابلها
+  if (!isAiConfigured()) {
+    return NextResponse.json({ error: t(locale, "apiErr.aiUnavailable") }, { status: 503 });
+  }
+
   const quota = await checkAndConsumeSiteScanQuota(user.id);
   if (!quota.allowed) {
     return NextResponse.json(

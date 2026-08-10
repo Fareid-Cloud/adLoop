@@ -122,6 +122,7 @@ export const NAV_GROUPS: NavGroup[] = [
     labelAr: "التنفيذ",
     labelEn: "Act",
     items: [
+      { href: "/dashboard/agent", labelAr: "وكيل AdLoop", labelEn: "AdLoop Agent", iconName: "Sparkles", usesAi: true },
       { href: "/dashboard/actions", labelAr: "القرارات", labelEn: "Actions", iconName: "ListChecks" },
       { href: "/dashboard/experiments", labelAr: "الاختبارات", labelEn: "Experiments", iconName: "FlaskConical" },
       { href: "/dashboard/automation", labelAr: "الأتمتة", labelEn: "Automation", iconName: "Bot" },

@@ -29,6 +29,41 @@ export interface QuotaResult {
   retryAfterMinutes?: number; // لو اترفض بسبب الحد الساعي، تقول له يستنى قد إيه
 }
 
+/**
+ * هل خدمة الذكاء الاصطناعي مضبوطة أصلاً؟
+ *
+ * 🔴 **بلا هذا الفحص كان الرصيد يُخصَم ولو لم يكن هناك مفتاح خالص.**
+ * الخصم يسبق النداء، والنداء يفشل عند أوّل سطر لأنّ المفتاح غائب - فيبقى
+ * العدّاد مرتفعاً مقابل تحليلٍ لم يُطلَب من أحد. لا سبيل للمستخدم أن يعرف،
+ * ولا سبيل له أن يستردّ.
+ */
+export function isAiConfigured(): boolean {
+  return !!process.env.ANTHROPIC_API_KEY;
+}
+
+/**
+ * ردّ رصيد تحليلٍ خُصِم ثمّ لم يُسلَّم.
+ *
+ * الخصم يسبق النداء عمداً (نداءٌ بلا خصمٍ مسبق يفتح باب تشغيلٍ متوازٍ بلا
+ * سقف)، فالردّ هو ما يصحّح الحساب حين يفشل النداء لعطلٍ عندنا أو عند
+ * المزوّد - رصيدٌ نفد، مفتاحٌ غير صالح، انقطاعُ خدمة. المستخدم لا يدفع
+ * ثمن ما لم يصله.
+ */
+export async function refundAiRefreshQuota(userId: string): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, aiRefreshMonthlyCount: true, aiRefreshHourlyCount: true },
+  });
+  if (!user || isOwnerEmail(user.email)) return; // المالك لم يُخصَم منه أصلاً
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      aiRefreshMonthlyCount: Math.max(0, user.aiRefreshMonthlyCount - 1),
+      aiRefreshHourlyCount: Math.max(0, user.aiRefreshHourlyCount - 1),
+    },
+  });
+}
+
 export async function checkAndConsumeAIRefreshQuota(
   userId: string
 ): Promise<QuotaResult> {
@@ -208,6 +243,22 @@ export async function checkAndConsumeChatQuota(userId: string): Promise<QuotaRes
 // (سقف أعلى نسبياً - فحص إعلانات كتير مرة واحدة استخدام شرعي متوقّع)
 const IMAGE_QUALITY_MONTHLY_LIMIT = 30;
 const IMAGE_QUALITY_HOURLY_LIMIT = 5;
+
+/** ردّ فحص صورةٍ خُصِم ولم يُسلَّم - نفس مبدأ `refundAiRefreshQuota` */
+export async function refundImageQualityQuota(userId: string): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, imageQualityMonthlyCount: true, imageQualityHourlyCount: true },
+  });
+  if (!user || isOwnerEmail(user.email)) return;
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      imageQualityMonthlyCount: Math.max(0, user.imageQualityMonthlyCount - 1),
+      imageQualityHourlyCount: Math.max(0, user.imageQualityHourlyCount - 1),
+    },
+  });
+}
 
 export async function checkAndConsumeImageQualityQuota(userId: string): Promise<QuotaResult> {
   const user = await prisma.user.findUnique({

@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { auditAdImageQuality } from "@/lib/imageQualityAudit";
-import { checkAndConsumeImageQualityQuota } from "@/lib/aiRateLimit";
+import { checkAndConsumeImageQualityQuota, refundImageQualityQuota, isAiConfigured } from "@/lib/aiRateLimit";
 import { blockAiInDemo } from "@/lib/demo";
 import { prisma } from "@/lib/prisma";
 import { t } from "@/lib/i18n/dictionary";
@@ -41,6 +41,11 @@ export async function POST(req: NextRequest) {
   //
   // القاعدة الآن في كلّ مسار مدفوع: هويّة ← تحقّق ← ملكيّة ← حارس العرض
   // ← **ثمّ** الخصم. لا يُخصَم إلّا ما سيُنفَّذ فعلاً.
+  // خدمةٌ غير مضبوطة لا تُخصَم مقابلها
+  if (!isAiConfigured()) {
+    return NextResponse.json({ error: t(locale, "apiErr.aiUnavailable") }, { status: 503 });
+  }
+
   const quota = await checkAndConsumeImageQualityQuota(user.id);
   if (!quota.allowed) {
     return NextResponse.json(
@@ -55,8 +60,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const result = await auditAdImageQuality(imageUrl, platform, (user.preferredLocale as "ar" | "en") ?? "ar");
+  // 🔴 الرصيد خُصم قبل النداء - وكان يبقى مخصوماً في **حالتَي** فشل:
+  // صورةٌ لا تُقرأ (`null`)، ونداءٌ يرمي (رصيد المزوّد نفد، انقطاع).
+  // في الحالتين لم يصل المستخدم شيء، فلا يصحّ أن يدفع.
+  let result;
+  try {
+    result = await auditAdImageQuality(imageUrl, platform, (user.preferredLocale as "ar" | "en") ?? "ar");
+  } catch (err) {
+    console.error("[quality-check] فشل النداء - يُردّ الرصيد:", err);
+    await refundImageQualityQuota(user.id);
+    return NextResponse.json({ error: t(locale, "apiErr.aiUnavailable") }, { status: 503 });
+  }
+
   if (!result) {
+    await refundImageQualityQuota(user.id);
     return NextResponse.json({ error: t(locale, "apiErr.imageUnreadable") }, { status: 422 });
   }
 

@@ -11,7 +11,7 @@ import { detectAnomaly } from "@/lib/anomalyDetection";
 import { CampaignSummary } from "@/lib/aiInsights";
 import { shouldSendEmail, sendUrgentNotificationEmail } from "@/lib/notifications";
 import { countDisapprovedGoogleAds } from "@/lib/syncGoogleAds";
-import { checkAndConsumeAIRefreshQuota } from "@/lib/aiRateLimit";
+import { checkAndConsumeAIRefreshQuota, refundAiRefreshQuota, isAiConfigured } from "@/lib/aiRateLimit";
 import { getFrequencyByPlatform } from "@/lib/frequencyCheck";
 interface RuleCheckContext {
   workspaceId: string;
@@ -161,11 +161,28 @@ export async function runDailyDiagnosticsForWorkspace(workspaceId: string, local
     // التحديث اليدوي) - سقف واحد حقيقي، مش اتنين منفصلين
     // مساحة العمل التجريبية لا تُنفق شيئاً حقيقياً: أرقامها أمثلة، فتحليلها
     // بنداء مدفوع يشتري رأياً في بيانات مخترعة. العرض يبقى، الإنفاق لا.
-    const quota = workspace.isDemo
+    // 🔴🔴 **كان الرصيد يُخصَم ثمّ يُبتلَع الفشل.**
+    //
+    // الترتيب كان: خصم ← نداء ← والنداء يرمي (مفتاح غائب، رصيد مزوّد
+    // نفد، انقطاع) ← فيلتقطه `try/catch` الملفوف حول معالجة كلّ مساحة
+    // في الكرون ويُسجّله في السجلّ ← **والعدّاد يبقى مرتفعاً**.
+    //
+    // فيظهر لمستخدمٍ لم يسجّل الدخول قطّ استهلاكُ ثلاثة تحليلات: ثلاث
+    // دورات كرون، كلٌّ منها خصمت ولم تُسلّم شيئاً. لا فرق - من جهة
+    // العميل - بين هذا وبين أن يُباع له ما لا يُسلَّم.
+    //
+    // الآن: لا خصم إن لم تكن الخدمة مضبوطة أصلاً، وردٌّ للرصيد إن فشل
+    // النداء بعد الخصم.
+    const quota = workspace.isDemo || !isAiConfigured()
       ? { allowed: false as const }
       : await checkAndConsumeAIRefreshQuota(workspace.userId);
     if (quota.allowed) {
-      aiTasks = await generateAITask(summaries, await planModelFor(workspace.userId));
+      try {
+        aiTasks = await generateAITask(summaries, await planModelFor(workspace.userId));
+      } catch (err) {
+        console.error(`[dailyTasks] فشل التحليل - يُردّ الرصيد (${workspace.userId}):`, err);
+        await refundAiRefreshQuota(workspace.userId);
+      }
     }
   }
 

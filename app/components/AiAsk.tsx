@@ -37,7 +37,7 @@
 // (`docs/ai-agent-plan.md`) هو ما يحمل السجلّ حين يُبنى.
 
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, ArrowUp, Loader2, X } from "lucide-react";
+import { Sparkles, ArrowUp, ArrowUpRight, Loader2, X } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { MarkdownAnswer } from "@/app/components/MarkdownAnswer";
 import { showcaseFor, fillShowcaseMoney, followUpsFor, splitShowcaseKey } from "@/lib/demoAgentShowcase";
@@ -89,6 +89,8 @@ export function AiAsk({
   const [steps, setSteps] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  /** المحادثة التي حُفظ فيها هذا الجواب - رابطُ فتحها في القسم */
+  const [savedChatId, setSavedChatId] = useState<string | null>(null);
   const [upgradeUrl, setUpgradeUrl] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const [typed, setTyped] = useState("");
@@ -212,6 +214,7 @@ export function AiAsk({
     setAnsweredIndex(null);
     setSteps([]);
     setUpgradeUrl(null);
+    setSavedChatId(null);
   }
 
   /** أيّ مثالٍ يطابق هذا النصّ - تطابقاً تامّاً أو بادئةً منه */
@@ -331,6 +334,7 @@ export function AiAsk({
       return;
     }
     setAnswer(data.answer);
+    setSavedChatId(typeof data.chatId === "string" ? data.chatId : null);
   }
 
   function pick(index: number) {
@@ -440,6 +444,18 @@ export function AiAsk({
                       )}
 
                       {answer && <MarkdownAnswer text={answer} reveal={revealed} />}
+
+                      {/* أين ذهب هذا الجواب. الحفظ بلا إعلانٍ عنه ميزةٌ لا
+                          يعرف أحدٌ بوجودها - والسطر هو ما يجعل المربّع
+                          **مدخلاً** إلى القسم لا نافذةً تُغلق على جوابها. */}
+                      {savedChatId && answer && revealed >= answer.length && (
+                        <a
+                          href={`/dashboard/agent?chat=${savedChatId}`}
+                          className="flex items-center gap-1.5 text-[11.5px] text-accent no-underline"
+                        >
+                          {t(locale, "agentPage.openInAgent")} <ArrowUpRight size={12} />
+                        </a>
+                      )}
 
                       {/* لا تظهر قبل اكتمال الجواب: سؤالٌ تالٍ يقفز أمام
                           جوابٍ لم يُقرأ بعد يسحب الانتباه عنه. */}

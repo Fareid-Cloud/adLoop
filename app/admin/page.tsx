@@ -121,7 +121,7 @@ export default async function AdminDashboard() {
                   <td className={`px-4 py-2.5 text-xs ${isAtRisk ? "text-gap" : "text-text-faint"}`}>
                     {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString("ar") : "لم يسجّل الدخول بعد"}
                   </td>
-                  <td className="px-4 py-2.5 font-mono">{u.aiRefreshMonthlyCount}/120</td>
+                  <td className="px-4 py-2.5 font-mono">{u.aiRefreshMonthlyCount}</td>
                   <td className="px-4 py-2.5">
                     <UserActions userId={u.id} isSuspended={u.isSuspended} />
                   </td>

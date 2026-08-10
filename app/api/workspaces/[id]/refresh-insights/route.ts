@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { toUserFacingAiError, quotaExhaustedError } from "@/lib/aiErrors";
-import { checkAndConsumeAIRefreshQuota } from "@/lib/aiRateLimit";
+import { checkAndConsumeAIRefreshQuota, refundAiRefreshQuota, isAiConfigured } from "@/lib/aiRateLimit";
 import { generateInsights, buildCampaignSummaries } from "@/lib/aiInsights";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
@@ -37,6 +37,11 @@ export async function POST(
 
   // الحد بيتحسب على مستوى الحساب (User) ككل، مش على الـ Workspace -
   // عشان محدش يقدر يعمل عشرات الـ Workspaces الفاضية ويضاعف رصيده
+  // خدمةٌ غير مضبوطة لا تُخصَم مقابلها: الرفض المجّاني قبل الرفض المدفوع.
+  if (!isAiConfigured()) {
+    return NextResponse.json({ error: t(locale, "apiErr.aiUnavailable") }, { status: 503 });
+  }
+
   const quota = await checkAndConsumeAIRefreshQuota(user.id);
 
   if (!quota.allowed) {
@@ -82,6 +87,9 @@ export async function POST(
       remainingThisMonth: quota.remainingThisMonth,
     });
   } catch (err) {
+    // الرصيد خُصم قبل النداء، وفشلُ النداء ليس ذنب المستخدم - يُردّ إليه.
+    // نفس ما يفعله `/api/ai/chat`، وكان ناقصاً هنا وحده.
+    await refundAiRefreshQuota(user.id);
     const e = toUserFacingAiError(err, "refresh-insights");
     return NextResponse.json(
       { error: locale === "ar" ? e.messageAr : e.messageEn, kind: e.kind, showUpgrade: e.showUpgrade },

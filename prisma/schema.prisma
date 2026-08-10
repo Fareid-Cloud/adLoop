@@ -198,6 +198,7 @@ model User {
   /// «هل وافق». ويسمح لاحقاً بمطالبة من وافق على نسخة قديمة بالموافقة
   /// على المحدَّثة.
   acceptedTermsAt DateTime?
+  agentChats  AgentChat[]
 }
 
 // ربط المنصة على مستوى المستخدم (مرة واحدة لكل منصة)
@@ -415,6 +416,7 @@ model Workspace {
   // بغض النظر عن عدد القواعد أو القرارات المعتمدة - حماية أخيرة من انجراف
   // الميزانية بمرور الوقت حتى لو كل قرار فردي كان معقولاً وقت اتخاذه
   automationMonthlyBudgetChangeCeilingPct Int? @default(50)
+  agentChats  AgentChat[]
 }
 
 // أي كامبين (من جوجل أو ميتا) تم اختياره ليتبع لـ Workspace معين
@@ -2272,4 +2274,47 @@ model MarketingEmailLog {
   /// الضمانة الفعلية ضدّ التكرار - لا منطق تطبيقي وحده
   @@unique([userId, messageId])
   @@index([userId, sentAt])
+}
+
+/// ═══════════════════════════════════════════════════════════════════
+/// AdLoop Agent — حاوية المحادثات
+///
+/// **العقل كان مبنيّاً والذاكرة لا.** مربّع السؤال في كلّ صفحة يسأل
+/// ويُجيب اليوم إجابةً كاملةً بجدولها ومؤشّراتها، ثمّ **يُنسى الجواب**
+/// عند أوّل تنقّل - فلا يُراجَع، ولا يُبنى عليه سؤالٌ ثانٍ.
+///
+/// هذان الجدولان هما الذاكرة: كلّ سؤال يُحفظ في محادثة، والمحادثة
+/// تُفتَح لاحقاً وتُكمَّل. مربّع السؤال يصير **مدخلاً** إلى القسم لا
+/// بديلاً عنه.
+/// ═══════════════════════════════════════════════════════════════════
+model AgentChat {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  /// المالك - الملكيّة تُتحقَّق على المستخدم لا على المساحة وحدها
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// عنوان المحادثة = أوّل سؤال مقصوصاً. لا نداء نموذج لتسميتها:
+  /// عنوانٌ مولَّد يكلّف توكناً في كلّ محادثة مقابل سطرٍ يُقرأ مرّة.
+  title       String
+  createdAt   DateTime @default(now())
+  /// يُحدَّث مع كلّ رسالة - الترتيب بالأحدث نشاطاً لا بالأقدم إنشاءً
+  updatedAt   DateTime @updatedAt
+  messages    AgentMessage[]
+
+  @@index([workspaceId, updatedAt])
+  @@index([userId])
+}
+
+model AgentMessage {
+  id        String    @id @default(cuid())
+  chatId    String
+  chat      AgentChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  /// "user" أو "assistant"
+  role      String
+  /// نصّ Markdown كما وُلِّد - العرض يفسّره، والتخزين لا يفسّره
+  content   String    @db.Text
+  createdAt DateTime  @default(now())
+
+  @@index([chatId, createdAt])
 }
