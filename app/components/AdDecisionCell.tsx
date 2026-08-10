@@ -14,6 +14,7 @@ import { useState, useRef, useEffect } from "react";
 import { TrendingUp, PauseCircle, MinusCircle, Loader2, Check, Lock, AlertTriangle } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { localized } from "@/lib/localizedRecord";
 
 export type Decision = "SCALE" | "HOLD" | "PAUSE";
 
@@ -24,7 +25,9 @@ export interface AdDecisionCellProps {
   decision: Decision;
   reason: string;
   executable: boolean;
-  blockedReason: string | null;
+  /** مفتاحٌ ومتغيّراته لا نصّ - يُترجَم هنا بلغة القارئ */
+  blockedReasonKey: string | null;
+  blockedReasonVars: Record<string, string | number> | null;
   cooldownDaysRemaining: number;
   lastAppliedDecision: Decision | null;
   scaleIncreasePct: number;
@@ -38,8 +41,8 @@ const STYLES: Record<string, { labelKey: string; icon: LucideIcon; className: st
     labelKey: "scale",
     icon: TrendingUp,
     className:
-      "border-success/40 bg-success/10 text-success hover:bg-success/20 hover:ring-2 hover:ring-success/25",
-    confirmClassName: "border-success bg-success text-white",
+      "border-verified/40 bg-verified/10 text-verified hover:bg-verified/20 hover:ring-2 hover:ring-verified/25",
+    confirmClassName: "border-verified bg-verified text-white",
   },
   HOLD: {
     labelKey: "hold",
@@ -52,8 +55,8 @@ const STYLES: Record<string, { labelKey: string; icon: LucideIcon; className: st
     labelKey: "pause",
     icon: PauseCircle,
     className:
-      "border-danger/40 bg-danger/10 text-danger hover:bg-danger/20 hover:ring-2 hover:ring-danger/25",
-    confirmClassName: "border-danger bg-danger text-white",
+      "border-critical/40 bg-critical/10 text-critical hover:bg-critical/20 hover:ring-2 hover:ring-critical/25",
+    confirmClassName: "border-critical bg-critical text-white",
   },
 };
 
@@ -61,9 +64,12 @@ export function AdDecisionCell(props: AdDecisionCellProps) {
   const locale: Locale = props.locale ?? "ar";
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `adCell.${k}`, vars);
   const {
-    workspaceId, adId, decision, reason, executable, blockedReason,
+    workspaceId, adId, decision, reason, executable,
     cooldownDaysRemaining, lastAppliedDecision, scaleIncreasePct, scaleAffectsSiblings,
   } = props;
+  const blockedReason = props.blockedReasonKey
+    ? localized(locale, { key: props.blockedReasonKey, vars: props.blockedReasonVars, fallback: "" })
+    : null;
 
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -93,7 +99,7 @@ export function AdDecisionCell(props: AdDecisionCellProps) {
 
   if (done) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-lg border border-success/40 bg-success/10 px-2.5 py-1.5 text-xs font-medium text-success">
+      <span className="inline-flex items-center gap-1.5 rounded-lg border border-verified/40 bg-verified/10 px-2.5 py-1.5 text-xs font-medium text-verified">
         <Check className="h-3.5 w-3.5" />
         {done}
       </span>
@@ -171,7 +177,7 @@ export function AdDecisionCell(props: AdDecisionCellProps) {
       )}
 
       {error && (
-        <span className="inline-flex max-w-[220px] items-start gap-1 text-[11px] leading-tight text-danger">
+        <span className="inline-flex max-w-[220px] items-start gap-1 text-[11px] leading-tight text-critical">
           <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
           {error}
         </span>

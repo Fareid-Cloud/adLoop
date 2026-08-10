@@ -92,16 +92,22 @@ function AdCard({
   const Icon = first ? Trophy : Medal;
 
   return (
-    // إطار ذهبيّ خفيف للأوّل وحده: لونٌ لا يحمل معنًى دلالياً في هذا المنتج
-    // (الأخضر «متحقَّق» والأحمر «حرج»)، فهو حرٌّ ليعني «الفائز» بلا لبس.
-    // والتوهّج ظلٌّ واحدٌ خافت لا حلقة صارخة - الصفحة تُقرأ ساعاتٍ يومياً.
+    // 🔴 **كان ذهبياً، وبدا دخيلاً.** المنطق وقتها أنّ الذهبيّ حرٌّ من أيّ
+    // معنى دلاليّ فيصلح لـ«الفائز» - لكنّه حرٌّ لأنّه **ليس من الهوية
+    // أصلاً**: لونٌ سادس لا يظهر في أيّ مكان آخر من المنتج، فيُقرأ كشارة
+    // مستوردة من قالبٍ آخر لا كتمييزٍ من داخل النظام.
+    //
+    // لون التمييز (الأزرق) هو ما نستعمله للإشارة إلى «هذا هو المقصود» في
+    // كلّ الواجهة - وهو المعنى نفسه هنا. والتوهّج ظلٌّ واحدٌ خافت لا حلقة
+    // صارخة: الصفحة تُقرأ ساعاتٍ يومياً.
     <div
       className="card pad-md"
       style={
         first
           ? {
-              borderColor: "rgba(212,175,55,.55)",
-              boxShadow: "0 0 0 1px rgba(212,175,55,.22), 0 0 26px -10px rgba(212,175,55,.75)",
+              borderColor: "color-mix(in srgb, var(--accent) 55%, transparent)",
+              boxShadow:
+                "0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent), 0 0 26px -10px color-mix(in srgb, var(--accent) 70%, transparent)",
             }
           : undefined
       }
@@ -111,7 +117,7 @@ function AdCard({
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
           style={
             first
-              ? { background: "rgba(212,175,55,.14)", color: "#D4AF37" }
+              ? { background: "color-mix(in srgb, var(--accent) 14%, transparent)", color: "var(--accent)" }
               : undefined
           }
         >
@@ -121,7 +127,7 @@ function AdCard({
           <div className="flex items-center gap-1.5">
             <span
               className={first ? "text-[13px] font-bold tracking-wide" : "text-[13px] font-medium text-text-muted"}
-              style={first ? { color: "#D4AF37" } : undefined}
+              style={first ? { color: "var(--accent)" } : undefined}
             >
               {first ? tr("first") : tr("second")}
             </span>

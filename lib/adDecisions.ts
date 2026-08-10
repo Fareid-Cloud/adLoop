@@ -72,7 +72,11 @@ export interface AdDecisionView {
   /** هل يمكن تنفيذ هذا القرار فعلاً على المنصة الآن */
   executable: boolean;
   /** سبب تعطيل الزرّ - يُعرض للمستخدم بدل زرّ صامت لا يعمل */
-  blockedReason: string | null;
+  /** 🔴 مفتاحٌ لا نصّ: كانت هذه الجملة تُكتب عربيةً هنا وتُعرَض كما هي،
+   *  فيقرؤها مستخدم الواجهة الإنجليزية بالعربية. وفاحص التسريب لم يلتقطها
+   *  لأنّه يمسح `app/` وحدها - وهذا الملفّ في `lib/`. */
+  blockedReasonKey: string | null;
+  blockedReasonVars: Record<string, string | number> | null;
   /** خلال فترة التهدئة: متى يُعاد التقييم */
   cooldownUntil: Date | null;
   cooldownDaysRemaining: number;
@@ -168,25 +172,27 @@ export async function buildAdDecisions(opts: BuildOptions): Promise<AdDecisionVi
 
     // ==== قابلية التنفيذ ====
     let executable = true;
-    let blockedReason: string | null = null;
+    let blockedReasonKey: string | null = null;
+    let blockedReasonVars: Record<string, string | number> | null = null;
 
     if (inCooldown) {
       executable = false;
-      blockedReason =
-        `نُفِّذ قرار «${decisionLabelAr(lastRecord!.decision as Decision)}» على هذا الإعلان قبل ` +
-        `${daysSince(lastRecord!.appliedAt, now)} يوم. لا قرار جديد قبل ${cooldownDaysRemaining} يوم - ` +
-        `النتيجة لم تستقرّ بعد، وأي تغيير الآن يقيس الاضطراب لا الأثر.`;
+      blockedReasonKey = "adCell.blockedCooldown";
+      blockedReasonVars = {
+        decisionKey: DECISION_KEY[lastRecord!.decision as Decision],
+        since: daysSince(lastRecord!.appliedAt, now),
+        remaining: cooldownDaysRemaining,
+      };
     } else if (decision === "SCALE") {
       const missing = missingScaleTarget(perf.platform, parent);
       if (missing) {
         executable = false;
-        blockedReason = missing;
+        blockedReasonKey = missing;
       }
     } else if (decision === "PAUSE") {
       if (perf.platform === "GOOGLE_ADS" && (!parent?.adGroupId || !parent?.campaignId)) {
         executable = false;
-        blockedReason =
-          "ينقص معرّف المجموعة الإعلانية لهذا الإعلان - لا يمكن بناء اسم المصدر الصحيح لدى جوجل. سيتوفّر بعد المزامنة القادمة.";
+        blockedReasonKey = "adCell.blockedPauseNoAdGroup";
       }
     }
 
@@ -213,7 +219,8 @@ export async function buildAdDecisions(opts: BuildOptions): Promise<AdDecisionVi
         fatigued: fatiguedAdIds.has(perf.adId),
       },
       executable,
-      blockedReason,
+      blockedReasonKey,
+      blockedReasonVars,
       cooldownUntil: inCooldown ? lastRecord!.reEvaluateAt : null,
       cooldownDaysRemaining,
       lastAppliedDecision: (lastRecord?.decision as Decision) ?? null,
@@ -232,13 +239,9 @@ function missingScaleTarget(
   parent: { adSetId: string | null; campaignId: string | null } | undefined
 ): string | null {
   if (platform === "GOOGLE_ADS") {
-    return parent?.campaignId
-      ? null
-      : "ينقص معرّف الحملة - ميزانية جوجل تُضبط على مستوى الحملة، ولا هدف للزيادة بدونه.";
+    return parent?.campaignId ? null : "adCell.blockedScaleNoCampaign";
   }
-  return parent?.adSetId
-    ? null
-    : "ينقص معرّف المجموعة الإعلانية - الميزانية تُضبط عليها لا على الإعلان. سيتوفّر بعد المزامنة القادمة.";
+  return parent?.adSetId ? null : "adCell.blockedScaleNoAdSet";
 }
 
 function daysSince(from: Date, now: Date): number {

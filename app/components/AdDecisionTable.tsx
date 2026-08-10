@@ -151,7 +151,8 @@ export function AdDecisionTable({
                     decision={d.decision}
                     reason={locale === "en" ? d.reasonEn : d.reason}
                     executable={d.executable}
-                    blockedReason={d.blockedReason}
+                    blockedReasonKey={d.blockedReasonKey}
+                    blockedReasonVars={d.blockedReasonVars}
                     cooldownDaysRemaining={d.cooldownDaysRemaining}
                     lastAppliedDecision={d.lastAppliedDecision}
                     scaleIncreasePct={d.scaleIncreasePct}
@@ -209,7 +210,7 @@ function DivergenceBadge({ pct }: { pct: number }) {
   return (
     <span
       className={`inline-block rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums ${
-        good ? "bg-success/10 text-success" : "bg-danger/10 text-danger"
+        good ? "bg-verified/10 text-verified" : "bg-critical/10 text-critical"
       }`}
     >
       {pct > 0 ? "+" : ""}

@@ -285,7 +285,30 @@ export function ActionsClient({
               <ul hidden={!!collapsedGroups[key]}>
                 {groupItems.map((item, i) => (
                   <li key={item.id} className={i === 0 ? "" : "border-t border-border/50"}>
-                    <div className="flex items-start gap-3 p-4">
+                    {/* 🔴 **السطر كلّه هو الزرّ، لا العنوان وحده.**
+                        كان العنوان `<button>` بعرض السطر، فترسم قاعدة
+                        `button:hover` العامّة إطار ١px حوله - مستطيلٌ رفيع
+                        يُقرأ كحقل إدخال دخيل حول نصّ ليس حقلاً. والضغط كان
+                        لا يعمل إلّا على العنوان أو السهم نفسه.
+                        الآن: الصفّ كلّه يفتح التفاصيل، بتظليلٍ وحافّة
+                        تمييز عند الإشارة إليه (`.row-toggle` في الهوية). */}
+                    <div
+                      {...(item.description
+                        ? {
+                            role: "button",
+                            tabIndex: 0,
+                            "aria-expanded": expanded === item.id,
+                            onClick: () => setExpanded(expanded === item.id ? null : item.id),
+                            onKeyDown: (e: React.KeyboardEvent) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                setExpanded(expanded === item.id ? null : item.id);
+                              }
+                            },
+                          }
+                        : {})}
+                      className={`flex items-start gap-3 p-4 ${item.description ? "row-toggle" : ""}`}
+                    >
                       <span
                         className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
                         style={{ background: SEVERITY_TONE[item.severity] ?? "var(--text-muted)" }}
@@ -312,23 +335,9 @@ export function ActionsClient({
                           )}
                         </div>
 
-                        {/* العنوان والسهم في السطر نفسه الذي تعلوه الشارة،
-                            والسهم في طرف السطر لا ملتصقاً بآخر كلمة - كان
-                            يقفز مع كل عنوان بطول مختلف. */}
-                        <button
-                          onClick={() => setExpanded(expanded === item.id ? null : item.id)}
-                          className="mt-1 flex w-full items-center gap-2 text-start"
-                        >
-                          <span className="min-w-0 flex-1 text-[13.5px] font-medium leading-snug text-text-primary">
-                            {itemTitle(locale, item)}
-                          </span>
-                          {item.description && (
-                            <ChevronDown
-                              size={15}
-                              className={`shrink-0 text-text-faint transition-transform ${expanded === item.id ? "rotate-180" : ""}`}
-                            />
-                          )}
-                        </button>
+                        <div className="mt-1 text-[13.5px] font-medium leading-snug text-text-primary">
+                          {itemTitle(locale, item)}
+                        </div>
 
                         {/* التفاصيل محتوى حقيقي في مكانها - لا زرّ يقود
                             لصفحة أخرى تبدأ من الصفر */}
@@ -340,7 +349,7 @@ export function ActionsClient({
                                 {tr(item.executable ? "executable" : "informational")}
                               </span>
                               {item.linkUrl && (
-                                <a href={item.linkUrl} className="flex items-center gap-1 text-[11.5px] text-accent no-underline">
+                                <a href={item.linkUrl} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 text-[11.5px] text-accent no-underline">
                                   {tr("openSource")} <ExternalLink size={11} />
                                 </a>
                               )}
@@ -354,7 +363,7 @@ export function ActionsClient({
                           {tr(handled.get(item.id) === "apply" ? "doneApplied" : "doneDismissed")}
                         </span>
                       ) : item.type === "SUGGESTION" && (
-                        <div className="flex shrink-0 items-center gap-1.5">
+                        <div onClick={(e) => e.stopPropagation()} className="flex shrink-0 items-center gap-1.5">
                           {pendingConfirm === item.id ? (
                             <button
                               onClick={() => handleApplyClick(item.id)}
@@ -384,6 +393,15 @@ export function ActionsClient({
                           </button>
                         </div>
                       )}
+
+                      <span className="flex w-4 shrink-0 justify-center self-center">
+                        {item.description && (
+                          <ChevronDown
+                            size={15}
+                            className={`row-toggle-chevron text-text-faint transition-transform ${expanded === item.id ? "rotate-180" : ""}`}
+                          />
+                        )}
+                      </span>
                     </div>
                   </li>
                 ))}

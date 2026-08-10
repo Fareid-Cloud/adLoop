@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Performance report — Performance report</title>
+<style>
+  /* خطّ النظام لا خطّ من شبكة: المستند يُفتح بلا إنترنت بنفس شكله */
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:#F7F8FA;color:#171C27;line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:900px;margin:0 auto;padding:32px 20px 56px}
+
+  .head{
+    background:#FFFFFF;border:1px solid #E7EAEF;border-radius:18px;
+    padding:26px 28px;margin-bottom:18px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+  .mark{
+    width:30px;height:30px;border-radius:9px;background:#4C8DFF;
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-weight:700;font-size:15px;letter-spacing:-.4px;
+  }
+  .brand-name{font-size:16px;font-weight:700;letter-spacing:-.3px}
+  h1{font-size:25px;font-weight:650;letter-spacing:-.5px;line-height:1.25}
+  .meta{margin-top:7px;font-size:13px;color:#5C6478}
+  .meta b{color:#171C27;font-weight:600}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin-bottom:18px}
+  .kpi{background:#FFFFFF;border:1px solid #E7EAEF;border-radius:14px;padding:15px 16px}
+  .kpi-label{font-size:12px;color:#5C6478;margin-bottom:5px}
+  .kpi-value{font-size:23px;font-weight:650;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+  .kpi-unit{font-size:12px;font-weight:500;color:#5C6478;margin-inline-start:4px}
+  .kpi-caption{margin-top:4px;font-size:11.5px;color:#8B95A3}
+
+  .card{background:#FFFFFF;border:1px solid #E7EAEF;border-radius:16px;padding:20px 22px;margin-bottom:16px}
+  .card h2{font-size:15px;font-weight:650;letter-spacing:-.2px;margin-bottom:12px}
+
+  .summary ul{list-style:none}
+  .summary li{
+    position:relative;padding-inline-start:18px;margin-bottom:7px;
+    font-size:13.5px;color:#171C27;
+  }
+  .summary li::before{
+    content:"";position:absolute;inset-inline-start:0;top:8px;
+    width:6px;height:6px;border-radius:50%;background:#4C8DFF;
+  }
+
+  .table-wrap{overflow-x:auto;margin:0 -22px;padding:0 22px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{
+    text-align:start;font-weight:600;font-size:11.5px;letter-spacing:.03em;
+    text-transform:uppercase;color:#5C6478;
+    padding:9px 10px;border-bottom:1px solid #E7EAEF;white-space:nowrap;
+  }
+  td{padding:11px 10px;border-bottom:1px solid #E7EAEF}
+  tbody tr:last-child td{border-bottom:0}
+  .num{text-align:end;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  .foot{margin-top:22px;text-align:center;font-size:11.5px;color:#8B95A3}
+
+  /* الطباعة إلى PDF: نفس المستند بلا ظلال ولا خلفيات مهدِرة للحبر،
+     ولا يُقطع أي جدول بين صفحتين */
+  @media print{
+    body{background:#fff}
+    .page{padding:0;max-width:none}
+    .head,.card,.kpi{border-color:#DDE1E7;break-inside:avoid}
+    .card{break-inside:avoid}
+    .foot{margin-top:14px}
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <header class="head">
+      <div class="brand">
+        <span class="mark">A</span>
+        <span class="brand-name">AdLoop</span>
+      </div>
+      <h1>Performance report</h1>
+      <p class="meta">
+        <b>Performance report</b> · 2026-07-11 — 2026-08-09 · Generated 10 August 2026
+      </p>
+    </header>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="kpi-label">Spend</div>
+        <div class="kpi-value" style="color:#171C27">18,206<span class="kpi-unit">SAR</span></div>
+        
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Impressions</div>
+        <div class="kpi-value" style="color:#171C27">221,782</div>
+        
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Clicks</div>
+        <div class="kpi-value" style="color:#171C27">6,523</div>
+        
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Conversions</div>
+        <div class="kpi-value" style="color:#171C27">262</div>
+        
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Cost per customer</div>
+        <div class="kpi-value" style="color:#171C27">69.5<span class="kpi-unit">SAR</span></div>
+        
+      </div></div>
+    <section class="card summary">
+         <h2>Summary</h2>
+         <ul><li>Inflation gap only 18.1% — your reported numbers are close to the truth.</li><li>3299.8 of your spend had no verification behind it this period.</li><li>&quot;Google — Brand terms&quot; is 2.3x cheaper than &quot;Google — Request a quote&quot; per customer — a gap wide enough to justify moving budget.</li><li>If &quot;Google — Request a quote&quot; performed like &quot;Google — Brand terms&quot;, you would have saved around 8164.3.</li></ul>
+       </section>
+    
+        <section class="card">
+          <h2>Performance report</h2>
+          <div class="table-wrap">
+            <table><thead><tr><th class="">Item</th><th class="num">Spend</th><th class="num">Impressions</th><th class="num">Clicks</th><th class="num">Conversions</th><th class="num">Cost per customer</th><th class="num">CTR</th><th class="num">Cost per click</th><th class="num">CPM</th><th class="num">Conversion rate</th><th class="num">Verification rate</th><th class="num">Inflation rate</th><th class="num">Unverified spend</th><th class="num">Revenue</th><th class="num">ROAS</th><th class="num">Orders</th><th class="num">Average order value</th><th class="num">Returns</th><th class="num">Return rate</th><th class="num">Profit</th></tr></thead><tbody><tr><td class="">Google — Request a quote</td><td class="num">14,220</td><td class="num">135,048</td><td class="num">3,972</td><td class="num">158</td><td class="num">90</td><td class="num">2.94</td><td class="num">3.58</td><td class="num">105</td><td class="num">3.98</td><td class="num">84.5</td><td class="num">15.5</td><td class="num">2,205</td><td class="num">82,160</td><td class="num">5.78</td><td class="num">158</td><td class="num">520</td><td class="num">22</td><td class="num">13.9</td><td class="num">34,887</td></tr><tr><td class="">Google — Brand terms</td><td class="num">3,986</td><td class="num">86,734</td><td class="num">2,551</td><td class="num">104</td><td class="num">38.3</td><td class="num">2.94</td><td class="num">1.56</td><td class="num">46</td><td class="num">4.08</td><td class="num">78.2</td><td class="num">21.8</td><td class="num">869</td><td class="num">63,440</td><td class="num">15.9</td><td class="num">104</td><td class="num">610</td><td class="num">5</td><td class="num">4.81</td><td class="num">34,330</td></tr></tbody></table>
+          </div>
+        </section>
+
+    <p class="foot">Generated by AdLoop — the truth layer for your ad numbers.</p>
+  </div>
+</body>
+</html>

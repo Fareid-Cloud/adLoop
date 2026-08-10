@@ -159,6 +159,12 @@ export default async function CreativesPage({
   );
 }
 
+const TONE_TEXT: Record<"verified" | "critical" | "gap", string> = {
+  verified: "text-verified",
+  critical: "text-critical",
+  gap: "text-gap",
+};
+
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return <h2 className="mb-2 mt-6 text-sm font-semibold text-text-primary">{children}</h2>;
 }
@@ -182,19 +188,65 @@ function CreativeGrid({
 
   return (
     <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-      {items.map((item) => (
-        <div key={item.adId} className="card p-3">
+      {items.map((item) => {
+        // 🔴 **الرقم المُعلَن كان هو البطاقة كلّها.** كانت تطبع `cpa` وتحته
+        // «تكلفة التحويل (مُعلنة)» **دائماً** - حتى حين تكون البيانات
+        // متحقَّقة فعلاً (`usingVerifiedData`)، فالتسمية تكذب على نصف
+        // الحالات. والأسوأ أنّ الرقم المُعلَن هو ما تقوله المنصّة عن
+        // نفسها، وهو بالضبط ما يقوم هذا المنتج ليشكّك فيه.
+        //
+        // البطاقة الآن تقود بالمتحقَّق وتضع المُعلَن بجانبه أصغر - فتُقرأ
+        // **الفجوة** بينهما، وهي القيمة التي لا يعطيها أيّ تقرير منصّة.
+        // الرقمان محسوبان من حقول موجودة (`cost` و`rawConversions`)، بلا
+        // بيانات جديدة.
+        const reportedCpa = item.rawConversions > 0 ? item.cost / item.rawConversions : null;
+        const gapPct =
+          item.usingVerifiedData && reportedCpa && reportedCpa > 0
+            ? Math.round(((item.cpa - reportedCpa) / reportedCpa) * 100)
+            : null;
+        return (
+        <div key={item.adId} className="card flex flex-col gap-2 p-3.5">
+          {/* الاسم سطرُ سياق لا عنوان: أخفّ وزناً ممّا تحته عمداً */}
           {item.headline && (
-            <p className="mb-2 line-clamp-2 text-xs text-text-primary">{item.headline}</p>
+            <p className="line-clamp-2 text-[11.5px] leading-snug text-text-muted">{item.headline}</p>
           )}
-          <div className={`font-mono text-sm text-${accentColor}`}>{item.cpa || "—"}</div>
-          <div className="text-[10px] text-text-faint">{t(locale, "campPages.crCpaReported")} {!item.usingVerifiedData && ""}</div>
-          <div className="mt-1 text-[10px] text-text-faint">CTR: {item.ctr}%</div>
-          {item.thumbnailUrl && (
-            <ImageQualityButton imageUrl={item.thumbnailUrl} platform={item.platform} workspaceId={workspaceId} locale={locale} />
+
+          {/* التسمية فوق الرقم لا تحته: تُقرأ أوّلاً فيُعرف ما هو الرقم
+              قبل رؤيته - وكانت تحته بحجم ١٠px فتُقرأ بعد فوات الأوان. */}
+          <div>
+            <div className="text-[10.5px] font-medium uppercase tracking-wide text-text-faint">
+              {t(locale, item.usingVerifiedData ? "campPages.crCpaVerified" : "campPages.crCpaReported")}
+            </div>
+            <div className={`mt-0.5 font-mono text-[22px] font-semibold leading-none ${TONE_TEXT[accentColor]}`}>
+              {item.cpa || "—"}
+            </div>
+          </div>
+
+          {/* المُعلَن والفجوة - أو اعترافٌ صريح بغياب التحقّق */}
+          {item.usingVerifiedData && reportedCpa !== null ? (
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+              <span className="text-text-faint">
+                {t(locale, "campPages.crReportedAside", { value: Math.round(reportedCpa).toLocaleString("en-US") })}
+              </span>
+              {gapPct !== null && gapPct > 0 && (
+                <span className="rounded-full bg-gap/12 px-1.5 py-0.5 font-medium text-gap">
+                  {t(locale, "campPages.crGapPct", { pct: gapPct })}
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="text-[11px] text-text-faint">{t(locale, "campPages.crNoVerifiedYet")}</div>
           )}
+
+          <div className="mt-auto flex items-center justify-between gap-2 border-t border-border/60 pt-2 text-[11px] text-text-faint">
+            <span>CTR {item.ctr}%</span>
+            {item.thumbnailUrl && (
+              <ImageQualityButton imageUrl={item.thumbnailUrl} platform={item.platform} workspaceId={workspaceId} locale={locale} />
+            )}
+          </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -386,6 +386,36 @@ summary:focus-visible {
   box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 }
 
+/* ── صفٌّ كامل يعمل كزرّ ──────────────────────────────────────────────
+ * قاعدة `button:hover` فوق ترسم إطار ١px حول ما يُمرَّر عليه - وهذا صحيح
+ * لزرٍّ بحجم زرّ. لكن حين يكون الزرّ سطراً بعرض البطاقة (عنوان تنبيه
+ * يُفتح بالضغط) يصير الإطار **مستطيلاً رفيعاً حول النصّ** يُقرأ كحقل
+ * إدخال دخيل - وهو ما رآه المالك حول «69% inflation gap».
+ *
+ * البديل هو ما نفعله أصلاً في رؤوس المجموعات: تظليل خفيف للسطر كلّه،
+ * وحافّة بلون التمييز عند طرفه تقول «أنت تشير إلى هذا». لا حركة تُزيح
+ * المحتوى - الصفحة تُقرأ ساعاتٍ يومياً، والقفز فيها مُتعِب. */
+.row-toggle {
+  cursor: pointer;
+  position: relative;
+  transition: background-color .16s ease;
+}
+.row-toggle:hover { box-shadow: none; background: color-mix(in srgb, var(--surface-raised) 55%, transparent); }
+.row-toggle::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 2px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity .16s ease;
+}
+.row-toggle:hover::before { opacity: 1; }
+.row-toggle:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+/* السهم يتبع حالة السطر: يغمق عند الإشارة إليه، ويدور عند الفتح */
+.row-toggle:hover .row-toggle-chevron { color: var(--text-primary); }
+
 /* عنصر معطّل لا يستجيب بصرياً */
 button:disabled, [aria-disabled="true"] {
   box-shadow: none;
