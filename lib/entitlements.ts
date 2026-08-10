@@ -12,6 +12,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { PLAN_BY_KEY, type PlanKey, type PlanLimits } from "@/lib/plans";
+import { isOwnerEmail } from "@/lib/owner";
 
 export type SubscriptionState = "TRIAL" | "ACTIVE" | "EXPIRED" | "FREE";
 
@@ -30,10 +31,26 @@ export const TRIAL_DAYS = 14;
 /** مدّة الديمو - محدودة عمداً حتى لا تصير نسخة مفتوحة للاطّلاع الدائم */
 export const DEMO_DAYS = 7;
 
+/**
+ * حساب المالك: أعلى باقة دائماً، بلا اشتراك ولا انتهاء.
+ *
+ * **بريدٌ بعينه لا صفة `isAdmin`** - وهذا هو الفرق الذي يجعل الاستثناء
+ * مقبولاً. لو عُلّق على الصفة، لصار كلّ حساب يُمنح `isAdmin` يوماً ما
+ * حاملاً لإنفاقٍ بلا سقف، ولصار تسريب حسابٍ واحد تسريباً لرصيدٍ مفتوح.
+ * البريد الواحد لا يُمنح ولا يُورَّث.
+ *
+ * الجواب يأتي من `lib/owner.ts` - موضعٌ واحد يعرف مَن المالك.
+ */
+/** أعلى الباقات ترتيباً - لا اسمٌ مكتوب بيده يفترق عن الكتالوج لو أُضيفت أعلى منه */
+function topPlanKey(): PlanKey {
+  return [...PLAN_BY_KEY.values()].sort((a, b) => b.order - a.order)[0].key;
+}
+
 export async function getEntitlements(userId: string): Promise<Entitlements> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
+      email: true,
       subscriptionStatus: true,
       subscriptionPlan: true,
       currentPeriodEnd: true,
@@ -45,6 +62,19 @@ export async function getEntitlements(userId: string): Promise<Entitlements> {
   const purchasedCredits = user?.aiCreditsPurchased ?? 0;
   if (!user) {
     return { planKey: "free", state: "FREE", limits: limitsOf("free"), trialDaysLeft: null, purchasedCredits: 0 };
+  }
+
+  // المالك أوّلاً: قبل الاشتراك وقبل التجربة، فلا تنتهي صلاحيته بمرور
+  // يومٍ ولا تتوقّف على صفٍّ في جدول الاشتراكات قد يُعاد ضبطه.
+  if (isOwnerEmail(user.email)) {
+    const key = topPlanKey();
+    return {
+      planKey: key,
+      state: "ACTIVE",
+      limits: limitsOf(key),
+      trialDaysLeft: null,
+      purchasedCredits,
+    };
   }
 
   const now = new Date();

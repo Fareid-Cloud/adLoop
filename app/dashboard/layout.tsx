@@ -36,6 +36,7 @@ import { LegalLinks } from "@/app/components/LegalLinks";
 import { MobileNavButton } from "@/app/components/MobileNavButton";
 import { isDemoExpired } from "@/lib/demo";
 import { DemoExpiredGate } from "@/app/components/DemoExpiredGate";
+import { isOwnerEmail } from "@/lib/owner";
 // next/font/google بيحمّل ملف الخط فعلياً وقت الـ build ويربطه بمتغير CSS -
 // ده الفرق عن مجرد كتابة اسم الخط في font-family من غير ما يكون مستورد
 // فعلياً (المشكلة اللي حصلت في المعاينة السابقة)
@@ -294,7 +295,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               avatarUrl={user.avatarImageUrl ?? user.avatarUrl ?? null}
               avatarIcon={user.avatarIcon ?? null}
               locale={locale}
-              isOwner={user.isAdmin || user.email === process.env.OWNER_EMAIL}
+              isOwner={user.isAdmin || isOwnerEmail(user.email)}
             />
           )}
           </div>

@@ -4,9 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { t } from "@/lib/i18n/dictionary";
 import { localeOf } from "@/lib/apiLocale";
+import { isOwnerEmail } from "@/lib/owner";
 
 function isOwner(user: { isAdmin: boolean; email: string }): boolean {
-  return user.isAdmin || user.email === process.env.OWNER_EMAIL;
+  return user.isAdmin || isOwnerEmail(user.email);
 }
 
 export async function GET(req: NextRequest) {

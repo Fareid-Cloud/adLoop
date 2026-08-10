@@ -7,6 +7,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { checkCredits, consumePurchasedCreditIfNeeded, getEntitlements } from "@/lib/entitlements";
+import { isOwnerEmail } from "@/lib/owner";
 
 // إعادة معايرة عشان نضمن سقف التكلفة الشهري لكل مشترك عبر التلاتة ميزات.
 // ⚠️ الأرقام هنا **عدد نداءات** لا دولارات - وتكلفة النداء الواحد ارتفعت
@@ -34,6 +35,7 @@ export async function checkAndConsumeAIRefreshQuota(
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
+      email: true,
       aiRefreshMonthlyCount: true,
       aiRefreshMonthlyReset: true,
       aiRefreshHourlyCount: true,
@@ -42,6 +44,20 @@ export async function checkAndConsumeAIRefreshQuota(
   });
 
   if (!user) return { allowed: false, remainingThisMonth: 0 };
+
+  // 🔴 **حساب المالك يمرّ بلا خصم - قرارٌ صريح، لا سهو.**
+  //
+  // الحدود الشهرية مرفوعة أصلاً إلى أعلى باقة في `getEntitlements`، لكن
+  // حدّ الساعة حارسُ اندفاع منفصل عن الباقة (فحصٌ واحد في الساعة يصيب
+  // عميل الوكالة كما يصيب المجّاني) - وهو ما يقف أمام تجربة المالك
+  // لمنتجه: يضغط، يصلح، يعيد، فينتظر ساعة.
+  //
+  // **وما يترتّب عليه:** لا سقف من جهة المنتج على إنفاق هذا الحساب لدى
+  // مزوّد الذكاء الاصطناعي. السقف الوحيد هو رصيد الحساب في كونسول
+  // المزوّد نفسه. الاستثناء معلّق ببريدٍ واحد لا بصفة تُمنح، فلا يتوسّع.
+  if (isOwnerEmail(user.email)) {
+    return { allowed: true, remainingThisMonth: Number.MAX_SAFE_INTEGER };
+  }
 
   // 🔴 كان السقف رقماً واحداً (80) لكلّ المشتركين، فباقة `free` المُعلَن
   // فيها صفر تحليلات كانت تحصل على ثمانين، ورصيد الكريدت المشترى لا
@@ -123,6 +139,7 @@ export async function checkAndConsumeChatQuota(userId: string): Promise<QuotaRes
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
+      email: true,
       aiRefreshMonthlyCount: true,
       aiRefreshMonthlyReset: true,
       aiChatHourlyCount: true,
@@ -130,6 +147,20 @@ export async function checkAndConsumeChatQuota(userId: string): Promise<QuotaRes
     },
   });
   if (!user) return { allowed: false, remainingThisMonth: 0 };
+
+  // 🔴 **حساب المالك يمرّ بلا خصم - قرارٌ صريح، لا سهو.**
+  //
+  // الحدود الشهرية مرفوعة أصلاً إلى أعلى باقة في `getEntitlements`، لكن
+  // حدّ الساعة حارسُ اندفاع منفصل عن الباقة (فحصٌ واحد في الساعة يصيب
+  // عميل الوكالة كما يصيب المجّاني) - وهو ما يقف أمام تجربة المالك
+  // لمنتجه: يضغط، يصلح، يعيد، فينتظر ساعة.
+  //
+  // **وما يترتّب عليه:** لا سقف من جهة المنتج على إنفاق هذا الحساب لدى
+  // مزوّد الذكاء الاصطناعي. السقف الوحيد هو رصيد الحساب في كونسول
+  // المزوّد نفسه. الاستثناء معلّق ببريدٍ واحد لا بصفة تُمنح، فلا يتوسّع.
+  if (isOwnerEmail(user.email)) {
+    return { allowed: true, remainingThisMonth: Number.MAX_SAFE_INTEGER };
+  }
 
   const credits = await checkCredits(userId, 0);
   const effectiveMonthly = credits.left;
@@ -182,6 +213,7 @@ export async function checkAndConsumeImageQualityQuota(userId: string): Promise<
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
+      email: true,
       imageQualityMonthlyCount: true,
       imageQualityMonthlyReset: true,
       imageQualityHourlyCount: true,
@@ -189,6 +221,20 @@ export async function checkAndConsumeImageQualityQuota(userId: string): Promise<
     },
   });
   if (!user) return { allowed: false, remainingThisMonth: 0 };
+
+  // 🔴 **حساب المالك يمرّ بلا خصم - قرارٌ صريح، لا سهو.**
+  //
+  // الحدود الشهرية مرفوعة أصلاً إلى أعلى باقة في `getEntitlements`، لكن
+  // حدّ الساعة حارسُ اندفاع منفصل عن الباقة (فحصٌ واحد في الساعة يصيب
+  // عميل الوكالة كما يصيب المجّاني) - وهو ما يقف أمام تجربة المالك
+  // لمنتجه: يضغط، يصلح، يعيد، فينتظر ساعة.
+  //
+  // **وما يترتّب عليه:** لا سقف من جهة المنتج على إنفاق هذا الحساب لدى
+  // مزوّد الذكاء الاصطناعي. السقف الوحيد هو رصيد الحساب في كونسول
+  // المزوّد نفسه. الاستثناء معلّق ببريدٍ واحد لا بصفة تُمنح، فلا يتوسّع.
+  if (isOwnerEmail(user.email)) {
+    return { allowed: true, remainingThisMonth: Number.MAX_SAFE_INTEGER };
+  }
 
   // 🔴 كان السقف رقماً واحداً (80) لكلّ المشتركين، فباقة `free` المُعلَن
   // فيها صفر تحليلات كانت تحصل على ثمانين، ورصيد الكريدت المشترى لا
@@ -257,7 +303,7 @@ const SITE_SCAN_HOURLY_LIMIT = 1;
 export async function refundSiteScanQuota(userId: string): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { siteScanMonthlyCount: true, siteScanHourlyCount: true },
+    select: { email: true, siteScanMonthlyCount: true, siteScanHourlyCount: true },
   });
   if (!user) return;
   await prisma.user.update({
@@ -273,6 +319,7 @@ export async function checkAndConsumeSiteScanQuota(userId: string): Promise<Quot
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
+      email: true,
       siteScanMonthlyCount: true,
       siteScanMonthlyReset: true,
       siteScanHourlyCount: true,
@@ -280,6 +327,20 @@ export async function checkAndConsumeSiteScanQuota(userId: string): Promise<Quot
     },
   });
   if (!user) return { allowed: false, remainingThisMonth: 0 };
+
+  // 🔴 **حساب المالك يمرّ بلا خصم - قرارٌ صريح، لا سهو.**
+  //
+  // الحدود الشهرية مرفوعة أصلاً إلى أعلى باقة في `getEntitlements`، لكن
+  // حدّ الساعة حارسُ اندفاع منفصل عن الباقة (فحصٌ واحد في الساعة يصيب
+  // عميل الوكالة كما يصيب المجّاني) - وهو ما يقف أمام تجربة المالك
+  // لمنتجه: يضغط، يصلح، يعيد، فينتظر ساعة.
+  //
+  // **وما يترتّب عليه:** لا سقف من جهة المنتج على إنفاق هذا الحساب لدى
+  // مزوّد الذكاء الاصطناعي. السقف الوحيد هو رصيد الحساب في كونسول
+  // المزوّد نفسه. الاستثناء معلّق ببريدٍ واحد لا بصفة تُمنح، فلا يتوسّع.
+  if (isOwnerEmail(user.email)) {
+    return { allowed: true, remainingThisMonth: Number.MAX_SAFE_INTEGER };
+  }
 
   // 🔴 كان السقف رقماً واحداً (80) لكلّ المشتركين، فباقة `free` المُعلَن
   // فيها صفر تحليلات كانت تحصل على ثمانين، ورصيد الكريدت المشترى لا

@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { put } from "@vercel/blob";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { isOwnerEmail } from "@/lib/owner";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: t(locale, "supportUpload.imagesOnly") }, { status: 415 });
   }
 
-  const isOwner = user.isAdmin || user.email === process.env.OWNER_EMAIL;
+  const isOwner = user.isAdmin || isOwnerEmail(user.email);
   const folder = isOwner ? "support/admin" : `support/${user.id}`;
 
   try {

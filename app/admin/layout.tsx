@@ -6,6 +6,7 @@
 import { redirect } from "next/navigation";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import type { ReactNode } from "react";
+import { isOwnerEmail } from "@/lib/owner";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const user = await getSessionUserFromCookies();
@@ -18,7 +19,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // في المكان الخطأ ببساطة. إرسال الأوّل إلى لوحة العميل كان يخفي وجود
   // القسم عمّن يملكه فعلاً.
   if (!user) redirect("/login?next=/admin");
-  if (!user.isAdmin && user.email !== process.env.OWNER_EMAIL) redirect("/dashboard");
+  if (!user.isAdmin && !isOwnerEmail(user.email)) redirect("/dashboard");
 
   return (
     <div dir="rtl" data-accent="red" data-mode="dark" className="min-h-screen bg-bg px-8 py-7">
