@@ -28,7 +28,7 @@ import { KpiSection } from "@/app/components/KpiSection";
 import { computeKpis, KPI_DEFS } from "@/lib/kpiEngine";
 import { computeMetrics, comparePlatforms } from "@/lib/metricsEngine";
 import { compareMetric } from "@/lib/periodComparison";
-import { Megaphone, ShieldCheck, Wallet, Target, Activity } from "lucide-react";
+import { LayoutDashboard, Megaphone, ShieldCheck, Wallet, Target, Activity } from "lucide-react";
 import { TrackingAccuracyGauge } from "@/app/components/ui/TrackingAccuracyGauge";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { ReportedVsActualBars } from "@/app/components/ui/ReportedVsActualBars";
@@ -44,6 +44,7 @@ import { TodaySummaryCard } from "@/app/components/TodaySummaryCard";
 import { taskTitle } from "@/lib/taskTitle";
 import { itemTitle } from "@/lib/localizedRecord";
 import { costPerVerified } from "@/lib/kpiEngine";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 const AD_PLATFORMS = ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS", "SNAPCHAT_ADS"];
 
@@ -305,11 +306,12 @@ export default async function GlancePage({
           تُسمّى باسم صاحبها عند التسجيل، فيظهر «عبد الرحمن محمد فريد» سطراً
           فوق «أهلاً عبد الرحمن» - تكرارٌ يُقرأ كخلل لا كسياق. السطر مفيدٌ
           فقط حين يميّز: مَن يملك أكثر من مساحة يحتاج أن يعرف في أيّها هو. */}
-      {workspace.name !== user.name && (
-        <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      )}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="page-title">{tr("greeting", { name: firstName })}</h1>
+      <PageHeader
+        icon={LayoutDashboard}
+        tone="accent"
+        eyebrow={workspace.name !== user.name ? workspace.name : undefined}
+        title={tr("greeting", { name: firstName })}
+        actions={<>
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         {/* نفس عدّاد صفحة صحة الحساب بحجم الرأس - كان سطراً رمادياً طويلاً
             بلا وزن بصري ("درجة الصحة — التتبّع وحده مُقاساً حتى الآن")، فلا
@@ -330,7 +332,8 @@ export default async function GlancePage({
             </span>
           </span>
         </Link>
-      </div>
+        </>}
+      />
 
       {/* اختيار الحملات يفتح تلقائياً فور العودة من ربط المنصة */}
       <Suspense fallback={null}>

@@ -11,7 +11,7 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
+import { Plug,
   Link2, AlertTriangle, RefreshCw, BarChart3, Layers, Search,
   Plus, List, LayoutGrid, ChevronLeft, ChevronRight,
 } from "lucide-react";
@@ -21,6 +21,7 @@ import { IntegrationDrawer } from "./IntegrationDrawer";
 import { INTEGRATION_CATEGORIES, type IntegrationDef } from "@/lib/integrationsCatalog";
 import type { ActiveIntegration, IntegrationsOverview } from "@/lib/integrationsStatus";
 import { t, relativeFromDate, type Locale } from "@/lib/i18n/dictionary";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 type Tab = "connected" | "available" | "disconnected" | "all";
 type ViewMode = "list" | "grid";
@@ -28,10 +29,12 @@ type ViewMode = "list" | "grid";
 export function IntegrationsView({
   overview,
   workspaceId,
+  workspaceName,
   locale,
 }: {
   overview: IntegrationsOverview;
   workspaceId: string;
+  workspaceName: string;
   locale: Locale;
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) =>
@@ -115,12 +118,13 @@ export function IntegrationsView({
   return (
     <div className="mx-auto max-w-[1400px] pb-12">
       {/* ==================== الرأس ==================== */}
-      <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="page-title">{tr("title")}</h1>
-          <p className="mt-1 text-[13px] text-text-muted">{tr("subtitle")}</p>
-        </div>
-
+      <PageHeader
+        icon={Plug}
+        tone="accent"
+        eyebrow={workspaceName}
+        title={tr("title")}
+        description={tr("subtitle")}
+        actions={
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
             <Search size={14} className="absolute top-1/2 -translate-y-1/2 text-text-faint" style={{ insetInlineStart: 11 }} />
@@ -139,7 +143,8 @@ export function IntegrationsView({
             <Plus size={15} /> {tr("addIntegration")}
           </button>
         </div>
-      </header>
+        }
+      />
 
       {/* ==================== المؤشّرات ==================== */}
       <div className="card-shadow mb-5 grid gap-3 card pad-sm sm:grid-cols-2 lg:grid-cols-5">

@@ -15,7 +15,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
+import { CreditCard,
   Check, Minus, Sparkles, ChevronDown, Loader2, Zap, X, ArrowLeft, ShieldCheck,
 } from "lucide-react";
 import {
@@ -25,6 +25,7 @@ import {
 } from "@/lib/plans";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { TH } from "@/app/components/ui/tableStyles";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export function PlansClient({
   locale,
@@ -76,11 +77,14 @@ export function PlansClient({
 
   return (
     <div className="mx-auto max-w-[1200px] pb-16">
-      <header className="mb-7 text-center">
-        <h1 className="page-title">{tr("title")}</h1>
-        <p className="mx-auto mt-2 max-w-xl text-[13.5px] leading-relaxed text-text-muted">{tr("subtitle")}</p>
-
-        <div className="mt-5 inline-flex items-center gap-1 card p-1">
+      <PageHeader
+        icon={CreditCard}
+        tone="accent"
+        title={tr("title")}
+        description={tr("subtitle")}
+      />
+      <header className="mb-7">
+        <div className="inline-flex items-center gap-1 card p-1">
           {(["monthly", "yearly"] as const).map((c) => (
             <button
               key={c}

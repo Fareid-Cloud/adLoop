@@ -19,6 +19,7 @@ import { MetricCard } from "@/app/components/ui/MetricCard";
 import { AttributionModelTable } from "./AttributionModelTable";
 import type { TruthSnapshot } from "@/lib/truthKpis";
 import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 const PLATFORM_META: Record<string, { name: string; color: string }> = {
   GOOGLE_ADS: { name: "Google Ads", color: "#4285F4" },
@@ -70,21 +71,21 @@ export function TruthView({
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspaceName}</div>
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="flex items-center gap-2.5 page-title">
-          <ShieldCheck size={24} className="text-verified" />
-          {tr("heading")}
-        </h1>
-        {/* 🔴 كانت ثلاثة أزرار (٧ / ٣٠ / ٩٠) خاصّة بهذه الصفحة وحدها،
-            بينما `PeriodBar` الموحَّد مستورَدٌ في الصفحة ولا يُصيَّر. أداتان
-            تتحكّمان في المدّة نفسها، وواحدةٌ منهما لا تعرف بالأخرى - ولا
-            تسمحان بتحديد تاريخين. الموحَّد وحده يبقى. */}
-        {periodSlot}
-      </div>
-      <p className="mb-6 max-w-3xl text-[13px] leading-relaxed text-text-muted">
-        {tr("lead")}
-      </p>
+      {/* الرأس المشترك لا رأسٌ خاصّ: كانت الأيقونة هنا مرسومةً داخل `<h1>`
+          بحجمٍ ولونٍ يخصّان هذه الصفحة وحدها، فبدت مختلفةً عن كلّ قسم آخر.
+          `PageHeader` يعطي الشكل نفسه لكلّ الأقسام - وهو المطلوب.
+
+          🔴 وأزرار المدّة: كانت ثلاثة (٧ / ٣٠ / ٩٠) خاصّة بهذه الصفحة،
+          بينما `PeriodBar` الموحَّد مستورَدٌ ولا يُصيَّر. أداتان تتحكّمان في
+          المدّة نفسها ولا تعرف إحداهما الأخرى. الموحَّد وحده يبقى. */}
+      <PageHeader
+        icon={ShieldCheck}
+        tone="verified"
+        eyebrow={workspaceName}
+        title={tr("heading")}
+        description={tr("lead")}
+        actions={periodSlot}
+      />
 
       {/* ============ ١) شبكة المؤشّرات ============ */}
       <SectionTitle icon={Gauge}>{tr("kpis")}</SectionTitle>

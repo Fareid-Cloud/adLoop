@@ -34,8 +34,12 @@ export function PageHeader({
   title,
   description,
   actions,
+  iconNode,
 }: {
   icon?: LucideIcon;
+  /** بديلٌ عن `icon` حين تكون العلامة صورةً لا أيقونةً - شعار منصّة مثلاً.
+      يُصيَّر داخل المربّع الملوّن نفسه فيبقى الشكل واحداً في كلّ الأقسام. */
+  iconNode?: React.ReactNode;
   tone?: HeaderTone;
   /** اسم مساحة العمل عادةً - يجيب «أرقام مَن هذه؟» قبل أن تُقرأ الأرقام */
   eyebrow?: string;
@@ -67,23 +71,28 @@ export function PageHeader({
           المالك مكسوراً. الآن هي في صفّ العنوان بمحاذاة مركزية، فتُقرأ
           كأيقونة القسم لا كفاصل بين سطرين. */}
       {eyebrow && (
-        /* اسم مساحة عمل عربيّ داخل واجهة إنجليزية كان يُحاذى إلى الجهة
-           المقابلة للعنوان تحته، فيبدو السطران غير مرتبطين. `dir="ltr"`
-           على الصندوق يثبّت المحاذاة باتّجاه الصفحة، و`bdi` يعزل النصّ
-           فتبقى قراءته الداخلية صحيحة بلغته. */
-        <div dir="ltr" className="mb-1.5 truncate text-start text-[12.5px] text-text-muted">
+        /* 🔴 **لا `dir` هنا - `bdi` وحده.**
+           اسم مساحة عمل عربيّ داخل واجهة إنجليزية كان يُحاذى إلى الجهة
+           المقابلة للعنوان تحته، فيبدو السطران غير مرتبطين. عولج بـ
+           `dir="ltr"` على الصندوق - وهذا **كسر الواجهة العربية كلّها**:
+           `dir` يثبّت معنى `text-start` عند اليسار، فصار اسم المساحة في
+           أقصى اليسار والعنوان تحته في أقصى اليمين في كلّ صفحة عربية.
+           قِيس فعلياً في متصفّح: ١٥٢px مقابل ١٠٧٢px.
+           `bdi` وحده يعزل النصّ فتبقى قراءته الداخلية صحيحة بلغته،
+           ومحاذاة الصندوق تتبع اتّجاه الصفحة كما يجب. */
+        <div className="mb-1.5 truncate text-start text-[12.5px] text-text-muted">
           <bdi>{eyebrow}</bdi>
         </div>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <div className="flex min-w-0 items-center gap-3">
-          {Icon && (
+          {(Icon || iconNode) && (
             <span
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${TONE[tone]}`}
               aria-hidden
             >
-              <Icon size={19} />
+              {Icon ? <Icon size={19} /> : iconNode}
             </span>
           )}
           <h1 className="page-title min-w-0">{title}</h1>

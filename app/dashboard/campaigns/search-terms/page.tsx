@@ -74,9 +74,13 @@ export default async function SearchTermsPage({
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-2 page-title">{t(locale, "campPages.stTitle")}</h1>
-      <p className="mb-6 text-xs text-text-faint">
+      <PageHeader
+        icon={Search}
+        tone="gap"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.stTitle")}
+      />
+      <p className="-mt-3 mb-6 text-xs text-text-faint">
         {t(locale, "campPages.stWasted", { days: "30" })}{" "}
         <span className="font-mono text-critical">{totalWastedCost}</span> {workspace.currency}
       </p>

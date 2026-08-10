@@ -26,6 +26,7 @@ import { TrendChart } from "@/app/components/TrendChart";
 import { computeHealthScore } from "@/lib/healthScore";
 import { compareMetric } from "@/lib/periodComparison";
 import { costPerVerified } from "@/lib/kpiEngine";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 // ألوان رسمية حقيقية (مؤكدة من مصادر العلامات التجارية) - شارة لونية
 // بدل الشعار الفعلي (ملف صورة محمي بحقوق ملكية مش متاح لينا). ملاحظة:
@@ -90,11 +91,12 @@ export async function PlatformHub({
     const state = states.find((s) => s.platform === platform) ?? { platform, connected: false, campaignCount: 0 };
     return (
       <div className="mx-auto max-w-4xl">
-        <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="mb-6 flex items-center gap-2.5 page-title">
-          <PlatformLogo platform={platform} size={24} />
-          {platformLabel}
-        </h1>
+        <PageHeader
+          iconNode={<PlatformLogo platform={platform} size={22} />}
+          tone="neutral"
+          eyebrow={workspace.name}
+          title={platformLabel}
+        />
         <ConnectSinglePlatform state={state} workspaceId={workspace.id} locale={locale} />
       </div>
     );
@@ -180,19 +182,14 @@ export async function PlatformHub({
   return (
     <div className="mx-auto max-w-6xl">
       {/* ---------- الرأس: هويّة المنصّة + درجة صحّتها ---------- */}
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-        <div className="min-w-0">
-          <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-          <h1 className="flex items-center gap-2.5 page-title">
-            <PlatformLogo platform={platform} size={26} />
-            {platformLabel}
-          </h1>
-          <p className="mt-1 text-[12.5px] text-text-muted">
-            {t(locale, "campPages.hubSubtitle", { platform: platformLabel })}
-          </p>
-        </div>
-
-        {/* نفس عدّاد صحة الحساب - عنصر هوية واحد لكل درجة في المنتج */}
+      <PageHeader
+        iconNode={<PlatformLogo platform={platform} size={22} />}
+        tone="neutral"
+        eyebrow={workspace.name}
+        title={platformLabel}
+        description={t(locale, "campPages.hubSubtitle", { platform: platformLabel })}
+        actions={
+        // نفس عدّاد صحة الحساب - عنصر هوية واحد لكل درجة في المنتج
         <div className="flex shrink-0 items-center gap-3 card px-4 py-3">
           <HealthGauge score={platformHealth.overallScore} size="md" />
           <div className="leading-tight">
@@ -202,7 +199,8 @@ export async function PlatformHub({
             <div className="text-[11.5px] text-text-muted">{t(locale, "home.healthPartial")}</div>
           </div>
         </div>
-      </div>
+        }
+      />
 
       {/* ---------- ١) المؤشّرات ---------- */}
       <div className="mb-4 grid gap-3 sm:grid-cols-3">

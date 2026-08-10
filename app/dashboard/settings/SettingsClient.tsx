@@ -10,10 +10,11 @@ import { ConnectionTester } from "@/app/components/ConnectionTester";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { useState, useMemo, useEffect, createContext, useContext } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Bot, Cpu, Sparkles, Terminal, Brain, Zap, Upload, Search } from "lucide-react";
+import { Settings as SettingsIcon, Bot, Cpu, Sparkles, Terminal, Brain, Zap, Upload, Search } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
 import { PushNotificationToggle } from "@/app/components/PushNotificationToggle";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 // سياق اللغة بدل تمريرها كخاصية عبر أربعة عشر مكوّناً فرعياً. الملف واحد
 // وشجرته كلها في العميل، فالسياق هنا أنظف وأقل عرضة للخطأ من تمرير
@@ -192,7 +193,7 @@ export function SettingsClient({
   return (
     <SettingsLocaleContext.Provider value={locale}>
     <div className="mx-auto max-w-4xl">
-      <h1 className="mb-4 page-title">{tr("title")}</h1>
+      <PageHeader icon={SettingsIcon} tone="accent" title={tr("title")} />
 
       <div className="relative mb-4">
         <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-text-faint" />

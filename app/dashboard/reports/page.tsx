@@ -110,6 +110,7 @@ export default async function ReportsPage({
     <ReportsClient
       locale={locale}
       workspaceId={workspace.id}
+      workspaceName={workspace.name}
       currency={workspace.currency}
       platforms={platforms}
       campaigns={campaigns}

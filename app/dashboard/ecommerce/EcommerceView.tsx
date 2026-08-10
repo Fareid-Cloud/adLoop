@@ -7,7 +7,7 @@
 // يكون الأكثر خسارة، ولا يظهر ذلك في أي تقرير مبيعات عادي.
 
 import { useState, useMemo } from "react";
-import {
+import { ShoppingBag,
   Trophy, TrendingDown, Package, Wallet, RotateCcw, Search,
   AlertOctagon, Store, Boxes, ChevronLeft,
 } from "lucide-react";
@@ -15,6 +15,7 @@ import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { MetricCard, type MetricTone } from "@/app/components/ui/MetricCard";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { TH, TD, TR, THEAD_ROW } from "@/app/components/ui/tableStyles";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export interface ProductRow {
   id: string;
@@ -125,26 +126,25 @@ export function EcommerceView({
 
   return (
     <div className="mx-auto max-w-6xl pb-10">
-      <div className="reveal mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="mb-1 text-[13px] text-text-muted">{workspaceName}</div>
-          <h1 className="page-title">{tr("title")}</h1>
-          <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-text-muted">
-            {tr("subtitle")}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 card px-3 py-2">
-          <Store size={14} className={hasStoreConnection ? "text-verified" : "text-text-faint"} />
-          {hasStoreConnection && storePlatform ? (
-            <span className="text-[12.5px] text-text-primary">{tr("storeLinked", { store: STORE_LABEL[storePlatform] ?? storePlatform })}</span>
-          ) : (
-            <a href="/dashboard/integrations" className="text-[12.5px] text-accent no-underline">
-              {tr("connectStore")}
-            </a>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        icon={ShoppingBag}
+        tone="accent"
+        eyebrow={workspaceName}
+        title={tr("title")}
+        description={tr("subtitle")}
+        actions={
+          <div className="flex items-center gap-2 card px-3 py-2">
+            <Store size={14} className={hasStoreConnection ? "text-verified" : "text-text-faint"} />
+            {hasStoreConnection && storePlatform ? (
+              <span className="text-[12.5px] text-text-primary">{tr("storeLinked", { store: STORE_LABEL[storePlatform] ?? storePlatform })}</span>
+            ) : (
+              <a href="/dashboard/integrations" className="text-[12.5px] text-accent no-underline">
+                {tr("connectStore")}
+              </a>
+            )}
+          </div>
+        }
+      />
 
       {/* تنبيه صريح عند غياب مصدر البيانات الحقيقي */}
       {!hasStoreConnection && (

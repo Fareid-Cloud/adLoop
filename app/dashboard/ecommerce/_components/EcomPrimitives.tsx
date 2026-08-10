@@ -13,8 +13,9 @@
 import Link from "next/link";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import type { ReactNode } from "react";
-import { ArrowLeft, Lightbulb, AlertTriangle, Info, TrendingUp } from "lucide-react";
+import { ShoppingBag, ArrowLeft, Lightbulb, AlertTriangle, Info, TrendingUp } from "lucide-react";
 import { TH } from "@/app/components/ui/tableStyles";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export function fmtNum(n: number): string {
   return Math.round(n).toLocaleString("en-US");
@@ -33,17 +34,17 @@ export function EcomHeader({
   storeName?: string;
   action?: ReactNode;
 }) {
+  // شكلٌ واحد لا شكلان: كان هذا رأساً ثانياً يرسم الترتيب نفسه بيده،
+  // فينحرف عن الرأس الموحَّد كلّما تغيّر أحدهما. صار غلافاً رفيعاً حوله.
   return (
-    <div className="mb-8">
-      {storeName && <div className="mb-1 text-[13px] text-text-muted">{storeName}</div>}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="page-title">{title}</h1>
-          <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-text-muted">{subtitle}</p>
-        </div>
-        {action}
-      </div>
-    </div>
+    <PageHeader
+      icon={ShoppingBag}
+      tone="accent"
+      eyebrow={storeName}
+      title={title}
+      description={subtitle}
+      actions={action}
+    />
   );
 }
 

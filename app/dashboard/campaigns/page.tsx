@@ -11,6 +11,8 @@ import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams } from "@/lib/dateRange";
 import { toDateBoundsForUser } from "@/lib/historyWindow";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { PageHeader } from "@/app/components/ui/PageHeader";
+import { Megaphone } from "lucide-react";
 
 
 export default async function CampaignsPage({
@@ -95,14 +97,14 @@ export default async function CampaignsPage({
 
   return (
     <div className="mx-auto max-w-6xl pb-10">
-      <div className="reveal mb-6">
-        <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-        <h1 className="page-title">{t(locale, "campPages.title")}</h1>
-        <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
-        <p className="mt-1 text-[13px] text-text-muted">
-          {t(locale, "campPages.subtitle")}
-        </p>
-      </div>
+      <PageHeader
+        icon={Megaphone}
+        tone="accent"
+        eyebrow={workspace.name}
+        title={t(locale, "campPages.title")}
+        description={t(locale, "campPages.subtitle")}
+        actions={<PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />}
+      />
 
       <CampaignsNav locale={locale} />
 

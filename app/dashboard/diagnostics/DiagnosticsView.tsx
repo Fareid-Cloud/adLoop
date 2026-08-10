@@ -8,7 +8,7 @@
 
 import { useState, useMemo, useTransition, useRef, Fragment } from "react";
 import { useRouter } from "next/navigation";
-import {
+import { Stethoscope,
   RefreshCw, AlertOctagon, AlertTriangle, Info, CheckCircle2, Search,
   ChevronLeft, ChevronDown, Activity, Loader2, Radar,
 } from "lucide-react";
@@ -19,6 +19,7 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 import { itemTitle } from "@/lib/localizedRecord";
 import { HealthGauge } from "@/app/components/ui/HealthGauge";
 import { TH, TD, TR, THEAD_ROW } from "@/app/components/ui/tableStyles";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export interface CheckRow {
   id: string;
@@ -179,18 +180,16 @@ export function DiagnosticsView({
 
   return (
     <div className="mx-auto max-w-6xl pb-10">
-      {/* الرأس */}
-      <div className="reveal mb-8 flex flex-wrap items-start justify-between gap-4" style={{ animationDelay: "0ms" }}>
-        <div>
-          <div className="mb-1 text-[13px] text-text-muted">{workspaceName}</div>
-          <h1 className="page-title">{tp("title")}</h1>
-          <p className="mt-1 text-[13px] text-text-muted">
-            {tp("subtitle")}
-          </p>
-        </div>
-        {/* `flex-wrap` والنصّ `whitespace-nowrap`: الصفّ كان يضغط «آخر فحص:
-            الآن» حتى ينكسر على سطرين داخل ارتفاع سطر واحد، فيُقرأ نصفه.
-            الآن يلتفّ العنصر كاملاً إلى سطر جديد بدل أن ينكسر النصّ نفسه. */}
+      <PageHeader
+        icon={Stethoscope}
+        tone="accent"
+        eyebrow={workspaceName}
+        title={tp("title")}
+        description={tp("subtitle")}
+        actions={
+        // `flex-wrap` والنصّ `whitespace-nowrap`: الصفّ كان يضغط «آخر فحص:
+        // الآن» حتى ينكسر على سطرين داخل ارتفاع سطر واحد، فيُقرأ نصفه.
+        // الآن يلتفّ العنصر كاملاً إلى سطر جديد بدل أن ينكسر النصّ نفسه.
         <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
           {lastScanAt && (
             <span className="whitespace-nowrap text-[12.5px] text-text-muted">{tp("lastScan")}: {lastScanAt}</span>
@@ -213,7 +212,8 @@ export function DiagnosticsView({
             {busy ? tr("scanning") : tp("runScan")}
           </button>
         </div>
-      </div>
+        }
+      />
 
       {/* مؤشر الصحة + بطاقات الخطورة */}
       <div className="reveal mb-6 grid gap-4 lg:grid-cols-[1.15fr_2fr]" style={{ animationDelay: "80ms" }}>

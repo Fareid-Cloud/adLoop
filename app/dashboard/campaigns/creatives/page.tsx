@@ -107,8 +107,7 @@ export default async function CreativesPage({
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="mb-1 text-[13px] text-text-muted">{workspace.name}</div>
-      <h1 className="mb-6 page-title">{tr("title")}</h1>
+      <PageHeader icon={Image} tone="accent" eyebrow={workspace.name} title={tr("title")} />
 
       {/* أفضل إعلانين **عبر المنصّات مجتمعةً**. كانت البطاقة تُعرض داخل
           صفحة كلّ منصّة وحدها، فيعرف المستخدم أفضل إعلان في جوجل وأفضل

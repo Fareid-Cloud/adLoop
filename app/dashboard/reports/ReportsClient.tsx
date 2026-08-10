@@ -10,7 +10,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import {
+import { FileBarChart,
   BarChart3, Target, ShieldCheck, Image as ImageIcon, ShoppingCart, CalendarRange,
   ArrowLeftRight, Layers, Users, Sparkles, Save, Mail, Download, Play,
   TrendingUp, TrendingDown, Minus, Trash2, Star,
@@ -23,6 +23,7 @@ import type { DateRange, PresetKey, CompareMode } from "@/lib/dateRange";
 import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 import { TH } from "@/app/components/ui/tableStyles";
 import { renderReportDocument } from "@/lib/reports/reportDocument";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export interface SavedView {
   id: string;
@@ -79,6 +80,7 @@ export interface CampaignOption {
 export function ReportsClient({
   locale,
   workspaceId,
+  workspaceName,
   currency,
   platforms,
   campaigns,
@@ -88,6 +90,7 @@ export function ReportsClient({
 }: {
   locale: Locale;
   workspaceId: string;
+  workspaceName: string;
   currency: string;
   platforms: string[];
   campaigns: CampaignOption[];
@@ -165,11 +168,13 @@ export function ReportsClient({
   return (
     <div className="mx-auto max-w-[1400px] pb-12">
       {/* ==================== الرأس ==================== */}
-      <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="page-title">{tr("title")}</h1>
-          <p className="mt-1 text-[13px] text-text-muted">{tr("subtitle")}</p>
-        </div>
+      <PageHeader
+        icon={FileBarChart}
+        tone="accent"
+        eyebrow={workspaceName}
+        title={tr("title")}
+        description={tr("subtitle")}
+        actions={
         <div className="flex flex-wrap items-center gap-2">
           <DateRangePicker
             locale={locale}
@@ -209,7 +214,8 @@ export function ReportsClient({
             </>
           )}
         </div>
-      </header>
+        }
+      />
 
       {/* ==================== الجاهزة ==================== */}
       <Section title={tr("quickTitle")} subtitle={tr("quickSubtitle")}>

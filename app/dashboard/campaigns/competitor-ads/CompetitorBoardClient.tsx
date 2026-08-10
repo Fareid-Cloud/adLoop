@@ -12,13 +12,14 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
+import { Radar,
   Plus, ExternalLink, Trash2, CheckCircle2, PauseCircle, Trophy,
   Image as ImageIcon, Video, Layers, Type, X, Search, AlertTriangle, Loader2,
 } from "lucide-react";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import type { BoardSummary, CompetitorAdView, AdFormat } from "@/lib/competitorBoard";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 const FORMATS: AdFormat[] = ["IMAGE", "VIDEO", "CAROUSEL", "TEXT"];
 const FORMAT_ICON: Record<AdFormat, typeof ImageIcon> = {
@@ -94,18 +95,17 @@ export function CompetitorBoardClient({
 
   return (
     <div className="mx-auto max-w-[1300px] pb-12">
-      <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="page-title">{tr("title")}</h1>
-          <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-text-muted">{tr("subtitle")}</p>
-        </div>
-        <button
-          onClick={() => setAddingCompetitor(true)}
-          className="btn btn-primary"
-        >
-          <Plus size={15} /> {tr("addCompetitor")}
-        </button>
-      </header>
+      <PageHeader
+        icon={Radar}
+        tone="accent"
+        title={tr("title")}
+        description={tr("subtitle")}
+        actions={
+          <button onClick={() => setAddingCompetitor(true)} className="btn btn-primary">
+            <Plus size={15} /> {tr("addCompetitor")}
+          </button>
+        }
+      />
 
       <QuickSearch tr={tr} locale={locale} />
 

@@ -6,7 +6,7 @@ import { EmptyState } from "@/app/components/ui/EmptyState";
 import { DeepScanClient } from "./DeepScanClient";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
-import { ScanLine } from "lucide-react";
+import { ScanSearch } from "lucide-react";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export default async function SiteScanPage() {
@@ -32,7 +32,7 @@ export default async function SiteScanPage() {
   return (
     <div className="mx-auto max-w-2xl">
         <PageHeader
-          icon={ScanLine}
+          icon={ScanSearch}
           tone="accent"
           eyebrow={workspace.name}
           title={t(locale, "campPages.scanTitle")}

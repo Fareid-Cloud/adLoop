@@ -61,7 +61,7 @@ export default async function IntegrationsPage({
           {t(locale, `integrations.${connectionResult}`)}
         </div>
       )}
-      <IntegrationsView overview={overview} workspaceId={workspace.id} locale={locale} />
+      <IntegrationsView overview={overview} workspaceId={workspace.id} workspaceName={workspace.name} locale={locale} />
     </>
   );
 }
