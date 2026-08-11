@@ -463,7 +463,19 @@ button:disabled, [aria-disabled="true"] {
 .card,
 .card-inset,
 .card-ghost {
-  border: 1px solid var(--border);
+  /* 🔴 **كانت `border: 1px solid var(--border)` مختصرة - وهذا يمحو أيّ
+   * لونٍ مخصوص.**
+   *
+   * المختصرة تكتب الخصائص الثلاث معاً، ومنها `border-color`. فعنصرٌ مكتوبٌ
+   * عليه `card border-critical/30` - أي بطاقةٌ أُريد لها إطارٌ يقول «خطر» -
+   * يأخذ لونه من الأداة، ثمّ تعيده هذه المختصرة رمادياً. النتيجة أنّ كلّ
+   * إطارٍ دلاليّ في المنتج يُبهَت إلى الحياد، وهو ما رآه المالك.
+   *
+   * الطولى تكتب ما تقصده وحده: العرض والنمط من هنا، واللون افتراضٌ تغلبه
+   * أيّ أداةٍ تُكتَب على العنصر. */
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
   /* نصف قطر واحد للمنتج كلّه. الاختلاف بين 12 و16 بكسل بين صفحتين لا
      يُقرأ كخيار تصميم بل كإهمال. */
   border-radius: var(--radius);
@@ -698,7 +710,9 @@ html, body { overflow-x: clip; }
   width: 100%;
   /* `--border-visible` لا `--border`: الحقل على بطاقة بيضاء بخلفية بيضاء،
      والحدّ الخافت يجعله يختفي تماماً فلا يُعرف أنّه قابل للكتابة. */
-  border: 1px solid var(--border-visible);
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border-visible);
   border-radius: 12px;
   background: var(--surface);
   padding: 0.625rem 0.875rem;
@@ -751,7 +765,9 @@ html, body { overflow-x: clip; }
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  border: 1px solid transparent;
+  border-width: 1px;
+  border-style: solid;
+  border-color: transparent;
   border-radius: 12px;
   padding: 0.625rem 1.125rem;
   font-family: inherit;
@@ -825,7 +841,9 @@ html, body { overflow-x: clip; }
   align-items: center;
   gap: 0.625rem;
   border-radius: 12px;
-  border: 1px solid transparent;
+  border-width: 1px;
+  border-style: solid;
+  border-color: transparent;
   padding: 0.75rem 0.875rem;
   font-size: 12.5px;
   line-height: 1.7;

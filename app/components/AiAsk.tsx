@@ -360,6 +360,9 @@ export function AiAsk({
         className={`z-30 mt-6 transition-opacity duration-300 ${
           open ? "relative" : "sticky bottom-5"
         } ${solid ? "opacity-100" : "opacity-[0.94] hover:opacity-100"}`}
+        // طبقةُ تركيبٍ خاصّة بالعنصر الملتصق: بدونها يُعاد رسمه ضمن طبقة
+        // الصفحة مع كلّ حرفٍ يُكتَب، فيتخلّف أثرُه عند حدّ الالتصاق.
+        style={{ willChange: "transform", transform: "translateZ(0)" }}
       >
         {/* ── لوحة المحادثة ──────────────────────────────────────
             🔴 **فوق المربّع لا تحته، وعلى سطحٍ معتم لا شفّاف.**
@@ -487,8 +490,20 @@ export function AiAsk({
           // هالةٌ خفيفة بلون الهوية حول الحلقة: تفصل المربّع عمّا يمرّ
           // تحته وهو طافٍ، وتُعلّم أنّه العنصر الحيّ في الصفحة - بلا أن
           // تصير إطاراً ثقيلاً يزاحم البطاقات على الانتباه.
-          className={`flex items-center gap-2 rounded-full border px-2 py-1.5 backdrop-blur-md transition-all ${
-            solid ? "border-accent/55 bg-surface" : "border-accent/30 bg-surface/95"
+          // 🔴 **«الهزّة» أثرُ رسمٍ متخلّف لا حركة.**
+          // ثلاثةٌ اجتمعت في عنصرٍ واحد: `position: sticky`، و`backdrop-filter`،
+          // ومحتوىً يتغيّر كلّ بضع عشراتٍ من الأجزاء (الكتابة التدريجية للأمثلة).
+          // `backdrop-filter` يُلزم المتصفّح بأخذ **عيّنةٍ ممّا خلف العنصر** ثمّ
+          // تضبيبها. وحين يتحرّك العنصر مع التمرير ويتغيّر نصُّه في اللحظة نفسها
+          // تتأخّر العيّنة عن موضعه الجديد، فيبقى رسمُ الإطار السابق على الشاشة
+          // بجانب الحالي: صورتان لنصٍّ واحد بفارق حرف - وهو ما في لقطة المالك
+          // بالضبط، «once ve» فوق «once ver».
+          // وعند أسفل الصفحة تحديداً لأنّ العنصر ينتقل هناك من ملتصقٍ إلى ساكن،
+          // فيتبدّل أساسُ العيّنة كلّه دفعةً واحدة.
+          // أُزيل التضبيب. وما كان يؤدّيه (منعُ قراءة ما تحت المربّع) يؤدّيه
+          // السطحُ المعتم بلا أثرٍ متخلّف.
+          className={`flex items-center gap-2 rounded-full border px-2 py-1.5 transition-all ${
+            solid ? "border-accent/55 bg-surface" : "border-accent/30 bg-surface"
           }`}
           style={{
             boxShadow: solid
