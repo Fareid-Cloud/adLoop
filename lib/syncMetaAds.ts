@@ -98,8 +98,20 @@ export async function syncMetaAdsForWorkspace(workspaceId: string) {
           const cost = Number(row.spend ?? 0);
 
           // الليدز بتتقاس من حقل "actions" بفلتر action_type - مش رقم مستقل
+          const act = (type: string) => {
+            const hit = (row.actions ?? []).find((a: any) => a.action_type === type);
+            return hit ? Number(hit.value ?? 0) : null;
+          };
           const leadAction = (row.actions ?? []).find((a: any) => a.action_type === "lead");
           const rawConversions = leadAction ? Number(leadAction.value ?? 0) : 0;
+
+          // 🔴 **مرحلتا السلّة والدفع كانتا مهمَلتين في المصفوفة نفسها.**
+          // كان يُقرأ منها `lead` وحده ويُترك الباقي - بينما `add_to_cart`
+          // و`initiate_checkout` فيها بجانبه، وهما ما يملأ الفجوة بين النقرة
+          // والطلب في مسار الشراء. سطران، لا تكاملٌ جديد.
+          const addToCart = act("add_to_cart") ?? act("offsite_conversion.fb_pixel_add_to_cart");
+          const checkoutsStarted =
+            act("initiate_checkout") ?? act("offsite_conversion.fb_pixel_initiate_checkout");
 
           const date = new Date(row.date_start);
           const placementBreakdown =
@@ -115,10 +127,10 @@ export async function syncMetaAdsForWorkspace(workspaceId: string) {
             },
             create: {
               workspaceId, platform: "META_ADS", campaignId, date, placementBreakdown, placementDetail,
-              impressions, clicks, cost, rawConversions,
+              impressions, clicks, cost, rawConversions, addToCart, checkoutsStarted,
               verifiedConversions: 0, // قيمة ابتدائية صحيحة - بتتزود فعلياً وقت التحقق الحقيقي عبر /api/attribution/mark-matched (كانت التعليقة القديمة هنا غلط، مكانش فيه تحديث فعلي قبل كده)
             },
-            update: { impressions, clicks, cost, rawConversions },
+            update: { impressions, clicks, cost, rawConversions, addToCart, checkoutsStarted },
           });
         }
       } catch (err) {

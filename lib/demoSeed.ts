@@ -234,6 +234,11 @@ export async function seedDemoData(
         rawConversions: raw, verifiedConversions: verified,
         revenue, ordersCount: verified > 0 ? verified : null,
         returnedOrdersCount: verified > 0 ? Math.round(verified * 0.11) : null,
+        // مرحلتا المسار بين النقرة والطلب. النسب ليست اعتباطية: نحو ثُمن
+        // النقرات يضيف للسلّة، ونحو نصف هؤلاء يبدأ الدفع - وهو المدى الشائع
+        // في متاجر التجزئة، فيبقى المخروط في مساحة العرض معقولاً لا مثالياً.
+        addToCart: Math.max(1, Math.round(clicks * 0.12)),
+        checkoutsStarted: Math.max(1, Math.round(clicks * 0.12 * 0.55)),
         cogs: revenue ? Math.round(revenue * 0.36) : null, // نسبة من إيرادٍ محوَّل أصلاً
         shippingCost: verified > 0 ? m(verified * 22) : null,
         // مقاييس الفيديو للمنصّات التي تُرجعها فعلاً

@@ -89,11 +89,71 @@ export async function syncGoogleAdsForWorkspace(
         AND campaign.id IN (${campaignIds.join(",")})
     `);
 
+    // 🔴 **مرحلتا السلّة والدفع - استعلامٌ ثانٍ، لا حقلٌ في الأوّل.**
+    //
+    // `metrics.conversions` رقمٌ واحد يجمع كلّ أنواع التحويل. وتفصيلُه يتمّ
+    // بتقسيمه على `segments.conversion_action`، ثمّ ردّ كلّ إجراءٍ إلى فئته
+    // (`ADD_TO_CART` / `BEGIN_CHECKOUT`) من مورد `conversion_action`.
+    //
+    // **ولماذا لا يُدمَج في الاستعلام الأوّل:** التقسيم يضاعف الصفوف - صفٌّ
+    // لكلّ إجراءٍ لكلّ يوم - فلو دُمج لتضاعفت `impressions` و`clicks` مع كلّ
+    // إجراء. الدرس نفسه الذي تعلّمناه في «الجهاز والموقع الجغرافي»: دمجُ
+    // تقسيمين في استعلامٍ واحد يفسد الاثنين.
+    const categoryByAction = new Map<string, string>();
+    try {
+      const actionRows = await customer.query(`
+        SELECT conversion_action.resource_name, conversion_action.category
+        FROM conversion_action
+        WHERE conversion_action.status = 'ENABLED'
+      `);
+      for (const a of actionRows) {
+        const rn = a.conversion_action?.resource_name;
+        const cat = a.conversion_action?.category;
+        if (rn && cat) categoryByAction.set(String(rn), String(cat));
+      }
+    } catch (err) {
+      console.error("[google] تعذّر قراءة فئات إجراءات التحويل:", err);
+    }
+
+    /** المفتاح: حملة|تاريخ ← عدّ كلّ فئة */
+    const stageByKey = new Map<string, { addToCart: number; checkout: number }>();
+    if (categoryByAction.size > 0) {
+      try {
+        const stageRows = await customer.query(`
+          SELECT
+            campaign.id,
+            segments.date,
+            segments.conversion_action,
+            metrics.conversions
+          FROM campaign
+          WHERE segments.date BETWEEN '${from}' AND '${to}'
+            AND campaign.id IN (${campaignIds.join(",")})
+        `);
+        for (const r of stageRows) {
+          const cat = categoryByAction.get(String(r.segments?.conversion_action ?? ""));
+          if (cat !== "ADD_TO_CART" && cat !== "BEGIN_CHECKOUT") continue;
+          const key = `${r.campaign?.id}|${r.segments?.date}`;
+          const cur = stageByKey.get(key) ?? { addToCart: 0, checkout: 0 };
+          const n = Number(r.metrics?.conversions ?? 0);
+          if (cat === "ADD_TO_CART") cur.addToCart += n;
+          else cur.checkout += n;
+          stageByKey.set(key, cur);
+        }
+      } catch (err) {
+        console.error("[google] تعذّرت قراءة مراحل السلّة والدفع:", err);
+      }
+    }
+
     for (const row of rows) {
       const campaignId = String(row.campaign?.id);
       const rowDate = String(row.segments?.date);
 
       const verifiedCount = await getVerifiedConversionsCount(campaignId, rowDate);
+      // `null` لا صفر حين لا يبلّغ الحساب عن المرحلة: الصفر يُقرأ «لم يضف
+      // أحدٌ للسلّة»، والغياب يُقرأ «لا نقيس ذلك» - وهما ليسا شيئاً واحداً.
+      const stage = stageByKey.get(`${campaignId}|${rowDate}`);
+      const addToCart = stage ? Math.round(stage.addToCart) : null;
+      const checkoutsStarted = stage ? Math.round(stage.checkout) : null;
 
       await prisma.metricSnapshot.upsert({
         where: {
@@ -115,6 +175,8 @@ export async function syncGoogleAdsForWorkspace(
           clicks: Number(row.metrics?.clicks ?? 0),
           cost: Number(row.metrics?.cost_micros ?? 0) / 1_000_000,
           rawConversions: Number(row.metrics?.conversions ?? 0),
+          addToCart,
+          checkoutsStarted,
           verifiedConversions: verifiedCount,
         },
         update: {
@@ -122,6 +184,8 @@ export async function syncGoogleAdsForWorkspace(
           clicks: Number(row.metrics?.clicks ?? 0),
           cost: Number(row.metrics?.cost_micros ?? 0) / 1_000_000,
           rawConversions: Number(row.metrics?.conversions ?? 0),
+          addToCart,
+          checkoutsStarted,
           // ملاحظة: لو ده Backfill لبيانات قديمة، مفيش verified conversions
           // حقيقية من واتساب لتواريخ قبل ما نظام التتبع يتفعّل - بنسيب
           // القيمة القديمة المخزنة زي ما هي بدل ما نصفّرها بالغلط

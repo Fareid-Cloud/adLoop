@@ -1,146 +1,166 @@
 // app/components/StoreFunnel.tsx
 //
-// مسار الشراء - **مخروطٌ متدرّج بصفّ إحصاءاتٍ فوقه**، على المرجع الذي
-// أرسله المالك للمتجر تحديداً. وهو شكلٌ مقصودٌ أن يختلف عن قمع الحملات:
-// ذاك أشرطةٌ أفقية لأنّه يقارن منصّاتٍ ببعضها، وهذا مخروطٌ لأنّه يقرأ
-// **مساراً واحداً يضيق**.
+// مسار الشراء - **على المرجع الذي أرسله المالك، عنصراً بعنصر.**
 //
-// **الضيق نفسه هو المعلومة:** الشكل يُري بالنظر أين تنغلق الطريق فجأة،
-// قبل أن يُقرأ رقم. وذلك ما لا يفعله الجدول ولا صفٌّ من الأشرطة.
+//   صفٌّ علويّ: عمودٌ لكلّ مرحلة، بينها فواصل رأسية. في العمود: نقطةٌ
+//   ملوّنة واسمُ المرحلة، ثمّ الرقم كبيراً ومعه سهمُ التغيّر ونسبتُه، ثمّ
+//   سطرٌ صغير بالفارق عن الفترة السابقة.
 //
-// 🔴 **ورسمُه من الأرقام لا من قالب:** ارتفاع كلّ حافّةٍ نسبةٌ حقيقية من
-// المرحلة الأولى. القوالب الجاهزة ترسم مخروطاً متساوي التدرّج مهما كانت
-// البيانات - فيبدو الحساب المتهالك كالحساب الممتاز.
+//   تحته: مخروطٌ من خمس قطعٍ متدرّجة، لكلٍّ لونُ مرحلتها، ومنقوطةٌ من
+//   الداخل - والنقاط تخفّ كلّما ضاق المخروط، فالكثافة نفسها تقول كم بقي.
+//
+// **والفرق عن القالب أنّ كلّ رقمٍ هنا موصولٌ بمصدره:** الظهور والنقرة من
+// `MetricSnapshot`، والسلّة والدفع من إبلاغ المنصّة نفسها، والطلب الباقي
+// بعد طرح المرتجعات. لا مرحلةَ مرسومةً لتكتمل الصورة.
 
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import type { StoreFunnel as FunnelData } from "@/lib/storeFunnel";
 
-/** ألوان المراحل - تدرّجٌ واحد من لون الثيم إلى لون التحقّق، لا سبعة
- *  ألوانٍ مستقلّة. التدرّج يقول «هذه مراحلُ شيءٍ واحد»؛ والألوان المستقلّة
- *  (كما في القوالب) تجعل العين تبحث عن معنىً في اللون فلا تجده. */
-const STAGE_TINT = [
-  "var(--accent)",
-  "color-mix(in oklab, var(--accent) 78%, var(--verified))",
-  "color-mix(in oklab, var(--accent) 52%, var(--verified))",
-  "color-mix(in oklab, var(--accent) 26%, var(--verified))",
-  "var(--verified)",
-];
+/** لونُ كلّ مرحلة - نفسه في نقطة العمود وفي قطعة المخروط تحتها، فالعين
+ *  تربط الرقم برسمه بلا مفتاحٍ منفصل. */
+const TINT = ["#2563EB", "#DB2777", "#E11D48", "#F97316", "#16A34A"];
+
+/** نقاطٌ داخل قطعة المخروط. عددُها يتبع ارتفاع القطعة، فتخفّ الكثافة مع
+ *  الضيق - وهي الإشارة البصرية التي تجعل الفقد محسوساً قبل قراءة نسبة. */
+function dots(x1: number, x2: number, h1: number, h2: number, seed: number, mid: number) {
+  const out: Array<{ cx: number; cy: number }> = [];
+  const cols = 7;
+  const rows = 5;
+  for (let c = 0; c < cols; c++) {
+    for (let r = 0; r < rows; r++) {
+      // موضعٌ شبه عشوائيّ لكنّه **ثابت**: مشتقٌّ من الفهرس لا من `Math.random`،
+      // وإلّا تحرّكت النقاط مع كلّ تصيير وبدا الرسم مضطرباً.
+      const jx = ((Math.sin(seed * 12.9 + c * 4.1 + r * 7.3) + 1) / 2) * 0.6 + 0.2;
+      const jy = ((Math.sin(seed * 7.7 + c * 9.4 + r * 3.2) + 1) / 2) * 0.8 + 0.1;
+      const tx = (c + jx) / cols;
+      const cx = x1 + (x2 - x1) * tx;
+      const h = h1 + (h2 - h1) * tx;
+      const cy = mid - h / 2 + h * ((r + jy) / rows);
+      out.push({ cx, cy });
+    }
+  }
+  return out;
+}
 
 export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale }) {
   const tr = (k: string, v?: Record<string, string | number>) =>
     t(locale, `shopFunnel.${k}`, v);
+  const loc = locale === "ar" ? "ar-EG" : "en-US";
 
-  const nf = new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  });
+  const compact = new Intl.NumberFormat(loc, { notation: "compact", maximumFractionDigits: 1 });
+  const money = new Intl.NumberFormat(loc, { maximumFractionDigits: 1 });
+
   const stages = data.stages;
   const top = stages[0]?.value ?? 0;
 
-  // إحداثيات المخروط: ارتفاع كلّ حافّة نسبةٌ من المرحلة الأولى، بحدٍّ أدنى
-  // يبقي القطعة مرئيّةً حين تقترب النسبة من الصفر - وإلّا اختفت المراحل
-  // الأخيرة تماماً في كلّ حسابٍ حقيقيّ (الطلبات جزءٌ من ألفٍ من الظهور).
-  const H = 132;
-  const MIN = 0.06;
-  const edge = (v: number) => (top > 0 ? Math.max(MIN, v / top) * H : MIN * H);
-
-  // مقياسٌ لوغاريتميّ للرسم وحده - **الأرقام المكتوبة تبقى حقيقية.**
-  // الخطّيّ يجعل المخروط ينهار إلى خيطٍ بعد المرحلة الثانية، فلا يُقرأ منه
-  // شيء. اللوغاريتميّ يُبقي الترتيب والانحدار مرئيّين معاً.
-  const logEdge = (v: number) => {
-    if (top <= 0) return MIN * H;
+  const W = 1000;
+  const H = 210;
+  const MID = H / 2;
+  const seg = W / stages.length;
+  // مقياسٌ لوغاريتميّ للرسم وحده - **الأرقام المكتوبة تبقى حقيقية.** الخطّيّ
+  // ينهار إلى خيطٍ بعد المرحلة الثانية (الطلبات جزءٌ من ألفٍ من الظهور)،
+  // فلا يبقى في الشكل ما يُقرأ.
+  const height = (v: number) => {
+    if (top <= 0) return H * 0.08;
     const r = Math.log10(1 + v) / Math.log10(1 + top);
-    return Math.max(MIN, r) * H;
+    return Math.max(0.08, r) * (H - 12);
   };
-
-  const W = 100;
-  const seg = W / (stages.length - 1 || 1);
 
   return (
     <div className="card pad-lg">
-      <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-        <span className="text-[13px] font-medium text-text-primary">{tr("title")}</span>
+      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <span className="text-[14px] font-semibold text-text-primary">{tr("title")}</span>
+        <span className="text-[11.5px] text-text-muted">{tr("subtitle")}</span>
       </div>
-      <p className="mb-5 text-[12px] leading-5 text-text-muted">{tr("subtitle")}</p>
 
-      {/* صفّ الإحصاءات: كلّ مرحلة عمودٌ باسمها ورقمها وتغيّرها. الأعمدة
-          متساوية العرض فتقف كلّ قيمةٍ فوق موضعها في المخروط تحتها. */}
-      <div className="no-scrollbar mb-4 flex gap-0 overflow-x-auto">
+      {/* الصفّ العلويّ - أعمدةٌ متساوية تقف كلٌّ منها فوق قطعتها */}
+      <div className="no-scrollbar mb-5 flex overflow-x-auto">
         {stages.map((s, i) => {
-          const unknown = !data.storeConnected && (s.key === "orders" || s.key === "kept");
           const up = (s.changePct ?? 0) >= 0;
+          const diff = s.value - s.prevValue;
           return (
             <div
               key={s.key}
-              className="min-w-[7.5rem] flex-1 border-e border-border px-3 last:border-0 first:ps-0"
+              className="min-w-[8.5rem] flex-1 border-e border-border px-4 first:ps-0 last:border-0"
             >
-              <div className="mb-1.5 flex items-center gap-1.5">
+              <div className="mb-2 flex items-center gap-2">
                 <span
-                  className="h-2 w-2 shrink-0 rounded-full"
-                  style={{ background: STAGE_TINT[i] }}
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ background: TINT[i] }}
                 />
-                <span className="truncate text-[12px] text-text-muted">{tr(s.key)}</span>
+                <span className="truncate text-[12.5px] font-medium text-text-primary">
+                  {tr(s.key)}
+                </span>
               </div>
 
-              {unknown ? (
-                <div className="text-[13px] text-text-faint">{tr("noStore")}</div>
-              ) : (
-                <>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="font-mono text-[19px] font-semibold leading-tight text-text-primary">
-                      {nf.format(s.value)}
-                    </span>
-                    {s.changePct !== null && (
-                      <span
-                        className={`font-mono text-[11px] ${up ? "text-verified" : "text-critical"}`}
-                      >
-                        {up ? "↑" : "↓"} {Math.abs(s.changePct).toFixed(0)}%
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-0.5 text-[11px] text-text-faint">
-                    {tr("vsPrev", { value: nf.format(s.prevValue) })}
-                  </div>
-                </>
+              <div className="flex items-baseline gap-2">
+                <span className="font-mono text-[24px] font-bold leading-none text-text-primary">
+                  {compact.format(s.value)}
+                </span>
+                {s.changePct !== null && (
+                  <span
+                    className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-medium ${
+                      up ? "bg-verified/12 text-verified" : "bg-critical/12 text-critical"
+                    }`}
+                  >
+                    {up ? "↑" : "↓"} {Math.abs(s.changePct).toFixed(0)}%
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-1.5 text-[11px] text-text-faint">
+                {diff >= 0 ? "+" : "−"}
+                {compact.format(Math.abs(diff))} {tr("vsPrev")}
+              </div>
+
+              {/* 🔴 تكلفة الوصول إلى المرحلة - وهي ما تسمّيه المنصّات
+                  «تكلفة الإضافة للسلّة» وأخواتِها. رقمُ قرارٍ لا زينة:
+                  به يُعرَف أين يغلو المسار قبل أن يصل إلى بيع. */}
+              {s.costPer !== null && (
+                <div className="mt-1 font-mono text-[11px] text-text-muted">
+                  {money.format(s.costPer)} {data.currency} · {tr("each")}
+                </div>
               )}
             </div>
           );
         })}
       </div>
 
-      {/* المخروط. `preserveAspectRatio="none"` كي يمتدّ بعرض البطاقة أياً
-          كان، فتبقى كلّ قطعةٍ تحت عمود إحصاءاتها بالضبط. */}
+      {/* المخروط */}
       <svg
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
-        className="h-[132px] w-full"
+        className="h-[210px] w-full"
         role="img"
         aria-label={tr("title")}
       >
-        {stages.slice(0, -1).map((s, i) => {
+        {stages.map((s, i) => {
           const next = stages[i + 1];
-          const h1 = logEdge(s.value);
-          const h2 = logEdge(next.value);
+          const h1 = height(s.value);
+          const h2 = height(next ? next.value : s.value * 0.9);
           const x1 = i * seg;
           const x2 = (i + 1) * seg;
-          const weak = next.key === data.weakestStepKey;
+          const weak = s.key === data.weakestStepKey;
           return (
             <g key={s.key}>
               <polygon
-                points={`${x1},${(H - h1) / 2} ${x2},${(H - h2) / 2} ${x2},${(H + h2) / 2} ${x1},${(H + h1) / 2}`}
-                fill={STAGE_TINT[i]}
-                opacity={0.85}
+                points={`${x1},${MID - h1 / 2} ${x2},${MID - h2 / 2} ${x2},${MID + h2 / 2} ${x1},${MID + h1 / 2}`}
+                fill={TINT[i]}
+                opacity={0.13}
               />
-              {/* الانتقال الأضعف وحده معلَّم - وهو الموضع الذي يستحقّ الفعل */}
+              {dots(x1, x2, h1, h2, i + 1, MID).map((d, n) => (
+                <circle key={n} cx={d.cx} cy={d.cy} r={3.2} fill={TINT[i]} opacity={0.85} />
+              ))}
+              {/* المرحلة الأضعف وحدها معلَّمة - موضعُ الفعل لا موضعُ زينة */}
               {weak && (
                 <line
-                  x1={x2}
-                  y1={(H - h2) / 2 - 6}
-                  x2={x2}
-                  y2={(H + h2) / 2 + 6}
+                  x1={x1}
+                  y1={MID - h1 / 2 - 8}
+                  x2={x1}
+                  y2={MID + h1 / 2 + 8}
                   stroke="var(--gap)"
                   strokeWidth={1.5}
-                  strokeDasharray="3 2"
+                  strokeDasharray="4 3"
                   vectorEffect="non-scaling-stroke"
                 />
               )}
@@ -149,34 +169,30 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
         })}
       </svg>
 
-      {/* نسب البقاء تحت كلّ انتقال - الرسم يُري الانحدار، وهذه تقيسه */}
-      <div className="mt-2 flex gap-0">
-        {stages.slice(1).map((s) => {
+      {/* نسب البقاء - الرسم يُري الانحدار، وهذه تقيسه */}
+      <div className="mt-1 flex">
+        {stages.map((s, i) => {
           const weak = s.key === data.weakestStepKey;
-          const unknown = !data.storeConnected && (s.key === "orders" || s.key === "kept");
           return (
-            <div key={s.key} className="min-w-[7.5rem] flex-1 px-3 text-center">
-              <span
-                className={`text-[11px] ${weak ? "font-medium text-gap" : "text-text-faint"}`}
-              >
-                {unknown
-                  ? "—"
-                  : tr("stepKept", {
-                      pct: s.keptFromPrevPct === null ? "—" : s.keptFromPrevPct.toFixed(1),
-                    })}
-                {weak && ` · ${tr("weakest")}`}
-              </span>
+            <div key={s.key} className="min-w-[8.5rem] flex-1 px-4 text-center">
+              {i > 0 && (
+                <span className={`text-[11px] ${weak ? "font-medium text-gap" : "text-text-faint"}`}>
+                  {tr("stepKept", {
+                    pct: s.keptFromPrevPct === null ? "—" : s.keptFromPrevPct.toFixed(1),
+                  })}
+                  {weak && ` · ${tr("weakest")}`}
+                </span>
+              )}
             </div>
           );
         })}
       </div>
 
-      {/* 🔴 يُقال صراحةً ما ليس في المسار. المرجع يعرض «إضافة للسلّة»
-          و«بدء الدفع»، ونحن لا نجمعهما - وسكوتُنا عن ذلك يجعل المستخدم
-          يظنّ أنّ مساره كاملٌ وأنّ ما بين النقرة والطلب بلا تفصيل. */}
-      <p className="mt-5 border-t border-border pt-3.5 text-[11.5px] leading-relaxed text-text-faint">
-        {tr("missingStages")}
-      </p>
+      {!data.storeConnected && (
+        <p className="mt-5 border-t border-border pt-3.5 text-[11.5px] leading-relaxed text-text-faint">
+          {tr("noStoreNote")}
+        </p>
+      )}
     </div>
   );
 }

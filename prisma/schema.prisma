@@ -481,6 +481,18 @@ model MetricSnapshot {
   shippingCost        Float?   // تكلفة الشحن الفعلية
   returnedOrdersCount Int?     // عدد الطلبات المرتجعة (RTO - خاص بالدفع عند الاستلام)
 
+  // ==== مراحل السلّة والدفع - من **المنصّة الإعلانية** لا من ويب هوك المتجر ====
+  //
+  // 🔴 كان مكتوباً في هذا المشروع أنّ هاتين المرحلتين غير متاحتين لأنّ ويب
+  // هوك الطلب لا يرسلهما. وهذا صحيحٌ وغيرُ ذي صلة: المنصّات نفسها تبلّغ
+  // عنهما كأحداث تحويلٍ لها تكلفتها المستقلّة.
+  //   • جوجل: `ADD_TO_CART` و`BEGIN_CHECKOUT` فئتا تحويلٍ رسميّتان،
+  //     تُقرآن بتقسيم `metrics.conversions` على `segments.conversion_action`.
+  //   • ميتا: `add_to_cart` و`initiate_checkout` داخل مصفوفة `actions`
+  //     التي نقرأها **بالفعل** لاستخراج الليدز - سطرٌ واحد كان يفصلنا عنهما.
+  addToCart           Int?     // أضاف للسلّة
+  checkoutsStarted    Int?     // بدأ الدفع
+
   @@unique([workspaceId, platform, campaignId, date, placementBreakdown, placementDetail])
   @@index([workspaceId, date])
 }
