@@ -53,7 +53,7 @@ export default async function MatchTypesPage() {
     .sort((a: any, b: any) => b.cost - a.cost);
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="max-w-2xl">
       <PageHeader
         icon={Crosshair}
         tone="accent"

@@ -102,7 +102,7 @@ export default async function ShoppingProductsPage() {
   const hasAnyData = rejectedProducts.length > 0 || wastefulProducts.length > 0;
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="max-w-3xl">
       <PageHeader
         icon={ShoppingBag}
         tone="gap"

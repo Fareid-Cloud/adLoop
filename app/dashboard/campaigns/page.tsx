@@ -4,7 +4,6 @@ import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CampaignsOverview, type CampaignRow } from "./CampaignsOverview";
 import { EmptyState } from "@/app/components/ui/EmptyState";
-import { CampaignsNav } from "./CampaignsNav";
 import { AiAsk } from "@/app/components/AiAsk";
 import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
@@ -96,7 +95,7 @@ export default async function CampaignsPage({
   });
 
   return (
-    <div className="mx-auto max-w-6xl pb-10">
+    <div>
       <PageHeader
         icon={Megaphone}
         tone="accent"
@@ -105,8 +104,6 @@ export default async function CampaignsPage({
         description={t(locale, "campPages.subtitle")}
         actions={<PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />}
       />
-
-      <CampaignsNav locale={locale} />
 
       {rows.length === 0 ? (
         <EmptyState

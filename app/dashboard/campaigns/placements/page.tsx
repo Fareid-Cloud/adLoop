@@ -101,7 +101,7 @@ export default async function PlacementsPage({
     .sort((a, b) => b.totalCost - a.totalCost);
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="max-w-3xl">
       <PageHeader
         icon={SquareStack}
         tone="accent"

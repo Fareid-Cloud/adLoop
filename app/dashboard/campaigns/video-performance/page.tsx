@@ -48,7 +48,7 @@ export default async function VideoPerformancePage({
 
   if (byPlatform.length === 0) {
     return (
-      <div className="mx-auto max-w-4xl">
+      <div className="max-w-4xl">
         <PageHeader
           icon={Video}
           tone="accent"
@@ -82,7 +82,7 @@ export default async function VideoPerformancePage({
   );
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="max-w-4xl">
       <PageHeader
         icon={Video}
         tone="accent"

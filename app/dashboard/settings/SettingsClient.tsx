@@ -10,11 +10,13 @@ import { ConnectionTester } from "@/app/components/ConnectionTester";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { useState, useMemo, useEffect, createContext, useContext } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Settings as SettingsIcon, Bot, Cpu, Sparkles, Terminal, Brain, Zap, Upload, Search } from "lucide-react";
+import { Settings as SettingsIcon, Bot, Cpu, Sparkles, Terminal, Brain, Zap, Upload, Search, User, Palette, Plug, Building2, RefreshCw, TriangleAlert } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
 import { PushNotificationToggle } from "@/app/components/PushNotificationToggle";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { PageHeader } from "@/app/components/ui/PageHeader";
+import { OptionGroup } from "@/app/components/ui/OptionGroup";
+import { TabNav } from "@/app/components/ui/TabNav";
 
 // سياق اللغة بدل تمريرها كخاصية عبر أربعة عشر مكوّناً فرعياً. الملف واحد
 // وشجرته كلها في العميل، فالسياق هنا أنظف وأقل عرضة للخطأ من تمرير
@@ -113,13 +115,13 @@ interface ConnectedPlatformData {
 }
 
 const TABS = [
-  { key: "profile", labelKey: "tabProfile" },
-  { key: "preferences", labelKey: "tabPreferences" },
-  { key: "accounts", labelKey: "tabAccounts" },
-  { key: "workspace", labelKey: "tabWorkspace" },
-  { key: "automation", labelKey: "tabAutomation" },
-  { key: "conversionSync", labelKey: "tabConversionSync" },
-  { key: "danger", labelKey: "tabDanger" },
+  { key: "profile", labelKey: "tabProfile", icon: User },
+  { key: "preferences", labelKey: "tabPreferences", icon: Palette },
+  { key: "accounts", labelKey: "tabAccounts", icon: Plug },
+  { key: "workspace", labelKey: "tabWorkspace", icon: Building2 },
+  { key: "automation", labelKey: "tabAutomation", icon: Zap },
+  { key: "conversionSync", labelKey: "tabConversionSync", icon: RefreshCw },
+  { key: "danger", labelKey: "tabDanger", icon: TriangleAlert },
 ] as const;
 
 // فهرس بحث حقيقي - كل سطر هنا يمثّل حقلاً موجوداً فعلاً في أحد التبويبات
@@ -228,26 +230,19 @@ export function SettingsClient({
         )}
       </div>
 
-      {/* التفاف لا تمرير أفقي: شريط يتمرّر جانبياً يخفي تبويبات كاملة
-          عن العين، فيظنّ المستخدم أنها غير موجودة. */}
-      <div className="mb-6 flex flex-wrap gap-1">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            // النشط بلون الثيم لا برمادي أفتح بدرجة: `bg-surface-raised`
-            // على `bg-surface` فرق لا تلتقطه العين، فيتوه المستخدم عن
-            // موضعه بين تسعة تبويبات متشابهة.
-            className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
-              activeTab === tab.key
-                ? "bg-accent text-white shadow-[0_2px_10px_-4px_var(--accent)]"
-                : "text-text-muted hover:bg-surface-raised hover:text-text-primary"
-            }`}
-          >
-            {tr(tab.labelKey)}
-          </button>
-        ))}
-      </div>
+      {/* 🔴 **كانت كبسولاتٍ ممتلئةً بلون الثيم.** وزنُ الكبسولة الملوّنة
+          وزنُ زرّ الإجراء الأساسيّ في الصفحة نفسها، فيتنافس التنقّل مع
+          «احفظ» على العين - ويصير في الشاشة الواحدة موضعان يصرخان.
+          التبويب يشير إلى موضعك، لا يدعوك إلى فعل: خطٌّ سفليّ ولونُ نصّ.
+          وهي اللغة نفسها المستخدَمة في تنقّل الحملات - شكلٌ واحد لفكرة
+          واحدة في القسمين، فما يتعلّمه المستخدم هنا يعرفه هناك. */}
+      <TabNav
+        items={TABS.map((tab) => ({ key: tab.key, label: tr(tab.labelKey), icon: tab.icon }))}
+        active={activeTab}
+        onChange={(k) => setActiveTab(k as (typeof TABS)[number]["key"])}
+        ariaLabel={tr("title")}
+        className="mb-7"
+      />
 
       {activeTab === "profile" && <ProfileTab user={user} />}
       {activeTab === "preferences" && <PreferencesTab user={user} />}
@@ -413,7 +408,7 @@ function PreferencesTab({ user }: { user: UserData }) {
           في تذييل **كلّ** صفحة داخل اللوحة، ونسخةٌ ثانيةٌ منها في
           التفضيلات لا تضيف وصولاً - تضيف بنداً يمرّ عليه المستخدم وهو
           يبحث عن إعداد. الإعدادات لما يُضبَط، لا لما يُقرأ. */}
-      <div className="mb-2 mt-6 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("marketingTitle")}</div>
+      <div className="mb-3 mt-8 border-t border-border pt-6 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">{tr("marketingTitle")}</div>
       <p className="mb-2 text-xs text-text-faint">{tr("marketingHint")}</p>
       <ToggleRow
         label={tr("marketingToggle")}
@@ -733,7 +728,7 @@ function WorkspaceTab({
         className="field mb-4 w-full"
       />
 
-      <div className="mb-2 mt-6 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("waSection")}</div>
+      <div className="mb-3 mt-8 border-t border-border pt-6 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">{tr("waSection")}</div>
       <p className="mb-3 text-xs text-text-faint">{tr("waSectionHint")}</p>
 
       <FieldLabel>{tr("waPhoneNumberId")}</FieldLabel>
@@ -780,7 +775,7 @@ function WorkspaceTab({
         }}
       />
 
-      <div className="mb-2 mt-6 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("alerts")}</div>
+      <div className="mb-3 mt-8 border-t border-border pt-6 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">{tr("alerts")}</div>
       <p className="mb-2 text-xs text-text-faint">
         {tr("alertsHint")}
       </p>
@@ -1126,84 +1121,103 @@ function AutomationTab({
         <WorkspaceSwitcher workspaces={workspaces} active={activeWorkspaceId} onSwitch={onSwitchWorkspace} />
       )}
 
-      <div className="mb-2 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("switches")}</div>
+      <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">{tr("switches")}</div>
       <ToggleRow
         label={tr("swAi")}
+        hint={tr("swAiHint")}
         checked={form.enableAIInsights}
         onChange={(v) => setForm({ ...form, enableAIInsights: v })}
       />
       <ToggleRow
         label={tr("swRules")}
+        hint={tr("swRulesHint")}
         checked={form.enableAutomationRules}
         onChange={(v) => setForm({ ...form, enableAutomationRules: v })}
       />
       <ToggleRow
         label={tr("swDaily")}
+        hint={tr("swDailyHint")}
         checked={form.enableDailyDiagnostics}
         onChange={(v) => setForm({ ...form, enableDailyDiagnostics: v })}
       />
       <ToggleRow
         label={tr("swPricing")}
+        hint={tr("swPricingHint")}
         checked={form.enablePricingHealthChecks}
         onChange={(v) => setForm({ ...form, enablePricingHealthChecks: v })}
       />
       <ToggleRow
         label={tr("swModeled")}
+        hint={tr("swModeledHint")}
         checked={form.useModeledAttribution}
         onChange={(v) => setForm({ ...form, useModeledAttribution: v })}
       />
 
-      <div className="mb-2 mt-5 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("thresholdsHead")}</div>
+      <div className="mb-3 mt-8 border-t border-border pt-6 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">{tr("thresholdsHead")}</div>
       <NumberRow
         label={tr("thResponse")}
+        hint={tr("thResponseHint")}
+        suffix={tr("unitMinutes")}
         value={form.responseTimeThresholdMinutes}
         onChange={(v) => setForm({ ...form, responseTimeThresholdMinutes: v })}
       />
       <NumberRow
         label={tr("thFatigue")}
+        hint={tr("thFatigueHint")}
         value={form.adFatigueFrequencyThreshold}
         step={0.1}
         onChange={(v) => setForm({ ...form, adFatigueFrequencyThreshold: v })}
       />
       <NumberRow
         label={tr("thMessenger")}
+        hint={tr("thMessengerHint")}
+        suffix={tr("unitMinutes")}
         value={form.messengerInactivityThresholdMinutes}
         onChange={(v) => setForm({ ...form, messengerInactivityThresholdMinutes: v })}
       />
 
-      <div className="mb-2 mt-5 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("primarySourceHead")}</div>
-      <div className="flex gap-2">
-        {[
-          { value: "WHATSAPP", label: tr("srcWhatsapp") },
-          { value: "MESSENGER", label: tr("srcMessenger") },
-          { value: "LEAD_FORM", label: tr("srcLeadForm") },
-        ].map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => setForm({ ...form, primaryConversionSource: opt.value })}
-            className={`rounded-full px-3 py-1.5 text-xs ${
-              form.primaryConversionSource === opt.value
-                ? "bg-accent text-white"
-                : "bg-surface-raised text-text-muted"
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
+      {/* 🔴 **كان مكتوباً كعنوان مجموعة** (حرفٌ كبير، رماديّ باهت)، وتحته
+          الكبسولات، ثمّ تتبعه خمسة حدود عددية **بلا عنوانٍ خاصّ بها**.
+          فتقرأ العين: «اختر واتساب، ثمّ اضبط ما تحته» - بينما هو اختيارٌ
+          واحد لا يحكم شيئاً ممّا بعده. وهو ما قاله المالك بالحرف: «عاملة
+          زي كأني بختار كل حاجة وأظبط تحتها، مش كأني بختار أنهي فيهم».
+          صار حقلاً باسمه وشرحِه وأداتِه - أي بالبنية نفسها التي لكلّ حقل
+          آخر في الصفحة، فيُقرأ واحداً منها لا عنواناً لها. */}
+      <div className="mt-8 border-t border-border pt-6">
+        <FieldLabel>{tr("primarySourceHead")}</FieldLabel>
+        <FieldHint>{tr("primarySourceHint")}</FieldHint>
+        <div className="mb-4">
+          <OptionGroup
+            options={[
+              { value: "WHATSAPP", label: tr("srcWhatsapp") },
+              { value: "MESSENGER", label: tr("srcMessenger") },
+              { value: "LEAD_FORM", label: tr("srcLeadForm") },
+            ]}
+            value={form.primaryConversionSource}
+            onChange={(v) => setForm({ ...form, primaryConversionSource: v })}
+          />
+        </div>
       </div>
+
+      {/* الحدود التي كانت تقع تحت الاختيار تعود إلى مجموعتها: كانت ثلاثة
+          فوقه وخمسة تحته، فبدت مجموعتين يفصل بينهما إعدادٌ لا يخصّ أيّاً منهما. */}
+      <div className="mb-3 mt-8 border-t border-border pt-6 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">{tr("thresholdsMoreHead")}</div>
       <NumberRow
         label={tr("thCtr")}
+        hint={tr("thCtrHint")}
+        suffix={"%"}
         value={form.ctrDropThresholdPct}
         onChange={(v) => setForm({ ...form, ctrDropThresholdPct: v })}
       />
       <NumberRow
         label={tr("thPriceWarn")}
+        suffix={"%"}
         value={form.pricingWarningThresholdPct}
         onChange={(v) => setForm({ ...form, pricingWarningThresholdPct: v })}
       />
       <NumberRow
         label={tr("thPriceCrit")}
+        suffix={"%"}
         value={form.pricingCriticalThresholdPct}
         onChange={(v) => setForm({ ...form, pricingCriticalThresholdPct: v })}
       />
@@ -1215,6 +1229,8 @@ function AutomationTab({
       />
       <NumberRow
         label={tr("thCeiling")}
+        hint={tr("thCeilingHint")}
+        suffix={"%"}
         value={form.automationMonthlyBudgetChangeCeilingPct}
         onChange={(v) => setForm({ ...form, automationMonthlyBudgetChangeCeilingPct: v })}
       />
@@ -1551,7 +1567,7 @@ function ConversionSyncTab({
         {tr("csWhy")}
       </p>
 
-      <div className="mb-2 text-xs font-medium uppercase tracking-wider text-text-faint">{tr("csRunning")}</div>
+      <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">{tr("csRunning")}</div>
       <ToggleRow
         label={tr("csEnable")}
         checked={form.conversionSyncEnabled}
@@ -1572,7 +1588,7 @@ function ConversionSyncTab({
         </div>
       )}
 
-      <div className="mb-2 text-xs font-medium uppercase tracking-wider text-text-faint">
+      <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">
         {tr("csMetaHead")}
       </div>
       <FieldLabel>{tr("csPixelId")}</FieldLabel>
@@ -1588,7 +1604,7 @@ function ConversionSyncTab({
         placeholder={workspace.hasMetaCapiToken ? tr("csTokenSaved") : tr("csMetaTokenPlaceholder")}
       />
 
-      <div className="mb-2 text-xs font-medium uppercase tracking-wider text-text-faint">
+      <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">
         {tr("csGoogleHead")}
       </div>
       <FieldLabel>{tr("csConversionActionId")}</FieldLabel>
@@ -1601,7 +1617,7 @@ function ConversionSyncTab({
         {tr("csGoogleHint")}
       </p>
 
-      <div className="mb-2 text-xs font-medium uppercase tracking-wider text-text-faint">
+      <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">
         {tr("csTiktokHead")}
       </div>
       <FieldLabel>{tr("csPixelCode")}</FieldLabel>
@@ -1649,11 +1665,25 @@ function ReadyChip({ label, ready }: { label: string; ready: boolean }) {
 }
 
 function SettingsSection({ children }: { children: React.ReactNode }) {
-  return <div className="card p-6">{children}</div>;
+  return <div className="card p-6 sm:p-7">{children}</div>;
 }
 
+// 🔴 **هذا السطر وحده هو ما جعل الصفحة «سايحة على بعضها».**
+//
+// كان: `text-xs text-text-muted` - أي **ستايل نصّ الشرح بالحرف**. فحين
+// يتجاور حقلان تقرأ العين أربعة أسطر متساوية الحجم واللون، ولا شيء فيها
+// يقول أيّ سطرٍ اسمُ حقل وأيّها شرحُه - وهو سؤال المالك حرفياً: «مش بعرف
+// الوصف تبع أنهي أوبشن».
+//
+// صار درجةَ «الحقل» في السُّلَّم: أكبر ممّا تحته **وأثقل وأغمق** - ثلاثة
+// فروق معاً لأنّ فرقاً واحداً لا تلتقطه العين في المسح السريع.
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <div className="mb-1.5 text-xs text-text-muted">{children}</div>;
+  return <div className="mb-1.5 text-[13px] font-medium leading-5 text-text-primary">{children}</div>;
+}
+
+/** الشرح تحت اسم الحقل - درجةٌ أصغر وأفتح، فيُقرأ تابعاً لا ندّاً. */
+function FieldHint({ children }: { children: React.ReactNode }) {
+  return <div className="-mt-1 mb-2 text-[12px] leading-[1.55] text-text-muted">{children}</div>;
 }
 
 function TextInput({
@@ -1704,16 +1734,24 @@ function ToggleGroup({
 
 function ToggleRow({
   label,
+  hint,
   checked,
   onChange,
 }: {
   label: string;
+  /** شرحٌ تحت الاسم: «ماذا يفعل هذا المفتاح؟» يُجاب في مكانه لا في وثيقة */
+  hint?: string;
   checked: boolean;
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-border py-2.5 last:border-0">
-      <span className="text-sm text-text-primary">{label}</span>
+    <div className="flex items-start justify-between gap-6 border-b border-border py-3 last:border-0">
+      <div className="min-w-0">
+        {/* درجة «الحقل»: ١٣px/medium/primary. كان `text-sm` عارياً فيتساوى
+            مع الشرح تحته في الوزن واللون معاً. */}
+        <div className="text-[13px] font-medium leading-5 text-text-primary">{label}</div>
+        {hint && <p className="mt-1 text-[12px] leading-[1.55] text-text-muted">{hint}</p>}
+      </div>
       <Toggle checked={checked} onChange={onChange} label={label} />
     </div>
   );
@@ -1721,25 +1759,38 @@ function ToggleRow({
 
 function NumberRow({
   label,
+  hint,
   value,
   onChange,
   step = 1,
+  /** وحدة القياس بجانب الحقل - «دقيقة»، «٪» - فلا تُحشَر داخل الاسم */
+  suffix,
 }: {
   label: string;
+  hint?: string;
   value: number;
   onChange: (v: number) => void;
   step?: number;
+  suffix?: string;
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-border py-2.5 last:border-0">
-      <span className="text-sm text-text-primary">{label}</span>
-      <input
-        type="number"
-        step={step}
-        value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="field w-20 px-2 py-1 text-end"
-      />
+    <div className="flex items-start justify-between gap-6 border-b border-border py-3 last:border-0">
+      <div className="min-w-0">
+        {/* درجة «الحقل»: ١٣px/medium/primary. كان `text-sm` عارياً فيتساوى
+            مع الشرح تحته في الوزن واللون معاً. */}
+        <div className="text-[13px] font-medium leading-5 text-text-primary">{label}</div>
+        {hint && <p className="mt-1 text-[12px] leading-[1.55] text-text-muted">{hint}</p>}
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <input
+          type="number"
+          step={step}
+          value={value}
+          onChange={(e) => onChange(parseFloat(e.target.value))}
+          className="field w-24 px-2 py-1 text-end"
+        />
+        {suffix && <span className="w-12 text-[12px] text-text-faint">{suffix}</span>}
+      </div>
     </div>
   );
 }

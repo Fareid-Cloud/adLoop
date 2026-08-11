@@ -56,7 +56,7 @@ export default async function PmaxPage() {
     .sort((a: any, b: any) => b.cost - a.cost);
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="max-w-2xl">
       <PageHeader
         icon={Boxes}
         tone="accent"
