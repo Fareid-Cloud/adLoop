@@ -62,7 +62,10 @@ export function ConnectionTester({
       <button
         onClick={run}
         disabled={busy}
-        className="btn btn-secondary btn-sm"
+        // فعلٌ آمنٌ بلون الهوية: الفحص لا يغيّر شيئاً، فلا يستحقّ زرّاً
+        // ممتلئاً يزاحم «ربط الحساب» على الانتباه - ولا رماديّاً يجعله
+        // يبدو معطّلاً. سطحٌ لبنيّ ونصٌّ أزرق، كما في مرجع المالك.
+        className="btn btn-sm border-0 bg-accent/10 text-accent hover:bg-accent/16"
       >
         {busy ? <Loader2 size={13} className="animate-spin" /> : <Stethoscope size={13} />}
         {busy ? tr("testing") : tr("test")}

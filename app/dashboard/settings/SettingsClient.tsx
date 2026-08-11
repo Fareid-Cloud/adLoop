@@ -10,7 +10,7 @@ import { ConnectionTester } from "@/app/components/ConnectionTester";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { useState, useMemo, useEffect, createContext, useContext, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Settings as SettingsIcon, Bot, Cpu, Sparkles, Terminal, Brain, Zap, Upload, Search, User, Palette, Plug, Building2, RefreshCw, TriangleAlert, Check, ChevronDown } from "lucide-react";
+import { Settings as SettingsIcon, Bot, Cpu, Sparkles, Terminal, Brain, Zap, Upload, Search, User, Palette, Plug, Building2, RefreshCw, TriangleAlert, ShieldCheck, Check, ChevronDown } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
 import { PushNotificationToggle } from "@/app/components/PushNotificationToggle";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -125,6 +125,7 @@ const TABS = [
   { key: "workspace", labelKey: "tabWorkspace", icon: Building2 },
   { key: "automation", labelKey: "tabAutomation", icon: Zap },
   { key: "conversionSync", labelKey: "tabConversionSync", icon: RefreshCw },
+  { key: "security", labelKey: "tabSecurity", icon: ShieldCheck },
   { key: "danger", labelKey: "tabDanger", icon: TriangleAlert },
 ] as const;
 
@@ -137,7 +138,7 @@ const TAB_GROUPS: ReadonlyArray<{
   titleKey: string;
   keys: ReadonlyArray<(typeof TABS)[number]["key"]>;
 }> = [
-  { titleKey: "grpAccount", keys: ["profile", "preferences"] },
+  { titleKey: "grpAccount", keys: ["profile", "preferences", "security"] },
   { titleKey: "grpWorkspace", keys: ["workspace", "accounts", "automation", "conversionSync"] },
   { titleKey: "grpAdvanced", keys: ["danger"] },
 ];
@@ -270,7 +271,7 @@ export function SettingsClient({
 
           والفرق عن الجولة الأولى أنّ الإطار هنا يحدّ **شيئاً حقيقياً**:
           مساحة الإعداد بقائمتها ومحتواها، مفصولةً عن رأس الصفحة فوقها. */}
-      <div className="card overflow-hidden p-0 md:grid md:grid-cols-[15rem_minmax(0,1fr)]">
+      <div className="overflow-hidden rounded-2xl bg-surface shadow-[var(--shadow-card)] md:grid md:grid-cols-[15rem_minmax(0,1fr)]">
         {/* الشاشة الواسعة: عمودٌ مجمَّع. `sticky` كي يبقى مرئياً في تبويب
             طويل - التنقّل الذي يمرّ خارج الشاشة يعادل غيابه. */}
         <nav className="hidden border-e border-border md:block" aria-label={tr("title")}>
@@ -298,7 +299,10 @@ export function SettingsClient({
                           on
                             ? danger
                               ? "bg-critical/10 text-critical"
-                              : "bg-surface-raised text-text-primary"
+                              // العنصر المحدَّد بلون الهوية لا برماديّ أغمق:
+                              // الرماديّ يقول «مضغوط»، واللبنيّ يقول «أنت هنا» -
+                              // وهو ما يحتاجه تنقّلٌ لا زرّ.
+                              : "bg-accent/10 text-accent"
                             : danger
                               ? "text-critical/75 hover:bg-critical/8 hover:text-critical"
                               : "text-text-muted hover:bg-surface-raised hover:text-text-primary"
@@ -315,9 +319,10 @@ export function SettingsClient({
           </div>
         </nav>
 
-        {/* سطحٌ أخفت من سطح البطاقات التي تعلوه: الطفوّ يُقرأ من فرق
-            السطحين، لا من ظلٍّ ثقيل تحت كلّ بطاقة. */}
-        <div className="min-w-0 bg-bg p-5 md:p-6">
+        {/* سطحُ اللوحة أبيضُ الهوية لا رماديّ الصفحة - بطلب المالك، وهو
+            محقّ: الرماديّ كان يجعل اللوحة تبدو منطقةً معطّلة. والبطاقات
+            فوقه تُقرأ ببياضها وحدّها، لا بفرق درجةٍ عن سطحٍ كامد. */}
+        <div className="min-w-0 bg-surface p-5 md:p-6">
       {activeTab === "profile" && <ProfileTab user={user} />}
       {activeTab === "preferences" && <PreferencesTab user={user} />}
       {activeTab === "accounts" && <AccountsTab connectedPlatforms={connectedPlatforms} />}
@@ -345,11 +350,14 @@ export function SettingsClient({
           onSwitchWorkspace={setActiveWorkspaceId}
         />
       )}
+      {activeTab === "security" && (
+        <SettingsSection icon={ShieldCheck} title={tr("tabSecurity")} description={tr("secSecurityDesc")}>
+          <ChangePasswordFields />
+          <MfaFields />
+        </SettingsSection>
+      )}
       {activeTab === "danger" && workspaces.length > 0 && (
-        <>
-          <MfaSection />
-          <DangerZoneTab workspaces={workspaces} />
-        </>
+        <DangerZoneTab workspaces={workspaces} />
       )}
         </div>
       </div>
@@ -639,8 +647,13 @@ function DisconnectButton({ platform }: { platform: string }) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="rounded-full bg-verified/15 px-3 py-1 text-xs text-verified">{tr("connected")}</span>
-      <button onClick={() => setConfirming(true)} className="text-xs text-text-faint hover:text-critical">
+      <span className="rounded-full bg-verified/12 px-3 py-1 text-[12px] font-medium text-verified">
+        {tr("connected")}
+      </span>
+      <button
+        onClick={() => setConfirming(true)}
+        className="text-[12.5px] text-accent transition-colors hover:text-critical"
+      >
         {tr("disconnectAccount")}
       </button>
     </div>
@@ -656,7 +669,7 @@ function AccountsTab({ connectedPlatforms }: { connectedPlatforms: ConnectedPlat
       {(["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"] as const).map((platform) => {
         const connection = connectedMap.get(platform);
         return (
-          <div key={platform} className="card mb-2 bg-surface-raised px-4 py-3">
+          <div key={platform} className="card mb-3 px-4 py-3.5">
             <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <PlatformLogo platform={platform} size={18} />
@@ -1504,7 +1517,101 @@ function AutomationTab({
   );
 }
 
-function MfaSection() {
+/** تغيير كلمة المرور - **بالحالية شرطاً، ولو كانت الجلسة قائمة.**
+ *
+ *  الجلسة تثبت أنّ هذا المتصفّح دخل يوماً ما، لا أنّ الجالس أمامه الآن هو
+ *  صاحب الحساب. جهازٌ مفتوحٌ في مكتب يكفي لتغيير كلمة المرور وقفلِ صاحبها
+ *  خارج حسابه، ولذلك تُطلَب الحالية. المنطق كلّه في المسار الخلفيّ؛ وهذه
+ *  الواجهة لا تحرس شيئاً - تشرح فقط لماذا تُطلَب. */
+function ChangePasswordFields() {
+  const tr = useT();
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const locale = useContext(SettingsLocaleContext);
+
+  // التطابق يُفحَص هنا لا في الخادم: خطأٌ في إعادة الكتابة ليس شأناً أمنياً
+  // بل زلّةُ لوحة مفاتيح، وردُّها فوراً أسرع من رحلةٍ إلى الخادم وأوضح.
+  const mismatch = confirm.length > 0 && next !== confirm;
+  const tooShort = next.length > 0 && next.length < 8;
+  const ready = current.length > 0 && next.length >= 8 && next === confirm && !busy;
+
+  async function submit() {
+    setBusy(true);
+    setMsg(null);
+    const res = await fetch("/api/auth/change-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getCsrfHeader() },
+      body: JSON.stringify({ currentPassword: current, newPassword: next }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (res.ok) {
+      setMsg({ ok: true, text: tr("pwChanged") });
+      setCurrent("");
+      setNext("");
+      setConfirm("");
+    } else {
+      setMsg({ ok: false, text: t(locale, data?.errorKey ?? "api.genericError") });
+    }
+  }
+
+  return (
+    <div>
+      <div className="mb-1 text-[13px] font-medium text-text-primary">{tr("pwTitle")}</div>
+      <p className="mb-3 text-[12px] leading-5 text-text-muted">{tr("pwHint")}</p>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <FieldLabel>{tr("pwCurrent")}</FieldLabel>
+          <input
+            type="password"
+            value={current}
+            onChange={(e) => setCurrent(e.target.value)}
+            autoComplete="current-password"
+            className="field w-full"
+          />
+        </div>
+        <div>
+          <FieldLabel>{tr("pwNew")}</FieldLabel>
+          <input
+            type="password"
+            value={next}
+            onChange={(e) => setNext(e.target.value)}
+            autoComplete="new-password"
+            className="field w-full"
+          />
+          {tooShort && <p className="mt-1 text-[11px] text-gap">{tr("pwTooShort")}</p>}
+        </div>
+        <div>
+          <FieldLabel>{tr("pwConfirm")}</FieldLabel>
+          <input
+            type="password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            autoComplete="new-password"
+            className="field w-full"
+          />
+          {mismatch && <p className="mt-1 text-[11px] text-critical">{tr("pwMismatch")}</p>}
+        </div>
+      </div>
+
+      {msg && (
+        <p className={`mt-3 text-[12px] ${msg.ok ? "text-verified" : "text-critical"}`}>
+          {msg.text}
+        </p>
+      )}
+
+      <button onClick={submit} disabled={!ready} className="btn btn-primary btn-sm mt-3">
+        {busy ? tr("pwSaving") : tr("pwSave")}
+      </button>
+    </div>
+  );
+}
+
+function MfaFields() {
   const tr = useT();
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [setupData, setSetupData] = useState<{ secret: string; qrCodeDataUrl: string } | null>(null);
@@ -1570,11 +1677,20 @@ function MfaSection() {
   if (enabled === null) return null;
 
   return (
-    <div className="card mb-4 p-4">
-      <div className="mb-2 text-sm font-medium text-text-primary">{tr("mfaTitle")}</div>
-      <p className="mb-3 text-xs text-text-muted">
-        {tr("mfaHint")}
-      </p>
+    <div className="border-t border-border pt-4">
+      <div className="mb-1 flex items-center gap-2">
+        <span className="text-[13px] font-medium text-text-primary">{tr("mfaTitle")}</span>
+        {/* الحالة تُقرأ قبل الزرّ: «مفعّل» أو «غير مفعّل» هي الجواب على
+            السؤال الذي يأتي المستخدم يحمله، والزرّ فعلٌ بعده. */}
+        <span
+          className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
+            enabled ? "bg-verified/12 text-verified" : "bg-surface-raised text-text-muted"
+          }`}
+        >
+          {enabled ? tr("mfaOn") : tr("mfaOff")}
+        </span>
+      </div>
+      <p className="mb-3 text-[12px] leading-5 text-text-muted">{tr("mfaHint")}</p>
 
       {enabled ? (
         !showDisableConfirm ? (
