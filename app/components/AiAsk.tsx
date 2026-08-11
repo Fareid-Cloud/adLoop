@@ -91,6 +91,14 @@ export function AiAsk({
   const [note, setNote] = useState<string | null>(null);
   /** المحادثة التي حُفظ فيها هذا الجواب - رابطُ فتحها في القسم */
   const [savedChatId, setSavedChatId] = useState<string | null>(null);
+  // 🔴 **كلّ سؤالٍ كان يمحو الذي قبله.** `answer` و`asked` مفردان، و`reset()`
+  // يُستدعى في أوّل كلّ إرسال - فيختفي ما سبق ولا يبقى للمحادثة تاريخ. وهو
+  // ليس سلوك محادثة: السؤال الثاني غالباً بناءٌ على جواب الأوّل، فمحوُه
+  // يقطع الخيط الذي يجعل السلسلة مفهومة.
+  //
+  // الأدوار المكتملة تنزل هنا، ويبقى الدور الجاري في الحقول المفردة أعلاه -
+  // فمنطق الكشف التدريجيّ والخطوات لا يتغيّر، ويُضاف التاريخ فوقه.
+  const [history, setHistory] = useState<Array<{ q: string; a: string; steps: string[] }>>([]);
   const [upgradeUrl, setUpgradeUrl] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const [typed, setTyped] = useState("");
@@ -296,7 +304,16 @@ export function AiAsk({
     const q = usingExample ? examples[exampleIndex] : value.trim();
     if (q.length < 3) return;
 
+    // الدور المكتمل ينضمّ إلى التاريخ قبل تفريغ الحقول له. الشرط `answer`
+    // يمنع حفظ دورٍ لم يصله جواب (إلغاءٌ أو خطأ) - فالتاريخ سجلّ ما تمّ.
+    if (asked && answer) {
+      setHistory((h) => [...h, { q: asked, a: answer, steps }]);
+    }
+    // 🔴 `reset()` يمسح `savedChatId`، وهو خيط المحادثة. يُحفَظ قبله ويُعاد
+    // بعده، وإلّا فُتحت محادثةٌ جديدة مع كلّ سؤالٍ رغم أنّ المسار يدعم الإلحاق.
+    const thread = savedChatId;
     reset();
+    setSavedChatId(thread);
     setAsked(q);
     if (usingExample || index >= 0) setAnsweredIndex(index >= 0 ? index : exampleIndex);
     // 🔴 الحاوية تترك التصاقها الآن (`open`)، فتنتقل من أسفل الشاشة إلى
@@ -321,7 +338,9 @@ export function AiAsk({
     const res = await fetch("/api/ai/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: q, scope }),
+      // `chatId` من الدور السابق: تُلحَق الرسالة بالمحادثة نفسها بدل أن
+      // تُفتَح واحدةٌ جديدة - فيمكن العودة إليها لاحقاً وإكمال الموضوع.
+      body: JSON.stringify({ question: q, scope, chatId: savedChatId }),
     }).catch(() => null);
 
     setBusy(false);
@@ -410,15 +429,38 @@ export function AiAsk({
                 صاحبه، والجواب إلى جانب علامة المنتج بلا إطارٍ حوله - الإطار
                 للبيانات وحدها. وضعُ الجواب كلّه في بطاقةٍ كان يجعل الجملة
                 والجدول شيئاً واحداً، وهما شيئان: قولٌ ودليلُه. */}
-            {(steps.length > 0 || answer || asked) && (
+            {(steps.length > 0 || answer || asked || history.length > 0) && (
               <div className="min-w-0 space-y-3">
+                {/* الأدوار السابقة - بالشكل نفسه تماماً، فالمحادثة تُقرأ
+                    سلسلةً واحدة لا «قديماً» و«جديداً» بمظهرين. */}
+                {history.map((turn, n) => (
+                  <div key={n} className="min-w-0 space-y-3 opacity-90">
+                    <div className="flex min-w-0 items-start justify-end">
+                      <p className="max-w-[85%] rounded-2xl bg-text-primary px-3.5 py-2 text-[13px] leading-relaxed text-bg">
+                        {turn.q}
+                      </p>
+                    </div>
+                    <div className="flex min-w-0 items-start gap-2.5">
+                      <span className="icon-badge mt-0.5 h-7 w-7 shrink-0 bg-accent/12 text-accent">
+                        <Sparkles size={13} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <MarkdownAnswer text={turn.a} reveal={turn.a.length} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
                 {asked && (
                   <div className="flex min-w-0 items-start justify-end gap-2">
                     <p className="max-w-[85%] rounded-2xl bg-text-primary px-3.5 py-2 text-[13px] leading-relaxed text-bg">
                       {asked}
                     </p>
                     <button
-                      onClick={reset}
+                      onClick={() => {
+                        setHistory([]);
+                        reset();
+                      }}
                       aria-label={t(locale, "ui.close")}
                       className="mt-1 shrink-0 rounded-lg p-1 text-text-faint transition-colors hover:text-text-primary"
                     >
