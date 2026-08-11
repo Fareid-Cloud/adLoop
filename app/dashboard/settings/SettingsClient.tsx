@@ -261,16 +261,20 @@ export function SettingsClient({
         className="mb-7 md:hidden"
       />
 
-      {/* 🔴 **كان إطاراً واحداً حول القسم كلّه.** والإطار يقول «هذه بطاقة»
-          أي شيءٌ واحدٌ داخل صفحة - بينما الإعدادات هي الصفحة نفسها لا
-          عنصرٌ فيها. فيقرأ المستخدم حداً لا يحدّ شيئاً.
-          الآن: لا إطار حول الكلّ، والبطاقات **داخله** - كلّ عنوانٍ داخليّ
-          بطاقةٌ مستقلّة عمّا فوقها وتحتها. */}
-      <div className="md:grid md:grid-cols-[15rem_minmax(0,1fr)] md:gap-8">
+      {/* 🔴 **الشكل من المرجع الذي أرسله المالك، بعد جولتين خاطئتين.**
+          كان إطاراً واحداً بلا معنى، ثمّ أُزيل الإطار كلّه فتناثر كلّ شيء.
+          والمرجع يقول شيئاً ثالثاً: **لوحةٌ واحدة تضمّ القائمة والمحتوى
+          معاً**، والقائمة داخلها يفصلها خطٌّ رأسيّ، والبطاقات تطفو فوق
+          سطحٍ أخفت قليلاً من سطحها هي - فيُقرأ الطفوّ من فرق السطحين لا
+          من ظلٍّ ثقيل.
+
+          والفرق عن الجولة الأولى أنّ الإطار هنا يحدّ **شيئاً حقيقياً**:
+          مساحة الإعداد بقائمتها ومحتواها، مفصولةً عن رأس الصفحة فوقها. */}
+      <div className="card overflow-hidden p-0 md:grid md:grid-cols-[15rem_minmax(0,1fr)]">
         {/* الشاشة الواسعة: عمودٌ مجمَّع. `sticky` كي يبقى مرئياً في تبويب
             طويل - التنقّل الذي يمرّ خارج الشاشة يعادل غيابه. */}
-        <nav className="hidden md:block" aria-label={tr("title")}>
-          <div className="sticky top-6 flex flex-col gap-6">
+        <nav className="hidden border-e border-border md:block" aria-label={tr("title")}>
+          <div className="sticky top-6 flex flex-col gap-6 p-5">
             {TAB_GROUPS.map((group) => (
               <div key={group.titleKey}>
                 <div className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">
@@ -311,7 +315,9 @@ export function SettingsClient({
           </div>
         </nav>
 
-        <div className="min-w-0">
+        {/* سطحٌ أخفت من سطح البطاقات التي تعلوه: الطفوّ يُقرأ من فرق
+            السطحين، لا من ظلٍّ ثقيل تحت كلّ بطاقة. */}
+        <div className="min-w-0 bg-bg p-5 md:p-6">
       {activeTab === "profile" && <ProfileTab user={user} />}
       {activeTab === "preferences" && <PreferencesTab user={user} />}
       {activeTab === "accounts" && <AccountsTab connectedPlatforms={connectedPlatforms} />}
