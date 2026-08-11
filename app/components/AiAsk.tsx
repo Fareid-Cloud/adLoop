@@ -264,7 +264,13 @@ export function AiAsk({
           const label = t(locale, `aiAsk.ph_${parsed.scope}_${parsed.index + 1}`);
           return {
             label,
+            // 🔴 **المسار الثالث الذي كان يفقد التاريخ.** الأرشفة وُضعت في
+            // `submit` ثمّ في `pick`، وسؤال المتابعة في مساحة العرض لا يمرّ
+            // بأيّهما: يستدعي `reset()` من هنا مباشرةً. وهو أكثر المسارات
+            // استعمالاً في الاستعراض - سؤالٌ يتلو جواباً - فبدت الميزة
+            // معطّلةً تماماً رغم بنائها مرّتين.
             run: () => {
+              archiveCurrentTurn();
               reset();
               setAsked(label);
               setAnsweredIndex(parsed.index);
