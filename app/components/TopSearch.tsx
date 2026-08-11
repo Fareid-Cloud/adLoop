@@ -29,14 +29,48 @@ export function TopSearch({ locale }: { locale: "ar" | "en" }) {
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
+  // 🔴 **«التسعير» مرّتين بلا ما يفرّق بينهما.** الاسم وحده لا يكفي حين
+  // يتكرّر في موضعين - وهو يتكرّر: تسعيرُ منتجاتك داخل «متجري»، وصفحةُ
+  // التسعير العامّة. السياق (اسمُ ما تندرج تحته) هو ما يجعل الاختيار ممكناً.
   const all = NAV_GROUPS.flatMap((g) =>
     g.items.flatMap((it) => [
-      { href: it.href, text: ar ? it.labelAr : it.labelEn, platform: null as string | null },
-      ...(it.children ?? []).map((c) => ({ href: c.href, text: ar ? c.labelAr : c.labelEn, platform: plat(c.href) })),
+      {
+        href: it.href,
+        text: ar ? it.labelAr : it.labelEn,
+        context: (ar ? g.labelAr : g.labelEn) ?? null,
+        platform: null as string | null,
+      },
+      ...(it.children ?? []).map((c) => ({
+        href: c.href,
+        text: ar ? c.labelAr : c.labelEn,
+        // الأبُ لا المجموعة: «متجري ← التسعير» أدلّ من «تحليل ← التسعير».
+        context: ar ? it.labelAr : it.labelEn,
+        platform: plat(c.href),
+      })),
     ])
   );
   const query = q.trim().toLowerCase();
-  const results = query ? all.filter((r) => r.text.toLowerCase().includes(query)).slice(0, 8) : [];
+  const pageResults = query ? all.filter((r) => r.text.toLowerCase().includes(query)).slice(0, 6) : [];
+
+  // ═══ ما في المساحة فعلاً: حملاتٌ ومنتجات ═══
+  // الصفحات تُطابَق محلّياً فتظهر فوراً؛ وهذه رحلةُ شبكةٍ مؤجَّلة كي لا
+  // يُستدعى الخادم مع كلّ حرف.
+  const [hits, setHits] = useState<Array<{ kind: string; label: string; context: string | null; href: string; platform: string | null }>>([]);
+  useEffect(() => {
+    if (query.length < 2) { setHits([]); return; }
+    const id = setTimeout(() => {
+      fetch(`/api/search?q=${encodeURIComponent(query)}`)
+        .then((r) => r.json())
+        .then((d) => setHits(Array.isArray(d.hits) ? d.hits : []))
+        .catch(() => setHits([]));
+    }, 220);
+    return () => clearTimeout(id);
+  }, [query]);
+
+  const results = [
+    ...pageResults.map((r) => ({ ...r, kind: "page" as const, label: r.text })),
+    ...hits,
+  ];
 
   return (
     <div ref={ref} className="relative w-full max-w-md">
@@ -56,9 +90,21 @@ export function TopSearch({ locale }: { locale: "ar" | "en" }) {
             <div className="px-4 py-4 text-center text-[13px] text-text-faint">{ar ? t(locale, "ui.noResults") : "No results"}</div>
           ) : (
             results.map((r) => (
-              <a key={r.href} href={r.href} className="btn btn-secondary">
-                {r.platform ? <PlatformLogo platform={r.platform} size={15} /> : <Search size={13} className="text-text-faint" />}
-                {r.text}
+              <a
+                key={`${r.kind}:${r.href}`}
+                href={r.href}
+                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 no-underline transition-colors hover:bg-surface-raised"
+              >
+                {r.platform ? (
+                  <PlatformLogo platform={r.platform} size={15} />
+                ) : (
+                  <Search size={13} className="shrink-0 text-text-faint" />
+                )}
+                <span className="min-w-0 flex-1 truncate text-[13px] text-text-primary">{r.label}</span>
+                {/* السياق على اليمين: يفصل المتشابهات بلا أن يزاحم الاسم */}
+                {r.context && (
+                  <span className="shrink-0 text-[11px] text-text-faint">{r.context}</span>
+                )}
               </a>
             ))
           )}

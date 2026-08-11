@@ -316,20 +316,30 @@ export default async function GlancePage({
         {/* نفس عدّاد صفحة صحة الحساب بحجم الرأس - كان سطراً رمادياً طويلاً
             بلا وزن بصري ("درجة الصحة — التتبّع وحده مُقاساً حتى الآن")، فلا
             يُقرأ ولا يُربط بالعدّاد نفسه في مكان آخر. */}
+        {/* 🔴 **كان سطرين بينما جارُه سطرٌ واحد، فاختلف الارتفاعان.**
+            الحاوية تُوسّطهما رأسياً، فيتطابق مركزاهما وتتباعد حوافُّهما -
+            وهو ما يُقرأ عدمَ محاذاة. سطرٌ واحد لكليهما: الاسمُ ثمّ الحالةُ
+            شارةً بجانبه، فيستوي الارتفاعان بلا ضبطٍ يدويّ لأيّهما. */}
         <Link
           href="/dashboard/diagnostics"
-          className="inline-flex items-center gap-2.5 rounded-full card-shadow border border-border bg-surface py-1 pe-4 ps-1 no-underline transition-colors hover:border-accent"
+          className="inline-flex items-center gap-2.5 rounded-full card-shadow border border-border bg-surface py-1 pe-3 ps-1 no-underline transition-colors hover:border-accent"
         >
           <HealthGauge score={health.overallScore} size="sm" showDenominator={false} />
-          <span className="flex flex-col leading-tight">
-            <span className="text-[12.5px] font-medium text-text-primary">{tr("healthScoreShort")}</span>
-            <span className="text-[11px] text-text-muted">
-              {health.isComplete
-                ? tr("healthComplete")
+          <span className="text-[12.5px] font-medium text-text-primary">{tr("healthScoreShort")}</span>
+          <span
+            className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+              health.isComplete
+                ? "bg-verified/12 text-verified"
                 : health.overallScore > 0
-                  ? tr("healthPartial")
-                  : tr("healthPending")}
-            </span>
+                  ? "bg-accent/12 text-accent"
+                  : "bg-surface-raised text-text-muted"
+            }`}
+          >
+            {health.isComplete
+              ? tr("healthComplete")
+              : health.overallScore > 0
+                ? tr("healthPartial")
+                : tr("healthPending")}
           </span>
         </Link>
         </>}
