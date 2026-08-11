@@ -12,6 +12,8 @@ import {
   type RecommendedAction,
 } from "./_components/EcomPrimitives";
 import { getStoreOverview, getProfitJourney } from "@/lib/ecommerce/storeIntelligence";
+import { getStoreFunnel } from "@/lib/storeFunnel";
+import { StoreFunnel } from "@/app/components/StoreFunnel";
 import { buildOpportunities } from "@/lib/ecommerce/opportunities";
 import {
   Wallet, TrendingUp, Percent, ShoppingCart, Receipt, Repeat, RotateCcw, PackageX,
@@ -44,10 +46,16 @@ export default async function EcommerceOverviewPage() {
     );
   }
 
-  const [overview, journey, opps] = await Promise.all([
+  // نفس نافذة الثلاثين يوماً التي تقيس بها بقيّة الصفحة - فالمسار يُقرأ
+  // مع المؤشّرات فوقه لا بفترةٍ أخرى تجعل أرقامه غير قابلة للمقارنة بها.
+  const funnelTo = new Date();
+  const funnelFrom = new Date(funnelTo.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  const [overview, journey, opps, funnel] = await Promise.all([
     getStoreOverview(workspace.id, 30),
     getProfitJourney(workspace.id, 30),
     buildOpportunities(workspace.id, 30),
+    getStoreFunnel(workspace.id, funnelFrom, funnelTo),
   ]);
 
   const c = overview.currency;
@@ -226,6 +234,10 @@ export default async function EcommerceOverviewPage() {
           {tr("aggregateOnly")}
         </div>
       )}
+
+      <div className="mb-8">
+        <StoreFunnel data={funnel} locale={locale} />
+      </div>
 
       {topOpps.length > 0 && (
         <>

@@ -3145,6 +3145,21 @@ export const dictionary = {
       untracked: "لم تصل إشارة تتبّع من موقعك — الوسم غالباً غير مثبَّت.",
     },
     // ==== قمع الأداء ====
+    shopFunnel: {
+      title: "مسار الشراء",
+      subtitle: "من ظهور الإعلان إلى طلبٍ بقي فعلاً - وأين يُفقد الناس في الطريق.",
+      impressions: "ظهور الإعلان",
+      clicks: "نقرة",
+      contacts: "تواصل من موقعك",
+      orders: "طلب",
+      kept: "طلب بقي بعد المرتجعات",
+      stepKept: "بقي {pct}٪ ممّن قبله",
+      stepUnknown: "غير معروف - المتجر غير موصول",
+      weakest: "أضعف انتقال",
+      noStore: "غير موصول",
+      vsPrev: "مقابل {value} في الفترة السابقة",
+      missingStages: "«إضافة للسلّة» و«بدء الدفع» غير معروضتين لأنّنا لا نجمعهما: لا منصّة من الخمس ترسلهما في ويب هوك الطلب. عرضُهما يعني رقمين مخترَعين وسط أرقامٍ حقيقية.",
+    },
     funnel: {
       title: "قمع الأداء - أين يتسرّب العميل",
       impressions: "ظهور",
@@ -5679,6 +5694,21 @@ export const dictionary = {
       untracked: "No tracking signal from your site — the tag is most likely not installed.",
     },
     // ==== Performance funnel ====
+    shopFunnel: {
+      title: "Purchase path",
+      subtitle: "From the ad being shown to an order that actually stuck - and where people are lost along the way.",
+      impressions: "Ad shown",
+      clicks: "Click",
+      contacts: "Contacted you from your site",
+      orders: "Order",
+      kept: "Order kept after returns",
+      stepKept: "{pct}% of the step before carried through",
+      stepUnknown: "Unknown - store not connected",
+      weakest: "weakest step",
+      noStore: "Not connected",
+      vsPrev: "vs {value} previous period",
+      missingStages: "Add-to-cart and checkout-started are not shown because we do not collect them: none of the five platforms sends them in the order webhook. Showing them would mean two invented numbers among real ones.",
+    },
     funnel: {
       title: "Performance funnel - where customers leak",
       impressions: "impressions",
