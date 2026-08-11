@@ -45,10 +45,23 @@ export function IntegrationsView({
   const [tab, setTab] = useState<Tab>("connected");
   const [category, setCategory] = useState<string>("all");
   const [query, setQuery] = useState("");
+  // 🔴 **طريقةُ العرض كانت تُنسى مع كلّ زيارة.** المستخدم يختار الشبكة،
+  // ثمّ يعود فيجد القائمة - فيبدو الخيار زرّاً لا يفعل شيئاً. وهو تفضيلٌ
+  // شخصيٌّ لا حالةُ صفحة: يُحفَظ محلّياً، ويُقرأ عند أوّل تصيير.
   const [view, setView] = useState<ViewMode>("list");
-  const [selectedKey, setSelectedKey] = useState<string | null>(
-    overview.active[0]?.key ?? null
-  );
+  useEffect(() => {
+    const saved = localStorage.getItem("adloop.integrations.view");
+    if (saved === "grid" || saved === "list") setView(saved);
+  }, []);
+  function chooseView(v: ViewMode) {
+    setView(v);
+    localStorage.setItem("adloop.integrations.view", v);
+  }
+
+  // 🔴 **الدرج كان يُفتَح وحده عند فتح الصفحة.** أوّلُ تكاملٍ موصولٍ يُختار
+  // تلقائياً، فيجد المستخدم لوحةً جانبيةً مفتوحةً على شيءٍ لم يطلبه، تحجب
+  // نصف العرض. الفتحُ فعلُ المستخدم: `null` حتى يضغط «إدارة».
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [pickerPlatform, setPickerPlatform] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -197,9 +210,9 @@ export function IntegrationsView({
               المنسدلة بجانبه بدل أن يقف أقصر منها في الصفّ نفسه، وفاصل بين
               الشقّين فيُقرأ كمبدّل من موضعين لا كزرّ واحد عريض. */}
           <div className="flex h-full items-stretch overflow-hidden rounded-xl border border-border">
-            <IconToggle active={view === "list"} onClick={() => setView("list")} icon={List} title={tr("viewList")} />
+            <IconToggle active={view === "list"} onClick={() => chooseView("list")} icon={List} title={tr("viewList")} />
             <span className="w-px shrink-0 bg-border" aria-hidden />
-            <IconToggle active={view === "grid"} onClick={() => setView("grid")} icon={LayoutGrid} title={tr("viewGrid")} />
+            <IconToggle active={view === "grid"} onClick={() => chooseView("grid")} icon={LayoutGrid} title={tr("viewGrid")} />
           </div>
         </div>
       </div>
@@ -312,7 +325,7 @@ export function IntegrationsView({
           // و`bottom-0` ساريين فخرج العنصر من عمود التدفّق تماماً.
           <div
             ref={drawerRef}
-            className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-border bg-surface xl:sticky xl:inset-x-auto xl:bottom-auto xl:top-20 xl:z-auto xl:max-h-[calc(100dvh-7rem)] xl:self-start xl:rounded-none xl:border-t-0 xl:bg-transparent"
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] rounded-t-2xl border-t border-border bg-surface xl:sticky xl:inset-x-auto xl:bottom-auto xl:top-20 xl:z-auto xl:max-h-[calc(100dvh-7rem)] xl:self-start xl:rounded-none xl:border-t-0 xl:bg-transparent"
           >
           <IntegrationDrawer
             integration={selected}

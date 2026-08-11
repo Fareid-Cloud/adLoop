@@ -1208,6 +1208,8 @@ export const dictionary = {
     },
     // ==== مساحة العرض التجريبية ====
     demo: {
+      title: "مساحة تجريبية",
+      daysLeft: "باقٍ {n} يوماً",
       pointData: "كل الأرقام والحملات هنا من صنعنا للتوضيح.",
       pointNoWrite: "لا شيء هنا يمسّ حساباً إعلانياً حقيقياً - كل إجراء خارجي محظور.",
       pointFull: "كل ميزات المنتج متاحة لتجرّبها كما هي.",
@@ -5058,6 +5060,8 @@ export const dictionary = {
     },
     // ==== Demo workspace ====
     demo: {
+      title: "Demo workspace",
+      daysLeft: "{n} days left",
       pointData: "Every number and campaign here was made by us for illustration.",
       pointNoWrite: "Nothing here touches a real ad account - every external action is blocked.",
       pointFull: "Every product feature is available to try, exactly as it is.",

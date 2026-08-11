@@ -60,9 +60,9 @@ export function IntegrationDrawer({
   const Chevron = locale === "en" ? ChevronRight : ChevronLeft;
 
   return (
-    <aside className="card-shadow h-fit card xl:sticky xl:top-4">
+    <aside className="card-shadow flex h-fit max-h-[inherit] flex-col overflow-hidden card xl:sticky xl:top-4">
       {/* الرأس */}
-      <div className="flex items-center gap-2.5 border-b border-border p-4">
+      <div className="flex shrink-0 items-center gap-2.5 border-b border-border p-4">
         <span
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
           style={{ background: `color-mix(in srgb, ${integration.color} 12%, transparent)` }}
@@ -83,14 +83,15 @@ export function IntegrationDrawer({
       </div>
 
       {/* تبويبات اللوحة */}
-      <div className="flex gap-1 border-b border-border px-3">
+      <div className="flex shrink-0 gap-1 border-b border-border px-3">
         <DTab active={tab === "overview"} onClick={() => setTab("overview")} label={tr("drawerOverview")} />
         <DTab active={tab === "accounts"} onClick={() => setTab("accounts")} label={tr("drawerAccounts", { n: integration.accountCount })} />
         <DTab active={tab === "permissions"} onClick={() => setTab("permissions")} label={tr("drawerPermissions")} />
         <DTab active={tab === "activity"} onClick={() => setTab("activity")} label={tr("drawerActivity")} />
       </div>
 
-      <div className="p-4">
+      {/* الجسم وحده يتمرّر - الرأس والتبويبات فوقه ثابتان */}
+      <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {tab === "overview" && (
           <div className="flex flex-col">
             <Row icon={CircleDot} label={tr("dStatus")}>
@@ -197,7 +198,10 @@ export function IntegrationDrawer({
               <>
                 <button
                   onClick={onAddAccount}
-                  className="flex w-full items-center justify-center gap-1.5 card-inset py-2.5 text-[12.5px] font-medium text-text-primary"
+                  // بلون الهوية عند الإشارة: الفعلُ إضافةٌ لا هدم، وهو
+                  // ما يريده المستخدم غالباً حين يفتح الدرج. اللونُ يجعله
+                  // مقصوداً بلا أن يصير زرّاً ممتلئاً يزاحم ما حوله.
+                  className="flex w-full items-center justify-center gap-1.5 card-inset py-2.5 text-[12.5px] font-medium text-text-primary transition-colors hover:border-accent hover:bg-accent/[0.07] hover:text-accent"
                 >
                   <Plus size={14} /> {tr("addAccount")}
                 </button>
