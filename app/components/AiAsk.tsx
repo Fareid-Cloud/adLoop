@@ -123,10 +123,40 @@ export function AiAsk({
   // حارسٌ يقع مباشرةً تحت المربّع: ظهورُه في الشاشة يعني أنّ المربّع بلغ
   // موضعه الطبيعيّ ولم يعد ملتصقاً. لا CSS يعرف أنّ عنصراً «ملتصق الآن»،
   // وهذه أخفّ طريقة لمعرفة ذلك.
+  //
+  // 🔴 **«الهزّة» - حلقةُ تغذيةٍ راجعة، لا رسمٌ ولا شفافية.**
+  //
+  // وصفُ المالك حسمها: أثناء التمرير لا شيء، وعند الاقتراب من موضع الرسوّ
+  // يتناوب المربّع بين موضعيه بسرعةٍ تجعلهما يبدوان اثنين يتبادلان.
+  //
+  // والسلسلة:
+  //   الحارس يظهر  →  `docked` صحيح  →  `solid` صحيح  →  **يُركَّب محتوىً
+  //   إضافيّ** (سطر التكلفة، أو أمثلة مساحة العرض)  →  يزيد ارتفاع المربّع
+  //   →  ينزاح الحارس تحته خارج الشاشة  →  `docked` خطأ  →  يُفكَّك المحتوى
+  //   →  يعود الحارس مرئيّاً  →  من جديد، بمعدّل إطارات الشاشة.
+  //
+  // أي أنّ الحالة تغيّر ما تقيسه بنفسها. وعلاجُ التذبذب ليس تسريعاً ولا
+  // تنعيماً بل **منطقةٌ ميّتة**: يُرسى عند الظهور، ولا يُرفع الرسوّ حتى
+  // ينزل الحارس تحت الشاشة بمسافةٍ تتجاوز أيّ زيادةٍ يُحدثها المحتوى -
+  // فيستحيل على الحلقة أن تُغلَق.
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(([e]) => setDocked(e.isIntersecting), { threshold: 1 });
+    // أوسع من أيّ محتوىً يضيفه `solid` (سطر التكلفة ~28px، صفّ الأمثلة
+    // ~70px) بهامشٍ مريح.
+    const RELEASE_GAP = 140;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        setDocked((was) =>
+          was
+            ? e.boundingClientRect.top <= window.innerHeight + RELEASE_GAP
+            : e.isIntersecting,
+        );
+      },
+      // عتباتٌ متعدّدة: بلا `0` لا يُستدعى المراقب أصلاً عند خروج الحارس
+      // تماماً، فتبقى الحالة عالقةً على آخر قيمة.
+      { threshold: [0, 1] },
+    );
     io.observe(el);
     return () => io.disconnect();
   }, []);
@@ -590,14 +620,26 @@ export function AiAsk({
             الرصيد هو ما يجعل الحدّ يبدو مفاجأةً لا شرطاً معروفاً. يظهر عند
             الرسوّ أو التركيز فقط - سطرٌ دائم يطفو فوق المحتوى ضجيج.
             وفي مساحة العرض لا يُخصم شيء، فلا يُقال إنّه يُخصم. */}
-        {solid && !open && !demo && (
-          <p className="mt-1.5 px-4 text-[11px] text-text-faint">{tr("costNote")}</p>
+        {!open && !demo && (
+          <p
+            aria-hidden={!solid}
+            className={`mt-1.5 px-4 text-[11px] text-text-faint transition-opacity duration-200 ${
+              solid ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            {tr("costNote")}
+          </p>
         )}
 
         {/* أمثلة مساحة العرض: ما يعمل عليه الاستعراض معروضٌ صراحةً بدل أن
             يُنتظر مرورُه في الكتابة التدريجية. */}
-        {demo && !open && solid && (
-          <div className="mt-2 space-y-1.5">
+        {demo && !open && (
+          <div
+            aria-hidden={!solid}
+            className={`mt-2 space-y-1.5 transition-opacity duration-200 ${
+              solid ? "opacity-100" : "pointer-events-none opacity-0"
+            }`}
+          >
             <p className="px-1 text-[11px] text-text-faint">{tr("demoHint")}</p>
             <div className="flex flex-wrap gap-1.5">
               {examples.map((e, n) => (
