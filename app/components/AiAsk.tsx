@@ -357,9 +357,19 @@ export function AiAsk({
           فيه ما يُقرأ عاد إلى مجرى الصفحة يتمرّر معها كأيّ بطاقة، ويبقى
           تمريره الداخليّ داخله وحده. */}
       <div
-        className={`z-30 mt-6 transition-opacity duration-300 ${
-          open ? "relative" : "sticky bottom-5"
-        } ${solid ? "opacity-100" : "opacity-[0.94] hover:opacity-100"}`}
+        // 🔴 **`opacity` على الحاوية كانت سبب «الاهتزاز» عند أسفل الصفحة.**
+        //
+        // `opacity` أقلّ من ١ تُطبَّق على الشجرة كلّها: النصّ والحدود
+        // والخلفية معاً. فيصير كلّ ما تحت المربّع **مقروءاً من خلاله** -
+        // وعند أسفل الصفحة يقع شرحُ الرسم البيانيّ خلفه تماماً، فتُقرأ
+        // جملتان متراكبتان وتبدوان كأنّهما ترتجفان.
+        //
+        // وهي كذلك تُبطل `backdrop-blur` الموضوع على المربّع نفسه: الطبقة
+        // الشفّافة فوق الضبابية تُظهر ما حجبته.
+        //
+        // الشفافية المطلوبة تبقى - لكن **في لون الخلفية وحده**: النصّ معتم
+        // كاملاً، وما خلفه مضبَّبٌ لا مقروء.
+        className={`z-30 mt-6 ${open ? "relative" : "sticky bottom-5"}`}
       >
         {/* ── لوحة المحادثة ──────────────────────────────────────
             🔴 **فوق المربّع لا تحته، وعلى سطحٍ معتم لا شفّاف.**
@@ -487,8 +497,8 @@ export function AiAsk({
           // هالةٌ خفيفة بلون الهوية حول الحلقة: تفصل المربّع عمّا يمرّ
           // تحته وهو طافٍ، وتُعلّم أنّه العنصر الحيّ في الصفحة - بلا أن
           // تصير إطاراً ثقيلاً يزاحم البطاقات على الانتباه.
-          className={`flex items-center gap-2 rounded-full border px-2 py-1.5 backdrop-blur-md transition-all ${
-            solid ? "border-accent/55 bg-surface" : "border-accent/30 bg-surface/95"
+          className={`flex items-center gap-2 rounded-full border px-2 py-1.5 backdrop-blur-xl transition-all ${
+            solid ? "border-accent/55 bg-surface" : "border-accent/30 bg-surface/[0.94]"
           }`}
           style={{
             boxShadow: solid

@@ -35,7 +35,7 @@ export function PlatformDonut({
   return (
     <div className="card pad-lg">
       <div className="mb-3 text-[13px] text-text-muted">{t(locale, "home.donutTitle")}</div>
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-5">
         <div className="relative h-[150px] w-[150px] shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -79,9 +79,14 @@ export function PlatformDonut({
             <span className="text-[10px] text-text-faint">{t(locale, "home.donutVerified")}</span>
           </div>
         </div>
-        <div className="flex flex-1 flex-col gap-2">
+        {/* 🔴 **كان `flex-1` وحده: المفتاح يتمدّد على عرض البطاقة كلّه.**
+            فيقف الاسم عند الرسم والنسبةُ عند الحافّة البعيدة، بينهما فراغٌ
+            يزيد كلّما اتّسعت الشاشة - ويصير على العين سطراً ممدوداً لا
+            صفّاً واحداً مقروءاً. المفتاح يُقرأ بجانب رسمه لا بمحاذاة
+            الصفحة، فله الآن عرضٌ محدود يبقيه ملاصقاً له. */}
+        <div className="flex w-full min-w-0 flex-col gap-2.5 sm:max-w-[19rem]">
           {rows.map((r) => (
-            <div key={r.platform} className="flex items-center justify-between text-[13px]">
+            <div key={r.platform} className="flex items-center justify-between gap-4 text-[13px]">
               <span className="flex items-center gap-2 text-text-muted">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: r.color }} />
                 <PlatformLogo platform={r.platform} size={15} />

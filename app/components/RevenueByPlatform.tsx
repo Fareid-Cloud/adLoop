@@ -91,6 +91,16 @@ export function RevenueByPlatform({
         {tr("legendSpendMark")}
       </p>
 
+      {/* 🔴 **الفراغ يمين الشريط كان بلا تفسير.** وهو ليس عطلاً: الأشرطة
+          مرسومةٌ نسبةً إلى أكبر منصّة، فما لم يمتلئ منها هو الفارق بينها
+          وبين الأكبر - أي أنّه معلومةٌ لا نقص. لكنّ شيئاً لم يكن يقوله،
+          فيقف المستخدم أمام مساحةٍ خالية يسأل عن سببها. */
+      }
+      <p className="mb-3 flex items-center gap-1.5 text-[11.5px] text-text-faint">
+        <span className="inline-block h-1.5 w-4 shrink-0 rounded-full bg-surface-raised" />
+        {tr("legendScale")}
+      </p>
+
       <div className="flex flex-col gap-3">
         {sorted.map((row) => {
           const roas = row.cost > 0 ? Math.round((row.revenue / row.cost) * 100) / 100 : null;

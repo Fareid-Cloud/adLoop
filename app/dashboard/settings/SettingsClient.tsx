@@ -317,6 +317,7 @@ export function SettingsClient({
       {activeTab === "accounts" && <AccountsTab connectedPlatforms={connectedPlatforms} />}
       {activeTab === "workspace" && workspaces.length > 0 && (
         <WorkspaceTab
+          key={activeWorkspaceId}
           workspaces={workspaces}
           activeWorkspaceId={activeWorkspaceId}
           onSwitchWorkspace={setActiveWorkspaceId}
@@ -324,6 +325,7 @@ export function SettingsClient({
       )}
       {activeTab === "automation" && workspaces.length > 0 && (
         <AutomationTab
+          key={activeWorkspaceId}
           workspaces={workspaces}
           activeWorkspaceId={activeWorkspaceId}
           onSwitchWorkspace={setActiveWorkspaceId}
@@ -331,6 +333,7 @@ export function SettingsClient({
       )}
       {activeTab === "conversionSync" && workspaces.length > 0 && (
         <ConversionSyncTab
+          key={activeWorkspaceId}
           workspaces={workspaces}
           activeWorkspaceId={activeWorkspaceId}
           onSwitchWorkspace={setActiveWorkspaceId}

@@ -6,6 +6,10 @@ import { isOwnerEmail } from "@/lib/owner";
 import { SettingsClient } from "./SettingsClient";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
+// بيانات هذه الصفحة تتغيّر بالحفظ فيها نفسها - نسخةٌ مخبَّأةٌ منها
+// تُري المستخدم القيمة القديمة بعد أن غيّرها بلحظات.
+export const dynamic = "force-dynamic";
+
 export default async function SettingsPage() {
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
