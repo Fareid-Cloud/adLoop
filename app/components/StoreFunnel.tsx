@@ -78,6 +78,32 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
         {stages.map((s, i) => {
           const up = (s.changePct ?? 0) >= 0;
           const diff = s.value - s.prevValue;
+          // 🔴 مرحلةٌ لا يبلّغ عنها الحساب تُعرَض غياباً لا صفراً. الصفر
+          // بجانب طلباتٍ قائمة تناقضٌ صريح - لا يبلغ أحدٌ طلباً دون سلّة -
+          // فيقرؤه المالك عطلاً في المنتج، وهو في الحقيقة فئةُ تحويلٍ غير
+          // معرَّفةٍ في الحساب الإعلانيّ.
+          if (!s.measured) {
+            return (
+              <div
+                key={s.key}
+                className="min-w-[8.5rem] flex-1 border-e border-border px-4 first:ps-0 last:border-0"
+              >
+                <div className="mb-2 flex items-center gap-2">
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full opacity-35"
+                    style={{ background: TINT[i] }}
+                  />
+                  <span className="truncate text-[12.5px] font-medium text-text-muted">
+                    {tr(s.key)}
+                  </span>
+                </div>
+                <div className="text-[15px] font-medium text-text-faint">{tr("notMeasured")}</div>
+                <div className="mt-1.5 text-[11px] leading-relaxed text-text-faint">
+                  {tr("notMeasuredWhy")}
+                </div>
+              </div>
+            );
+          }
           return (
             <div
               key={s.key}
@@ -146,11 +172,12 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
               <polygon
                 points={`${x1},${MID - h1 / 2} ${x2},${MID - h2 / 2} ${x2},${MID + h2 / 2} ${x1},${MID + h1 / 2}`}
                 fill={TINT[i]}
-                opacity={0.13}
+                opacity={s.measured ? 0.13 : 0.05}
               />
-              {dots(x1, x2, h1, h2, i + 1, MID).map((d, n) => (
-                <circle key={n} cx={d.cx} cy={d.cy} r={3.2} fill={TINT[i]} opacity={0.85} />
-              ))}
+              {s.measured &&
+                dots(x1, x2, h1, h2, i + 1, MID).map((d, n) => (
+                  <circle key={n} cx={d.cx} cy={d.cy} r={3.2} fill={TINT[i]} opacity={0.85} />
+                ))}
               {/* المرحلة الأضعف وحدها معلَّمة - موضعُ الفعل لا موضعُ زينة */}
               {weak && (
                 <line
@@ -175,11 +202,9 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
           const weak = s.key === data.weakestStepKey;
           return (
             <div key={s.key} className="min-w-[8.5rem] flex-1 px-4 text-center">
-              {i > 0 && (
+              {i > 0 && s.keptFromPrevPct !== null && (
                 <span className={`text-[11px] ${weak ? "font-medium text-gap" : "text-text-faint"}`}>
-                  {tr("stepKept", {
-                    pct: s.keptFromPrevPct === null ? "—" : s.keptFromPrevPct.toFixed(1),
-                  })}
+                  {tr("stepKept", { pct: s.keptFromPrevPct.toFixed(1) })}
                   {weak && ` · ${tr("weakest")}`}
                 </span>
               )}

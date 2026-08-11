@@ -3158,6 +3158,8 @@ export const dictionary = {
       noStore: "غير موصول",
       vsPrev: "عن الفترة السابقة",
       each: "للواحدة",
+      notMeasured: "غير مقيسة",
+      notMeasuredWhy: "حسابك الإعلانيّ لا يبلّغ عن هذه المرحلة - عرِّفها كإجراء تحويل في المنصّة لتظهر هنا.",
       noStoreNote: "الطلبات لا تظهر حتى تربط متجرك - المراحل قبلها تعمل بالفعل.",
     },
     funnel: {
@@ -5707,6 +5709,8 @@ export const dictionary = {
       noStore: "Not connected",
       vsPrev: "vs previous period",
       each: "each",
+      notMeasured: "Not measured",
+      notMeasuredWhy: "Your ad account does not report this stage - define it as a conversion action on the platform and it will appear here.",
       noStoreNote: "Orders will not appear until your store is connected - the stages before them already work.",
     },
     funnel: {

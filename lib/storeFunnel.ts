@@ -45,6 +45,16 @@ export interface FunnelStage {
   keptFromPrevPct: number | null;
   /** نسبة الباقين من أوّل المسار - يقيس المسار كلّه لا خطوةً منه */
   keptFromTopPct: number | null;
+  /** 🔴 **هل هذه المرحلة مقيسةٌ أصلاً؟**
+   *
+   *  المالك رأى «إضافة للسلّة: صفر» بينما في الحساب طلباتٌ فعلاً - وهو
+   *  مستحيلٌ منطقاً: لا يصل أحدٌ إلى طلبٍ دون أن يمرّ بالسلّة. والسبب أنّ
+   *  الحساب لا يبلّغ عن هذه الفئة (لم تُعرَّف عنده كإجراء تحويل)، فيصل
+   *  المجموع `null` ويُعرَض صفراً.
+   *
+   *  والصفر كذبٌ هنا: يُقرأ «لم يضف أحدٌ للسلّة»، والحقيقة «لا نقيس ذلك».
+   *  فتُميَّز الحالتان، ويُعرَض الغياب غياباً. */
+  measured: boolean;
 }
 
 export interface StoreFunnel {
@@ -99,12 +109,14 @@ export async function getStoreFunnel(
   const pick = (sum: Sums) => {
     const orders = sum.ordersCount ?? 0;
     const returned = sum.returnedOrdersCount ?? 0;
+    // `null` من `_sum` يعني أنّ **كلّ** الصفوف في المدى فارغةٌ في هذا الحقل -
+    // أي أنّ المنصّة لا تبلّغ عن الفئة أصلاً، لا أنّ العدّ صفر.
     return [
-      { key: "impressions", value: sum.impressions ?? 0 },
-      { key: "clicks", value: sum.clicks ?? 0 },
-      { key: "addToCart", value: sum.addToCart ?? 0 },
-      { key: "checkout", value: sum.checkoutsStarted ?? 0 },
-      { key: "kept", value: Math.max(0, orders - returned) },
+      { key: "impressions", value: sum.impressions ?? 0, measured: true },
+      { key: "clicks", value: sum.clicks ?? 0, measured: true },
+      { key: "addToCart", value: sum.addToCart ?? 0, measured: sum.addToCart !== null },
+      { key: "checkout", value: sum.checkoutsStarted ?? 0, measured: sum.checkoutsStarted !== null },
+      { key: "kept", value: Math.max(0, orders - returned), measured: sum.ordersCount !== null },
     ];
   };
 
@@ -123,13 +135,16 @@ export async function getStoreFunnel(
     return {
       key: s.key,
       value: s.value,
+      measured: s.measured,
       prevValue: p,
-      changePct: p === 0 ? null : ((s.value - p) / p) * 100,
+      changePct: !s.measured || p === 0 ? null : ((s.value - p) / p) * 100,
       // الظهور لا تكلفةَ «لكلّ واحدةٍ» له تُفهَم (تكلفة الألف شيءٌ آخر)،
       // فيُترك بلا رقمٍ بدل أن يُعطى رقماً بكسورٍ لا تُقرأ.
-      costPer: i === 0 || s.value === 0 || spend === 0 ? null : spend / s.value,
-      keptFromPrevPct: i === 0 || before === 0 ? null : (s.value / before) * 100,
-      keptFromTopPct: i === 0 || top === 0 ? null : (s.value / top) * 100,
+      costPer: !s.measured || i === 0 || s.value === 0 || spend === 0 ? null : spend / s.value,
+      keptFromPrevPct: !s.measured || i === 0 || before === 0 || !now[i - 1].measured
+        ? null
+        : (s.value / before) * 100,
+      keptFromTopPct: !s.measured || i === 0 || top === 0 ? null : (s.value / top) * 100,
     };
   });
 
