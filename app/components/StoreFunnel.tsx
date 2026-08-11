@@ -18,7 +18,10 @@ import type { StoreFunnel as FunnelData } from "@/lib/storeFunnel";
 
 /** لونُ كلّ مرحلة - نفسه في نقطة العمود وفي قطعة المخروط تحتها، فالعين
  *  تربط الرقم برسمه بلا مفتاحٍ منفصل. */
-const TINT = ["#2563EB", "#DB2777", "#E11D48", "#F97316", "#16A34A"];
+// 🔴 الثانية والثالثة كانتا `#DB2777` و`#E11D48` - ورديّتان متجاورتان في
+// عجلة اللون، فتتداخلان حيث تلتقيان ويصعب فصلُ المرحلتين بالنظر. الثانية
+// دُفعت نحو الأرجوانيّ والثالثة نحو الأحمر، فبينهما الآن مسافةٌ تُقرأ.
+const TINT = ["#2563EB", "#C026D3", "#F43F5E", "#F97316", "#16A34A"];
 
 /** نقاطٌ داخل قطعة المخروط. عددُها يتبع ارتفاع القطعة، فتخفّ الكثافة مع
  *  الضيق - وهي الإشارة البصرية التي تجعل الفقد محسوساً قبل قراءة نسبة. */
@@ -74,7 +77,7 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
       </div>
 
       {/* الصفّ العلويّ - أعمدةٌ متساوية تقف كلٌّ منها فوق قطعتها */}
-      <div className="no-scrollbar mb-5 flex overflow-x-auto">
+      <div className="no-scrollbar mb-5 grid grid-cols-5">
         {stages.map((s, i) => {
           const up = (s.changePct ?? 0) >= 0;
           const diff = s.value - s.prevValue;
@@ -86,7 +89,7 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
             return (
               <div
                 key={s.key}
-                className="min-w-[8.5rem] flex-1 border-e border-border px-4 first:ps-0 last:border-0"
+                className="min-w-0 border-e border-border px-3 last:border-0"
               >
                 <div className="mb-2 flex items-center gap-2">
                   <span
@@ -107,7 +110,7 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
           return (
             <div
               key={s.key}
-              className="min-w-[8.5rem] flex-1 border-e border-border px-4 first:ps-0 last:border-0"
+              className="min-w-0 border-e border-border px-3 last:border-0"
             >
               <div className="mb-2 flex items-center gap-2">
                 <span
@@ -160,6 +163,19 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
         role="img"
         aria-label={tr("title")}
       >
+        {/* 🔴 **فوهةُ المخروط - وهي ما يجعله مخروطاً لا شبه منحرف.**
+            قُصٌّ بيضويّ عند الطرف الأوّل، نصفُه ظاهرٌ خارج القطعة الأولى:
+            يقرأه النظر عمقاً، فيبدو الشكل أنبوباً يضيق لا مضلّعاً مسطّحاً.
+            وهو أوّل ما يُرى، فغيابه كان يُفقد الرسم صفته كلَّها. */}
+        <ellipse
+          cx={0}
+          cy={MID}
+          rx={seg * 0.085}
+          ry={height(stages[0]?.value ?? 0) / 2}
+          fill={TINT[0]}
+          opacity={0.9}
+        />
+
         {stages.map((s, i) => {
           const next = stages[i + 1];
           const h1 = height(s.value);
@@ -197,11 +213,11 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
       </svg>
 
       {/* نسب البقاء - الرسم يُري الانحدار، وهذه تقيسه */}
-      <div className="mt-1 flex">
+      <div className="mt-1 grid grid-cols-5">
         {stages.map((s, i) => {
           const weak = s.key === data.weakestStepKey;
           return (
-            <div key={s.key} className="min-w-[8.5rem] flex-1 px-4 text-center">
+            <div key={s.key} className="min-w-0 px-3 text-center">
               {i > 0 && s.keptFromPrevPct !== null && (
                 <span className={`text-[11px] ${weak ? "font-medium text-gap" : "text-text-faint"}`}>
                   {tr("stepKept", { pct: s.keptFromPrevPct.toFixed(1) })}
