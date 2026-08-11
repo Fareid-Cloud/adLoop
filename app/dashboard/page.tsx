@@ -28,7 +28,7 @@ import { KpiSection } from "@/app/components/KpiSection";
 import { computeKpis, KPI_DEFS } from "@/lib/kpiEngine";
 import { computeMetrics, comparePlatforms } from "@/lib/metricsEngine";
 import { compareMetric } from "@/lib/periodComparison";
-import { LayoutDashboard, Megaphone, ShieldCheck, Wallet, Target, Activity } from "lucide-react";
+import { House, Megaphone, ShieldCheck, Wallet, Target, Activity } from "lucide-react";
 import { TrackingAccuracyGauge } from "@/app/components/ui/TrackingAccuracyGauge";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { ReportedVsActualBars } from "@/app/components/ui/ReportedVsActualBars";
@@ -307,7 +307,7 @@ export default async function GlancePage({
           فوق «أهلاً عبد الرحمن» - تكرارٌ يُقرأ كخلل لا كسياق. السطر مفيدٌ
           فقط حين يميّز: مَن يملك أكثر من مساحة يحتاج أن يعرف في أيّها هو. */}
       <PageHeader
-        icon={LayoutDashboard}
+        icon={House}
         tone="accent"
         eyebrow={workspace.name !== user.name ? workspace.name : undefined}
         title={tr("greeting", { name: firstName })}

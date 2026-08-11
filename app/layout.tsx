@@ -10,17 +10,35 @@
 
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { IBM_Plex_Sans_Arabic } from "next/font/google";
+import { Inter, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { PwaSetup } from "@/app/components/PwaSetup";
 import "./dashboard/theme.css";
 
-// خط عربي/لاتيني احترافي واحد للواجهة كلها - IBM Plex Sans Arabic: نظيف،
-// حديث، تغطية ممتازة للعربي والأرقام، ويقترن طبيعياً مع IBM Plex Mono.
-const display = IBM_Plex_Sans_Arabic({
-  subsets: ["arabic", "latin"],
+// 🔴 **خطّان لا خطٌّ واحد - والسبب أنّ لكلّ كتابة ما صُمّم لها.**
+//
+// كان `IBM_Plex_Sans_Arabic` يخدم العربية واللاتينية معاً. عربيّته ممتازة،
+// أمّا لاتينيّته فهي IBM Plex Sans: قامةٌ صغيرة (x-height منخفض) وأشكال
+// حروفٍ ذات طابع، صُمّمت للنصّ المطبوع لا لواجهةٍ حجم نصّها ١٢-١٣ بكسل.
+// وعند هذا الحجم تفقد الحروف حدّتها فتُقرأ «مبكسلة» - وهو وصف المالك.
+//
+// **Inter** مصمَّم لهذا الحجم بالذات: قامةٌ عالية، فتحاتٌ واسعة، وتلميحٌ
+// (hinting) مضبوط على شبكة البكسل. وهو خطّ واجهات SaaS القياسيّ لهذا السبب
+// لا لموضة.
+//
+// **الترتيب هو الآلية:** Inter أوّلاً وليس فيه حرفٌ عربيّ واحد، فالمتصفّح
+// يسقط تلقائياً إلى Plex العربيّ عند أوّل حرفٍ عربيّ. لا فرعَ في الكود ولا
+// `dir` يُفحَص: الخطّ يتبع الحرف نفسه.
+const latin = Inter({
+  subsets: ["latin"],
+  variable: "--font-latin",
+  display: "swap",
+});
+
+const arabic = IBM_Plex_Sans_Arabic({
+  subsets: ["arabic"],
   weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-sans",
+  variable: "--font-arabic",
   display: "swap",
 });
 
@@ -98,7 +116,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       data-mode={user?.themeMode ?? "light"}
       data-accent={user?.themeColor ?? "blue"}
     >
-      <body className={`${display.variable} font-display antialiased`}>
+      <body className={`${latin.variable} ${arabic.variable} font-display antialiased`}>
         {children}
         {/* في الجذر لا داخل الداشبورد: تسجيل الـSW شرط التثبيت، ويجب أن
             يحدث حتى لمن يفتح صفحة الدخول أوّل مرّة. */}

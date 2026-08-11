@@ -243,12 +243,18 @@
   --color-accent: var(--accent);
   --color-accent-dim: var(--accent-dim);
 
-  /* next/font بيحمّل الخط ويحطه في --font-sans / --font-mono-code (أسماء
+  /* next/font يحمّل كلّ خطّ ويربطه بمتغيّره (--font-latin / --font-arabic)، ثمّ
      مختلفة عن توكن @theme لتجنّب المرجعية الدائرية). @theme بيشاور عليها،
      فـ.font-display / .font-mono بيتحلّوا للخط المُحمّل فعلاً، مش system.
      (كان system-ui ثابت محقون هنا = سبب إن الخط مايتغيّرش أبداً) */
-  --font-display: var(--font-sans, system-ui, sans-serif);
-  --font-mono: var(--font-mono-code, ui-monospace, monospace);
+  /* **الترتيب هو الآلية.** Inter أوّلاً وليس فيه حرفٌ عربيّ واحد، فالمتصفّح
+     يسقط تلقائياً إلى Plex العربيّ عند أوّل حرفٍ عربيّ - في الجملة نفسها إن
+     خُلطت. لا فرعَ في الكود ولا `dir` يُفحَص: الخطّ يتبع الحرف. */
+  --font-sans: var(--font-latin), var(--font-arabic), system-ui, sans-serif;
+  --font-display: var(--font-sans);
+  /* الأرقام بخطّ النصّ نفسه - ما يميّزها `tabular-nums` أدناه لا ملفُّ خطٍّ
+     ثانٍ. كان يُحمَّل Inter مرّتين لفرقٍ مصدرُه CSS. */
+  --font-mono: var(--font-latin), ui-monospace, monospace;
 
   --radius-card: var(--radius);
 
@@ -266,8 +272,14 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  font-family: var(--font-sans, system-ui, sans-serif);
+  /* 🔴 **`text-rendering: optimizeLegibility` كان هنا وأُزيل.**
+     رغم اسمه، هو لا يحسّن الوضوح: يفرض الكيرننج والروابط ويترك المتصفّح
+     يعيد تنظيم الحروف، فتثقل الحواف عند الأحجام الصغيرة ويختلف الرسم بين
+     المتصفّحات - وهو أحد وجهَي «الإحساس المبكسل». */
+  -moz-osx-font-smoothing: grayscale;
+  font-family: var(--font-sans);
+  /* الأحجام البصرية: Inter متغيّرٌ يعدّل ثخن الحروف حسب الحجم تلقائياً */
+  font-optical-sizing: auto;
 }
 
 /* ==== عداد الفجوة (Gap Meter) - العنصر التوقيعي، بيتكرر بحجمين ====

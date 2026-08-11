@@ -17,6 +17,7 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { OptionGroup } from "@/app/components/ui/OptionGroup";
 import { TabNav } from "@/app/components/ui/TabNav";
+import type { LucideIcon } from "lucide-react";
 
 // سياق اللغة بدل تمريرها كخاصية عبر أربعة عشر مكوّناً فرعياً. الملف واحد
 // وشجرته كلها في العميل، فالسياق هنا أنظف وأقل عرضة للخطأ من تمرير
@@ -209,7 +210,7 @@ export function SettingsClient({
   return (
     <SettingsLocaleContext.Provider value={locale}>
     <div className="mx-auto max-w-5xl">
-      <PageHeader icon={SettingsIcon} tone="accent" title={tr("title")} />
+      <PageHeader icon={SettingsIcon} tone="accent" title={tr("title")} description={tr("pageSubtitle")} />
 
       <div className="relative mb-6 max-w-md">
         <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-text-faint" />
@@ -254,7 +255,7 @@ export function SettingsClient({
         className="mb-7 md:hidden"
       />
 
-      <div className="card overflow-hidden p-0 md:grid md:grid-cols-[14rem_minmax(0,1fr)]">
+      <div className="card overflow-hidden p-0 md:grid md:grid-cols-[15rem_minmax(0,1fr)]">
         {/* الشاشة الواسعة: عمودٌ مجمَّع. `sticky` كي يبقى مرئياً في تبويب
             طويل - التنقّل الذي يمرّ خارج الشاشة يعادل غيابه. */}
         <nav className="hidden border-e border-border bg-surface-raised/40 p-4 md:block" aria-label={tr("title")}>
@@ -278,7 +279,7 @@ export function SettingsClient({
                         type="button"
                         onClick={() => setActiveTab(key)}
                         aria-current={on ? "page" : undefined}
-                        className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-start text-[13px] font-medium transition-colors ${
+                        className={`flex w-full items-start gap-2.5 rounded-lg px-3 py-2 text-start text-[13px] font-medium transition-colors ${
                           on
                             ? danger
                               ? "bg-critical/10 text-critical"
@@ -288,8 +289,8 @@ export function SettingsClient({
                               : "text-text-muted hover:bg-surface-raised hover:text-text-primary"
                         }`}
                       >
-                        <Icon size={15} strokeWidth={2} className="shrink-0" />
-                        <span className="truncate">{tr(tab.labelKey)}</span>
+                        <Icon size={15} strokeWidth={2} className="mt-0.5 shrink-0" />
+                        <span className="leading-tight">{tr(tab.labelKey)}</span>
                       </button>
                     );
                   })}
@@ -369,7 +370,7 @@ function ProfileTab({ user }: { user: UserData }) {
   }
 
   return (
-    <SettingsSection title={tr("tabProfile")} description={tr("secProfileDesc")}>
+    <SettingsSection icon={User} title={tr("tabProfile")} description={tr("secProfileDesc")}>
       <FieldLabel>{tr("idxName")}</FieldLabel>
       <TextInput value={name} onChange={setName} placeholder={tr("namePlaceholder")} />
 
@@ -431,7 +432,7 @@ function PreferencesTab({ user }: { user: UserData }) {
   }
 
   return (
-    <SettingsSection title={tr("tabPreferences")} description={tr("secPrefsDesc")}>
+    <SettingsSection icon={Palette} title={tr("tabPreferences")} description={tr("secPrefsDesc")}>
       <FieldLabel>{tr("idxLanguage")}</FieldLabel>
       <ToggleGroup
         options={[{ value: "ar", label: tr("langArabic") }, { value: "en", label: "English" }]}
@@ -579,7 +580,7 @@ function AccountsTab({ connectedPlatforms }: { connectedPlatforms: ConnectedPlat
   const connectedMap = new Map(connectedPlatforms.map((c) => [c.platform, c]));
 
   return (
-    <SettingsSection title={tr("tabAccounts")} description={tr("secAccountsDesc")}>
+    <SettingsSection icon={Plug} title={tr("tabAccounts")} description={tr("secAccountsDesc")}>
       {(["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"] as const).map((platform) => {
         const connection = connectedMap.get(platform);
         return (
@@ -697,7 +698,7 @@ function WorkspaceTab({
   }
 
   return (
-    <SettingsSection title={tr("tabWorkspace")} description={tr("secWorkspaceDesc")}>
+    <SettingsSection icon={Building2} title={tr("tabWorkspace")} description={tr("secWorkspaceDesc")}>
       {workspaces.length > 1 && (
         <WorkspaceSwitcher workspaces={workspaces} active={activeWorkspaceId} onSwitch={onSwitchWorkspace} />
       )}
@@ -1193,7 +1194,7 @@ function AutomationTab({
   }
 
   return (
-    <SettingsSection title={tr("tabAutomation")} description={tr("secAutomationDesc")}>
+    <SettingsSection icon={Zap} title={tr("tabAutomation")} description={tr("secAutomationDesc")}>
       {workspaces.length > 1 && (
         <WorkspaceSwitcher workspaces={workspaces} active={activeWorkspaceId} onSwitch={onSwitchWorkspace} />
       )}
@@ -1472,7 +1473,7 @@ function DangerZoneTab({ workspaces }: { workspaces: WorkspaceData[] }) {
   }
 
   return (
-    <SettingsSection title={tr("tabDanger")} description={tr("secDangerDesc")}>
+    <SettingsSection icon={TriangleAlert} title={tr("tabDanger")} description={tr("secDangerDesc")}>
       <div className="note border-critical/35 bg-critical/10 p-4">
         <div className="mb-2 text-sm font-medium text-critical">{tr("dzDeleteWorkspace")}</div>
         <p className="mb-3 text-xs text-text-muted">
@@ -1635,7 +1636,7 @@ function ConversionSyncTab({
   const anyReady = metaReady || googleReady || tiktokReady;
 
   return (
-    <SettingsSection title={tr("tabConversionSync")} description={tr("secSyncDesc")}>
+    <SettingsSection icon={RefreshCw} title={tr("tabConversionSync")} description={tr("secSyncDesc")}>
       {workspaces.length > 1 && (
         <WorkspaceSwitcher workspaces={workspaces} active={activeWorkspaceId} onSwitch={onSwitchWorkspace} />
       )}
@@ -1748,22 +1749,32 @@ function ReadyChip({ label, ready }: { label: string; ready: boolean }) {
 function SettingsSection({
   title,
   description,
+  icon: Icon,
   children,
 }: {
   title?: string;
   description?: string;
+  /** الأيقونة نفسها الموجودة في تبويب القسم بالعمود الجانبيّ - فالمربّع
+   *  الملوّن هنا يؤكّد للعين أنّها وصلت حيث ضغطت، ولا يخترع علامةً ثانية
+   *  للشيء نفسه. */
+  icon?: LucideIcon;
   children: React.ReactNode;
 }) {
   return (
     <div className="border-b border-border pb-8 [&:last-child]:border-0 [&:last-child]:pb-0 [&+&]:pt-8">
       {title && (
-        // الفاصل تحت العنوان يفصل «ما هذا القسم» عن «ما تضبطه فيه» - وهو
-        // ما يجعل الوصف يُقرأ وصفاً للقسم لا شرحاً لأوّل حقل تحته.
-        <div className="mb-6">
-          <h2 className="text-[15px] font-semibold leading-6 text-text-primary">{title}</h2>
-          {description && (
-            <p className="mt-1.5 text-[12.5px] leading-5 text-text-muted">{description}</p>
+        <div className="mb-6 flex items-start gap-3.5">
+          {Icon && (
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-surface-raised/60 text-accent">
+              <Icon size={19} strokeWidth={1.9} />
+            </span>
           )}
+          <div className="min-w-0 pt-0.5">
+            <h2 className="text-[16px] font-semibold leading-6 text-text-primary">{title}</h2>
+            {description && (
+              <p className="mt-1 text-[12.5px] leading-5 text-text-muted">{description}</p>
+            )}
+          </div>
         </div>
       )}
       {children}

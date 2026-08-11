@@ -40,21 +40,32 @@ import { isOwnerEmail } from "@/lib/owner";
 // next/font/google بيحمّل ملف الخط فعلياً وقت الـ build ويربطه بمتغير CSS -
 // ده الفرق عن مجرد كتابة اسم الخط في font-family من غير ما يكون مستورد
 // فعلياً (المشكلة اللي حصلت في المعاينة السابقة)
-const display = IBM_Plex_Sans_Arabic({
-  subsets: ["arabic", "latin"],
+// 🔴 **العربية وحدها من هنا - واللاتينية من Inter تحت.**
+//
+// كانت هذه الاستدعاءة تخدم الكتابتين معاً (`subsets: ["arabic", "latin"]`).
+// عربيّتها ممتازة، أمّا لاتينيّتها فهي IBM Plex Sans: قامةٌ صغيرة وأشكالُ
+// حروفٍ ذاتُ طابع، صُمّمت للنصّ المطبوع لا لواجهةٍ نصُّها ١٢-١٣ بكسل -
+// وعند هذا الحجم تفقد حدّتها على شبكة البكسل فتُقرأ «مبكسلة».
+const arabic = IBM_Plex_Sans_Arabic({
+  subsets: ["arabic"],
   weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-sans",
+  variable: "--font-arabic",
   display: "swap",
 });
 
-// خط الأرقام: Inter بأرقام جدولية (tabular figures) بدل خط برمجي.
-// السبب: IBM Plex Mono خط شيفرة - حروفه عريضة وميكانيكية، فتبدو المبالغ
-// المالية كأنها مخرجات طرفية لا أرقام منتج. Inter يعطي أرقاماً متساوية
-// العرض (تصطفّ رأسياً في الجداول) بمظهر تحريري نظيف.
-const numeric = Inter({
+// **Inter للاتينيّة كلّها - نصّاً وأرقاماً.**
+//
+// مصمَّم لهذا الحجم بالذات: قامةٌ عالية، فتحاتٌ واسعة، وتلميحٌ مضبوط على
+// شبكة البكسل. وهو خطّ واجهات SaaS القياسيّ لهذا السبب لا لموضة.
+//
+// **واستدعاءٌ واحد يخدم الاثنين:** كان يُحمَّل هنا للأرقام وحدها بينما
+// يُحمَّل خطٌّ ثانٍ للنصّ. وما يميّز الأرقام ليس الخطّ بل
+// `font-variant-numeric: tabular-nums` في `theme.css` - أي أنّ تحميله
+// مرّتين كان يُنزّل الملفّ نفسه بذريعة فرقٍ مصدرُه CSS.
+const latin = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-mono-code",
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-latin",
   display: "swap",
 });
 
@@ -180,7 +191,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         locale={locale}
         accent={accent}
         mode={mode}
-        fontVars={`${display.variable} ${numeric.variable}`}
+        fontVars={`${latin.variable} ${arabic.variable}`}
       />
     );
   }
@@ -216,7 +227,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       dir={locale === "ar" ? "rtl" : "ltr"}
       data-accent={accent}
       data-mode={mode}
-      className={`${display.variable} ${numeric.variable} flex min-h-screen flex-col bg-bg font-display`}
+      className={`${latin.variable} ${arabic.variable} flex min-h-screen flex-col bg-bg font-display`}
     >
       {isImpersonating && <ImpersonationBanner locale={locale} />}
       <LiveDataProvider>

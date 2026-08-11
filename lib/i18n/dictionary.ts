@@ -3266,6 +3266,7 @@ export const dictionary = {
     // ==== الإعدادات ====
     settings: {
       title: "الإعدادات",
+      pageSubtitle: "أدر حسابك ومساحة عملك والحسابات المربوطة.",
       searchPlaceholder: "ابحث في الإعدادات…",
       inTab: "في {tab}",
       tabProfile: "الملف الشخصي",
@@ -7042,6 +7043,7 @@ export const dictionary = {
     // ==== Settings ====
     settings: {
       title: "Settings",
+      pageSubtitle: "Manage your account, workspace, and connected accounts.",
       searchPlaceholder: "Search settings…",
       inTab: "in {tab}",
       tabProfile: "Profile",
@@ -7059,7 +7061,7 @@ export const dictionary = {
       tabPreferences: "Preferences",
       tabAccounts: "Connected accounts",
       tabWorkspace: "Workspace",
-      tabAutomation: "Controls and automation",
+      tabAutomation: "Automation",
       tabConversionSync: "Conversion sync",
       tabDanger: "Danger zone",
       idxName: "Name",

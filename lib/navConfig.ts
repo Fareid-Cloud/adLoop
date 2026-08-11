@@ -46,7 +46,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     labelAr: null,
     labelEn: null,
-    items: [{ href: "/dashboard", labelAr: "الرئيسية", labelEn: "Home", iconName: "LayoutDashboard" }],
+    items: [{ href: "/dashboard", labelAr: "الرئيسية", labelEn: "Home", iconName: "House" }],
   },
   {
     labelAr: "التحليل",
