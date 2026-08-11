@@ -3267,6 +3267,8 @@ export const dictionary = {
     settings: {
       title: "الإعدادات",
       pageSubtitle: "أدر حسابك ومساحة عملك والحسابات المربوطة.",
+      grpInterface: "اللغة",
+      grpAppearance: "المظهر",
       searchPlaceholder: "ابحث في الإعدادات…",
       inTab: "في {tab}",
       tabProfile: "الملف الشخصي",
@@ -7044,6 +7046,8 @@ export const dictionary = {
     settings: {
       title: "Settings",
       pageSubtitle: "Manage your account, workspace, and connected accounts.",
+      grpInterface: "Language",
+      grpAppearance: "Appearance",
       searchPlaceholder: "Search settings…",
       inTab: "in {tab}",
       tabProfile: "Profile",

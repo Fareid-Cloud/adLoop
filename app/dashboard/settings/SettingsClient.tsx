@@ -10,13 +10,14 @@ import { ConnectionTester } from "@/app/components/ConnectionTester";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { useState, useMemo, useEffect, createContext, useContext } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Settings as SettingsIcon, Bot, Cpu, Sparkles, Terminal, Brain, Zap, Upload, Search, User, Palette, Plug, Building2, RefreshCw, TriangleAlert } from "lucide-react";
+import { Settings as SettingsIcon, Bot, Cpu, Sparkles, Terminal, Brain, Zap, Upload, Search, User, Palette, Plug, Building2, RefreshCw, TriangleAlert, Check } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
 import { PushNotificationToggle } from "@/app/components/PushNotificationToggle";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { OptionGroup } from "@/app/components/ui/OptionGroup";
 import { TabNav } from "@/app/components/ui/TabNav";
+import { ThemeModeCard } from "@/app/components/ui/ThemeModeCard";
 import type { LucideIcon } from "lucide-react";
 
 // سياق اللغة بدل تمريرها كخاصية عبر أربعة عشر مكوّناً فرعياً. الملف واحد
@@ -433,34 +434,73 @@ function PreferencesTab({ user }: { user: UserData }) {
 
   return (
     <SettingsSection icon={Palette} title={tr("tabPreferences")} description={tr("secPrefsDesc")}>
-      <FieldLabel>{tr("idxLanguage")}</FieldLabel>
-      <ToggleGroup
-        options={[{ value: "ar", label: tr("langArabic") }, { value: "en", label: "English" }]}
-        value={locale}
-        onChange={setLocale}
-      />
-
-      <FieldLabel>{tr("mode")}</FieldLabel>
-      <ToggleGroup
-        options={[{ value: "dark", label: tr("modeDark") }, { value: "light", label: tr("modeLight") }]}
-        value={themeMode}
-        onChange={setThemeMode}
-      />
-
-      <FieldLabel>{tr("idxAccent")}</FieldLabel>
-      <div className="mb-4 flex gap-2">
-        {THEME_COLORS.map((c) => (
-          <button
-            key={c}
-            onClick={() => setThemeColor(c)}
-            data-accent={c}
-            title={tr(THEME_COLOR_KEYS[c])}
-            aria-label={tr(THEME_COLOR_KEYS[c])}
-            className={`h-8 w-8 rounded-full bg-accent transition-transform ${
-              themeColor === c ? "scale-110 ring-2 ring-text-primary ring-offset-2 ring-offset-bg" : ""
-            }`}
+      {/* عمودان: ما يخصّ **اللغة** وما يخصّ **المظهر**. كانا قائمةً واحدة
+          طويلة، فيقع لونُ التمييز على بُعد تمريرةٍ من الوضع الذي يظهر
+          عليه - وهما يُختاران معاً بالعين لا كلٌّ على حدة. */}
+      <div className="grid gap-8 md:grid-cols-2">
+        <div>
+          <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">
+            {tr("grpInterface")}
+          </div>
+          <FieldLabel>{tr("idxLanguage")}</FieldLabel>
+          <ToggleGroup
+            options={[{ value: "ar", label: tr("langArabic") }, { value: "en", label: "English" }]}
+            value={locale}
+            onChange={setLocale}
           />
-        ))}
+        </div>
+
+        <div className="md:border-s md:border-border md:ps-8">
+          <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">
+            {tr("grpAppearance")}
+          </div>
+
+          {/* 🔴 **كان كبسولتين مكتوباً عليهما «فاتح» و«داكن».** والكلمة
+              تسمّي ولا تُري: مَن لم يجرّب الوضع الداكن لا يعرف منها أهو
+              رماديّ فحميّ أم أزرقُ ليليّ، ولا أين يقع لونُ التمييز عليه.
+              فيضغط ليرى ثمّ يرجع - أي أنّ الاختيار كان يُجرَّب لا يُقرأ. */}
+          <FieldLabel>{tr("mode")}</FieldLabel>
+          <div className="mb-5 grid grid-cols-2 gap-3">
+            {(["light", "dark"] as const).map((m) => (
+              <ThemeModeCard
+                key={m}
+                mode={m}
+                label={tr(m === "light" ? "modeLight" : "modeDark")}
+                selected={themeMode === m}
+                onSelect={() => setThemeMode(m)}
+              />
+            ))}
+          </div>
+
+          {/* الألوان السبعة كما هي - لا يُضاف إليها ولا يُعدَّل عليها.
+              ما تغيّر شكلُ الاختيار وحده: علامةٌ صريحة بدل تكبيرٍ طفيف
+              كان يترك «أيّها المختار؟» سؤالاً قائماً. */}
+          <FieldLabel>{tr("idxAccent")}</FieldLabel>
+          <div className="mb-4 flex flex-wrap gap-2.5">
+            {THEME_COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setThemeColor(c)}
+                data-accent={c}
+                title={tr(THEME_COLOR_KEYS[c])}
+                aria-label={tr(THEME_COLOR_KEYS[c])}
+                aria-pressed={themeColor === c}
+                className={`relative h-8 w-8 rounded-full bg-accent transition-transform hover:scale-105 ${
+                  themeColor === c ? "ring-2 ring-accent ring-offset-2 ring-offset-surface" : ""
+                }`}
+              >
+                {themeColor === c && (
+                  <Check
+                    size={14}
+                    strokeWidth={3}
+                    className="absolute inset-0 m-auto text-white"
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* 🔴 حُذف من هنا بند «المستندات القانونية»: الروابط الثلاثة نفسها
