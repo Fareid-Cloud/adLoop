@@ -254,10 +254,10 @@ export function SettingsClient({
         className="mb-7 md:hidden"
       />
 
-      <div className="md:grid md:grid-cols-[13rem_minmax(0,1fr)] md:gap-10">
+      <div className="card overflow-hidden p-0 md:grid md:grid-cols-[14rem_minmax(0,1fr)]">
         {/* الشاشة الواسعة: عمودٌ مجمَّع. `sticky` كي يبقى مرئياً في تبويب
             طويل - التنقّل الذي يمرّ خارج الشاشة يعادل غيابه. */}
-        <nav className="hidden md:block" aria-label={tr("title")}>
+        <nav className="hidden border-e border-border bg-surface-raised/40 p-4 md:block" aria-label={tr("title")}>
           <div className="sticky top-6 flex flex-col gap-6">
             {TAB_GROUPS.map((group) => (
               <div key={group.titleKey}>
@@ -299,7 +299,7 @@ export function SettingsClient({
           </div>
         </nav>
 
-        <div className="min-w-0">
+        <div className="min-w-0 p-5 sm:p-7">
       {activeTab === "profile" && <ProfileTab user={user} />}
       {activeTab === "preferences" && <PreferencesTab user={user} />}
       {activeTab === "accounts" && <AccountsTab connectedPlatforms={connectedPlatforms} />}
@@ -654,6 +654,7 @@ function WorkspaceTab({
   // المستخدم هنا يعني أنّه يفعّل تنبيهات لا تصل ولا يعرف السبب أبداً.
   const emailEnabled = workspace.emailEnabled;
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleSave() {
     setSaving(true);
@@ -679,6 +680,17 @@ function WorkspaceTab({
     // البيانات: الصفحة كلّها تُعاد لتقرأ المساحة الجديدة من الكوكي.
     const out = await res.json().catch(() => null);
     if (out?.reseeded) { window.location.reload(); return; }
+
+    // 🔴 **الخطأ كان يُبتلَع.** الخادم يرفض تبديل العملة حين تأتي من حساب
+    // إعلانيّ حقيقيّ، والواجهة تُنهي الحفظ وتُحدّث - فترتدّ القائمة إلى
+    // القيمة القديمة بلا كلمة. من جهة المستخدم: «بختار الجنيه وبتثبت على
+    // الريال». الرفض يظهر الآن حيث حدث.
+    if (!res.ok) {
+      setError(out?.error ?? tr("saveFailed"));
+      setSaving(false);
+      return;
+    }
+    setError("");
 
     setSaving(false);
     router.refresh();
@@ -1155,6 +1167,7 @@ function AutomationTab({
     automationMonthlyBudgetChangeCeilingPct: workspace.automationMonthlyBudgetChangeCeilingPct ?? 50,
   });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleSave() {
     setSaving(true);
@@ -1168,6 +1181,12 @@ function AutomationTab({
     // البيانات: الصفحة كلّها تُعاد لتقرأ المساحة الجديدة من الكوكي.
     const out = await res.json().catch(() => null);
     if (out?.reseeded) { window.location.reload(); return; }
+    if (!res.ok) {
+      setError(out?.error ?? tr("saveFailed"));
+      setSaving(false);
+      return;
+    }
+    setError("");
 
     setSaving(false);
     router.refresh();
@@ -1736,11 +1755,11 @@ function SettingsSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="card p-6 sm:p-7">
+    <div className="border-b border-border pb-8 [&:last-child]:border-0 [&:last-child]:pb-0 [&+&]:pt-8">
       {title && (
         // الفاصل تحت العنوان يفصل «ما هذا القسم» عن «ما تضبطه فيه» - وهو
         // ما يجعل الوصف يُقرأ وصفاً للقسم لا شرحاً لأوّل حقل تحته.
-        <div className="mb-6 border-b border-border pb-5">
+        <div className="mb-6">
           <h2 className="text-[15px] font-semibold leading-6 text-text-primary">{title}</h2>
           {description && (
             <p className="mt-1.5 text-[12.5px] leading-5 text-text-muted">{description}</p>
@@ -1829,7 +1848,7 @@ function ToggleRow({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-6 border-b border-border py-3 last:border-0">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-6 gap-y-2 border-b border-border py-3.5 last:border-0">
       <div className="min-w-0">
         {/* درجة «الحقل»: ١٣px/medium/primary. كان `text-sm` عارياً فيتساوى
             مع الشرح تحته في الوزن واللون معاً. */}
@@ -1858,7 +1877,7 @@ function NumberRow({
   suffix?: string;
 }) {
   return (
-    <div className="flex items-start justify-between gap-6 border-b border-border py-3 last:border-0">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-6 gap-y-2 border-b border-border py-3.5 last:border-0">
       <div className="min-w-0">
         {/* درجة «الحقل»: ١٣px/medium/primary. كان `text-sm` عارياً فيتساوى
             مع الشرح تحته في الوزن واللون معاً. */}
@@ -1873,7 +1892,10 @@ function NumberRow({
           onChange={(e) => onChange(parseFloat(e.target.value))}
           className="field w-24 px-2 py-1 text-end"
         />
-        {suffix && <span className="w-12 text-[12px] text-text-faint">{suffix}</span>}
+        {/* 🔴 تُصيَّر دائماً حتى بلا وحدة. حين كانت مشروطةً، الصفّ الذي بلا
+            وحدة يفقد عرضها فينزاح صندوقه وحده عن بقيّة الصفوف - وهو
+            «البوكس المش متحاذي». `aria-hidden` كي لا يقرأ قارئ الشاشة فراغاً. */}
+        <span aria-hidden className="w-8 shrink-0 text-[12px] text-text-faint">{suffix ?? ""}</span>
       </div>
     </div>
   );

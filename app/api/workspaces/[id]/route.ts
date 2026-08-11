@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { verifyCsrfToken } from "@/lib/csrf";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 const ALLOWED_FIELDS = [
   "name",
@@ -85,7 +86,19 @@ export async function PATCH(
   //     محوَّلةً فعلاً. هذا هو الموضع الوحيد الذي «يتحوّل» فيه المال حقّاً.
   if ("currency" in data && data.currency !== workspace.currency) {
     if (workspace.dataCurrency && data.currency !== workspace.dataCurrency) {
-      delete data.currency;
+      // 🔴 **كان `delete data.currency` صامتاً.** الحفظ ينجح، والقائمة ترتدّ
+      // إلى القيمة القديمة بعد التحديث، ولا شيء يقول لماذا - فيقرأها
+      // المستخدم عطلاً في المنتج لا قاعدةً فيه: «بختار الجنيه وبتثبت
+      // على الريال». الرفض يُقال الآن ومعه سببُه ومصدرُ الرقم.
+      const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
+      return NextResponse.json(
+        {
+          error: t(locale, "apiErr.currencyLockedToAccount", {
+            currency: workspace.dataCurrency,
+          }),
+        },
+        { status: 409 },
+      );
     } else if (workspace.isDemo) {
       const { seedDemoWorkspace } = await import("@/lib/demo");
       // إعادة البذر تحذف المساحة وتنشئها من جديد، فيتغيّر معرّفها - ويُكتب

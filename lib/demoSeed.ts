@@ -181,6 +181,14 @@ export async function seedDemoData(
   // الحساب الحقيقيّ لا يمرّ من هنا: عملته عملة حسابه الإعلانيّ، تأتي من
   // المنصّة ولا نختارها له - راجع `dataCurrency` في `SettingsClient`.
   const m = (v: number) => roundForCurrency(v * demoCurrencyScale(currency), currency);
+  /** الرقم مكتوباً بعملته - لنصوص البذرة التي تذكر مبلغاً داخل جملة.
+   *  `Intl` يعطي اسم العملة الصحيح للّغة، فلا يُكتب «ريال» في نصٍّ بالجنيه. */
+  const fmt = (v: number) =>
+    new Intl.NumberFormat(ar ? "ar-EG" : "en-US", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(v);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -366,9 +374,13 @@ export async function seedDemoData(
       {
         workspaceId, type: "SUGGESTION" as const, severity: "HIGH" as const,
         title: ar ? "«تيك توك — جمهور واسع» تصرف بلا تحويل مؤكَّد واحد" : "\"TikTok — Broad audience\" is spending with zero confirmed conversions",
+        // 🔴 كان الرقمان واسمُ العملة مكتوبين في النصّ: «٢٩٥ ريالاً»
+        // و«SAR 8,850». فمساحةٌ بالجنيه تعرض بطاقاتٍ بالجنيه وتنبيهاً
+        // يتحدّث بالريال - في الشاشة الواحدة. الرقمان يُحوَّلان بالدالة
+        // نفسها التي تحوّل كلّ رقمٍ آخر، واسم العملة يُشتقّ منها.
         description: ar
-          ? "٢٩٥ ريالاً يومياً منذ اثني عشر يوماً، وصفر تحويل متحقّق. الإيقاف يوفّر نحو ٨٬٨٥٠ ريالاً شهرياً."
-          : "SAR 295 a day for twelve days, and zero verified conversions. Pausing saves around SAR 8,850 a month.",
+          ? `${fmt(m(295))} يومياً منذ اثني عشر يوماً، وصفر تحويل متحقّق. الإيقاف يوفّر نحو ${fmt(m(8850))} شهرياً.`
+          : `${fmt(m(295))} a day for twelve days, and zero verified conversions. Pausing saves around ${fmt(m(8850))} a month.`,
         linkUrl: "/dashboard/campaigns/creatives",
       },
       {
@@ -457,7 +469,9 @@ export async function seedDemoData(
         eventName: "Purchase",
         occurredAt: convertedAt,
         value: j.value,
-        currency: "SAR",
+        // 🔴 كانت `"SAR"` ثابتةً. فمساحةٌ أُعيد بذرها بالجنيه تُنتج صفوف
+        // تحويلٍ موسومةً بالريال - قيمةٌ محوَّلة تحمل لافتة العملة القديمة.
+        currency,
         verified: true,
         matchQualityScore: 7 + (ji % 3),
       });
