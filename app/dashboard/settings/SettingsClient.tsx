@@ -271,7 +271,10 @@ export function SettingsClient({
 
           والفرق عن الجولة الأولى أنّ الإطار هنا يحدّ **شيئاً حقيقياً**:
           مساحة الإعداد بقائمتها ومحتواها، مفصولةً عن رأس الصفحة فوقها. */}
-      <div className="overflow-hidden rounded-2xl bg-surface shadow-[var(--shadow-card)] md:grid md:grid-cols-[15rem_minmax(0,1fr)]">
+      {/* حدٌّ خفيفٌ **ثابت**: يرسم حدود المنطقة، ولا يستجيب للمرور فوقه.
+          `.card` تُفتّح حدَّها عند التأشير لأنّها عنصرٌ يُتعامَل معه؛ وهذه
+          مساحةُ صفحةٍ لا تُضغط ولا تُفتَح، فتفاعلُها يَعِد بفعلٍ لا وجود له. */}
+      <div className="overflow-hidden rounded-2xl border border-border bg-surface md:grid md:grid-cols-[15rem_minmax(0,1fr)]">
         {/* الشاشة الواسعة: عمودٌ مجمَّع. `sticky` كي يبقى مرئياً في تبويب
             طويل - التنقّل الذي يمرّ خارج الشاشة يعادل غيابه. */}
         <nav className="hidden border-e border-border md:block" aria-label={tr("title")}>
@@ -351,7 +354,7 @@ export function SettingsClient({
         />
       )}
       {activeTab === "security" && (
-        <SettingsSection icon={ShieldCheck} title={tr("tabSecurity")} description={tr("secSecurityDesc")}>
+        <SettingsSection icon={ShieldCheck} title={tr("tabSecurity")} boxed description={tr("secSecurityDesc")}>
           <ChangePasswordFields />
           <MfaFields />
         </SettingsSection>
@@ -399,7 +402,7 @@ function ProfileTab({ user }: { user: UserData }) {
   }
 
   return (
-    <SettingsSection icon={User} title={tr("tabProfile")} description={tr("secProfileDesc")}>
+    <SettingsSection icon={User} title={tr("tabProfile")} boxed description={tr("secProfileDesc")}>
       <FieldLabel>{tr("idxName")}</FieldLabel>
       <TextInput value={name} onChange={setName} placeholder={tr("namePlaceholder")} />
 
@@ -461,7 +464,7 @@ function PreferencesTab({ user }: { user: UserData }) {
   }
 
   return (
-    <SettingsSection icon={Palette} title={tr("tabPreferences")} description={tr("secPrefsDesc")}>
+    <SettingsSection icon={Palette} title={tr("tabPreferences")} boxed description={tr("secPrefsDesc")}>
       {/* عمودان: ما يخصّ **اللغة** وما يخصّ **المظهر**. كانا قائمةً واحدة
           طويلة، فيقع لونُ التمييز على بُعد تمريرةٍ من الوضع الذي يظهر
           عليه - وهما يُختاران معاً بالعين لا كلٌّ على حدة. */}
@@ -650,9 +653,13 @@ function DisconnectButton({ platform }: { platform: string }) {
       <span className="rounded-full bg-verified/12 px-3 py-1 text-[12px] font-medium text-verified">
         {tr("connected")}
       </span>
+      {/* رماديٌّ ساكنٌ يحمرّ عند التأشير: الفعلُ هدمٌ لا تنقّل، فلونُ الهوية
+          كان يَعِد بشيءٍ آمن. و`focus:outline-none` **ليست** إلغاءً للتركيز -
+          `focus-visible` تُبقيه لمن يتنقّل بلوحة المفاتيح، وتمنعه وحده عن
+          الضغط بالفأرة حيث كان يرسم مستطيلاً حول النصّ بلا سبب. */}
       <button
         onClick={() => setConfirming(true)}
-        className="text-[12.5px] text-accent transition-colors hover:text-critical"
+        className="rounded text-[12.5px] text-text-muted outline-none transition-colors hover:text-critical focus-visible:ring-2 focus-visible:ring-critical/40"
       >
         {tr("disconnectAccount")}
       </button>
@@ -2052,11 +2059,15 @@ function SettingsSection({
   title,
   description,
   icon: Icon,
+  boxed = false,
   children,
 }: {
   title?: string;
   description?: string;
   icon?: LucideIcon;
+  /** للأقسام التي لا عناوين داخلية لها: تُغلَّف ببطاقةٍ واحدة بدل أن تبدو
+   *  حقولاً سائبةً بينما أخواتها في بطاقات. */
+  boxed?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -2078,19 +2089,18 @@ function SettingsSection({
           </div>
         </div>
       )}
-      {/* 🔴 **جسمُ القسم بطاقةٌ تطفو، لا محتوىً سائبٌ على السطح.**
+      {/* 🔴 **إطارٌ واحد، لا ثلاثة متداخلة.**
        *
-       * كان الرأس والحقول يتدفّقان معاً على سطح اللوحة مباشرةً، فلا شيء
-       * يقول أين يبدأ الإعداد وأين ينتهي - والمرجع الذي أرسله المالك يفصل
-       * الاثنين: رأسٌ عارٍ فوق، وما يُعدَّل داخل بطاقةٍ تحته.
+       * أُعطي هذا الغلافُ إطاراً في جولةٍ سابقة، وكان خطأً: أبناؤه أصلاً
+       * بطاقاتٌ لها إطاراتها (`SettingsCard` لكلّ عنوانٍ داخليّ)، ولوحةُ
+       * الإعدادات حولهم جميعاً لها حدُّها. فصار الحقلُ داخل ثلاثة أطرٍ
+       * متداخلة - عمقٌ كاذبٌ لا يفصل شيئاً، لأنّ الإطار إنّما يفصل حين
+       * يكون وحده.
        *
-       * والرأس يبقى خارجها عمداً: هو عنوانُ ما تحته، فلو دخل الإطار صار
-       * عنصراً بجانب الحقول لا فوقها.
-       *
-       * وهذه نقطةُ الرافعة: كلّ تبويبات الإعدادات تمرّ من هنا، فالشكل
-       * واحدٌ فيها جميعاً بتعديلٍ واحد - لا تسعةُ تبويباتٍ تُعدَّل يدوياً
-       * ثمّ يُنسى واحدٌ منها. */}
-      <div className="card flex flex-col gap-4 p-5 sm:p-6">{children}</div>
+       * فالإطار للبطاقة الداخلية وحدها، وهذا الغلاف تخطيطٌ لا سطح. */}
+      <div className={boxed ? "card flex flex-col gap-4 p-5 sm:p-6" : "flex flex-col gap-4"}>
+        {children}
+      </div>
     </div>
   );
 }
