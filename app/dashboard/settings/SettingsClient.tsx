@@ -8,9 +8,9 @@
 import { Toggle } from "@/app/components/ui/Toggle";
 import { ConnectionTester } from "@/app/components/ConnectionTester";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
-import { useState, useMemo, useEffect, createContext, useContext } from "react";
+import { useState, useMemo, useEffect, createContext, useContext, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Settings as SettingsIcon, Bot, Cpu, Sparkles, Terminal, Brain, Zap, Upload, Search, User, Palette, Plug, Building2, RefreshCw, TriangleAlert, Check } from "lucide-react";
+import { Settings as SettingsIcon, Bot, Cpu, Sparkles, Terminal, Brain, Zap, Upload, Search, User, Palette, Plug, Building2, RefreshCw, TriangleAlert, Check, ChevronDown } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
 import { PushNotificationToggle } from "@/app/components/PushNotificationToggle";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -24,6 +24,8 @@ import type { LucideIcon } from "lucide-react";
 // وشجرته كلها في العميل، فالسياق هنا أنظف وأقل عرضة للخطأ من تمرير
 // خاصية تُنسى في مكوّن واحد فيبقى نصّه بلغة واحدة دون أن يلاحظ أحد.
 const SettingsLocaleContext = createContext<Locale>("ar");
+/** حساب المالك يرى الأعطاب التقنية باسمها؛ المشترك يرى ما يعنيه هو. */
+const OwnerContext = createContext(false);
 
 function useT() {
   const locale = useContext(SettingsLocaleContext);
@@ -180,10 +182,12 @@ export function SettingsClient({
   user,
   workspaces,
   connectedPlatforms,
+  isOwner,
 }: {
   user: UserData;
   workspaces: WorkspaceData[];
   connectedPlatforms: ConnectedPlatformData[];
+  isOwner: boolean;
 }) {
   // التبويب الأوّلي من الرابط: بدونه كان كل زرّ يشير إلى إعداد بعينه
   // يهبط بالمستخدم على «الملف الشخصي» ويتركه يبحث عمّا أُرسل إليه.
@@ -210,6 +214,7 @@ export function SettingsClient({
 
   return (
     <SettingsLocaleContext.Provider value={locale}>
+    <OwnerContext.Provider value={isOwner}>
     <div className="mx-auto max-w-5xl">
       <PageHeader icon={SettingsIcon} tone="accent" title={tr("title")} description={tr("pageSubtitle")} />
 
@@ -256,10 +261,15 @@ export function SettingsClient({
         className="mb-7 md:hidden"
       />
 
-      <div className="card overflow-hidden p-0 md:grid md:grid-cols-[15rem_minmax(0,1fr)]">
+      {/* 🔴 **كان إطاراً واحداً حول القسم كلّه.** والإطار يقول «هذه بطاقة»
+          أي شيءٌ واحدٌ داخل صفحة - بينما الإعدادات هي الصفحة نفسها لا
+          عنصرٌ فيها. فيقرأ المستخدم حداً لا يحدّ شيئاً.
+          الآن: لا إطار حول الكلّ، والبطاقات **داخله** - كلّ عنوانٍ داخليّ
+          بطاقةٌ مستقلّة عمّا فوقها وتحتها. */}
+      <div className="md:grid md:grid-cols-[15rem_minmax(0,1fr)] md:gap-8">
         {/* الشاشة الواسعة: عمودٌ مجمَّع. `sticky` كي يبقى مرئياً في تبويب
             طويل - التنقّل الذي يمرّ خارج الشاشة يعادل غيابه. */}
-        <nav className="hidden border-e border-border bg-surface-raised/40 p-4 md:block" aria-label={tr("title")}>
+        <nav className="hidden md:block" aria-label={tr("title")}>
           <div className="sticky top-6 flex flex-col gap-6">
             {TAB_GROUPS.map((group) => (
               <div key={group.titleKey}>
@@ -301,7 +311,7 @@ export function SettingsClient({
           </div>
         </nav>
 
-        <div className="min-w-0 p-5 sm:p-7">
+        <div className="min-w-0">
       {activeTab === "profile" && <ProfileTab user={user} />}
       {activeTab === "preferences" && <PreferencesTab user={user} />}
       {activeTab === "accounts" && <AccountsTab connectedPlatforms={connectedPlatforms} />}
@@ -335,6 +345,7 @@ export function SettingsClient({
         </div>
       </div>
     </div>
+    </OwnerContext.Provider>
     </SettingsLocaleContext.Provider>
   );
 }
@@ -448,6 +459,32 @@ function PreferencesTab({ user }: { user: UserData }) {
             value={locale}
             onChange={setLocale}
           />
+
+          <FieldLabel>{tr("idxTimezone")}</FieldLabel>
+          <select
+            value={timezone}
+            onChange={(e) => setTimezone(e.target.value)}
+            className="field mb-4 w-full"
+          >
+            {/* مجموعات بدل قائمة مسطّحة: القائمة صارت أطول من أن تُمسح بالعين */}
+            <optgroup label={tr("tzGroupGulf")}>
+          <option value="Asia/Riyadh">{tr("tzRiyadh")}</option>
+          <option value="Africa/Cairo">{tr("tzCairo")}</option>
+          <option value="Asia/Dubai">{tr("tzDubai")}</option>
+          <option value="Asia/Kuwait">{tr("tzKuwait")}</option>
+          <option value="Europe/Istanbul">{tr("tzIstanbul")}</option>
+            </optgroup>
+            <optgroup label={tr("tzGroupEurope")}>
+          <option value="Europe/London">{tr("tzLondon")}</option>
+          <option value="Europe/Paris">{tr("tzParis")}</option>
+          <option value="Europe/Berlin">{tr("tzBerlin")}</option>
+            </optgroup>
+            <optgroup label={tr("tzGroupAmericas")}>
+          <option value="America/New_York">{tr("tzNewYork")}</option>
+          <option value="America/Chicago">{tr("tzChicago")}</option>
+          <option value="America/Los_Angeles">{tr("tzLosAngeles")}</option>
+            </optgroup>
+          </select>
         </div>
 
         <div className="md:border-s md:border-border md:ps-8">
@@ -507,57 +544,43 @@ function PreferencesTab({ user }: { user: UserData }) {
           في تذييل **كلّ** صفحة داخل اللوحة، ونسخةٌ ثانيةٌ منها في
           التفضيلات لا تضيف وصولاً - تضيف بنداً يمرّ عليه المستخدم وهو
           يبحث عن إعداد. الإعدادات لما يُضبَط، لا لما يُقرأ. */}
-      <div className="mb-3 mt-8 border-t border-border pt-6 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">{tr("marketingTitle")}</div>
-      <p className="mb-2 text-xs text-text-faint">{tr("marketingHint")}</p>
-      <ToggleRow
-        label={tr("marketingToggle")}
-        checked={!marketingOptOut}
-        onChange={(v) => setMarketingOptOut(!v)}
-      />
+      {/* 🔴 **كان قسماً بعنوانٍ وشرحٍ لمفتاحٍ واحد.** والعنوان يَعِد بما
+          تحته: يقرأ المستخدم «رسائل تسويقية» فيتوقّع مجموعةَ خيارات، ثمّ
+          يجد سطراً واحداً - فيبدو القسم ناقصاً لا مكتملاً. الخيار الواحد
+          يقف بذاته، وشرحُه تحت اسمه حيث يخصّه. */}
+      <div className="mt-8 border-t border-border pt-6">
+        <ToggleRow
+          label={tr("marketingToggle")}
+          hint={tr("marketingHint")}
+          checked={!marketingOptOut}
+          onChange={(v) => setMarketingOptOut(!v)}
+        />
+      </div>
 
-      <FieldLabel>{tr("idxTimezone")}</FieldLabel>
-      <select
-        value={timezone}
-        onChange={(e) => setTimezone(e.target.value)}
-        className="field mb-4 w-full"
-      >
-        {/* مجموعات بدل قائمة مسطّحة: القائمة صارت أطول من أن تُمسح بالعين */}
-        <optgroup label={tr("tzGroupGulf")}>
-          <option value="Asia/Riyadh">{tr("tzRiyadh")}</option>
-          <option value="Africa/Cairo">{tr("tzCairo")}</option>
-          <option value="Asia/Dubai">{tr("tzDubai")}</option>
-          <option value="Asia/Kuwait">{tr("tzKuwait")}</option>
-          <option value="Europe/Istanbul">{tr("tzIstanbul")}</option>
-        </optgroup>
-        <optgroup label={tr("tzGroupEurope")}>
-          <option value="Europe/London">{tr("tzLondon")}</option>
-          <option value="Europe/Paris">{tr("tzParis")}</option>
-          <option value="Europe/Berlin">{tr("tzBerlin")}</option>
-        </optgroup>
-        <optgroup label={tr("tzGroupAmericas")}>
-          <option value="America/New_York">{tr("tzNewYork")}</option>
-          <option value="America/Chicago">{tr("tzChicago")}</option>
-          <option value="America/Los_Angeles">{tr("tzLosAngeles")}</option>
-        </optgroup>
-      </select>
+      {/* 🔴 **إعادة الجولة كانت تقف بجانب «احفظ» كأنّهما زوجان.** وهي
+          ليست إعداداً يُحفَظ أصلاً: ضغطةٌ واحدة تفعل الفعل فوراً وتغادر
+          الصفحة. وضعُها في صفّ الحفظ يوحي بأنّها اختيارٌ ينتظر تأكيداً،
+          ويوحي عكسياً بأنّ «احفظ» يخصّ الجولة. الفعل الفوريّ في سطره،
+          والحفظ وحده في صفّه. */}
+      <div className="mt-6 border-t border-border pt-6">
+        <FieldRowAction
+          label={tr("tour")}
+          hint={tr("tourHint")}
+          actionLabel={tr("tourRestart")}
+          onAction={async () => {
+            await fetch("/api/onboarding/progress", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ step: 0, completed: false, dismissed: false }),
+            });
+            router.push("/dashboard");
+          }}
+        />
+      </div>
 
-      <FieldLabel>{tr("tour")}</FieldLabel>
-      <p className="mb-2 text-xs text-text-faint">{tr("tourHint")}</p>
-      <button
-        onClick={async () => {
-          await fetch("/api/onboarding/progress", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ step: 0, completed: false, dismissed: false }),
-          });
-          router.push("/dashboard");
-        }}
-        className="mb-4 rounded-full bg-surface-raised px-3.5 py-1.5 text-xs text-text-primary"
-      >
-        {tr("tourRestart")}
-      </button>
-
-      <SaveButton onClick={handleSave} saving={saving} />
+      <div className="flex justify-end pt-2">
+        <SaveButton onClick={handleSave} saving={saving} />
+      </div>
     </SettingsSection>
   );
 }
@@ -676,6 +699,7 @@ function WorkspaceTab({
   const tr = useT();
   // سياق اللغة موجود في هذا الملفّ أصلاً - نقرأه بدل تمرير خاصّية عبر طبقات
   const tabLocale = useContext(SettingsLocaleContext);
+  const isOwner = useContext(OwnerContext);
   const router = useRouter();
   const workspace = workspaces.find((w) => w.id === activeWorkspaceId) ?? workspaces[0];
   const [name, setName] = useState(workspace.name);
@@ -788,6 +812,7 @@ function WorkspaceTab({
       )}
 
       <FieldLabel>{tr("idxMarket")}</FieldLabel>
+      <FieldHint>{tr("idxMarketHint")}</FieldHint>
       <select
         value={targetLocation}
         onChange={(e) => setTargetLocation(e.target.value)}
@@ -839,7 +864,7 @@ function WorkspaceTab({
         className="field mb-4 w-full"
       />
 
-      <div className="mb-3 mt-8 border-t border-border pt-6 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">{tr("waSection")}</div>
+      <SettingsCard title={tr("waSection")}>
       <p className="mb-3 text-xs text-text-faint">{tr("waSectionHint")}</p>
 
       <FieldLabel>{tr("waPhoneNumberId")}</FieldLabel>
@@ -880,13 +905,16 @@ function WorkspaceTab({
         workspaceId={workspace.id}
         ready={Boolean(waPhoneNumberId.trim() && waBusinessPhone.trim())}
         copied={linkCopied}
+        isOwner={isOwner}
         onCopied={() => {
           setLinkCopied(true);
           setTimeout(() => setLinkCopied(false), 2000);
         }}
       />
 
-      <div className="mb-3 mt-8 border-t border-border pt-6 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">{tr("alerts")}</div>
+      </SettingsCard>
+
+      <SettingsCard title={tr("alerts")}>
       <p className="mb-2 text-xs text-text-faint">
         {tr("alertsHint")}
       </p>
@@ -910,6 +938,8 @@ function WorkspaceTab({
       </p>
       <CampaignPicker workspaceId={workspace.id} />
 
+      </SettingsCard>
+
       <div className="mt-4">
         <SaveButton onClick={handleSave} saving={saving} />
       </div>
@@ -930,11 +960,14 @@ function TrackerAdLink({
   ready,
   copied,
   onCopied,
+  isOwner,
 }: {
   workspaceId: string;
   ready: boolean;
   copied: boolean;
   onCopied: () => void;
+  /** مالك المنتج وحده يرى العطب التقنيّ باسمه - هو من يملك إصلاحه */
+  isOwner: boolean;
 }) {
   const tr = useT();
   const base = process.env.NEXT_PUBLIC_TRACKER_BASE_URL;
@@ -943,12 +976,28 @@ function TrackerAdLink({
     : null;
 
   // كلّ حالة تقول ما الناقص وأين يُضبط، لا "غير متاح" وتصمت.
+  //
+  // 🔴 **لكنّ «ما الناقص» يختلف باختلاف مَن يقرأ.**
+  //
+  // `NEXT_PUBLIC_TRACKER_BASE_URL` متغيّرُ بيئةٍ **واحد على النشر كلّه**،
+  // لا إعدادٌ لكلّ مشترك: المتتبّع متعدّد المستأجرين يعرف صاحب الرسالة من
+  // قاعدة البيانات المشتركة عبر `phone_number_id`. أي أنّ ضبطه عملُ مالك
+  // المنتج مرّةً واحدة، لا عملُ المشترك أبداً.
+  //
+  // وكانت الرسالة تُعرض للجميع باسم المتغيّر: يقرأ المشترك اسم متغيّرٍ
+  // برمجيّ وإحالةً إلى «دليل تفعيل» لا يملكه ولا يستطيع فعل شيء حياله -
+  // عطبٌ في منتجنا معروضٌ عليه كأنّه نقصٌ في إعداده هو.
   if (!ready || !link) {
+    const ownerProblem = !base;
     return (
       <div className="mb-4 surface-0/50 p-3.5">
         <div className="mb-1 text-[12.5px] font-medium text-text-primary">{tr("waLinkTitle")}</div>
         <p className="text-[11.5px] leading-relaxed text-text-faint">
-          {!base ? tr("waLinkNeedsBase") : tr("waLinkNeedsSetup")}
+          {ownerProblem
+            ? isOwner
+              ? tr("waLinkNeedsBase")
+              : tr("waLinkUnavailable")
+            : tr("waLinkNeedsSetup")}
         </p>
       </div>
     );
@@ -1159,20 +1208,100 @@ function WorkspaceSwitcher({
   active: string;
   onSwitch: (id: string) => void;
 }) {
+  const tr = useT();
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const current = workspaces.find((w) => w.id === active) ?? workspaces[0];
+
+  // الإغلاق بالضغط خارجه: قائمةٌ تبقى مفتوحة بعد أن يُصرَف النظر عنها
+  // تغطّي ما تحتها، فيضغط المستخدم عليها وهو يقصد ما وراءها.
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (!boxRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onEsc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, [open]);
+
   return (
-    <div className="mb-4 flex gap-1.5">
-      {workspaces.map((w) => (
-        <button
-          key={w.id}
-          onClick={() => onSwitch(w.id)}
-          className={`rounded-full px-3 py-1 text-xs transition-colors ${
-            active === w.id ? "bg-accent text-white" : "bg-surface-raised text-text-muted"
-          }`}
+    // 🔴 **كانت كبسولاتٍ مصفوفة، واحدةٌ لكلّ مساحة.**
+    //
+    // وهي تعمل عند اثنتين وتنهار عند عشر: صفٌّ يطول حتى يلتفّ أو يخرج من
+    // الشاشة. والأهمّ أنّها **لا تقول أين أنت** إلّا بالتلوين - فالمساحة
+    // النشطة والمساحات الأخرى معروضةٌ بالوزن نفسه، بينما السؤال الأوّل
+    // دائماً «أرقام مَن هذه؟».
+    //
+    // القائمة تجيبه قبل أن يُفتَح شيء: المساحة الحالية وحدها ظاهرة، وما
+    // عداها خلف ضغطة. وهي لا تطول مهما بلغ العدد.
+    <div ref={boxRef} className="relative mb-5 max-w-sm">
+      <div className="mb-1.5 text-[12px] font-medium text-text-muted">{tr("wsCurrent")}</div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        className="flex w-full items-center gap-2.5 rounded-xl border border-border bg-surface px-3 py-2.5 text-start transition-colors hover:border-border-visible"
+      >
+        <WorkspaceMark name={current.name} />
+        <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-text-primary">
+          {current.name}
+        </span>
+        <ChevronDown
+          size={15}
+          className={`shrink-0 text-text-faint transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div
+          role="listbox"
+          className="pop-shadow absolute z-30 mt-1.5 w-full overflow-hidden rounded-xl border border-border bg-surface p-1.5"
         >
-          {w.name}
-        </button>
-      ))}
+          {workspaces.map((w) => {
+            const on = w.id === active;
+            return (
+              <button
+                key={w.id}
+                type="button"
+                role="option"
+                aria-selected={on}
+                onClick={() => {
+                  onSwitch(w.id);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-start transition-colors ${
+                  on ? "bg-surface-raised" : "hover:bg-surface-raised"
+                }`}
+              >
+                <WorkspaceMark name={w.name} />
+                <span className="min-w-0 flex-1 truncate text-[13px] text-text-primary">{w.name}</span>
+                {on && (
+                  <span className="shrink-0 rounded-full bg-accent/12 px-2 py-0.5 text-[11px] font-medium text-accent">
+                    {tr("wsCurrentChip")}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
+  );
+}
+
+/** أوّل حرفٍ في مربّع - يميّز المساحات في القائمة قبل قراءة الاسم.
+ *  `bdi` لأنّ الحرف قد يكون عربياً في واجهةٍ إنجليزية أو العكس. */
+function WorkspaceMark({ name }: { name: string }) {
+  return (
+    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent/12 text-[12px] font-semibold uppercase text-accent">
+      <bdi>{name.trim().charAt(0) || "?"}</bdi>
+    </span>
   );
 }
 
@@ -1239,7 +1368,7 @@ function AutomationTab({
         <WorkspaceSwitcher workspaces={workspaces} active={activeWorkspaceId} onSwitch={onSwitchWorkspace} />
       )}
 
-      <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">{tr("switches")}</div>
+      <SettingsCard title={tr("switches")}>
       <ToggleRow
         label={tr("swAi")}
         hint={tr("swAiHint")}
@@ -1271,7 +1400,9 @@ function AutomationTab({
         onChange={(v) => setForm({ ...form, useModeledAttribution: v })}
       />
 
-      <div className="mb-3 mt-8 border-t border-border pt-6 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">{tr("thresholdsHead")}</div>
+      </SettingsCard>
+
+      <SettingsCard title={tr("thresholdsHead")}>
       <NumberRow
         label={tr("thResponse")}
         hint={tr("thResponseHint")}
@@ -1319,7 +1450,9 @@ function AutomationTab({
 
       {/* الحدود التي كانت تقع تحت الاختيار تعود إلى مجموعتها: كانت ثلاثة
           فوقه وخمسة تحته، فبدت مجموعتين يفصل بينهما إعدادٌ لا يخصّ أيّاً منهما. */}
-      <div className="mb-3 mt-8 border-t border-border pt-6 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">{tr("thresholdsMoreHead")}</div>
+      </SettingsCard>
+
+      <SettingsCard title={tr("thresholdsMoreHead")}>
       <NumberRow
         label={tr("thCtr")}
         hint={tr("thCtrHint")}
@@ -1352,6 +1485,8 @@ function AutomationTab({
         value={form.automationMonthlyBudgetChangeCeilingPct}
         onChange={(v) => setForm({ ...form, automationMonthlyBudgetChangeCeilingPct: v })}
       />
+
+      </SettingsCard>
 
       <div className="mt-4">
         <SaveButton onClick={handleSave} saving={saving} />
@@ -1685,7 +1820,7 @@ function ConversionSyncTab({
         {tr("csWhy")}
       </p>
 
-      <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">{tr("csRunning")}</div>
+      <SettingsCard title={tr("csRunning")}>
       <ToggleRow
         label={tr("csEnable")}
         checked={form.conversionSyncEnabled}
@@ -1761,6 +1896,8 @@ function ConversionSyncTab({
         {tr("csSafety")}
       </p>
 
+      </SettingsCard>
+
       <div className="flex items-center gap-3">
         <SaveButton onClick={handleSave} saving={saving} />
         {saved && <span className="text-[12.5px] text-verified">{tr("csSavedNote")}</span>}
@@ -1794,31 +1931,61 @@ function SettingsSection({
 }: {
   title?: string;
   description?: string;
-  /** الأيقونة نفسها الموجودة في تبويب القسم بالعمود الجانبيّ - فالمربّع
-   *  الملوّن هنا يؤكّد للعين أنّها وصلت حيث ضغطت، ولا يخترع علامةً ثانية
-   *  للشيء نفسه. */
   icon?: LucideIcon;
   children: React.ReactNode;
 }) {
   return (
-    <div className="border-b border-border pb-8 [&:last-child]:border-0 [&:last-child]:pb-0 [&+&]:pt-8">
+    <div>
       {title && (
-        <div className="mb-6 flex items-start gap-3.5">
+        // رأسُ القسم لا بطاقة: هو عنوان ما تحته، فلو كان محاطاً بإطارٍ
+        // صار عنصراً بجانبها لا فوقها.
+        <div className="mb-5 flex items-start gap-3.5">
           {Icon && (
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-surface-raised/60 text-accent">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-surface text-accent">
               <Icon size={19} strokeWidth={1.9} />
             </span>
           )}
           <div className="min-w-0 pt-0.5">
-            <h2 className="text-[16px] font-semibold leading-6 text-text-primary">{title}</h2>
+            <h2 className="text-[17px] font-semibold leading-6 text-text-primary">{title}</h2>
             {description && (
               <p className="mt-1 text-[12.5px] leading-5 text-text-muted">{description}</p>
             )}
           </div>
         </div>
       )}
-      {children}
+      <div className="flex flex-col gap-4">{children}</div>
     </div>
+  );
+}
+
+/** بطاقةٌ لعنوانٍ داخليّ واحد - «تتبّع واتساب» بإعداداته، وحدَه.
+ *
+ *  🔴 كانت العناوين الداخلية أسطراً يفصلها خطٌّ داخل بطاقةٍ واحدة طويلة،
+ *  فتُقرأ قائمةً متّصلة لا مجموعاتٍ مستقلّة - ولا يُعرف أين ينتهي موضوعٌ
+ *  ويبدأ الذي بعده إلّا بقراءة كلّ سطر. البطاقة تفصل بالبنية لا بخطّ. */
+function SettingsCard({
+  title,
+  description,
+  children,
+}: {
+  title?: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="card p-5 sm:p-6">
+      {title && (
+        <div className="mb-5">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">
+            {title}
+          </h3>
+          {description && (
+            <p className="mt-1.5 text-[12.5px] leading-5 text-text-muted">{description}</p>
+          )}
+        </div>
+      )}
+      {children}
+    </section>
   );
 }
 
@@ -1948,6 +2115,34 @@ function NumberRow({
             «البوكس المش متحاذي». `aria-hidden` كي لا يقرأ قارئ الشاشة فراغاً. */}
         <span aria-hidden className="w-8 shrink-0 text-[12px] text-text-faint">{suffix ?? ""}</span>
       </div>
+    </div>
+  );
+}
+
+/** صفٌّ اسمُه وشرحُه يمين، وزرّ فعلٍ **فوريّ** يسار.
+ *
+ *  الفرق عن `ToggleRow` أنّ هذا لا يُحفَظ: الضغط يفعل الفعل الآن. ولذلك
+ *  زرُّه ثانويّ - لو كان أساسياً لنافس «احفظ» على أنّه إجراء الصفحة. */
+function FieldRowAction({
+  label,
+  hint,
+  actionLabel,
+  onAction,
+}: {
+  label: string;
+  hint?: string;
+  actionLabel: string;
+  onAction: () => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-6">
+      <div className="min-w-0">
+        <div className="text-[13px] font-medium leading-5 text-text-primary">{label}</div>
+        {hint && <p className="mt-1 text-[12px] leading-[1.55] text-text-muted">{hint}</p>}
+      </div>
+      <button type="button" onClick={onAction} className="btn btn-secondary btn-sm shrink-0">
+        {actionLabel}
+      </button>
     </div>
   );
 }

@@ -846,3 +846,33 @@ html, body { overflow-x: clip; }
    بالثيم فيرسم شريطه ومربّعات النماذج الأصلية بما يوافقه. */
 :root, [data-mode="dark"] { color-scheme: dark; }
 [data-mode="light"] { color-scheme: light; }
+
+/* 🔴 **سهم القائمة المنسدلة كان سهم المتصفّح.**
+ *
+ * يرسمه المحرّك بمقاسه ولونه على الحافّة مباشرةً، فيلتصق بالإطار بلا حشوة
+ * تفصله عنه، ويختلف شكله بين المتصفّحات - ويقع في RTL حيث يضعه المحرّك.
+ *
+ * **على العنصر نفسه لا على غلافٍ حوله:** في المنتج ستٌّ وعشرون قائمة، ولفُّ
+ * كلٍّ منها بعنصرٍ إضافيّ ستٌّ وعشرون فرصةً للسهو - وأيّ قائمةٍ تُضاف غداً
+ * تبدأ بالعلّة نفسها. القاعدة هنا تصيبها كلّها الآن وما يأتي بعدها.
+ *
+ * نسختان للسهم لأنّ `background-image` لا ترث `currentColor`: واحدةٌ
+ * للفاتح وأخرى للداكن. و`[dir="rtl"]` يقلب الجهة - `background-position`
+ * فيزيائيّة ولا مقابل منطقيّ لها. */
+select.field {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-inline-end: 2.25rem;
+  background-repeat: no-repeat;
+  background-size: 0.75rem;
+  background-position: right 0.875rem center;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+[dir="rtl"] select.field {
+  background-position: left 0.875rem center;
+}
+
+[data-mode="dark"] select.field {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239AA4B2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}

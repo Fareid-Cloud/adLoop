@@ -2,6 +2,7 @@
 
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isOwnerEmail } from "@/lib/owner";
 import { SettingsClient } from "./SettingsClient";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
@@ -19,6 +20,7 @@ export default async function SettingsPage() {
 
   return (
     <SettingsClient
+      isOwner={isOwnerEmail(user.email)}
       user={{
         name: user.name,
         email: user.email,
