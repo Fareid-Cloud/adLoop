@@ -79,27 +79,27 @@ export function AccountMenu({
           </div>
           <a
             href="/dashboard/settings"
-            className="mt-1 flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-text-primary no-underline transition-colors hover:bg-surface"
+            className="mt-1 flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-text-primary no-underline transition-colors hover:bg-surface-raised"
           >
             <Settings size={15} /> {ar ? t(locale, "accountMenu.settings") : "Settings"}
           </a>
           <a
             href="/dashboard/billing"
-            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-text-primary no-underline transition-colors hover:bg-surface"
+            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-text-primary no-underline transition-colors hover:bg-surface-raised"
           >
             <CreditCard size={15} /> {ar ? t(locale, "accountMenu.billing") : "Billing & Plan"}
           </a>
           {isOwner && (
             <a
               href="/admin"
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-accent no-underline transition-colors hover:bg-surface"
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-accent no-underline transition-colors hover:bg-accent/10"
             >
               <Shield size={15} /> {ar ? t(locale, "accountMenu.owner") : "Admin panel"}
             </a>
           )}
           <button
             onClick={logout}
-            className="mt-0.5 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-critical transition-colors hover:bg-surface"
+            className="mt-0.5 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-critical transition-colors hover:bg-critical/10"
           >
             <LogOut size={15} /> {ar ? t(locale, "accountMenu.signOut") : "Log out"}
           </button>

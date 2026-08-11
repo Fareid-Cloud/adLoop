@@ -124,6 +124,20 @@ const TABS = [
   { key: "danger", labelKey: "tabDanger", icon: TriangleAlert },
 ] as const;
 
+// 🔴 سبعة تبويبات في صفٍّ واحد تُقرأ قائمةً مسطّحة: «مساحة العمل» و«الملفّ
+// الشخصيّ» و«المنطقة الخطرة» بوزنٍ واحد، رغم أنّ الأوّل يخصّ حساباً
+// إعلانياً والثاني يخصّك أنت والثالث يحذف كلّ شيء. المجموعة تقول أيّها
+// يخصّ ماذا **قبل** أن يُقرأ اسمُ التبويب - وهو ما يجعل الصفحة «متقسّمة
+// بمنطق» لا مجرّد مرتّبة.
+const TAB_GROUPS: ReadonlyArray<{
+  titleKey: string;
+  keys: ReadonlyArray<(typeof TABS)[number]["key"]>;
+}> = [
+  { titleKey: "grpAccount", keys: ["profile", "preferences"] },
+  { titleKey: "grpWorkspace", keys: ["workspace", "accounts", "automation", "conversionSync"] },
+  { titleKey: "grpAdvanced", keys: ["danger"] },
+];
+
 // فهرس بحث حقيقي - كل سطر هنا يمثّل حقلاً موجوداً فعلاً في أحد التبويبات
 // أعلاه، لا أسماء وهمية. أي حقل جديد يُضاف إلى تبويب يجب أن يُضاف هنا
 // أيضاً كي يبقى البحث دقيقاً ومطابقاً للواقع.
@@ -194,10 +208,10 @@ export function SettingsClient({
 
   return (
     <SettingsLocaleContext.Provider value={locale}>
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-5xl">
       <PageHeader icon={SettingsIcon} tone="accent" title={tr("title")} />
 
-      <div className="relative mb-4">
+      <div className="relative mb-6 max-w-md">
         <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-text-faint" />
         <input
           value={searchQuery}
@@ -218,7 +232,7 @@ export function SettingsClient({
                   setActiveTab(r.tab);
                   setSearchQuery("");
                 }}
-                className="block w-full px-4 py-2.5 text-start text-sm text-text-primary hover:bg-surface"
+                className="block w-full rounded-lg px-4 py-2.5 text-start text-sm text-text-primary transition-colors hover:bg-surface"
               >
                 {tr(r.labelKey)}
                 <span className="ms-2 text-xs text-text-faint">
@@ -230,20 +244,62 @@ export function SettingsClient({
         )}
       </div>
 
-      {/* 🔴 **كانت كبسولاتٍ ممتلئةً بلون الثيم.** وزنُ الكبسولة الملوّنة
-          وزنُ زرّ الإجراء الأساسيّ في الصفحة نفسها، فيتنافس التنقّل مع
-          «احفظ» على العين - ويصير في الشاشة الواحدة موضعان يصرخان.
-          التبويب يشير إلى موضعك، لا يدعوك إلى فعل: خطٌّ سفليّ ولونُ نصّ.
-          وهي اللغة نفسها المستخدَمة في تنقّل الحملات - شكلٌ واحد لفكرة
-          واحدة في القسمين، فما يتعلّمه المستخدم هنا يعرفه هناك. */}
+      {/* الهاتف: تبويبات أفقية. عمودٌ جانبيّ في ٣٧٥ بكسل يأكل نصف العرض
+          ويترك للمحتوى النصف الآخر. */}
       <TabNav
         items={TABS.map((tab) => ({ key: tab.key, label: tr(tab.labelKey), icon: tab.icon }))}
         active={activeTab}
         onChange={(k) => setActiveTab(k as (typeof TABS)[number]["key"])}
         ariaLabel={tr("title")}
-        className="mb-7"
+        className="mb-7 md:hidden"
       />
 
+      <div className="md:grid md:grid-cols-[13rem_minmax(0,1fr)] md:gap-10">
+        {/* الشاشة الواسعة: عمودٌ مجمَّع. `sticky` كي يبقى مرئياً في تبويب
+            طويل - التنقّل الذي يمرّ خارج الشاشة يعادل غيابه. */}
+        <nav className="hidden md:block" aria-label={tr("title")}>
+          <div className="sticky top-6 flex flex-col gap-6">
+            {TAB_GROUPS.map((group) => (
+              <div key={group.titleKey}>
+                <div className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">
+                  {tr(group.titleKey)}
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  {group.keys.map((key) => {
+                    const tab = TABS.find((x) => x.key === key)!;
+                    const on = activeTab === key;
+                    const Icon = tab.icon;
+                    // الخطر لونُه دلاليّ حتى وهو ساكن: العنصر الذي يحذف
+                    // الحساب لا يُقرأ كأخيه الذي يبدّل لغة الواجهة.
+                    const danger = key === "danger";
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setActiveTab(key)}
+                        aria-current={on ? "page" : undefined}
+                        className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-start text-[13px] font-medium transition-colors ${
+                          on
+                            ? danger
+                              ? "bg-critical/10 text-critical"
+                              : "bg-surface-raised text-text-primary"
+                            : danger
+                              ? "text-critical/75 hover:bg-critical/8 hover:text-critical"
+                              : "text-text-muted hover:bg-surface-raised hover:text-text-primary"
+                        }`}
+                      >
+                        <Icon size={15} strokeWidth={2} className="shrink-0" />
+                        <span className="truncate">{tr(tab.labelKey)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </nav>
+
+        <div className="min-w-0">
       {activeTab === "profile" && <ProfileTab user={user} />}
       {activeTab === "preferences" && <PreferencesTab user={user} />}
       {activeTab === "accounts" && <AccountsTab connectedPlatforms={connectedPlatforms} />}
@@ -274,6 +330,8 @@ export function SettingsClient({
           <DangerZoneTab workspaces={workspaces} />
         </>
       )}
+        </div>
+      </div>
     </div>
     </SettingsLocaleContext.Provider>
   );
@@ -311,7 +369,7 @@ function ProfileTab({ user }: { user: UserData }) {
   }
 
   return (
-    <SettingsSection>
+    <SettingsSection title={tr("tabProfile")} description={tr("secProfileDesc")}>
       <FieldLabel>{tr("idxName")}</FieldLabel>
       <TextInput value={name} onChange={setName} placeholder={tr("namePlaceholder")} />
 
@@ -373,7 +431,7 @@ function PreferencesTab({ user }: { user: UserData }) {
   }
 
   return (
-    <SettingsSection>
+    <SettingsSection title={tr("tabPreferences")} description={tr("secPrefsDesc")}>
       <FieldLabel>{tr("idxLanguage")}</FieldLabel>
       <ToggleGroup
         options={[{ value: "ar", label: tr("langArabic") }, { value: "en", label: "English" }]}
@@ -521,7 +579,7 @@ function AccountsTab({ connectedPlatforms }: { connectedPlatforms: ConnectedPlat
   const connectedMap = new Map(connectedPlatforms.map((c) => [c.platform, c]));
 
   return (
-    <SettingsSection>
+    <SettingsSection title={tr("tabAccounts")} description={tr("secAccountsDesc")}>
       {(["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"] as const).map((platform) => {
         const connection = connectedMap.get(platform);
         return (
@@ -627,7 +685,7 @@ function WorkspaceTab({
   }
 
   return (
-    <SettingsSection>
+    <SettingsSection title={tr("tabWorkspace")} description={tr("secWorkspaceDesc")}>
       {workspaces.length > 1 && (
         <WorkspaceSwitcher workspaces={workspaces} active={activeWorkspaceId} onSwitch={onSwitchWorkspace} />
       )}
@@ -1116,7 +1174,7 @@ function AutomationTab({
   }
 
   return (
-    <SettingsSection>
+    <SettingsSection title={tr("tabAutomation")} description={tr("secAutomationDesc")}>
       {workspaces.length > 1 && (
         <WorkspaceSwitcher workspaces={workspaces} active={activeWorkspaceId} onSwitch={onSwitchWorkspace} />
       )}
@@ -1395,7 +1453,7 @@ function DangerZoneTab({ workspaces }: { workspaces: WorkspaceData[] }) {
   }
 
   return (
-    <SettingsSection>
+    <SettingsSection title={tr("tabDanger")} description={tr("secDangerDesc")}>
       <div className="note border-critical/35 bg-critical/10 p-4">
         <div className="mb-2 text-sm font-medium text-critical">{tr("dzDeleteWorkspace")}</div>
         <p className="mb-3 text-xs text-text-muted">
@@ -1558,7 +1616,7 @@ function ConversionSyncTab({
   const anyReady = metaReady || googleReady || tiktokReady;
 
   return (
-    <SettingsSection>
+    <SettingsSection title={tr("tabConversionSync")} description={tr("secSyncDesc")}>
       {workspaces.length > 1 && (
         <WorkspaceSwitcher workspaces={workspaces} active={activeWorkspaceId} onSwitch={onSwitchWorkspace} />
       )}
@@ -1664,8 +1722,34 @@ function ReadyChip({ label, ready }: { label: string; ready: boolean }) {
   );
 }
 
-function SettingsSection({ children }: { children: React.ReactNode }) {
-  return <div className="card p-6 sm:p-7">{children}</div>;
+// 🔴 كانت `<div className="card p-6">` عارية: **بطاقةٌ بلا عنوان**. تفتح
+// التبويب فتجد حقولاً تبدأ من العدم - لا شيء يقول ما هذا القسم ولا لماذا
+// تُضبَط هذه الحقول معاً. الاسم والوصف هنا ليسا زينةً: هما ما يحوّل
+// كومةَ حقولٍ إلى قسمٍ له معنى.
+function SettingsSection({
+  title,
+  description,
+  children,
+}: {
+  title?: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="card p-6 sm:p-7">
+      {title && (
+        // الفاصل تحت العنوان يفصل «ما هذا القسم» عن «ما تضبطه فيه» - وهو
+        // ما يجعل الوصف يُقرأ وصفاً للقسم لا شرحاً لأوّل حقل تحته.
+        <div className="mb-6 border-b border-border pb-5">
+          <h2 className="text-[15px] font-semibold leading-6 text-text-primary">{title}</h2>
+          {description && (
+            <p className="mt-1.5 text-[12.5px] leading-5 text-text-muted">{description}</p>
+          )}
+        </div>
+      )}
+      {children}
+    </div>
+  );
 }
 
 // 🔴 **هذا السطر وحده هو ما جعل الصفحة «سايحة على بعضها».**
