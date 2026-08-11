@@ -8,6 +8,7 @@
 // حالة لها رسالة صريحة: تحميل، خطأ، لا توجد حملات، نجاح.
 
 import { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { X, Search, Check, AlertCircle, Loader2 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { t } from "@/lib/i18n/dictionary";
@@ -156,8 +157,22 @@ export function CampaignPickerModal({
     setSaving(false);
   }
 
-  return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm" onClick={onClose}>
+  // 🔴 **نافذتان مرسومتان فوق بعضهما - لا اهتزاز.**
+  //
+  // كانت تُركَّب داخل شجرة مَن يفتحها. وبوّابة الترحيب غلافٌ ثابتٌ بطبقة
+  // `z-[9999]` وخلفيّةٍ شبه شفّافة، وهذه كانت `z-[80]` - فتقع **داخله** لا
+  // فوقه، فتُقرأ خلفيّتُه من خلالها ونصُّه من خلال نصّها: كلامان متراكبان
+  // كما في لقطة المالك.
+  //
+  // ورفعُ الرقم وحده لا يكفي: عنصرٌ داخل سياق تكديسٍ خاصّ لا يعلوه مهما
+  // بلغ رقمه. فتخرج من الشجرة إلى جذر المستند، وتُصلَّب خلفيّتُها (بلا
+  // تضبيبٍ يُبقي ما تحتها مقروءاً) فلا يبقى إلّا هي.
+  //
+  // `typeof document` لأنّ التصيير على الخادم لا مستند فيه.
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
       <div
         dir={ar ? "rtl" : "ltr"}
         onClick={(e) => e.stopPropagation()}
@@ -319,6 +334,7 @@ export function CampaignPickerModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

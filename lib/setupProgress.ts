@@ -25,6 +25,16 @@ export interface SetupStep {
   descAr: string;
   descEn: string;
   done: boolean;
+  /** 🔴 **«لا تعنيك» ليست «أنجزتَها».**
+   *
+   *  خطوةُ ربط المتجر كانت تُعلَّم `done` لمن لا منتجات لديه، بنيّةٍ صحيحة
+   *  (ألّا تعلق القائمة عند من لا يبيع شيئاً) ونتيجةٍ خاطئة: مستخدمٌ جديد
+   *  يرى «مكتملة» أمام شيءٍ لم يفعله - فيصدّق أنّ متجره موصول، أو يظنّ
+   *  المنتج يكذب عليه. وكلاهما أسوأ من خطوةٍ معلّقة.
+   *
+   *  الحالتان منفصلتان الآن: `done` إنجازٌ حقيقيّ، و`notApplicable` إعفاءٌ
+   *  يُقال بلفظه. ولا تُحسَب في المُنجَز حتى لا يرتفع «جاهزٌ ٪» بلا سبب. */
+  notApplicable?: boolean;
   ctaHref: string;
   ctaAr: string;
   ctaEn: string;
@@ -123,9 +133,10 @@ export async function getSetupProgress(workspaceId: string, userId: string): Pro
       titleEn: "Connect your online store",
       descAr: "سلة أو شوبيفاي أو زد أو ووكومرس أو إيزي أوردرز — لتصل الطلبات والمرتجعات والمخزون تلقائياً.",
       descEn: "Salla, Shopify, Zid, WooCommerce or EasyOrders — so orders, returns and stock arrive automatically.",
-      // خطوة اختيارية بطبيعتها: من لا يبيع منتجات لا تعنيه. تُعتبر
-      // مكتملة أيضاً لمن لا يستخدم منتجات إطلاقاً حتى لا تعلق القائمة.
-      done: storeCount > 0 || productCount === 0,
+      // الربط الحقيقيّ وحده إنجاز. ومن لا منتجات لديه تُعفى عنه الخطوة
+      // بلفظها، لا بادّعاء أنّه أنجزها.
+      done: storeCount > 0,
+      notApplicable: storeCount === 0 && productCount === 0,
       ctaHref: "/dashboard/integrations",
       ctaAr: "ربط المتجر",
       ctaEn: "Connect store",
@@ -143,12 +154,15 @@ export async function getSetupProgress(workspaceId: string, userId: string): Pro
     },
   ];
 
-  const completedCount = steps.filter((s) => s.done).length;
+  const applicable = steps.filter((s) => !s.notApplicable);
+  const completedCount = applicable.filter((s) => s.done).length;
   return {
     steps,
     completedCount,
-    total: steps.length,
-    allDone: completedCount === steps.length,
-    nextStep: steps.find((s) => !s.done) ?? null,
+    // المقام هو المطبَّق عليه وحده - وإلّا بقي «جاهزٌ ٪» دون المئة أبداً
+    // لمن أعفته خطوةٌ لا تعنيه.
+    total: applicable.length,
+    allDone: completedCount === applicable.length,
+    nextStep: applicable.find((s) => !s.done) ?? null,
   };
 }

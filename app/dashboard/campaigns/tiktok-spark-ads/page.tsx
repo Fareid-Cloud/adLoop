@@ -51,7 +51,7 @@ export default async function TikTokSparkAdsPage() {
   const hasComparison = groups.SPARK.length > 0 && groups.DARK_POST.length > 0;
 
   return (
-    <div className="max-w-2xl">
+    <div>
       <PageHeader
         icon={Sparkles}
         tone="accent"

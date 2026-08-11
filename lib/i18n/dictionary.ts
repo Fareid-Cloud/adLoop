@@ -1350,6 +1350,7 @@ export const dictionary = {
     homePanels: {
       readyPct: "أنت جاهز بنسبة {pct}%",
       stepOf: "الخطوة {a} من {b}",
+      notNeeded: "غير لازمة لك",
       completed: "مكتملة",
       inProgress: "جارية",
       pending: "بانتظارك",
@@ -5772,6 +5773,7 @@ export const dictionary = {
     homePanels: {
       readyPct: "You're {pct}% ready",
       stepOf: "Step {a} of {b}",
+      notNeeded: "Not needed",
       completed: "Completed",
       inProgress: "In progress",
       pending: "Pending",

@@ -27,7 +27,7 @@ export default async function MonthlyForecastPage() {
 
   if (!workspace.monthlyBudgetTarget) {
     return (
-      <div className="max-w-2xl">
+      <div>
         <PageHeader
           icon={CalendarRange}
           tone="accent"
@@ -70,7 +70,7 @@ export default async function MonthlyForecastPage() {
   }[status];
 
   return (
-    <div className="max-w-2xl">
+    <div>
       <PageHeader
         icon={CalendarRange}
         tone="accent"

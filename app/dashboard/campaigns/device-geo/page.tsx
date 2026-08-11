@@ -59,7 +59,7 @@ export default async function DeviceGeoPage() {
   const geos = withCpa(geoRows);
 
   return (
-    <div className="max-w-2xl">
+    <div>
       <PageHeader
         icon={MapPin}
         tone="accent"

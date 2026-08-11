@@ -36,7 +36,7 @@ export default async function TikTokHookRatePage() {
   });
 
   return (
-    <div className="max-w-2xl">
+    <div>
       <PageHeader
         icon={Anchor}
         tone="accent"

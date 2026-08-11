@@ -44,7 +44,7 @@ export default async function PortfolioPage({
 
   if (campaignLinks.length === 0) {
     return (
-      <div className="max-w-3xl">
+      <div>
         {/* الرأس نفسه في فرع الفراغ: صفحة بلا حملات لا تفقد هويّتها -
             بدونه تبدو صفحةً أخرى، وهي القاعدة التي وُجد لها هذا المكوّن. */}
         <PageHeader
@@ -85,7 +85,7 @@ export default async function PortfolioPage({
   const result = computeOptimalAllocation(input);
 
   return (
-    <div className="max-w-3xl">
+    <div>
       <PageHeader
         icon={LayoutGrid}
         tone="accent"

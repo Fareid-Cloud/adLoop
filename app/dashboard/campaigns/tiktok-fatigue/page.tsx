@@ -68,7 +68,7 @@ export default async function TikTokFatiguePage() {
   });
 
   return (
-    <div className="max-w-2xl">
+    <div>
       <PageHeader
         icon={BatteryLow}
         tone="gap"

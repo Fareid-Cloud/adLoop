@@ -53,7 +53,7 @@ export default async function AttributionPathPage({
 
   if (conversions.length === 0) {
     return (
-      <div className="max-w-2xl">
+      <div>
         <PageHeader
           icon={Route}
           tone="accent"
@@ -102,7 +102,7 @@ export default async function AttributionPathPage({
   const multiTouchPct = conversions.length > 0 ? Math.round((multiTouch / conversions.length) * 100) : 0;
 
   return (
-    <div className="max-w-2xl">
+    <div>
       <PageHeader
         icon={Route}
         tone="accent"

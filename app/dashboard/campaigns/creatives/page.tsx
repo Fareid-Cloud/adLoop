@@ -72,7 +72,7 @@ export default async function CreativesPage({
 
   if (performances.length === 0) {
     return (
-      <div className="max-w-4xl">
+      <div>
       <PageHeader
         icon={Image}
         tone="accent"
@@ -106,7 +106,7 @@ export default async function CreativesPage({
   });
 
   return (
-    <div className="max-w-6xl">
+    <div>
       <PageHeader icon={Image} tone="accent" eyebrow={workspace.name} title={tr("title")} />
 
       {/* أفضل إعلانين **عبر المنصّات مجتمعةً**. كانت البطاقة تُعرض داخل

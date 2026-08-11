@@ -48,7 +48,7 @@ export default async function VideoPerformancePage({
 
   if (byPlatform.length === 0) {
     return (
-      <div className="max-w-4xl">
+      <div>
         <PageHeader
           icon={Video}
           tone="accent"
@@ -82,7 +82,7 @@ export default async function VideoPerformancePage({
   );
 
   return (
-    <div className="max-w-4xl">
+    <div>
       <PageHeader
         icon={Video}
         tone="accent"

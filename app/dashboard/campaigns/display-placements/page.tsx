@@ -35,7 +35,7 @@ export default async function DisplayPlacementsPage() {
   });
 
   return (
-    <div className="max-w-2xl">
+    <div>
       <PageHeader
         icon={LayoutTemplate}
         tone="accent"

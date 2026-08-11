@@ -79,7 +79,9 @@ export function SetupProgressPanel({
             >
               <span
                 className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${
-                  s.done ? "bg-verified text-white" : isNext ? "bg-accent text-white" : "border border-border bg-surface-raised text-text-faint"
+                  s.notApplicable
+                    ? "border border-border bg-surface text-text-faint"
+                    : s.done ? "bg-verified text-white" : isNext ? "bg-accent text-white" : "border border-border bg-surface-raised text-text-faint"
                 }`}
               >
                 {/* 🔴 كانت `s.done ? <Check/> : i + 1`، فيبتلع المكتملُ رقمَه
@@ -101,10 +103,16 @@ export function SetupProgressPanel({
               </span>
               <span
                 className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                  s.done ? "bg-verified/12 text-verified" : isNext ? "bg-accent/12 text-accent" : "bg-surface-raised text-text-faint"
+                  s.notApplicable
+                    ? "bg-surface-raised text-text-faint"
+                    : s.done ? "bg-verified/12 text-verified" : isNext ? "bg-accent/12 text-accent" : "bg-surface-raised text-text-faint"
                 }`}
               >
-                {s.done ? tr("completed") : isNext ? tr("inProgress") : tr("pending")}
+                {/* 🔴 المُعفاة لا تُقال «مكتملة»: المالك رأى «تمّ» أمام متجرٍ
+                    لم يربطه قطّ. الإعفاء يُقال بلفظه، والأخضر يبقى لما أُنجز. */}
+                {s.notApplicable
+                  ? tr("notNeeded")
+                  : s.done ? tr("completed") : isNext ? tr("inProgress") : tr("pending")}
               </span>
             </li>
           );

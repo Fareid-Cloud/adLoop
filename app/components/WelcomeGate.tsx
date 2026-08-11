@@ -109,7 +109,9 @@ export function WelcomeGate({
   if (closing) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-bg/85 px-4 backdrop-blur-sm">
+    // خلفيّةٌ معتمة: بوّابةٌ تحجب لا نافذةٌ تُطلّ. الـ٨٥٪ كانت تُبقي اللوحة
+    // خلفها مقروءة فيتراكب نصُّها على نصّ البوّابة - نصفُ ما رآه المالك.
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-bg px-4">
       <div className="pop-shadow w-full max-w-md rounded-3xl border border-border bg-surface p-7">
         {/* مؤشّر التقدّم - الخطوات المنجزة فعلاً بلون مختلف عن المعروضة */}
         <div className="mb-5 flex gap-1.5">

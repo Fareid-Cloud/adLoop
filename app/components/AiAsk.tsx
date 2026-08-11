@@ -104,9 +104,7 @@ export function AiAsk({
   const [typed, setTyped] = useState("");
   /** المثال الجاري كتابته - به يُعرف أيّ استعراضٍ محفوظ يُشغَّل */
   const [exampleIndex, setExampleIndex] = useState(0);
-  const [docked, setDocked] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -119,47 +117,6 @@ export function AiAsk({
   // ستحدّث حالة مكوّنٍ أُزيل. تُجمع لتُلغى دفعةً واحدة.
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
-  // ── الرسوّ ──────────────────────────────────────────────
-  // حارسٌ يقع مباشرةً تحت المربّع: ظهورُه في الشاشة يعني أنّ المربّع بلغ
-  // موضعه الطبيعيّ ولم يعد ملتصقاً. لا CSS يعرف أنّ عنصراً «ملتصق الآن»،
-  // وهذه أخفّ طريقة لمعرفة ذلك.
-  //
-  // 🔴 **«الهزّة» - حلقةُ تغذيةٍ راجعة، لا رسمٌ ولا شفافية.**
-  //
-  // وصفُ المالك حسمها: أثناء التمرير لا شيء، وعند الاقتراب من موضع الرسوّ
-  // يتناوب المربّع بين موضعيه بسرعةٍ تجعلهما يبدوان اثنين يتبادلان.
-  //
-  // والسلسلة:
-  //   الحارس يظهر  →  `docked` صحيح  →  `solid` صحيح  →  **يُركَّب محتوىً
-  //   إضافيّ** (سطر التكلفة، أو أمثلة مساحة العرض)  →  يزيد ارتفاع المربّع
-  //   →  ينزاح الحارس تحته خارج الشاشة  →  `docked` خطأ  →  يُفكَّك المحتوى
-  //   →  يعود الحارس مرئيّاً  →  من جديد، بمعدّل إطارات الشاشة.
-  //
-  // أي أنّ الحالة تغيّر ما تقيسه بنفسها. وعلاجُ التذبذب ليس تسريعاً ولا
-  // تنعيماً بل **منطقةٌ ميّتة**: يُرسى عند الظهور، ولا يُرفع الرسوّ حتى
-  // ينزل الحارس تحت الشاشة بمسافةٍ تتجاوز أيّ زيادةٍ يُحدثها المحتوى -
-  // فيستحيل على الحلقة أن تُغلَق.
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el || typeof IntersectionObserver === "undefined") return;
-    // أوسع من أيّ محتوىً يضيفه `solid` (سطر التكلفة ~28px، صفّ الأمثلة
-    // ~70px) بهامشٍ مريح.
-    const RELEASE_GAP = 140;
-    const io = new IntersectionObserver(
-      ([e]) => {
-        setDocked((was) =>
-          was
-            ? e.boundingClientRect.top <= window.innerHeight + RELEASE_GAP
-            : e.isIntersecting,
-        );
-      },
-      // عتباتٌ متعدّدة: بلا `0` لا يُستدعى المراقب أصلاً عند خروج الحارس
-      // تماماً، فتبقى الحالة عالقةً على آخر قيمة.
-      { threshold: [0, 1] },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
 
   // ── كشف الجواب حرفاً حرفاً ──────────────────────────────
   //
@@ -334,11 +291,7 @@ export function AiAsk({
     const q = usingExample ? examples[exampleIndex] : value.trim();
     if (q.length < 3) return;
 
-    // الدور المكتمل ينضمّ إلى التاريخ قبل تفريغ الحقول له. الشرط `answer`
-    // يمنع حفظ دورٍ لم يصله جواب (إلغاءٌ أو خطأ) - فالتاريخ سجلّ ما تمّ.
-    if (asked && answer) {
-      setHistory((h) => [...h, { q: asked, a: answer, steps }]);
-    }
+    archiveCurrentTurn();
     // 🔴 `reset()` يمسح `savedChatId`، وهو خيط المحادثة. يُحفَظ قبله ويُعاد
     // بعده، وإلّا فُتحت محادثةٌ جديدة مع كلّ سؤالٍ رغم أنّ المسار يدعم الإلحاق.
     const thread = savedChatId;
@@ -387,15 +340,41 @@ export function AiAsk({
   }
 
   function pick(index: number) {
+    // 🔴 **هنا كان التاريخ يضيع في مساحة العرض.**
+    //
+    // الأرشفة كُتبت في `submit`، ومساحةُ العرض لا تمرّ به: الضغط على سؤالٍ
+    // مقترَح يصل إلى هنا، و`reset()` يمسح الدور السابق قبل أن يُحفَظ. فبدت
+    // الميزة مبنيّةً وهي معطّلةٌ في المسار الذي يراه المالك.
+    //
+    // نفس الحفظ إذن، في كلا الطريقين.
+    archiveCurrentTurn();
     reset();
     if (demo) { setAsked(examples[index]); runShowcase(index); return; }
     setValue(examples[index]);
     inputRef.current?.focus();
   }
 
+  /** الدور المكتمل ينضمّ إلى التاريخ. شرطُ `answer` يمنع حفظ دورٍ لم يصله
+   *  جواب (إلغاءٌ أو خطأ) - فالتاريخ سجلّ ما تمّ لا ما بُدئ. */
+  function archiveCurrentTurn() {
+    if (asked && answer) {
+      setHistory((h) => [...h, { q: asked, a: answer, steps }]);
+    }
+  }
+
   // يُعتم كاملاً متى رسا، أو متى كان فيه ما يُقرأ، أو أثناء الكتابة -
   // الشفافية لحالة السكون وحدها.
-  const solid = docked || focused || open || !!value;
+  // 🔴 **الرسوّ لم يعد يُصلّب المربّع - والمالك محقّ في السبب.**
+  //
+  // كان بلوغُ المربّع موضعَه أسفل الصفحة يجعله «مختاراً»: عتامةٌ كاملة
+  // وأمثلةٌ تنفتح تحته - دون أن يلمسه أحد. والتمرير ليس نيّة: من ينزل إلى
+  // آخر الصفحة لم يطلب شيئاً، فردُّ فعلٍ كامل على مروره يَعِد بتفاعلٍ لم
+  // يبدأ. الصلابة الآن للمسّ وحده: تركيزٌ، أو كتابة، أو محادثةٌ مفتوحة.
+  //
+  // وهذا يلغي حلقةَ التغذية الراجعة من جذرها: لا حالةَ تتبدّل مع التمرير،
+  // فلا شيء يغيّر ارتفاعاً يغيّر الحالة التي غيّرته. الحارسُ والمراقبُ
+  // اللذان بُنيا لعلاج عَرَضها حُذفا معها - العلاج يزول بزوال العلّة.
+  const solid = focused || open || !!value;
 
   return (
     <>
@@ -656,8 +635,6 @@ export function AiAsk({
         )}
       </div>
 
-      {/* الحارس - بلا ارتفاع، وجوده كلّه ليُرصد ظهوره */}
-      <div ref={sentinelRef} aria-hidden className="h-px" />
     </>
   );
 }

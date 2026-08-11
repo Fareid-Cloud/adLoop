@@ -74,7 +74,7 @@ export default async function LeadFormsPage({
   const hasAnyData = googleCount > 0 || metaCount > 0 || tiktokCount > 0 || websiteFormCount > 0;
 
   return (
-    <div className="max-w-2xl">
+    <div>
       <PageHeader
         icon={ClipboardList}
         tone="accent"

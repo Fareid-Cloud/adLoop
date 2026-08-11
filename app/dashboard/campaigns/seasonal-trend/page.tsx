@@ -68,7 +68,7 @@ export default async function SeasonalTrendPage({
   const changePct = hasComparison ? Math.round(((thisCpa! - lastCpa!) / lastCpa!) * 100) : null;
 
   return (
-    <div className="max-w-2xl">
+    <div>
       <PageHeader
         icon={TrendingUp}
         tone="accent"

@@ -71,7 +71,7 @@ export default async function BudgetSimulatorPage({
   const SIMULATION_AMOUNT = 1000;
 
   return (
-    <div className="max-w-2xl">
+    <div>
       <PageHeader
         icon={Calculator}
         tone="accent"

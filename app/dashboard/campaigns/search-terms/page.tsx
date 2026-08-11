@@ -46,7 +46,7 @@ export default async function SearchTermsPage({
 
   if (snapshots.length === 0) {
     return (
-      <div className="max-w-3xl">
+      <div>
       <PageHeader
         icon={Search}
         tone="accent"
@@ -73,7 +73,7 @@ export default async function SearchTermsPage({
   const { wasteful, totalWastedCost } = findWastefulSearchTerms(terms);
 
   return (
-    <div className="max-w-3xl">
+    <div>
       <PageHeader
         icon={Search}
         tone="gap"

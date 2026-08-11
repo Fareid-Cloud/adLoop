@@ -62,7 +62,7 @@ export default async function AttributionEnginePage({
   });
 
   return (
-    <div className="max-w-2xl">
+    <div>
       <PageHeader
         icon={GitMerge}
         tone="verified"

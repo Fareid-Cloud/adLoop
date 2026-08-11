@@ -46,7 +46,7 @@ export default async function QualityScorePage() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div>
       <PageHeader
         icon={Gauge}
         tone="critical"

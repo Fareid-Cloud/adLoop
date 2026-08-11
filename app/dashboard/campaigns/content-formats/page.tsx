@@ -72,7 +72,7 @@ export default async function ContentFormatsPage({
     .sort((a: any, b: any) => b.cost - a.cost);
 
   return (
-    <div className="max-w-2xl">
+    <div>
       <PageHeader
         icon={Shapes}
         tone="accent"

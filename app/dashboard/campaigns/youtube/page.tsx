@@ -46,7 +46,7 @@ export default async function YoutubePage() {
   }));
 
   return (
-    <div className="max-w-2xl">
+    <div>
       <PageHeader
         icon={MonitorPlay}
         tone="accent"

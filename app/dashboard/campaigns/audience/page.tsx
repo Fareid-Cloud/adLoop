@@ -60,7 +60,7 @@ export default async function AudiencePage({
     .sort((a, b) => (a.cpa ?? 0) - (b.cpa ?? 0));
 
   return (
-    <div className="max-w-3xl">
+    <div>
       <PageHeader
         icon={Users}
         tone="accent"

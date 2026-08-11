@@ -39,7 +39,7 @@ export default async function CatalogAdsPage() {
   );
 
   return (
-    <div className="max-w-2xl">
+    <div>
       <PageHeader
         icon={PackageSearch}
         tone="gap"
