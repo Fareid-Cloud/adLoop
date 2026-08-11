@@ -1703,7 +1703,8 @@ function MfaFields() {
         !showDisableConfirm ? (
           <button
             onClick={() => setShowDisableConfirm(true)}
-            className="rounded-full bg-surface-raised px-4 py-1.5 text-xs text-text-muted"
+            // زرٌّ يُطفئ حمايةً: يُقرأ خطراً عند الاقتراب لا سطراً رمادياً ساكناً.
+            className="rounded-full border border-border bg-surface-raised px-4 py-1.5 text-xs text-text-muted transition-colors hover:border-critical/40 hover:bg-critical/10 hover:text-critical"
           >
             {tr("mfaDisable")}
           </button>
@@ -1879,7 +1880,8 @@ function DeleteAccountSection() {
             </button>
             <button
               onClick={() => setConfirming(false)}
-              className="rounded-full bg-surface-raised px-4 py-1.5 text-xs text-text-muted"
+              // زرٌّ يُطفئ حمايةً: يُقرأ خطراً عند الاقتراب لا سطراً رمادياً ساكناً.
+            className="rounded-full border border-border bg-surface-raised px-4 py-1.5 text-xs text-text-muted transition-colors hover:border-critical/40 hover:bg-critical/10 hover:text-critical"
             >
               {tr("cancel")}
             </button>

@@ -3166,7 +3166,8 @@ export const dictionary = {
       vsPrev: "عن الفترة السابقة",
       each: "للواحدة",
       notMeasured: "غير مقيسة",
-      notMeasuredWhy: "حسابك الإعلانيّ لا يبلّغ عن هذه المرحلة - عرِّفها كإجراء تحويل في المنصّة لتظهر هنا.",
+      notMeasuredEvent: "تتبّعك يعمل، لكنّ هذه المرحلة غير معرَّفة كإجراء تحويل في حسابك الإعلانيّ - عرِّفها في لوحة المنصّة وستظهر هنا خلال يوم.",
+      notMeasuredNoTracking: "لا نستقبل تحويلات من هذا الحساب - ركِّب وسم التتبّع على موقعك أولاً، ثمّ عرِّف هذه المرحلة كإجراء تحويل.",
       noStoreNote: "الطلبات لا تظهر حتى تربط متجرك - المراحل قبلها تعمل بالفعل.",
     },
     funnel: {
@@ -3204,6 +3205,10 @@ export const dictionary = {
     },
     // ==== الرئيسية ====
     home: {
+      greetMorning: "صباح الخير، {name}",
+      greetAfternoon: "مساء الخير، {name}",
+      greetEvening: "مساء الخير، {name}",
+      greetNight: "ما زلت مستيقظاً، {name}",
       greeting: "أهلاً، {name}",
       healthScore: "درجة الصحة — {state}",
       healthComplete: "مكتملة",
@@ -5737,7 +5742,8 @@ export const dictionary = {
       vsPrev: "vs previous period",
       each: "each",
       notMeasured: "Not measured",
-      notMeasuredWhy: "Your ad account does not report this stage - define it as a conversion action on the platform and it will appear here.",
+      notMeasuredEvent: "Your tracking works, but this stage is not defined as a conversion action in your ad account - define it in the platform's dashboard and it will appear here within a day.",
+      notMeasuredNoTracking: "No conversions are reaching us from this account - install the tracking tag on your site first, then define this stage as a conversion action.",
       noStoreNote: "Orders will not appear until your store is connected - the stages before them already work.",
     },
     funnel: {
@@ -7026,6 +7032,10 @@ export const dictionary = {
     },
     // ==== Home ====
     home: {
+      greetMorning: "Good morning, {name}",
+      greetAfternoon: "Good afternoon, {name}",
+      greetEvening: "Good evening, {name}",
+      greetNight: "Still up, {name}",
       greeting: "Hello, {name}",
       healthScore: "Health score — {state}",
       healthComplete: "complete",

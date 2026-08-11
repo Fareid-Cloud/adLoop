@@ -52,6 +52,31 @@ function fmt(n: number): string {
   return Math.round(n).toLocaleString("en-US");
 }
 
+/** التحيّة بحسب ساعة المستخدم - **لا ساعة الخادم.**
+ *
+ *  الخادم في منطقةٍ زمنيّةٍ أخرى غالباً، فتحيّةُ الصباح تصل مساءً. والمنطقة
+ *  محفوظةٌ على المستخدم أصلاً (`User.timezone`)، فلا حاجة إلى تخمينٍ من
+ *  عنوان الشبكة - وهو أدقُّ من التخمين وأصدق: هذا ما اختاره هو.
+ *
+ *  `Intl` لا حسابٌ يدويّ بالإزاحة: التوقيت الصيفيّ يُزيح الساعة في نصف
+ *  دول العالم، وحسابُه بالطرح خطأٌ نصفَ السنة. */
+function greetingKey(timezone: string): string {
+  let hour: number;
+  try {
+    hour = Number(
+      new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: timezone })
+        .format(new Date()),
+    );
+  } catch {
+    // منطقةٌ غير صالحة (بياناتٌ قديمة مثلاً): تحيّةٌ محايدة خيرٌ من انهيار.
+    return "greeting";
+  }
+  if (hour >= 5 && hour < 12) return "greetMorning";
+  if (hour >= 12 && hour < 17) return "greetAfternoon";
+  if (hour >= 17 && hour < 23) return "greetEvening";
+  return "greetNight";
+}
+
 export default async function GlancePage({
   searchParams,
 }: {
@@ -310,7 +335,7 @@ export default async function GlancePage({
         icon={House}
         tone="accent"
         eyebrow={workspace.name !== user.name ? workspace.name : undefined}
-        title={tr("greeting", { name: firstName })}
+        title={tr(greetingKey(user.timezone), { name: firstName })}
         actions={<>
         <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
         {/* نفس عدّاد صفحة صحة الحساب بحجم الرأس - كان سطراً رمادياً طويلاً
@@ -322,7 +347,7 @@ export default async function GlancePage({
             شارةً بجانبه، فيستوي الارتفاعان بلا ضبطٍ يدويّ لأيّهما. */}
         <Link
           href="/dashboard/diagnostics"
-          className="inline-flex h-11 items-center gap-2.5 rounded-full card-shadow border border-border bg-surface pe-3 ps-1 no-underline transition-colors hover:border-accent"
+          className="inline-flex h-11 items-center gap-2.5 overflow-hidden rounded-full card-shadow border border-border bg-surface pe-3 ps-0 no-underline transition-colors hover:border-accent"
         >
           <HealthGauge score={health.overallScore} size="sm" showDenominator={false} />
           <span className="text-[12.5px] font-medium text-text-primary">{tr("healthScoreShort")}</span>

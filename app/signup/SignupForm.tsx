@@ -88,7 +88,15 @@ export function SignupForm() {
     const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...f, preferredLocale: locale, turnstileToken, acceptedTerms }),
+      // منطقةُ المتصفّح الزمنيّة: قيمةٌ أوليّةٌ لحساب المستخدم، فتصل تحيّةُ
+      // الصباح صباحاً عنده لا عند الخادم. يبدّلها من الإعدادات متى شاء.
+      body: JSON.stringify({
+        ...f,
+        preferredLocale: locale,
+        turnstileToken,
+        acceptedTerms,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      }),
     });
     const data = await res.json();
     setLoading(false);

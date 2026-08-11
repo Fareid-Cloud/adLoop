@@ -64,6 +64,17 @@ export interface StoreFunnel {
   /** أضعف انتقالٍ في المسار: أين يُفقد أكبر عددٍ نسبةً إلى ما قبله.
    *  لا يُحتسب من المرحلة الأولى (الظهور ← النقرة يسقط دائماً بالجملة). */
   weakestStepKey: string | null;
+  /** 🔴 **«غير مقيسة» لها سببان مختلفان تماماً، والرسالة كانت تقول واحداً.**
+   *
+   *  السبب الأوّل: لا تتبّعَ مركَّباً أصلاً - فلا بيكسل ولا وسم على الموقع،
+   *  والعلاج تركيبُه (عملُ ساعة).
+   *  والثاني: التتبّع يعمل، لكنّ حدث السلّة **لم يُعرَّف كإجراء تحويل** في
+   *  الحساب الإعلانيّ - فالبيكسل يرسله والمنصّة لا تعدّه، والعلاج إعدادٌ
+   *  في لوحة المنصّة (دقيقة).
+   *
+   *  والتفرقة بينهما من بياناتٍ عندنا: إن كان الحساب يبلّغ عن **أيّ** تحويل
+   *  في الفترة، فالتتبّع حيٌّ ولا ينقص إلّا تعريفُ هذا الحدث بعينه. */
+  trackingLive: boolean;
   /** هل المتجر موصول أصلاً؟ بدونه المرحلتان الأخيرتان صفرٌ لا معنى له،
    *  فتُعرَض الحقيقة: «غير موصول» لا «صفر طلبات». */
   storeConnected: boolean;
@@ -83,7 +94,7 @@ export async function getStoreFunnel(
 
   const sums = {
     impressions: true, clicks: true, ordersCount: true, returnedOrdersCount: true,
-    addToCart: true, checkoutsStarted: true, cost: true,
+    addToCart: true, checkoutsStarted: true, cost: true, rawConversions: true,
   } as const;
 
   const [ads, prevAds] = await Promise.all([
@@ -105,6 +116,7 @@ export async function getStoreFunnel(
     addToCart: number | null;
     checkoutsStarted: number | null;
     cost: number | null;
+    rawConversions: number | null;
   }
   const pick = (sum: Sums) => {
     const orders = sum.ordersCount ?? 0;
@@ -126,6 +138,8 @@ export async function getStoreFunnel(
   // «موصول» يعني وصلَنا منه طلبٌ فعلاً في هذه الفترة. غيابُ الطلبات مع
   // وجود نقرات حالةٌ مختلفة تماماً عن غياب الربط، ولا يجوز خلطهما.
   const storeConnected = (ads._sum.ordersCount ?? 0) > 0 || (ads._sum.returnedOrdersCount ?? 0) > 0;
+  // تحويلاتٌ مبلَّغٌ عنها من أيّ نوع = التتبّع يصل إلى المنصّة فعلاً.
+  const trackingLive = (ads._sum.rawConversions ?? 0) > 0;
 
   const top = now[0].value;
   const spend = ads._sum.cost ?? 0;
@@ -161,5 +175,5 @@ export async function getStoreFunnel(
     }
   }
 
-  return { stages, weakestStepKey, storeConnected, currency };
+  return { stages, weakestStepKey, storeConnected, trackingLive, currency };
 }

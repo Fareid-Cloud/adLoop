@@ -57,6 +57,11 @@ export interface TruthTotals {
   /** فرق التكلفة الحقيقية عن المعلَنة بالعملة - "لو صدّقت المنصة، كنت ستدفع أقل مما تدفع فعلاً بهذا الفارق" */
   cpaGapAmount: number | null;
   verificationChangePp: number | null;
+  /** سلسلتا الاتّجاه لكامل المساحة - مجموعُ المنصّات يوماً بيوم.
+   *  البطاقة تعرض رقمَ اليوم، وهاتان تقولان إلى أين يسير - وهي معلومةٌ
+   *  مختلفة: حسابٌ استقرّ عند الرقم وآخرُ بلغه صاعداً ليسا سواءً في القرار. */
+  reportedSeries: number[];
+  verifiedSeries: number[];
 }
 
 export interface SyncHealth {
@@ -212,6 +217,9 @@ export async function getTruthSnapshot(workspaceId: string, days: number): Promi
     cpaGapAmount: cpaReported !== null && cpaVerified !== null ? round2(cpaVerified - cpaReported) : null,
     verificationChangePp:
       prevVerificationRate !== null ? round1(verificationRatePct - prevVerificationRate) : null,
+    // تُملأ بعد بناء المنصّات أدناه: سلاسلُها هي مصدرها.
+    reportedSeries: [],
+    verifiedSeries: [],
   };
 
   // ==== لكل منصة ====
@@ -302,6 +310,18 @@ export async function getTruthSnapshot(workspaceId: string, days: number): Promi
     lastSentAt: sentTimes.length > 0 ? new Date(Math.max(...sentTimes.map((d) => d.getTime()))) : null,
     topSkipReason: topSkip ? `${topSkip[0]} (${topSkip[1]} حدث)` : null,
   };
+
+  // 🔴 سلاسل المساحة كلّها = مجموعُ سلاسل منصّاتها يوماً بيوم. تُبنى هنا
+  // لا مع بقيّة `totals`، لأنّ `platforms` - مصدرَها - لا يوجد قبل هذا
+  // السطر. والمنصّات تشترك في المدى الزمنيّ نفسه، فالفهرسُ يقابل اليومَ
+  // نفسه في جميعها.
+  const dayCount = Math.max(0, ...platforms.map((p) => p.reportedSeries.length));
+  const sumAcrossPlatforms = (pick: (p: (typeof platforms)[number]) => number[]) =>
+    Array.from({ length: dayCount }, (_, i) =>
+      platforms.reduce((acc, p) => acc + (pick(p)[i] ?? 0), 0),
+    );
+  totals.reportedSeries = sumAcrossPlatforms((p) => p.reportedSeries);
+  totals.verifiedSeries = sumAcrossPlatforms((p) => p.verifiedSeries);
 
   return {
     days,

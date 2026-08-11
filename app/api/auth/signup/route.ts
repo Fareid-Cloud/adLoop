@@ -21,6 +21,18 @@ import { signupSchema, validateOrError } from "@/lib/validation/schemas";
 import { CSRF_COOKIE_NAME, generateCsrfToken } from "@/lib/csrf";
 import { isCountryCode } from "@/lib/countries";
 
+/** هل هذه منطقةٌ زمنيّةٌ يعرفها المتصفّح؟ نصٌّ من العميل لا يُوثَق به،
+ *  و`Intl` ترفض غير الصالح برمي استثناء. */
+function isValidTimezone(tz: unknown): boolean {
+  if (typeof tz !== "string" || tz.length > 64) return false;
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(req: NextRequest) {
   // حد استخدام إضافي فوق الكابتشا (دفاع متعدد الطبقات) - حتى لو حد لقى
   // طريقة يتجاوز بيها الكابتشا، الحد ده بيوقف محاولات إنشاء حسابات جماعية
@@ -80,7 +92,7 @@ export async function POST(req: NextRequest) {
   }
 
   // الحقول الإضافية (اختيارية) + التأكد إن اسم المستخدم غير مكرر
-  const { username, companyName, gender, birthDate, howHeard, referralSource, country, adSpendMonthly, businessScale } = rawBody;
+  const { username, companyName, gender, birthDate, howHeard, referralSource, country, adSpendMonthly, businessScale, timezone } = rawBody;
   const cleanUsername = username ? String(username).trim().toLowerCase() : null;
   if (cleanUsername) {
     const uExists = await prisma.user.findUnique({ where: { username: cleanUsername } });
@@ -112,6 +124,11 @@ export async function POST(req: NextRequest) {
       // الحقل صار رمز ISO من قائمة مغلقة، فيُتحقَّق منه بدل تخزين ما يصل:
       // نداء مصوغ يدوياً كان سيكتب أيّ نصّ في عمود يُعرض في لوحة الدعم.
       country: isCountryCode(country) ? String(country) : null,
+      // 🔴 المنطقة الزمنية من المتصفّح عند التسجيل - قيمةٌ أوليّةٌ صحيحةٌ
+      // غالباً بدل افتراضٍ ثابتٍ يجعل تحيّة الصباح تصل مساءً لمن هو خارجها.
+      // يبقى الحقل قابلاً للتعديل من الإعدادات: هذا تخمينٌ أوّل لا قرار.
+      // والتحقّق بـ`Intl` لا بقائمةٍ عندنا: المناطق تتغيّر، والمتصفّح أدرى.
+      ...(isValidTimezone(timezone) ? { timezone: String(timezone) } : {}),
       adSpendMonthly: adSpendMonthly || null,
       businessScale: businessScale || null,
     },

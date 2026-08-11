@@ -60,6 +60,10 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
   const H = 210;
   const MID = H / 2;
   const seg = W / stages.length;
+  // نصفُ قطر فوهة المخروط أفقياً. القوس ينتفخ من `CAP` إلى الصفر، فيبقى
+  // الشكل كلّه داخل الإطار ولا يُقصّ، وتبقى حدود القطع على أخماس العرض
+  // تماماً - فتظلّ فواصلُ الصفّ أعلاه فوقها بالضبط.
+  const CAP = seg * 0.16;
   // مقياسٌ لوغاريتميّ للرسم وحده - **الأرقام المكتوبة تبقى حقيقية.** الخطّيّ
   // ينهار إلى خيطٍ بعد المرحلة الثانية (الطلبات جزءٌ من ألفٍ من الظهور)،
   // فلا يبقى في الشكل ما يُقرأ.
@@ -101,8 +105,10 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
                   </span>
                 </div>
                 <div className="text-[15px] font-medium text-text-faint">{tr("notMeasured")}</div>
+                {/* السببان مختلفان، وكذلك العلاج. الرسالة تقول أيَّهما هو
+                    وتُنهي بالخطوة التالية بدل أن تصف عطلاً وتسكت. */}
                 <div className="mt-1.5 text-[11px] leading-relaxed text-text-faint">
-                  {tr("notMeasuredWhy")}
+                  {data.trackingLive ? tr("notMeasuredEvent") : tr("notMeasuredNoTracking")}
                 </div>
               </div>
             );
@@ -167,18 +173,6 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
             قُصٌّ بيضويّ عند الطرف الأوّل، نصفُه ظاهرٌ خارج القطعة الأولى:
             يقرأه النظر عمقاً، فيبدو الشكل أنبوباً يضيق لا مضلّعاً مسطّحاً.
             وهو أوّل ما يُرى، فغيابه كان يُفقد الرسم صفته كلَّها. */}
-        <ellipse
-          // 🔴 كانت عند `cx={0}` فيقع نصفُها خارج إطار الرسم ويُقصّ - وهو
-          // ما رآه المالك. مركزُها عند `rx` يجعل حافّتها اليسرى على الصفر
-          // تماماً: الشكلُ كاملٌ، وأوّلُه ملاصقٌ للطرف كما ينبغي.
-          cx={seg * 0.085}
-          cy={MID}
-          rx={seg * 0.085}
-          ry={height(stages[0]?.value ?? 0) / 2}
-          fill={TINT[0]}
-          opacity={0.9}
-        />
-
         {stages.map((s, i) => {
           const next = stages[i + 1];
           const h1 = height(s.value);
@@ -188,13 +182,40 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
           const weak = s.key === data.weakestStepKey;
           return (
             <g key={s.key}>
-              <polygon
-                points={`${x1},${MID - h1 / 2} ${x2},${MID - h2 / 2} ${x2},${MID + h2 / 2} ${x1},${MID + h1 / 2}`}
-                fill={TINT[i]}
-                opacity={s.measured ? 0.13 : 0.05}
-              />
+              {/* 🔴 **الرأس المخروطيّ جزءٌ من القطعة الأولى، لا شكلٌ فوقها.**
+                  رسمُه بيضاويّاً مستقلّاً جعله يتراكب على القطعة ونقاطِها،
+                  ويبقى حرفُ المضلّع المستقيم ظاهراً خلفه - وهو ما رآه
+                  المالك: دوائرُ داخل الرأس، ومستطيلٌ يكمل بعده.
+
+                  القطعة الأولى الآن مسارٌ حرفُه الأيسر قوسٌ ينتفخ يساراً
+                  (`A`): شكلٌ واحدٌ لا شكلان، فلا تراكبَ ولا حرفَ زائد. */}
+              {i === 0 ? (
+                <path
+                  d={`M ${CAP},${MID - h1 / 2}
+                      A ${CAP},${h1 / 2} 0 0 0 ${CAP},${MID + h1 / 2}
+                      L ${x2},${MID + h2 / 2}
+                      L ${x2},${MID - h2 / 2} Z`}
+                  fill={TINT[i]}
+                  opacity={s.measured ? 0.13 : 0.05}
+                />
+              ) : (
+                <polygon
+                  points={`${x1},${MID - h1 / 2} ${x2},${MID - h2 / 2} ${x2},${MID + h2 / 2} ${x1},${MID + h1 / 2}`}
+                  fill={TINT[i]}
+                  opacity={s.measured ? 0.13 : 0.05}
+                />
+              )}
+              {/* حافّةُ الرأس معتمة: هي «فوهةُ» الأنبوب، وبها يُقرأ العمق */}
+              {i === 0 && (
+                <path
+                  d={`M ${CAP},${MID - h1 / 2}
+                      A ${CAP},${h1 / 2} 0 0 0 ${CAP},${MID + h1 / 2} Z`}
+                  fill={TINT[0]}
+                  opacity={0.9}
+                />
+              )}
               {s.measured &&
-                dots(x1, x2, h1, h2, i + 1, MID).map((d, n) => (
+                dots(i === 0 ? CAP : x1, x2, h1, h2, i + 1, MID).map((d, n) => (
                   <circle key={n} cx={d.cx} cy={d.cy} r={3.2} fill={TINT[i]} opacity={0.85} />
                 ))}
               {/* المرحلة الأضعف وحدها معلَّمة - موضعُ الفعل لا موضعُ زينة */}

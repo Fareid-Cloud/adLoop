@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { MetricCard } from "@/app/components/ui/MetricCard";
+import { Sparkline } from "@/app/components/ui/Sparkline";
 import { AttributionModelTable } from "./AttributionModelTable";
 import type { TruthSnapshot } from "@/lib/truthKpis";
 import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
@@ -99,6 +100,7 @@ export function TruthView({
           caption={{ text: tr("reportedCardHint"), tone: "muted" }}
           explainKey="reportedConversions"
           locale={locale}
+          trend={<Sparkline values={totals.reportedSeries} tone="accent" />}
         />
         <MetricCard
           label={tr("verifiedCard")}
@@ -109,6 +111,9 @@ export function TruthView({
           caption={{ text: tr("verifiedCardHint"), tone: "positive" }}
           explainKey="verifiedConversions"
           locale={locale}
+          // الاتّجاه بلون التحقّق: الخطّ يقول «إلى أين يسير الرقم»، وهي
+          // معلومةٌ لا يحملها الرقم وحده.
+          trend={<Sparkline values={totals.verifiedSeries} tone="verified" />}
         />
         <MetricCard
           label={tr("verificationRate")}

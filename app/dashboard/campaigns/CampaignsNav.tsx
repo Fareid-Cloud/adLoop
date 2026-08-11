@@ -154,7 +154,14 @@ export function CampaignsNav({ locale }: { locale: Locale }) {
     <div className="mb-6">
       {/* المستوى الأوّل: النطاق. مِفتاحٌ مجمَّع داخل خلفية واحدة - كتلة
           واحدة تُقرأ «اختر منها واحداً»، لا أربعة عناصر مستقلّة. */}
-      <div className="no-scrollbar mb-4 flex gap-1 overflow-x-auto rounded-xl bg-surface-raised p-1">
+      {/* 🔴 **شكلٌ ثانٍ لنفس الفكرة.** كانت شريطاً رمادياً بأقراصٍ داخله،
+          بينما مجموعة مركز الحقيقة أزرارٌ مستقلّة بحدٍّ وتظليلٍ من لون
+          الهوية - ففكرةٌ واحدة («اختر واحداً») بلغتين بصريّتين، والمستخدم
+          يتعلّم شكلاً في صفحةٍ ولا يجده في التي بعدها.
+
+          هنا لغة `OptionGroup` نفسها: لا حاويةَ رمادية، بل خياراتٌ متجاورة
+          المختارُ منها بحدٍّ وخلفيةٍ لبنيّة. */}
+      <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto">
         {scopeTabs.map((tab) => {
           const on = tab.key === section.id;
           const color = SECTIONS.find((s) => s.id === tab.key)!.color;
@@ -163,10 +170,10 @@ export function CampaignsNav({ locale }: { locale: Locale }) {
               key={tab.key}
               href={tab.href}
               aria-current={on ? "true" : undefined}
-              className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all ${
+              className={`flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2 text-[13px] font-medium no-underline transition-colors ${
                 on
-                  ? "bg-surface text-text-primary shadow-[0_1px_3px_rgba(0,0,0,0.10)]"
-                  : "text-text-muted hover:text-text-primary"
+                  ? "border-accent bg-accent/10 text-accent"
+                  : "border-border bg-surface-raised text-text-muted hover:text-text-primary"
               }`}
             >
               <span className={on ? "" : "opacity-60"}>{tab.iconNode}</span>
@@ -175,7 +182,7 @@ export function CampaignsNav({ locale }: { locale: Locale }) {
                 className="rounded-full px-1.5 py-px font-mono text-[11px] leading-4"
                 style={
                   on
-                    ? { backgroundColor: `${color}1f`, color }
+                    ? { backgroundColor: `${color}24`, color }
                     : { backgroundColor: "var(--surface)", color: "var(--text-faint)" }
                 }
               >
