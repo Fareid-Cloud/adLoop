@@ -50,7 +50,7 @@ export function AccountMenu({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 rounded-full py-1 pe-2.5 ps-1 transition-colors hover:bg-surface-raised"
+        className="flex items-center gap-2 rounded-full py-1 pe-2.5 ps-1 transition-colors hover:bg-surface-hover"
       >
         {avatarUrl ? (
           <img src={avatarUrl} alt={display} className="h-7 w-7 rounded-full object-cover" />

@@ -20,7 +20,7 @@ export function HelpButton({ locale }: { locale: "ar" | "en" }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex h-9 w-9 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface-raised hover:text-text-primary"
+        className="flex h-9 w-9 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface-hover hover:text-text-primary"
         aria-label={ar ? tr("button") : "Help"}
         title={ar ? tr("button") : "Help"}
       >

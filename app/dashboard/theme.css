@@ -25,6 +25,7 @@
   --bg: #0E1116;
   --surface: #161A21;
   --surface-raised: #1F242D;
+  --surface-hover: #272E39;
   --border: #2A313B;
   --border-visible: #3A424E;
 
@@ -87,6 +88,8 @@
   --bg: #F6F7F9;
   --surface: #FFFFFF;
   --surface-raised: #F1F3F6;
+  /* أغمق من `surface-raised` بدرجةٍ: لعناصرَ صغيرةٍ لا يكفيها الفرقُ الخفيف */
+  --surface-hover: #E4E8EE;
   --border: #E7EAEF;
   --border-visible: #D5DAE2;
   --text-primary: #0F172A;
@@ -229,6 +232,7 @@
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);
+  --color-surface-hover: var(--surface-hover);
   --color-border: var(--border);
   --color-border-visible: var(--border-visible);
 
@@ -813,7 +817,7 @@ html, body { overflow-x: clip; }
 .btn-ghost:hover:not(:disabled)     { background: var(--surface-raised); color: var(--text-primary); }
 
 .btn-danger    { background: var(--critical); color: #fff; }
-.btn-danger:hover:not(:disabled)    { background: color-mix(in oklab, var(--critical) 82%, black); }
+.btn-danger:hover:not(:disabled)    { background: color-mix(in oklab, var(--critical) 62%, #FF1F1F); }
 
 /* المقاسات - الدور ثابت والمقاس يتبع المكان */
 .btn-sm { padding: 0.4375rem 0.8125rem; font-size: 12.5px; border-radius: 10px; gap: 0.3125rem; }

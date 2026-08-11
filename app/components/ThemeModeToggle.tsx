@@ -53,7 +53,7 @@ export function ThemeModeToggle({
       // نفس هوية أزرار الرأس المجاورة (المساعدة، الجرس): دائري بلا إطار
       // ولا خلفية. الإطار والخلفية كانا يجعلانه يبدو عنصراً من عائلة أخرى
       // وسط ثلاثة أزرار متطابقة.
-      className="flex h-9 w-9 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface-raised hover:text-text-primary"
+      className="flex h-9 w-9 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface-hover hover:text-text-primary"
     >
       {isDark ? <Sun size={16} /> : <Moon size={16} />}
     </button>

@@ -104,7 +104,7 @@ export function NotificationBell({ locale }: { locale: Locale }) {
     <div ref={containerRef} className="relative">
       <button
         onClick={handleBellClick}
-        className="relative flex h-9 w-9 items-center justify-center rounded-full text-text-muted hover:bg-surface-raised hover:text-text-primary"
+        className="relative flex h-9 w-9 items-center justify-center rounded-full text-text-muted hover:bg-surface-hover hover:text-text-primary"
         aria-label={t(locale, "notif.title")}
       >
         <Bell size={18} strokeWidth={1.75} />

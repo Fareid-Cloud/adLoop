@@ -16,19 +16,19 @@ import { checkRateLimit } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
   if (!verifyCsrfToken(req)) {
-    return NextResponse.json({ errorKey: "api.csrfFailed" }, { status: 403 });
+    return NextResponse.json({ errorKey: "apiErr.csrfFailed" }, { status: 403 });
   }
 
   const user = await getSessionUserFromCookies();
   if (!user) {
-    return NextResponse.json({ errorKey: "api.unauthorized" }, { status: 401 });
+    return NextResponse.json({ errorKey: "apiErr.unauthorized" }, { status: 401 });
   }
 
   // تخمينُ كلمة المرور الحالية هجومٌ ممكنٌ من داخل جلسةٍ مسروقة - فيُحدّ
   // كما يُحدّ تسجيل الدخول نفسه.
   const { allowed } = await checkRateLimit(user.id, "change-password", 5, 15);
   if (!allowed) {
-    return NextResponse.json({ errorKey: "api.tooManyAttempts" }, { status: 429 });
+    return NextResponse.json({ errorKey: "apiErr.tooManyAttempts" }, { status: 429 });
   }
 
   const body = await req.json().catch(() => null);
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   const next = typeof body?.newPassword === "string" ? body.newPassword : "";
 
   if (next.length < 8) {
-    return NextResponse.json({ errorKey: "api.passwordTooShort" }, { status: 400 });
+    return NextResponse.json({ errorKey: "apiErr.passwordTooShort" }, { status: 400 });
   }
 
   const record = await prisma.user.findUnique({
@@ -48,12 +48,12 @@ export async function POST(req: NextRequest) {
   // هنا يعني أنّ جلسةً مسروقة تفتح مسار دخولٍ ثانياً لم يكن موجوداً -
   // فيُرفَض، ويُوجَّه إلى «نسيت كلمة المرور» حيث يُثبِت ملكية بريده.
   if (!record?.passwordHash) {
-    return NextResponse.json({ errorKey: "api.noPasswordSet" }, { status: 400 });
+    return NextResponse.json({ errorKey: "apiErr.noPasswordSet" }, { status: 400 });
   }
 
   const ok = await bcrypt.compare(current, record.passwordHash);
   if (!ok) {
-    return NextResponse.json({ errorKey: "api.wrongCurrentPassword" }, { status: 400 });
+    return NextResponse.json({ errorKey: "apiErr.wrongCurrentPassword" }, { status: 400 });
   }
 
   await prisma.user.update({

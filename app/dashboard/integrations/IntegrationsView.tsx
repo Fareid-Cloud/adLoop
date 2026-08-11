@@ -206,12 +206,15 @@ export function IntegrationsView({
               <option key={c.key} value={c.key}>{locale === "en" ? c.labelEn : c.labelAr}</option>
             ))}
           </select>
-          {/* مبدّل طريقة العرض: `h-full items-stretch` ليطابق ارتفاع القوائم
-              المنسدلة بجانبه بدل أن يقف أقصر منها في الصفّ نفسه، وفاصل بين
-              الشقّين فيُقرأ كمبدّل من موضعين لا كزرّ واحد عريض. */}
-          <div className="flex h-full items-stretch overflow-hidden rounded-xl border border-border">
+          {/* 🔴 **كان `h-full` بلا أبٍ ذي ارتفاع، فينهار المبدّل إلى شكلٍ
+              مشوّه:** نصفٌ أزرقُ مستديرٌ من جهة وقوسٌ أبيضُ من الأخرى، وهو ما
+              صوّره المالك. ولا فاصلَ يفصل شيئاً حين لا ارتفاع للشقّين.
+
+              وشكلُه الآن من لغة `OptionGroup` نفسها (مجموعة مركز الحقيقة):
+              شقّان مستقلّان، المختارُ بحدٍّ وخلفيةٍ من لون الهوية - لا كتلةٌ
+              زرقاء ممتلئة. مصدرُ الشكل واحدٌ في المنتج، لا شكلٌ لكلّ صفحة. */}
+          <div className="flex shrink-0 gap-1.5">
             <IconToggle active={view === "list"} onClick={() => chooseView("list")} icon={List} title={tr("viewList")} />
-            <span className="w-px shrink-0 bg-border" aria-hidden />
             <IconToggle active={view === "grid"} onClick={() => chooseView("grid")} icon={LayoutGrid} title={tr("viewGrid")} />
           </div>
         </div>
@@ -415,8 +418,10 @@ function IconToggle({
       title={title}
       aria-label={title}
       aria-pressed={active}
-      className={`flex items-center justify-center px-3 transition-colors ${
-        active ? "bg-accent text-white" : "bg-surface text-text-muted hover:text-text-primary"
+      className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-colors ${
+        active
+          ? "border-accent bg-accent/10 text-accent"
+          : "border-border bg-surface-raised text-text-muted hover:text-text-primary"
       }`}
     >
       <Icon size={15} />

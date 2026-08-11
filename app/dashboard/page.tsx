@@ -322,7 +322,7 @@ export default async function GlancePage({
             شارةً بجانبه، فيستوي الارتفاعان بلا ضبطٍ يدويّ لأيّهما. */}
         <Link
           href="/dashboard/diagnostics"
-          className="inline-flex items-center gap-2.5 rounded-full card-shadow border border-border bg-surface py-1 pe-3 ps-1 no-underline transition-colors hover:border-accent"
+          className="inline-flex h-11 items-center gap-2.5 rounded-full card-shadow border border-border bg-surface pe-3 ps-1 no-underline transition-colors hover:border-accent"
         >
           <HealthGauge score={health.overallScore} size="sm" showDenominator={false} />
           <span className="text-[12.5px] font-medium text-text-primary">{tr("healthScoreShort")}</span>

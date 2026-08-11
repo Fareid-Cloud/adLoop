@@ -156,7 +156,7 @@ export function DateRangePicker({
     <div className="relative" ref={boxRef}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 card px-3.5 py-2.5 text-[13px] text-text-primary"
+        className="flex h-11 items-center gap-2 card px-3.5 text-[13px] text-text-primary"
       >
         <CalendarDays size={15} className="text-text-muted" />
         <span className="font-medium">{label}</span>
