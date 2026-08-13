@@ -45,13 +45,15 @@ function dots(x1: number, x2: number, h1: number, h2: number, seed: number, mid:
   return out;
 }
 
+/** 🔴 **الرسم بعرض الصفحة كان يُفقده شكلَه:** مخروطٌ ممتدٌّ على ١٤٠٠ بكسل
+ *  يصير شريطاً مسطّحاً، والانحدارُ الذي هو كلّ معناه لا يُقرأ. الثلثان
+ *  يعيدان له نسبتَه، والثلث الباقي يحمل ما يُفعَل بما يقوله. */
 export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale }) {
   const tr = (k: string, v?: Record<string, string | number>) =>
     t(locale, `shopFunnel.${k}`, v);
   const loc = locale === "ar" ? "ar-EG" : "en-US";
 
   const compact = new Intl.NumberFormat(loc, { notation: "compact", maximumFractionDigits: 1 });
-  const money = new Intl.NumberFormat(loc, { maximumFractionDigits: 1 });
 
   const stages = data.stages;
   const top = stages[0]?.value ?? 0;
@@ -59,11 +61,17 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
   const W = 1000;
   const H = 210;
   const MID = H / 2;
-  const seg = W / stages.length;
-  // نصفُ قطر فوهة المخروط أفقياً. القوس ينتفخ من `CAP` إلى الصفر، فيبقى
-  // الشكل كلّه داخل الإطار ولا يُقصّ، وتبقى حدود القطع على أخماس العرض
-  // تماماً - فتظلّ فواصلُ الصفّ أعلاه فوقها بالضبط.
-  const CAP = seg * 0.16;
+  // 🔴 **الفوهة بيضاويٌّ كامل، والجسم يبدأ من مركزه.**
+  //
+  // رسمتُها مرّتين خطأً: مرّةً نصفَ بيضاويٍّ بحافّةٍ مستقيمة (فبدت قرصاً
+  // ملصوقاً لا فوهةَ أنبوب)، ومرّةً بيضاوياً كاملاً فوق الجسم (فظهرت نقاطُه
+  // من خلاله وبقي حرفُ المضلّع خلفه).
+  //
+  // والمرجع يفعل شيئاً واحداً: بيضاويٌّ كامل، **ونصفُه الأيمن يختفي تحت
+  // الجسم** لأنّ الجسم يبدأ من مركزه لا من طرفه. فيُقرأ الشكل أنبوباً
+  // منظوراً من فوهته - وهو ما يعطي الإيحاء المجسَّم.
+  const CAP = (W / stages.length) * 0.16;
+  const seg = (W - CAP) / stages.length;
   // مقياسٌ لوغاريتميّ للرسم وحده - **الأرقام المكتوبة تبقى حقيقية.** الخطّيّ
   // ينهار إلى خيطٍ بعد المرحلة الثانية (الطلبات جزءٌ من ألفٍ من الظهور)،
   // فلا يبقى في الشكل ما يُقرأ.
@@ -73,15 +81,19 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
     return Math.max(0.08, r) * (H - 12);
   };
 
+  const money = (v: number) =>
+    new Intl.NumberFormat(loc, { maximumFractionDigits: 0 }).format(Math.round(v));
+
   return (
-    <div className="card pad-lg">
+    <div className="grid gap-4 lg:grid-cols-3">
+    <div className="card pad-lg lg:col-span-2">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
         <span className="text-[14px] font-semibold text-text-primary">{tr("title")}</span>
         <span className="text-[11.5px] text-text-muted">{tr("subtitle")}</span>
       </div>
 
       {/* الصفّ العلويّ - أعمدةٌ متساوية تقف كلٌّ منها فوق قطعتها */}
-      <div className="no-scrollbar mb-5 grid grid-cols-5">
+      <div className="no-scrollbar mb-5 grid grid-cols-5" style={{ paddingInlineStart: `${(CAP / W) * 100}%` }}>
         {stages.map((s, i) => {
           const up = (s.changePct ?? 0) >= 0;
           const diff = s.value - s.prevValue;
@@ -153,7 +165,7 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
                   به يُعرَف أين يغلو المسار قبل أن يصل إلى بيع. */}
               {s.costPer !== null && (
                 <div className="mt-1 font-mono text-[11px] text-text-muted">
-                  {money.format(s.costPer)} {data.currency} · {tr("each")}
+                  {money(s.costPer)} {data.currency} · {tr("each")}
                 </div>
               )}
             </div>
@@ -177,43 +189,16 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
           const next = stages[i + 1];
           const h1 = height(s.value);
           const h2 = height(next ? next.value : s.value * 0.9);
-          const x1 = i * seg;
-          const x2 = (i + 1) * seg;
+          const x1 = CAP + i * seg;
+          const x2 = CAP + (i + 1) * seg;
           const weak = s.key === data.weakestStepKey;
           return (
             <g key={s.key}>
-              {/* 🔴 **الرأس المخروطيّ جزءٌ من القطعة الأولى، لا شكلٌ فوقها.**
-                  رسمُه بيضاويّاً مستقلّاً جعله يتراكب على القطعة ونقاطِها،
-                  ويبقى حرفُ المضلّع المستقيم ظاهراً خلفه - وهو ما رآه
-                  المالك: دوائرُ داخل الرأس، ومستطيلٌ يكمل بعده.
-
-                  القطعة الأولى الآن مسارٌ حرفُه الأيسر قوسٌ ينتفخ يساراً
-                  (`A`): شكلٌ واحدٌ لا شكلان، فلا تراكبَ ولا حرفَ زائد. */}
-              {i === 0 ? (
-                <path
-                  d={`M ${CAP},${MID - h1 / 2}
-                      A ${CAP},${h1 / 2} 0 0 0 ${CAP},${MID + h1 / 2}
-                      L ${x2},${MID + h2 / 2}
-                      L ${x2},${MID - h2 / 2} Z`}
-                  fill={TINT[i]}
-                  opacity={s.measured ? 0.13 : 0.05}
-                />
-              ) : (
-                <polygon
-                  points={`${x1},${MID - h1 / 2} ${x2},${MID - h2 / 2} ${x2},${MID + h2 / 2} ${x1},${MID + h1 / 2}`}
-                  fill={TINT[i]}
-                  opacity={s.measured ? 0.13 : 0.05}
-                />
-              )}
-              {/* حافّةُ الرأس معتمة: هي «فوهةُ» الأنبوب، وبها يُقرأ العمق */}
-              {i === 0 && (
-                <path
-                  d={`M ${CAP},${MID - h1 / 2}
-                      A ${CAP},${h1 / 2} 0 0 0 ${CAP},${MID + h1 / 2} Z`}
-                  fill={TINT[0]}
-                  opacity={0.9}
-                />
-              )}
+              <polygon
+                points={`${x1},${MID - h1 / 2} ${x2},${MID - h2 / 2} ${x2},${MID + h2 / 2} ${x1},${MID + h1 / 2}`}
+                fill={TINT[i]}
+                opacity={s.measured ? 0.13 : 0.05}
+              />
               {s.measured &&
                 dots(i === 0 ? CAP : x1, x2, h1, h2, i + 1, MID).map((d, n) => (
                   <circle key={n} cx={d.cx} cy={d.cy} r={3.2} fill={TINT[i]} opacity={0.85} />
@@ -234,10 +219,17 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
             </g>
           );
         })}
+        <ellipse
+          cx={CAP}
+          cy={MID}
+          rx={CAP}
+          ry={height(stages[0]?.value ?? 0) / 2}
+          fill={TINT[0]}
+        />
       </svg>
 
       {/* نسب البقاء - الرسم يُري الانحدار، وهذه تقيسه */}
-      <div className="mt-1 grid grid-cols-5">
+      <div className="mt-1 grid grid-cols-5" style={{ paddingInlineStart: `${(CAP / W) * 100}%` }}>
         {stages.map((s, i) => {
           const weak = s.key === data.weakestStepKey;
           return (
@@ -258,6 +250,44 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
           {tr("noStoreNote")}
         </p>
       )}
+    </div>
+
+    {/* ═══ الثلث: أكبر تسرّب ═══
+        الرسم يقول «أين يضيق»، وهذا يقول «كم يكلّفك ذلك» - وهو ما يُفعَل به
+        شيء. وأكبرُ تسرّبٍ **بالعدد** لا بالنسبة: انتقالٌ يُبقي ٣٪ من مليون
+        يخسر أكثر ممّن يُبقي ١٥٪ من ألف، والقرار يتبع الأثر لا النسبة. */}
+    <div className="card pad-lg flex flex-col">
+      <div className="mb-1 text-[13px] font-medium text-text-primary">{tr("leakTitle")}</div>
+
+      {data.biggestLeak === null ? (
+        <p className="text-[12px] leading-relaxed text-text-muted">{tr("leakNone")}</p>
+      ) : (
+        <>
+          <p className="mb-4 text-[11.5px] leading-5 text-text-muted">{tr("leakSub")}</p>
+
+          <div className="mb-1 text-[12.5px] text-text-muted">
+            {tr(`before_${data.biggestLeak.stageKey}`)}
+          </div>
+          <div className="font-mono text-[30px] font-bold leading-none text-gap">
+            {compact.format(data.biggestLeak.lost)}
+          </div>
+          <div className="mt-1.5 text-[12px] text-text-muted">{tr("leakLost")}</div>
+
+          {data.biggestLeak.wastedSpend !== null && (
+            <div className="mt-4 rounded-xl border border-gap/30 bg-gap/[0.07] p-3">
+              <div className="text-[11.5px] text-text-muted">{tr("leakCostLabel")}</div>
+              <div className="mt-0.5 font-mono text-[17px] font-semibold text-text-primary">
+                {money(data.biggestLeak.wastedSpend)} {data.currency}
+              </div>
+            </div>
+          )}
+
+          <p className="mt-auto pt-4 text-[11.5px] leading-relaxed text-text-faint">
+            {tr(`leakHint_${data.biggestLeak.stageKey}`)}
+          </p>
+        </>
+      )}
+    </div>
     </div>
   );
 }

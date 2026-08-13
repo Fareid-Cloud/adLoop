@@ -75,6 +75,17 @@ export interface StoreFunnel {
    *  والتفرقة بينهما من بياناتٍ عندنا: إن كان الحساب يبلّغ عن **أيّ** تحويل
    *  في الفترة، فالتتبّع حيٌّ ولا ينقص إلّا تعريفُ هذا الحدث بعينه. */
   trackingLive: boolean;
+  /** أكبر تسرّب: المرحلة التي فُقد عندها أكبر **عدد** - لا أكبر نسبة.
+   *
+   *  🔴 والفرق جوهريّ: انتقالٌ يُبقي ٣٪ من مليونٍ يخسر ٩٧٠ ألفاً، وآخرُ
+   *  يُبقي ١٥٪ من ألفٍ يخسر ٨٥٠. الثاني أسوأ نسبةً والأوّل أسوأ أثراً -
+   *  والقرار يتبع الأثر. */
+  biggestLeak: {
+    stageKey: string;
+    lost: number;
+    /** ما كلّفك الوصول بهؤلاء إلى المرحلة السابقة ثمّ فقدهم */
+    wastedSpend: number | null;
+  } | null;
   /** هل المتجر موصول أصلاً؟ بدونه المرحلتان الأخيرتان صفرٌ لا معنى له،
    *  فتُعرَض الحقيقة: «غير موصول» لا «صفر طلبات». */
   storeConnected: boolean;
@@ -175,5 +186,23 @@ export async function getStoreFunnel(
     }
   }
 
-  return { stages, weakestStepKey, storeConnected, trackingLive, currency };
+  // أكبر عددٍ مفقود بين مرحلتين متتاليتين - يبدأ من الانتقال الثاني لأنّ
+  // الظهور ← النقرة يفقد الملايين في كلّ حساب، فهو صدارةٌ دائمةٌ بلا معنى.
+  let biggestLeak: StoreFunnel["biggestLeak"] = null;
+  for (let i = 2; i < stages.length; i++) {
+    const prevStage = stages[i - 1];
+    if (!stages[i].measured || !prevStage.measured) continue;
+    const lost = prevStage.value - stages[i].value;
+    if (lost <= 0) continue;
+    if (biggestLeak === null || lost > biggestLeak.lost) {
+      biggestLeak = {
+        stageKey: stages[i].key,
+        lost,
+        // ما دُفع للوصول بهؤلاء إلى المرحلة السابقة: تكلفةُ الواحد فيها × عددُ المفقودين
+        wastedSpend: prevStage.costPer !== null ? prevStage.costPer * lost : null,
+      };
+    }
+  }
+
+  return { stages, weakestStepKey, biggestLeak, storeConnected, trackingLive, currency };
 }
