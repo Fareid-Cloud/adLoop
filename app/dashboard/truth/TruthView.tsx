@@ -226,6 +226,33 @@ export function TruthView({
           explainKey="roas"
           locale={locale}
         />
+        {/* 🔴 **العائد على الاستثمار بجانب العائد على الإنفاق - لأنّهما
+            يختلفان، وقد يتناقضان.** حسابٌ بعائد إنفاقٍ ٣× يبدو ناجحاً وهو
+            خاسرٌ إن كان هامشه ٢٥٪. ولذلك يقع هذا بعد ذاك مباشرةً: من قرأ
+            الأوّل يحتاج الثاني قبل أن يقرّر. */}
+        <MetricCard
+          label={tr("roiVerified")}
+          value={totals.roiVerifiedPct !== null ? `${totals.roiVerifiedPct}` : "—"}
+          unit={totals.roiVerifiedPct !== null ? "%" : undefined}
+          icon={TrendingUp}
+          tone={
+            totals.roiVerifiedPct === null ? "neutral"
+            : totals.roiVerifiedPct >= 0 ? "verified"
+            : "critical"
+          }
+          verified={totals.roiVerifiedPct !== null}
+          caption={
+            totals.roiVerifiedPct === null
+              // الغياب يُقال بسببه وخطوته: هامشُ الربح إعدادٌ في مساحة العمل.
+              ? { text: tr("roiNeedsMargin"), tone: "muted" }
+              : totals.roiVerifiedPct < 0
+                ? { text: tr("roiNegative"), tone: "negative" }
+                : undefined
+          }
+          explainKey="roi"
+          locale={locale}
+        />
+
         <MetricCard
           label={tr("multiTouch")}
           value={journey.multiTouchRatePct}

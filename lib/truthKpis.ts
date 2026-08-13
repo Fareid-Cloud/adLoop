@@ -55,6 +55,17 @@ export interface TruthTotals {
   roasReported: number | null;
   roasVerified: number | null;
   /** فرق التكلفة الحقيقية عن المعلَنة بالعملة - "لو صدّقت المنصة، كنت ستدفع أقل مما تدفع فعلاً بهذا الفارق" */
+  /** 🔴 **العائد على الاستثمار - وهو غير العائد على الإنفاق.**
+   *
+   *  `ROAS` يقسم الإيراد على الصرف الإعلانيّ، فيتجاهل ثمنَ البضاعة نفسها.
+   *  حسابٌ بعائدٍ ٣× قد يكون **خاسراً** إن كان هامشه ٢٥٪: من كلّ ثلاثة
+   *  ريالاتٍ عائدة، ريالان وربع ثمنُ المنتج، فالباقي أقلُّ ممّا دُفع للإعلان.
+   *
+   *  ولذلك يُحسَب من الربح لا من الإيراد: (إيراد×هامش − صرف) ÷ صرف.
+   *
+   *  و`null` بلا هامشٍ محدَّد: لا نخمّنه. رقمُ ربحٍ مبنيٌّ على هامشٍ مفترَض
+   *  أسوأ من غياب الرقم، لأنّه يُتَّخذ عليه قرارُ ميزانية. */
+  roiVerifiedPct: number | null;
   cpaGapAmount: number | null;
   verificationChangePp: number | null;
   /** سلسلتا الاتّجاه لكامل المساحة - مجموعُ المنصّات يوماً بيوم.
@@ -151,6 +162,14 @@ export async function getTruthSnapshot(workspaceId: string, days: number): Promi
   const prevSince = new Date();
   prevSince.setDate(prevSince.getDate() - days * 2);
 
+  // هامشُ الربح من المساحة: بدونه لا يُحسَب العائد على الاستثمار - ولا
+  // يُخمَّن. رقمُ ربحٍ مبنيٌّ على هامشٍ مفترَض تُتَّخذ عليه قرارات ميزانية.
+  const workspaceSettings = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { profitMarginPct: true },
+  });
+  const profitMarginPct = workspaceSettings?.profitMarginPct ?? null;
+
   const [current, previous, paths, syncLogs, syncConfig, probabilisticRaw] = await Promise.all([
     prisma.metricSnapshot.findMany({
       where: { workspaceId, date: { gte: since } },
@@ -215,6 +234,12 @@ export async function getTruthSnapshot(workspaceId: string, days: number): Promi
         ? round2((t.revenue * (t.verified / t.raw)) / t.cost)
         : null,
     cpaGapAmount: cpaReported !== null && cpaVerified !== null ? round2(cpaVerified - cpaReported) : null,
+    roiVerifiedPct:
+      profitMarginPct !== null && profitMarginPct > 0 && t.cost > 0 && t.revenue > 0 && t.raw > 0
+        ? round1(
+            (((t.revenue * (t.verified / t.raw) * (profitMarginPct / 100)) - t.cost) / t.cost) * 100,
+          )
+        : null,
     verificationChangePp:
       prevVerificationRate !== null ? round1(verificationRatePct - prevVerificationRate) : null,
     // تُملأ بعد بناء المنصّات أدناه: سلاسلُها هي مصدرها.
