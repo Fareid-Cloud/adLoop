@@ -1625,6 +1625,9 @@ function MfaFields() {
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+  /** الأكواد الصريحة - في الذاكرة فقط ولحظةَ توليدها. */
+  const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -1633,6 +1636,30 @@ function MfaFields() {
       .then((res) => res.json())
       .then((data) => setEnabled(data.enabled));
   }, []);
+
+  // عدّ المتبقّي: من استهلك أوراقه دون أن يدري يبقى بلا شبكة أمان وهو
+  // يظنّ العكس - والعدد وحده يكفي لتنبيهه.
+  useEffect(() => {
+    if (!enabled) return;
+    fetch("/api/auth/mfa/backup-codes")
+      .then((res) => res.json())
+      .then((d) => setRemaining(typeof d.remaining === "number" ? d.remaining : null))
+      .catch(() => setRemaining(null));
+  }, [enabled]);
+
+  async function regenerate() {
+    setLoading(true);
+    const res = await fetch("/api/auth/mfa/backup-codes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getCsrfHeader() },
+    });
+    const data = await res.json();
+    setLoading(false);
+    if (res.ok && Array.isArray(data.backupCodes)) {
+      setBackupCodes(data.backupCodes);
+      setRemaining(data.backupCodes.length);
+    }
+  }
 
   async function startSetup() {
     setLoading(true);
@@ -1659,6 +1686,12 @@ function MfaFields() {
     }
     setEnabled(true);
     setSetupData(null);
+    // 🔴 تُعرَض مرّةً واحدة: المخزَّن مجزّأٌ لا نصّ، فلا سبيل لإظهارها بعد
+    // إغلاق هذه اللوحة - ولا حتى لنا.
+    if (Array.isArray(data.backupCodes)) {
+      setBackupCodes(data.backupCodes);
+      setRemaining(data.backupCodes.length);
+    }
     setCode("");
   }
 
@@ -1698,6 +1731,53 @@ function MfaFields() {
         </span>
       </div>
       <p className="mb-3 text-[12px] leading-5 text-text-muted">{tr("mfaHint")}</p>
+
+      {/* 🔴 **الأكواد لحظة توليدها - ولا مرّة أخرى.** لوحةٌ صريحةٌ بلونٍ
+          تحذيريّ لأنّ إغلاقها بلا نسخٍ يعني فقدَها: لا نملكها بعد هذه
+          اللحظة، فالمخزَّن مجزّأ. */}
+      {backupCodes && (
+        <div className="mb-4 rounded-xl border border-gap/40 bg-gap/[0.07] p-4">
+          <div className="mb-1 text-[13px] font-medium text-text-primary">{tr("bcTitle")}</div>
+          <p className="mb-3 text-[11.5px] leading-relaxed text-text-muted">{tr("bcHint")}</p>
+          <div className="mb-3 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+            {backupCodes.map((c) => (
+              <code
+                key={c}
+                className="rounded-lg bg-surface px-2 py-1.5 text-center font-mono text-[12.5px] tracking-wide text-text-primary"
+              >
+                {c}
+              </code>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => navigator.clipboard?.writeText(backupCodes.join(String.fromCharCode(10)))}
+              className="btn btn-secondary btn-sm"
+            >
+              {tr("bcCopy")}
+            </button>
+            <button onClick={() => setBackupCodes(null)} className="btn btn-primary btn-sm">
+              {tr("bcSaved")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* عدّادُ المتبقّي: من استهلك أوراقه لا يعرف ذلك إلّا حين يحتاجها */}
+      {enabled && !backupCodes && remaining !== null && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-[12px]">
+          <span className={remaining <= 2 ? "font-medium text-gap" : "text-text-muted"}>
+            {tr("bcRemaining", { n: remaining })}
+          </span>
+          <button
+            onClick={regenerate}
+            disabled={loading}
+            className="text-[12px] text-accent transition-colors hover:text-text-primary"
+          >
+            {tr("bcRegenerate")}
+          </button>
+        </div>
+      )}
 
       {enabled ? (
         !showDisableConfirm ? (

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { createSessionToken, createMfaPendingToken } from "@/lib/auth";
+import { TRUSTED_DEVICE_COOKIE, hashDeviceToken } from "@/lib/mfa";
 import { t, Locale } from "@/lib/i18n/dictionary";
 import { loginSchema, validateOrError } from "@/lib/validation/schemas";
 import { CSRF_COOKIE_NAME, generateCsrfToken } from "@/lib/csrf";
@@ -20,6 +21,38 @@ const LOCKOUT_MINUTES = 15;
 // هاش bcrypt وهمي (مُولّد مسبقاً، مش بتاع حد حقيقي) - بنستخدمه بس عشان
 // نضمن إن bcrypt.compare ياخد نفس الوقت تقريباً حتى لو الإيميل مش موجود
 const DUMMY_HASH_FOR_TIMING_SAFETY = "$2a$12$K9Jk3z8QwXvN5tR7yLmF4uH2bC1dE6fG8iJ0kL2mN4oP6qR8sT0uV";
+
+/** إنشاء الجلسة وكوكياتها - **مصدرٌ واحد لمسارَي الدخول.**
+ *
+ *  الدخول العاديّ والدخول من جهازٍ موثوق يُنتجان الجلسة نفسها. ونسخُ
+ *  الكوكيات في الموضعين يعني أنّ إصلاحاً في أحدهما يُنسى في الآخر - وهو
+ *  ما حدث فعلاً في `verify-login` حيث سقطت كوكي CSRF من فرعٍ جديد. */
+function issueSession(user: { id: string; email: string; name: string | null }) {
+  const response = NextResponse.json({
+    success: true,
+    user: { id: user.id, email: user.email, name: user.name },
+  });
+
+  response.cookies.set("session", createSessionToken(user.id), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 30,
+    path: "/",
+  });
+
+  // كوكي CSRF - غير httpOnly عمداً، عشان JavaScript في الواجهة يقدر
+  // يقراها ويحطها في هيدر الطلبات (شرح كامل في lib/csrf.ts)
+  response.cookies.set(CSRF_COOKIE_NAME, generateCsrfToken(), {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 30,
+    path: "/",
+  });
+
+  return response;
+}
 
 export async function POST(req: NextRequest) {
   // اللغة تُعرَف على مرحلتين هنا وحدها: رسالتان تسبقان معرفة المستخدم
@@ -119,34 +152,38 @@ export async function POST(req: NextRequest) {
   // دقايق) بس، والجلسة الكاملة بتتاح من endpoint تاني بعد التأكد من كود
   // التطبيق (verify-login)
   if (user.mfaEnabled) {
+    // 🔴 **جهازٌ وثِق به صاحبُه من قبل: لا يُسأل ثانيةً حتى ينتهي الأجل.**
+    //
+    // السؤالُ عند كلّ دخولٍ من الحاسوب نفسه احتكاكٌ يوميّ يدفع الناس إلى
+    // إطفاء التحقّق كلّه - فالحمايةُ التي تُتعِب تُلغى. والحماية تبقى حيث
+    // تنفع: أوّلُ دخولٍ من جهازٍ جديد يُسأل دائماً.
+    //
+    // والشرطان معاً: الرمز يطابق **ولم ينتهِ أجلُه**. ومربوطٌ بالمستخدم
+    // نفسه، فرمزُ جهاز شخصٍ آخر لا يفتح هذا الحساب.
+    const deviceToken = req.cookies.get(TRUSTED_DEVICE_COOKIE)?.value;
+    if (deviceToken) {
+      const trusted = await prisma.trustedDevice.findFirst({
+        where: {
+          userId: user.id,
+          tokenHash: await hashDeviceToken(deviceToken),
+          expiresAt: { gt: new Date() },
+        },
+        select: { id: true },
+      });
+      if (trusted) {
+        // آخرُ استعمال: به تُعرَض «آخر مرّة» في الإعدادات، ويُميَّز الجهاز
+        // المهجور من المستعمَل عند المراجعة.
+        await prisma.trustedDevice.update({
+          where: { id: trusted.id },
+          data: { lastUsedAt: new Date() },
+        });
+        return issueSession(user);
+      }
+    }
+
     const pendingToken = createMfaPendingToken(user.id);
     return NextResponse.json({ mfaRequired: true, pendingToken });
   }
 
-  const token = createSessionToken(user.id);
-
-  const response = NextResponse.json({
-    success: true,
-    user: { id: user.id, email: user.email, name: user.name },
-  });
-
-  response.cookies.set("session", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30,
-    path: "/",
-  });
-
-  // كوكي CSRF - غير httpOnly عمداً، عشان JavaScript في الواجهة يقدر
-  // يقراها ويحطها في هيدر الطلبات (شرح كامل في lib/csrf.ts)
-  response.cookies.set(CSRF_COOKIE_NAME, generateCsrfToken(), {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30,
-    path: "/",
-  });
-
-  return response;
+  return issueSession(user);
 }

@@ -39,10 +39,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: t(locale, "apiErr.wrongPassword") }, { status: 401 });
   }
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { mfaEnabled: false, mfaSecret: null },
-  });
+  // 🔴 يُمسَح معه كلُّ أثر: أكوادُ استرجاعٍ وأجهزةٌ موثوقة.
+  //
+  // الأكواد بلا تحقّقٍ لا تسترجع شيئاً، وبقاؤها يعني أنّ إعادة التفعيل
+  // لاحقاً ترث أوراقاً قديمة قد تكون تسرّبت. والأجهزة الموثوقة أخطر: لو
+  // بقيت، فإعادةُ التفعيل تجد أجهزةً تتخطّى التحقّق من أوّل لحظة - أي
+  // حمايةٌ مفعَّلةٌ ومُتخطّاةٌ في آن.
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: user.id },
+      data: { mfaEnabled: false, mfaSecret: null },
+    }),
+    prisma.mfaBackupCode.deleteMany({ where: { userId: user.id } }),
+    prisma.trustedDevice.deleteMany({ where: { userId: user.id } }),
+  ]);
 
   return NextResponse.json({ success: true });
 }

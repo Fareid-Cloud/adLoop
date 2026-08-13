@@ -817,7 +817,7 @@ html, body { overflow-x: clip; }
 .btn-ghost:hover:not(:disabled)     { background: var(--surface-raised); color: var(--text-primary); }
 
 .btn-danger    { background: var(--critical); color: #fff; }
-.btn-danger:hover:not(:disabled)    { background: #FF0F0F; box-shadow: 0 0 0 3px color-mix(in oklab, #FF0F0F 26%, transparent); }
+.btn-danger:hover:not(:disabled)    { background: #FF0F0F; }
 
 /* المقاسات - الدور ثابت والمقاس يتبع المكان */
 .btn-sm { padding: 0.4375rem 0.8125rem; font-size: 12.5px; border-radius: 10px; gap: 0.3125rem; }

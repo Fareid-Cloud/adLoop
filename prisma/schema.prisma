@@ -79,6 +79,8 @@ model User {
   // التحقق بخطوتين (TOTP) - اختياري، المستخدم يفعّله بنفسه من الإعدادات
   mfaSecret     String? // مشفّر بنفس آلية توكنات OAuth (AES-256-GCM)
   mfaEnabled    Boolean @default(false)
+  mfaBackupCodes MfaBackupCode[]
+  trustedDevices TrustedDevice[]
   mfaLastUsedCode String? // آخر كود نجح - يمنع إعادة استخدام نفس الكود مرتين (Replay)
   // حماية من محاولات الدخول المتكررة (Brute Force) - قفل مؤقت بعد محاولات فاشلة كتير
   failedLoginAttempts Int @default(0)
@@ -215,6 +217,57 @@ model ConnectedPlatform {
   connectedAt   DateTime @default(now())
 
   @@unique([userId, platform])
+}
+
+
+// ==================== أكواد استرجاع التحقّق بخطوتين ====================
+//
+// 🔴 **الفجوة التي سدّها هذا الجدول:** كان من يفعّل التحقّق بخطوتين ثمّ
+// يفقد هاتفه **يُقفَل خارج حسابه نهائياً** - يعرف بريده وكلمة مروره ولا
+// يملك الكود، ولا مسارَ في المنتج يعيده. الحلُّ الوحيد تدخّلٌ يدويّ في
+// قاعدة البيانات، وهو ما لا يصلح لمنتجٍ له مشتركون.
+//
+// **مخزَّنةٌ مجزّأةً (hash) لا نصّاً**، كما كلمات المرور: من يقرأ الجدول
+// لا يستطيع الدخول به. ولذلك تُعرَض مرّةً واحدةً عند توليدها - لا يمكننا
+// إظهارُها بعدها لأنّنا لا نملكها.
+//
+// ولكلّ كودٍ استعمالٌ واحد: يُحرَق بأوّل استخدام، فسرقةُ كودٍ مستعملٍ
+// لا تفيد شيئاً.
+model MfaBackupCode {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+
+// ==================== أجهزة موثوقة (لا تسألني على هذا الجهاز) ====================
+//
+// كتابةُ كودٍ عند كلّ دخولٍ من الحاسوب نفسه احتكاكٌ يوميّ يدفع الناس إلى
+// **إطفاء التحقّق كلّه** - فالميزةُ التي تُتعِب تُلغى. تذكُّرُ الجهاز يبقي
+// الحماية قائمةً حيث تنفع: أوّلُ دخولٍ من جهازٍ جديد يُسأل دائماً.
+//
+// 🔴 **والرمز مجزّأٌ لا نصّ:** من يقرأ الجدول لا يستطيع تزوير كوكي جهازٍ
+// موثوق - وإلّا صار تسريبُ قاعدة البيانات تخطّياً للتحقّق بخطوتين لكلّ
+// المستخدمين دفعةً واحدة.
+//
+// وله أجلٌ ينتهي: الثقة لا تُمنَح إلى الأبد، والجهاز يُباع ويُسرَق.
+model TrustedDevice {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String
+  /// لعرضها للمستخدم كي يعرف أيَّ جهازٍ يُلغي - لا للتحقّق.
+  label      String?
+  lastUsedAt DateTime @default(now())
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
 }
 
 // ==================== Workspaces (الفايلات) ====================

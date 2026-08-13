@@ -18,6 +18,7 @@ export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
   const [loading, setLoading] = useState(false);
   const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
+  const [rememberDevice, setRememberDevice] = useState(false);
   const [showPw, setShowPw] = useState(false);
 
   const ar = locale === "ar";
@@ -54,7 +55,7 @@ export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
     const res = await fetch("/api/auth/mfa/verify-login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pendingToken, code: mfaCode }),
+      body: JSON.stringify({ pendingToken, code: mfaCode, rememberDevice }),
     });
     const data = await res.json();
     setLoading(false);
@@ -85,20 +86,41 @@ export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
       {pendingToken ? (
         <form onSubmit={handleMfaSubmit}>
           <p className="mb-4 text-[13px] text-text-muted">{t(locale, "auth.mfaHint")}</p>
+          {/* 🔴 **كان `maxLength={6}` و`inputMode="numeric"`** - فكودُ
+              الاسترجاع (عشرةُ محارفَ بحروف) **يستحيل كتابتُه هنا أصلاً**،
+              ويبقى مسارُ من فقد هاتفه مبنيّاً في الخادم وغيرَ قابلٍ للوصول
+              من الواجهة. الطول يتّسع للاثنين، والإدخال نصّيّ. */}
           <input
             type="text"
-            inputMode="numeric"
-            maxLength={6}
+            maxLength={11}
             placeholder="000000"
             value={mfaCode}
             onChange={(e) => setMfaCode(e.target.value)}
             required
-            className={`${FIELD} mb-3 text-center font-mono text-2xl tracking-[0.4em]`}
+            autoComplete="one-time-code"
+            className={`${FIELD} mb-3 text-center font-mono text-2xl tracking-[0.3em]`}
           />
+
+          {/* «لا تسألني على هذا الجهاز»: السؤالُ عند كلّ دخولٍ من الحاسوب
+              نفسه احتكاكٌ يوميّ يدفع الناس إلى إطفاء التحقّق كلّه. والحماية
+              تبقى حيث تنفع - أوّلُ دخولٍ من جهازٍ جديد يُسأل دائماً. */}
+          <label className="mb-3 flex cursor-pointer items-center gap-2 text-[12.5px] text-text-muted">
+            <input
+              type="checkbox"
+              checked={rememberDevice}
+              onChange={(e) => setRememberDevice(e.target.checked)}
+              className="h-4 w-4 accent-[var(--accent)]"
+            />
+            {t(locale, "auth.rememberDevice")}
+          </label>
+
           {error && <p className="mb-2 text-xs text-critical">{error}</p>}
           <button type="submit" disabled={loading} className={PRIMARY_BTN}>
             {loading ? t(locale, "auth.mfaVerifying") : t(locale, "auth.mfaConfirm")}
           </button>
+          <p className="mt-3 text-center text-[11.5px] leading-relaxed text-text-faint">
+            {t(locale, "auth.mfaLostPhone")}
+          </p>
         </form>
       ) : (
         <>
