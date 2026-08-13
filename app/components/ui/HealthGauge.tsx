@@ -12,7 +12,7 @@
 // الثلاثة لأن دلالته أهمّ من مقاسه: أخضر مطمئن، كهرماني منتبه، أحمر عاجل.
 
 const SIZES = {
-  sm: { box: 44, r: 17, sw: 5, num: 14, sub: 0 },
+  sm: { box: 36, r: 14, sw: 4, num: 12, sub: 0 },
   md: { box: 88, r: 35, sw: 8, num: 24, sub: 9 },
   lg: { box: 132, r: 52, sw: 11, num: 34, sub: 11 },
 } as const;

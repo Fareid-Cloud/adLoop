@@ -347,7 +347,7 @@ export default async function GlancePage({
             شارةً بجانبه، فيستوي الارتفاعان بلا ضبطٍ يدويّ لأيّهما. */}
         <Link
           href="/dashboard/diagnostics"
-          className="inline-flex h-11 items-center gap-2.5 overflow-hidden rounded-full card-shadow border border-border bg-surface pe-3 ps-0 no-underline transition-colors hover:border-accent"
+          className="inline-flex h-11 items-center gap-2.5 overflow-hidden rounded-full card-shadow border border-border bg-surface pe-3.5 ps-1.5 no-underline transition-colors hover:border-accent"
         >
           <HealthGauge score={health.overallScore} size="sm" showDenominator={false} />
           <span className="text-[12.5px] font-medium text-text-primary">{tr("healthScoreShort")}</span>
@@ -514,53 +514,61 @@ export default async function GlancePage({
             </div>
           )}
 
-          {/* توزيع التحويلات المتحقّقة على المنصّات */}
-          <div className="mb-4">
+          {/* 🔴 **كلُّ بطاقةٍ كانت تأخذ صفّاً بعرض الصفحة كاملاً** - فرسمٌ
+              دائريٌّ صغير يجلس وحده في فراغٍ عريض، وتحته قائمةُ قرارات في
+              فراغٍ مثله، ويصير التمرير طويلاً بلا أن تزيد المعلومة.
+              الاثنان جنباً إلى جنب: الرسم يقول «من أين يأتي المتحقَّق»،
+              والقائمة تقول «ما ينتظر قرارك» - وقراءتهما معاً هي الغرض. */}
+          <div className="mb-4 grid gap-4 lg:grid-cols-2">
             <PlatformDonut locale={locale} data={sourceRows.map((r) => ({ platform: r.platform, value: r.verifiedConversions }))} />
+
+            {urgentActionItems.length > 0 && (
+              <div className="card pad-md flex flex-col">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <span className="text-[13px] font-medium text-text-primary">{tr("pendingDecisions")}</span>
+                  <a href="/dashboard/actions" className="text-xs text-accent no-underline">
+                    {tr("viewAllArrow")}
+                  </a>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {urgentActionItems.map((item: any) => (
+                    <a
+                      key={item.id}
+                      href="/dashboard/actions"
+                      className="flex items-center gap-2 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-[12.5px] text-text-primary no-underline transition-colors hover:border-accent"
+                    >
+                      <PriorityDot priority={item.severity} />
+                      <span className="min-w-0 flex-1">{itemTitle(locale, item)}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}
 
-      {urgentActionItems.length > 0 && (
-        <div className="mb-6 mt-6">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-[13px] text-text-muted">{tr("pendingDecisions")}</span>
-            <a href="/dashboard/actions" className="text-xs text-accent no-underline">
-              {tr("viewAllArrow")}
-            </a>
-          </div>
-          <div className="flex flex-col gap-1">
-            {urgentActionItems.map((item: any) => (
+      {/* مهامُّ اليوم بطاقةٌ كبقيّتها، لا سطرٌ عارٍ فوق قائمةٍ عارية:
+          الصفحة كلّها بطاقات، وقسمٌ واحدٌ بلا سطحٍ يُقرأ ذيلاً منسيّاً. */}
+      <div className="card pad-md mt-6">
+        <div className="mb-3 text-[13px] font-medium text-text-primary">{tr("todayTasks")}</div>
+        {todaysTasks.length === 0 ? (
+          <div className="py-2 text-[12.5px] text-text-faint">{tr("noTasks")}</div>
+        ) : (
+          <div className="grid gap-1.5 sm:grid-cols-2">
+            {todaysTasks.map((task: DailyTask) => (
               <a
-                key={item.id}
-                href="/dashboard/actions"
-                className="btn btn-secondary"
+                key={task.id}
+                href="/dashboard/diagnostics"
+                className="flex items-center gap-2 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-[12.5px] text-text-primary no-underline transition-colors hover:border-accent"
               >
-                <PriorityDot priority={item.severity} />
-                <span>{itemTitle(locale, item)}</span>
+                <PriorityDot priority={task.priority} />
+                <span className="min-w-0 flex-1">{taskTitle(locale, task)}</span>
               </a>
             ))}
           </div>
-        </div>
-      )}
-
-      <div className="mb-2 mt-6 text-[13px] text-text-muted">{tr("todayTasks")}</div>
-      {todaysTasks.length === 0 ? (
-        <div className="py-3 text-sm text-text-faint">{tr("noTasks")}</div>
-      ) : (
-        <div className="flex flex-col gap-1">
-          {todaysTasks.map((task: DailyTask) => (
-            <a
-              key={task.id}
-              href="/dashboard/diagnostics"
-              className="btn btn-secondary"
-            >
-              <PriorityDot priority={task.priority} />
-              <span>{taskTitle(locale, task)}</span>
-            </a>
-          ))}
-        </div>
-      )}
+        )}
+      </div>
 
       {hasAnyData && (
         <div className="mt-6">
