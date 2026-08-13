@@ -9,6 +9,7 @@ import { Toggle } from "@/app/components/ui/Toggle";
 import { ConnectionTester } from "@/app/components/ConnectionTester";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { useState, useMemo, useEffect, createContext, useContext, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Settings as SettingsIcon, Bot, Cpu, Sparkles, Terminal, Brain, Zap, Upload, Search, User, Palette, Plug, Building2, RefreshCw, TriangleAlert, ShieldCheck, Check, ChevronDown } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
@@ -1732,35 +1733,56 @@ function MfaFields() {
       </div>
       <p className="mb-3 text-[12px] leading-5 text-text-muted">{tr("mfaHint")}</p>
 
-      {/* 🔴 **الأكواد لحظة توليدها - ولا مرّة أخرى.** لوحةٌ صريحةٌ بلونٍ
-          تحذيريّ لأنّ إغلاقها بلا نسخٍ يعني فقدَها: لا نملكها بعد هذه
-          اللحظة، فالمخزَّن مجزّأ. */}
-      {backupCodes && (
-        <div className="mb-4 rounded-xl border border-gap/40 bg-gap/[0.07] p-4">
-          <div className="mb-1 text-[13px] font-medium text-text-primary">{tr("bcTitle")}</div>
-          <p className="mb-3 text-[11.5px] leading-relaxed text-text-muted">{tr("bcHint")}</p>
-          <div className="mb-3 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-            {backupCodes.map((c) => (
-              <code
-                key={c}
-                className="rounded-lg bg-surface px-2 py-1.5 text-center font-mono text-[12.5px] tracking-wide text-text-primary"
+      {/* 🔴 **نافذةٌ لا لوحةٌ في مجرى الصفحة.**
+       *
+       * الأكواد تُعرَض **مرّةً واحدة**: المخزَّن بصمةٌ لا نصّ، فمن أغلق دون
+       * أن ينسخ فقدها إلى الأبد. ولوحةٌ صفراء بين بقيّة الإعدادات تُمرَّر
+       * بالعين كتنبيهٍ آخر، بينما النافذة تحجب ما وراءها فلا تُغلَق إلّا
+       * بقرار.
+       *
+       * وإلى `document.body` عبر بوّابة: الدرس المدفوع ثمنه في اختيار
+       * الحملات - عنصرٌ داخل شجرةٍ لها سياق تكديسٍ خاصّ لا يعلوها مهما بلغ
+       * رقم طبقته. */}
+      {backupCodes && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[10060] flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+            <div className="flex items-start gap-3 border-b border-border p-5">
+              <span className="icon-badge mt-0.5 h-9 w-9 shrink-0 bg-gap/12 text-gap">
+                <ShieldCheck size={17} />
+              </span>
+              <div className="min-w-0">
+                <div className="text-[14px] font-semibold text-text-primary">{tr("bcTitle")}</div>
+                <p className="mt-1 text-[12px] leading-relaxed text-text-muted">{tr("bcHint")}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 p-5 sm:grid-cols-2">
+              {backupCodes.map((c) => (
+                <code
+                  key={c}
+                  className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-center font-mono text-[13px] tracking-wider text-text-primary"
+                >
+                  {c}
+                </code>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap justify-end gap-2 border-t border-border p-4">
+              <button
+                onClick={() => navigator.clipboard?.writeText(backupCodes.join(String.fromCharCode(10)))}
+                className="btn btn-secondary btn-sm"
               >
-                {c}
-              </code>
-            ))}
+                {tr("bcCopy")}
+              </button>
+              {/* لا زرَّ إغلاقٍ صامت (X) ولا إغلاقَ بالنقر خارجها: الإغلاق
+                  هنا يعني فقدَ الأكواد، فيكون بإقرارٍ صريح لا بحركةٍ عابرة. */}
+              <button onClick={() => setBackupCodes(null)} className="btn btn-primary btn-sm">
+                {tr("bcSaved")}
+              </button>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => navigator.clipboard?.writeText(backupCodes.join(String.fromCharCode(10)))}
-              className="btn btn-secondary btn-sm"
-            >
-              {tr("bcCopy")}
-            </button>
-            <button onClick={() => setBackupCodes(null)} className="btn btn-primary btn-sm">
-              {tr("bcSaved")}
-            </button>
-          </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* عدّادُ المتبقّي: من استهلك أوراقه لا يعرف ذلك إلّا حين يحتاجها */}
