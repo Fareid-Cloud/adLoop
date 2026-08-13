@@ -18,7 +18,7 @@ Whatagraph). القيمة الحقيقية: **مقارنة CPL/ROAS بناءً �
 ```
 User — تسجيل دخول (إيميل/باسورد أو Google/Facebook مباشرة)
  └── ConnectedPlatform — ربط Google Ads/Meta/TikTok
- └── Workspace ("Thawabet", "Tamkeen", ...) — عزل كامل لكل عميل
+ └── Workspace (واحدة أو أكثر لكل مشترك) — عزل كامل لكل عميل
       ├── CampaignLink — الكامبينز المحددة من كل منصة
       ├── MetricSnapshot — بيانات يومية (raw + verified conversions)
       ├── CreativeSnapshot — أداء الإعلان الفردي (Scale/Kill/Watch)

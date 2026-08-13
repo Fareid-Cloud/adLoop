@@ -276,7 +276,7 @@ model Workspace {
   id          String   @id @default(cuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name        String   // مثلاً "Thawabet"
+  name        String   // اسم مساحة العمل كما يكتبه المشترك
   /// مساحة عرض ببيانات ثابتة. **كل أثر خارجي محظور منها** عبر
   /// `assertNotDemo` - ضغطة هنا يجب أن تستحيل أن توقف إعلاناً حقيقياً.
   isDemo      Boolean  @default(false)
@@ -326,7 +326,7 @@ model Workspace {
   /// معرّف رقم واتساب الأعمال (`phone_number_id` من Meta) - هو الهويّة
   /// الوحيدة التي يرسلها ويب هوك واتساب، فهو مفتاح ربط الرسالة الواردة
   /// بمساحة عملها. كان المتتبّع يعتمد خريطة عملاء مكتوبة في الكود
-  /// (`tamkeen`/`thawabet`)، فكان يستحيل أن يستخدمه أيّ مشترك آخر.
+  /// بأسماء عملاء بعينهم، فكان يستحيل أن يستخدمه أيّ مشترك آخر.
   whatsappPhoneNumberId String? @unique
   /// رقم واتساب المعروض للزوّار (بالصيغة الدولية بلا +) - إليه يُحوَّل
   /// الزائر بعد النقر على الإعلان. منفصل عن المعرّف أعلاه: ذاك داخليّ
