@@ -187,7 +187,35 @@ export async function getEcommerceOverview(
     });
 
     const successfulUnits = Math.max(sales.units - sales.returned, 0);
-    const totalProfit = Math.round(pricing.profitAtCurrentPrice * successfulUnits * 100) / 100;
+
+    // 🔴 **إعلانٌ واحدٌ يُخصم مرّةً واحدة - وكان يُخصم برقمين مختلفين في
+    // السطر الواحد.**
+    //
+    // `profitAtCurrentPrice` يطرح سطر «تكلفة الإعلان» المبنيّ على
+    // `avgAdCostPerOrder` اليدويّ، بينما عمود العائد يقسم على الإنفاق
+    // الحقيقيّ من حملات التسوّق. فكان «الربح الحقيقي» و«العائد على
+    // الاستثمار» في السطر نفسه يحاسبان الإعلان بمبلغين مختلفين، ويظهر
+    // الربح أعلى ممّا هو بفارق ما بين التقدير والحقيقة.
+    //
+    // فحيث يوجد إنفاقٌ حقيقيّ لهذا الصنف يُردّ التقدير ويحلّ محلّه، وحيث
+    // لا يوجد يبقى التقدير كما هو ويُسكَت عن العائد. والأساس مُعلَنٌ في
+    // العمود إمّا بالرقم وإمّا بسبب غيابه.
+    const manualAdCostPerUnit = pricing.lines.find((l) => l.key === "ad")?.amount ?? 0;
+    const profitBeforeAds =
+      Math.round((pricing.profitAtCurrentPrice + manualAdCostPerUnit) * successfulUnits * 100) / 100;
+
+    const skuKey = p.sku?.trim().toLowerCase();
+    const adSpend = skuKey ? spendBySku.get(skuKey) ?? null : null;
+
+    const totalProfit =
+      adSpend !== null
+        ? Math.round((profitBeforeAds - adSpend) * 100) / 100
+        : Math.round(pricing.profitAtCurrentPrice * successfulUnits * 100) / 100;
+    const profitPerUnit =
+      adSpend !== null && successfulUnits > 0
+        ? Math.round((totalProfit / successfulUnits) * 100) / 100
+        : pricing.profitAtCurrentPrice;
+
     const velocity = Math.round((sales.units / windowDays) * 100) / 100;
     const stockDaysLeft =
       p.stockQuantity !== null && velocity > 0 ? Math.floor(p.stockQuantity / velocity) : null;
@@ -235,20 +263,6 @@ export async function getEcommerceOverview(
       verdictVars = { amount: Math.round(totalProfit), currency, units: sales.units };
     }
 
-    // الإنفاق الحقيقيّ على هذا الصنف - ولا يوجد إلّا بـSKU مضبوطٍ يطابق
-    // معرّفه في ميرشنت سنتر. غيابه ليس عطلاً، بل حالةٌ تُقال كما هي.
-    const skuKey = p.sku?.trim().toLowerCase();
-    const adSpend = skuKey ? spendBySku.get(skuKey) ?? null : null;
-
-    // 🔴 **فخّ العدّ المزدوج:** `profitAtCurrentPrice` خُصم منه بالفعل سطرُ
-    // «تكلفة الإعلان» المأخوذ من `avgAdCostPerOrder` اليدويّ. فطرحُ الإنفاق
-    // الحقيقيّ فوقه يخصم الإعلان مرّتين. يُردّ السطر اليدويّ أوّلاً ليصير
-    // الربح «قبل الإعلان» فعلاً، ثمّ يخصم `computeReturn` الإنفاق الحقيقيّ
-    // وحده - رقمٌ واحدٌ للإعلان لا رقمان.
-    const manualAdCostPerUnit = pricing.lines.find((l) => l.key === "ad")?.amount ?? 0;
-    const profitBeforeAds =
-      Math.round((pricing.profitAtCurrentPrice + manualAdCostPerUnit) * successfulUnits * 100) / 100;
-
     const returns = computeReturn({
       adSpend,
       revenue: sales.revenue,
@@ -264,9 +278,14 @@ export async function getEcommerceOverview(
       adSpend: adSpend === null ? null : Math.round(adSpend),
       returns,
       returnRatePct: Math.round(returnRatePct * 10) / 10,
-      profitPerUnit: pricing.profitAtCurrentPrice,
+      profitPerUnit,
       totalProfit,
-      marginPct: pricing.actualMarginPct,
+      // الهامش يتبع الربح المعروض: لو حُوسب الإعلان بالإنفاق الحقيقيّ،
+      // فهامشٌ محسوبٌ على التقدير يناقض الربح الذي بجانبه في السطر نفسه.
+      marginPct:
+        adSpend !== null && sales.revenue > 0
+          ? Math.round((totalProfit / sales.revenue) * 1000) / 10
+          : pricing.actualMarginPct,
       velocity,
       stockDaysLeft,
       stockQuantity: p.stockQuantity,

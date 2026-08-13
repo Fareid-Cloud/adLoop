@@ -621,20 +621,58 @@ export async function seedDemoData(
   });
 
   // ---------- منتجات التسوّق ----------
+  //
+  // 🔴 **كان الإنفاق رقماً ثابتاً (`640 + i*130`) لا علاقة له بمبيعات
+  // المنتج، فأنتج عائداً خرافياً: ١١٢ ضعفاً وعائد استثمار ‎+٤٤٥٨٪‎.**
+  //
+  // ولم يكن خطأً وقت كُتب: هذا الحقل كان يغذّي تنبيه «منتج يصرف بلا
+  // مبيعات» وحده، وهناك يهمّ أن يتجاوز عتبةً لا أن يكون متناسباً. ثمّ صار
+  // **مقاماً** لعائد المنتج، فظهر عُواره: مبيعاتٌ بـ‎٧١٬٧١٢‎ مقابل إنفاقٍ
+  // بـ‎٦٤٠‎ رقمان لا يجتمعان في متجرٍ حقيقيّ.
+  //
+  // فيُشتقّ الإنفاق الآن **من مبيعات كلّ منتج فعلاً**، بعائدٍ مستهدَفٍ
+  // يروي قصّة المنتج نفسها التي تحكيها بقيّة البذرة - ويُقارَن بنقطة
+  // التعادل الحقيقية لهامشه (١ ÷ الهامش) لا برقمٍ عامّ:
+  //
+  //   سيروم فيتامين سي  ٤٫٦× مقابل تعادلٍ عند ٢٫٩×  → رابحٌ بوضوح
+  //   كريم مرطّب        ٣٫٦× مقابل ٣٫٣×             → ربحٌ ضئيل
+  //   المجموعة الكاملة  ١٫٩× مقابل ٣٫١×             → خسارةٌ فعلية (مقصودة)
+  //   غسول لطيف         ٤٫١× مقابل ٢٫٥×             → رابح
+  //   واقي شمس          ٢٫٦× مقابل ٢٫٨×             → تحت التعادل بقليل
+  const TARGET_ROAS = [4.6, 3.6, 1.9, 4.1, 2.6];
+
+  const saleAgg = await prisma.productSaleEvent.groupBy({
+    by: ["productId"],
+    where: { productId: { in: products.map((p) => p.id) } },
+    _sum: { revenue: true },
+  });
+  const revenueByProductId = new Map(saleAgg.map((r) => [r.productId, r._sum.revenue ?? 0]));
+  // الربط بالـSKU هو نفسه الذي يستعمله عائد المنتج في الإنتاج
+  // (`sku` ← `item_id`)، فالبذرة تختبر الجسر الحقيقيّ لا تلتفّ حوله.
+  const revenueBySku = new Map(
+    products.map((p) => [p.sku ?? "", revenueByProductId.get(p.id) ?? 0])
+  );
+
   await prisma.shoppingProductSnapshot.createMany({
-    data: DEMO_PRODUCTS.map((p, i) => ({
-      workspaceId,
-      accountId: "demo-google-1",
-      itemId: p.sku,
-      title: ar ? p.nameAr : p.nameEn,
-      feedLabel: "SA",
-      hasIssues: i === 2,
-      issuesDetail: i === 2 ? (ar ? "صورة مفقودة" : "Missing image") : null,
-      clicks: 210 + i * 45,
-      impressions: 4_800 + i * 900,
-      conversions: i === 2 ? 0 : 12 + i * 4,
-      cost: m(640 + i * 130),
-    })),
+    data: DEMO_PRODUCTS.map((p, i) => {
+      // المبيعات محوَّلةٌ للعملة بالفعل (سعر المنتج مرّ على `m`)، فلا
+      // تُحوَّل مرّةً ثانية - والقسمة على العائد تبقيها في العملة نفسها.
+      const revenue = revenueBySku.get(p.sku) ?? 0;
+      const cost = revenue > 0 ? Math.round(revenue / TARGET_ROAS[i]) : m(320);
+      return {
+        workspaceId,
+        accountId: "demo-google-1",
+        itemId: p.sku,
+        title: ar ? p.nameAr : p.nameEn,
+        feedLabel: "SA",
+        hasIssues: i === 2,
+        issuesDetail: i === 2 ? (ar ? "صورة مفقودة" : "Missing image") : null,
+        clicks: 210 + i * 45,
+        impressions: 4_800 + i * 900,
+        conversions: i === 2 ? 0 : 12 + i * 4,
+        cost,
+      };
+    }),
     skipDuplicates: true,
   });
 
