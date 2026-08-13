@@ -207,8 +207,12 @@ export async function PlatformHub({
         }
       />
 
-      {/* ---------- ١) المؤشّرات ---------- */}
-      <div className="mb-4 grid gap-3 sm:grid-cols-3">
+      {/* ---------- ١) المؤشّرات ----------
+          🔴 **أربع بطاقات في شبكةٍ من ثلاثة أعمدة تترك الرابعة وحدها في
+          صفٍّ خاصّ بها** - بطاقةٌ بعرض الثلث وإلى جانبها فراغٌ بعرض
+          الثلثين. والصفّ الواحد هو المقصود: الأربعة تُقرأ معاً (أنفقتُ
+          كذا، وصلني كذا، بكم العميل، وبكم باع) لا ثلاثةٌ ثمّ واحدة. */}
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           label={t(locale, "campPages.hubSpend")}
           explainKey="cost"
@@ -247,7 +251,14 @@ export async function PlatformHub({
         />
         {/* ROAS لكلّ منصّة على حدة: تكلفةُ العميل تقول «بكم اشتريته»،
             وهذا يقول «بكم باع» - ومنصّةٌ أغلى في الأولى قد تكون أربح في
-            الثاني إن كان متوسّط طلبها أعلى. القراران مختلفان. */}
+            الثاني إن كان متوسّط طلبها أعلى. القراران مختلفان.
+
+            🔴 **وكان اسمه «ROAS المتحقَّق» وعليه علامة تحقّقٍ خضراء، وكلاهما
+            ادّعاءٌ كاذب.** بسطُه `revenue` - وهو ما تنسبه المنصّة لإعلانها
+            هي، أي رقمٌ **مُعلَن** بتعريفه. ووضعُ علامة التحقّق عليه يقلب
+            معنى العلامة في منتجٍ كلُّ فكرته التفرقةُ بين المُعلَن والمتحقَّق:
+            إن صحّت على رقمٍ من المنصّة، لم تعد تعني شيئاً في أيّ موضعٍ آخر.
+            فهو الآن `accent` بلا علامة - كنظيره في مركز الحقيقة حرفياً. */}
         <MetricCard
           label={t(locale, "campPages.hubRoas")}
           explainKey="roas"
@@ -255,8 +266,7 @@ export async function PlatformHub({
           value={roas !== null ? `${roas}` : "—"}
           unit={roas !== null ? "x" : undefined}
           icon={Icons.TrendingUp}
-          tone={roas !== null ? "verified" : "default"}
-          verified={roas !== null}
+          tone="accent"
           caption={
             roas === null
               ? { text: t(locale, "campPages.hubNoRoas"), tone: "muted" }

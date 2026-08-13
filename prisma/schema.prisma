@@ -2394,3 +2394,46 @@ model AgentMessage {
 
   @@index([chatId, createdAt])
 }
+
+/// 🔴🔴🔴 **جدولٌ لا يملكه هذا المشروع - ومُعلَنٌ هنا كي لا يُحذَف.**
+///
+/// `wa-conversion-tracker` يكتب كليكات الواتساب في **قاعدة البيانات نفسها**
+/// (قرارٌ مقصود وموثَّق في `.env.example` عنده)، وينشئ جدوله بـ SQL خام
+/// `CREATE TABLE IF NOT EXISTS` لا بـ Prisma. فلا يعرفه مخطَّطُنا.
+///
+/// و`prisma db push` يعامل كلّ جدولٍ لا يعرفه على أنّه انحرافٌ **فيُسقطه**.
+/// أي أنّ كلّ بناءٍ لهذا المشروع كان يحذف جدول الكليكات كاملاً - بصمتٍ ما
+/// دام فارغاً، وهو الحال في كلّ مرّة سابقة. ولم يظهر إلّا حين وصل أوّل
+/// كليكٍ حقيقيّ فصار الحذف «فقدان بيانات» يستوقف Prisma.
+///
+/// وأثرُه أكبر من صفٍّ ضائع: هذا الجدول هو ذاكرة «مَن ضغط ومتى ومن أيّ
+/// إعلان»، ومنه وحده يعرف `/api/attribution/mark-matched` أيّ حملةٍ
+/// يُنسَب إليها التحقّق. بحذفه تصبح كلّ رسالة واتساب تصل بعد النشر
+/// **مجهولةَ المصدر** - أي أنّ عمود التحقّق كلّه، وهو جوهر المنتج، كان
+/// يُصفَّر عند كلّ نشرة.
+///
+/// **إعلانُه هنا هو الإصلاح:** يصير Prisma يعرف أنّه جدولٌ مقصود فيتركه.
+/// والأعمدة منسوخةٌ حرفياً عن `wa-conversion-tracker/lib/db.ts` - وأيّ
+/// اختلافٍ في نوعٍ أو اسم يجعل `db push` **يُعدّل** الجدول بدل أن يتركه،
+/// فيُفقد ما فيه. لا يُعدَّل هذا النموذج إلّا مع ذاك الملفّ معاً.
+model WaClick {
+  code           String    @id
+  /// الاسم قديم: يحمل معرّف الكليك من أيّ منصّة (fbclid/ttclid/sc_click_id)
+  gclid          String
+  platform       String    @default("GOOGLE_ADS")
+  siteSourceName String?   @map("site_source_name")
+  clientId       String    @map("client_id")
+  campaignId     String?   @map("campaign_id")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  matched        Boolean   @default(false)
+  matchedAt      DateTime? @map("matched_at") @db.Timestamptz(6)
+  phoneNumber    String?   @map("phone_number")
+  sentToGoogle   Boolean   @default(false) @map("sent_to_google")
+  ipAddress      String?   @map("ip_address")
+  visitorId      String?   @map("visitor_id")
+  userAgent      String?   @map("user_agent")
+
+  @@index([visitorId], map: "wa_clicks_visitor_idx")
+  @@index([clientId, createdAt(sort: Desc)], map: "wa_clicks_client_created_idx")
+  @@map("wa_clicks")
+}

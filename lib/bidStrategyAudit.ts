@@ -16,7 +16,16 @@ export interface BidStrategyInput {
   targetCpa: number | null; // بالعملة، مش micros - محوّلة بالفعل
   targetRoas: number | null; // نسبة (2.5 يعني 250%)
   verifiedCpa: number | null; // الحقيقي الفعلي آخر 30 يوم
-  verifiedRoas: number | null;
+  /** 🔴 **اسمه `verifiedRoas` وكان يُمرَّر `null` دائماً، فلم يُفحص
+   *  التزامٌ واحدٌ من نوع `TARGET_ROAS` منذ كُتب الملفّ.**
+   *
+   *  والسبب في الاسم: لم يكن عندنا إيراد منسوب أصلاً حتى نمرّره. ولمّا صار
+   *  عندنا (`MetricSnapshot.revenue` = قيمة التحويل التي تنسبها المنصّة
+   *  لإعلانها)، تبيّن أنّ هذا **هو** الرقم الصحيح لهذا الفحص بعينه لا رقمنا
+   *  المتحقَّق: الفحص يسأل «الهدف الذي ضبطتَه في المنصّة، هل تحقّق؟» -
+   *  والمنصّة تحسّن نحو قياسها هي، فمقارنة هدفها بقياسٍ آخر تقارن شيئين
+   *  مختلفين وتنذر إنذاراً كاذباً. فسُمّي `actualRoas` بما هو. */
+  actualRoas: number | null;
 }
 
 export interface BidStrategySanityResult {
@@ -38,7 +47,14 @@ const MIN_VERIFIED_SAMPLE = 5; // أقل عدد تحويلات حقيقية قب
 
 export function auditBidStrategySanity(
   input: BidStrategyInput,
-  verifiedSampleSize: number
+  verifiedSampleSize: number,
+  /** عيّنة المنصّة نفسها - تحويلاتها هي كما تعدّها.
+   *
+   *  فرع `TARGET_CPA` يقارن هدفك بتكلفتنا **المتحقَّقة**، فعيّنتُه عيّنتنا.
+   *  وفرع `TARGET_ROAS` يقارن هدف المنصّة بما حقّقته المنصّة، فعيّنتُه
+   *  عيّنتها - ولو حكمناه بعدّنا نحن، لسكت الفحص في كلّ حسابٍ لم يُركَّب
+   *  فيه تحقّقٌ بعد، وهو الحساب الذي يحتاجه أكثر. */
+  platformSampleSize: number = verifiedSampleSize,
 ): BidStrategySanityResult {
   const base = { campaignId: input.campaignId, campaignName: input.campaignName };
 
@@ -65,22 +81,22 @@ export function auditBidStrategySanity(
   }
 
   if (input.biddingStrategyType === "TARGET_ROAS" || input.biddingStrategyType === "MAXIMIZE_CONVERSION_VALUE") {
-    if (input.targetRoas === null || input.verifiedRoas === null || verifiedSampleSize < MIN_VERIFIED_SAMPLE) {
+    if (input.targetRoas === null || input.actualRoas === null || platformSampleSize < MIN_VERIFIED_SAMPLE) {
       return { ...base, hasTarget: input.targetRoas !== null, divergencePct: null, status: "NOT_APPLICABLE",
         message: t("ar", "alerts.bidNoSample"), messageKey: "alerts.bidNoSample" };
     }
 
-    const divergencePct = Math.round(((input.verifiedRoas - input.targetRoas) / input.targetRoas) * 100);
+    const divergencePct = Math.round(((input.actualRoas - input.targetRoas) / input.targetRoas) * 100);
     const isDivergent = Math.abs(divergencePct) > DIVERGENCE_THRESHOLD_PCT;
 
     return {
       ...base, hasTarget: true, divergencePct,
       status: isDivergent ? "DIVERGENT" : "ALIGNED",
       messageKey: isDivergent ? "alerts.bidRoasDivergent" : "alerts.bidRoasAligned",
-      messageVars: { target: input.targetRoas, actual: input.verifiedRoas, pct: Math.abs(divergencePct) },
+      messageVars: { target: input.targetRoas, actual: input.actualRoas, pct: Math.abs(divergencePct) },
       message: t("ar", isDivergent ? "alerts.bidRoasDivergent" : "alerts.bidRoasAligned", {
         target: input.targetRoas,
-        actual: input.verifiedRoas,
+        actual: input.actualRoas,
         pct: Math.abs(divergencePct),
       }),
     };
@@ -109,10 +125,14 @@ export async function checkBidStrategyAlertsForWorkspace(workspaceId: string) {
   for (const link of links) {
     const agg = await prisma.metricSnapshot.aggregate({
       where: { workspaceId, campaignId: link.externalCampaignId, date: { gte: thirtyDaysAgo } },
-      _sum: { cost: true, verifiedConversions: true },
+      _sum: { cost: true, verifiedConversions: true, rawConversions: true, revenue: true },
     });
     const verified = agg._sum.verifiedConversions ?? 0;
     const cost = agg._sum.cost ?? 0;
+    // قيمة التحويل التي تنسبها المنصّة لهذه الحملة - البسط الوحيد الذي
+    // يجوز أن يُقارَن بهدفٍ ضُبط في المنصّة نفسها.
+    const revenue = agg._sum.revenue ?? 0;
+    const platformConversions = agg._sum.rawConversions ?? 0;
 
     const result = auditBidStrategySanity(
       {
@@ -122,9 +142,10 @@ export async function checkBidStrategyAlertsForWorkspace(workspaceId: string) {
         targetCpa: link.targetCpa,
         targetRoas: link.targetRoas,
         verifiedCpa: verified > 0 ? cost / verified : null,
-        verifiedRoas: null,
+        actualRoas: cost > 0 && revenue > 0 ? revenue / cost : null,
       },
-      verified
+      verified,
+      platformConversions,
     );
 
     if (result.status === "DIVERGENT") {
