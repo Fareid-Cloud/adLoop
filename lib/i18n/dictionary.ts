@@ -211,6 +211,7 @@ export const dictionary = {
       severityHigh: "أولوية عالية",
     },
     truthPage: {
+      vsPrevPeriod: "عن الفترة السابقة",
       title: "الحقيقة",
       subtitle: "ما تعلنه كل منصة مقابل ما تأكّد فعلاً عبر محادثة أو طلب حقيقي — الفارق بينهما هو ما تدفعه بلا مقابل.",
       noData: "لا توجد بيانات في هذه الفترة",
@@ -247,9 +248,9 @@ export const dictionary = {
       cpaVerified: "تكلفة العميل الحقيقية",
       cpaGap: "أغلى بـ{amount} عن الرقم المعلَن",
       noVerifiedYet: "لا توجد تحويلات متحقّق منها بعد",
-      roasReported: "العائد المعلَن",
-      roasVerified: "العائد المتحقّق",
-      roiVerified: "العائد على الاستثمار",
+      roasReported: "ROAS المُعلَن",
+      roasVerified: "ROAS المتحقَّق",
+      roiVerified: "العائد على الاستثمار (ROI)",
       roiNeedsMargin: "يحتاج هامش ربحك - اضبطه في إعدادات مساحة العمل",
       roiNegative: "الإعلان يكلّفك أكثر ممّا يربح بعد ثمن البضاعة",
       roasNeedsStore: "يتطلّب ربط متجر لقراءة الإيراد",
@@ -408,6 +409,7 @@ export const dictionary = {
 
     // ==== عناصر مشتركة تتكرّر في كل الصفحات ====
     common: {
+      notAvailable: "غير متاح",
       sessionExpired: "انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.",
       noWorkspace: "لا توجد مساحة عمل بعد",
       noWorkspaceHint: "ارجع إلى الرئيسية لإنشاء أول مساحة عمل.",
@@ -867,7 +869,8 @@ export const dictionary = {
     // ==== الوثائق القانونية ====
     // نصّان محرَّران لا منقولان: الترجمة الحرفية لبند قانوني تُنتج التزاماً
     // مختلفاً عمّا قُصد. تحتاجان مراجعة محامٍ قبل الاعتماد النهائي.
-    nav: { openMenu: "فتح القائمة" },
+    nav: {
+      openMenu: "فتح القائمة" },
     legal: {
       linkTerms: "شروط الاستخدام",
       linkPrivacy: "سياسة الخصوصية",
@@ -1728,6 +1731,9 @@ export const dictionary = {
       wastedSpend_what: "المبلغ الذي صرفته مقابل تحويلات لم تتأكّد.",
       wastedSpend_how: "الإنفاق × نسبة التحويلات غير المتحقّقة. رقم بالعملة لا نسبة.",
       wastedSpend_why: "النسبة لا تقول لك ماذا تفعل؛ المبلغ يقول. هذا ما يمكن استرجاعه فعلياً بإصلاح أو إيقاف.",
+      roasVerified_what: "العائد على الإنفاق محسوباً على الإيراد المتحقَّق وحده - لا على كلّ ما تقوله المنصّة.",
+      roasVerified_how: "الإيراد × نسبة التحقّق ÷ الصرف الإعلانيّ. فلو أبلغت المنصّة عن ١٠٠ تحويل وتحقّقنا من ٤٠، حُسب ٤٠٪ من الإيراد فقط.",
+      roasVerified_why: "الفرق بينه وبين ROAS المُعلَن هو فرقُ التصديق: الأوّل يفترض أنّ كلّ تحويلٍ أبلغت عنه المنصّة حقيقيّ، وهذا لا ينسب إليك إلّا ما تأكّد مصدره. والقرار على الرقم المتحقَّق، لأنّه ما تقبضه فعلاً.",
       roi_what: "كم ربحت فعلاً مقابل كلّ ريال أنفقته على الإعلان - بعد خصم ثمن البضاعة.",
       roi_how: "(الإيراد المتحقَّق × هامش ربحك − الصرف الإعلانيّ) ÷ الصرف الإعلانيّ.",
       roi_why: "العائد على الإنفاق (ROAS) يتجاهل ثمن ما تبيعه. حسابٌ بعائد ٣× وهامشٍ ٢٥٪ خاسرٌ فعلاً: من كلّ ثلاثة ريالات عائدة، ريالان وربع ثمنُ المنتج - فالباقي أقلّ ممّا دفعتَه للإعلان. هذا الرقم يقول إن كنت تربح أم لا.",
@@ -2326,6 +2332,8 @@ export const dictionary = {
       hubSpend: "الإنفاق",
       hubVerified: "تحويلات متحقّق منها",
       hubCpa: "تكلفة العميل الحقيقية",
+      hubRoas: "ROAS المتحقَّق",
+      hubNoRoas: "يحتاج ربط متجرك ليصل الإيراد",
       hubNoCpa: "لا توجد تحويلات متحقّق منها بعد لحساب التكلفة الحقيقية.",
       // درجة الجودة
       qsTitle: "تفصيل درجة الجودة",
@@ -2475,6 +2483,14 @@ export const dictionary = {
       tDaysAgo: "منذ {n} يوماً",
     },
     // ==== تنقّل الحملات ====
+    productVerdict: {
+      noSales: "لا توجد مبيعات مسجّلة في هذه الفترة.",
+      losing: "كلّ وحدة مباعة تُكلّفك {amount} {currency}.",
+      smallSample: "{units} وحدة فقط - عيّنة صغيرة، والنتيجة غير حاسمة بعد.",
+      returnsEatIt: "يربح ظاهرياً، لكنّ {pct}٪ مرتجعات تلتهم العائد.",
+      confirmedProfit: "ربحٌ مؤكَّد {amount} {currency} من {units} وحدة ناجحة.",
+      earlySignal: "مؤشّر مبكّر جيّد - {amount} {currency} ربحاً من {units} وحدة.",
+    },
     campNav: {
       crossPlatform: "نظرة شاملة عبر المنصات",
       overview: "لمحة عامّة",
@@ -2935,6 +2951,9 @@ export const dictionary = {
     },
     // ==== نصوص واجهة متفرّقة ====
     ui: {
+      sessionExpired: "انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.",
+      print: "طباعة أو حفظ PDF",
+      listSep: "، ",
       splitSeparated: "كل منصّة على حدة",
       splitMerged: "كل المنصّات",
       splitHeading: "الحقيقة مقابل الظاهر — {mode} (آخر {days} يوماً)",
@@ -4094,6 +4113,7 @@ export const dictionary = {
       severityHigh: "High priority",
     },
     truthPage: {
+      vsPrevPeriod: "vs previous period",
       title: "Truth",
       subtitle: "What each platform reports against what actually converted — the gap between them is what you pay for nothing.",
       noData: "No data in this period",
@@ -4130,9 +4150,9 @@ export const dictionary = {
       cpaVerified: "Real cost per customer",
       cpaGap: "{amount} more than the reported figure",
       noVerifiedYet: "No verified conversions yet",
-      roasReported: "Reported return",
-      roasVerified: "Verified return",
-      roiVerified: "Return on investment",
+      roasReported: "Reported ROAS",
+      roasVerified: "Verified ROAS",
+      roiVerified: "Return on investment (ROI)",
       roiNeedsMargin: "Needs your profit margin - set it in workspace settings",
       roiNegative: "Ads cost more than they earn once goods are paid for",
       roasNeedsStore: "Requires a connected store to read revenue",
@@ -4291,6 +4311,7 @@ export const dictionary = {
 
     // ==== Shared across every page ====
     common: {
+      notAvailable: "Not available",
       sessionExpired: "Your session has ended. Please log in again.",
       noWorkspace: "No workspace yet",
       noWorkspaceHint: "Go back to Home to create your first workspace.",
@@ -4743,7 +4764,8 @@ export const dictionary = {
       unknownError: "Unknown error",
     },
     // ==== Legal documents ====
-    nav: { openMenu: "Open menu" },
+    nav: {
+      openMenu: "Open menu" },
     legal: {
       linkTerms: "Terms of Use",
       linkPrivacy: "Privacy Policy",
@@ -5525,6 +5547,9 @@ export const dictionary = {
     },
     // ==== Misc interface strings ====
     ui: {
+      sessionExpired: "Your session expired - please sign in again.",
+      print: "Print or save PDF",
+      listSep: ", ",
       splitSeparated: "each platform separately",
       splitMerged: "all platforms",
       splitHeading: "Truth vs appearance — {mode} (last {days} days)",
@@ -6177,6 +6202,9 @@ export const dictionary = {
       wastedSpend_what: "The amount you spent against conversions that were never confirmed.",
       wastedSpend_how: "Spend × the share of unverified conversions. A currency figure, not a percentage.",
       wastedSpend_why: "A percentage does not tell you what to do; an amount does. This is what a fix or a pause can actually recover.",
+      roasVerified_what: "Return on ad spend counted on verified revenue only - not on everything the platform claims.",
+      roasVerified_how: "revenue × verification rate ÷ ad spend. If the platform reported 100 conversions and we verified 40, only 40% of the revenue is counted.",
+      roasVerified_why: "The gap between this and reported ROAS is the gap between claimed and confirmed: the first assumes every conversion the platform reported is real, this one credits only what was traced to a source. Decide on the verified figure - it is the one you actually collect.",
       roi_what: "What you actually earned for every unit spent on ads - after the cost of the goods.",
       roi_how: "(verified revenue × your profit margin − ad spend) ÷ ad spend.",
       roi_why: "Return on ad spend ignores what your goods cost you. A 3x return on a 25% margin is a loss: of every three units coming back, two and a quarter paid for the product - leaving less than you paid the platform. This number says whether you are making money.",
@@ -6775,6 +6803,8 @@ export const dictionary = {
       hubSpend: "Spend",
       hubVerified: "Verified conversions",
       hubCpa: "Real cost per customer",
+      hubRoas: "Verified ROAS",
+      hubNoRoas: "Needs your store connected so revenue arrives",
       hubNoCpa: "No verified conversions yet to calculate the real cost.",
       // Quality score
       qsTitle: "Quality score breakdown",
@@ -6924,6 +6954,14 @@ export const dictionary = {
       tDaysAgo: "{n}d ago",
     },
     // ==== Campaigns navigation ====
+    productVerdict: {
+      noSales: "No sales recorded in this period.",
+      losing: "Every unit sold costs you {amount} {currency}.",
+      smallSample: "Only {units} units - a small sample, not conclusive yet.",
+      returnsEatIt: "Profitable on paper, but {pct}% returns eat the margin.",
+      confirmedProfit: "Confirmed profit of {amount} {currency} from {units} successful units.",
+      earlySignal: "Good early signal - {amount} {currency} profit from {units} units.",
+    },
     campNav: {
       crossPlatform: "Across all platforms",
       overview: "Overview",

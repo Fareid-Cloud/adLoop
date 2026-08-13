@@ -191,11 +191,11 @@ export default async function ReportsPage({
         )}
 
         {/* حدود التقرير - تُطبع مع التقرير عمداً */}
-        {journey.missingCostsAr.length > 0 && (
+        {journey.missingCosts.length > 0 && (
           <section className="border-t border-border pt-4">
             <h3 className="mb-1.5 text-[12.5px] font-semibold text-text-muted">{tr("limits")}</h3>
             <ul className="flex flex-col gap-1">
-              {journey.missingCostsAr.map((m, i) => (
+              {journey.missingCosts.map((m, i) => (
                 <li key={i} className="text-[11.5px] leading-relaxed text-text-faint">
                   • {t(locale, m.key, m.vars)}
                 </li>

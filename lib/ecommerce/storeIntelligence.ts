@@ -62,7 +62,7 @@ export interface ProfitJourney {
   /** أكبر بند تكلفة - نقطة التدخّل الأولى */
   biggestLeak: { label: LocalizedText; amount: number; pctOfRevenue: number } | null;
   /** تكاليف لم نستطع قراءتها، تُذكر صراحةً لأن غيابها يضخّم الربح */
-  missingCostsAr: Array<{ key: string; vars?: Record<string, string | number> }>;
+  missingCosts: Array<{ key: string; vars?: Record<string, string | number> }>;
   currency: string;
 }
 
@@ -235,7 +235,7 @@ export async function getProfitJourney(workspaceId: string, windowDays = 30): Pr
             pctOfRevenue: revenue > 0 ? round1((Math.abs(biggest.amount) / revenue) * 100) : 0,
           }
         : null,
-    missingCostsAr: missingCosts,
+    missingCosts: missingCosts,
     currency,
   };
 }

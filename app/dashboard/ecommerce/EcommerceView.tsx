@@ -34,7 +34,8 @@ export interface ProductRow {
   stockQuantity: number | null;
   confidence: "RELIABLE" | "PRELIMINARY" | "INSUFFICIENT";
   verdict: "WINNER" | "PROMISING" | "WATCH" | "LOSING" | "NO_DATA";
-  verdictAr: string;
+  verdictKey: string;
+  verdictVars: Record<string, string | number>;
 }
 
 const VERDICT_META: Record<string, { key: string; tone: string }> = {
@@ -191,7 +192,7 @@ export function EcommerceView({
                     {tr(CONFIDENCE_KEY[winner.confidence])}
                   </span>
                 </div>
-                <p className="text-[13px] leading-relaxed text-text-muted">{winner.verdictAr}</p>
+                <p className="text-[13px] leading-relaxed text-text-muted">{t(locale, `productVerdict.${winner.verdictKey}`, winner.verdictVars)}</p>
 
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Stat label={tr("unitProfit")} value={`${winner.profitPerUnit} ${currency}`} tone="var(--verified)" />
@@ -251,7 +252,7 @@ export function EcommerceView({
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
                 <div className="min-w-0">
                   <div className="text-[13.5px] font-medium text-text-primary">{p.name}</div>
-                  <p className="text-[12.5px] text-text-muted">{p.verdictAr}</p>
+                  <p className="text-[12.5px] text-text-muted">{t(locale, `productVerdict.${p.verdictKey}`, p.verdictVars)}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="font-mono text-[14px] font-bold text-critical">

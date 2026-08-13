@@ -131,7 +131,7 @@ export async function PlatformHub({
   const [totalsAgg, prevAgg, daily] = await Promise.all([
     prisma.metricSnapshot.aggregate({
       where: { workspaceId: workspace.id, platform, date: { gte: thirtyDaysAgo } },
-      _sum: { cost: true, verifiedConversions: true, rawConversions: true, clicks: true, impressions: true },
+      _sum: { cost: true, verifiedConversions: true, rawConversions: true, clicks: true, impressions: true, revenue: true },
     }),
     // الفترة السابقة مباشرةً - بدونها كل رقم لقطة بلا اتجاه
     prisma.metricSnapshot.aggregate({
@@ -151,6 +151,17 @@ export async function PlatformHub({
   const clicks = totalsAgg._sum.clicks ?? 0;
   const impressions = totalsAgg._sum.impressions ?? 0;
   const cpa = costPerVerified(cost, verified);
+
+  // 🔴 **ROAS المتحقَّق - بنفس منطق مركز الحقيقة لا بحسابٍ ثانٍ.**
+  //
+  // الإيراد يُقاس بنسبة التحقّق: لا يُنسب للإعلان إيرادٌ لم يُتأكَّد مصدره.
+  // ولو حُسب هنا بالإيراد الخام لاختلف الرقم عن الصفحة الأخرى للمنصّة
+  // نفسها - ورقمان مختلفان لشيءٍ واحد يُفقدان الثقة في الاثنين.
+  const revenue = totalsAgg._sum.revenue ?? 0;
+  const roasVerified =
+    cost > 0 && revenue > 0 && rawConv > 0
+      ? Math.round(((revenue * (verified / rawConv)) / cost) * 100) / 100
+      : null;
 
   const prevVerified = prevAgg._sum.verifiedConversions ?? 0;
   const prevCpa = prevVerified > 0 ? (prevAgg._sum.cost ?? 0) / prevVerified : 0;
@@ -239,6 +250,24 @@ export async function PlatformHub({
             ) : undefined
           }
           caption={cpa ? undefined : { text: t(locale, "campPages.hubNoCpa"), tone: "muted" }}
+        />
+        {/* ROAS لكلّ منصّة على حدة: تكلفةُ العميل تقول «بكم اشتريته»،
+            وهذا يقول «بكم باع» - ومنصّةٌ أغلى في الأولى قد تكون أربح في
+            الثاني إن كان متوسّط طلبها أعلى. القراران مختلفان. */}
+        <MetricCard
+          label={t(locale, "campPages.hubRoas")}
+          explainKey="roasVerified"
+          locale={locale}
+          value={roasVerified !== null ? `${roasVerified}` : "—"}
+          unit={roasVerified !== null ? "x" : undefined}
+          icon={Icons.TrendingUp}
+          tone={roasVerified !== null ? "verified" : "default"}
+          verified={roasVerified !== null}
+          caption={
+            roasVerified === null
+              ? { text: t(locale, "campPages.hubNoRoas"), tone: "muted" }
+              : undefined
+          }
         />
       </div>
 

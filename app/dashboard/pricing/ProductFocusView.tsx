@@ -192,7 +192,7 @@ export function ProductFocusView({
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="flex items-center gap-2 text-[13px] text-text-primary">
                     {(() => { const I = LINE_ICON[line.key] ?? Package; return <I size={14} className="shrink-0 text-text-muted" />; })()}
-                    {line.labelAr}
+                    {locale === "en" ? line.labelEn : line.labelAr}
                     {line.key === result.largestCostKey && (
                       <span className="ms-1.5 rounded-full bg-gap/12 px-1.5 py-0.5 text-[10px] font-medium text-gap">{tr("biggest")}</span>
                     )}
@@ -202,7 +202,11 @@ export function ProductFocusView({
                 <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-raised">
                   <div className="h-full rounded-full bg-accent/55" style={{ width: `${(line.amount / maxLine) * 100}%` }} />
                 </div>
-                {line.noteAr && <p className="mt-1 text-[11px] text-text-faint">{line.noteAr}</p>}
+                {(locale === "en" ? line.noteEn : line.noteAr) && (
+                  <p className="mt-1 text-[11px] text-text-faint">
+                    {locale === "en" ? line.noteEn : line.noteAr}
+                  </p>
+                )}
               </div>
             ))}
           </div>

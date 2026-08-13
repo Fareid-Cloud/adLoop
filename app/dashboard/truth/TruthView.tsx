@@ -223,7 +223,7 @@ export function TruthView({
           icon={TrendingUp}
           tone="verified"
           verified
-          explainKey="roas"
+          explainKey="roasVerified"
           locale={locale}
         />
         {/* 🔴 **العائد على الاستثمار بجانب العائد على الإنفاق - لأنّهما

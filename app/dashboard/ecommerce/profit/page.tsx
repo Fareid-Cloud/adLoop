@@ -160,7 +160,7 @@ export default async function ProfitPage({
         />
       </div>
 
-      <LimitsNote locale={locale} items={journey.missingCostsAr} />
+      <LimitsNote locale={locale} items={journey.missingCosts} />
 
       <SectionHeading hint={tr("whereMoneyGoesHint")}>{tr("whereMoneyGoes")}</SectionHeading>
 

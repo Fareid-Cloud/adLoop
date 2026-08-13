@@ -525,7 +525,7 @@ export function DiagnosticsView({
                         <div className="grid gap-4 md:grid-cols-2">
                           <div>
                             <div className="mb-1 text-[11.5px] font-medium text-text-muted">{tp("whatItMeasures")}</div>
-                            <p className="text-[12.5px] leading-relaxed text-text-primary">{c.descAr}</p>
+                            <p className="text-[12.5px] leading-relaxed text-text-primary">{bi(locale, c.descAr, c.descEn)}</p>
                             {c.source && (
                               <>
                                 <div className="mb-1 mt-3 text-[11.5px] font-medium text-text-muted">{tp("dataSource")}</div>

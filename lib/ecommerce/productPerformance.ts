@@ -42,7 +42,8 @@ export interface ProductPerformance {
   score: number;
 
   /** سبب واضح لتصنيف هذا المنتج */
-  verdictAr: string;
+  verdictKey: string;
+  verdictVars: Record<string, string | number>;
   verdict: "WINNER" | "PROMISING" | "WATCH" | "LOSING" | "NO_DATA";
 }
 
@@ -144,27 +145,37 @@ export async function getEcommerceOverview(
     const returnPenalty = 1 - Math.min(returnRatePct, 80) / 100;
     const score = totalProfit * returnPenalty * (1 + Math.min(velocity, 10) / 20);
 
+    // 🔴 **الحكم كان يُبنى نصّاً عربياً هنا، فيصل إلى شاشةٍ إنجليزية عربياً
+    // وبخطٍّ ليس خطّنا** (الحرف العربيّ يسقط إلى خطّ النظام حين تكون الصفحة
+    // إنجليزية). والقاعدة المتّبعة في المنتج: **ما يُبنى في الخادم يُخزَّن
+    // مفتاحاً ومتغيّراته**، ويُترجَم عند العرض حيث تُعرَف لغة القارئ.
     let verdict: ProductPerformance["verdict"];
-    let verdictAr: string;
+    let verdictKey: string;
+    let verdictVars: Record<string, string | number> = {};
 
     if (sales.units === 0) {
       verdict = "NO_DATA";
-      verdictAr = "لا توجد مبيعات مسجّلة في هذه الفترة.";
+      verdictKey = "noSales";
     } else if (pricing.profitAtCurrentPrice < 0) {
       verdict = "LOSING";
-      verdictAr = `كل وحدة مباعة تُكلّفك ${Math.abs(pricing.profitAtCurrentPrice)} ${currency}.`;
+      verdictKey = "losing";
+      verdictVars = { amount: Math.abs(pricing.profitAtCurrentPrice), currency };
     } else if (confidence === "INSUFFICIENT") {
       verdict = "WATCH";
-      verdictAr = `${sales.units} وحدة فقط — عينة صغيرة، النتيجة غير حاسمة بعد.`;
+      verdictKey = "smallSample";
+      verdictVars = { units: sales.units };
     } else if (returnRatePct > 35) {
       verdict = "WATCH";
-      verdictAr = `يربح ظاهرياً لكن ${Math.round(returnRatePct)}% مرتجعات تلتهم العائد.`;
+      verdictKey = "returnsEatIt";
+      verdictVars = { pct: Math.round(returnRatePct) };
     } else if (confidence === "RELIABLE") {
       verdict = "WINNER";
-      verdictAr = `ربح مؤكد ${Math.round(totalProfit)} ${currency} من ${successfulUnits} وحدة ناجحة.`;
+      verdictKey = "confirmedProfit";
+      verdictVars = { amount: Math.round(totalProfit), currency, units: successfulUnits };
     } else {
       verdict = "PROMISING";
-      verdictAr = `مؤشر مبكر جيد — ${Math.round(totalProfit)} ${currency} ربح من ${sales.units} وحدة.`;
+      verdictKey = "earlySignal";
+      verdictVars = { amount: Math.round(totalProfit), currency, units: sales.units };
     }
 
     return {
@@ -179,7 +190,7 @@ export async function getEcommerceOverview(
       stockDaysLeft,
       stockQuantity: p.stockQuantity,
       confidence, score,
-      verdict, verdictAr,
+      verdict, verdictKey, verdictVars,
     };
   });
 
