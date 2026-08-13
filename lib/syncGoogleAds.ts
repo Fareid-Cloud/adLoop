@@ -83,7 +83,8 @@ export async function syncGoogleAdsForWorkspace(
         metrics.impressions,
         metrics.clicks,
         metrics.cost_micros,
-        metrics.conversions
+        metrics.conversions,
+        metrics.conversions_value
       FROM campaign
       WHERE segments.date BETWEEN '${from}' AND '${to}'
         AND campaign.id IN (${campaignIds.join(",")})
@@ -175,6 +176,18 @@ export async function syncGoogleAdsForWorkspace(
           clicks: Number(row.metrics?.clicks ?? 0),
           cost: Number(row.metrics?.cost_micros ?? 0) / 1_000_000,
           rawConversions: Number(row.metrics?.conversions ?? 0),
+          // 🔴 **الإيراد المنسوب لهذه الحملة - من جوجل نفسها.**
+          //
+          // كان هذا الحقل يُملأ من ويب هوك المتجر وحده، فيحمل **مبيعاتك
+          // كلّها** (العضويّ والمباشر والمتكرّر) على صفٍّ واحدٍ لا منصّة له.
+          // فأيُّ «عائد» يُحسَب منه ليس عائداً على الإعلان.
+          //
+          // و`conversions_value` هو ما تنسبه جوجل لإعلانها هي - البسط
+          // الصحيح لـROAS. `null` لا صفر حين لا تبلّغ: الصفر يُقرأ «لم يبع
+          // شيئاً»، والغياب يُقرأ «لا نقيس ذلك».
+          revenue: row.metrics?.conversions_value != null
+            ? Number(row.metrics.conversions_value)
+            : null,
           addToCart,
           checkoutsStarted,
           verifiedConversions: verifiedCount,
@@ -184,6 +197,9 @@ export async function syncGoogleAdsForWorkspace(
           clicks: Number(row.metrics?.clicks ?? 0),
           cost: Number(row.metrics?.cost_micros ?? 0) / 1_000_000,
           rawConversions: Number(row.metrics?.conversions ?? 0),
+          revenue: row.metrics?.conversions_value != null
+            ? Number(row.metrics.conversions_value)
+            : null,
           addToCart,
           checkoutsStarted,
           // ملاحظة: لو ده Backfill لبيانات قديمة، مفيش verified conversions

@@ -109,6 +109,18 @@ export async function syncMetaAdsForWorkspace(workspaceId: string) {
           // كان يُقرأ منها `lead` وحده ويُترك الباقي - بينما `add_to_cart`
           // و`initiate_checkout` فيها بجانبه، وهما ما يملأ الفجوة بين النقرة
           // والطلب في مسار الشراء. سطران، لا تكاملٌ جديد.
+          // 🔴 **الإيراد المنسوب لهذه الحملة - من ميتا نفسها.**
+          //
+          // `action_values` توأمُ `actions`: تلك تعدّ الأحداث وهذه تحمل
+          // قيمَها. وكنّا نقرأ العدّ ونترك القيمة، فيبقى حقل الإيراد يُملأ
+          // من ويب هوك المتجر وحده - أي **مبيعاتك كلّها** بلا نسبةٍ لمنصّة.
+          const actionValue = (type: string) => {
+            const hit = (row.action_values ?? []).find((a: any) => a.action_type === type);
+            return hit ? Number(hit.value ?? 0) : null;
+          };
+          const revenue =
+            actionValue("purchase") ?? actionValue("offsite_conversion.fb_pixel_purchase");
+
           const addToCart = act("add_to_cart") ?? act("offsite_conversion.fb_pixel_add_to_cart");
           const checkoutsStarted =
             act("initiate_checkout") ?? act("offsite_conversion.fb_pixel_initiate_checkout");
@@ -127,10 +139,10 @@ export async function syncMetaAdsForWorkspace(workspaceId: string) {
             },
             create: {
               workspaceId, platform: "META_ADS", campaignId, date, placementBreakdown, placementDetail,
-              impressions, clicks, cost, rawConversions, addToCart, checkoutsStarted,
+              impressions, clicks, cost, rawConversions, addToCart, checkoutsStarted, revenue,
               verifiedConversions: 0, // قيمة ابتدائية صحيحة - بتتزود فعلياً وقت التحقق الحقيقي عبر /api/attribution/mark-matched (كانت التعليقة القديمة هنا غلط، مكانش فيه تحديث فعلي قبل كده)
             },
-            update: { impressions, clicks, cost, rawConversions, addToCart, checkoutsStarted },
+            update: { impressions, clicks, cost, rawConversions, addToCart, checkoutsStarted, revenue },
           });
         }
       } catch (err) {
@@ -195,7 +207,7 @@ export async function syncMetaAdSetsForWorkspace(workspaceId: string) {
             since: from.toISOString().slice(0, 10),
             until: to.toISOString().slice(0, 10),
           }),
-          fields: "impressions,clicks,spend,actions",
+          fields: "impressions,clicks,spend,actions,action_values",
         });
 
         const insightsRes = await fetch(

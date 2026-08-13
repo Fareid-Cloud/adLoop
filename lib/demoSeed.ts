@@ -226,13 +226,26 @@ export async function seedDemoData(
       const clicks = Math.round(c.baseClicks * w);
       const raw = Math.max(0, Math.round(c.baseRaw * w));
       const verified = Math.round(raw * c.verifyRate);
+      // 🔴 **الديمو يحاكي المصدرَين كما هما في الواقع، لا رقماً واحداً.**
+      //
+      // كان يكتب رقماً واحداً في `revenue` لكلّ منصّة، فيُظهر قدرةً لم تكن
+      // موجودة: لا مزامنةَ إعلانيةٍ تملأ ذلك الحقل أصلاً. الآن:
+      //
+      //   `revenue`      ← ما تنسبه المنصّة لإعلانها (كـ`conversions_value`)
+      //   `storeRevenue` ← مبيعات المتجر كلّها، وهي **أكبر** لأنّها تشمل
+      //                     العضويّ والمباشر والمتكرّر
+      //
+      // والفارق بينهما مقصود: هو ما يجعل «عائد الإعلان» أقلّ من «مبيعاتك
+      // ÷ إنفاقك» - وهو الفرق الذي بُني المنتج ليُظهره.
       const revenue = verified > 0 ? m(verified * c.aov) : null;
+      // نحو ٤٠٪ فوق إيراد الإعلان: نسبةٌ شائعةٌ لما يأتي من غير الإعلان.
+      const storeRevenue = revenue !== null ? m(revenue * 1.4) : null;
 
       snapshots.push({
         workspaceId, platform: c.platform, campaignId: c.id, date,
         impressions: clicks * 34, clicks, cost,
         rawConversions: raw, verifiedConversions: verified,
-        revenue, ordersCount: verified > 0 ? verified : null,
+        revenue, storeRevenue, ordersCount: verified > 0 ? verified : null,
         returnedOrdersCount: verified > 0 ? Math.round(verified * 0.11) : null,
         // مرحلتا المسار بين النقرة والطلب. النسب ليست اعتباطية: نحو ثُمن
         // النقرات يضيف للسلّة، ونحو نصف هؤلاء يبدأ الدفع - وهو المدى الشائع

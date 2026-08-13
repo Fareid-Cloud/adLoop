@@ -89,12 +89,12 @@ export async function POST(req: NextRequest) {
       campaignId: "unlinked",
       date: dateOnly,
       ordersCount: 1,
-      revenue: orderRevenue,
+      storeRevenue: orderRevenue,
       returnedOrdersCount: 0,
     },
     update: {
       ordersCount: { increment: 1 },
-      revenue: { increment: orderRevenue },
+      storeRevenue: { increment: orderRevenue },
     },
   });
 

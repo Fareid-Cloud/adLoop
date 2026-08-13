@@ -100,7 +100,7 @@ export async function syncTikTokAdsForWorkspace(workspaceId: string) {
         // conversion هنا معناها "أحداث التحسين" المُعرّفة في الحملة نفسها
         // (زي جوجل وميتا بالظبط - رقم مش موحّد المعنى عبر كل الحملات
         // إلا لو كلهم بنفس هدف التحسين)
-        metrics: JSON.stringify(["spend", "impressions", "clicks", "conversion"]),
+        metrics: JSON.stringify(["spend", "impressions", "clicks", "conversion", "total_purchase_value"]),
         filtering: JSON.stringify([
           { field_name: "campaign_ids", filter_type: "IN", filter_value: JSON.stringify(campaignIds) },
         ]),
@@ -139,6 +139,10 @@ export async function syncTikTokAdsForWorkspace(workspaceId: string) {
             clicks: Number(m.clicks ?? 0),
             cost: Number(m.spend ?? 0),
             rawConversions: Number(m.conversion ?? 0),
+            // ⚠️ **ثقة متوسّطة في اسم الحقل** - `total_purchase_value` هو
+            // ما توثّقه تيك توك، ولم يُختبَر بحسابٍ حقيقيّ بعد. ولذلك يُقرأ
+            // بحذر: `null` إن غاب، فلا يُكتَب صفرٌ يُقرأ «لم يبع شيئاً».
+            revenue: m.total_purchase_value != null ? Number(m.total_purchase_value) : null,
             verifiedConversions: 0, // قيمة ابتدائية صحيحة - بتتزود فعلياً وقت التحقق الحقيقي عبر /api/attribution/mark-matched
           },
           update: {
@@ -146,6 +150,7 @@ export async function syncTikTokAdsForWorkspace(workspaceId: string) {
             clicks: Number(m.clicks ?? 0),
             cost: Number(m.spend ?? 0),
             rawConversions: Number(m.conversion ?? 0),
+            revenue: m.total_purchase_value != null ? Number(m.total_purchase_value) : null,
           },
         });
       }

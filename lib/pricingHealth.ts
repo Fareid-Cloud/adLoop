@@ -109,7 +109,7 @@ export async function getWorkspacePricing(
   const [sallaAgg, adSpendAgg] = await Promise.all([
     prisma.metricSnapshot.aggregate({
       where: { workspaceId, platform: "SALLA", date: { gte: thirtyDaysAgo } },
-      _sum: { ordersCount: true, revenue: true, returnedOrdersCount: true },
+      _sum: { ordersCount: true, storeRevenue: true, returnedOrdersCount: true },
     }),
     prisma.metricSnapshot.aggregate({
       where: { workspaceId, platform: { in: ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS", "SNAPCHAT_ADS"] }, date: { gte: thirtyDaysAgo } },
@@ -123,7 +123,7 @@ export async function getWorkspacePricing(
     const avgCogs = products.reduce((s: number, p: any) => s + p.cogs, 0) / products.length;
     const computed = computeEcommerceMetrics({
       platform: "SALLA", cost: adSpendAgg._sum.cost ?? 0, ordersCount,
-      revenue: sallaAgg._sum.revenue ?? 0, cogs: avgCogs * ordersCount,
+      revenue: sallaAgg._sum.storeRevenue ?? 0, cogs: avgCogs * ordersCount,
       shippingCost: avgShippingAll * ordersCount, returnedOrdersCount: sallaAgg._sum.returnedOrdersCount ?? 0,
     });
     roasGapInsight = explainRoasGap(computed, locale);

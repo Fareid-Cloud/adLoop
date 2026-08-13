@@ -102,9 +102,9 @@ export async function getProfitJourney(workspaceId: string, windowDays = 30): Pr
   if (orders.length === 0) {
     const snap = await prisma.metricSnapshot.aggregate({
       where: { workspaceId, date: { gte: since } },
-      _sum: { revenue: true },
+      _sum: { storeRevenue: true },
     });
-    revenue = snap._sum.revenue ?? 0;
+    revenue = snap._sum.storeRevenue ?? 0;
     usedSnapshots = true;
   }
 
