@@ -11,6 +11,7 @@
 // البيانات نقول ذلك بدل إخراج صفر يبدو نتيجةً.
 
 import { prisma } from "@/lib/prisma";
+import { computeReturn, type ReturnResult } from "@/lib/returnMetrics";
 import type { LocalizedText } from "./opportunities";
 
 const AD_PLATFORMS = ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS", "SNAPCHAT_ADS"] as const;
@@ -27,6 +28,14 @@ export interface StoreOverview {
   refundRatePct: number;
   /** عدد المنتجات المهدَّدة بالنفاد خلال ١٤ يوماً بمعدّل بيعها الحالي */
   inventoryRiskCount: number;
+  /** 🔴 **العائد على الإنفاق والعائد على الاستثمار - كانا غائبين عن صفحة
+   *  المتجر كلّها**، وهما أوّل ما يسأل عنه صاحب متجرٍ يُعلن.
+   *
+   *  والمصدر هنا **متجرُه هو** لا المنصّة: البسط مبيعاته الفعلية، والمقام
+   *  إنفاقه الإعلانيّ الحقيقيّ - وهو ما يفرّق هذا العائد عن نظيره في مركز
+   *  الحقيقة (حيث البسط ما تنسبه المنصّة لنفسها). ولذلك يحمل كلٌّ منهما
+   *  مصدرَه مكتوباً تحته: الرقمان مختلفان عن قصد، والفرق بينهما معلومة. */
+  returns: ReturnResult;
   /** مقارنة بالفترة السابقة بنفس الطول */
   revenueChangePct: number | null;
   profitChangePct: number | null;
@@ -59,6 +68,14 @@ export interface ProfitJourney {
   revenue: number;
   netProfit: number;
   netMarginPct: number | null;
+  /** الإنفاق الإعلانيّ في النافذة - كان يُحسب هنا ويُستهلك داخلياً في
+   *  مرحلةٍ من مراحل الرحلة ثمّ يُرمى. وهو مقام العائد، فبدونه لا تستطيع
+   *  الصفحة أن تقول «بكم باع كلّ ريالٍ أنفقتَه» رغم أنّ الرقم عندها. */
+  adSpend: number;
+  /** الربح **قبل** خصم الإعلان = صافي الربح + الإنفاق الإعلانيّ.
+   *  هو ما يقيس به `computeReturn` العائدَ على الاستثمار، وهو هنا محسوبٌ
+   *  من التكاليف الحقيقية بنداً بنداً لا من نسبة هامشٍ مقدَّرة. */
+  profitBeforeAds: number;
   /** أكبر بند تكلفة - نقطة التدخّل الأولى */
   biggestLeak: { label: LocalizedText; amount: number; pctOfRevenue: number } | null;
   /** تكاليف لم نستطع قراءتها، تُذكر صراحةً لأن غيابها يضخّم الربح */
@@ -227,6 +244,10 @@ export async function getProfitJourney(workspaceId: string, windowDays = 30): Pr
     revenue: Math.round(revenue),
     netProfit: Math.round(netProfit),
     netMarginPct: revenue > 0 ? round1((netProfit / revenue) * 100) : null,
+    adSpend: Math.round(advertising),
+    // صافي الربح مطروحٌ منه الإعلان بالفعل (مرحلةٌ من مراحل الرحلة)، فردُّه
+    // يعطي الربح قبله - لا نعيد الجمع من البنود فنخاطر باختلاف الرقمين.
+    profitBeforeAds: Math.round(netProfit + advertising),
     biggestLeak:
       biggest && biggest.amount < 0
         ? {
@@ -306,6 +327,15 @@ export async function getStoreOverview(workspaceId: string, windowDays = 30): Pr
     returningCustomersPct: customers.length > 0 ? round1((returning / customers.length) * 100) : null,
     refundRatePct: orders.length > 0 ? round1((returned / orders.length) * 100) : 0,
     inventoryRiskCount,
+    // الربح هنا مقروءٌ من التكاليف الحقيقية لا مقدَّرٌ بنسبة هامش - وهي
+    // الدقّة التي لا تملكها صفحات الإعلانات، فتُصرَّح للقارئ عبر `profitBasis`.
+    returns: computeReturn({
+      adSpend: journey.adSpend,
+      revenue: journey.revenue,
+      grossProfit: journey.profitBeforeAds,
+      revenueBasis: "STORE_TOTAL",
+      profitBasis: "REAL_COSTS",
+    }),
     revenueChangePct: prevRevenue > 0 ? round1(((journey.revenue - prevRevenue) / prevRevenue) * 100) : null,
     profitChangePct: prevProfit !== 0 ? round1(((journey.netProfit - prevProfit) / Math.abs(prevProfit)) * 100) : null,
     hasOrderLevelData: orders.length > 0,

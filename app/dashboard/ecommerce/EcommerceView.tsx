@@ -16,6 +16,7 @@ import { MetricCard, type MetricTone } from "@/app/components/ui/MetricCard";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { TH, TD, TR, THEAD_ROW } from "@/app/components/ui/tableStyles";
 import { PageHeader } from "@/app/components/ui/PageHeader";
+import { missingReturnKey, type ReturnResult } from "@/lib/returnMetrics";
 
 export interface ProductRow {
   id: string;
@@ -36,6 +37,9 @@ export interface ProductRow {
   verdict: "WINNER" | "PROMISING" | "WATCH" | "LOSING" | "NO_DATA";
   verdictKey: string;
   verdictVars: Record<string, string | number>;
+  /** `null` = لا نعرف إنفاق هذا المنتج، لا أنّه صفر - راجع `ProductPerformance` */
+  adSpend: number | null;
+  returns: ReturnResult;
 }
 
 const VERDICT_META: Record<string, { key: string; tone: string }> = {
@@ -64,6 +68,7 @@ const num = (n: number) => Math.round(n).toLocaleString("en-US");
 export function EcommerceView({
   workspaceName, products, winner, runnerUp, losing, totals,
   windowDays, hasStoreConnection, storePlatform, currency, locale,
+  adSpendAvailability,
 }: {
   workspaceName: string;
   products: ProductRow[];
@@ -76,6 +81,7 @@ export function EcommerceView({
   storePlatform: string | null;
   currency: string;
   locale: Locale;
+  adSpendAvailability: "OK" | "WINDOW_MISMATCH" | "NO_SHOPPING_DATA";
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `productsPage.${k}`, v);
   // جدول المنتجات له مساحة مفاتيح خاصة - أعمدته مشتركة مع أقسام أخرى
@@ -298,18 +304,28 @@ export function EcommerceView({
           </div>
         </div>
 
+        {/* السبب يُقال مرّةً فوق الجدول لا شرطةً مبهمةً في كلّ سطر - ومعه
+            خطوته: أن يعرف المستخدم أنّ الإنفاق لكلّ منتجٍ يأتي من حملات
+            تسوّق جوجل وحدها، وأنّ ربطه يمرّ بالـSKU، هو الفرق بين عمودٍ
+            فارغٍ يبدو عطلاً وعمودٍ فارغٍ يبدو مهمّةً واضحة. */}
+        {adSpendAvailability !== "OK" && (
+          <div className="border-b border-border bg-surface-raised/50 px-4 py-2.5 text-[12px] leading-relaxed text-text-muted">
+            {tr(adSpendAvailability === "WINDOW_MISMATCH" ? "adSpendWindowNote" : "adSpendSourceNote")}
+          </div>
+        )}
+
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] border-collapse">
+          <table className="w-full min-w-[980px] border-collapse">
             <thead>
               <tr className={THEAD_ROW}>
-                {[tr("colProduct"), tr("colState"), tr("colSold"), tr("colReturns"), tr("colUnitProfit"), tr("colRealProfit"), tr("colStock")].map((h) => (
+                {[tr("colProduct"), tr("colState"), tr("colSold"), tr("colReturns"), tr("colUnitProfit"), tr("colRealProfit"), tr("colRoas"), tr("colRoi"), tr("colStock")].map((h) => (
                   <th key={h} className={TH}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={7} className="p-10 text-center text-[13px] text-text-muted">{tr("noMatch")}</td></tr>
+                <tr><td colSpan={9} className="p-10 text-center text-[13px] text-text-muted">{tr("noMatch")}</td></tr>
               ) : filtered.map((p) => {
                 const v = VERDICT_META[p.verdict];
                 return (
@@ -346,6 +362,33 @@ export function EcommerceView({
                             style={{ color: p.totalProfit < 0 ? "var(--critical)" : "var(--text-primary)" }}>
                         {num(p.totalProfit)} {currency}
                       </span>
+                    </td>
+                    {/* العائدان لهذا المنتج بعينه. الشرطة هنا ليست صفراً
+                        مُجمَّلاً: المنتج الذي لا نعرف إنفاقه الإعلانيّ يُقال
+                        عنه ذلك عند المرور عليه، ولا يُحسب عائدُه على إنفاقٍ
+                        مخمَّن فيبدو أربح ممّا هو. */}
+                    <td className="whitespace-nowrap px-4 py-3.5">
+                      {p.returns.roas !== null ? (
+                        <span className="font-mono text-[12.5px] font-medium text-text-primary">
+                          {p.returns.roas}x
+                        </span>
+                      ) : (
+                        <span className="text-[11.5px] text-text-faint" title={t(locale, missingReturnKey(p.returns.missing)!)}>
+                          —
+                        </span>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3.5">
+                      {p.returns.roiPct !== null ? (
+                        <span className="font-mono text-[12.5px] font-medium"
+                              style={{ color: p.returns.roiPct < 0 ? "var(--critical)" : "var(--verified)" }}>
+                          {p.returns.roiPct > 0 ? "+" : ""}{p.returns.roiPct}%
+                        </span>
+                      ) : (
+                        <span className="text-[11.5px] text-text-faint" title={t(locale, missingReturnKey(p.returns.missing)!)}>
+                          —
+                        </span>
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3.5">
                       {p.stockQuantity === null ? (

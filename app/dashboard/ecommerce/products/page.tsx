@@ -59,6 +59,7 @@ export default async function EcommerceProductsPage({
       hasStoreConnection={overview.hasStoreConnection}
       storePlatform={overview.storePlatform}
       currency={overview.currency}
+      adSpendAvailability={overview.adSpendAvailability}
       locale={(user.preferredLocale as "ar" | "en") ?? "ar"}
     />
   );

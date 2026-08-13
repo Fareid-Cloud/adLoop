@@ -9,6 +9,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { calculateFullPricing } from "@/lib/pricingCalculator";
+import { computeReturn, type ReturnResult } from "@/lib/returnMetrics";
 
 export type Confidence = "RELIABLE" | "PRELIMINARY" | "INSUFFICIENT";
 
@@ -37,6 +38,27 @@ export interface ProductPerformance {
   stockDaysLeft: number | null;
   stockQuantity: number | null;
 
+  /** 🔴 **الإنفاق الإعلانيّ على هذا المنتج بعينه - `null` يعني «لا نعرف»
+   *  لا «صفر».**
+   *
+   *  والفرق هنا ليس شكلياً. في جدول المنتجات حقلٌ اسمه `avgAdCostPerOrder`
+   *  يبدو أنّه يحمل هذا الرقم، **وهو يُكتب يدوياً وحده** - لا شيء في
+   *  المشروع كلّه يحدّثه من بيانات حملة رغم أنّ تعليقه يَعِد بذلك. فبناء
+   *  عائدٍ عليه يعني قسمة إيرادٍ حقيقيّ على رقمٍ خمّنه المستخدم.
+   *
+   *  المصدر الحقيقيّ الوحيد على مستوى المنتج هو `shopping_product` من
+   *  جوجل: إنفاقٌ ونقراتٌ وتحويلاتٌ لكلّ صنفٍ على حدة. ويُربط بمنتجنا عبر
+   *  `sku` ← `item_id` - وهو نفس الجسر الذي يربط مبيعات سلّة بالمنتج
+   *  أصلاً، لا اصطلاحٌ جديد.
+   *
+   *  **وحدُّه معلومٌ ومُعلَن:** حملات التسوّق من جوجل وحدها. ميتا وتيك توك
+   *  لا تُرجعان إنفاقاً لكلّ صنف (جدول الكتالوج عندنا على مستوى الحملة لا
+   *  المنتج)، ومنتجٌ يُعلَن خارج حملات التسوّق لا إنفاقَ منسوباً له. وفي
+   *  الحالتين يبقى `null` وتُقال العلّة، ولا يُخترع صفر. */
+  adSpend: number | null;
+  /** العائد والاستثمار لهذا المنتج - بالتعريف نفسه المستعمل في كلّ الصفحات */
+  returns: ReturnResult;
+
   confidence: Confidence;
   /** درجة مركّبة للترتيب - ليست معروضة، أساس اختيار الرابح فقط */
   score: number;
@@ -57,12 +79,24 @@ export interface EcommerceOverview {
   hasStoreConnection: boolean;
   storePlatform: string | null;
   currency: string;
+  /** لماذا قد يكون عمود الإنفاق فارغاً في كلّ الصفوف - سببٌ واحدٌ يُقال
+   *  مرّةً فوق الجدول، أفضل من شرطةٍ مكرَّرةٍ في كلّ سطرٍ بلا تفسير:
+   *
+   *    OK              - اللقطة موجودة والنافذة مطابقة
+   *    WINDOW_MISMATCH - المستخدم اختار ٧ أو ٩٠ يوماً، ولقطة التسوّق ٣٠
+   *    NO_SHOPPING_DATA - لا حملات تسوّقٍ من جوجل أصلاً في هذا الحساب */
+  adSpendAvailability: "OK" | "WINDOW_MISMATCH" | "NO_SHOPPING_DATA";
 }
 
 // عتبات العينة: مبنية على نفس منطق الثقة المستخدم في المعمل - قرار
 // مبني على 3 طلبات ليس قراراً، بل صدفة.
 const RELIABLE_UNITS = 25;
 const PRELIMINARY_UNITS = 8;
+
+/** نافذة لقطة التسوّق في `syncShoppingProductsForWorkspace` - مثبَّتة هناك،
+ *  ومكرَّرة هنا لأنّ الرقمين يجب أن يتطابقا وإلّا صار العائد مقسوماً على
+ *  مدّةٍ غير مدّة بسطه. */
+const SHOPPING_SNAPSHOT_WINDOW_DAYS = 30;
 
 export async function getEcommerceOverview(
   workspaceId: string,
@@ -91,13 +125,36 @@ export async function getEcommerceOverview(
       totals: { revenue: 0, profit: 0, units: 0, returnRatePct: 0 },
       windowDays, hasStoreConnection: !!connection,
       storePlatform: connection?.platform ?? null, currency,
+      adSpendAvailability: "NO_SHOPPING_DATA",
     };
   }
 
-  const events = await prisma.productSaleEvent.findMany({
-    where: { productId: { in: products.map((p: any) => p.id) }, occurredAt: { gte: since } },
-    select: { productId: true, quantity: true, revenue: true, returned: true },
-  });
+  const [events, shopping] = await Promise.all([
+    prisma.productSaleEvent.findMany({
+      where: { productId: { in: products.map((p: any) => p.id) }, occurredAt: { gte: since } },
+      select: { productId: true, quantity: true, revenue: true, returned: true },
+    }),
+    // لقطة التسوّق تُحدَّث بالمزامنة اليومية على نافذة **ثلاثين يوماً** ثابتة
+    // (`syncShoppingProductsForWorkspace`)، وهي نافذة هذه الدالة الافتراضية
+    // نفسها. فإن طُلبت نافذةٌ أخرى، لم يعد البسط والمقام يقيسان المدّة
+    // نفسها - ونسبةٌ طرفاها من مدّتين مختلفتين رقمٌ خاطئ لا رقمٌ تقريبيّ،
+    // فيُسكت عن الإنفاق بدل عرضه. لا يُصلَح هذا إلّا بتخزين اللقطة مؤرَّخةً
+    // يوماً بيوم كبقيّة الجداول، وهو تغييرُ بنيةٍ لا حساب.
+    windowDays === SHOPPING_SNAPSHOT_WINDOW_DAYS
+      ? prisma.shoppingProductSnapshot.findMany({
+          where: { workspaceId },
+          select: { itemId: true, cost: true },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  // معرّف الصنف في ميرشنت سنتر هو ما يضعه التاجر، وأشهرُ ما يضعه هو الـSKU.
+  // والمقارنة بلا حساسية حالةٍ لأنّ التطابق يفشل صمتاً لو اختلف حرفٌ كبير.
+  const spendBySku = new Map<string, number>();
+  for (const row of shopping) {
+    const key = row.itemId.trim().toLowerCase();
+    spendBySku.set(key, (spendBySku.get(key) ?? 0) + row.cost);
+  }
 
   const byProduct = new Map<string, { units: number; returned: number; revenue: number }>();
   for (const e of events) {
@@ -178,10 +235,34 @@ export async function getEcommerceOverview(
       verdictVars = { amount: Math.round(totalProfit), currency, units: sales.units };
     }
 
+    // الإنفاق الحقيقيّ على هذا الصنف - ولا يوجد إلّا بـSKU مضبوطٍ يطابق
+    // معرّفه في ميرشنت سنتر. غيابه ليس عطلاً، بل حالةٌ تُقال كما هي.
+    const skuKey = p.sku?.trim().toLowerCase();
+    const adSpend = skuKey ? spendBySku.get(skuKey) ?? null : null;
+
+    // 🔴 **فخّ العدّ المزدوج:** `profitAtCurrentPrice` خُصم منه بالفعل سطرُ
+    // «تكلفة الإعلان» المأخوذ من `avgAdCostPerOrder` اليدويّ. فطرحُ الإنفاق
+    // الحقيقيّ فوقه يخصم الإعلان مرّتين. يُردّ السطر اليدويّ أوّلاً ليصير
+    // الربح «قبل الإعلان» فعلاً، ثمّ يخصم `computeReturn` الإنفاق الحقيقيّ
+    // وحده - رقمٌ واحدٌ للإعلان لا رقمان.
+    const manualAdCostPerUnit = pricing.lines.find((l) => l.key === "ad")?.amount ?? 0;
+    const profitBeforeAds =
+      Math.round((pricing.profitAtCurrentPrice + manualAdCostPerUnit) * successfulUnits * 100) / 100;
+
+    const returns = computeReturn({
+      adSpend,
+      revenue: sales.revenue,
+      grossProfit: profitBeforeAds,
+      revenueBasis: "STORE_TOTAL",
+      profitBasis: "REAL_COSTS",
+    });
+
     return {
       id: p.id, name: p.name, sku: p.sku, currentPrice: p.currentPrice,
       unitsSold: sales.units, unitsReturned: sales.returned,
       revenue: Math.round(sales.revenue),
+      adSpend: adSpend === null ? null : Math.round(adSpend),
+      returns,
       returnRatePct: Math.round(returnRatePct * 10) / 10,
       profitPerUnit: pricing.profitAtCurrentPrice,
       totalProfit,
@@ -228,5 +309,9 @@ export async function getEcommerceOverview(
     hasStoreConnection: !!connection,
     storePlatform: connection?.platform ?? null,
     currency,
+    adSpendAvailability:
+      windowDays !== SHOPPING_SNAPSHOT_WINDOW_DAYS ? "WINDOW_MISMATCH"
+      : spendBySku.size === 0 ? "NO_SHOPPING_DATA"
+      : "OK",
   };
 }

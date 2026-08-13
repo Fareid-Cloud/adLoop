@@ -25,7 +25,7 @@ export type Dimension = "platform" | "campaign" | "creative" | "day" | "week" | 
 export type MetricKey =
   | "cost" | "impressions" | "clicks" | "ctr" | "cpc" | "cpm"
   | "conversions" | "cpa" | "conversionRate"
-  | "revenue" | "roas" | "orders" | "aov" | "returnedOrders" | "rtoRate"
+  | "revenue" | "roas" | "roi" | "orders" | "aov" | "returnedOrders" | "rtoRate"
   | "verificationRate" | "inflationRate" | "wastedSpend" | "profit";
 
 export interface MetricDef {
@@ -57,6 +57,9 @@ export const METRICS: MetricDef[] = [
 
   { key: "revenue", group: "ecommerce", common: true, lowerIsBetter: false, format: "currency", sourceSensitive: false },
   { key: "roas", group: "ecommerce", common: true, lowerIsBetter: false, format: "ratio", sourceSensitive: false },
+  // العائد على الاستثمار بجانب العائد على الإنفاق - يفترقان عند ثمن البضاعة،
+  // وقد يتناقضان: عائدُ إنفاقٍ ٣× على هامش ٢٥٪ خسارة.
+  { key: "roi", group: "ecommerce", common: true, lowerIsBetter: false, format: "percent", sourceSensitive: false },
   { key: "orders", group: "ecommerce", common: false, lowerIsBetter: false, format: "number", sourceSensitive: false },
   { key: "aov", group: "ecommerce", common: false, lowerIsBetter: false, format: "currency", sourceSensitive: false },
   { key: "returnedOrders", group: "ecommerce", common: false, lowerIsBetter: true, format: "number", sourceSensitive: false },
@@ -270,6 +273,14 @@ function derive(tt: Totals, useVerified: boolean): Partial<Record<MetricKey, num
 
     revenue: tt.revenue > 0 ? tt.revenue : null,
     roas: tt.cost > 0 && tt.revenue > 0 ? tt.revenue / tt.cost : null,
+    // 🔴 **يشترط ثمن بضاعةٍ معلوماً، وإلّا لا يُعرض.**
+    //
+    // `profit` هنا = الإيراد − الإنفاق − ثمن البضاعة − الشحن. فإن كان ثمن
+    // البضاعة صفراً (لا متجر موصول، أو تكاليف لم تُضبط)، انهار الحساب إلى
+    // «الإيراد − الإنفاق» - وهو العائد على الإنفاق ناقص واحدٍ باسمٍ آخر،
+    // يقول «ربحت ٢٠٠٪» لمن لم يربح شيئاً. ومؤشّرٌ يبالغ في الربح أسوأ من
+    // مؤشّرٍ غائب، لأنّ صاحبه يزيد إنفاقه بناءً عليه.
+    roi: tt.cost > 0 && tt.revenue > 0 && tt.cogs > 0 ? (profit / tt.cost) * 100 : null,
     orders: tt.orders > 0 ? tt.orders : null,
     aov: safe(tt.revenue, tt.orders),
     returnedOrders: tt.returnedOrders > 0 ? tt.returnedOrders : null,

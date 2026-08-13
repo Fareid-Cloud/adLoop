@@ -132,6 +132,20 @@ export default async function ReportsPage({
               value={customers.avgLtv !== null ? `${fmtNum(customers.avgLtv)} ${c}` : "—"}
             />
             <Fact label={t(locale, "store.inventoryRisk")} value={String(overview.inventoryRiskCount)} />
+            {/* العائدان في التقرير كما هما في الصفحة - رقمٌ يظهر على الشاشة
+                ويغيب عن التقرير المطبوع يجعل الاثنين موضع شكّ. */}
+            <Fact
+              label={t(locale, "store.adSpend")}
+              value={overview.returns.adSpend !== null ? `${fmtNum(overview.returns.adSpend)} ${c}` : "—"}
+            />
+            <Fact
+              label={t(locale, "store.roas")}
+              value={overview.returns.roas !== null ? `${overview.returns.roas}x` : "—"}
+            />
+            <Fact
+              label={t(locale, "store.roi")}
+              value={overview.returns.roiPct !== null ? `${overview.returns.roiPct}%` : "—"}
+            />
           </div>
         </section>
 

@@ -1,7 +1,7 @@
 // app/dashboard/ecommerce/page.tsx
 //
 // النظرة التنفيذية للمتجر - ليست لوحة إعلانات ولا نسخة من تحليلات سلة.
-// ثمانية مؤشّرات تجارية فقط، ثم أكبر الفرص وأكبر تسريب، ثم إجراءات.
+// عشرة مؤشّرات تجارية فقط، ثم أكبر الفرص وأكبر تسريب، ثم إجراءات.
 
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { AiAsk } from "@/app/components/AiAsk";
@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { missingReturnKey, revenueBasisKey, roiTone } from "@/lib/returnMetrics";
 
 export const dynamic = "force-dynamic";
 
@@ -110,7 +111,10 @@ export default async function EcommerceOverviewPage() {
 
       <SectionHeading hint={tr("storeStatusHint")}>{tr("storeStatus")}</SectionHeading>
 
-      <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* عشرُ بطاقاتٍ في خمسة أعمدة = صفّان تامّان، وفي عمودين = خمسة صفوف
+          تامّة. وهو التقسيم الوحيد الذي لا يترك بطاقةً وحيدةً في صفٍّ ناقص
+          عند أيّ عرضٍ للشاشة - وأربعةُ أعمدةٍ كانت تترك اثنتين. */}
+      <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <MetricCard
           label={tc("revenue")}
           value={fmtNum(overview.revenue)}
@@ -225,6 +229,44 @@ export default async function EcommerceOverviewPage() {
               : { text: tr("stockSafe"), tone: "positive" }
           }
           explainKey="capitalTied"
+          locale={locale}
+        />
+
+        {/* 🔴 **العائدان كانا غائبين تماماً عن صفحة المتجر** - وهما أوّل ما
+            يسأل عنه صاحب متجرٍ يُعلن: «بكم باع كلّ ريالٍ أنفقتُه، وهل ربحت».
+            وكلاهما هنا من خطّافٍ حقيقيّ: البسط مبيعات متجره الفعلية (ويب هوك
+            المتجر)، والمقام إنفاقه المسحوب من المنصّات - لا تقدير.
+
+            ويُعرضان معاً لا أحدهما: العائد على الإنفاق يتجاهل ثمن البضاعة،
+            فقد يقول «٤×» بينما العائد على الاستثمار يقول إنّك خسرت. */}
+        <MetricCard
+          label={tr("roas")}
+          value={overview.returns.roas !== null ? `${overview.returns.roas}` : "—"}
+          unit={overview.returns.roas !== null ? "x" : undefined}
+          icon={TrendingUp}
+          tone="accent"
+          caption={
+            overview.returns.roas !== null
+              ? { text: t(locale, revenueBasisKey(overview.returns.revenueBasis)), tone: "muted" }
+              : { text: t(locale, missingReturnKey(overview.returns.missing)!), tone: "muted" }
+          }
+          explainKey="storeRoas"
+          locale={locale}
+        />
+        <MetricCard
+          label={tr("roi")}
+          value={overview.returns.roiPct !== null ? `${overview.returns.roiPct}` : "—"}
+          unit={overview.returns.roiPct !== null ? "%" : undefined}
+          icon={TrendingUp}
+          tone={roiTone(overview.returns.roiPct)}
+          caption={
+            overview.returns.roiPct === null
+              ? { text: t(locale, missingReturnKey(overview.returns.missing)!), tone: "muted" }
+              : overview.returns.roiPct < 0
+                ? { text: tr("roiNegative"), tone: "negative" }
+                : { text: tr("roiRealCosts"), tone: "positive" }
+          }
+          explainKey="storeRoi"
           locale={locale}
         />
       </div>
