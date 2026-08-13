@@ -152,16 +152,10 @@ export async function PlatformHub({
   const impressions = totalsAgg._sum.impressions ?? 0;
   const cpa = costPerVerified(cost, verified);
 
-  // 🔴 **ROAS المتحقَّق - بنفس منطق مركز الحقيقة لا بحسابٍ ثانٍ.**
-  //
-  // الإيراد يُقاس بنسبة التحقّق: لا يُنسب للإعلان إيرادٌ لم يُتأكَّد مصدره.
-  // ولو حُسب هنا بالإيراد الخام لاختلف الرقم عن الصفحة الأخرى للمنصّة
-  // نفسها - ورقمان مختلفان لشيءٍ واحد يُفقدان الثقة في الاثنين.
+  // ROAS: الإيراد الذي تنسبه المنصّة لإعلانها ÷ الصرف. بنفس صيغة مركز
+  // الحقيقة لا بحسابٍ ثانٍ - رقمان مختلفان لشيءٍ واحد يُفقدان الثقة فيهما.
   const revenue = totalsAgg._sum.revenue ?? 0;
-  const roasVerified =
-    cost > 0 && revenue > 0 && rawConv > 0
-      ? Math.round(((revenue * (verified / rawConv)) / cost) * 100) / 100
-      : null;
+  const roas = cost > 0 && revenue > 0 ? Math.round((revenue / cost) * 100) / 100 : null;
 
   const prevVerified = prevAgg._sum.verifiedConversions ?? 0;
   const prevCpa = prevVerified > 0 ? (prevAgg._sum.cost ?? 0) / prevVerified : 0;
@@ -256,15 +250,15 @@ export async function PlatformHub({
             الثاني إن كان متوسّط طلبها أعلى. القراران مختلفان. */}
         <MetricCard
           label={t(locale, "campPages.hubRoas")}
-          explainKey="roasVerified"
+          explainKey="roas"
           locale={locale}
-          value={roasVerified !== null ? `${roasVerified}` : "—"}
-          unit={roasVerified !== null ? "x" : undefined}
+          value={roas !== null ? `${roas}` : "—"}
+          unit={roas !== null ? "x" : undefined}
           icon={Icons.TrendingUp}
-          tone={roasVerified !== null ? "verified" : "default"}
-          verified={roasVerified !== null}
+          tone={roas !== null ? "verified" : "default"}
+          verified={roas !== null}
           caption={
-            roasVerified === null
+            roas === null
               ? { text: t(locale, "campPages.hubNoRoas"), tone: "muted" }
               : undefined
           }

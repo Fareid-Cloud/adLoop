@@ -201,13 +201,19 @@ export function TruthView({
           locale={locale}
         />
 
+        {/* 🔴 **كان ثلاثة: مُعلَن، ومتحقَّق، وعائد استثمار.** و«المتحقَّق»
+            أُزيل لأنّه لم يكن يعني شيئاً: نسبة التحقّق تقيس **عدّ التحويلات**،
+            وضربُ الإيراد فيها يفترض أنّ نسبة الإيراد المجهول تساوي نسبة
+            التحويلات المجهولة - افتراضٌ بلا سند.
+            وبعد أن صار الإيراد هو ما تنسبه المنصّة لإعلانها (لا مبيعات
+            المتجر كلّها)، صار البسط منسوباً أصلاً فلا شيء يبقى ليُتحقَّق منه.
+            اثنان يكفيان: بكم باع، وهل ربح. */}
         <MetricCard
-          label={tr("roasReported")}
+          label={tr("roas")}
           value={totals.roasReported !== null ? `${totals.roasReported}` : "—"}
           unit={totals.roasReported !== null ? "x" : undefined}
           icon={TrendingUp}
-          tone="neutral"
-          verified={false}
+          tone="accent"
           caption={
             totals.roasReported === null
               ? { text: tr("roasNeedsStore"), tone: "muted" }
@@ -216,36 +222,27 @@ export function TruthView({
           explainKey="roas"
           locale={locale}
         />
-        <MetricCard
-          label={tr("roasVerified")}
-          value={totals.roasVerified !== null ? `${totals.roasVerified}` : "—"}
-          unit={totals.roasVerified !== null ? "x" : undefined}
-          icon={TrendingUp}
-          tone="verified"
-          verified
-          explainKey="roasVerified"
-          locale={locale}
-        />
+
         {/* 🔴 **العائد على الاستثمار بجانب العائد على الإنفاق - لأنّهما
             يختلفان، وقد يتناقضان.** حسابٌ بعائد إنفاقٍ ٣× يبدو ناجحاً وهو
             خاسرٌ إن كان هامشه ٢٥٪. ولذلك يقع هذا بعد ذاك مباشرةً: من قرأ
             الأوّل يحتاج الثاني قبل أن يقرّر. */}
         <MetricCard
-          label={tr("roiVerified")}
-          value={totals.roiVerifiedPct !== null ? `${totals.roiVerifiedPct}` : "—"}
-          unit={totals.roiVerifiedPct !== null ? "%" : undefined}
+          label={tr("roi")}
+          value={totals.roiPct !== null ? `${totals.roiPct}` : "—"}
+          unit={totals.roiPct !== null ? "%" : undefined}
           icon={TrendingUp}
           tone={
-            totals.roiVerifiedPct === null ? "neutral"
-            : totals.roiVerifiedPct >= 0 ? "verified"
+            totals.roiPct === null ? "neutral"
+            : totals.roiPct >= 0 ? "verified"
             : "critical"
           }
-          verified={totals.roiVerifiedPct !== null}
+          verified={totals.roiPct !== null}
           caption={
-            totals.roiVerifiedPct === null
+            totals.roiPct === null
               // الغياب يُقال بسببه وخطوته: هامشُ الربح إعدادٌ في مساحة العمل.
               ? { text: tr("roiNeedsMargin"), tone: "muted" }
-              : totals.roiVerifiedPct < 0
+              : totals.roiPct < 0
                 ? { text: tr("roiNegative"), tone: "negative" }
                 : undefined
           }
@@ -331,7 +328,7 @@ export function TruthView({
                           : undefined
                       }
                     />
-                    <MiniStat label={tr("colRoas")} value={p.roasVerified !== null ? `${p.roasVerified}x` : "—"} />
+                    <MiniStat label={tr("colRoas")} value={p.roasReported !== null ? `${p.roasReported}x` : "—"} />
                     <MiniStat label={tr("colUnconfirmed")} value={num(p.wastedSpend)} negative />
                   </div>
 
