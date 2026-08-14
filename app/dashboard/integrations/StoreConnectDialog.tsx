@@ -77,6 +77,12 @@ export function StoreConnectDialog({
   const [storeName, setStoreName] = useState("");
   const [storeUrl, setStoreUrl] = useState("");
   const [apiToken, setApiToken] = useState("");
+  // 🔴 ووكومرس وحدها تصادق بمفتاحٍ **وسرّ** (Consumer key + secret)، و
+  // `priceSync` يرفض العمل بلا الاثنين (`needsSetup`). فحقلٌ واحدٌ هنا كان
+  // يعني أنّ تحديث الأسعار على ووكومرس لا يعمل أبداً من الواجهة - والخانة
+  // موجودة في الـAPI أصلاً، فكان النقص في النموذج وحده.
+  const [apiSecret, setApiSecret] = useState("");
+  const needsSecret = platform === "WOOCOMMERCE";
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<"url" | "secret" | null>(null);
@@ -113,6 +119,7 @@ export function StoreConnectDialog({
           storeName: storeName.trim() || undefined,
           storeUrl: storeUrl.trim() || undefined,
           apiToken: apiToken.trim() || undefined,
+          apiSecret: needsSecret ? apiSecret.trim() || undefined : undefined,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -201,11 +208,23 @@ export function StoreConnectDialog({
           </div>
           <input
             className="field mt-2 w-full"
-            placeholder={tr("apiToken")}
+            placeholder={needsSecret ? tr("consumerKey") : tr("apiToken")}
             value={apiToken}
             onChange={(e) => setApiToken(e.target.value)}
+            dir="ltr"
           />
-          <p className="mt-1.5 text-[11.5px] leading-relaxed text-text-faint">{tr("apiTokenHint")}</p>
+          {needsSecret && (
+            <input
+              className="field mt-2 w-full"
+              placeholder={tr("consumerSecret")}
+              value={apiSecret}
+              onChange={(e) => setApiSecret(e.target.value)}
+              dir="ltr"
+            />
+          )}
+          <p className="mt-1.5 text-[11.5px] leading-relaxed text-text-faint">
+            {needsSecret ? tr("wooKeysHint") : tr("apiTokenHint")}
+          </p>
         </Step>
 
         {error && (
