@@ -18,6 +18,7 @@ import { Plug,
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { CampaignPickerModal } from "@/app/components/CampaignPickerModal";
 import { IntegrationDrawer } from "./IntegrationDrawer";
+import { StoreConnectDialog } from "./StoreConnectDialog";
 import { INTEGRATION_CATEGORIES, type IntegrationDef } from "@/lib/integrationsCatalog";
 import type { ActiveIntegration, IntegrationsOverview } from "@/lib/integrationsStatus";
 import { t, relativeFromDate, type Locale } from "@/lib/i18n/dictionary";
@@ -49,6 +50,8 @@ export function IntegrationsView({
   // ثمّ يعود فيجد القائمة - فيبدو الخيار زرّاً لا يفعل شيئاً. وهو تفضيلٌ
   // شخصيٌّ لا حالةُ صفحة: يُحفَظ محلّياً، ويُقرأ عند أوّل تصيير.
   const [view, setView] = useState<ViewMode>("list");
+  /** المتجر الذي تُفتح له نافذة الربط - `null` حين لا نافذة. */
+  const [storeToConnect, setStoreToConnect] = useState<IntegrationDef | null>(null);
   useEffect(() => {
     const saved = localStorage.getItem("adloop.integrations.view");
     if (saved === "grid" || saved === "list") setView(saved);
@@ -254,16 +257,21 @@ export function IntegrationsView({
                 }
 
                 // ما عداها: درجُه إن كان مربوطاً بالفعل - فيه إعداداته.
-                //
-                // ⚠️ **وإن لم يكن مربوطاً فلا شيء يُفتح، وهذه فجوة معروفة
-                // غير مصلَحة:** ربط متجرٍ يحتاج نموذجاً خاصّاً به (سرّ
-                // الويب هوك ومعرّف المتجر)، ولا وجود له في الواجهة بعد -
-                // وصفحة المتجر نفسها تحيل إلى هنا، فتدور الإحالة على
-                // نفسها. أُصلح هنا فتحُ نافذةٍ خاطئة، لا غيابُ النموذج.
                 const isConnected = overview.active.some((a) => a.key === def.key);
                 if (isConnected) {
                   setSelectedKey(def.key);
                   setTab("connected");
+                  return;
+                }
+
+                // 🔴 **وهنا كان الزرّ يموت صامتاً.**
+                //
+                // متجرٌ غير مربوط لا `connectPath` له يبدأ بـ`/api/` (فليس
+                // OAuth) ولا هو `AD_PLATFORM` (فلا نافذة حملات) ولا مربوط
+                // (فلا درج) - فينتهي المعالِج بلا شيء. المستخدم يضغط
+                // «ربط» على سلّة أو شوبيفاي فلا يحدث **أيّ** شيء ولا رسالة.
+                if (def.category === "ECOMMERCE" && def.platform) {
+                  setStoreToConnect(def);
                 }
               }}
             />
@@ -356,6 +364,24 @@ export function IntegrationsView({
           locale={locale}
           onClose={() => setPickerPlatform(null)}
           onSaved={() => { setPickerPlatform(null); router.refresh(); }}
+        />
+      )}
+
+      {storeToConnect && (
+        <StoreConnectDialog
+          def={storeToConnect}
+          workspaceId={workspaceId}
+          locale={locale}
+          onClose={() => setStoreToConnect(null)}
+          onConnected={() => {
+            setStoreToConnect(null);
+            // `refresh` لا تحديث حالةٍ محلّية: حالة الربط تُحسب في الخادم
+            // (`getIntegrationsOverview`)، فنسخةٌ محلّية منها تفترق عنها
+            // عند أوّل اختلاف - والمتجر المربوط يجب أن يظهر في تبويب
+            // «مربوطة» فوراً لا بعد إعادة تحميلٍ يدوية.
+            setTab("connected");
+            router.refresh();
+          }}
         />
       )}
     </div>

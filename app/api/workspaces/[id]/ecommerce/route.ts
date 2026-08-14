@@ -57,10 +57,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!storeCheck.allowed) {
     return NextResponse.json(
       {
+        // 🔴 كانتا نصّاً عربياً مثبَّتاً هنا، فتصلان مشتركاً يقرأ الإنجليزية
+        // عربيّتين - وهما أوّل ما يراه عند منعه من المتابعة. وفحص تسريب
+        // العربية لم يلتقطهما لأنّه لا يفحص هذا المسار، فلتُصلَح باليد.
         error:
           storeCheck.limit === 0
-            ? "باقتك الحالية لا تشمل ربط المتاجر. رقِّ باقتك لتفعيل هذه الميزة."
-            : `باقتك الحالية تسمح بربط ${storeCheck.limit} متجر. رقِّ باقتك لإضافة المزيد.`,
+            ? t(locale, "apiErr.storesNotInPlan")
+            : t(locale, "apiErr.storeLimitReached", { limit: storeCheck.limit }),
         limitReached: true,
         limit: storeCheck.limit,
       },
