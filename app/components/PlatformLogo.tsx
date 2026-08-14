@@ -1,8 +1,30 @@
+"use client";
+
 // app/components/PlatformLogo.tsx
 //
 // لوجوهات المنصات كـ SVG مضمّن (recognizable brand marks). المستخدم أكّد
 // إنه هيتولّى موضوع حقوق الملكية. تُستخدم في القائمة الجانبية، الجداول،
 // صفحات الدخول/التسجيل، والدائرة.
+//
+// ═══ الملفّ الرسميّ يسبق الرسم، والرسم يسبق الحرف ═══
+//
+// طُلبت شعاراتٌ رسمية للمتاجر الخمسة وشركات الشحن وواتساب وكلاريتي. وبعضها
+// مرسومٌ هنا بدقّة (شوبيفاي، ووكومرس، واتساب، ميتا، جوجل...)، وبعضها شارةُ
+// حرفٍ لأنّي **لا أملك معرفةً موثوقة بهندسة علامته** - وشعارٌ مرسومٌ خطأً
+// أسوأ من شارةٍ صادقة: الشارة تُقرأ «رمز مؤقّت»، والشعار الخطأ يُقرأ
+// «هذه علامتهم» وهي ليست كذلك.
+//
+// فالترتيب هنا ثلاث طبقات:
+//
+//   ١) `public/logos/<KEY>.svg` - **الملفّ الرسميّ إن وُضع**، ويُستعمل فوراً
+//      بلا تعديل كود. أسقِط `SALLA.svg` و`ARAMEX.svg` وأخواتها هناك وتظهر.
+//   ٢) الرسم المضمَّن أدناه - للعلامات التي أعرف هندستها يقيناً.
+//   ٣) شارة الحرف بلون العلامة - أوضح من مربّعٍ رمادي، وأصدق من اختراع.
+//
+// والانتقال بين ١ و٢ يحدث عند فشل التحميل (`onError`)، فلا حاجة إلى قائمة
+// بما هو موجود ولا إلى خطوة بناء: الملفّ الموجود يفوز، والغائب لا يُلاحَظ.
+
+import { useState } from "react";
 
 export type PlatformKey =
   | "GOOGLE_ADS" | "META_ADS" | "FACEBOOK" | "INSTAGRAM" | "TIKTOK_ADS"
@@ -11,6 +33,31 @@ export type PlatformKey =
   | "EASY_ORDERS" | "GA4" | "CLARITY" | "BOSTA" | "ARAMEX" | "MYLERZ" | "SMSA";
 
 export function PlatformLogo({ platform, size = 18 }: { platform: string; size?: number }) {
+  // مفتاحٌ واحدٌ لكلّ علامة بحروفٍ كبيرة - نفس اسم الملفّ المتوقَّع، فلا
+  // يحتاج من يضيف شعاراً أن يقرأ الكود ليعرف كيف يسمّي ملفّه.
+  const [fileMissing, setFileMissing] = useState(false);
+  const key = String(platform).toUpperCase();
+
+  if (!fileMissing) {
+    return (
+      // `img` لا `next/image`: هذه ملفّاتٌ يسقطها المالك متى شاء، ولا
+      // نعرف أبعادها سلفاً، ولا قيمة لتحسينٍ على ملفّ SVG بحجم كيلوبايت.
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={`/logos/${key}.svg`}
+        alt={key}
+        width={size}
+        height={size}
+        style={{ width: size, height: size, display: "block", objectFit: "contain" }}
+        onError={() => setFileMissing(true)}
+      />
+    );
+  }
+
+  return <DrawnLogo platform={platform} size={size} />;
+}
+
+function DrawnLogo({ platform, size = 18 }: { platform: string; size?: number }) {
   // currentColor يجعل الأجزاء المحايدة تتبع لون النص، فتظل واضحة في
   // الوضعين الفاتح والداكن بدل أسود ثابت يذوب في الخلفية الداكنة.
   const s = { width: size, height: size, display: "block", color: "var(--text-primary)" } as const;
