@@ -26,7 +26,7 @@ export function DateRangePicker({
   compare,
   preset,
   compareMode = "none",
-  allowCompare = true,
+  allowCompare = false,
   onApply,
 }: {
   locale: Locale;
@@ -34,6 +34,7 @@ export function DateRangePicker({
   compare: DateRange | null;
   preset: PresetKey;
   compareMode?: CompareMode;
+  /** يُعرض خيار المقارنة فقط لصفحةٍ تقرأ نتيجته - راجع `PeriodBar` */
   allowCompare?: boolean;
   /** حين تُمرَّر، يتولّى النداء الحفظ؛ وإلا يُكتب الاختيار في الـURL */
   onApply?: (next: { preset: PresetKey; range: DateRange; compareMode: CompareMode; compare: DateRange | null }) => void;

@@ -8,6 +8,7 @@
 // لكل صفحة في المنتج (تسجيل الدخول، التسجيل، إلخ)، مش الداشبورد بس
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { IBM_Plex_Sans_Arabic, Inter } from "next/font/google";
@@ -78,6 +79,26 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   // خالص - كانت شغالة بالصدفة لأن القيم الافتراضية (عربي/أزرق/غامق)
   // بتتطابق مع القيم الثابتة، فمحدش لاحظ إلا لو غيّر تفضيلاته فعلياً
   const user = await getSessionUserFromCookies();
+
+  // 🔴 **شاشة بلا مخرج - أخطر ما يصادفه مستخدم.**
+  //
+  // `middleware.ts` يفحص **وجود** كوكي الجلسة لا صحّتها، لأنّه يعمل على
+  // حافة الشبكة و`jsonwebtoken` مكتبة Node لا تعمل هناك. فالكوكي المنتهية
+  // أو الموقَّعة بمفتاحٍ قديم (بعد إعادة تشغيل الخادم مثلاً) **تمرّ**، ثمّ
+  // يعود `getSessionUserFromCookies` بـ`null`، فتُصيّر كلّ صفحة من الاثنتين
+  // والخمسين جملةَ «انتهت الجلسة» **داخل هيكل اللوحة**: جرسٌ وبحثٌ وقائمة،
+  // وسطرٌ في المنتصف، **ولا زرّ دخول ولا خروج**. المستخدم محبوس.
+  //
+  // والتحويل هنا لا في كلّ صفحة: هذا الملفّ يلفّها جميعاً، فإصلاحٌ واحد
+  // يكفي - ولا تُحذف حراسات الصفحات لأنّها هي التي تُضيّق النوع لما بعدها.
+  //
+  // و`redirect` آمنٌ هنا رغم التحذير أسفله: تحذيرُ «لا redirect» يخصّ
+  // **الأخطاء** التي تصعد إلى `global-error`، وهذه ليست خطأً بل تحكّمُ
+  // مسارٍ يعرفه الإطار ولا تلتقطه حدود الأخطاء.
+  if (!user) {
+    redirect("/login?expired=1");
+  }
+
   const locale: "ar" | "en" = (user?.preferredLocale as "ar" | "en") ?? "ar";
   const accent = user?.themeColor ?? "blue";
   const mode = user?.themeMode ?? "light";

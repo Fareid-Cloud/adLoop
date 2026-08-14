@@ -137,11 +137,36 @@ export async function checkWorkspaceLimit(userId: string): Promise<LimitCheck> {
   return buildCheck(count, ent.limits.workspaces, ent.planKey, "workspaces");
 }
 
-export async function checkStoreLimit(userId: string, workspaceId: string): Promise<LimitCheck> {
-  const [ent, count] = await Promise.all([
+export async function checkStoreLimit(
+  userId: string,
+  workspaceId: string,
+  /** 🔴 **المنصّة التي يجري ربطها الآن - وبدونها كان تعديلُ ربطٍ قائمٍ
+   *  يُرفض.**
+   *
+   *  مسار الحفظ `upsert`: يُنشئ أو **يُحدّث**. وكان الحدّ يَعُدّ الروابط
+   *  النشطة كلّها ثمّ يقارن `count < limit`، فصاحب باقةٍ حدّها متجرٌ
+   *  واحد ومعه متجرٌ مربوط بالفعل يصير `1 < 1` كاذباً - فيُمنع من
+   *  **تعديل متجره هو**: تغيير اسمه، أو تدوير سرّه، أو إضافة توكن نسيه.
+   *  أي أنّ الحدّ كان يمنع الصيانة لا الإضافة.
+   *
+   *  فإن كان لهذه المنصّة ربطٌ قائم، فالعملية تحديثٌ لا إضافة، ولا يُسأل
+   *  الحدّ أصلاً. */
+  platform?: string
+): Promise<LimitCheck> {
+  const [ent, count, existing] = await Promise.all([
     getEntitlements(userId),
     prisma.ecommerceConnection.count({ where: { workspaceId, active: true } }),
+    platform
+      ? prisma.ecommerceConnection.findFirst({
+          where: { workspaceId, platform: platform as never },
+          select: { id: true },
+        })
+      : Promise.resolve(null),
   ]);
+
+  if (existing) {
+    return { allowed: true, limit: ent.limits.stores, current: count, suggestedPlan: null };
+  }
   return buildCheck(count, ent.limits.stores, ent.planKey, "stores");
 }
 

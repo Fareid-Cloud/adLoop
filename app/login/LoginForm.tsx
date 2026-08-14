@@ -9,7 +9,7 @@ import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { AuthShell } from "@/app/components/AuthShell";
 import { SocialButton, FIELD, PRIMARY_BTN } from "@/app/components/AuthControls";
 
-export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
+export function LoginForm({ nextPath = "/dashboard", expired = false }: { nextPath?: string; expired?: boolean }) {
   const router = useRouter();
   const [locale, setLocale] = useAuthLocale();
   const [email, setEmail] = useState("");
@@ -82,6 +82,14 @@ export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
           </p>
         )}
       </div>
+
+      {/* لا تُعرض مع شاشة التحقّق بخطوتين: من وصل إليها قد سجّل دخوله
+          الآن، فتذكيره بجلسةٍ انتهت قبل دقيقة يربكه بلا فائدة. */}
+      {expired && !pendingToken && (
+        <div className="mb-5 rounded-xl border border-gap/30 bg-gap/[0.07] p-3 text-[12.5px] leading-relaxed text-text-primary">
+          {t(locale, "auth.sessionExpiredNotice")}
+        </div>
+      )}
 
       {pendingToken ? (
         <form onSubmit={handleMfaSubmit}>

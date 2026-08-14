@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { getIntegrationsOverview } from "@/lib/integrationsStatus";
 import { IntegrationsView } from "./IntegrationsView";
+import { checkStoreLimit } from "@/lib/entitlements";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
@@ -53,6 +54,11 @@ export default async function IntegrationsPage({
   }
 
   const overview = await getIntegrationsOverview(workspace.id, user.id);
+  // حالة حدّ المتاجر تُقرأ **قبل** عرض الصفحة، لا عند الحفظ: الباقة
+  // المجّانية حدّها صفر متجر، فكانت النافذة تفتح وتمشي بالمستخدم في ثلاث
+  // خطوات - ينسخ رابطاً وسرّاً ويلصقهما في لوحة متجره - ثمّ تردّه بأنّ
+  // باقته لا تشمل المتاجر أصلاً. الرفض بعد العمل أسوأ من الرفض قبله.
+  const storeLimit = await checkStoreLimit(user.id, workspace.id);
 
   return (
     <>
@@ -69,6 +75,7 @@ export default async function IntegrationsPage({
         // هويّة قناتَي المحادثة تعيش على `Workspace` لا في سجلٍّ خاصّ بها،
         // فتُمرَّر لتفتح نافذة الربط على المحفوظ بدل أن تبدأ فارغةً
         // فيُخيَّل للمستخدم أنّ ما ضبطه ضاع.
+        storeLimit={{ allowed: storeLimit.allowed, limit: storeLimit.limit }}
         messaging={{
           whatsappPhoneNumberId: workspace.whatsappPhoneNumberId ?? null,
           whatsappBusinessPhone: workspace.whatsappBusinessPhone ?? null,

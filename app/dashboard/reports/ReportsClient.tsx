@@ -182,6 +182,10 @@ export function ReportsClient({
             range={initial.range}
             compare={initial.compare}
             compareMode={initial.compareMode}
+            // الصفحة الوحيدة التي تُمرّر فترة المقارنة إلى محرّك التقرير
+            // فعلاً (`reportEngine` يبني صفّي «الحالية» و«المقارنة» منها)،
+            // فهي الوحيدة التي يحقّ لها عرض الخيار.
+            allowCompare
           />
           {result && (
             <>

@@ -9,14 +9,16 @@ import { LoginForm } from "./LoginForm";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; expired?: string }>;
 }) {
-  const { next } = await searchParams;
+  const { next, expired } = await searchParams;
   // مسار داخلي فقط: قبول أيّ قيمة يجعل الرابط أداة تحويل إلى موقع خارجي
   // بعد تسجيل دخول ناجح (open redirect).
   const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
 
   const user = await getSessionUserFromCookies();
   if (user) redirect(safeNext);
-  return <LoginForm nextPath={safeNext} />;
+  // سبب الوصول يُقال للمستخدم: من وصل إلى هنا لأنّ جلسته انتهت يظنّ
+  // أنّه خرج بالخطأ أو أنّ شيئاً تعطّل، ما لم تُقل له العلّة.
+  return <LoginForm nextPath={safeNext} expired={expired === "1"} />;
 }

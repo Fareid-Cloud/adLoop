@@ -40,12 +40,15 @@ export function IntegrationsView({
   workspaceName,
   locale,
   messaging,
+  storeLimit,
 }: {
   overview: IntegrationsOverview;
   workspaceId: string;
   workspaceName: string;
   locale: Locale;
   messaging: MessagingIdentity;
+  /** حدّ المتاجر في الباقة - يُفحص قبل فتح النافذة لا بعدها */
+  storeLimit: { allowed: boolean; limit: number };
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) =>
     t(locale, `integrations.${k}`, vars);
@@ -63,6 +66,8 @@ export function IntegrationsView({
   const [storeToConnect, setStoreToConnect] = useState<IntegrationDef | null>(null);
   /** قناة المحادثة التي تُفتح لها نافذة الربط - `null` حين لا نافذة. */
   const [channelToConnect, setChannelToConnect] = useState<{ def: IntegrationDef; channel: MessagingKey } | null>(null);
+  /** ظهرت الباقة مانعةً - يُعرض السبب وطريق الترقية بدل نافذة لا تُحفظ */
+  const [limitBlocked, setLimitBlocked] = useState(false);
   useEffect(() => {
     const saved = localStorage.getItem("adloop.integrations.view");
     if (saved === "grid" || saved === "list") setView(saved);
@@ -282,6 +287,13 @@ export function IntegrationsView({
                 // (فلا درج) - فينتهي المعالِج بلا شيء. المستخدم يضغط
                 // «ربط» على سلّة أو شوبيفاي فلا يحدث **أيّ** شيء ولا رسالة.
                 if (def.category === "ECOMMERCE" && def.platform) {
+                  // الفحص هنا لا عند الحفظ: النافذة تطلب نسخ رابطٍ وسرٍّ
+                  // ولصقهما في لوحة المتجر، فردُّ الطلب بعدها يعني أنّ
+                  // المستخدم عمل عملاً كاملاً ثمّ عرف أنّه ممنوع منه.
+                  if (!storeLimit.allowed) {
+                    setLimitBlocked(true);
+                    return;
+                  }
                   setStoreToConnect(def);
                   return;
                 }
@@ -385,6 +397,24 @@ export function IntegrationsView({
           onClose={() => setPickerPlatform(null)}
           onSaved={() => { setPickerPlatform(null); router.refresh(); }}
         />
+      )}
+
+      {limitBlocked && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          onClick={() => setLimitBlocked(false)}
+        >
+          <div className="card w-full max-w-sm pad-md" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <div className="mb-2 text-[14px] font-semibold text-text-primary">{tr("storeLimitTitle")}</div>
+            <p className="mb-4 text-[12.5px] leading-relaxed text-text-muted">
+              {storeLimit.limit === 0 ? tr("storeLimitNone") : tr("storeLimitReached", { limit: storeLimit.limit })}
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <button onClick={() => setLimitBlocked(false)} className="btn btn-ghost">{tr("close")}</button>
+              <a href="/dashboard/billing" className="btn btn-primary no-underline">{tr("seePlans")}</a>
+            </div>
+          </div>
+        </div>
       )}
 
       {channelToConnect && (

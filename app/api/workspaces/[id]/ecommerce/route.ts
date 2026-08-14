@@ -53,7 +53,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // 🔴 حدّ الباقة كان معرَّفاً في `entitlements` ولا يُستدعى من أيّ مكان،
   // فباقة تعرض «متجر واحد» كانت تقبل أيّ عدد. الفحص قبل التحقّق من
   // الحمولة: لا معنى لتدقيق بيانات لن تُقبل أصلاً.
-  const storeCheck = await checkStoreLimit(user.id, id);
+  const storeCheck = await checkStoreLimit(user.id, id, body.platform);
   if (!storeCheck.allowed) {
     return NextResponse.json(
       {
