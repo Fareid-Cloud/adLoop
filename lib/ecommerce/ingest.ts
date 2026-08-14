@@ -141,22 +141,29 @@ async function markProcessed(platform: string, orderId: string): Promise<boolean
 }
 
 export interface IngestResult {
-  status: "ok" | "duplicate" | "no_workspace";
+  // `no_workspace` أُزيلت: كانت تعني «لم أجد مساحةً لهذا الطلب» أيّام
+  // كانت هذه الدالة تبحث بنفسها. صار الحسم قبلها ومرّةً واحدة، فالحالة
+  // لا تُبلَغ هنا أصلاً - والمسار يردّ `401` قبل أن يصل إلينا شيء.
+  status: "ok" | "duplicate";
   matchedProducts: number;
   stockUpdated: number;
 }
 
-export async function ingestOrder(order: NormalizedOrder): Promise<IngestResult> {
+export async function ingestOrder(
+  order: NormalizedOrder,
+  /** 🔴 **يُمرَّر ولا يُستنتَج.**
+   *
+   *  كانت هذه الدالة تعيد حسم المساحة بنفسها بـ
+   *  `findFirst({ platform, active })` - بلا `workspaceId`، فتأخذ أوّل
+   *  ربطٍ لتلك المنصّة في القاعدة كلّها. وكان المسار الداعي قد حسمها
+   *  **صحيحةً** قبل سطرين، فيضيع حسمُه وتُكتب مبيعات متجرٍ في مساحة
+   *  متجرٍ آخر. مصدرُ حقيقةٍ واحدٌ للملكية: `resolveStoreConnection`،
+   *  ومَن يستدعي هذه الدالة يمرّر نتيجته. */
+  workspaceId: string
+): Promise<IngestResult> {
   const isFirstTime = await markProcessed(order.platform, order.externalOrderId);
   if (!isFirstTime) return { status: "duplicate", matchedProducts: 0, stockUpdated: 0 };
 
-  // نحدّد مساحة العمل من الربط المسجّل لهذه المنصة
-  const link = await prisma.ecommerceConnection.findFirst({
-    where: { platform: order.platform as any, active: true },
-  });
-  if (!link) return { status: "no_workspace", matchedProducts: 0, stockUpdated: 0 };
-
-  const workspaceId = link.workspaceId;
   const dateOnly = new Date(order.createdAt.toISOString().slice(0, 10));
 
   // مقاييس اليوم على مستوى المنصة - نفس الجدول الذي تقرأ منه بقية اللوحة

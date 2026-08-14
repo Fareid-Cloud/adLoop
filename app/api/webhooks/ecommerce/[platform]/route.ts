@@ -6,11 +6,15 @@
 //
 // المنطق كله مشترك (lib/ecommerce/ingest.ts)، وما يختلف بين المنصات هو
 // تحويل الصيغة والتحقق من التوقيع فقط (lib/ecommerce/adapters.ts).
+//
+// 🔴 وحسم **صاحب** الطلب في `lib/ecommerce/resolveStore.ts` - كان هنا
+// `findFirst({ platform })` بلا `workspaceId`، فيصل طلب متجرٍ إلى مساحة
+// عمل متجرٍ آخر. اقرأ ذلك الملفّ قبل تعديل أيّ شيء هنا.
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { decryptToken } from "@/lib/encryption";
-import { parseOrder, verifySignature } from "@/lib/ecommerce/adapters";
+import { parseOrder, extractStoreIdentifier } from "@/lib/ecommerce/adapters";
+import { resolveStoreConnection } from "@/lib/ecommerce/resolveStore";
 import { ingestOrder } from "@/lib/ecommerce/ingest";
 import type { EcommercePlatform } from "@/lib/ecommerce/types";
 
@@ -37,25 +41,26 @@ export async function POST(
   // وتُفشل المقارنة حتى لو كان المحتوى صحيحاً.
   const rawBody = await req.text();
 
-  const connection = await prisma.ecommerceConnection.findFirst({
-    where: { platform: platform as any, active: true },
-  });
-  if (!connection) {
-    return NextResponse.json({ error: "store not connected" }, { status: 404 });
-  }
-
-  const secret = connection.webhookSecret ? decryptToken(connection.webhookSecret) : undefined;
-  if (!verifySignature(platform, rawBody, req.headers, secret)) {
-    // الرفض هو السلوك الافتراضي: بيانات مالية بلا تحقق لا تُقبل
-    console.error(`توقيع ويب هوك غير صالح لمنصة ${platform}`);
-    return NextResponse.json({ error: "invalid signature" }, { status: 401 });
-  }
-
   let body: unknown;
   try {
     body = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
+  }
+
+  // الجسم مُحلَّل قبل التحقّق **لقراءة معرّف المتجر وحده** - وهو مفتاح
+  // بحثٍ لا إذن. لا يُكتب شيءٌ ولا يُصدَّق شيءٌ منه قبل أن يصحّ التوقيع.
+  const storeIdentifier = extractStoreIdentifier(platform, req.headers, body);
+
+  const store = await resolveStoreConnection(platform, storeIdentifier, rawBody, req.headers);
+  if (!store) {
+    // رسالةٌ واحدة لحالتين متمايزتين عمداً: «متجر غير مربوط» و«توقيع
+    // خاطئ» - التفريق بينهما للعالَم الخارجي يكشف أيّ المتاجر مربوطة
+    // عندنا. والسجلّ عندنا يفرّق بينهما، وهو ما يلزم للتشخيص.
+    console.error(
+      `[ecommerce/${slug}] لم يُحسم المتجر - المعرّف: ${storeIdentifier ?? "غير متاح"}`
+    );
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
   const order = parseOrder(platform, body);
@@ -65,11 +70,11 @@ export async function POST(
     return NextResponse.json({ ok: true, ignored: true });
   }
 
-  const result = await ingestOrder(order);
+  const result = await ingestOrder(order, store.workspaceId);
 
   if (result.status === "ok") {
     await prisma.ecommerceConnection.update({
-      where: { id: connection.id },
+      where: { id: store.connectionId },
       data: { lastOrderAt: new Date(), ordersReceived: { increment: 1 } },
     });
   }

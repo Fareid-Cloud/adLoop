@@ -295,3 +295,54 @@ function safeEqual(a: string, b: string): boolean {
   if (bufA.length !== bufB.length) return false;
   return crypto.timingSafeEqual(bufA, bufB);
 }
+
+// ==================== هويّة المتجر المُرسِل ====================
+//
+// 🔴 **السؤال الذي لم يكن أحدٌ يسأله: مِن أيّ متجرٍ جاء هذا الويب هوك؟**
+//
+// كان الجواب `findFirst({ platform })` - أي «أوّل متجرٍ على هذه المنصّة في
+// قاعدة البيانات كلّها». فأوّل مشترك على شوبيفاي يبتلع ويب هوكات كلّ
+// مشتركي شوبيفاي، والثاني يُفحص توقيعه بمفتاح الأوّل فيُرفض ٤٠١ ولا يصله
+// طلبٌ واحد. عيبٌ لا يظهر أبداً بمشترك واحد، ويظهر يوم يأتي الثاني.
+//
+// وهذه الدالة تستخرج هويّة المتجر من الويب هوك نفسه. **والهويّة هنا
+// مفتاح بحثٍ لا إثبات:** أيّ أحدٍ يستطيع ادّعاءها في ترويسة، ولا يستطيع
+// أحدٌ تزوير التوقيع بدون سرّ ذلك المتجر - فالبحث بها، والإثبات بالتوقيع.
+//
+// درجات التأكّد صريحة، لأنّ الحقل الخطأ يعني عودةً صامتة إلى المسح:
+//   شوبيفاي  - **مؤكّد رسمياً**: `X-Shopify-Shop-Domain`، وهو نطاق
+//              `myshopify.com` غير القابل للتغيير لا واجهة المتجر.
+//   ووكومرس  - **مؤكّد رسمياً**: `X-WC-Webhook-Source` = `home_url('/')`،
+//              موجود منذ WooCommerce 2.6.
+//   سلّة     - ثقة متوسطة: `merchant` في جسم الطلب.
+//   زد       - ثقة منخفضة (مخطّطهم لم نستطع قراءته - راجع أعلى الملفّ).
+//   إيزي أوردرز - لا معرّف معروف، فيرجع `null` عمداً.
+//
+// و`null` ليس فشلاً: المسار البديل في `resolveConnection` يحسم المتجر
+// بالسرّ نفسه، فتعمل المنصّات الخمس كلّها ولو جهلنا معرّف بعضها.
+export function extractStoreIdentifier(
+  platform: EcommercePlatform,
+  headers: Headers,
+  body: any
+): string | null {
+  const clean = (v: unknown): string | null => {
+    if (v === undefined || v === null) return null;
+    // التطبيع يمنع فشلاً صامتاً: `Store.myshopify.com` و`https://x.com/`
+    // و`https://x.com` كلّها المتجر نفسه، واختلاف حرفٍ يجعلها متاجر ثلاثة.
+    const s = String(v).trim().toLowerCase().replace(/\/+$/, "");
+    return s.length > 0 ? s : null;
+  };
+
+  switch (platform) {
+    case "SHOPIFY":
+      return clean(headers.get("x-shopify-shop-domain"));
+    case "WOOCOMMERCE":
+      return clean(headers.get("x-wc-webhook-source"));
+    case "SALLA":
+      return clean(pick(body, "merchant", "data.merchant", "merchant.id", "data.store.id"));
+    case "ZID":
+      return clean(pick(body, "store_id", "store.id", "data.store_id", "data.store.id"));
+    case "EASY_ORDERS":
+      return null;
+  }
+}

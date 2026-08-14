@@ -1984,7 +1984,12 @@ model EcommerceConnection {
   // توكن API للكتابة (تحديث الأسعار). منفصل عن سرّ الويب هوك: الأول
   // للاستقبال والتحقق، وهذا للكتابة إلى المتجر - وصلاحياتهما مختلفة.
   apiToken      String?  @db.Text // مشفّر
-  storeIdentifier String? // معرّف المتجر لدى المنصة (يلزم لووكومرس/شوبيفاي)
+  /// معرّف المتجر لدى المنصّة كما يصل في الويب هوك نفسه: نطاق
+  /// `myshopify.com` لشوبيفاي، وعنوان الموقع لووكومرس، ومعرّف التاجر
+  /// لسلّة. **هو مفتاح حسم صاحب كلّ ويب هوك** - راجع
+  /// `lib/ecommerce/resolveStore.ts`. يبقى `null` حتى أوّل رسالةٍ يصحّ
+  /// توقيعها، فيُوسَم بها تلقائياً ولا يُمسح بعدها.
+  storeIdentifier String?
   apiSecret     String?  @db.Text // مشفّر - ووكومرس تستخدم مفتاح + سرّ
   canWritePrices Boolean @default(false) // هل التوكن يسمح بالكتابة فعلاً
   active        Boolean  @default(true)
@@ -1996,6 +2001,11 @@ model EcommerceConnection {
   updatedAt     DateTime @updatedAt
 
   @@unique([workspaceId, platform])
+  /// متجرٌ واحدٌ لا يملكه مساحتا عمل. بدون هذا القيد يستطيع مشتركٌ أن
+  /// يسجّل معرّف متجر غيره فتُقسَم مبيعاته بين حسابين - والقيد يجعلها
+  /// غلطةً تُرفض عند الكتابة لا خطأً يُكتشف من تقريرٍ ناقص.
+  /// (الـ`null` لا يتعارض في Postgres، فتتعايش الروابط غير الموسومة.)
+  @@unique([platform, storeIdentifier])
   @@index([platform, active])
 }
 
