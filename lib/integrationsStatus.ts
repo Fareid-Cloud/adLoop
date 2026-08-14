@@ -63,7 +63,7 @@ export interface ActiveIntegration {
   healthPct: number;
   /** عدد الحملات/الويب هوك المرتبطة - يظهر تحت عدد الحسابات */
   entityCount: number;
-  entityLabelKey: "campaigns" | "webhooks";
+  entityLabelKey: "campaigns" | "webhooks" | "conversations";
 }
 
 export interface IntegrationsOverview {
@@ -104,13 +104,18 @@ export async function getIntegrationsOverview(
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-  const [connections, campaignLinks, ecommerce, runs, demoSet] = await Promise.all([
+  const [connections, campaignLinks, ecommerce, messaging, runs, demoSet] = await Promise.all([
     prisma.connectedPlatform.findMany({ where: { userId } }),
     prisma.campaignLink.findMany({
       where: { workspaceId },
       select: { platform: true, externalAccountId: true, campaignName: true },
     }),
     prisma.ecommerceConnection.findMany({ where: { workspaceId } }),
+    // هويّة قناتَي المحادثة حقولٌ على المساحة لا سجلٌّ خاصّ بهما
+    prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { whatsappPhoneNumberId: true, whatsappBusinessPhone: true, facebookPageId: true },
+    }),
     prisma.syncRun.findMany({
       where: { workspaceId },
       orderBy: { startedAt: "desc" },
@@ -264,6 +269,53 @@ export async function getIntegrationsOverview(
         : [...ECOMMERCE_PERMISSIONS, "permReadOnlyPrices"],
       recentRuns: [],
       recordsLast7Days: store.ordersReceived,
+    });
+  }
+
+  // ==== قنوات المحادثة ====
+  //
+  // 🔴 **كان الحفظ يعمل ولا يظهر أثره.** نافذة ربط واتساب/ماسنجر تكتب
+  // المعرّف على `Workspace` فعلاً، لكنّ هذا المحرّك لم يكن يعرف بالقناتين
+  // أصلاً - فتبقيان في «متاح» إلى الأبد مهما ضبط المستخدم. أي أنّ الزرّ
+  // كان يبدو نافذةً تُفتح وتُحفظ وتختفي بلا نتيجة، وهو أسوأ من زرٍّ ميّت:
+  // الميّت يُشتكى منه، وهذا يجعل المستخدم يظنّ أنّه أخطأ هو.
+  //
+  // ولا مزامنة دورية لهما ولا ويب هوك نملك عدّه هنا، فالصحّة تُقاس بما
+  // نملكه فعلاً: **هل الهويّة مضبوطة**. ولا يُخترع رقمٌ لما لا يُقاس.
+  const MESSAGING_CHANNELS: Array<{ key: string; id: string | null; extra: string | null }> = [
+    { key: "whatsapp", id: messaging?.whatsappPhoneNumberId ?? null, extra: messaging?.whatsappBusinessPhone ?? null },
+    { key: "messenger", id: messaging?.facebookPageId ?? null, extra: null },
+  ];
+
+  for (const channel of MESSAGING_CHANNELS) {
+    if (!channel.id) continue;
+    const def = INTEGRATIONS.find((i) => i.key === channel.key);
+    if (!def) continue;
+
+    active.push({
+      key: def.key,
+      platform: null,
+      name: def.name,
+      nameAr: def.nameAr,
+      category: def.category,
+      color: def.color,
+      logoKey: def.logoKey,
+      accountCount: 1,
+      entityCount: 0,
+      entityLabelKey: "conversations",
+      // ليست ١٠٠: الهويّة مضبوطة، وتسجيل الويب هوك عند ميتا خطوةٌ خارج
+      // علمنا لا نستطيع تأكيدها من هنا - فلا نُعلن اكتمالاً لا نراه.
+      healthPct: 75,
+      accounts: [{ id: channel.id, label: channel.extra ?? channel.id, campaignCount: 0 }],
+      connectedAt: null,
+      expiresAt: null,
+      lastSyncAt: null,
+      lastSyncStatus: null,
+      health: "NEEDS_ATTENTION",
+      healthReason: { key: "hrChannelIdSet" },
+      permissionKeys: ["permReceiveMessages", "permVerifyConversions"],
+      recentRuns: [],
+      recordsLast7Days: 0,
     });
   }
 

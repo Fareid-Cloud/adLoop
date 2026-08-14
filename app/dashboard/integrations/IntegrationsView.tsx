@@ -544,9 +544,13 @@ function IntegrationRow({
         <div className="section-title">{item.accountCount}</div>
         <div className="text-[11.5px] text-text-muted">{tr("colAccounts")}</div>
         <div className="mt-0.5 text-[11px] text-text-faint">
+          {/* ثلاث حالات لا اثنتان: `else` وحدها كانت تجعل أيّ نوعٍ جديد
+              يُعرض «ويب هوك» بصمت - وهو ما كان سيحدث لقناتَي المحادثة. */}
           {item.entityLabelKey === "campaigns"
             ? tr("nCampaigns", { n: item.entityCount })
-            : tr("nWebhooks", { n: item.entityCount })}
+            : item.entityLabelKey === "conversations"
+              ? tr("nConversations", { n: item.entityCount })
+              : tr("nWebhooks", { n: item.entityCount })}
         </div>
       </div>
 
