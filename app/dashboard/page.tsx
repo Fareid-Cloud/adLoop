@@ -34,7 +34,7 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 import { ReportedVsActualBars } from "@/app/components/ui/ReportedVsActualBars";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { AiAsk } from "@/app/components/AiAsk";
-import { periodFromParams, daysBetween } from "@/lib/dateRange";
+import { periodFromParams, daysBetween, resolveCompare, toDateBounds } from "@/lib/dateRange";
 import { toDateBoundsForUser } from "@/lib/historyWindow";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { HealthGauge } from "@/app/components/ui/HealthGauge";
@@ -125,8 +125,22 @@ export default async function GlancePage({
 
   const fourteenDaysAgo = new Date();
   fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-  const sixtyDaysAgo = new Date();
-  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+  // 🔴 **فترة المقارنة كانت ثابتةً عند ستّين يوماً مهما اخترتَ.**
+  //
+  // كان الاستعلام `gte: sixtyDaysAgo, lt: bounds.gte` - أي أنّ من يختار
+  // «آخر ٧ أيام» تُقارَن أيّامه السبعة بـ**ثلاثةٍ وخمسين يوماً** قبلها.
+  // فالرقم لم يكن مفصولاً عن المنتقي فحسب، بل **خاطئاً**: طرفان بمدّتين
+  // مختلفتين لا تصحّ بينهما نسبة.
+  //
+  // والآن: ما اختاره المستخدم في المنتقي إن اختار، وإلّا فترةٌ سابقة
+  // **بالطول نفسه** تماماً - وهي القراءة التي يتوقّعها من لم يختر شيئاً.
+  const comparisonRange = period.compare ?? resolveCompare(period.range, "previous");
+  const comparisonBounds = comparisonRange ? toDateBounds(comparisonRange) : null;
+  // الحارس يمنع استعلاماً بحدودٍ فارغة لو تعذّر حساب الفترة السابقة
+  const prevWhere = comparisonBounds
+    ? { gte: comparisonBounds.gte, lte: comparisonBounds.lte }
+    : { gte: new Date(0), lt: bounds.gte };
 
   const [totalsAgg, byPlatform, byPlatformPrev, dailySnapshots, todaysTasks, urgentActionItems, valueConfig, previousPeriodAgg] =
     await Promise.all([
@@ -141,7 +155,7 @@ export default async function GlancePage({
       }),
       prisma.metricSnapshot.groupBy({
         by: ["platform"],
-        where: { workspaceId: workspace.id, date: { gte: sixtyDaysAgo, lt: bounds.gte } },
+        where: { workspaceId: workspace.id, date: prevWhere },
         _sum: { verifiedConversions: true, cost: true, revenue: true },
       }),
       prisma.metricSnapshot.findMany({
@@ -165,7 +179,7 @@ export default async function GlancePage({
       }),
       prisma.conversionValueConfig.findUnique({ where: { workspaceId: workspace.id } }),
       prisma.metricSnapshot.aggregate({
-        where: { workspaceId: workspace.id, date: { gte: sixtyDaysAgo, lt: bounds.gte } },
+        where: { workspaceId: workspace.id, date: prevWhere },
         _sum: { cost: true, rawConversions: true, verifiedConversions: true },
       }),
     ]);
@@ -337,7 +351,15 @@ export default async function GlancePage({
         eyebrow={workspace.name !== user.name ? workspace.name : undefined}
         title={tr(greetingKey(user.timezone), { name: firstName })}
         actions={<>
-        <PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />
+        <PeriodBar
+          locale={locale}
+          preset={period.preset}
+          range={period.range}
+          compare={period.compare}
+          // الصفحة تقرأ فترة المقارنة فعلاً في استعلامَي «السابقة» و«حسب
+          // المصدر»، فيحقّ لها عرض الخيار - راجع `PeriodBar`.
+          allowCompare
+        />
         {/* نفس عدّاد صفحة صحة الحساب بحجم الرأس - كان سطراً رمادياً طويلاً
             بلا وزن بصري ("درجة الصحة — التتبّع وحده مُقاساً حتى الآن")، فلا
             يُقرأ ولا يُربط بالعدّاد نفسه في مكان آخر. */}
