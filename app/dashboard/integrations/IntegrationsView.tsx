@@ -19,6 +19,7 @@ import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { CampaignPickerModal } from "@/app/components/CampaignPickerModal";
 import { IntegrationDrawer } from "./IntegrationDrawer";
 import { StoreConnectDialog } from "./StoreConnectDialog";
+import { MessagingConnectDialog, type MessagingKey } from "./MessagingConnectDialog";
 import { INTEGRATION_CATEGORIES, type IntegrationDef } from "@/lib/integrationsCatalog";
 import type { ActiveIntegration, IntegrationsOverview } from "@/lib/integrationsStatus";
 import { t, relativeFromDate, type Locale } from "@/lib/i18n/dictionary";
@@ -27,16 +28,24 @@ import { PageHeader } from "@/app/components/ui/PageHeader";
 type Tab = "connected" | "available" | "disconnected" | "all";
 type ViewMode = "list" | "grid";
 
+export interface MessagingIdentity {
+  whatsappPhoneNumberId: string | null;
+  whatsappBusinessPhone: string | null;
+  facebookPageId: string | null;
+}
+
 export function IntegrationsView({
   overview,
   workspaceId,
   workspaceName,
   locale,
+  messaging,
 }: {
   overview: IntegrationsOverview;
   workspaceId: string;
   workspaceName: string;
   locale: Locale;
+  messaging: MessagingIdentity;
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) =>
     t(locale, `integrations.${k}`, vars);
@@ -52,6 +61,8 @@ export function IntegrationsView({
   const [view, setView] = useState<ViewMode>("list");
   /** المتجر الذي تُفتح له نافذة الربط - `null` حين لا نافذة. */
   const [storeToConnect, setStoreToConnect] = useState<IntegrationDef | null>(null);
+  /** قناة المحادثة التي تُفتح لها نافذة الربط - `null` حين لا نافذة. */
+  const [channelToConnect, setChannelToConnect] = useState<{ def: IntegrationDef; channel: MessagingKey } | null>(null);
   useEffect(() => {
     const saved = localStorage.getItem("adloop.integrations.view");
     if (saved === "grid" || saved === "list") setView(saved);
@@ -272,6 +283,15 @@ export function IntegrationsView({
                 // «ربط» على سلّة أو شوبيفاي فلا يحدث **أيّ** شيء ولا رسالة.
                 if (def.category === "ECOMMERCE" && def.platform) {
                   setStoreToConnect(def);
+                  return;
+                }
+
+                // واتساب وماسنجر: نفس الزرّ الميّت، وهما **مصدر التحقّق
+                // نفسه** - رسالة واتساب الحقيقية هي ما يحوّل نقرةً مُعلَنة
+                // إلى عميلٍ مؤكَّد. هويّتهما حقلٌ على `Workspace` لا سجلٌّ
+                // خاصّ، فلهما نافذتهما.
+                if (def.key === "whatsapp" || def.key === "messenger") {
+                  setChannelToConnect({ def, channel: def.key as MessagingKey });
                 }
               }}
             />
@@ -364,6 +384,22 @@ export function IntegrationsView({
           locale={locale}
           onClose={() => setPickerPlatform(null)}
           onSaved={() => { setPickerPlatform(null); router.refresh(); }}
+        />
+      )}
+
+      {channelToConnect && (
+        <MessagingConnectDialog
+          def={channelToConnect.def}
+          channel={channelToConnect.channel}
+          workspaceId={workspaceId}
+          locale={locale}
+          initial={messaging}
+          onClose={() => setChannelToConnect(null)}
+          onConnected={() => {
+            setChannelToConnect(null);
+            setTab("connected");
+            router.refresh();
+          }}
         />
       )}
 

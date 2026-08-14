@@ -2559,6 +2559,26 @@ export const dictionary = {
       basisAdAttributed: "من قيمة التحويل التي تنسبها المنصّة",
       basisStoreTotal: "من مبيعات متجرك الفعلية",
     },
+    // ==== نافذة ربط قنوات المحادثة ====
+    messagingConnect: {
+      title: "ربط {channel}",
+      subtitleWhatsApp: "المعرّف الذي يعرف به كل رسالةٍ أنّها لك",
+      subtitleMessenger: "الصفحة التي تصلنا محادثاتها",
+      close: "إغلاق",
+      copy: "نسخ",
+      cancel: "إلغاء",
+      save: "حفظ الربط",
+      saveFailed: "تعذّر حفظ الربط. حاول مرّةً أخرى.",
+      phoneNumberId: "معرّف رقم واتساب (Phone number ID)",
+      phoneNumberIdHint: "من لوحة Meta for Developers: تطبيقك ← WhatsApp ← API Setup، وهو رقمٌ طويل تحت الرقم نفسه. ليس رقم هاتفك - بل المعرّف الوحيد الذي يرسله واتساب مع كلّ رسالة، وبه نعرف أنّها لمساحة عملك.",
+      businessPhone: "رقم واتساب المعروض للزوّار (اختياري)",
+      businessPhoneHint: "بالصيغة الدولية بلا علامة زائد ولا مسافات. إليه يُحوَّل من ينقر إعلانك، ويُستعمل في وسم التتبّع فلا يكتبه المعلن في كلّ رابط.",
+      whatsappWebhookNote: "ويب هوك واتساب يُسجَّل على مشروع تتبّع الواتساب لا على AdLoop، لأنّه هو من يستقبل الرسائل ويطابقها بالنقرات. عنوانه: عنوان مشروع التتبّع متبوعاً بـ /api/whatsapp-webhook — والخطوات الكاملة في دليل التفعيل قسم ٢٨.",
+      pageId: "معرّف صفحة فيسبوك (Page ID)",
+      pageIdHint: "من إعدادات صفحتك: حول ← الشفافية، أو من Meta Business Suite. ميتا ترسل معرّف الصفحة وحده مع كلّ محادثة، فبه تُعرَف مساحة العمل صاحبتها.",
+      messengerWebhook: "رابط استقبال المحادثات",
+      messengerWebhookHint: "سجّله في تطبيق ميتا: Webhooks ← Page، واشترك في الحقلين messages و messaging_referrals معاً - بدون الثاني تصل الرسالة بلا معرّف الإعلان الذي جاءت منه، فلا تُنسب إلى حملة.",
+    },
     // ==== نافذة ربط المتجر ====
     storeConnect: {
       title: "ربط {store}",
@@ -7101,6 +7121,26 @@ export const dictionary = {
       noProfitBasis: "Return on investment needs what your goods cost you — set your profit margin in workspace settings.",
       basisAdAttributed: "From the conversion value the platform attributes",
       basisStoreTotal: "From your store's actual sales",
+    },
+    // ==== Messaging channel connect dialog ====
+    messagingConnect: {
+      title: "Connect {channel}",
+      subtitleWhatsApp: "The identifier that tells us a message is yours",
+      subtitleMessenger: "The page whose conversations reach us",
+      close: "Close",
+      copy: "Copy",
+      cancel: "Cancel",
+      save: "Save connection",
+      saveFailed: "Could not save the connection. Please try again.",
+      phoneNumberId: "WhatsApp phone number ID",
+      phoneNumberIdHint: "In Meta for Developers: your app -> WhatsApp -> API Setup, the long number shown under the phone number. Not your phone number itself - this is the only identifier WhatsApp sends with every message, and it is how we know the message belongs to your workspace.",
+      businessPhone: "WhatsApp number shown to visitors (optional)",
+      businessPhoneHint: "International format, no plus sign or spaces. Anyone clicking your ad is forwarded here, and the tracking tag reads it so the advertiser does not type it into every link.",
+      whatsappWebhookNote: "The WhatsApp webhook is registered on the WhatsApp tracker project, not on AdLoop, because the tracker is what receives messages and matches them to clicks. Its address is your tracker's domain followed by /api/whatsapp-webhook — full steps are in the activation guide, section 28.",
+      pageId: "Facebook Page ID",
+      pageIdHint: "From your page settings: About -> Page transparency, or from Meta Business Suite. Meta sends only the page ID with each conversation, so it is what identifies the workspace it belongs to.",
+      messengerWebhook: "Conversation endpoint",
+      messengerWebhookHint: "Register it in your Meta app: Webhooks -> Page, and subscribe to both messages and messaging_referrals - without the second, a message arrives with no ad id attached and cannot be attributed to a campaign.",
     },
     // ==== Store connect dialog ====
     storeConnect: {

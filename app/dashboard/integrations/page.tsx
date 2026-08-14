@@ -61,7 +61,20 @@ export default async function IntegrationsPage({
           {t(locale, `integrations.${connectionResult}`)}
         </div>
       )}
-      <IntegrationsView overview={overview} workspaceId={workspace.id} workspaceName={workspace.name} locale={locale} />
+      <IntegrationsView
+        overview={overview}
+        workspaceId={workspace.id}
+        workspaceName={workspace.name}
+        locale={locale}
+        // هويّة قناتَي المحادثة تعيش على `Workspace` لا في سجلٍّ خاصّ بها،
+        // فتُمرَّر لتفتح نافذة الربط على المحفوظ بدل أن تبدأ فارغةً
+        // فيُخيَّل للمستخدم أنّ ما ضبطه ضاع.
+        messaging={{
+          whatsappPhoneNumberId: workspace.whatsappPhoneNumberId ?? null,
+          whatsappBusinessPhone: workspace.whatsappBusinessPhone ?? null,
+          facebookPageId: workspace.facebookPageId ?? null,
+        }}
+      />
     </>
   );
 }
