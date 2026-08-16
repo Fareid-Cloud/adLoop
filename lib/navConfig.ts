@@ -11,6 +11,13 @@ export interface NavChild {
   platform?: string;
   /** عنصر فرعي داخل منصة (يُزاح ويظهر عند الدخول إلى تلك المنصة فقط) */
   nested?: boolean;
+  /**
+   * لا يظهر إلّا لمساحةٍ فيها أكثر من قناة بيع.
+   *
+   * صفحةُ مقارنةٍ بقناةٍ واحدة تعرض نفسها فارغةً وتشرح أنّها لا تعمل -
+   * رابطٌ دائمٌ إلى لا شيء يعلّم المستخدم تجاهل القائمة.
+   */
+  needsTwoStores?: boolean;
   labelAr: string;
   labelEn: string;
 }
@@ -97,7 +104,7 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/dashboard/ecommerce", labelAr: "متجري الإلكتروني", labelEn: "My Store", iconName: "ShoppingBag", usesAi: true,
         children: [
           { href: "/dashboard/ecommerce", labelAr: "ملخّص المتجر", labelEn: "Overview" },
-          { href: "/dashboard/ecommerce/stores", labelAr: "مقارنة المتاجر", labelEn: "Compare stores" },
+          { href: "/dashboard/ecommerce/stores", labelAr: "قنوات البيع", labelEn: "Sales channels", needsTwoStores: true },
           { href: "/dashboard/ecommerce/profit", labelAr: "الأرباح", labelEn: "Profit" },
           { href: "/dashboard/ecommerce/products", labelAr: "المنتجات", labelEn: "Products" },
           { href: "/dashboard/ecommerce/pricing-intelligence", labelAr: "فرص التسعير", labelEn: "Pricing" },

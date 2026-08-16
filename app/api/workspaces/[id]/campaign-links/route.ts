@@ -102,6 +102,9 @@ export async function POST(
         externalAccountId: c.externalAccountId,
         externalCampaignId: c.externalCampaignId,
         campaignName: c.campaignName,
+        // القناة التي تبيع لها الحملة - أساس العائد لكلّ قناة. غيابها
+        // يعني إنفاقاً «غير منسوب» يُعرض على حدة ولا يُقسَّم.
+        connectionId: typeof c.connectionId === "string" && c.connectionId ? c.connectionId : null,
       })),
     }),
     // إصلاح TODO حقيقي: كانت visibleMetrics بتتحسب مرة واحدة بس وقت

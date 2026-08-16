@@ -224,6 +224,14 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     campaignCount: number;
   } | null = null;
 
+  // عدد قنوات البيع - تحتاجه القائمة لتخفي صفحة المقارنة ما لم يوجد
+  // ما يُقارَن. استعلام عدٍّ واحد، لا جلب صفوف.
+  const storeCount = activeWorkspace
+    ? await prisma.ecommerceConnection.count({
+        where: { workspaceId: activeWorkspace.id, active: true },
+      })
+    : 0;
+
   if (showOnboarding && activeWorkspace) {
     const [connections, links] = await Promise.all([
       prisma.connectedPlatform.findMany({ where: { userId: user!.id }, select: { platform: true } }),
@@ -260,6 +268,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <SidebarNav
         locale={locale}
         badges={navBadges}
+        storeCount={storeCount}
         // انتقلت من رأس الصفحة: الرأس على الهاتف يحمل ستّة عناصر في ٦٨
         // بكسل، وهذه كانت تدفع البحث واسم المستخدم حتى يُقصّا معاً.
         brandSlot={

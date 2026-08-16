@@ -99,9 +99,34 @@ export async function GET(
   const { searchParams } = new URL(req.url);
   const platform = searchParams.get("platform") ?? "GOOGLE_ADS";
 
-  if (platform === "META_ADS") return getMetaCampaigns(user.id, locale);
-  if (platform === "TIKTOK_ADS") return getTikTokCampaigns(user.id, locale);
-  if (platform === "GOOGLE_ADS") return getGoogleCampaigns(user.id, locale);
+  // قنوات البيع تُرسَل مع الحملات: بدونها لا تعرف النافذة ما تنسب إليه،
+  // ونسبةُ الحملة إلى قناتها هي وحدها ما يجعل العائد لكلّ قناة ممكناً.
+  const stores = await prisma.ecommerceConnection.findMany({
+    where: { workspaceId: id, active: true },
+    select: { id: true, storeName: true, storeUrl: true, platform: true },
+    orderBy: { createdAt: "asc" },
+  });
+  const storeOptions = stores.map((s) => ({
+    id: s.id,
+    name: s.storeName ?? s.storeUrl ?? s.platform,
+  }));
+  const assigned = await prisma.campaignLink.findMany({
+    where: { workspaceId: id, platform: platform as never },
+    select: { externalCampaignId: true, connectionId: true },
+  });
+  const assignedMap = Object.fromEntries(
+    assigned.filter((a) => a.connectionId).map((a) => [a.externalCampaignId, a.connectionId as string])
+  );
+
+  const withStores = async (r: Promise<NextResponse>) => {
+    const res = await r;
+    const body = await res.json().catch(() => ({}));
+    return NextResponse.json({ ...body, stores: storeOptions, assigned: assignedMap }, { status: res.status });
+  };
+
+  if (platform === "META_ADS") return withStores(getMetaCampaigns(user.id, locale));
+  if (platform === "TIKTOK_ADS") return withStores(getTikTokCampaigns(user.id, locale));
+  if (platform === "GOOGLE_ADS") return withStores(getGoogleCampaigns(user.id, locale));
 
   // 🔴 كان هذا السطر `return getGoogleCampaigns(...)` بلا شرط - أي أنّ **كلّ**
   // منصّة غير معروفة تسقط على جوجل بصمت. فمن فتح «اختر الحملات» من تكامل

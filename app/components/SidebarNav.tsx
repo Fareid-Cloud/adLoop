@@ -43,6 +43,7 @@ export function SidebarNav({
   workspaceSlot,
   brandSlot,
   badges = {},
+  storeCount = 0,
 }: {
   locale: "ar" | "en";
   supportSlot?: React.ReactNode;
@@ -52,6 +53,14 @@ export function SidebarNav({
   brandSlot?: React.ReactNode;
   /** عدد ما ينتظر المستخدم في كل قسم، مفتاحه مسار القسم */
   badges?: Record<string, number>;
+  /**
+   * عدد قنوات البيع المربوطة بالمساحة الحالية.
+   *
+   * صفحة المقارنة بقناةٍ واحدة تعرض نفسها فارغةً وتشرح أنّها لا تعمل،
+   * ورابطٌ دائمٌ إلى لا شيء يعلّم المستخدم تجاهل القائمة. فتظهر حين
+   * يصير لها ما تقارنه.
+   */
+  storeCount?: number;
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -284,6 +293,9 @@ export function SidebarNav({
                             // الصفحات الداخلية للمنصة تظهر فقط عند التواجد
                             // داخل تلك المنصة - وإلا امتلأت القائمة بعشرات
                             // الروابط غير المتعلقة بما يشاهده المستخدم الآن.
+                            // لا تظهر إلّا حين يوجد ما يُقارَن فعلاً.
+                            if (child.needsTwoStores && storeCount < 2) return null;
+
                             if (child.nested) {
                               const insidePlatform = item.children!.some(
                                 (c) => !c.nested && c.platform === child.platform && pathname.startsWith(c.href)

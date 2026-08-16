@@ -37,6 +37,13 @@ export interface StoreLine {
   grossProfit: number | null;
   /** أكثر منتجٍ ربحاً - وإن غابت التكاليف فأكثرُه إيراداً، مع تصريحٍ بذلك */
   topProduct: { name: string; revenue: number; units: number } | null;
+  /**
+   * إنفاق حملات هذا المتجر وحده - من الحملات المنسوبة إليه صراحةً.
+   * `null` حين لا حملة منسوبة: صفرٌ مكانه يجعل ROAS لانهائياً.
+   */
+  adSpend: number | null;
+  /** الإيراد ÷ إنفاق حملاته هو. `null` بلا إنفاقٍ منسوب - لا يُخمَّن. */
+  roas: number | null;
 }
 
 export interface StoreComparison {
@@ -49,6 +56,13 @@ export interface StoreComparison {
   /** الطلبات التي لا متجر لها - تُذكر ولا تُوزَّع */
   unattributedOrders: number;
   unattributedRevenue: number;
+  /**
+   * إنفاقٌ إعلانيّ لم تُنسَب حملته إلى متجر.
+   *
+   * يُعرض ولا يُقسَّم: قسمتُه بالتساوي أو بنسبة الإيراد تُنتج ROAS يبدو
+   * دقيقاً وهو مخترع - في الصفحة التي يُقرَّر بها أين يُوضع المال.
+   */
+  unassignedAdSpend: number;
   /** المجاميع عبر المتاجر كلّها، بما فيها غير المنسوبة */
   totalOrders: number;
   totalRevenue: number;
@@ -95,6 +109,40 @@ export async function getStoreComparison(
     },
   });
 
+  // ═══ الإنفاق الإعلانيّ لكلّ متجر ═══
+  //
+  // الطريق: `CampaignLink.connectionId` يقول أيّ متجرٍ تبيع له الحملة، ثمّ
+  // `MetricSnapshot` يحمل تكلفتها اليومية. ولا يُقرأ إلّا من منصّات الإعلان:
+  // صفوف الإيكومرس تكتب في الجدول نفسه بتكلفة صفر، وضمّها لا يضرّ الرقم
+  // لكنّه يجعل القارئ يظنّ أنّ للمتجر إنفاقاً إعلانياً وليس له.
+  const AD_PLATFORMS = ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS", "SNAPCHAT_ADS"] as const;
+  const links = await prisma.campaignLink.findMany({
+    where: { workspaceId, connectionId: { not: null } },
+    select: { externalCampaignId: true, connectionId: true, platform: true },
+  });
+  const storeOfCampaign = new Map<string, string>(
+    links.map((l) => [`${l.platform}:${l.externalCampaignId}`, l.connectionId as string])
+  );
+
+  const spendRows = await prisma.metricSnapshot.groupBy({
+    by: ["platform", "campaignId"],
+    where: { workspaceId, date: { gte: since }, platform: { in: AD_PLATFORMS as never } },
+    _sum: { cost: true },
+  });
+
+  const spendByStore = new Map<string, number>();
+  let unassignedAdSpend = 0;
+  for (const row of spendRows) {
+    const cost = row._sum.cost ?? 0;
+    if (cost <= 0) continue;
+    const storeId = storeOfCampaign.get(`${row.platform}:${row.campaignId}`);
+    if (!storeId) {
+      unassignedAdSpend += cost;
+      continue;
+    }
+    spendByStore.set(storeId, (spendByStore.get(storeId) ?? 0) + cost);
+  }
+
   const byStore = new Map<string, StoreLine>();
   for (const s of stores) {
     byStore.set(s.id, {
@@ -108,6 +156,8 @@ export async function getStoreComparison(
       avgOrderValue: null,
       grossProfit: null,
       topProduct: null,
+      adSpend: null,
+      roas: null,
     });
   }
 
@@ -172,6 +222,12 @@ export async function getStoreComparison(
     const acc = profitByStore.get(cid);
     line.grossProfit = acc?.sawCost ? round(acc.profit) : null;
 
+    const spend = spendByStore.get(cid) ?? 0;
+    line.adSpend = spend > 0 ? round(spend) : null;
+    // ROAS إيرادُ هذا المتجر ÷ إنفاق حملاته هو. لا مقام مشتركاً ولا بسطاً
+    // مقسوماً: رقمان من مصدرين مختلفين لا يُخلطان.
+    line.roas = spend > 0 ? Math.round((line.revenue / spend) * 100) / 100 : null;
+
     const agg = productAgg.get(cid);
     if (agg && agg.size > 0) {
       const [name, v] = [...agg.entries()].sort((a, b) => b[1].revenue - a[1].revenue)[0];
@@ -208,6 +264,7 @@ export async function getStoreComparison(
     winnerBasis,
     unattributedOrders,
     unattributedRevenue: round(unattributedRevenue),
+    unassignedAdSpend: round(unassignedAdSpend),
     totalOrders: orders.length,
     totalRevenue: round(lines.reduce((n, l) => n + l.revenue, 0) + unattributedRevenue),
     currency,

@@ -51,6 +51,10 @@ export function CampaignPickerModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  /** قنوات البيع المتاحة للنسبة - فارغة حين لا متجر مربوط */
+  const [stores, setStores] = useState<Array<{ id: string; name: string }>>([]);
+  /** القناة المختارة لكلّ حساب إعلانيّ. المفتاح `accountId`. */
+  const [storeByAccount, setStoreByAccount] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState("");
   const [onlyActive, setOnlyActive] = useState(true);
@@ -88,6 +92,14 @@ export function CampaignPickerModal({
         setAccounts([]);
       } else {
         setAccounts(data.accounts ?? []);
+        setStores(data.stores ?? []);
+        // ما نُسب من قبل يظهر مختاراً: النافذة تعرض الحالة لا تعيد ضبطها.
+        const prior: Record<string, string> = {};
+        for (const a of data.accounts ?? []) {
+          const hit = (a.campaigns ?? []).find((c: Campaign) => data.assigned?.[c.id]);
+          if (hit) prior[a.accountId] = data.assigned[hit.id];
+        }
+        setStoreByAccount(prior);
         // الحملات النشطة مُحدَّدة مسبقاً - الاختيار الأكثر منطقية افتراضياً
         const preselect = new Set<string>();
         for (const a of data.accounts ?? []) {
@@ -141,6 +153,7 @@ export function CampaignPickerModal({
         externalAccountId: acc.accountId,
         externalCampaignId: c.id,
         campaignName: c.name,
+        connectionId: storeByAccount[acc.accountId] ?? null,
       }))
     );
     try {
@@ -301,10 +314,29 @@ export function CampaignPickerModal({
             <div key={acc.accountId} className="mb-5 last:mb-0">
               {/* اسمُ تسجيل الدخول بجانب اسم الحساب حين تتعدّد المنح - حسابان
                   متشابها الاسم تحت عميلين مختلفين لا يفرّق بينهما غيره. */}
-              <div className="mb-2 flex flex-wrap items-baseline gap-x-2 text-[12px] font-medium text-text-muted">
+              <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[12px] font-medium text-text-muted">
                 <span>{acc.accountName}</span>
                 {acc.connectionLabel && (
                   <span className="text-[11px] font-normal text-text-faint">· {acc.connectionLabel}</span>
+                )}
+                {/* لا يظهر إلّا بقناتين: بقناةٍ واحدة لا خيار، والحقل
+                    الذي لا بديل فيه ضجيج. */}
+                {stores.length > 1 && (
+                  <label className="ms-auto flex items-center gap-1.5 text-[11.5px] font-normal">
+                    <span className="text-text-faint">{tr("sellsFor")}</span>
+                    <select
+                      value={storeByAccount[acc.accountId] ?? ""}
+                      onChange={(e) =>
+                        setStoreByAccount((prev) => ({ ...prev, [acc.accountId]: e.target.value }))
+                      }
+                      className="field py-1 text-[11.5px]"
+                    >
+                      <option value="">{tr("noStoreAssigned")}</option>
+                      {stores.map((st) => (
+                        <option key={st.id} value={st.id}>{st.name}</option>
+                      ))}
+                    </select>
+                  </label>
                 )}
               </div>
               <div className="flex flex-col gap-1.5">

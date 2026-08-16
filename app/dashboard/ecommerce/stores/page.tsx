@@ -18,11 +18,17 @@ import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { EcomHeader, SectionHeading, DataGate, fmtNum } from "../_components/EcomPrimitives";
 import { TH } from "@/app/components/ui/tableStyles";
 import { Trophy, Store, AlertTriangle } from "lucide-react";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams, daysBetween, toDateBounds } from "@/lib/dateRange";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
-export default async function StoreComparisonPage() {
+export default async function StoreComparisonPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `storeCompare.${k}`, vars);
@@ -42,12 +48,14 @@ export default async function StoreComparisonPage() {
     );
   }
 
-  // النافذة نفسها للمقارنة والمسار: رقمان لفترتين مختلفتين في صفحةٍ
-  // واحدة يُقرآن كأنّهما لفترةٍ واحدة.
-  const WINDOW_DAYS = 30;
-  const to = new Date();
-  const from = new Date();
-  from.setDate(from.getDate() - WINDOW_DAYS);
+  // الفترة تُختار ولا تُفرَض: «آخر ثلاثين يوماً» ثابتةً تخفي الموسمية،
+  // ولا تسمح بمقارنة شهرٍ بشهر. والمنتقي نفسه المستعمل في بقيّة الصفحات.
+  const sp = await searchParams;
+  const period = periodFromParams(sp);
+  const bounds = toDateBounds(period.range);
+  const from = bounds.gte;
+  const to = bounds.lte;
+  const WINDOW_DAYS = Math.max(1, daysBetween(period.range.from, period.range.to));
 
   const cmp = await getStoreComparison(workspace.id, WINDOW_DAYS);
   // عملة المتجر تُقرأ من طلباته لا تُفترض - والمسار يحتاجها للعرض.
@@ -72,9 +80,18 @@ export default async function StoreComparisonPage() {
     <div className="mx-auto max-w-[1200px] pb-12">
       <EcomHeader
         title={tr("title")}
-        subtitle={tr("subtitle", { days: cmp.windowDays })}
+        subtitle={tr("subtitle")}
         storeName={workspace.name}
       />
+
+      <div className="mb-5">
+        <PeriodBar
+          locale={locale}
+          preset={period.preset}
+          range={period.range}
+          compare={period.compare}
+        />
+      </div>
 
       {/* ═══ الحكم: أيّها يكسب، وبأيّ مقياس ═══ */}
       {winner ? (
@@ -119,6 +136,8 @@ export default async function StoreComparisonPage() {
               <th className={TH}>{tr("colOrders")}</th>
               <th className={TH}>{tr("colRevenue")}</th>
               <th className={TH}>{tr("colAov")}</th>
+              <th className={TH}>{tr("colAdSpend")}</th>
+              <th className={TH}>{tr("colRoas")}</th>
               <th className={TH}>{tr("colReturns")}</th>
               <th className={TH}>{tr("colProfit")}</th>
               <th className={TH}>{tr("colTopProduct")}</th>
@@ -145,6 +164,27 @@ export default async function StoreComparisonPage() {
                 <td className="px-4 py-2.5 tabular-nums text-text-primary">{money(s.revenue)}</td>
                 <td className="px-4 py-2.5 tabular-nums text-text-muted">
                   {s.avgOrderValue === null ? "—" : money(s.avgOrderValue)}
+                </td>
+                <td className="px-4 py-2.5 tabular-nums text-text-muted">
+                  {s.adSpend === null ? (
+                    <span className="text-text-faint" title={tr("noSpendTitle")}>
+                      {tr("noSpend")}
+                    </span>
+                  ) : (
+                    money(s.adSpend)
+                  )}
+                </td>
+                <td className="px-4 py-2.5 tabular-nums">
+                  {/* بلا حملةٍ منسوبة لا مقام للقسمة - وصفرٌ مكانه يجعل
+                      العائد لانهائياً، ورقمٌ مقسومٌ من إنفاق المساحة كلّها
+                      يخلط متجراً بآخر. */}
+                  {s.roas === null ? (
+                    <span className="text-text-faint">—</span>
+                  ) : (
+                    <span className={s.roas >= 1 ? "text-verified" : "text-critical"}>
+                      {s.roas.toFixed(2)}x
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-2.5 tabular-nums text-text-muted">
                   {s.returnedOrders > 0 ? (
@@ -197,6 +237,23 @@ export default async function StoreComparisonPage() {
               {tr("unattributedHint", { amount: money(cmp.unattributedRevenue) })}
             </p>
           </div>
+        </div>
+      )}
+
+      {cmp.unassignedAdSpend > 0 && (
+        <div className="card mb-6 flex flex-wrap items-start gap-3 border-gap/30 bg-gap/[0.05] p-4">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-gap" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[12.5px] font-medium text-text-primary">
+              {tr("unassignedSpendTitle", { amount: money(cmp.unassignedAdSpend) })}
+            </p>
+            <p className="mt-0.5 text-[12px] leading-relaxed text-text-muted">
+              {tr("unassignedSpendHint")}
+            </p>
+          </div>
+          <a href="/dashboard/integrations" className="btn btn-ghost shrink-0">
+            {tr("assignCampaigns")}
+          </a>
         </div>
       )}
 

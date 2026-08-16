@@ -554,6 +554,21 @@ model CampaignLink {
   campaignName       String
   addedAt            DateTime  @default(now())
 
+  /// 🔴 **المتجر الذي تبيع له هذه الحملة - وبدونه لا وجود لـROAS لكلّ متجر.**
+  ///
+  /// الإيراد منسوبٌ إلى متجره (`Order.connectionId`)، أمّا الإنفاق فلا:
+  /// الحملة تُشترى للمساحة، ولا تحمل المنصّاتُ الإعلانية أيّ إشارةٍ إلى
+  /// أيّ متجرٍ أرسلت إليه الزائر. فقسمة الإنفاق على المتاجر بالتساوي أو
+  /// بنسبة الإيراد تُنتج ROAS **يبدو دقيقاً وهو مخترع**.
+  ///
+  /// والنسبة على **الحملة** لا على الحساب الإعلانيّ: الحساب الواحد يخدم
+  /// المتجرين روتينياً (حملةٌ لكلّ متجر بصفحة هبوطٍ مختلفة)، فربطُ الحساب
+  /// بمتجر يخطئ في الحالة الشائعة لا النادرة.
+  ///
+  /// اختياريّ: ما لم يُنسَب يُعرض إنفاقاً غير منسوب، ولا يُقسَّم.
+  connectionId String?
+  connection   EcommerceConnection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+
   // آخر بيانات استراتيجية مزايدة معروفة - بتتحدث يومياً عن طريق الـ cron،
   // مش بتُستدعى حية وقت فتح صفحة التشخيص (تجنباً لبطء وحصة API استهلاك زيادة)
   biddingStrategyType  String?
@@ -2087,8 +2102,9 @@ model EcommerceConnection {
   lastOrderAt    DateTime?
   ordersReceived Int       @default(0)
 
-  products Product[]
-  orders   Order[]
+  products      Product[]
+  orders        Order[]
+  campaignLinks CampaignLink[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
