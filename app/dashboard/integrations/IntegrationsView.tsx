@@ -20,7 +20,7 @@ import { CampaignPickerModal } from "@/app/components/CampaignPickerModal";
 import { IntegrationDrawer } from "./IntegrationDrawer";
 import { StoreConnectDialog } from "./StoreConnectDialog";
 import { MessagingConnectDialog, type MessagingKey } from "./MessagingConnectDialog";
-import { INTEGRATION_CATEGORIES, type IntegrationDef } from "@/lib/integrationsCatalog";
+import { INTEGRATION_CATEGORIES, integrationByKey, type IntegrationDef } from "@/lib/integrationsCatalog";
 import type { ActiveIntegration, IntegrationsOverview } from "@/lib/integrationsStatus";
 import { t, relativeFromDate, type Locale } from "@/lib/i18n/dictionary";
 import { PageHeader } from "@/app/components/ui/PageHeader";
@@ -381,6 +381,12 @@ export function IntegrationsView({
             onSync={() => syncNow(selected.platform)}
             onDisconnect={() => disconnect(selected.key)}
             onDisconnectGrant={(connectionId) => disconnect(selected.key, connectionId)}
+            onAddStore={() => {
+              // المتجر المربوط ليس في «المتاحة»، فالتعريف يُقرأ من الكتالوج
+              // نفسه - وهو مصدر تعريفات التكاملات كلّها.
+              const def = integrationByKey(selected.key);
+              if (def) setStoreToConnect(def);
+            }}
             onManageCampaigns={() => selected.platform && setPickerPlatform(selected.platform)}
           />
           </div>

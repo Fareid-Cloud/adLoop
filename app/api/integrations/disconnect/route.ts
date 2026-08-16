@@ -90,8 +90,14 @@ export async function POST(req: NextRequest) {
         ]);
       }
     } else {
+      // متجرٌ بعينه إن أُشير إليه، وإلّا متاجر المنصّة كلّها - فقد صار
+      // للمساحة أكثر من متجرٍ على المنصّة الواحدة، وفصلُ أحدها يجب ألّا
+      // يفصل أخواته معه.
       await prisma.ecommerceConnection.deleteMany({
-        where: { workspaceId, platform: def.platform as never },
+        where:
+          typeof connectionId === "string" && connectionId
+            ? { id: connectionId, workspaceId }
+            : { workspaceId, platform: def.platform as never },
       });
     }
 

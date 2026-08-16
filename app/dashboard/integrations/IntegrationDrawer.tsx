@@ -21,7 +21,7 @@ import { t, relativeFromDate, durationFromHours, type Locale } from "@/lib/i18n/
 type DrawerTab = "overview" | "accounts" | "permissions" | "activity";
 
 export function IntegrationDrawer({
-  integration, locale, busy, onClose, onSync, onDisconnect, onDisconnectGrant, onManageCampaigns,
+  integration, locale, busy, onClose, onSync, onDisconnect, onDisconnectGrant, onAddStore, onManageCampaigns,
 }: {
   integration: ActiveIntegration;
   locale: Locale;
@@ -29,8 +29,10 @@ export function IntegrationDrawer({
   onClose: () => void;
   onSync: () => void;
   onDisconnect: () => void;
-  /** فصل تسجيل دخولٍ بعينه - غير فصل المنصّة كلّها */
+  /** فصل تسجيل دخولٍ أو متجرٍ بعينه - غير فصل المنصّة كلّها */
   onDisconnectGrant: (connectionId: string) => void;
+  /** فتح نافذة ربط متجرٍ آخر على المنصّة نفسها */
+  onAddStore: () => void;
   onManageCampaigns: () => void;
 }) {
   const onAddAccount = onManageCampaigns;
@@ -181,13 +183,28 @@ export function IntegrationDrawer({
               ) : (
                 integration.accounts.map((a) => (
                   <li key={a.id} className="card flex items-center justify-between gap-2 bg-surface-raised/70 px-3 py-2">
-                    <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-text-primary" title={a.label}>
+                    <span
+                      className={`min-w-0 flex-1 truncate text-[12px] text-text-primary ${isStore ? "" : "font-mono"}`}
+                      title={a.label}
+                    >
                       {a.label}
                     </span>
-                    {!isStore && (
-                      <span className="shrink-0 text-[11px] text-text-faint">
-                        {a.campaignCount > 0 ? tr("accountCampaigns", { n: a.campaignCount }) : tr("accountNoCampaigns")}
-                      </span>
+                    <span className="shrink-0 text-[11px] text-text-faint">
+                      {isStore
+                        ? tr("storeOrders", { n: a.campaignCount })
+                        : a.campaignCount > 0
+                          ? tr("accountCampaigns", { n: a.campaignCount })
+                          : tr("accountNoCampaigns")}
+                    </span>
+                    {/* فصلُ متجرٍ واحد لا يجوز أن يفصل أخواته: الزرّ يظهر
+                        حين يكون له معنى، أي حين يزيد المتاجر عن واحد. */}
+                    {isStore && integration.accounts.length > 1 && (
+                      <button
+                        onClick={() => onDisconnectGrant(a.id)}
+                        className="shrink-0 rounded-lg px-1.5 py-1 text-[11px] font-medium text-text-muted transition-colors hover:bg-surface hover:text-critical"
+                      >
+                        {tr("grantRemove")}
+                      </button>
                     )}
                   </li>
                 ))
@@ -227,6 +244,20 @@ export function IntegrationDrawer({
                 </a>
                 <p className="mt-2 text-[11px] leading-relaxed text-text-faint">{tr("addGrantHint")}</p>
               </div>
+            )}
+
+            {/* متجرٌ آخر على المنصّة نفسها: علامتان، أو تجزئة وجملة. كان
+                القيد يمنعه، فلمّا سقط صار الزرّ هو ما يجعله ممكناً فعلاً. */}
+            {isStore && (
+              <>
+                <button
+                  onClick={onAddStore}
+                  className="flex w-full items-center justify-center gap-1.5 card-inset py-2.5 text-[12.5px] font-medium text-text-primary transition-colors hover:border-accent hover:bg-accent/[0.07] hover:text-accent"
+                >
+                  <Plus size={14} /> {tr("addStore")}
+                </button>
+                <p className="mt-2 text-[11px] leading-relaxed text-text-faint">{tr("addStoreHint")}</p>
+              </>
             )}
 
             {/* حسابات متعدّدة تحت ربط واحد: MCC في جوجل وBusiness في ميتا

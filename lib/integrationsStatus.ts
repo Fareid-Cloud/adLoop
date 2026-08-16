@@ -40,6 +40,8 @@ export interface ActiveIntegration {
   accountCount: number;
   /** الحساب باسمه وعدد حملاته - المعرّف وحده لا يقول شيئاً للمستخدم */
   accounts: Array<{ id: string; label: string; campaignCount: number }>;
+  /** مسار بدء OAuth - تبنى منه الواجهة روابط «جدِّد» و«أضف تسجيل دخول» */
+  connectPath: string | null;
   /**
    * تسجيلات الدخول لهذه المنصّة.
    *
@@ -48,9 +50,10 @@ export interface ActiveIntegration {
    * والشعار واحد، والفرق في المنح تحتها. وقبل هذا كان كلّ منحةٍ تُنتج
    * بطاقةً كاملة باسم المنصّة نفسه - بطاقتا «جوجل» متطابقتان لا يفرّق
    * بينهما شيء، وبمفتاح React واحد.
+   *
+   * والمتاجر تسلك المسلك نفسه: `accounts` فيها متاجر المنصّة، وقد صارت
+   * أكثر من واحد بعد سقوط قيد «متجرٍ واحدٍ لكلّ منصّة».
    */
-  /** مسار بدء OAuth - تبنى منه الواجهة روابط «جدِّد» و«أضف تسجيل دخول» */
-  connectPath: string | null;
   grants: Array<{
     id: string;
     /** اسمٌ يضعه المشترك ليعرف منحةَ أيّ عميل هي */
@@ -280,9 +283,36 @@ export async function getIntegrationsOverview(
   }
 
   // ==== المتاجر ====
+  //
+  // 🔴 تُجمَع بالمنصّة كما تُجمَع منح الإعلانات. كان كلّ متجرٍ يُنتج بطاقةً
+  // كاملة، وهو صحيحٌ ما دام القيد يمنع متجرين على المنصّة نفسها. وبعد
+  // سقوطه صار صاحب متجرَي سلّة يرى **بطاقتَي «سلّة» متطابقتين** لا يفرّق
+  // بينهما شيء - وبمفتاح React واحد، فيخلط الإطار بينهما عند إعادة الرسم.
+  const storesByPlatform = new Map<string, typeof ecommerce>();
   for (const store of ecommerce) {
-    const def = INTEGRATIONS.find((i) => i.platform === store.platform);
+    const arr = storesByPlatform.get(store.platform) ?? [];
+    arr.push(store);
+    storesByPlatform.set(store.platform, arr);
+  }
+
+  for (const [storePlatform, group] of storesByPlatform) {
+    const def = INTEGRATIONS.find((i) => i.platform === storePlatform);
     if (!def) continue;
+
+    // أسوأ متجرٍ هو ما يُنذر، وأحدثُ طلبٍ هو ما يُعرض: متجرٌ متوقّف بين
+    // متجرين سليمين لا يجوز أن تبتلعه بطاقةٌ خضراء.
+    const store = [...group].sort((a, b) => {
+      const rank = (x: (typeof group)[number]) =>
+        !x.active ? 0 : x.lastOrderAt ? 2 : 1;
+      return rank(a) - rank(b);
+    })[0];
+    const totalOrders = group.reduce((n, x) => n + x.ordersReceived, 0);
+    const newestOrderAt = group
+      .map((x) => x.lastOrderAt)
+      .filter((d): d is Date => d instanceof Date)
+      .sort((a, b) => b.getTime() - a.getTime())[0] ?? null;
+    const oldestConnectedAt = [...group]
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0].createdAt;
 
     // المتاجر تعمل بالويب هوك لا بالمزامنة الدورية، فمقياس صحّتها مختلف
     // جوهرياً: وصول طلب حديث، لا نجاح مزامنة.
@@ -322,26 +352,30 @@ export async function getIntegrationsOverview(
       category: def.category,
       color: def.color,
       logoKey: def.logoKey,
-      accountCount: 1,
-      entityCount: store.ordersReceived,
+      accountCount: group.length,
+      entityCount: totalOrders,
       entityLabelKey: "webhooks",
       healthPct: storeHealthPct,
-      accounts: [{
-        id: store.id,
-        label: store.storeName ?? store.storeUrl ?? def.name,
-        campaignCount: 0,
-      }],
-      connectedAt: store.createdAt,
+      // كلّ متجرٍ سطرٌ باسمه: «سلّة» و«سلّة» لا يفرّق بينهما شيء، واسم
+      // المتجر هو ما يجعل فصلَ أحدهما قراراً واعياً.
+      accounts: group.map((x) => ({
+        id: x.id,
+        label: x.storeName ?? x.storeUrl ?? def.name,
+        campaignCount: x.ordersReceived,
+      })),
+      connectedAt: oldestConnectedAt,
       expiresAt: null,
-      lastSyncAt: store.lastOrderAt,
+      lastSyncAt: newestOrderAt,
       lastSyncStatus: store.active ? "SUCCESS" : "FAILED",
       health,
       healthReason: reason,
-      permissionKeys: store.canWritePrices
+      // يكفي متجرٌ واحدٌ قابلٌ للكتابة ليكون التعديل متاحاً - والمتجر
+      // الذي يُكتب فيه يُحسم من المنتج نفسه لا من هذه البطاقة.
+      permissionKeys: group.some((x) => x.canWritePrices)
         ? [...ECOMMERCE_PERMISSIONS, "permWritePrices"]
         : [...ECOMMERCE_PERMISSIONS, "permReadOnlyPrices"],
       recentRuns: [],
-      recordsLast7Days: store.ordersReceived,
+      recordsLast7Days: totalOrders,
     });
   }
 
