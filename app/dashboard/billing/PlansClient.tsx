@@ -129,7 +129,9 @@ export function PlansClient({
         </p>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      {/* أربع باقات لا ثلاث بعد إضافة المؤسّسية - والشبكة تُوسَّع معها،
+          وإلّا نزلت الرابعة وحدها في صفٍّ تحت الثلاث فبدت ملحقاً لا خياراً. */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {paid.map((plan) => (
           <PlanCard
             key={plan.key}
@@ -251,19 +253,31 @@ function PlanCard({
       <p className="mt-1 min-h-[36px] text-[12.5px] leading-relaxed text-text-muted">{tr(`d_${plan.key}`)}</p>
 
       <div className="my-4">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-[32px] font-semibold leading-none tracking-tight tabular-nums text-text-primary">
-            {fmt(price)}
-          </span>
-          <span className="text-[13px] text-text-muted">{currency}</span>
-          <span className="text-[12.5px] text-text-faint">
-            {cycle === "monthly" ? tr("perMonth") : tr("perYear")}
-          </span>
-        </div>
-        {cycle === "yearly" && saving > 0 && (
-          <div className="mt-1 text-[12px] font-medium text-verified">
-            {tr("youSave", { amount: `${fmt(saving)} ${currency}` })}
+        {plan.contactOnly ? (
+          // سعرُ هذه الباقة يُحدَّد بالاتّفاق، وعرضُ «0 جنيه» مكانه أسوأ من
+          // عدم عرض شيء: يقرأها القارئ مجّانية.
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[26px] font-semibold leading-none tracking-tight text-text-primary">
+              {tr("priceOnRequest")}
+            </span>
           </div>
+        ) : (
+          <>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-[32px] font-semibold leading-none tracking-tight tabular-nums text-text-primary">
+                {fmt(price)}
+              </span>
+              <span className="text-[13px] text-text-muted">{currency}</span>
+              <span className="text-[12.5px] text-text-faint">
+                {cycle === "monthly" ? tr("perMonth") : tr("perYear")}
+              </span>
+            </div>
+            {cycle === "yearly" && saving > 0 && (
+              <div className="mt-1 text-[12px] font-medium text-verified">
+                {tr("youSave", { amount: `${fmt(saving)} ${currency}` })}
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -281,17 +295,30 @@ function PlanCard({
         ))}
       </ul>
 
-      <button
-        onClick={onPick}
-        disabled={busy || current}
-        className={`flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-[13.5px] font-medium transition-opacity disabled:opacity-60 ${
-          plan.highlighted ? "bg-accent text-white" : "border border-border bg-surface-raised text-text-primary"
-        }`}
-      >
-        {busy ? <Loader2 size={15} className="animate-spin" /> : null}
-        {current ? tr("currentPlan") : busy ? tr("opening") : tr("choosePlan")}
-        {!busy && !current && <ArrowLeft size={14} className="rtl:rotate-0 ltr:rotate-180" />}
-      </button>
+      {plan.contactOnly ? (
+        // الحلّ يسافر مع الحدّ: من بلغ سقف أكبر باقة يجد هنا طريقاً يمشي
+        // فيه الآن - لا رقم هاتف يكتبه ولا بريداً يبحث عنه. الحدث نفسه
+        // الذي يفتح الدعم من أيّ مكان في المنتج.
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("adloop:open-support"))}
+          className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-accent bg-accent/[0.08] py-2.5 text-[13.5px] font-medium text-accent transition-colors hover:bg-accent/[0.14]"
+        >
+          {tr("contactSales")}
+          <ArrowLeft size={14} className="rtl:rotate-0 ltr:rotate-180" />
+        </button>
+      ) : (
+        <button
+          onClick={onPick}
+          disabled={busy || current}
+          className={`flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-[13.5px] font-medium transition-opacity disabled:opacity-60 ${
+            plan.highlighted ? "bg-accent text-white" : "border border-border bg-surface-raised text-text-primary"
+          }`}
+        >
+          {busy ? <Loader2 size={15} className="animate-spin" /> : null}
+          {current ? tr("currentPlan") : busy ? tr("opening") : tr("choosePlan")}
+          {!busy && !current && <ArrowLeft size={14} className="rtl:rotate-0 ltr:rotate-180" />}
+        </button>
+      )}
       <span className="hidden">{locale}</span>
     </div>
   );

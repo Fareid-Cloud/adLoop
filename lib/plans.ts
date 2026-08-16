@@ -10,7 +10,7 @@
 // **سعران منفصلان: مصر والخليج/الدولي.** تسعير حسب القوة الشرائية ممارسة
 // قياسية لا تنازل - سعر دولاري واحد يقصي السوق المصري كلّه.
 
-export type PlanKey = "free" | "starter" | "pro" | "agency";
+export type PlanKey = "free" | "starter" | "pro" | "agency" | "enterprise";
 export type BillingCurrency = "EGP" | "SAR" | "USD";
 export type BillingCycle = "monthly" | "yearly";
 
@@ -53,6 +53,14 @@ export interface Plan {
   highlighted: boolean;
   price: Record<BillingCurrency, number>;
   limits: PlanLimits;
+  /**
+   * باقةٌ لا تُشترى بضغطة بل باتّفاق - يُعرض «تواصل معنا» مكان السعر.
+   *
+   * **وسعرها صفر في الجدول، فمنعُها في مسار الدفع شرطٌ لا تحسين:** بغيره
+   * يكفي أن يبعث أحدٌ اسمها إلى `/api/billing/checkout` ليأخذ اشتراكاً
+   * بلا حدود بلا مقابل.
+   */
+  contactOnly?: boolean;
 }
 
 /** الشهران المجّانيان في الاشتراك السنوي - الخصم الدائم الوحيد */
@@ -103,6 +111,30 @@ export const PLANS: Plan[] = [
       workspaces: 15, platforms: "all", adAccounts: 15, monthlySpendUsd: 250_000, verifiedConversions: 50_000,
       historyMonths: 24, conversionSync: "all", automationRules: -1, scaleKill: "apply",
       stores: 15, aiCredits: 600, deepScans: 20, aiModel: "claude-sonnet-5", savedViews: -1, scheduledReports: true,
+    },
+  },
+  {
+    // 🔴 **الفجوة التي سدّتها هذه الباقة:** كان الجدول ينتهي عند خمس عشرة
+    // مساحة عمل وخمسة عشر حساباً لكلّ منصّة. فوكالةٌ بخمسين عميلاً - وهي
+    // أكبر عميل محتمَل لا أندره - كانت تُمنع عند ربط الحملات، ويُحسب لها
+    // اقتراحُ ترقيةٍ **غير موجودة** فيعود فارغاً: رسالةٌ تقول «رقِّ باقتك»
+    // ولا شيء فوقها. طريقٌ مسدود عند لحظة الشراء بالضبط.
+    //
+    // ولا سعر لها في الجدول لأنّ حجم كهذا يُسعَّر بالاتّفاق: عدد الحسابات
+    // والمساحات ورصيد التحليل تُضبط لكلّ عميل في `User.planLimitOverrides`
+    // بعد المكالمة. والحدود هنا سقفُ ما يمنحه المنتج، لا ما يُمنح تلقائياً.
+    key: "enterprise",
+    order: 4,
+    highlighted: false,
+    contactOnly: true,
+    price: { EGP: 0, SAR: 0, USD: 0 },
+    limits: {
+      workspaces: -1, platforms: "all", adAccounts: -1, monthlySpendUsd: -1, verifiedConversions: -1,
+      historyMonths: 24, conversionSync: "all", automationRules: -1, scaleKill: "apply",
+      // **ليست بلا حدّ**: كلّ تحليلٍ نداءٌ مدفوع إلى Claude، وسقفٌ مفتوح
+      // هنا سقفٌ مفتوح على فاتورتنا نحن. الرقم يُرفع بالاتّفاق لا بالجدول.
+      stores: -1, aiCredits: 2_000, deepScans: 50, aiModel: "claude-sonnet-5",
+      savedViews: -1, scheduledReports: true,
     },
   },
 ];

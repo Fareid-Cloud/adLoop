@@ -39,7 +39,12 @@ export async function POST(req: NextRequest) {
   }
 
   const planKey = String(body?.plan ?? "") as PlanKey;
-  if (!PLAN_BY_KEY.has(planKey) || planKey === "free") {
+  const plan = PLAN_BY_KEY.get(planKey);
+  // 🔴 `contactOnly` تُفحص هنا لا في الواجهة وحدها: سعر الباقة المؤسّسية
+  // صفرٌ في الجدول لأنّها تُسعَّر بالاتّفاق، فبعثُ اسمها إلى هذا المسار
+  // مباشرةً كان سيُنشئ اشتراكاً بلا حدود بمقابلٍ صفر. الواجهة تُخفي الزرّ،
+  // والإخفاء ليس منعاً.
+  if (!plan || planKey === "free" || plan.contactOnly) {
     return NextResponse.json({ ok: false, errorKey: "errUnknownPlan" }, { status: 400 });
   }
   const cycle: BillingCycle = body?.cycle === "yearly" ? "yearly" : "monthly";

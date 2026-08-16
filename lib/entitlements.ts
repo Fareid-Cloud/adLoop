@@ -55,6 +55,7 @@ export async function getEntitlements(userId: string): Promise<Entitlements> {
       subscriptionPlan: true,
       currentPeriodEnd: true,
       aiCreditsPurchased: true,
+      planLimitOverrides: true,
       createdAt: true,
     },
   });
@@ -64,6 +65,12 @@ export async function getEntitlements(userId: string): Promise<Entitlements> {
     return { planKey: "free", state: "FREE", limits: limitsOf("free"), trialDaysLeft: null, purchasedCredits: 0 };
   }
 
+  // حدودٌ خاصّة تعلو الباقة - مخرج من لا تسعه أكبر باقة (وكالةٌ
+  // بخمسين عميلاً مثلاً). تُطبّق على كلّ مسارات الإرجاع تحت، لا على
+  // مسار الاشتراك النشط وحده: الاتفاق الخاصّ لا يسقط لأنّ الدفعة
+  // تأخّرت يوماً.
+  const overrides = parseOverrides(user.planLimitOverrides);
+
   // المالك أوّلاً: قبل الاشتراك وقبل التجربة، فلا تنتهي صلاحيته بمرور
   // يومٍ ولا تتوقّف على صفٍّ في جدول الاشتراكات قد يُعاد ضبطه.
   if (isOwnerEmail(user.email)) {
@@ -71,7 +78,7 @@ export async function getEntitlements(userId: string): Promise<Entitlements> {
     return {
       planKey: key,
       state: "ACTIVE",
-      limits: limitsOf(key),
+      limits: limitsOf(key, overrides),
       trialDaysLeft: null,
       purchasedCredits,
     };
@@ -88,7 +95,7 @@ export async function getEntitlements(userId: string): Promise<Entitlements> {
     return {
       planKey: PLAN_BY_KEY.has(key) ? key : "starter",
       state: "ACTIVE",
-      limits: limitsOf(PLAN_BY_KEY.has(key) ? key : "starter"),
+      limits: limitsOf(PLAN_BY_KEY.has(key) ? key : "starter", overrides),
       trialDaysLeft: null,
       purchasedCredits,
     };
@@ -100,7 +107,7 @@ export async function getEntitlements(userId: string): Promise<Entitlements> {
   const trialDaysLeft = TRIAL_DAYS - daysSinceSignup;
 
   if (trialDaysLeft > 0) {
-    return { planKey: "pro", state: "TRIAL", limits: limitsOf("pro"), trialDaysLeft, purchasedCredits };
+    return { planKey: "pro", state: "TRIAL", limits: limitsOf("pro", overrides), trialDaysLeft, purchasedCredits };
   }
 
   // انتهت التجربة بلا اشتراك: نزول إلى المجّانية لا حائط. الحساب لا
@@ -108,14 +115,41 @@ export async function getEntitlements(userId: string): Promise<Entitlements> {
   return {
     planKey: "free",
     state: user.subscriptionStatus === "PAST_DUE" ? "EXPIRED" : "FREE",
-    limits: limitsOf("free"),
+    limits: limitsOf("free", overrides),
     trialDaysLeft: null,
     purchasedCredits,
   };
 }
 
-function limitsOf(key: PlanKey): PlanLimits {
-  return (PLAN_BY_KEY.get(key) ?? PLAN_BY_KEY.get("free")!).limits;
+function limitsOf(key: PlanKey, overrides?: Partial<PlanLimits>): PlanLimits {
+  const base = (PLAN_BY_KEY.get(key) ?? PLAN_BY_KEY.get("free")!).limits;
+  return overrides ? { ...base, ...overrides } : base;
+}
+
+/**
+ * قراءة `planLimitOverrides` من عمود Json.
+ *
+ * **لا يُقبل منه إلّا ما هو حدٌّ عدديّ معروف**: العمود حرّ الشكل،
+ * ونشرُ محتواه كما هو على `PlanLimits` يعني أنّ قيمةً مكتوبة خطأً
+ * (نصٌّ مكان رقم، أو `scaleKill: "apply"` من حيث لا يُقصد) تسري في كلّ
+ * فحوص الحدود بلا أن يمسكها شيء - والمقارنة مع نصّ تمرّ صامتة في
+ * جافاسكريبت. والحقل يُضبط يدوياً، واليدويّ يُخطئ.
+ */
+function parseOverrides(raw: unknown): Partial<PlanLimits> | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const NUMERIC_LIMITS = [
+    "workspaces", "adAccounts", "monthlySpendUsd", "verifiedConversions",
+    "historyMonths", "automationRules", "stores", "aiCredits", "deepScans", "savedViews",
+  ] as const;
+  const out: Partial<PlanLimits> = {};
+  for (const key of NUMERIC_LIMITS) {
+    const v = (raw as Record<string, unknown>)[key];
+    // وـ-1 تعني «بلا حدّ» في كلّ الفحوص، فهي مقبولة وحدها دون السوالب.
+    if (typeof v === "number" && Number.isFinite(v) && (v >= 0 || v === -1)) {
+      out[key] = v;
+    }
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
 }
 
 // ==================== فحوص الحدّ ====================
