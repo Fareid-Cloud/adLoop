@@ -53,7 +53,20 @@ export async function getSetupProgress(workspaceId: string, userId: string): Pro
     // عبر المصدر الموحّد لا استعلاماً مباشراً: المساحة التجريبية مربوطة
     // بحكم كونها تجريبية، وإلا وقف الديمو المليء بالبيانات على خطوة
     // «اربط حساباً» إلى الأبد.
-    getConnectedPlatforms(workspaceId, userId).then((s) => s.size),
+    getConnectedPlatforms(workspaceId, userId).then(async (set) => {
+      // 🔴 **التفويض ليس حساباً إعلانياً.** كانت الخطوة تكتمل بمجرّد وجود
+      // منح OAuth، فيقرأ المالك «اربط حساباً إعلانياً: مكتمل» بينما
+      // «صحّة الحساب» تحته تقول «في انتظار ربط الحسابات» - والثانية هي
+      // الصادقة: منحُ جوجل قائم وليس تحته حساب إعلانيّ واحد. والخطوة
+      // تقول ما تقوله بلفظها، فلا تكتمل حتى يُختار حساب فعليّ.
+      if (set.size === 0) return 0;
+      const ws = await prisma.workspace.findUnique({
+        where: { id: workspaceId },
+        select: { isDemo: true },
+      });
+      if (ws?.isDemo) return set.size;
+      return prisma.connectedAccount.count({ where: { connection: { userId } } });
+    }),
     prisma.campaignLink.count({ where: { workspaceId } }),
     prisma.metricSnapshot.count({ where: { workspaceId } }),
     prisma.syncRun.count({ where: { workspaceId, status: "SUCCESS" } }),

@@ -25,7 +25,9 @@ export interface StoreOverview {
   orders: number;
   avgOrderValue: number | null;
   returningCustomersPct: number | null;
-  refundRatePct: number;
+  /** `null` حين لا طلبات: «٠٪ إرجاع» بلا طلبٍ واحد رقمٌ مخترَع،
+   *  ويُقرأ إنجازاً بينما لا شيء قيس أصلاً. */
+  refundRatePct: number | null;
   /** عدد المنتجات المهدَّدة بالنفاد خلال ١٤ يوماً بمعدّل بيعها الحالي */
   inventoryRiskCount: number;
   /** 🔴 **العائد على الإنفاق والعائد على الاستثمار - كانا غائبين عن صفحة
@@ -367,7 +369,7 @@ export async function getStoreOverview(
     orders: ordersCount,
     avgOrderValue: ordersCount > 0 ? Math.round(journey.revenue / ordersCount) : null,
     returningCustomersPct: customers.length > 0 ? round1((returning / customers.length) * 100) : null,
-    refundRatePct: orders.length > 0 ? round1((returned / orders.length) * 100) : 0,
+    refundRatePct: live.length > 0 ? round1((returned / live.length) * 100) : null,
     inventoryRiskCount,
     // الربح هنا مقروءٌ من التكاليف الحقيقية لا مقدَّرٌ بنسبة هامش - وهي
     // الدقّة التي لا تملكها صفحات الإعلانات، فتُصرَّح للقارئ عبر `profitBasis`.

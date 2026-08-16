@@ -53,6 +53,13 @@ export function SetupProgressPanel({
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `homePanels.${k}`, v);
   const pct = Math.round((progress.completedCount / progress.total) * 100);
+  // 🔴 **«الخطوة ٣ من ٧» بينما المضيئة هي الثانية.** كان الرقم
+  // `المكتمَل + ١`، وهو صحيحٌ فقط حين تكون المكتملات في أوّل القائمة.
+  // ومَن ربط متجره (السادسة) قبل مزامنته الأولى يرى رقماً لا يطابق
+  // السطر المضيء أمامه. الرقم صار موضعَ الخطوة التالية نفسها.
+  const applicable = progress.steps.filter((s) => !s.notApplicable);
+  const nextIndex = applicable.findIndex((s) => !s.done);
+  const stepNumber = nextIndex === -1 ? progress.total : nextIndex + 1;
 
   return (
     <section className="card pad-md">
@@ -61,7 +68,7 @@ export function SetupProgressPanel({
           {tr("readyPct", { pct })}
         </h2>
         <span className="text-[12px] text-text-muted">
-          {tr("stepOf", { a: Math.min(progress.completedCount + 1, progress.total), b: progress.total })}
+          {tr("stepOf", { a: stepNumber, b: progress.total })}
         </span>
       </div>
 

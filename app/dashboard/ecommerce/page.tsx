@@ -217,14 +217,24 @@ export default async function EcommerceOverviewPage({
         />
         <MetricCard
           label={tr("refundRate")}
-          value={overview.refundRatePct}
-          unit="%"
+          value={overview.refundRatePct ?? "—"}
+          unit={overview.refundRatePct === null ? undefined : "%"}
           icon={RotateCcw}
-          tone={overview.refundRatePct >= 15 ? "critical" : overview.refundRatePct >= 8 ? "gap" : "verified"}
+          tone={
+            overview.refundRatePct === null
+              ? "default"
+              : overview.refundRatePct >= 15
+                ? "critical"
+                : overview.refundRatePct >= 8
+                  ? "gap"
+                  : "verified"
+          }
           caption={
-            overview.refundRatePct >= 15
-              ? { text: tr("refundHigh"), tone: "negative" }
-              : undefined
+            overview.refundRatePct === null
+              ? { text: tc("needsOrders"), tone: "muted" }
+              : overview.refundRatePct >= 15
+                ? { text: tr("refundHigh"), tone: "negative" }
+                : undefined
           }
           explainKey="refundRate"
           locale={locale}
