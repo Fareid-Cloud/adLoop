@@ -97,6 +97,7 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/dashboard/ecommerce", labelAr: "متجري الإلكتروني", labelEn: "My Store", iconName: "ShoppingBag", usesAi: true,
         children: [
           { href: "/dashboard/ecommerce", labelAr: "ملخّص المتجر", labelEn: "Overview" },
+          { href: "/dashboard/ecommerce/stores", labelAr: "مقارنة المتاجر", labelEn: "Compare stores" },
           { href: "/dashboard/ecommerce/profit", labelAr: "الأرباح", labelEn: "Profit" },
           { href: "/dashboard/ecommerce/products", labelAr: "المنتجات", labelEn: "Products" },
           { href: "/dashboard/ecommerce/pricing-intelligence", labelAr: "فرص التسعير", labelEn: "Pricing" },
