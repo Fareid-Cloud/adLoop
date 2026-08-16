@@ -57,12 +57,12 @@ function ok(label: string, cond: boolean, extra = "") {
 }
 
 /** ووكومرس: السرّ يضعه صاحب المتجر، والتوقيع HMAC-SHA256 بترميز base64. */
-function wooBody(id: string, total: number) {
+function wooBody(id: string, total: number, status = "completed") {
   return JSON.stringify({
     id,
     date_created_gmt: new Date().toISOString(),
     total: String(total),
-    status: "completed",
+    status,
     line_items: [{ sku: `sku-${stamp}`, name: "Widget", quantity: 1, total: String(total) }],
   });
 }
@@ -148,14 +148,33 @@ try {
   const d5 = await deliver(b4, new Headers({ "x-wc-webhook-source": srcA }), srcA);
   ok("بلا توقيع يُرفض", d5.rejected === true);
 
-  // ــ ٦) وصولاً إلى ما يراه المشترك: صفحة المقارنة ــ
+  // ــ ٦) **الطلب نفسه بحالةٍ جديدة: مرتجع** ــ
+  //
+  // هذه هي الحالة التي كانت تُرمى بالكامل: الحارس القديم يُطابق معرّف
+  // الطلب وحده، فيُقرأ إشعارُ الإرجاع «تكراراً» ويُهمَل - أي أنّ كلّ
+  // مرتجعٍ في المنتج لم يكن يصل. وأخطر ما فيها ألّا يُعَدّ الطلب مرّتين
+  // بعد فتح الطريق.
+  const bR = wooBody("1001", 300, "refunded");
+  const dR = await deliver(bR, wooHeaders(SECRET_A, bR, srcA), srcA);
+  ok("إشعار الإرجاع للطلب نفسه يُقرأ تحديثاً لا تكراراً",
+    dR.result?.status === "updated", dR.result?.status ?? "");
+
+  // ــ ٧) وإعادة إرسال إشعار الإرجاع نفسه تُهمَل ــ
+  const dR2 = await deliver(bR, wooHeaders(SECRET_A, bR, srcA), srcA);
+  ok("إعادة إشعار الإرجاع نفسه تُهمَل", dR2.result?.status === "duplicate",
+    dR2.result?.status ?? "");
+
+  // ــ ٨) وصولاً إلى ما يراه المشترك: صفحة المقارنة ــ
   const cmp = await getStoreComparison(ws.id, 30);
   const lineA = cmp.stores.find((s) => s.connectionId === storeA.id);
   const lineB = cmp.stores.find((s) => s.connectionId === storeB.id);
 
   ok("المقارنة تعرض متجرين", cmp.stores.length === 2, String(cmp.stores.length));
-  ok("متجر أ: طلبٌ واحد بقيمة 300", lineA?.orders === 1 && lineA?.revenue === 300,
-    `${lineA?.orders} · ${lineA?.revenue}`);
+  // الإيراد إجماليٌّ يشمل ما ارتُجع، والمرتجع يُعرَض في عموده - وهو
+  // التعريف نفسه المستعمل في «نظرة شاملة».
+  ok("متجر أ: طلبٌ واحد بقيمة 300، مُحصىً مرتجعاً",
+    lineA?.orders === 1 && lineA?.revenue === 300 && lineA?.returnedOrders === 1,
+    `${lineA?.orders} · ${lineA?.revenue} · ارتجاع ${lineA?.returnedOrders}`);
   ok("متجر ب: طلبٌ واحد بقيمة 700", lineB?.orders === 1 && lineB?.revenue === 700,
     `${lineB?.orders} · ${lineB?.revenue}`);
   ok("لا طلب بلا متجر", cmp.unattributedOrders === 0, String(cmp.unattributedOrders));

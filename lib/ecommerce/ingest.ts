@@ -129,6 +129,97 @@ function assessOrderRisk(input: {
   return { score: Math.min(100, score), reasons };
 }
 
+/**
+ * **حالةٌ جديدة لطلبٍ معروف: يُصحَّح ولا يُعَدّ من جديد.**
+ *
+ * الخطر هنا العدُّ المزدوج: طلبٌ وصل مرّتين بحالتين يصير طلبين في
+ * المجاميع اليومية، ومرّتين في عدّاد العميل، وسطرَي بيعٍ لكلّ منتج -
+ * فيتضاعف الإيراد بلا أن يبيع التاجر شيئاً. فلا يُلمَس هنا إلّا ما
+ * تغيّر فعلاً.
+ *
+ * والانتقال الذي يعني شيئاً هو **صار مرتجعاً** (أو رجع عن الإرجاع، وهو
+ * نادرٌ لكنّه يقع حين يُلغى طلب إرجاع). عنده وحده تتحرّك المرتجعات في
+ * المجاميع، ويعود المخزون، ويُصحَّح إنفاق العميل.
+ */
+async function applyStatusChange(
+  workspaceId: string,
+  connectionId: string,
+  order: NormalizedOrder,
+  known: { id: string; isReturned: boolean; total: number; customerId: string | null; orderedAt: Date }
+): Promise<IngestResult> {
+  const cancelled = isCancelledStatus(order.status);
+  const becameReturned = order.isReturned && !known.isReturned;
+  const unreturned = !order.isReturned && known.isReturned;
+
+  await prisma.order.update({
+    where: { id: known.id },
+    data: {
+      rawStatus: order.status ?? null,
+      state: cancelled ? "CANCELLED" : order.isReturned ? "RETURNED" : order.fulfilledAt ? "FULFILLED" : "PLACED",
+      isReturned: order.isReturned,
+      fulfilledAt: order.fulfilledAt ?? null,
+    },
+  });
+
+  if (!becameReturned && !unreturned) {
+    return { status: "updated", matchedProducts: 0, stockUpdated: 0 };
+  }
+
+  const delta = becameReturned ? 1 : -1;
+
+  // المجاميع اليومية: صفُّ **يوم الطلب** لا يوم وصول الإشعار. المرتجع
+  // يخصّ اليوم الذي بيع فيه، وإلّا ظهر متجرٌ كأنّه باع أمس وأرجع اليوم.
+  const dateOnly = new Date(known.orderedAt.toISOString().slice(0, 10));
+  await prisma.metricSnapshot.updateMany({
+    where: {
+      workspaceId,
+      platform: order.platform as never,
+      campaignId: `store:${connectionId}`,
+      date: dateOnly,
+    },
+    data: { returnedOrdersCount: { increment: delta } },
+  });
+
+  if (known.customerId) {
+    await prisma.customer.update({
+      where: { id: known.customerId },
+      data: {
+        returnedOrdersCount: { increment: delta },
+        totalReturned: { increment: delta * known.total },
+        // ما ارتُجع لم يُنفَق: الإنفاق يُصحَّح لا يُترك على رقم البيع
+        totalSpent: { increment: -delta * known.total },
+      },
+    });
+  }
+
+  // أسطر البيع تحمل «مرتجع» بنفسها، فتُصحَّح كلّها معاً
+  await prisma.productSaleEvent.updateMany({
+    where: { orderId: known.id },
+    data: { returned: order.isReturned },
+  });
+
+  // والمخزون يعود بما ارتُجع، ويُخصم ثانيةً لو أُلغي الإرجاع
+  const events = await prisma.productSaleEvent.findMany({
+    where: { orderId: known.id },
+    select: { quantity: true, product: { select: { id: true, stockQuantity: true } } },
+  });
+  let stockUpdated = 0;
+  for (const e of events) {
+    if (e.product?.stockQuantity === null || e.product?.stockQuantity === undefined) continue;
+    await prisma.product.update({
+      where: { id: e.product.id },
+      data: {
+        stockQuantity: Math.max(0, e.product.stockQuantity + delta * e.quantity),
+        stockUpdatedAt: new Date(),
+        stockSource: order.platform,
+      },
+    });
+    stockUpdated++;
+  }
+
+  return { status: "updated", matchedProducts: events.length, stockUpdated };
+}
+
 /** يمنع معالجة نفس الطلب مرتين (إعادة إرسال الويب هوك أمر شائع). */
 // نسخةٌ ثانية من منطق منع التكرار كانت هنا، بجانب `markEventAsProcessed`
 // في `lib/webhookSecurity.ts`. ومنطقان لمنع التكرار يعنيان أنّ إصلاح أحدهما
@@ -139,7 +230,9 @@ export interface IngestResult {
   // `no_workspace` أُزيلت: كانت تعني «لم أجد مساحةً لهذا الطلب» أيّام
   // كانت هذه الدالة تبحث بنفسها. صار الحسم قبلها ومرّةً واحدة، فالحالة
   // لا تُبلَغ هنا أصلاً - والمسار يردّ `401` قبل أن يصل إلينا شيء.
-  status: "ok" | "duplicate";
+  /** `updated` = طلبٌ معروفٌ وصلت حالتُه الجديدة (شُحن، ارتُجع). وهي
+   *  غير `ok` عمداً: الأولى تصحيحٌ لطلبٍ محسوب، والثانية طلبٌ يُحسب. */
+  status: "ok" | "duplicate" | "updated";
   matchedProducts: number;
   stockUpdated: number;
 }
@@ -167,12 +260,45 @@ export async function ingestOrder(
    *  نفسها داخل مساحةٍ واحدة. */
   connectionId: string
 ): Promise<IngestResult> {
+  // 🔴🔴 **الطلب لا يقع مرّةً واحدة، والحارس كان يفترض ذلك.**
+  //
+  // كان المفتاح معرّفَ الطلب وحده، فأوّل ويب هوك يُقبل وكلّ ما بعده
+  // يُرفض «مكرَّراً» **قبل أن يُقرأ**. والمنصّات ترسل للطلب نفسه مرّةً
+  // عند إنشائه ومرّةً عند شحنه ومرّةً عند إرجاعه - أي أنّ **كلّ مرتجعٍ
+  // في المنتج كان يُرمى**، وفرعُ `update` في `upsert` أدناه مكتوبٌ منذ
+  // البداية ولا طريق يصل إليه.
+  //
+  // والبصمة تفرّق بين الأمرين: إعادةُ إرسالِ الحدث نفسه (شبكة تعثّرت،
+  // مهلة انتهت) تحمل الحالة نفسها فتُهمَل، والحالةُ الجديدة مفتاحٌ
+  // جديد فتُعالَج تحديثاً - بلا عدٍّ ثانٍ لطلبٍ عُدّ.
+  const stateFingerprint = [
+    order.status ?? "",
+    order.isReturned ? "R" : "",
+    order.fulfilledAt ? order.fulfilledAt.toISOString().slice(0, 10) : "",
+  ].join("|");
+
   const isFirstTime = await markEventAsProcessed(
     order.platform,
-    order.externalOrderId,
+    `${order.externalOrderId}#${stateFingerprint}`,
     connectionId
   );
   if (!isFirstTime) return { status: "duplicate", matchedProducts: 0, stockUpdated: 0 };
+
+  // هل هذا الطلب معروفٌ عندنا أصلاً؟ يُسأل قبل أيّ عدّ، لأنّ الفارق بين
+  // «طلبٌ جديد» و«حالةٌ جديدة لطلبٍ قديم» هو الفارق بين الزيادة والتصحيح.
+  const known = await prisma.order.findUnique({
+    where: {
+      workspaceId_platform_connectionId_externalOrderId: {
+        workspaceId,
+        platform: order.platform as never,
+        connectionId,
+        externalOrderId: order.externalOrderId,
+      },
+    },
+    select: { id: true, isReturned: true, total: true, customerId: true, orderedAt: true },
+  });
+
+  if (known) return await applyStatusChange(workspaceId, connectionId, order, known);
 
   const dateOnly = new Date(order.createdAt.toISOString().slice(0, 10));
 
