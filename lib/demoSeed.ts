@@ -344,15 +344,32 @@ export async function seedDemoData(
 
   // ---------- إعدادات مستقلّة: تُكتب معاً ----------
   await Promise.all([
-    prisma.ecommerceConnection.create({
-    data: {
-      workspaceId, platform: "SALLA",
-      storeName: ar ? "متجر النخبة" : "Elite Store",
-      storeUrl: "https://elite-store.example",
-      active: true,
-      lastOrderAt: day(0),
-      ordersReceived: 1284,
-    },
+    // 🔴 **متجرٌ واحد كان يجعل صفحة المقارنة تعرض نفسها فارغة.** والأسوأ
+    // أنّ نتيجة الإنشاء كانت تُرمى (`.catch(() => {})` بلا التقاط
+    // المعرّف)، فالطلبات تُكتب بلا `connectionId` - فتقول بطاقة التكاملات
+    // «1284 طلباً» وتقول صفحة المقارنة «0» عن المتجر نفسه، ويظهر الكلّ
+    // تحت «غير منسوب». رقمان متناقضان لمتجرٍ واحد في شاشتين.
+    //
+    // ومتجران لا واحد لأنّ الميزة نفسها هي المقارنة: ديمو بمتجرٍ واحد
+    // يعرض صفحةً تشرح أنّها لا تعمل.
+    prisma.ecommerceConnection.createMany({
+      data: [
+        {
+          workspaceId, platform: "SALLA",
+          storeName: ar ? "متجر النخبة" : "Elite Store",
+          storeUrl: "https://elite-store.example",
+          active: true, lastOrderAt: day(0), ordersReceived: 899,
+        },
+        {
+          // متجر الجملة: متوسّط طلبٍ أعلى وهامشٌ أقلّ - فيخرج الأعلى
+          // إيراداً والأقلّ ربحاً. وهو بالضبط ما وُجدت الصفحة لتكشفه.
+          workspaceId, platform: "SALLA",
+          storeName: ar ? "النخبة للجملة" : "Elite Wholesale",
+          storeUrl: "https://elite-wholesale.example",
+          active: true, lastOrderAt: day(1), ordersReceived: 385,
+        },
+      ],
+      skipDuplicates: true,
     }).catch(() => {}),
 
     prisma.conversionValueConfig.create({
@@ -507,6 +524,15 @@ export async function seedDemoData(
     select: { id: true, sku: true, currentPrice: true },
   });
 
+  // المتجران اللذان أُنشئا أعلاه - بترتيب إنشائهما، فالأوّل التجزئة.
+  const demoStores = await prisma.ecommerceConnection.findMany({
+    where: { workspaceId },
+    select: { id: true },
+    orderBy: { createdAt: "asc" },
+  });
+  const retailStoreId = demoStores[0]?.id ?? null;
+  const wholesaleStoreId = demoStores[1]?.id ?? retailStoreId;
+
   const CITIES = ar
     ? ["الرياض", "جدة", "الدمام", "مكة", "المدينة"]
     : ["Riyadh", "Jeddah", "Dammam", "Mecca", "Medina"];
@@ -549,8 +575,12 @@ export async function seedDemoData(
     const total = Math.round(p.currentPrice * qty);
     // نحو أحد عشر بالمئة مرتجعات - نفس النسبة في لقطات الأداء
     const returned = oi % 9 === 0;
+    // سبعون بالمئة للتجزئة والباقي للجملة - نسبةٌ غير متساوية عمداً:
+    // متجران متطابقان لا يُنتجان فائزاً، فلا تُظهر الصفحة ما بُنيت له.
+    const isWholesale = oi % 10 >= 7;
     orders.push({
       workspaceId, platform: "SALLA",
+      connectionId: isWholesale ? wholesaleStoreId : retailStoreId,
       externalOrderId: `demo-order-${oi}`,
       customerId: cust.id,
       orderedAt: day(oi % ORDER_DAYS),
@@ -567,6 +597,23 @@ export async function seedDemoData(
     });
   }
   await prisma.order.createMany({ data: orders, skipDuplicates: true });
+
+  // نصف المنتجات لكلّ متجر. وبدون هذا النسب يرفض `priceSync` تعديل أيّ
+  // سعر حين يكون للمساحة أكثر من متجرٍ قابلٍ للكتابة - وهو رفضٌ صحيح، لكن
+  // ديمو يعرضه على كلّ منتج يبدو معطّلاً.
+  if (retailStoreId && wholesaleStoreId) {
+    const half = Math.ceil(products.length / 2);
+    await Promise.all([
+      prisma.product.updateMany({
+        where: { id: { in: products.slice(0, half).map((x) => x.id) } },
+        data: { connectionId: retailStoreId },
+      }),
+      prisma.product.updateMany({
+        where: { id: { in: products.slice(half).map((x) => x.id) } },
+        data: { connectionId: wholesaleStoreId },
+      }),
+    ]);
+  }
 
   const savedOrders = await prisma.order.findMany({
     where: { workspaceId },

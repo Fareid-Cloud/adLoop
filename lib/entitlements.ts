@@ -188,7 +188,13 @@ export async function checkStoreLimit(
 ): Promise<LimitCheck> {
   const [ent, count, existing] = await Promise.all([
     getEntitlements(userId),
-    prisma.ecommerceConnection.count({ where: { workspaceId, active: true } }),
+    // 🔴 كان العدّ **لكلّ مساحة عمل**، فمشترك الباقة الاحترافية (ثلاث
+    // مساحات × ثلاثة متاجر) يملك تسعة متاجر بينما جدول الباقات يقول
+    // «ثلاثة». والحسابات الإعلانية تُعَدّ على الحساب كلّه، فرقمان في
+    // الجدول نفسه يُقاسان بمقياسين - والمشترك يقرأ رقماً ويحصل على غيره.
+    //
+    // الآن على الحساب كلّه: رقمٌ واحدٌ في الجدول يعني ما يقوله.
+    prisma.ecommerceConnection.count({ where: { workspace: { userId }, active: true } }),
     editingConnectionId
       ? prisma.ecommerceConnection.findFirst({
           // `workspaceId` في الشرط لا المعرّف وحده: وإلّا مرّ الحدّ بمعرّف
