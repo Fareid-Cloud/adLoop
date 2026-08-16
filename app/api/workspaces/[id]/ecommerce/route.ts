@@ -9,6 +9,7 @@ import { getSessionUser } from "@/lib/auth";
 import { encryptToken } from "@/lib/encryption";
 import { PLATFORM_LABEL, type EcommercePlatform } from "@/lib/ecommerce/types";
 import { checkStoreLimit } from "@/lib/entitlements";
+import { authSpecFor } from "@/lib/ecommerce/webhookAuth";
 import { t } from "@/lib/i18n/dictionary";
 import { localeOf } from "@/lib/apiLocale";
 
@@ -81,6 +82,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     );
   }
 
+  // 🔴 زد لا توقّع ويب هوكاتها إطلاقاً - المصادقة الأساسية هي كلّ ما
+  // لديها، وهي **اختيارية عندها**. فقبولُ ربطٍ بلا اسم مستخدم يعني فتح
+  // مسار استقبال بيانات مالية يقبل من أيّ أحدٍ عرف الرابط، ويحقن مبيعاتٍ
+  // وهمية في حساب تاجر. إجباريّةٌ عندنا، ويُرفض الحفظ بدونها.
+  const spec = authSpecFor(body.platform);
+  const webhookUsername =
+    typeof body.webhookUsername === "string" ? body.webhookUsername.trim() : "";
+  if (spec?.needsUsername && webhookUsername.length < 4) {
+    return NextResponse.json(
+      { error: t(locale, "apiErr.webhookUsernameRequired") },
+      { status: 400 }
+    );
+  }
+
   const connection = await prisma.ecommerceConnection.upsert({
     where: { workspaceId_platform: { workspaceId: id, platform: body.platform } },
     create: {
@@ -96,6 +111,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       apiSecret: typeof body.apiSecret === "string" && body.apiSecret.trim()
         ? encryptToken(body.apiSecret.trim()) : null,
       storeIdentifier: typeof body.storeIdentifier === "string" ? body.storeIdentifier.trim() || null : null,
+      webhookUsername: webhookUsername || null,
       canWritePrices: !!(typeof body.apiToken === "string" && body.apiToken.trim()),
       active: true,
     },
@@ -108,6 +124,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ...(typeof body.apiSecret === "string" && body.apiSecret.trim()
         ? { apiSecret: encryptToken(body.apiSecret.trim()) } : {}),
       ...(typeof body.storeIdentifier === "string" ? { storeIdentifier: body.storeIdentifier.trim() || null } : {}),
+      ...(webhookUsername ? { webhookUsername } : {}),
       active: true,
     },
     select: { id: true, platform: true, storeName: true, active: true },

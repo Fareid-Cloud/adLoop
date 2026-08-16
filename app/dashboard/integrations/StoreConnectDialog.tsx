@@ -27,6 +27,7 @@ import { X, Copy, Check, Loader2 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import type { IntegrationDef } from "@/lib/integrationsCatalog";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { authSpecFor } from "@/lib/ecommerce/webhookAuth";
 
 /** شريحة المسار لكلّ منصّة - **يجب أن تطابق `SLUG_TO_PLATFORM`** في
  *  `app/api/webhooks/ecommerce/[platform]/route.ts` حرفاً بحرف، وإلّا
@@ -71,9 +72,20 @@ export function StoreConnectDialog({
 
   const platform = def.platform ?? "";
   const slug = SLUG[platform] ?? "";
+  // 🔴 **مَن يولّد السرّ يختلف باختلاف المنصّة.** كانت النافذة تولّد
+  // سرّاً للخمس وتقول «الصقه في متجرك» - وهو صحيحٌ لووكومرس وحدها.
+  // أمّا شوبيفاي وسلّة وإيزي أوردرز فتولّد أسرارها بنفسها: فالسرّ الذي
+  // نولّده لا مكان له في لوحاتها، وكلّ ويب هوك يُرفض بـ401 بلا سبب ظاهر.
+  const spec = authSpecFor(platform);
+  const weGenerate = spec?.direction !== "they_generate";
+
   // يُولَّد مرّةً واحدة لعمر النافذة: توليده مع كلّ تصيير يعني أنّ ما
   // نسخه المستخدم قبل ثانيةٍ ليس ما سيُحفظ.
-  const [secret] = useState(generateSecret);
+  const [generatedSecret] = useState(generateSecret);
+  // زد وحدها: مصادقةٌ أساسية باسمٍ وكلمة مرور، فالاسم يُولَّد معه.
+  const [username] = useState(() => "adloop-" + generateSecret().slice(0, 10));
+  const [pastedSecret, setPastedSecret] = useState("");
+  const secret = weGenerate ? generatedSecret : pastedSecret.trim();
   const [storeName, setStoreName] = useState("");
   const [storeUrl, setStoreUrl] = useState("");
   const [apiToken, setApiToken] = useState("");
@@ -85,7 +97,7 @@ export function StoreConnectDialog({
   const needsSecret = platform === "WOOCOMMERCE";
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState<"url" | "secret" | null>(null);
+  const [copied, setCopied] = useState<"url" | "secret" | "username" | null>(null);
 
   const webhookUrl = useMemo(
     () =>
@@ -95,7 +107,7 @@ export function StoreConnectDialog({
     [slug]
   );
 
-  async function copy(text: string, which: "url" | "secret") {
+  async function copy(text: string, which: "url" | "secret" | "username") {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(which);
@@ -116,6 +128,7 @@ export function StoreConnectDialog({
         body: JSON.stringify({
           platform,
           webhookSecret: secret,
+          webhookUsername: spec?.needsUsername ? username : undefined,
           storeName: storeName.trim() || undefined,
           storeUrl: storeUrl.trim() || undefined,
           apiToken: apiToken.trim() || undefined,
@@ -181,14 +194,50 @@ export function StoreConnectDialog({
           />
         </Step>
 
-        <Step n={2} title={tr("step2")} hint={tr("step2Hint")}>
-          <CopyField
-            value={secret}
-            mono
-            onCopy={() => copy(secret, "secret")}
-            done={copied === "secret"}
-            label={tr("copy")}
-          />
+        <Step
+          n={2}
+          title={weGenerate ? tr("step2") : tr("step2Paste")}
+          hint={t(locale, "storeConnect." + (spec?.hintKey ?? "step2Hint"))}
+        >
+          {weGenerate ? (
+            <>
+              {/* زد: الاسم وكلمة المرور يُلصقان معاً في لوحتها -
+                  واحدٌ منهما وحده لا يثبت شيئاً. */}
+              {spec?.needsUsername && (
+                <div className="mb-2">
+                  <p className="mb-1 text-[11.5px] text-text-muted">{tr("basicUsername")}</p>
+                  <CopyField
+                    value={username}
+                    mono
+                    onCopy={() => copy(username, "username")}
+                    done={copied === "username"}
+                    label={tr("copy")}
+                  />
+                </div>
+              )}
+              {spec?.needsUsername && (
+                <p className="mb-1 text-[11.5px] text-text-muted">{tr("basicPassword")}</p>
+              )}
+              <CopyField
+                value={generatedSecret}
+                mono
+                onCopy={() => copy(generatedSecret, "secret")}
+                done={copied === "secret"}
+                label={tr("copy")}
+              />
+            </>
+          ) : (
+            // الاتّجاه معكوس: المنصّة ولّدته، فالمشترك ينسخ منها إلينا.
+            <input
+              className="field w-full font-mono"
+              placeholder={tr("pasteSecretPlaceholder")}
+              value={pastedSecret}
+              onChange={(e) => setPastedSecret(e.target.value)}
+              dir="ltr"
+              autoComplete="off"
+              spellCheck={false}
+            />
+          )}
         </Step>
 
         <Step n={3} title={tr("step3")} hint={tr("step3Hint")}>
@@ -237,7 +286,13 @@ export function StoreConnectDialog({
           <button onClick={onClose} className="btn btn-ghost">
             {tr("cancel")}
           </button>
-          <button onClick={save} disabled={saving} className="btn btn-primary">
+          {/* الزرّ معطَّل حتى يُلصق السرّ: الحفظ بلا سرّ يرتدّ من الخادم
+              برسالة عامّة بعد ثلاث خطوات، والمنع قبل العمل أوضح من الرفض بعده. */}
+          <button
+            onClick={save}
+            disabled={saving || secret.length < 8}
+            className="btn btn-primary"
+          >
             {saving ? <Loader2 size={14} className="animate-spin" /> : null}
             {tr("save")}
           </button>

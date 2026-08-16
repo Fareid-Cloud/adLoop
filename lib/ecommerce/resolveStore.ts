@@ -52,14 +52,14 @@ export async function resolveStoreConnection(
   if (storeIdentifier) {
     const tagged = await prisma.ecommerceConnection.findFirst({
       where: { platform: platform as never, storeIdentifier, active: true },
-      select: { id: true, workspaceId: true, webhookSecret: true },
+      select: { id: true, workspaceId: true, webhookSecret: true, webhookUsername: true },
     });
     if (tagged) {
       // وُجد صاحب المعرّف - فالتوقيع إمّا يثبته أو يُرفض الطلب. ولا
       // نعود إلى المسح: طلبٌ يدّعي متجراً ثمّ يفشل توقيعه مرفوضٌ، لا
       // فرصةَ له في أن يُجرَّب على أسرار الآخرين.
       const secret = tagged.webhookSecret ? decryptToken(tagged.webhookSecret) : undefined;
-      if (!verifySignature(platform, rawBody, headers, secret)) return null;
+      if (!verifySignature(platform, rawBody, headers, secret, tagged.webhookUsername)) return null;
       return { connectionId: tagged.id, workspaceId: tagged.workspaceId };
     }
   }
@@ -67,14 +67,14 @@ export async function resolveStoreConnection(
   // ═══ ٢) المسار البطيء مرّةً واحدة: مَن يصحّ سرّه فهو المالك ═══
   const untagged = await prisma.ecommerceConnection.findMany({
     where: { platform: platform as never, active: true, storeIdentifier: null },
-    select: { id: true, workspaceId: true, webhookSecret: true },
+    select: { id: true, workspaceId: true, webhookSecret: true, webhookUsername: true },
     orderBy: { createdAt: "asc" },
     take: MAX_UNTAGGED_CANDIDATES,
   });
 
   for (const candidate of untagged) {
     const secret = candidate.webhookSecret ? decryptToken(candidate.webhookSecret) : undefined;
-    if (!verifySignature(platform, rawBody, headers, secret)) continue;
+    if (!verifySignature(platform, rawBody, headers, secret, candidate.webhookUsername)) continue;
 
     // وسمٌ يحدث مرّةً واحدة في عمر الربط. `updateMany` بشرط `null` تمنع
     // سباق رسالتين متزامنتين من متجرين مختلفين على الربط نفسه: الأولى

@@ -253,7 +253,9 @@ export function verifySignature(
   platform: EcommercePlatform,
   rawBody: string,
   headers: Headers,
-  secret: string | undefined
+  secret: string | undefined,
+  /** زد وحدها تحتاجه: مصادقةٌ أساسية لا توقيع، فلها حقلان لا حقل */
+  username?: string | null
 ): boolean {
   if (!secret) return false;
 
@@ -271,14 +273,36 @@ export function verifySignature(
       return safeEqual(sent, expected);
     }
     case "SALLA": {
+      // 🔴 لسلّة **استراتيجيتان** لا واحدة، وترويسة
+      // `X-Salla-Security-Strategy` تقول أيّهما. وكان الكود يفترض التوقيع
+      // دائماً، فتاجرٌ تطبيقُه على «التوكن» يُرفض كلّ ويب هوك له بـ`401`
+      // ولا يصله طلبٌ واحد - وهو نصف الاحتمالات لا حالةٌ نادرة.
+      // (docs.salla.dev/doc-421119)
+      const strategy = (headers.get("x-salla-security-strategy") ?? "").trim().toLowerCase();
+      if (strategy === "token") {
+        // التوكن يصل في `Authorization` كما هو، وقد تسبقه `Bearer`.
+        const sent = (headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
+        return safeEqual(sent, secret);
+      }
+      // الافتراضيّ توقيعاً: هو ما تُسنده سلّة لكلّ تطبيقٍ جديد.
       const sent = headers.get("x-salla-signature") ?? "";
       const expected = crypto.createHmac("sha256", secret).update(rawBody, "utf8").digest("hex");
       return safeEqual(sent, expected);
     }
     case "ZID": {
-      const sent = headers.get("x-zid-signature") ?? headers.get("signature") ?? "";
-      const expected = crypto.createHmac("sha256", secret).update(rawBody, "utf8").digest("hex");
-      return safeEqual(sent, expected);
+      // 🔴 **زد لا توقّع الويب هوك إطلاقاً.** كان هنا فحصُ HMAC على ترويسة
+      // `x-zid-signature` - ترويسةٍ لا وجود لها في توثيق زد، فكان كلّ ويب
+      // هوك من زد يُرفض `401` بلا استثناء: تكاملٌ يبدو مبنيّاً وهو معطّل
+      // بالكامل. الموجود عندها مصادقةٌ أساسية بـ`username`/`password`
+      // يضعهما المطوّر عند إنشاء الويب هوك. (docs.zid.sa/create-a-webhook)
+      //
+      // وهي **اختياريةٌ عندهم وإجباريةٌ عندنا**: ويب هوكٌ بلا مصادقة يعني
+      // أنّ كلّ من عرف الرابط يحقن مبيعاتٍ وهمية في حساب تاجر.
+      if (!username) return false;
+      const sent = headers.get("authorization") ?? "";
+      const expected =
+        "Basic " + Buffer.from(`${username}:${secret}`, "utf8").toString("base64");
+      return safeEqual(sent.trim(), expected);
     }
     case "EASY_ORDERS": {
       // مؤكد من التوثيق: مفتاح مشترك بسيط في ترويسة باسم secret
