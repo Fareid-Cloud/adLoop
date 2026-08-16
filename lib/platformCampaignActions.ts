@@ -15,6 +15,7 @@ import { GoogleAdsApi } from "google-ads-api";
 import { prisma } from "@/lib/prisma";
 import { decryptToken } from "@/lib/encryption";
 import { platformLabel } from "@/lib/i18n/dictionary";
+import { pickConnection } from "@/lib/platformConnections";
 
 const META_API_VERSION = "v25.0";
 const TIKTOK_API_VERSION = "v1.3";
@@ -24,7 +25,7 @@ async function getConnection(workspaceId: string, platform: "GOOGLE_ADS" | "META
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find((c: any) => c.platform === platform);
+  const connection = pickConnection(workspace?.user.connectedPlatforms, platform);
   if (!connection) throw new Error(`حساب ${platformLabel("ar", platform)} غير متصل`);
   return connection;
 }

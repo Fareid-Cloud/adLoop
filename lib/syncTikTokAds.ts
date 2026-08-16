@@ -14,6 +14,7 @@ import { decryptToken } from "@/lib/encryption";
 import { t } from "@/lib/i18n/dictionary";
 import { assertNotDemo } from "@/lib/demo";
 import { recordDataCurrency } from "@/lib/dataCurrency";
+import { pickConnection } from "@/lib/platformConnections";
 
 const TIKTOK_API_VERSION = "v1.3";
 
@@ -71,9 +72,7 @@ export async function syncTikTokAdsForWorkspace(workspaceId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "TIKTOK_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
   if (!connection) return;
 
   const accessToken = decryptToken(connection.accessToken);
@@ -176,9 +175,7 @@ export async function syncTikTokVideoMetricsForWorkspace(workspaceId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "TIKTOK_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
   if (!connection) return;
 
   const accessToken = decryptToken(connection.accessToken);
@@ -284,9 +281,7 @@ export async function syncTikTokWeeklyEngagementForWorkspace(workspaceId: string
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "TIKTOK_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
   if (!connection) return;
 
   const accessToken = decryptToken(connection.accessToken);
@@ -589,9 +584,7 @@ export async function syncTikTokBidCapForWorkspace(workspaceId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "TIKTOK_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
   if (!connection) return;
 
   const accessToken = decryptToken(connection.accessToken);
@@ -710,9 +703,7 @@ export async function syncTikTokLearningPhaseForWorkspace(workspaceId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "TIKTOK_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
   if (!connection) return;
 
   const accessToken = decryptToken(connection.accessToken);
@@ -791,9 +782,7 @@ export async function syncTikTokLookalikeComparisonForWorkspace(workspaceId: str
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "TIKTOK_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
   if (!connection) return;
 
   const accessToken = decryptToken(connection.accessToken);
@@ -931,9 +920,7 @@ export async function syncTikTokSparkAdsCommentsForWorkspace(workspaceId: string
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "TIKTOK_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
   if (!connection) return;
 
   const accessToken = decryptToken(connection.accessToken);
@@ -992,9 +979,7 @@ export async function syncTikTokLeadFormsForWorkspace(workspaceId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "TIKTOK_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
   if (!connection) return;
 
   const accessToken = decryptToken(connection.accessToken);
@@ -1064,9 +1049,7 @@ export async function syncTikTokCreativesForWorkspace(workspaceId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "TIKTOK_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
   if (!connection) return;
 
   const accessToken = decryptToken(connection.accessToken);
@@ -1171,9 +1154,7 @@ export async function checkTikTokBidStrategyProgressionForWorkspace(workspaceId:
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "TIKTOK_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
   if (!connection) return;
 
   const accessToken = decryptToken(connection.accessToken);
@@ -1263,9 +1244,7 @@ export async function applyTikTokBidStrategyChange(
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "TIKTOK_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
   if (!connection) throw new Error(t("ar", "alerts.noTiktokAccount"));
 
   const res = await fetch(`https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/adgroup/update/`, {
@@ -1301,9 +1280,7 @@ export async function pauseTikTokAd(workspaceId: string, advertiserId: string, a
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "TIKTOK_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
   if (!connection) throw new Error(t("ar", "alerts.noTiktokAccount"));
 
   const res = await fetch(`https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/ad/status/update/`, {

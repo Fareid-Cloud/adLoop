@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { decryptToken } from "@/lib/encryption";
+import { pickConnection } from "@/lib/platformConnections";
 
 const META_API_VERSION = "v21.0";
 
@@ -94,7 +95,7 @@ export async function POST(req: NextRequest) {
 }
 
 async function resolveCampaignIdFromAd(adId: string, connectedPlatforms: any[]): Promise<string | null> {
-  const connection = connectedPlatforms.find((c: any) => c.platform === "META_ADS");
+  const connection = pickConnection(connectedPlatforms, "META_ADS");
   if (!connection) return null;
 
   try {

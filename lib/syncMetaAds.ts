@@ -17,6 +17,7 @@ import { pushToActionFeed } from "@/lib/actionFeed";
 import { t } from "@/lib/i18n/dictionary";
 import { assertNotDemo } from "@/lib/demo";
 import { recordDataCurrency } from "@/lib/dataCurrency";
+import { pickConnection } from "@/lib/platformConnections";
 
 const META_API_VERSION = "v25.0";
 const ROLLING_WINDOW_DAYS = 28; // نفس نافذة إغلاق الإسناد بتاعة ميتا نفسها
@@ -47,9 +48,7 @@ export async function syncMetaAdsForWorkspace(workspaceId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "META_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "META_ADS");
   if (!connection) return;
 
   // التوكن بتاع ميتا بينتهي بعد ~60 يوم بدون تجديد صامت (مختلف عن جوجل) -
@@ -166,9 +165,7 @@ export async function syncMetaAdSetsForWorkspace(workspaceId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "META_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "META_ADS");
   if (!connection) return;
 
   const to = new Date();
@@ -315,9 +312,7 @@ export async function syncMetaCreativesForWorkspace(workspaceId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "META_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "META_ADS");
   if (!connection) return;
 
   const to = new Date();
@@ -456,9 +451,7 @@ export async function syncMetaAccountHealthForWorkspace(workspaceId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "META_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "META_ADS");
   if (!connection) return;
 
   const links = await prisma.campaignLink.findMany({
@@ -634,9 +627,7 @@ export async function syncCatalogCampaignsForWorkspace(workspaceId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "META_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "META_ADS");
   if (!connection) return;
 
   const links = await prisma.campaignLink.findMany({
@@ -823,9 +814,7 @@ export async function applyMetaBidStrategyChange(
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "META_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "META_ADS");
   if (!connection) throw new Error(t("ar", "alerts.noMetaAccount"));
 
   const res = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${adSetId}`, {
@@ -854,9 +843,7 @@ export async function pauseMetaAd(workspaceId: string, adId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "META_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "META_ADS");
   if (!connection) throw new Error(t("ar", "alerts.noMetaAccount"));
 
   const res = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${adId}`, {

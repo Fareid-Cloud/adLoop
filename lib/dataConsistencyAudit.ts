@@ -10,6 +10,7 @@ import { GoogleAdsApi } from "google-ads-api";
 import { prisma } from "@/lib/prisma";
 import type { ConnectedPlatform } from "@prisma/client";
 import { decryptToken } from "@/lib/encryption";
+import { pickConnection } from "@/lib/platformConnections";
 
 export interface ConsistencyAuditResult {
   matches: boolean;
@@ -49,9 +50,7 @@ export async function auditDataConsistency(
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
   if (!connection) {
     return { matches: true, storedClicks, liveClicks: 0, discrepancyPct: 0, checkedAt: new Date() };
   }

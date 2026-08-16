@@ -16,6 +16,7 @@ import { decryptToken } from "@/lib/encryption";
 import { recordDataCurrency } from "@/lib/dataCurrency";
 import { t } from "@/lib/i18n/dictionary";
 import { assertNotDemo } from "@/lib/demo";
+import { pickConnection } from "@/lib/platformConnections";
 
 // حقول جودة الإعلان بترجع من Google API كـ enum (رقم/سلسلة)، وحقول Prisma
 // نوعها String? - بنحوّلها لنص، ونسيب null زي ما هي
@@ -34,9 +35,7 @@ export async function syncGoogleAdsForWorkspace(
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
   if (!connection) return;
 
   const client = new GoogleAdsApi({
@@ -266,9 +265,7 @@ export async function syncCreativesForWorkspace(
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
   if (!connection) return;
 
   const client = new GoogleAdsApi({
@@ -378,9 +375,7 @@ export async function syncSearchTermsForWorkspace(
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
   if (!connection) return;
 
   const client = new GoogleAdsApi({
@@ -468,9 +463,7 @@ export async function syncBiddingStrategyForWorkspace(workspaceId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
   if (!connection) return [];
 
   const client = new GoogleAdsApi({
@@ -546,9 +539,7 @@ export async function syncAudiencePerformanceForWorkspace(
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
   if (!connection) return { synced: [], skipped: [] };
 
   const client = new GoogleAdsApi({
@@ -653,9 +644,7 @@ export async function syncQualityScoreForWorkspace(workspaceId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
   if (!connection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
@@ -736,9 +725,7 @@ export async function syncShoppingProductsForWorkspace(workspaceId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
   if (!connection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
@@ -834,9 +821,7 @@ export async function syncPerformanceMaxChannelsForWorkspace(workspaceId: string
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
   if (!connection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
@@ -927,9 +912,7 @@ export async function syncYoutubeMetricsForWorkspace(workspaceId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
   if (!connection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
@@ -1023,9 +1006,7 @@ export async function syncDeviceAndGeoPerformanceForWorkspace(workspaceId: strin
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
   if (!connection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
@@ -1135,9 +1116,7 @@ export async function syncMatchTypePerformanceForWorkspace(workspaceId: string) 
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
   if (!connection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
@@ -1236,9 +1215,7 @@ export async function syncDisplayPlacementsForWorkspace(workspaceId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
   if (!connection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
@@ -1403,9 +1380,7 @@ export async function applyGoogleBidStrategyChange(
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
   if (!connection) throw new Error(t("ar", "alerts.noGoogleAccount"));
 
   const link = await prisma.campaignLink.findFirst({
@@ -1450,9 +1425,7 @@ export async function pauseGoogleAd(workspaceId: string, campaignId: string, adG
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
   if (!connection) throw new Error(t("ar", "alerts.noGoogleAccount"));
 
   const link = await prisma.campaignLink.findFirst({
@@ -1500,9 +1473,7 @@ export async function syncGoogleLeadFormsForWorkspace(workspaceId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
   if (!connection) return;
 
   const client = new GoogleAdsApi({
@@ -1571,9 +1542,7 @@ export async function countDisapprovedGoogleAds(workspaceId: string): Promise<nu
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = workspace?.user.connectedPlatforms.find(
-    (c: ConnectedPlatform) => c.platform === "GOOGLE_ADS"
-  );
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
   if (!connection) return 0;
 
   const client = new GoogleAdsApi({

@@ -7,6 +7,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { decryptToken } from "@/lib/encryption";
+import { pickConnection } from "@/lib/platformConnections";
 
 const META_API_VERSION = "v25.0";
 
@@ -22,9 +23,7 @@ export async function getFrequencyByPlatform(workspaceId: string): Promise<Recor
         where: { id: workspaceId },
         include: { user: { include: { connectedPlatforms: true } } },
       });
-      const connection = workspace?.user.connectedPlatforms.find(
-        (c: any) => c.platform === "META_ADS"
-      );
+      const connection = pickConnection(workspace?.user.connectedPlatforms, "META_ADS");
 
       if (connection) {
         let totalFrequency = 0;

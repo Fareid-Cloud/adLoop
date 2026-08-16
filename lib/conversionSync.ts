@@ -26,6 +26,7 @@ import {
   type MatchSignals,
 } from "@/lib/matchQuality";
 import { assertNotDemo } from "@/lib/demo";
+import { pickConnection } from "@/lib/platformConnections";
 
 const META_API_VERSION = "v25.0";
 const TIKTOK_API_VERSION = "v1.3";
@@ -250,7 +251,7 @@ async function sendToGoogle(
       where: { id: workspace.id },
       include: { user: { include: { connectedPlatforms: true } } },
     });
-    const connection = ws?.user.connectedPlatforms.find((c) => c.platform === "GOOGLE_ADS");
+    const connection = pickConnection(ws?.user.connectedPlatforms, "GOOGLE_ADS");
     if (!connection?.refreshToken) {
       return { platform: "GOOGLE_ADS", status: "SKIPPED", error: "حساب جوجل غير متصل" };
     }
