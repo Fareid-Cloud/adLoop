@@ -174,25 +174,26 @@ export async function checkWorkspaceLimit(userId: string): Promise<LimitCheck> {
 export async function checkStoreLimit(
   userId: string,
   workspaceId: string,
-  /** 🔴 **المنصّة التي يجري ربطها الآن - وبدونها كان تعديلُ ربطٍ قائمٍ
-   *  يُرفض.**
+  /** المتجر الذي يجري **تعديله** الآن - وبدونه كان تعديلُ متجرٍ قائمٍ
+   *  يُرفض: الحدّ يَعُدّ المتاجر كلّها ثمّ يقارن `count < limit`، فصاحب
+   *  باقةٍ حدّها متجرٌ واحد ومعه متجرٌ مربوط يصير `1 < 1` كاذباً فيُمنع
+   *  من تغيير اسم متجره أو تدوير سرّه. الحدّ يمنع التوسّع لا الصيانة.
    *
-   *  مسار الحفظ `upsert`: يُنشئ أو **يُحدّث**. وكان الحدّ يَعُدّ الروابط
-   *  النشطة كلّها ثمّ يقارن `count < limit`، فصاحب باقةٍ حدّها متجرٌ
-   *  واحد ومعه متجرٌ مربوط بالفعل يصير `1 < 1` كاذباً - فيُمنع من
-   *  **تعديل متجره هو**: تغيير اسمه، أو تدوير سرّه، أو إضافة توكن نسيه.
-   *  أي أنّ الحدّ كان يمنع الصيانة لا الإضافة.
-   *
-   *  فإن كان لهذه المنصّة ربطٌ قائم، فالعملية تحديثٌ لا إضافة، ولا يُسأل
-   *  الحدّ أصلاً. */
-  platform?: string
+   *  🔴 وصار **معرّف المتجر** لا المنصّة. كان الفحص «هل لهذه المنصّة ربطٌ
+   *  قائم؟»، وهو تمييزٌ صحيحٌ حين لا يُسمح إلّا بمتجرٍ واحد لكلّ منصّة.
+   *  فلمّا صار للمساحة متجران على المنصّة نفسها، صار **إضافةُ** متجر سلّة
+   *  ثانٍ تُقرأ «تعديلاً» فيمرّ الحدّ بلا فحص - أي أنّ باقةً حدّها متجرٌ
+   *  واحد تقبل عدداً بلا حدّ ما دامت المنصّة واحدة. */
+  editingConnectionId?: string | null
 ): Promise<LimitCheck> {
   const [ent, count, existing] = await Promise.all([
     getEntitlements(userId),
     prisma.ecommerceConnection.count({ where: { workspaceId, active: true } }),
-    platform
+    editingConnectionId
       ? prisma.ecommerceConnection.findFirst({
-          where: { workspaceId, platform: platform as never },
+          // `workspaceId` في الشرط لا المعرّف وحده: وإلّا مرّ الحدّ بمعرّف
+          // متجرٍ لمساحةٍ أخرى.
+          where: { id: editingConnectionId, workspaceId },
           select: { id: true },
         })
       : Promise.resolve(null),

@@ -247,14 +247,18 @@ export async function ingestOrder(
 
   const orderRow = await prisma.order.upsert({
     where: {
-      workspaceId_platform_externalOrderId: {
+      // المتجر جزءٌ من المفتاح: متجرا التاجر الواحد على المنصّة نفسها
+      // يبدأ كلٌّ منهما ترقيمه من عنده، فرقم «1001» يتكرّر بينهما.
+      workspaceId_platform_connectionId_externalOrderId: {
         workspaceId,
         platform: order.platform as never,
+        connectionId,
         externalOrderId: order.externalOrderId,
       },
     },
     create: {
       workspaceId,
+      connectionId,
       platform: order.platform as never,
       externalOrderId: order.externalOrderId,
       customerId,

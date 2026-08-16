@@ -54,7 +54,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // 🔴 حدّ الباقة كان معرَّفاً في `entitlements` ولا يُستدعى من أيّ مكان،
   // فباقة تعرض «متجر واحد» كانت تقبل أيّ عدد. الفحص قبل التحقّق من
   // الحمولة: لا معنى لتدقيق بيانات لن تُقبل أصلاً.
-  const storeCheck = await checkStoreLimit(user.id, id, body.platform);
+  //
+  // ويُميَّز التعديل من الإضافة بمعرّف المتجر لا بالمنصّة: بعد أن صار
+  // للمساحة أكثر من متجرٍ على المنصّة الواحدة، صارت المنصّة لا تدلّ على
+  // متجرٍ بعينه، فإضافةُ الثاني كانت تُقرأ تعديلاً وتفلت من الحدّ.
+  const editingId = typeof body.connectionId === "string" ? body.connectionId : null;
+  const storeCheck = await checkStoreLimit(user.id, id, editingId);
   if (!storeCheck.allowed) {
     return NextResponse.json(
       {
@@ -96,9 +101,35 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     );
   }
 
-  const connection = await prisma.ecommerceConnection.upsert({
-    where: { workspaceId_platform: { workspaceId: id, platform: body.platform } },
-    create: {
+  // 🔴 **متجرٌ جديد أم تعديلُ متجرٍ قائم؟** كان `upsert` على
+  // `[workspaceId, platform]` يجيب عن هذا ضمناً: لا يوجد إلّا واحد.
+  // فلمّا صار للمساحة متجران على المنصّة نفسها، صار الحفظ بلا معرّف
+  // يكتب **فوق** متجرٍ قائم بدل إضافة الثاني - يظنّ التاجر أنّه أضاف
+  // وقد استبدل، ويكتشف ذلك حين تتوقّف طلبات متجره الأوّل.
+  //
+  // فالمعرّف هو الفارق: بوجوده تعديل، وبغيابه إضافة.
+  if (editingId) {
+    // الملكية شرطٌ في التحديث نفسه: معرّفٌ وحده يفتح باب تعديل متجر غيرك.
+    const updated = await prisma.ecommerceConnection.updateMany({
+      where: { id: editingId, workspaceId: id },
+      data: {
+        storeName: typeof body.storeName === "string" ? body.storeName.trim().slice(0, 120) : undefined,
+        storeUrl: typeof body.storeUrl === "string" ? body.storeUrl.trim().slice(0, 300) : undefined,
+        webhookSecret: encryptToken(body.webhookSecret.trim()),
+        ...(typeof body.apiToken === "string" && body.apiToken.trim()
+          ? { apiToken: encryptToken(body.apiToken.trim()), canWritePrices: true } : {}),
+        ...(typeof body.apiSecret === "string" && body.apiSecret.trim()
+          ? { apiSecret: encryptToken(body.apiSecret.trim()) } : {}),
+        ...(webhookUsername ? { webhookUsername } : {}),
+        active: true,
+      },
+    });
+    if (updated.count === 0) return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json({ connection: { id: editingId } });
+  }
+
+  const connection = await prisma.ecommerceConnection.create({
+    data: {
       workspaceId: id,
       platform: body.platform,
       storeName: typeof body.storeName === "string" ? body.storeName.trim().slice(0, 120) : null,
@@ -113,18 +144,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       storeIdentifier: typeof body.storeIdentifier === "string" ? body.storeIdentifier.trim() || null : null,
       webhookUsername: webhookUsername || null,
       canWritePrices: !!(typeof body.apiToken === "string" && body.apiToken.trim()),
-      active: true,
-    },
-    update: {
-      storeName: typeof body.storeName === "string" ? body.storeName.trim().slice(0, 120) : undefined,
-      storeUrl: typeof body.storeUrl === "string" ? body.storeUrl.trim().slice(0, 300) : undefined,
-      webhookSecret: encryptToken(body.webhookSecret.trim()),
-      ...(typeof body.apiToken === "string" && body.apiToken.trim()
-        ? { apiToken: encryptToken(body.apiToken.trim()), canWritePrices: true } : {}),
-      ...(typeof body.apiSecret === "string" && body.apiSecret.trim()
-        ? { apiSecret: encryptToken(body.apiSecret.trim()) } : {}),
-      ...(typeof body.storeIdentifier === "string" ? { storeIdentifier: body.storeIdentifier.trim() || null } : {}),
-      ...(webhookUsername ? { webhookUsername } : {}),
       active: true,
     },
     select: { id: true, platform: true, storeName: true, active: true },
@@ -143,13 +162,19 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const { searchParams } = new URL(req.url);
+  // بمعرّف المتجر يُحذف متجرٌ واحد. وبالمنصّة وحدها تُحذف متاجرها كلّها -
+  // وهو ما كان يعنيه الحذف حين لم يكن للمنصّة إلّا متجرٌ واحد، فيبقى
+  // للتوافق مع من يفصل «سلّة» كلّها.
+  const connectionId = searchParams.get("connectionId");
   const platform = searchParams.get("platform");
-  if (!platform || !ALLOWED.includes(platform as EcommercePlatform)) {
+  if (!connectionId && (!platform || !ALLOWED.includes(platform as EcommercePlatform))) {
     return NextResponse.json({ error: t(locale, "apiErr.platformUnknown") }, { status: 400 });
   }
 
   await prisma.ecommerceConnection.deleteMany({
-    where: { workspaceId: id, platform: platform as any },
+    where: connectionId
+      ? { id: connectionId, workspaceId: id }
+      : { workspaceId: id, platform: platform as any },
   });
 
   return NextResponse.json({ ok: true });

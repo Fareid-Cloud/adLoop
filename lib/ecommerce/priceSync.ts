@@ -35,9 +35,39 @@ export async function syncPriceToStore(
   const product = await prisma.product.findFirst({ where: { id: productId, workspaceId } });
   if (!product) return { ok: false, reasonAr: "المنتج غير موجود." };
 
-  const connection = await prisma.ecommerceConnection.findFirst({
+  // 🔴 **إلى أيّ متجرٍ يُكتب هذا السعر؟** كان الجواب «أوّل متجرٍ له صلاحية
+  // كتابة في المساحة»، وهو صحيحٌ ما دام المتجر واحداً. فإذا صارا اثنين،
+  // صار تعديلُ سعر منتجٍ من متجر «أ» **يكتبه في متجر «ب»** - مالٌ حقيقيّ
+  // في المكان الخطأ، لا يظهر إلّا حين يسأل التاجر عن سعرٍ تغيّر بلا سبب.
+  //
+  // فالمنتج يقول متجره. وإن لم يكن له متجر (أُضيف يدوياً) ولدى المساحة
+  // أكثر من متجرٍ قابلٍ للكتابة، **لا نخمّن**: الكتابة الخاطئة أسوأ من
+  // الامتناع، والامتناع هنا يحمل معه ما يلزم لحلّه.
+  const writable = await prisma.ecommerceConnection.findMany({
     where: { workspaceId, active: true, canWritePrices: true },
   });
+  const connection = product.connectionId
+    ? writable.find((c) => c.id === product.connectionId) ?? null
+    : writable.length === 1
+      ? writable[0]
+      : null;
+
+  if (!connection && product.connectionId && writable.length > 0) {
+    return {
+      ok: false,
+      needsSetup: true,
+      reasonAr:
+        "متجر هذا المنتج غير مربوط بصلاحية تعديل الأسعار. أضف توكن كتابة لذلك المتجر تحديداً - لن يُكتب السعر في متجرٍ آخر.",
+    };
+  }
+  if (!connection && writable.length > 1) {
+    return {
+      ok: false,
+      needsSetup: true,
+      reasonAr:
+        "هذا المنتج غير منسوب إلى متجرٍ بعينه، ولديك أكثر من متجر. اختر متجره أوّلاً حتى لا يُكتب السعر في المتجر الخطأ.",
+    };
+  }
 
   if (!connection) {
     return {
