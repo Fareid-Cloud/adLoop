@@ -1,5 +1,3 @@
-"use client";
-
 // app/components/PlatformLogo.tsx
 //
 // لوجوهات المنصات كـ SVG مضمّن (recognizable brand marks). المستخدم أكّد
@@ -24,7 +22,7 @@
 // والانتقال بين ١ و٢ يحدث عند فشل التحميل (`onError`)، فلا حاجة إلى قائمة
 // بما هو موجود ولا إلى خطوة بناء: الملفّ الموجود يفوز، والغائب لا يُلاحَظ.
 
-import { useState } from "react";
+import { LOGO_FILES } from "@/lib/logoManifest";
 
 export type PlatformKey =
   | "GOOGLE_ADS" | "META_ADS" | "FACEBOOK" | "INSTAGRAM" | "TIKTOK_ADS"
@@ -35,21 +33,31 @@ export type PlatformKey =
 export function PlatformLogo({ platform, size = 18 }: { platform: string; size?: number }) {
   // مفتاحٌ واحدٌ لكلّ علامة بحروفٍ كبيرة - نفس اسم الملفّ المتوقَّع، فلا
   // يحتاج من يضيف شعاراً أن يقرأ الكود ليعرف كيف يسمّي ملفّه.
-  const [fileMissing, setFileMissing] = useState(false);
+  // 🔴 **الامتداد يُحسم وقت البناء لا في المتصفّح.**
+  //
+  // بعض العلامات لا تنشر متجهاً أصلاً، وتنشر أيقونتها المربّعة **صورةً**
+  // بمقاس ٢٥٦ (بوسطة ومايلرز وإيزي أوردرز وكلاريتي وووكومرس). وطلبُ
+  // `.svg` أوّلاً ثمّ السقوط إلى `.png` عند الفشل يعمل، لكنّه يكلّف طلباً
+  // فاشلاً لكلّ واحدةٍ منها، ويُجبر هذا المكوّن أن يكون عميلاً - فيُشحن
+  // جافاسكريبت لأجل عرض صورة.
+  //
+  // والمجلّد معروفٌ وقت البناء، فيولّد `scripts/generateLogoManifest.mjs`
+  // جدولاً بما فيه فعلاً. النتيجة: مصدرٌ صحيحٌ من أوّل طلب، ولا حالة في
+  // العميل، ومكوّنٌ خادمٌ لا يشحن شيئاً.
   const key = String(platform).toUpperCase();
+  const ext = LOGO_FILES[key];
 
-  if (!fileMissing) {
+  if (ext) {
     return (
       // `img` لا `next/image`: هذه ملفّاتٌ يسقطها المالك متى شاء، ولا
-      // نعرف أبعادها سلفاً، ولا قيمة لتحسينٍ على ملفّ SVG بحجم كيلوبايت.
+      // نعرف أبعادها سلفاً، ولا قيمة لتحسينٍ على ملفّ بحجم كيلوبايت.
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={`/logos/${key}.svg`}
+        src={`/logos/${key}.${ext}`}
         alt={key}
         width={size}
         height={size}
         style={{ width: size, height: size, display: "block", objectFit: "contain" }}
-        onError={() => setFileMissing(true)}
       />
     );
   }
