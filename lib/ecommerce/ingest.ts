@@ -8,6 +8,7 @@
 
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
+import { markEventAsProcessed } from "@/lib/webhookSecurity";
 import { isCancelledStatus, isCashOnDelivery, type NormalizedOrder, type NormalizedCustomer } from "./types";
 
 function hash(value: string | null | undefined): string | null {
@@ -129,16 +130,10 @@ function assessOrderRisk(input: {
 }
 
 /** يمنع معالجة نفس الطلب مرتين (إعادة إرسال الويب هوك أمر شائع). */
-async function markProcessed(platform: string, orderId: string): Promise<boolean> {
-  try {
-    await prisma.processedWebhookEvent.create({
-      data: { source: platform, externalEventId: orderId },
-    });
-    return true;
-  } catch {
-    return false; // قيد التفرّد رفضه ⇒ سبق أن عولج
-  }
-}
+// نسخةٌ ثانية من منطق منع التكرار كانت هنا، بجانب `markEventAsProcessed`
+// في `lib/webhookSecurity.ts`. ومنطقان لمنع التكرار يعنيان أنّ إصلاح أحدهما
+// لا يصل الآخر - وهو ما حدث بالضبط: النطاق أُضيف هناك وبقي هذا عامّاً.
+// موضعٌ واحد يعرف كيف يُمنع التكرار.
 
 export interface IngestResult {
   // `no_workspace` أُزيلت: كانت تعني «لم أجد مساحةً لهذا الطلب» أيّام
@@ -159,9 +154,24 @@ export async function ingestOrder(
    *  **صحيحةً** قبل سطرين، فيضيع حسمُه وتُكتب مبيعات متجرٍ في مساحة
    *  متجرٍ آخر. مصدرُ حقيقةٍ واحدٌ للملكية: `resolveStoreConnection`،
    *  ومَن يستدعي هذه الدالة يمرّر نتيجته. */
-  workspaceId: string
+  workspaceId: string,
+  /** 🔴 **الربط الذي وصل منه الطلب - وبدونه يبتلع تاجرٌ طلبات تاجرٍ آخر.**
+   *
+   *  منعُ التكرار كان بالمفتاح `[platform, externalOrderId]` وحده، عامّاً
+   *  على القاعدة كلّها. وأرقام الطلبات ليست عالمية: ووكومرس تُنصَّب على
+   *  خادم كلّ تاجر وتبدأ من واحد، فطلب «1001» عند الثاني يُقرأ مكرَّراً
+   *  لأنّ الأوّل سجّله، **فيُهمَل بلا خطأ ولا سجلّ** - إيرادٌ ناقصٌ في
+   *  تقريرٍ لا يشكو، ولا يُكتشف إلّا بمراجعة يدوية مع التاجر.
+   *
+   *  والنطاق الربطُ لا المساحة، ليصحّ كذلك لمن يملك متجرين على المنصّة
+   *  نفسها داخل مساحةٍ واحدة. */
+  connectionId: string
 ): Promise<IngestResult> {
-  const isFirstTime = await markProcessed(order.platform, order.externalOrderId);
+  const isFirstTime = await markEventAsProcessed(
+    order.platform,
+    order.externalOrderId,
+    connectionId
+  );
   if (!isFirstTime) return { status: "duplicate", matchedProducts: 0, stockUpdated: 0 };
 
   const dateOnly = new Date(order.createdAt.toISOString().slice(0, 10));

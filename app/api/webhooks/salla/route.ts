@@ -48,7 +48,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "missing order id" }, { status: 400 });
   }
 
-  const isFirstTime = await markEventAsProcessed("SALLA", orderId);
+  // النطاق معرّف التاجر عند سلّة - متاحٌ قبل أيّ استعلام. وبدونه كان
+  // رقمُ طلبٍ عند تاجرٍ يمنع رقمَه نفسه عند تاجرٍ آخر من الدخول.
+  const isFirstTime = await markEventAsProcessed("SALLA", orderId, storeId);
   if (!isFirstTime) {
     return NextResponse.json({ ok: true, note: "already processed" });
   }

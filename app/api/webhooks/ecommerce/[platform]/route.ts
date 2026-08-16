@@ -70,7 +70,7 @@ export async function POST(
     return NextResponse.json({ ok: true, ignored: true });
   }
 
-  const result = await ingestOrder(order, store.workspaceId);
+  const result = await ingestOrder(order, store.workspaceId, store.connectionId);
 
   if (result.status === "ok") {
     await prisma.ecommerceConnection.update({

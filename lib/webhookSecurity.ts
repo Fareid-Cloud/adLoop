@@ -38,13 +38,25 @@ export function verifyHmacSignature(
 // وbfalse لو سبق معالجته (تجاهله بأمان، حتى لو المصدر بعته تاني بسبب
 // إعادة محاولة تلقائية بعد timeout).
 
+/**
+ * @param scopeId صاحبُ الحدث - الربط الذي وصل منه.
+ *
+ * 🔴 **إغفالُه كان يجعل تاجراً يبتلع طلبات تاجرٍ آخر.** أرقام الطلبات
+ * ليست عالمية: ووكومرس تُنصَّب على خادم كلّ تاجر وتبدأ الترقيم من واحد،
+ * فطلب «1001» عند الثاني يُقرأ مكرَّراً لأنّ الأوّل سجّله - فيُهمَل بصمت.
+ *
+ * ويُترك فارغاً **عمداً** لمصادرَ معرّفاتُها عالمية من عند مُصدِرها نفسه:
+ * معرّف عملية Paymob، ومعرّف ليد ميتا. تمريرُ نطاقٍ لها لا يضرّ ولا يفيد،
+ * وتركُه يقول إنّ ذلك مقصود.
+ */
 export async function markEventAsProcessed(
   source: string,
-  externalEventId: string
+  externalEventId: string,
+  scopeId = ""
 ): Promise<boolean> {
   try {
     await prisma.processedWebhookEvent.create({
-      data: { source, externalEventId },
+      data: { source, externalEventId, scopeId },
     });
     return true; // نجح التسجيل = أول مرة
   } catch (err: any) {
