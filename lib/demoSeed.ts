@@ -567,7 +567,21 @@ export async function seedDemoData(
   // يحملون ألفاً وأربعمئة طلب - ستّة وثلاثون طلباً للعميل الواحد في شهرين،
   // وهو رقمٌ لا يوجد في متجر حقيقيّ. العدد يتبع الطلبات: ~٣ طلبات لكلّ
   // عميل، وهو معدّل تكرارٍ معقول لمتجر عناية بالبشرة.
-  const CUSTOMER_COUNT = Math.round((ORDERS_PER_DAY * ORDER_DAYS) / 3);
+  //
+  // 🔴 **والتوزيع غير متساوٍ عمداً.** كان كلّ عميل يأخذ العدد نفسه
+  // (`oi % العدد`)، فيخرج كلّ عملاء المتجر مشترين متكرّرين: «نسبة الشراء
+  // المتكرّر ١٠٠٪»، وشريحة «اشترى مرّةً» فارغة، و«العميل العائد يساوي…»
+  // شرطةً لأنّ لا مشترِيَ مرّةٍ واحدة يُقاس عليه. والمتجر الحقيقيّ ذيلٌ
+  // طويل: أغلبهم مرّة، وقلّةٌ تحمل الإيراد.
+  const REPEAT_SHAPE: Array<{ share: number; orders: number }> = [
+    { share: 0.60, orders: 1 },
+    { share: 0.20, orders: 2 },
+    { share: 0.12, orders: 3 },
+    { share: 0.06, orders: 5 },
+    { share: 0.02, orders: 10 },
+  ];
+  const ORDERS_PER_CUSTOMER = REPEAT_SHAPE.reduce((s, r) => s + r.share * r.orders, 0);
+  const CUSTOMER_COUNT = Math.round((ORDERS_PER_DAY * ORDER_DAYS) / ORDERS_PER_CUSTOMER);
   const customers = Array.from({ length: CUSTOMER_COUNT }, (_, ci) => ({
     workspaceId,
     platform: "SALLA" as const,
@@ -575,8 +589,8 @@ export async function seedDemoData(
     displayName: ar ? `عميل ${ci + 1}` : `Customer ${ci + 1}`,
     city: CITIES[ci % CITIES.length],
     country: "SA",
-    // عملاء متكرّرون عمداً: قسم العملاء بلا تكرار لا يعرض شيئاً ذا معنى
-    ordersCount: ci % 7 === 0 ? 4 : ci % 3 === 0 ? 2 : 1,
+    // المجاميع تُشتقّ من الطلبات بعد كتابتها - راجع التجميع أسفل
+    ordersCount: 0,
     totalSpent: 0,
     // `60 - ci` كان يصير سالباً بعد العميل الستّين، أي تاريخ أوّل طلب في
     // **المستقبل**. الباقي يبقيه داخل الأفق مهما كبر العدد.
@@ -594,8 +608,23 @@ export async function seedDemoData(
   // العدد مشتقّ لا مكتوب: `ORDERS_PER_DAY` تتبع التحويلات المتحقَّقة من
   // الحملات، و`oi % ORDER_DAYS` توزّعها بالتساوي على الأفق - فيخرج بالضبط
   // ما تُنتجه الحملات في اليوم، لا رقماً موازياً لها.
+  // خانةٌ لكلّ طلبٍ يحملها صاحبه: عميلٌ بعشرة طلبات يظهر عشر مرّات.
+  // فتتبع القسمةُ الذيلَ أعلاه بدل أن توزّع بالتساوي.
+  const customerSlots: number[] = [];
+  {
+    let ci = 0;
+    for (const band of REPEAT_SHAPE) {
+      const n = Math.round(savedCustomers.length * band.share);
+      for (let k = 0; k < n && ci < savedCustomers.length; k++, ci++) {
+        for (let r = 0; r < band.orders; r++) customerSlots.push(ci);
+      }
+    }
+    // ما تبقّى بعد التقريب يُلحق بالمشترين مرّةً واحدة
+    for (; ci < savedCustomers.length; ci++) customerSlots.push(ci);
+  }
+
   for (let oi = 0; oi < ORDERS_PER_DAY * ORDER_DAYS; oi++) {
-    const cust = savedCustomers[oi % savedCustomers.length];
+    const cust = savedCustomers[customerSlots[oi % customerSlots.length]];
     const p = products[oi % products.length];
     const qty = (oi % 3) + 1;
     const total = Math.round(p.currentPrice * qty);
