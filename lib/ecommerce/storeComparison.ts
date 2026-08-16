@@ -92,6 +92,7 @@ export async function getStoreComparison(
         connectionId: true,
         total: true,
         isReturned: true,
+        state: true,
         currency: true,
       },
     }),
@@ -167,20 +168,29 @@ export async function getStoreComparison(
 
   for (const o of orders) {
     currency ??= o.currency ?? null;
+    // 🔴 **الطلب الملغى لا يُعَدّ ولا يُحسب إيراده** - وكان يُعَدّ هنا
+    // ويُستبعد في «نظرة شاملة»، فيقول الرقمان عن المتجر نفسه رقمين.
+    if (o.state === "CANCELLED") continue;
     const line = o.connectionId ? byStore.get(o.connectionId) : undefined;
     if (!line) {
       // إمّا طلبٌ سبق وسم المتاجر، وإمّا متجرٌ فُصل وبقيت طلباته. كلاهما
       // يُعَدّ ولا يُنسب.
       unattributedOrders++;
-      if (!o.isReturned) unattributedRevenue += o.total;
+      unattributedRevenue += o.total;
       continue;
     }
     line.orders++;
+    // 🔴 **الإيراد إجماليٌّ يشمل ما ارتُجع، والمرتجع يُعرَض في عموده.**
+    //
+    // كان صافياً هنا وإجمالياً في «نظرة شاملة»، فيقرأ التاجر للمتجر نفسه
+    // ٢١٢٬١٣٩ في شاشة و٢٢٥٬٠٧٢ في الشاشة المجاورة تحت الكلمة نفسها -
+    // والفارق هو المرتجعات بالضبط. وكلمةٌ واحدة برقمين تُفقد الثقة في
+    // الاثنين، فالتُزم تعريفٌ واحد: يُحجَز الإيراد كاملاً، ثمّ تُخصَم
+    // المرتجعات مرحلةً معلنة في رحلة الربح.
+    line.revenue += o.total;
     if (o.isReturned) {
       line.returnedOrders++;
       line.returnedValue += o.total;
-    } else {
-      line.revenue += o.total;
     }
   }
 
@@ -214,10 +224,8 @@ export async function getStoreComparison(
   for (const [cid, line] of byStore) {
     line.revenue = round(line.revenue);
     line.returnedValue = round(line.returnedValue);
-    line.avgOrderValue =
-      line.orders - line.returnedOrders > 0
-        ? round(line.revenue / (line.orders - line.returnedOrders))
-        : null;
+    // القاعدة نفسها المستعملة في «نظرة شاملة»: الإيراد ÷ الطلبات الحيّة.
+    line.avgOrderValue = line.orders > 0 ? round(line.revenue / line.orders) : null;
 
     const acc = profitByStore.get(cid);
     line.grossProfit = acc?.sawCost ? round(acc.profit) : null;

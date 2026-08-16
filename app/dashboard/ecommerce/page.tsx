@@ -66,7 +66,7 @@ export default async function EcommerceOverviewPage({
     getStoreOverview(workspace.id, 30, scope.selectedId),
     getProfitJourney(workspace.id, 30, scope.selectedId),
     buildOpportunities(workspace.id, 30),
-    getStoreFunnel(workspace.id, funnelFrom, funnelTo, workspace.currency),
+    getStoreFunnel(workspace.id, funnelFrom, funnelTo, workspace.currency, scope.selectedId),
   ]);
 
   const c = overview.currency;

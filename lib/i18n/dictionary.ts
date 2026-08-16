@@ -1309,9 +1309,9 @@ export const dictionary = {
       unlock_enterprise: "مساحات وحسابات إعلانية بلا حدّ، وأرقام تُضبط على حجمك أنت.",
 
       feats_free: "مساحة عمل واحدة|منصّة إعلانية واحدة|٢٠٠ تحويل متحقّق شهرياً|تاريخ ٣٠ يوماً|قرارات للعرض فقط",
-      feats_starter: "كل المنصّات الإعلانية|٢٬٠٠٠ تحويل متحقّق|رفع التحويلات لمنصّة واحدة|٣ قواعد أتمتة|تنفيذ قرارات التوسيع والإيقاف|قناتا بيع (سلّة، شوبيفاي...)|٥٠ كريدت ذكاء اصطناعي|تقارير مجدولة بالبريد",
-      feats_pro: "كل ما في البداية|٣ مساحات عمل|١٠٬٠٠٠ تحويل متحقّق|رفع التحويلات لكل المنصّات|١٥ قاعدة أتمتة|٩ قنوات بيع|٢٠٠ كريدت + ٥ فحوصات عميقة|عروض تقارير بلا حدّ|تاريخ ٢٤ شهراً",
-      feats_agency: "كل ما في الاحترافية|١٥ مساحة عمل|٥٠٬٠٠٠ تحويل متحقّق|قواعد أتمتة بلا حدّ|٣٠ قناة بيع|٦٠٠ كريدت + ٢٠ فحصاً عميقاً|دعم مخصّص",
+      feats_starter: "كل المنصّات الإعلانية|٢٬٠٠٠ تحويل متحقّق|رفع التحويلات لمنصّة واحدة|٣ قواعد أتمتة|تنفيذ قرارات التوسيع والإيقاف|متجران (سلّة، شوبيفاي...)|٥٠ كريدت ذكاء اصطناعي|تقارير مجدولة بالبريد",
+      feats_pro: "كل ما في البداية|٣ مساحات عمل|١٠٬٠٠٠ تحويل متحقّق|رفع التحويلات لكل المنصّات|١٥ قاعدة أتمتة|٩ متاجر|٢٠٠ كريدت + ٥ فحوصات عميقة|عروض تقارير بلا حدّ|تاريخ ٢٤ شهراً",
+      feats_agency: "كل ما في الاحترافية|١٥ مساحة عمل|٥٠٬٠٠٠ تحويل متحقّق|قواعد أتمتة بلا حدّ|٣٠ متجراً|٦٠٠ كريدت + ٢٠ فحصاً عميقاً|دعم مخصّص",
       feats_enterprise: "كل ما في الوكالات|مساحات عمل بلا حدّ|حسابات إعلانية بلا حدّ لكلّ منصّة|تحويلات متحقّقة بلا حدّ|متاجر بلا حدّ|٢٬٠٠٠ كريدت + ٥٠ فحصاً عميقاً|حدود تُضبط بالاتّفاق",
 
       f_workspaces: "مساحات العمل",
@@ -1324,7 +1324,7 @@ export const dictionary = {
       f_automationRules: "قواعد الأتمتة",
       f_aiCredits: "كريدت الذكاء الاصطناعي",
       f_deepScans: "الفحص العميق للموقع",
-      f_stores: "قنوات البيع المربوطة",
+      f_stores: "المتاجر المربوطة",
       f_historyMonths: "تاريخ البيانات (شهر)",
       f_savedViews: "عروض التقارير المحفوظة",
       f_scheduledReports: "تقارير مجدولة بالبريد",
@@ -2651,18 +2651,18 @@ export const dictionary = {
     },
     // ==== متجري الإلكتروني ====
     storePicker: {
-      label: "القناة",
-      all: "كلّ القنوات",
+      label: "المتجر",
+      all: "كلّ المتاجر",
     },
     storeCompare: {
-      title: "قنوات البيع",
-      subtitle: "قنوات بيع مساحة العمل هذه جنباً إلى جنب - أيّها يكسب فعلاً.",
+      title: "المتاجر",
+      subtitle: "متاجر مساحة العمل هذه جنباً إلى جنب - أيّها يكسب فعلاً.",
       colAdSpend: "إنفاق إعلانيّ",
       colRoas: "العائد على الإنفاق",
       noSpend: "لا حملة منسوبة",
-      noSpendTitle: "لم تُنسب أيّ حملة إلى هذه القناة، فلا إنفاق يُقاس عليه العائد. انسب حملاتها من نافذة اختيار الحملات - ولن يُقسَّم عليها إنفاق قناةٍ أخرى.",
-      unassignedSpendTitle: "إنفاق إعلانيّ غير منسوب إلى قناة: {amount}",
-      unassignedSpendHint: "هذه حملات لم تُحدَّد القناة التي تبيع لها. لا يُقسَّم إنفاقها على القنوات لأنّ القسمة تخمين - فالعائد أعلاه محسوبٌ من الحملات المنسوبة وحدها.",
+      noSpendTitle: "لم تُنسب أيّ حملة إلى هذا المتجر، فلا إنفاق يُقاس عليه العائد. انسب حملاته من نافذة اختيار الحملات - ولن يُقسَّم عليه إنفاق متجرٍ آخر.",
+      unassignedSpendTitle: "إنفاق إعلانيّ غير منسوب إلى متجر: {amount}",
+      unassignedSpendHint: "هذه حملات لم يُحدَّد المتجر الذي تبيع له. لا يُقسَّم إنفاقها على المتاجر لأنّ القسمة تخمين - فالعائد أعلاه محسوبٌ من الحملات المنسوبة وحدها.",
       assignCampaigns: "انسب الحملات",
       noStoresTitle: "لا متجر مربوط بهذه المساحة",
       noStoresReason: "المقارنة تحتاج متجراً واحداً على الأقلّ. اربط متجرك ليبدأ استقبال طلباته، ثمّ أضف الثاني لتظهر المقارنة.",
@@ -2672,7 +2672,7 @@ export const dictionary = {
       winnerIs: "الأكثر ربحاً: {name}",
       winnerByProfit: "بالربح بعد تكلفة البضاعة: {amount}. الربح لا الإيراد - المتجر الأعلى مبيعاً قد يكون الأقلّ ربحاً.",
       winnerByRevenue: "بالإيراد: {amount}. لم تُدخَل تكلفة البضاعة لكلّ المتاجر، فالمقارنة بالإيراد لا بالربح - وقد ينقلب الترتيب بإدخالها.",
-      tableTitle: "القنوات جنباً إلى جنب",
+      tableTitle: "المتاجر جنباً إلى جنب",
       tableHint: "كلّ رقم من طلبات هذا المتجر وحده - لا تُقسَّم أرقام متجر على آخر.",
       colStore: "المتجر",
       colOrders: "الطلبات",
@@ -2827,7 +2827,7 @@ export const dictionary = {
       errSave: "تعذّر حفظ الحملات.",
       errAdAccountLimit: "باقتك تسمح بـ{limit} حساباً إعلانياً لكلّ منصّة، وهذا الاختيار يبلغ {current}. أزل حسابات حملاتها غير مطلوبة، أو رقِّ باقتك.",
       sellsFor: "تبيع لـ",
-      noStoreAssigned: "بلا قناة",
+      noStoreAssigned: "بلا متجر",
     },
     // ==== مبدّل مساحات العمل ====
     wsSwitch: {
@@ -3346,6 +3346,9 @@ export const dictionary = {
     },
     // ==== قمع الأداء ====
     shopFunnel: {
+      emptyTitle: "لم يمرّ أحد بهذا المسار بعد",
+      emptyReason: "المسار يُبنى من زيارات موقعك الحقيقية، لا من أرقام المتجر وحدها. فما لم يُركَّب وسم التتبّع على صفحاتك، لا تصل إلينا الزيارة ولا النقرة - وتبقى المراحل فارغة حتى لو وصلت الطلبات.",
+      emptyAction: "احصل على وسم التتبّع",
       title: "مسار الشراء",
       subtitle: "من ظهور الإعلان إلى طلبٍ بقي فعلاً - وأين يُفقد الناس في الطريق.",
       impressions: "ظهور الإعلان",
@@ -5377,9 +5380,9 @@ export const dictionary = {
       unlock_enterprise: "Unlimited workspaces and ad accounts, with the numbers set to your size.",
 
       feats_free: "One workspace|One ad platform|200 verified conversions a month|30 days of history|Decisions are view-only",
-      feats_starter: "Every ad platform|2,000 verified conversions|Conversion upload to one platform|3 automation rules|Apply scale and pause decisions|Two sales channels (Salla, Shopify...)|50 AI credits|Scheduled email reports",
-      feats_pro: "Everything in Starter|3 workspaces|10,000 verified conversions|Conversion upload to every platform|15 automation rules|9 sales channels|200 credits + 5 deep scans|Unlimited saved report views|24 months of history",
-      feats_agency: "Everything in Pro|15 workspaces|50,000 verified conversions|Unlimited automation rules|30 sales channels|600 credits + 20 deep scans|Dedicated support",
+      feats_starter: "Every ad platform|2,000 verified conversions|Conversion upload to one platform|3 automation rules|Apply scale and pause decisions|Two stores (Salla, Shopify...)|50 AI credits|Scheduled email reports",
+      feats_pro: "Everything in Starter|3 workspaces|10,000 verified conversions|Conversion upload to every platform|15 automation rules|9 stores|200 credits + 5 deep scans|Unlimited saved report views|24 months of history",
+      feats_agency: "Everything in Pro|15 workspaces|50,000 verified conversions|Unlimited automation rules|30 stores|600 credits + 20 deep scans|Dedicated support",
       feats_enterprise: "Everything in Agency|Unlimited workspaces|Unlimited ad accounts per platform|Unlimited verified conversions|Unlimited stores|2,000 credits + 50 deep scans|Limits agreed with you",
 
       f_workspaces: "Workspaces",
@@ -5392,7 +5395,7 @@ export const dictionary = {
       f_automationRules: "Automation rules",
       f_aiCredits: "AI credits",
       f_deepScans: "Deep site scans",
-      f_stores: "Connected sales channels",
+      f_stores: "Connected stores",
       f_historyMonths: "Data history (months)",
       f_savedViews: "Saved report views",
       f_scheduledReports: "Scheduled email reports",
@@ -5478,7 +5481,7 @@ export const dictionary = {
       errSave: "Could not save your campaigns.",
       errAdAccountLimit: "Your plan allows {limit} ad accounts per platform, and this selection reaches {current}. Drop campaigns from the accounts you do not need, or upgrade your plan.",
       sellsFor: "Sells for",
-      noStoreAssigned: "No channel",
+      noStoreAssigned: "No store",
     },
     // ==== Workspace switcher ====
     wsSwitch: {
@@ -5969,6 +5972,9 @@ export const dictionary = {
     },
     // ==== Performance funnel ====
     shopFunnel: {
+      emptyTitle: "Nobody has been through this path yet",
+      emptyReason: "The path is built from real visits to your site, not from store figures alone. Until the tracking tag is installed on your pages, neither the visit nor the click reaches us - so the stages stay empty even while orders arrive.",
+      emptyAction: "Get the tracking tag",
       title: "Purchase path",
       subtitle: "From the ad being shown to an order that actually stuck - and where people are lost along the way.",
       impressions: "Ad shown",
@@ -7314,18 +7320,18 @@ export const dictionary = {
     },
     // ==== My Store ====
     storePicker: {
-      label: "Channel",
-      all: "All channels",
+      label: "Store",
+      all: "All stores",
     },
     storeCompare: {
-      title: "Sales channels",
-      subtitle: "This workspace's sales channels side by side - which one actually wins.",
+      title: "Stores",
+      subtitle: "This workspace's stores side by side - which one actually wins.",
       colAdSpend: "Ad spend",
       colRoas: "ROAS",
       noSpend: "No campaign assigned",
-      noSpendTitle: "No campaign is assigned to this channel, so there is no spend to measure a return against. Assign its campaigns from the campaign picker - another channel's spend will never be split onto it.",
-      unassignedSpendTitle: "Ad spend not assigned to a channel: {amount}",
-      unassignedSpendHint: "These campaigns have no channel set. Their spend is not split across channels because splitting it would be a guess - the returns above come only from assigned campaigns.",
+      noSpendTitle: "No campaign is assigned to this store, so there is no spend to measure a return against. Assign its campaigns from the campaign picker - another store's spend will never be split onto it.",
+      unassignedSpendTitle: "Ad spend not assigned to a store: {amount}",
+      unassignedSpendHint: "These campaigns have no store set. Their spend is not split across stores because splitting it would be a guess - the returns above come only from assigned campaigns.",
       assignCampaigns: "Assign campaigns",
       noStoresTitle: "No store connected to this workspace",
       noStoresReason: "Comparison needs at least one store. Connect a store to start receiving its orders, then add a second one for the comparison to appear.",
@@ -7335,7 +7341,7 @@ export const dictionary = {
       winnerIs: "Most profitable: {name}",
       winnerByProfit: "By profit after cost of goods: {amount}. Profit, not revenue - the store that sells most can be the one that earns least.",
       winnerByRevenue: "By revenue: {amount}. Cost of goods is not entered for every store, so this compares revenue rather than profit - and entering costs may reverse the order.",
-      tableTitle: "Channels side by side",
+      tableTitle: "Stores side by side",
       tableHint: "Every figure comes from that store's own orders - nothing is split from one store onto another.",
       colStore: "Store",
       colOrders: "Orders",

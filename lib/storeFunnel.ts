@@ -96,6 +96,15 @@ export async function getStoreFunnel(
   from: Date,
   to: Date,
   currency: string,
+  /**
+   * قناة البيع المختارة، أو `null` لكلّ القنوات.
+   *
+   * المسار كلّه - من الظهور إلى الطلب الباقي - يُقرأ من صفوف الحملات،
+   * فتضييقه على قناةٍ يكون بتضييق الحملات على حملاتها هي
+   * (`CampaignLink.connectionId`). وحملةٌ بلا نسبةٍ لا تدخل مسار قناةٍ
+   * بعينها: لا يُعرف لأيّها اشتُريت، وتوزيعُها تخمين.
+   */
+  storeId: string | null = null,
 ): Promise<StoreFunnel> {
   // الفترة السابقة بالطول نفسه تماماً - مقارنةُ ثلاثين يوماً بسبعة تعطي
   // هبوطاً وهمياً في كلّ مرحلة.
@@ -108,13 +117,25 @@ export async function getStoreFunnel(
     addToCart: true, checkoutsStarted: true, cost: true, rawConversions: true,
   } as const;
 
+  // معرّفات حملات هذه القناة. وقائمةٌ فارغة تعني «لا حملة منسوبة إليها»،
+  // فيخرج المسار أصفاراً صادقة لا أرقام المساحة كلّها منسوبةً إليها ظلماً.
+  const scopedCampaignIds = storeId
+    ? (
+        await prisma.campaignLink.findMany({
+          where: { workspaceId, connectionId: storeId },
+          select: { externalCampaignId: true },
+        })
+      ).map((l) => l.externalCampaignId)
+    : null;
+  const scope = scopedCampaignIds ? { campaignId: { in: scopedCampaignIds } } : {};
+
   const [ads, prevAds] = await Promise.all([
     prisma.metricSnapshot.aggregate({
-      where: { workspaceId, date: { gte: from, lte: to } },
+      where: { workspaceId, date: { gte: from, lte: to }, ...scope },
       _sum: sums,
     }),
     prisma.metricSnapshot.aggregate({
-      where: { workspaceId, date: { gte: prevFrom, lte: prevTo } },
+      where: { workspaceId, date: { gte: prevFrom, lte: prevTo }, ...scope },
       _sum: sums,
     }),
   ]);

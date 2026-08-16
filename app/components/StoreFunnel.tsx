@@ -13,6 +13,7 @@
 // `MetricSnapshot`، والسلّة والدفع من إبلاغ المنصّة نفسها، والطلب الباقي
 // بعد طرح المرتجعات. لا مرحلةَ مرسومةً لتكتمل الصورة.
 
+import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import type { StoreFunnel as FunnelData } from "@/lib/storeFunnel";
 
@@ -57,6 +58,27 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
 
   const stages = data.stages;
   const top = stages[0]?.value ?? 0;
+
+  // 🔴 **بلا بيانات كان الشكل يُرسَم على أيّ حال.** المقياس اللوغاريتميّ
+  // يعطي كلّ مرحلةٍ أدنى ارتفاعٍ حين يكون المجموع صفراً، فيخرج شريطٌ
+  // مسطّحٌ معلَّقةٌ عليه أصفار - يُقرأ **معطّلاً** لا فارغاً، ويجعل
+  // المشترك يظنّ أنّ الصفحة مكسورة لا أنّ متجره لم يستقبل طلباً بعد.
+  //
+  // والفراغ يُقال بالكلام، ومعه خطوته التالية: هذا المسار يحتاج وسم
+  // التتبّع على الموقع، لا مجرّد ربط متجر.
+  if (!stages.some((s) => s.value > 0)) {
+    return (
+      <EmptyState
+        title={tr("emptyTitle")}
+        description={tr("emptyReason")}
+        action={
+          <a href="/dashboard/settings" className="btn btn-ghost">
+            {tr("emptyAction")}
+          </a>
+        }
+      />
+    );
+  }
 
   const W = 1000;
   const H = 210;

@@ -30,6 +30,13 @@ interface SeedCampaign {
   baseRaw: number;
   verifyRate: number;
   aov: number;
+  /**
+   * أيّ قناة بيعٍ تشتري هذه الحملة؟ `null` تعني حملةً لم تُنسب بعد -
+   * وهي حالةٌ حقيقية يجب أن يراها الزائر: إنفاقٌ لا يدخل عائد أيّ قناة
+   * لأنّ نسبته تخمين. ولولا واحدةٌ كذلك لظهرت لافتة «إنفاق غير منسوب»
+   * ميّتةً في الديمو.
+   */
+  store?: "retail" | "wholesale";
 }
 
 /**
@@ -60,11 +67,11 @@ interface SeedCampaign {
  * مبلغاً لا يصبر عليه أحد.
  */
 export const DEMO_CAMPAIGNS: SeedCampaign[] = [
-  { id: "demo-g-search", nameAr: "جوجل — طلب عرض سعر", nameEn: "Google — Request a quote", platform: "GOOGLE_ADS", account: "482-119-7730", baseCost: 530, baseClicks: 148, baseRaw: 7, verifyRate: 0.85, aov: 520 },
-  { id: "demo-g-brand", nameAr: "جوجل — اسم العلامة", nameEn: "Google — Brand terms", platform: "GOOGLE_ADS", account: "482-119-7730", baseCost: 150, baseClicks: 96, baseRaw: 5, verifyRate: 0.78, aov: 610 },
-  { id: "demo-m-retarget", nameAr: "ميتا — إعادة استهداف", nameEn: "Meta — Retargeting", platform: "META_ADS", account: "act_609183472", baseCost: 430, baseClicks: 310, baseRaw: 11, verifyRate: 0.44, aov: 470 },
-  { id: "demo-m-awareness", nameAr: "ميتا — وعي بالعلامة", nameEn: "Meta — Brand awareness", platform: "META_ADS", account: "act_609183472", baseCost: 605, baseClicks: 690, baseRaw: 19, verifyRate: 0.31, aov: 390 },
-  { id: "demo-t-video", nameAr: "تيك توك — فيديو المنتج", nameEn: "TikTok — Product video", platform: "TIKTOK_ADS", account: "7291043118", baseCost: 340, baseClicks: 540, baseRaw: 15, verifyRate: 0.22, aov: 330 },
+  { id: "demo-g-search", nameAr: "جوجل — طلب عرض سعر", nameEn: "Google — Request a quote", platform: "GOOGLE_ADS", account: "482-119-7730", baseCost: 530, baseClicks: 148, baseRaw: 7, verifyRate: 0.85, aov: 520 , store: "retail" },
+  { id: "demo-g-brand", nameAr: "جوجل — اسم العلامة", nameEn: "Google — Brand terms", platform: "GOOGLE_ADS", account: "482-119-7730", baseCost: 150, baseClicks: 96, baseRaw: 5, verifyRate: 0.78, aov: 610 , store: "wholesale" },
+  { id: "demo-m-retarget", nameAr: "ميتا — إعادة استهداف", nameEn: "Meta — Retargeting", platform: "META_ADS", account: "act_609183472", baseCost: 430, baseClicks: 310, baseRaw: 11, verifyRate: 0.44, aov: 470 , store: "retail" },
+  { id: "demo-m-awareness", nameAr: "ميتا — وعي بالعلامة", nameEn: "Meta — Brand awareness", platform: "META_ADS", account: "act_609183472", baseCost: 605, baseClicks: 690, baseRaw: 19, verifyRate: 0.31, aov: 390 , store: "retail" },
+  { id: "demo-t-video", nameAr: "تيك توك — فيديو المنتج", nameEn: "TikTok — Product video", platform: "TIKTOK_ADS", account: "7291043118", baseCost: 340, baseClicks: 540, baseRaw: 15, verifyRate: 0.22, aov: 330 , store: "wholesale" },
   // الحملة الخاسرة عمداً: تصرف بلا تحويل متحقَّق واحد. تبقى كما هي - هي
   // نفسها ما يبيعه المنتج، وحذفها يجعل الديمو حساباً لا مشكلة فيه.
   { id: "demo-t-broad", nameAr: "تيك توك — جمهور واسع", nameEn: "TikTok — Broad audience", platform: "TIKTOK_ADS", account: "7291043118", baseCost: 245, baseClicks: 380, baseRaw: 4, verifyRate: 0, aov: 0 },
@@ -532,6 +539,25 @@ export async function seedDemoData(
   });
   const retailStoreId = demoStores[0]?.id ?? null;
   const wholesaleStoreId = demoStores[1]?.id ?? retailStoreId;
+
+  // 🔴 **الحملات تُنسب إلى قنواتها هنا لا عند إنشائها**، لأنّ المتجرين
+  // يُنشآن بعدها فلا معرّف لهما وقتَ كتابة الروابط.
+  //
+  // وبغير هذه النسبة يبقى «العائد على الإنفاق لكلّ قناة» شرطةً في كلّ
+  // شاشة: الطلبات تعرف متجرها والإنفاق لا يعرف، فلا يُقسَم - وهو رفضٌ
+  // صحيح، لكنّ ديمو يعرضه على كلّ صفٍّ يبدو ميزةً معطّلة لا امتناعاً
+  // مقصوداً. و«جمهور واسع» تبقى بلا قناة عمداً: لافتة «إنفاقٌ غير منسوب»
+  // نفسها ميزةٌ يجب أن تُرى وهي تعمل.
+  if (retailStoreId && wholesaleStoreId) {
+    await Promise.all(
+      DEMO_CAMPAIGNS.filter((c) => c.store).map((c) =>
+        prisma.campaignLink.updateMany({
+          where: { workspaceId, externalCampaignId: c.id },
+          data: { connectionId: c.store === "wholesale" ? wholesaleStoreId : retailStoreId },
+        })
+      )
+    );
+  }
 
   const CITIES = ar
     ? ["الرياض", "جدة", "الدمام", "مكة", "المدينة"]
