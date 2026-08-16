@@ -176,6 +176,20 @@ export async function ingestOrder(
 
   const dateOnly = new Date(order.createdAt.toISOString().slice(0, 10));
 
+  // 🔴 **كان `campaignId: order.externalOrderId`** - أي صفَّ مقاييس لكلّ
+  // **طلب** لا لكلّ حملة، في جدولٍ حقلُه اسمه `campaignId`. يلوّث الجدول
+  // بصفٍّ عن كلّ طلبٍ يصل، ويجعل `increment` في فرع التحديث لا يُنفَّذ أبداً
+  // لأنّ كلّ طلبٍ مفتاحٌ جديد.
+  //
+  // وبتعدّد المتاجر صار عطباً صريحاً لا تلويثاً: ووكومرس تبدأ ترقيمها من
+  // واحدٍ في كلّ تنصيب، فطلب «1001» من متجرين يتصادم على المفتاح نفسه
+  // ويسقط الثاني بخطأ قيدٍ فريد - أي أنّ **طلب المتجر الثاني يُرفض**.
+  // (أمسكه `checkOrderPipeline` عند أوّل تشغيل.)
+  //
+  // فالمفتاح صار المتجر: طلبات كلّ متجرٍ تتجمّع في صفٍّ واحدٍ لليوم، وهو
+  // ما يفعله مسار سلّة القديم أصلاً (`campaignId: "unlinked"`).
+  const metricRowKey = `store:${connectionId}`;
+
   // مقاييس اليوم على مستوى المنصة - نفس الجدول الذي تقرأ منه بقية اللوحة
   await prisma.metricSnapshot.upsert({
     where: {
@@ -184,7 +198,7 @@ export async function ingestOrder(
       workspaceId_platform_campaignId_date_placementBreakdown_placementDetail: {
         workspaceId,
         platform: order.platform as any,
-        campaignId: order.externalOrderId,
+        campaignId: metricRowKey,
         date: dateOnly,
         placementBreakdown: "",
         placementDetail: "",
@@ -193,7 +207,7 @@ export async function ingestOrder(
     create: {
       workspaceId,
       platform: order.platform as any,
-      campaignId: order.externalOrderId,
+      campaignId: metricRowKey,
       date: dateOnly,
       impressions: 0, clicks: 0, cost: 0,
       rawConversions: 1, verifiedConversions: 0,

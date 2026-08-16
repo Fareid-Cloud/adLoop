@@ -1309,9 +1309,9 @@ export const dictionary = {
       unlock_enterprise: "مساحات وحسابات إعلانية بلا حدّ، وأرقام تُضبط على حجمك أنت.",
 
       feats_free: "مساحة عمل واحدة|منصّة إعلانية واحدة|٢٠٠ تحويل متحقّق شهرياً|تاريخ ٣٠ يوماً|قرارات للعرض فقط",
-      feats_starter: "كل المنصّات الإعلانية|٢٬٠٠٠ تحويل متحقّق|رفع التحويلات لمنصّة واحدة|٣ قواعد أتمتة|تنفيذ قرارات التوسيع والإيقاف|ربط متجر واحد|٥٠ كريدت ذكاء اصطناعي|تقارير مجدولة بالبريد",
-      feats_pro: "كل ما في البداية|٣ مساحات عمل|١٠٬٠٠٠ تحويل متحقّق|رفع التحويلات لكل المنصّات|١٥ قاعدة أتمتة|٣ متاجر|٢٠٠ كريدت + ٥ فحوصات عميقة|عروض تقارير بلا حدّ|تاريخ ٢٤ شهراً",
-      feats_agency: "كل ما في الاحترافية|١٥ مساحة عمل|٥٠٬٠٠٠ تحويل متحقّق|قواعد أتمتة بلا حدّ|١٥ متجراً|٦٠٠ كريدت + ٢٠ فحصاً عميقاً|دعم مخصّص",
+      feats_starter: "كل المنصّات الإعلانية|٢٬٠٠٠ تحويل متحقّق|رفع التحويلات لمنصّة واحدة|٣ قواعد أتمتة|تنفيذ قرارات التوسيع والإيقاف|قناتا بيع (سلّة، شوبيفاي...)|٥٠ كريدت ذكاء اصطناعي|تقارير مجدولة بالبريد",
+      feats_pro: "كل ما في البداية|٣ مساحات عمل|١٠٬٠٠٠ تحويل متحقّق|رفع التحويلات لكل المنصّات|١٥ قاعدة أتمتة|٩ قنوات بيع|٢٠٠ كريدت + ٥ فحوصات عميقة|عروض تقارير بلا حدّ|تاريخ ٢٤ شهراً",
+      feats_agency: "كل ما في الاحترافية|١٥ مساحة عمل|٥٠٬٠٠٠ تحويل متحقّق|قواعد أتمتة بلا حدّ|٣٠ قناة بيع|٦٠٠ كريدت + ٢٠ فحصاً عميقاً|دعم مخصّص",
       feats_enterprise: "كل ما في الوكالات|مساحات عمل بلا حدّ|حسابات إعلانية بلا حدّ لكلّ منصّة|تحويلات متحقّقة بلا حدّ|متاجر بلا حدّ|٢٬٠٠٠ كريدت + ٥٠ فحصاً عميقاً|حدود تُضبط بالاتّفاق",
 
       f_workspaces: "مساحات العمل",
@@ -1324,7 +1324,7 @@ export const dictionary = {
       f_automationRules: "قواعد الأتمتة",
       f_aiCredits: "كريدت الذكاء الاصطناعي",
       f_deepScans: "الفحص العميق للموقع",
-      f_stores: "المتاجر المربوطة",
+      f_stores: "قنوات البيع المربوطة",
       f_historyMonths: "تاريخ البيانات (شهر)",
       f_savedViews: "عروض التقارير المحفوظة",
       f_scheduledReports: "تقارير مجدولة بالبريد",
@@ -5364,9 +5364,9 @@ export const dictionary = {
       unlock_enterprise: "Unlimited workspaces and ad accounts, with the numbers set to your size.",
 
       feats_free: "One workspace|One ad platform|200 verified conversions a month|30 days of history|Decisions are view-only",
-      feats_starter: "Every ad platform|2,000 verified conversions|Conversion upload to one platform|3 automation rules|Apply scale and pause decisions|One store connected|50 AI credits|Scheduled email reports",
-      feats_pro: "Everything in Starter|3 workspaces|10,000 verified conversions|Conversion upload to every platform|15 automation rules|3 stores|200 credits + 5 deep scans|Unlimited saved report views|24 months of history",
-      feats_agency: "Everything in Pro|15 workspaces|50,000 verified conversions|Unlimited automation rules|15 stores|600 credits + 20 deep scans|Dedicated support",
+      feats_starter: "Every ad platform|2,000 verified conversions|Conversion upload to one platform|3 automation rules|Apply scale and pause decisions|Two sales channels (Salla, Shopify...)|50 AI credits|Scheduled email reports",
+      feats_pro: "Everything in Starter|3 workspaces|10,000 verified conversions|Conversion upload to every platform|15 automation rules|9 sales channels|200 credits + 5 deep scans|Unlimited saved report views|24 months of history",
+      feats_agency: "Everything in Pro|15 workspaces|50,000 verified conversions|Unlimited automation rules|30 sales channels|600 credits + 20 deep scans|Dedicated support",
       feats_enterprise: "Everything in Agency|Unlimited workspaces|Unlimited ad accounts per platform|Unlimited verified conversions|Unlimited stores|2,000 credits + 50 deep scans|Limits agreed with you",
 
       f_workspaces: "Workspaces",
@@ -5379,7 +5379,7 @@ export const dictionary = {
       f_automationRules: "Automation rules",
       f_aiCredits: "AI credits",
       f_deepScans: "Deep site scans",
-      f_stores: "Connected stores",
+      f_stores: "Connected sales channels",
       f_historyMonths: "Data history (months)",
       f_savedViews: "Saved report views",
       f_scheduledReports: "Scheduled email reports",
