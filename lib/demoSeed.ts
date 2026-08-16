@@ -624,6 +624,33 @@ export async function seedDemoData(
   }
   await prisma.order.createMany({ data: orders, skipDuplicates: true });
 
+  // 🔴 **مجاميع العميل تُشتقّ من طلباته لا تُكتب صفراً.**
+  //
+  // كان صفّ العميل يُنشأ بـ`totalSpent: 0`، فتقرأ صفحة العملاء كلّها
+  // أصفاراً: «متوسّط قيمة العميل ٠»، وكلّ شريحة بإيراد ٠، ومضاعِف
+  // العميل المتكرّر بلا معنى - بينما الطلبات تحته تقول مئات الآلاف.
+  // والمسار الحقيقيّ (`upsertCustomer`) يزيدها مع كلّ طلب، فالديمو وحده
+  // كان يخالفه. تُبنى هنا من الطلبات نفسها التي كُتبت للتوّ، فيتّفق
+  // الرقمان لأنّهما صارا رقماً واحداً.
+  const orderRollup = new Map<string, { n: number; spent: number; returned: number }>();
+  for (const o of orders) {
+    const id = o.customerId as string;
+    if (!id) continue;
+    const acc = orderRollup.get(id) ?? { n: 0, spent: 0, returned: 0 };
+    acc.n++;
+    acc.spent += o.total as number;
+    if (o.isReturned) acc.returned++;
+    orderRollup.set(id, acc);
+  }
+  await Promise.all(
+    [...orderRollup].map(([id, acc]) =>
+      prisma.customer.update({
+        where: { id },
+        data: { ordersCount: acc.n, totalSpent: acc.spent, returnedOrdersCount: acc.returned },
+      })
+    )
+  );
+
   // نصف المنتجات لكلّ متجر. وبدون هذا النسب يرفض `priceSync` تعديل أيّ
   // سعر حين يكون للمساحة أكثر من متجرٍ قابلٍ للكتابة - وهو رفضٌ صحيح، لكن
   // ديمو يعرضه على كلّ منتج يبدو معطّلاً.

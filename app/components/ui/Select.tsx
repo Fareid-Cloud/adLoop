@@ -360,9 +360,9 @@ export function Select({
         onClick={() => !disabled && setOpen((v) => !v)}
         onKeyDown={onKeyDown}
         data-open={open || undefined}
-        className={`field flex w-full items-center gap-2 text-start ${pad} ${
+        className={`field select-trigger ${pad} ${
           open ? "border-accent shadow-[0_0_0_3px_var(--accent-dim)]" : ""
-        } ${disabled ? "" : "cursor-pointer"}`}
+        }`}
       >
         {selected?.icon && <span className="flex shrink-0 items-center">{selected.icon}</span>}
         <span className="min-w-0 flex-1">

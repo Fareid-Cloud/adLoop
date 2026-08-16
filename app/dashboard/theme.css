@@ -768,6 +768,22 @@ html, body { overflow-x: clip; }
 }
 .field:disabled { opacity: .55; cursor: not-allowed; }
 
+/* ── زرّ قائمة الاختيار ───────────────────────────────────────────────
+   🔴 **`display: block` في `.field` تغلب `flex` من تيلويند**، لأنّ هذا
+   الملفّ خارج طبقات أدواتها فيفوز بالترتيب - وهو الفخّ نفسه الموثَّق
+   أعلاه مع الحشوة. والنتيجة زرٌّ يُفكّ إلى ثلاثة أسطر: الأيقونة سطراً،
+   والقيمة سطراً، والسهم سطراً - وهو ما ظهر فعلاً في «متجري».
+   فيأخذ الزرّ صنفه الخاصّ: مظهر الحقل نفسه وسلوك الصفّ. */
+.select-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: start;
+  cursor: pointer;
+}
+.select-trigger:disabled { cursor: not-allowed; }
+
 /* حقل مضغوط للفلاتر وأشرطة الأدوات */
 .field-sm { padding: 0.4375rem 0.75rem; font-size: 12.5px; border-radius: 10px; }
 
