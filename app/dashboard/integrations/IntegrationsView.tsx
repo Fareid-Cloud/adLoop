@@ -24,6 +24,7 @@ import { INTEGRATION_CATEGORIES, integrationByKey, type IntegrationDef } from "@
 import type { ActiveIntegration, IntegrationsOverview } from "@/lib/integrationsStatus";
 import { t, relativeFromDate, type Locale } from "@/lib/i18n/dictionary";
 import { PageHeader } from "@/app/components/ui/PageHeader";
+import { Select } from "@/app/components/ui/Select";
 
 type Tab = "connected" | "available" | "disconnected" | "all";
 type ViewMode = "list" | "grid";
@@ -218,16 +219,20 @@ export function IntegrationsView({
         </nav>
 
         <div className="flex items-center gap-2 pb-2">
-          <select
+          <Select
+            locale={locale}
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="field"
-          >
-            <option value="all">{tr("allCategories")}</option>
-            {INTEGRATION_CATEGORIES.map((c) => (
-              <option key={c.key} value={c.key}>{locale === "en" ? c.labelEn : c.labelAr}</option>
-            ))}
-          </select>
+            onChange={setCategory}
+            ariaLabel={tr("allCategories")}
+            className="w-52"
+            options={[
+              { value: "all", label: tr("allCategories") },
+              ...INTEGRATION_CATEGORIES.map((c) => ({
+                value: c.key,
+                label: locale === "en" ? c.labelEn : c.labelAr,
+              })),
+            ]}
+          />
           {/* 🔴 **كان `h-full` بلا أبٍ ذي ارتفاع، فينهار المبدّل إلى شكلٍ
               مشوّه:** نصفٌ أزرقُ مستديرٌ من جهة وقوسٌ أبيضُ من الأخرى، وهو ما
               صوّره المالك. ولا فاصلَ يفصل شيئاً حين لا ارتفاع للشقّين.

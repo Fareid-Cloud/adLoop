@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { resolveStoreScope } from "@/lib/ecommerce/storeScope";
+import { StorePicker } from "@/app/components/ui/StorePicker";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +48,12 @@ const CONFIDENCE_TONE = {
 } as const;
 const DIFFICULTY_KEY = { EASY: "diffEasy", MEDIUM: "diffMedium", HARD: "diffHard" } as const;
 
-export default async function OpportunitiesPage() {
+export default async function OpportunitiesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ store?: string }>;
+}) {
+  const sp = await searchParams;
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `opportunities.${k}`, v);
@@ -62,7 +69,10 @@ export default async function OpportunitiesPage() {
     return <DataGate locale={locale} title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
-  const result = await buildOpportunities(workspace.id, 30);
+  // المتجر المختار من الرابط، مُتحقَّقاً من انتمائه لهذه المساحة.
+  const scope = await resolveStoreScope(workspace.id, sp.store);
+
+  const result = await buildOpportunities(workspace.id, 30, scope.selectedId);
   const c = result.currency;
 
   const easyWins = result.opportunities.filter((o) => o.difficulty === "EASY");
@@ -74,6 +84,7 @@ export default async function OpportunitiesPage() {
         title={tr("title")}
         subtitle={tr("subtitle")}
         storeName={workspace.name}
+        action={<StorePicker options={scope.options} selectedId={scope.selectedId} locale={locale} />}
       />
 
       {result.opportunities.length > 0 && (

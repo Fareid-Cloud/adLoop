@@ -80,13 +80,16 @@ const CONFIDENCE_RANK: Record<Confidence, number> = { HIGH: 3, MEDIUM: 2, LOW: 1
 
 export async function buildOpportunities(
   workspaceId: string,
-  windowDays = 30
+  windowDays = 30,
+  /** متجرٌ بعينه، أو `null` لكلّ المتاجر - يُمرَّر كما هو إلى كلّ مصدرٍ
+   *  تُبنى منه الفرصة، فلا يخرج اقتراحٌ من أرقام متجرٍ لا يقرأه المستخدم. */
+  storeId: string | null = null
 ): Promise<OpportunitiesResult> {
   const [overview, inventory, customers, journey, workspace] = await Promise.all([
-    getEcommerceOverview(workspaceId, windowDays),
-    getInventoryAnalysis(workspaceId, windowDays),
-    getCustomerAnalytics(workspaceId),
-    getProfitJourney(workspaceId, windowDays),
+    getEcommerceOverview(workspaceId, windowDays, storeId),
+    getInventoryAnalysis(workspaceId, windowDays, storeId),
+    getCustomerAnalytics(workspaceId, storeId),
+    getProfitJourney(workspaceId, windowDays, storeId),
     prisma.workspace.findUnique({ where: { id: workspaceId }, select: { currency: true } }),
   ]);
 

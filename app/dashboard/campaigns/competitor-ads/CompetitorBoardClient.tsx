@@ -20,6 +20,7 @@ import { MetricCard } from "@/app/components/ui/MetricCard";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import type { BoardSummary, CompetitorAdView, AdFormat } from "@/lib/competitorBoard";
 import { PageHeader } from "@/app/components/ui/PageHeader";
+import { Select } from "@/app/components/ui/Select";
 
 const FORMATS: AdFormat[] = ["IMAGE", "VIDEO", "CAROUSEL", "TEXT"];
 const FORMAT_ICON: Record<AdFormat, typeof ImageIcon> = {
@@ -249,7 +250,7 @@ export function CompetitorBoardClient({
       </p>
 
       {addingCompetitor && (
-        <CompetitorModal workspaceId={workspaceId} tr={tr} onClose={() => setAddingCompetitor(false)} />
+        <CompetitorModal workspaceId={workspaceId} tr={tr} locale={locale} onClose={() => setAddingCompetitor(false)} />
       )}
       {addingAdFor && (
         <AdModal
@@ -293,13 +294,14 @@ function QuickSearch({
           placeholder={tr("quickPlaceholder")}
           className="field min-w-[200px] flex-1"
         />
-        <select
+        <Select
+          locale={locale}
           value={country}
-          onChange={(e) => setCountry(e.target.value)}
-          className="field text-[13px]"
-        >
-          {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
+          onChange={setCountry}
+          ariaLabel={tr("country")}
+          className="w-32"
+          options={COUNTRIES.map((c) => ({ value: c, label: c }))}
+        />
         <a
           href={url ?? undefined}
           target="_blank"
@@ -429,10 +431,11 @@ function AdCard({
 // ==================== النوافذ ====================
 
 function CompetitorModal({
-  workspaceId, tr, onClose,
+  workspaceId, tr, locale, onClose,
 }: {
   workspaceId: string;
   tr: (k: string, v?: Record<string, string | number>) => string;
+  locale: Locale;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -460,9 +463,13 @@ function CompetitorModal({
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder={tr("competitorNamePlaceholder")} className={INPUT} />
       </Field>
       <Field label={tr("country")}>
-        <select value={country} onChange={(e) => setCountry(e.target.value)} className={INPUT}>
-          {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
+        <Select
+          locale={locale}
+          value={country}
+          onChange={setCountry}
+          ariaLabel={tr("country")}
+          options={COUNTRIES.map((c) => ({ value: c, label: c }))}
+        />
       </Field>
       <Field label={tr("pageUrl")}>
         <input value={pageUrl} onChange={(e) => setPageUrl(e.target.value)} placeholder="facebook.com/…" className={INPUT} dir="ltr" />

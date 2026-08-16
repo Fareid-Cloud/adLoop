@@ -11,6 +11,7 @@ import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { OptionGroup } from "@/app/components/ui/OptionGroup";
 import { EXPERIMENT_METRICS } from "@/lib/experimentMetrics";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { Select } from "@/app/components/ui/Select";
 
 interface MetricResult { before: number; after: number; changePct: number | null }
 
@@ -352,19 +353,29 @@ function ManualExperimentModal({
 
         <div className="flex-1 overflow-y-auto p-5">
           <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("changeType")}</label>
-          <select value={changeType} onChange={(e) => setChangeType(e.target.value)}
-                  className="field mb-4 w-full">
-            {Object.entries(CHANGE_TYPE_KEYS).filter(([k]) => k !== "AUTOMATION_RULE").map(([k, key]) => (
-              <option key={k} value={k}>{tr(key)}</option>
-            ))}
-          </select>
+          <Select
+            locale={locale}
+            value={changeType}
+            onChange={setChangeType}
+            ariaLabel={tr("changeType")}
+            className="mb-4"
+            options={Object.entries(CHANGE_TYPE_KEYS)
+              .filter(([k]) => k !== "AUTOMATION_RULE")
+              .map(([k, key]) => ({ value: k, label: tr(key) }))}
+          />
 
           <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("campaignOptional")}</label>
-          <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)}
-                  className="field mb-4 w-full">
-            <option value="">{tr("allCampaigns")}</option>
-            {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <Select
+            locale={locale}
+            value={campaignId}
+            onChange={setCampaignId}
+            ariaLabel={tr("campaignOptional")}
+            className="mb-4"
+            options={[
+              { value: "", label: tr("allCampaigns") },
+              ...campaigns.map((c) => ({ value: c.id, label: c.name })),
+            ]}
+          />
 
           <label className="mb-1.5 block text-[12.5px] text-text-muted">{tr("changeDesc")}</label>
           <input value={description} onChange={(e) => setDescription(e.target.value)}

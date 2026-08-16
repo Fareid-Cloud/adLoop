@@ -2649,13 +2649,19 @@ export const dictionary = {
       whereWoo: "من لوحة ووردبريس: WooCommerce ← الإعدادات ← Advanced ← Webhooks ← Add webhook، والموضوع Order created.",
       whereEasyOrders: "من لوحة إيزي أوردرز: الإعدادات ← الويب هوك، وأضف الرابط لحدث الطلب الجديد.",
     },
+    // ==== قائمة الاختيار المشتركة ====
+    select: {
+      placeholder: "اختر…",
+      search: "ابحث…",
+      noResults: "لا نتيجة تطابق ما كتبت",
+    },
     // ==== متجري الإلكتروني ====
     storePicker: {
       label: "المتجر",
       all: "كلّ المتاجر",
     },
     storeCompare: {
-      title: "المتاجر",
+      title: "نزال المتاجر",
       subtitle: "متاجر مساحة العمل هذه جنباً إلى جنب - أيّها يكسب فعلاً.",
       colAdSpend: "إنفاق إعلانيّ",
       colRoas: "العائد على الإنفاق",
@@ -7318,13 +7324,19 @@ export const dictionary = {
       whereWoo: "In WordPress: WooCommerce -> Settings -> Advanced -> Webhooks -> Add webhook, topic Order created.",
       whereEasyOrders: "In EasyOrders: Settings -> Webhooks, and add the URL for the new-order event.",
     },
+    // ==== Shared select ====
+    select: {
+      placeholder: "Select…",
+      search: "Search…",
+      noResults: "Nothing matches what you typed",
+    },
     // ==== My Store ====
     storePicker: {
       label: "Store",
       all: "All stores",
     },
     storeCompare: {
-      title: "Stores",
+      title: "Store Showdown",
       subtitle: "This workspace's stores side by side - which one actually wins.",
       colAdSpend: "Ad spend",
       colRoas: "ROAS",

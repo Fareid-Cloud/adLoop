@@ -58,7 +58,10 @@ const RUNNING_OUT_DAYS = 14;
 
 export async function getInventoryAnalysis(
   workspaceId: string,
-  windowDays = 30
+  windowDays = 30,
+  /** متجرٌ بعينه، أو `null` لكلّ المتاجر - المخزون يخصّ منتجاً، والمنتج
+   *  يحمل متجره. */
+  storeId: string | null = null
 ): Promise<InventoryAnalysis> {
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
@@ -71,7 +74,9 @@ export async function getInventoryAnalysis(
   const longSince = new Date();
   longSince.setDate(longSince.getDate() - DEAD_STOCK_DAYS);
 
-  const products = await prisma.product.findMany({ where: { workspaceId } });
+  const products = await prisma.product.findMany({
+    where: { workspaceId, ...(storeId ? { connectionId: storeId } : {}) },
+  });
   const tracked = products.filter((p) => p.stockQuantity !== null);
 
   if (tracked.length === 0) {

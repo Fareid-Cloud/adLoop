@@ -19,6 +19,8 @@ import { buildOpportunities } from "@/lib/ecommerce/opportunities";
 import { HelpCircle, ArrowLeft } from "lucide-react";
 import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { resolveStoreScope } from "@/lib/ecommerce/storeScope";
+import { StorePicker } from "@/app/components/ui/StorePicker";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +33,12 @@ interface Answer {
   tone: "critical" | "warning" | "positive" | "neutral";
 }
 
-export default async function AiInsightsPage() {
+export default async function AiInsightsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ store?: string }>;
+}) {
+  const sp = await searchParams;
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   const tx = (item: { key: string; vars?: Record<string, string | number> }) => tText(locale, "oppText", item);
@@ -47,12 +54,15 @@ export default async function AiInsightsPage() {
     return <DataGate locale={locale} title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
+  // المتجر المختار من الرابط، مُتحقَّقاً من انتمائه لهذه المساحة.
+  const scope = await resolveStoreScope(workspace.id, sp.store);
+
   const [journey, prevJourney, overview, products, opps] = await Promise.all([
-    getProfitJourney(workspace.id, 30),
-    getProfitJourney(workspace.id, 60),
-    getStoreOverview(workspace.id, 30),
-    getEcommerceOverview(workspace.id, 30),
-    buildOpportunities(workspace.id, 30),
+    getProfitJourney(workspace.id, 30, scope.selectedId),
+    getProfitJourney(workspace.id, 60, scope.selectedId),
+    getStoreOverview(workspace.id, 30, scope.selectedId),
+    getEcommerceOverview(workspace.id, 30, scope.selectedId),
+    buildOpportunities(workspace.id, 30, scope.selectedId),
   ]);
 
   const c = journey.currency;
@@ -188,6 +198,7 @@ export default async function AiInsightsPage() {
         title={tr("title")}
         subtitle={tr("subtitle")}
         storeName={workspace.name}
+        action={<StorePicker options={scope.options} selectedId={scope.selectedId} locale={locale} />}
       />
 
       <SectionHeading hint={tr("fourQuestionsHint")}>{tr("fourQuestions")}</SectionHeading>

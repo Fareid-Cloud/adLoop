@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import { X, Search, Check, AlertCircle, Loader2 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { t } from "@/lib/i18n/dictionary";
+import { Select } from "@/app/components/ui/Select";
 
 type Platform = "GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS";
 
@@ -324,18 +325,20 @@ export function CampaignPickerModal({
                 {stores.length > 1 && (
                   <label className="ms-auto flex items-center gap-1.5 text-[11.5px] font-normal">
                     <span className="text-text-faint">{tr("sellsFor")}</span>
-                    <select
+                    <Select
+                      locale={locale}
                       value={storeByAccount[acc.accountId] ?? ""}
-                      onChange={(e) =>
-                        setStoreByAccount((prev) => ({ ...prev, [acc.accountId]: e.target.value }))
+                      onChange={(v) =>
+                        setStoreByAccount((prev) => ({ ...prev, [acc.accountId]: v }))
                       }
-                      className="field py-1 text-[11.5px]"
-                    >
-                      <option value="">{tr("noStoreAssigned")}</option>
-                      {stores.map((st) => (
-                        <option key={st.id} value={st.id}>{st.name}</option>
-                      ))}
-                    </select>
+                      ariaLabel={tr("noStoreAssigned")}
+                      size="sm"
+                      className="w-44"
+                      options={[
+                        { value: "", label: tr("noStoreAssigned") },
+                        ...stores.map((st) => ({ value: st.id, label: st.name })),
+                      ]}
+                    />
                   </label>
                 )}
               </div>

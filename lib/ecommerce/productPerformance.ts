@@ -100,7 +100,10 @@ const SHOPPING_SNAPSHOT_WINDOW_DAYS = 30;
 
 export async function getEcommerceOverview(
   workspaceId: string,
-  windowDays = 30
+  windowDays = 30,
+  /** متجرٌ بعينه، أو `null` لكلّ المتاجر. المنتج يحمل متجره
+   *  (`Product.connectionId`)، فيكفي تضييقه ليتبعه كلّ ما يُحسب منه. */
+  storeId: string | null = null
 ): Promise<EcommerceOverview> {
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
@@ -112,7 +115,9 @@ export async function getEcommerceOverview(
   since.setDate(since.getDate() - windowDays);
 
   const [products, connection] = await Promise.all([
-    prisma.product.findMany({ where: { workspaceId } }),
+    prisma.product.findMany({
+      where: { workspaceId, ...(storeId ? { connectionId: storeId } : {}) },
+    }),
     prisma.ecommerceConnection.findFirst({
       where: { workspaceId, active: true },
       select: { platform: true },

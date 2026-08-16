@@ -20,6 +20,7 @@ import { itemTitle } from "@/lib/localizedRecord";
 import { HealthGauge } from "@/app/components/ui/HealthGauge";
 import { TH, TD, TR, THEAD_ROW } from "@/app/components/ui/tableStyles";
 import { PageHeader } from "@/app/components/ui/PageHeader";
+import { Select } from "@/app/components/ui/Select";
 
 export interface CheckRow {
   id: string;
@@ -416,13 +417,22 @@ export function DiagnosticsView({
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <select value={category} onChange={(e) => setCategory(e.target.value as any)}
-                    className="field">
-              <option value="all">{tp("allCategories")} ({categoryCounts.all ?? 0})</option>
-              {(Object.keys(CATEGORY_META) as CheckCategory[]).filter((k) => categoryCounts[k]).map((k) => (
-                <option key={k} value={k}>{ar ? CATEGORY_META[k].ar : CATEGORY_META[k].en} ({categoryCounts[k]})</option>
-              ))}
-            </select>
+            <Select
+              locale={locale}
+              value={category}
+              onChange={(v) => setCategory(v as CheckCategory | "all")}
+              ariaLabel={tp("allCategories")}
+              className="w-52"
+              options={[
+                { value: "all", label: `${tp("allCategories")} (${categoryCounts.all ?? 0})` },
+                ...(Object.keys(CATEGORY_META) as CheckCategory[])
+                  .filter((k) => categoryCounts[k])
+                  .map((k) => ({
+                    value: k,
+                    label: `${ar ? CATEGORY_META[k].ar : CATEGORY_META[k].en} (${categoryCounts[k]})`,
+                  })),
+              ]}
+            />
             {(severityFilter !== "all" || statusFilter !== "all" || category !== "all") && (
               <button
                 onClick={() => { setSeverityFilter("all"); setStatusFilter("all"); setCategory("all"); }}
@@ -431,13 +441,20 @@ export function DiagnosticsView({
                 {tr("clearFilters")}
               </button>
             )}
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)}
-                    className="field">
-              <option value="all">{tp("allStatuses")}</option>
-              {(Object.keys(STATUS_TONE) as CheckStatus[]).map((k) => (
-                <option key={k} value={k}>{tp(STATUS_KEY[k])}</option>
-              ))}
-            </select>
+            <Select
+              locale={locale}
+              value={statusFilter}
+              onChange={(v) => setStatusFilter(v as CheckStatus | "all")}
+              ariaLabel={tp("allStatuses")}
+              className="w-44"
+              options={[
+                { value: "all", label: tp("allStatuses") },
+                ...(Object.keys(STATUS_TONE) as CheckStatus[]).map((k) => ({
+                  value: k,
+                  label: tp(STATUS_KEY[k]),
+                })),
+              ]}
+            />
             <div className="relative">
               <Search size={14} className="absolute top-1/2 -translate-y-1/2 text-text-faint" style={{ insetInlineStart: 10 }} />
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tp("searchChecks")}

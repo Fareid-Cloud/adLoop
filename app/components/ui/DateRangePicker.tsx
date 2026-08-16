@@ -17,6 +17,7 @@ import {
   type CompareMode, type DateRange, type PresetKey,
 } from "@/lib/dateRange";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { Select } from "./Select";
 
 const COMPARE_MODES: CompareMode[] = ["previous", "sameWeekday", "previousYear", "custom"];
 
@@ -271,19 +272,19 @@ export function DateRangePicker({
               )}
 
               {cmpOn && (
-                <select
+                <Select
+                  locale={locale}
                   value={draftCmpMode}
-                  onChange={(e) => {
-                    const m = e.target.value as CompareMode;
+                  onChange={(v) => {
+                    const m = v as CompareMode;
                     setDraftCmpMode(m);
                     if (m !== "custom") setDraftCmp(resolveCompare(draft, m));
                   }}
-                  className="field field-sm"
-                >
-                  {COMPARE_MODES.map((m) => (
-                    <option key={m} value={m}>{tr(`cmp_${m}`)}</option>
-                  ))}
-                </select>
+                  ariaLabel={tr("compare")}
+                  size="sm"
+                  className="w-44"
+                  options={COMPARE_MODES.map((m) => ({ value: m, label: tr(`cmp_${m}`) }))}
+                />
               )}
 
               <span className="text-[11.5px] text-text-faint">

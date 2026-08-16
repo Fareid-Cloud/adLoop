@@ -10,6 +10,7 @@ import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 import { TH } from "@/app/components/ui/tableStyles";
+import { Select } from "@/app/components/ui/Select";
 
 export interface CampaignRow {
   campaignId: string;
@@ -153,18 +154,30 @@ export function CampaignsOverview({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <select value={platform} onChange={(e) => setPlatform(e.target.value)}
-                    className="field">
-              <option value="all">{tr("ovAllPlatforms")}</option>
-              {platforms.map((p) => <option key={p} value={p}>{platformLabel(locale, p)}</option>)}
-            </select>
-            <select value={state} onChange={(e) => setState(e.target.value as any)}
-                    className="field">
-              <option value="all">{tr("ovAllStates")}</option>
-              <option value="critical">{tr("ovStCritical")} ({counts.critical})</option>
-              <option value="watch">{tr("ovStWatch")} ({counts.watch})</option>
-              <option value="healthy">{tr("ovStHealthy")} ({counts.healthy})</option>
-            </select>
+            <Select
+              locale={locale}
+              value={platform}
+              onChange={setPlatform}
+              ariaLabel={tr("ovAllPlatforms")}
+              className="w-44"
+              options={[
+                { value: "all", label: tr("ovAllPlatforms") },
+                ...platforms.map((p) => ({ value: p, label: platformLabel(locale, p) })),
+              ]}
+            />
+            <Select
+              locale={locale}
+              value={state}
+              onChange={(v) => setState(v as typeof state)}
+              ariaLabel={tr("ovAllStates")}
+              className="w-48"
+              options={[
+                { value: "all", label: tr("ovAllStates") },
+                { value: "critical", label: `${tr("ovStCritical")} (${counts.critical})` },
+                { value: "watch", label: `${tr("ovStWatch")} (${counts.watch})` },
+                { value: "healthy", label: `${tr("ovStHealthy")} (${counts.healthy})` },
+              ]}
+            />
             <div className="relative">
               <Search size={14} className="absolute top-1/2 -translate-y-1/2 text-text-faint" style={{ insetInlineStart: 10 }} />
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tr("ovSearch")}

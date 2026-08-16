@@ -11,13 +11,15 @@ import { getEcommerceOverview } from "@/lib/ecommerce/productPerformance";
 import { EcommerceView, type ProductRow } from "../EcommerceView";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { resolveStoreScope } from "@/lib/ecommerce/storeScope";
+import { StorePicker } from "@/app/components/ui/StorePicker";
 
 export const dynamic = "force-dynamic";
 
 export default async function EcommerceProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ days?: string }>;
+  searchParams: Promise<{ days?: string; store?: string }>;
 }) {
   const sp = await searchParams;
   const windowDays = [7, 30, 90].includes(Number(sp.days)) ? Number(sp.days) : 30;
@@ -34,7 +36,10 @@ export default async function EcommerceProductsPage({
     return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
-  const overview = await getEcommerceOverview(workspace.id, windowDays);
+  // المتجر المختار من الرابط، مُتحقَّقاً من انتمائه لهذه المساحة.
+  const scope = await resolveStoreScope(workspace.id, sp.store);
+
+  const overview = await getEcommerceOverview(workspace.id, windowDays, scope.selectedId);
 
   if (overview.products.length === 0) {
     return (
@@ -61,6 +66,7 @@ export default async function EcommerceProductsPage({
       currency={overview.currency}
       adSpendAvailability={overview.adSpendAvailability}
       locale={(user.preferredLocale as "ar" | "en") ?? "ar"}
+      storePicker={<StorePicker options={scope.options} selectedId={scope.selectedId} locale={locale} />}
     />
   );
 }

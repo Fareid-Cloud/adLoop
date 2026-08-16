@@ -9,6 +9,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { Select } from "@/app/components/ui/Select";
 
 const VERTICALS = [
   { value: "ecommerce", key: "vEcommerce" },
@@ -85,31 +86,25 @@ export function CreateWorkspaceForm({ locale }: { locale: Locale }) {
           className="field mb-3 w-full"
         />
 
-        <select
+        <Select
+          locale={locale}
           value={vertical}
-          onChange={(e) => setVertical(e.target.value)}
-          className="field mb-3 w-full"
-        >
-          <option value="">{tr("verticalPlaceholder")}</option>
-          {VERTICALS.map((v) => (
-            <option key={v.value} value={v.value}>
-              {tr(v.key)}
-            </option>
-          ))}
-        </select>
+          onChange={setVertical}
+          placeholder={tr("verticalPlaceholder")}
+          ariaLabel={tr("verticalPlaceholder")}
+          className="mb-3"
+          options={VERTICALS.map((v) => ({ value: v.value, label: tr(v.key) }))}
+        />
 
-        <select
+        <Select
+          locale={locale}
           value={businessScale}
-          onChange={(e) => setBusinessScale(e.target.value)}
-          className="field mb-4 w-full"
-        >
-          <option value="">{tr("scalePlaceholder")}</option>
-          {BUSINESS_SCALES.map((s) => (
-            <option key={s.value} value={s.value}>
-              {tr(s.key)}
-            </option>
-          ))}
-        </select>
+          onChange={setBusinessScale}
+          placeholder={tr("scalePlaceholder")}
+          ariaLabel={tr("scalePlaceholder")}
+          className="mb-4"
+          options={BUSINESS_SCALES.map((s) => ({ value: s.value, label: tr(s.key) }))}
+        />
 
         {error && <p className="mb-3 text-xs text-critical">{error}</p>}
 

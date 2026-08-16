@@ -25,6 +25,7 @@ import {
 import { MetricCard, type MetricTone } from "@/app/components/ui/MetricCard";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { itemTitle, itemDescription } from "@/lib/localizedRecord";
+import { Select } from "@/app/components/ui/Select";
 
 export interface ActionItemData {
   id: string;
@@ -230,22 +231,30 @@ export function ActionsClient({
           <Pill active={tab === "alerts"} onClick={() => setTab("alerts")} label={tr("tabAlerts")} />
         </div>
         <div className="flex flex-wrap gap-2">
-          <select
+          <Select
+            locale={locale}
             value={groupBy}
-            onChange={(e) => setGroupBy(e.target.value as GroupBy)}
-            className="field field-sm"
-          >
-            <option value="source">{tr("groupBySource")}</option>
-            <option value="severity">{tr("groupBySeverity")}</option>
-          </select>
-          <select
+            onChange={(v) => setGroupBy(v as GroupBy)}
+            ariaLabel={tr("groupBySource")}
+            size="sm"
+            className="w-40"
+            options={[
+              { value: "source", label: tr("groupBySource") },
+              { value: "severity", label: tr("groupBySeverity") },
+            ]}
+          />
+          <Select
+            locale={locale}
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortBy)}
-            className="field field-sm"
-          >
-            <option value="impact">{tr("sortImpact")}</option>
-            <option value="newest">{tr("sortNewest")}</option>
-          </select>
+            onChange={(v) => setSortBy(v as SortBy)}
+            ariaLabel={tr("sortImpact")}
+            size="sm"
+            className="w-40"
+            options={[
+              { value: "impact", label: tr("sortImpact") },
+              { value: "newest", label: tr("sortNewest") },
+            ]}
+          />
         </div>
       </div>
 

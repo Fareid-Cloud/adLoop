@@ -78,20 +78,21 @@ export default async function StoreComparisonPage({
 
   return (
     <div className="mx-auto max-w-[1200px] pb-12">
+      {/* منتقي الفترة في صفّ العنوان لا تحته: شريطٌ وحده على عرض الصفحة
+          يقرأ كقسمٍ مستقلّ، وهو ليس قسماً بل ضبطٌ لما في العنوان. */}
       <EcomHeader
         title={tr("title")}
         subtitle={tr("subtitle")}
         storeName={workspace.name}
+        action={
+          <PeriodBar
+            locale={locale}
+            preset={period.preset}
+            range={period.range}
+            compare={period.compare}
+          />
+        }
       />
-
-      <div className="mb-5">
-        <PeriodBar
-          locale={locale}
-          preset={period.preset}
-          range={period.range}
-          compare={period.compare}
-        />
-      </div>
 
       {/* ═══ الحكم: أيّها يكسب، وبأيّ مقياس ═══ */}
       {winner ? (

@@ -24,6 +24,7 @@ import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 import { TH } from "@/app/components/ui/tableStyles";
 import { renderReportDocument } from "@/lib/reports/reportDocument";
 import { PageHeader } from "@/app/components/ui/PageHeader";
+import { Select } from "@/app/components/ui/Select";
 
 export interface SavedView {
   id: string;
@@ -311,15 +312,16 @@ export function ReportsClient({
             {/* ٣ التفصيل + ٤ التصفية */}
             <div className="flex flex-col gap-4">
               <Step n={3} label={tr("stepBreakdown")}>
-                <select
+                <Select
+                  locale={locale}
                   value={dimension}
-                  onChange={(e) => setDimension(e.target.value as Dimension)}
-                  className="field w-full"
-                >
-                  {DIMENSIONS.map((d) => (
-                    <option key={d} value={d}>{tr(`dim${d[0].toUpperCase()}${d.slice(1)}`)}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setDimension(v as Dimension)}
+                  ariaLabel={tr("stepBreakdown")}
+                  options={DIMENSIONS.map((d) => ({
+                    value: d,
+                    label: tr(`dim${d[0].toUpperCase()}${d.slice(1)}`),
+                  }))}
+                />
               </Step>
 
               <Step n={4} label={tr("stepFilters")}>

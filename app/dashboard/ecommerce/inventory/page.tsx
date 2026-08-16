@@ -15,10 +15,17 @@ import { MetricCard } from "@/app/components/ui/MetricCard";
 import { Boxes, Snowflake, PackageX } from "lucide-react";
 import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { resolveStoreScope } from "@/lib/ecommerce/storeScope";
+import { StorePicker } from "@/app/components/ui/StorePicker";
 
 export const dynamic = "force-dynamic";
 
-export default async function InventoryPage() {
+export default async function InventoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ store?: string }>;
+}) {
+  const sp = await searchParams;
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `inventory.${k}`, v);
@@ -34,7 +41,10 @@ export default async function InventoryPage() {
     return <DataGate locale={locale} title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
-  const analysis = await getInventoryAnalysis(workspace.id, 30);
+  // المتجر المختار من الرابط، مُتحقَّقاً من انتمائه لهذه المساحة.
+  const scope = await resolveStoreScope(workspace.id, sp.store);
+
+  const analysis = await getInventoryAnalysis(workspace.id, 30, scope.selectedId);
   const c = analysis.currency;
 
   if (!analysis.hasData) {
@@ -92,6 +102,7 @@ export default async function InventoryPage() {
         title={tr("title")}
         subtitle={tr("subtitleWindow", { days: analysis.windowDays })}
         storeName={workspace.name}
+        action={<StorePicker options={scope.options} selectedId={scope.selectedId} locale={locale} />}
       />
 
       <div className="mb-8 grid gap-3 sm:grid-cols-3">

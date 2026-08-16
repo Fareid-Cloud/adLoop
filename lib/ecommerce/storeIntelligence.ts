@@ -563,14 +563,63 @@ export interface CustomerAnalytics {
 const CHURN_RISK_DAYS = 90;
 const VIP_TOP_PERCENT = 0.1;
 
-export async function getCustomerAnalytics(workspaceId: string): Promise<CustomerAnalytics> {
+/** يعيد بناء مجاميع كلّ عميل من طلبات متجرٍ واحد، ويُسقط مَن لم يشترِ منه.
+ *  الطلب الملغى لا يُعَدّ - كما في بقيّة الصفحة. */
+async function scopeCustomersToStore<T extends {
+  id: string;
+  ordersCount: number;
+  totalSpent: number;
+  returnedOrdersCount: number;
+  lastOrderAt: Date | null;
+}>(customers: T[], workspaceId: string, storeId: string): Promise<T[]> {
+  const orders = await prisma.order.findMany({
+    where: { workspaceId, connectionId: storeId, state: { not: "CANCELLED" } },
+    select: { customerId: true, total: true, isReturned: true, orderedAt: true },
+  });
+
+  const byCustomer = new Map<string, { n: number; spent: number; returned: number; last: Date | null }>();
+  for (const o of orders) {
+    if (!o.customerId) continue;
+    const acc = byCustomer.get(o.customerId) ?? { n: 0, spent: 0, returned: 0, last: null };
+    acc.n++;
+    acc.spent += o.total;
+    if (o.isReturned) acc.returned++;
+    if (!acc.last || o.orderedAt > acc.last) acc.last = o.orderedAt;
+    byCustomer.set(o.customerId, acc);
+  }
+
+  return customers.flatMap((c) => {
+    const acc = byCustomer.get(c.id);
+    if (!acc) return [];
+    return [{
+      ...c,
+      ordersCount: acc.n,
+      totalSpent: acc.spent,
+      returnedOrdersCount: acc.returned,
+      lastOrderAt: acc.last,
+    }];
+  });
+}
+
+export async function getCustomerAnalytics(
+  workspaceId: string,
+  /** متجرٌ بعينه، أو `null` لكلّ المتاجر.
+   *
+   * 🔴 **العميل هنا ليس تصفيةً بل إعادةَ حساب.** صفّ العميل يحمل مجاميعه
+   * عبر المساحة كلّها (`ordersCount`, `totalSpent`, `returnedOrdersCount`)،
+   * فتصفيةُ «مَن اشترى من هذا المتجر» تُبقي أرقاماً تضمّ مشترياته من
+   * المتجر الآخر - فيُقرأ متوسّط عمر العميل أعلى ممّا هو لهذا المتجر.
+   * فتُعاد المجاميع الأربعة من طلبات هذا المتجر وحدها. */
+  storeId: string | null = null
+): Promise<CustomerAnalytics> {
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
     select: { currency: true },
   });
   const currency = workspace?.currency ?? "SAR";
 
-  const customers = await prisma.customer.findMany({ where: { workspaceId } });
+  const all = await prisma.customer.findMany({ where: { workspaceId } });
+  const customers = storeId ? await scopeCustomersToStore(all, workspaceId, storeId) : all;
 
   if (customers.length === 0) {
     return {

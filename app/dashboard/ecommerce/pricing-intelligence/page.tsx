@@ -20,10 +20,17 @@ import { MetricCard } from "@/app/components/ui/MetricCard";
 import { ArrowUpCircle, ArrowDownCircle, Percent, Wallet, ArrowLeft } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { resolveStoreScope } from "@/lib/ecommerce/storeScope";
+import { StorePicker } from "@/app/components/ui/StorePicker";
 
 export const dynamic = "force-dynamic";
 
-export default async function PricingIntelligencePage() {
+export default async function PricingIntelligencePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ store?: string }>;
+}) {
+  const sp = await searchParams;
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `pricingIntel.${k}`, v);
@@ -38,7 +45,10 @@ export default async function PricingIntelligencePage() {
     return <DataGate locale={locale} title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
-  const overview = await getEcommerceOverview(workspace.id, 30);
+  // المتجر المختار من الرابط، مُتحقَّقاً من انتمائه لهذه المساحة.
+  const scope = await resolveStoreScope(workspace.id, sp.store);
+
+  const overview = await getEcommerceOverview(workspace.id, 30, scope.selectedId);
   const c = overview.currency;
 
   if (overview.products.length === 0) {
@@ -119,6 +129,7 @@ export default async function PricingIntelligencePage() {
         title={tr("title")}
         subtitle={tr("subtitle")}
         storeName={workspace.name}
+        action={<StorePicker options={scope.options} selectedId={scope.selectedId} locale={locale} />}
       />
 
       <div className="mb-8 grid gap-3 sm:grid-cols-3">

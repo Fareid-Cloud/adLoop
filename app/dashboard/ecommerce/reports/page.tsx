@@ -16,13 +16,15 @@ import { buildOpportunities } from "@/lib/ecommerce/opportunities";
 import { PrintButton } from "./PrintButton";
 import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { resolveStoreScope } from "@/lib/ecommerce/storeScope";
+import { StorePicker } from "@/app/components/ui/StorePicker";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReportsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ days?: string }>;
+  searchParams: Promise<{ days?: string; store?: string }>;
 }) {
   const sp = await searchParams;
   const windowDays = [7, 30, 90].includes(Number(sp.days)) ? Number(sp.days) : 30;
@@ -42,12 +44,15 @@ export default async function ReportsPage({
     return <DataGate locale={locale} title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
+  // المتجر المختار من الرابط، مُتحقَّقاً من انتمائه لهذه المساحة.
+  const scope = await resolveStoreScope(workspace.id, sp.store);
+
   const [journey, overview, products, customers, opps] = await Promise.all([
-    getProfitJourney(workspace.id, windowDays),
-    getStoreOverview(workspace.id, windowDays),
-    getEcommerceOverview(workspace.id, windowDays),
-    getCustomerAnalytics(workspace.id),
-    buildOpportunities(workspace.id, windowDays),
+    getProfitJourney(workspace.id, windowDays, scope.selectedId),
+    getStoreOverview(workspace.id, windowDays, scope.selectedId),
+    getEcommerceOverview(workspace.id, windowDays, scope.selectedId),
+    getCustomerAnalytics(workspace.id, scope.selectedId),
+    buildOpportunities(workspace.id, windowDays, scope.selectedId),
   ]);
 
   const c = journey.currency;
@@ -74,7 +79,12 @@ export default async function ReportsPage({
           title={tr("title")}
           subtitle={tr("subtitleWindow", { days: windowDays })}
           storeName={workspace.name}
-          action={<PrintButton locale={locale} label={tr("print")} />}
+          action={
+            <div className="flex flex-wrap items-center gap-2">
+              <StorePicker options={scope.options} selectedId={scope.selectedId} locale={locale} />
+              <PrintButton locale={locale} label={tr("print")} />
+            </div>
+          }
         />
       </div>
 

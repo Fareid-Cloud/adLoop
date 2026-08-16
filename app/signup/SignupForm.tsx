@@ -10,6 +10,7 @@ import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { AuthShell } from "@/app/components/AuthShell";
 import { countriesForDisplay, PRIORITY_COUNTRY_CODES } from "@/lib/countries";
 import { SocialButton, FIELD as F, PRIMARY_BTN as PB } from "@/app/components/AuthControls";
+import { Select } from "@/app/components/ui/Select";
 
 const FIELD = F;
 const PRIMARY_BTN = PB;
@@ -167,43 +168,61 @@ export function SignupForm() {
               title={L("تاريخ الميلاد", "Date of birth")}
             />
 
-            <select className={FIELD} value={f.gender} onChange={(e) => set("gender", e.target.value)}>
-              <option value="">{L("النوع", "Gender")}</option>
-              {GENDERS.map((g) => <option key={g.v} value={g.v}>{ar ? g.ar : g.en}</option>)}
-            </select>
+            <Select
+              locale={locale}
+              value={f.gender}
+              onChange={(v) => set("gender", v)}
+              placeholder={L("النوع", "Gender")}
+              ariaLabel={L("النوع", "Gender")}
+              options={GENDERS.map((g) => ({ value: g.v, label: ar ? g.ar : g.en }))}
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <select className={FIELD} value={f.country} onChange={(e) => set("country", e.target.value)} required>
-              <option value="">{L("الدولة *", "Country *")}</option>
-              {/* مجموعتان لا قائمة واحدة: مئتا خيار بلا فاصل تُخفي الأسواق
-                  التي يأتي منها أغلب المسجّلين خلف تمرير طويل. */}
-              <optgroup label={L("الأكثر شيوعاً", "Most common")}>
-                {countriesForDisplay(locale).slice(0, PRIORITY_COUNTRY_CODES.length).map((c) => (
-                  <option key={c.code} value={c.code}>{ar ? c.ar : c.en}</option>
-                ))}
-              </optgroup>
-              <optgroup label={L("كل الدول", "All countries")}>
-                {countriesForDisplay(locale).slice(PRIORITY_COUNTRY_CODES.length).map((c) => (
-                  <option key={c.code} value={c.code}>{ar ? c.ar : c.en}</option>
-                ))}
-              </optgroup>
-            </select>
-            <select className={FIELD} value={f.adSpendMonthly} onChange={(e) => set("adSpendMonthly", e.target.value)} required>
-              <option value="">{L("الإنفاق الإعلاني الشهري *", "Ad spend / month *")}</option>
-              {AD_SPEND.map((a) => <option key={a.v} value={a.v}>{ar ? a.ar : a.en}</option>)}
-            </select>
+            {/* مجموعتان لا قائمة واحدة: مئتا خيار بلا فاصل تُخفي الأسواق
+                التي يأتي منها أغلب المسجّلين خلف تمرير طويل. */}
+            <Select
+              locale={locale}
+              value={f.country}
+              onChange={(v) => set("country", v)}
+              placeholder={L("الدولة *", "Country *")}
+              ariaLabel={L("الدولة *", "Country *")}
+              options={countriesForDisplay(locale).map((c, i) => ({
+                value: c.code,
+                label: ar ? c.ar : c.en,
+                group:
+                  i < PRIORITY_COUNTRY_CODES.length
+                    ? L("الأكثر شيوعاً", "Most common")
+                    : L("كل الدول", "All countries"),
+              }))}
+            />
+            <Select
+              locale={locale}
+              value={f.adSpendMonthly}
+              onChange={(v) => set("adSpendMonthly", v)}
+              placeholder={L("الإنفاق الإعلاني الشهري *", "Ad spend / month *")}
+              ariaLabel={L("الإنفاق الإعلاني الشهري *", "Ad spend / month *")}
+              options={AD_SPEND.map((a) => ({ value: a.v, label: ar ? a.ar : a.en }))}
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <select className={FIELD} value={f.businessScale} onChange={(e) => set("businessScale", e.target.value)}>
-              <option value="">{L("عدد العملاء الحاليين", "Current clients")}</option>
-              {CLIENTS.map((c) => <option key={c.v} value={c.v}>{ar ? c.ar : c.en}</option>)}
-            </select>
-            <select className={FIELD} value={f.howHeard} onChange={(e) => set("howHeard", e.target.value)}>
-              <option value="">{L("سمعت عن AdLoop من؟", "How did you hear about us?")}</option>
-              {HEARD.map((h) => <option key={h.v} value={h.v}>{ar ? h.ar : h.en}</option>)}
-            </select>
+            <Select
+              locale={locale}
+              value={f.businessScale}
+              onChange={(v) => set("businessScale", v)}
+              placeholder={L("عدد العملاء الحاليين", "Current clients")}
+              ariaLabel={L("عدد العملاء الحاليين", "Current clients")}
+              options={CLIENTS.map((c) => ({ value: c.v, label: ar ? c.ar : c.en }))}
+            />
+            <Select
+              locale={locale}
+              value={f.howHeard}
+              onChange={(v) => set("howHeard", v)}
+              placeholder={L("سمعت عن AdLoop من؟", "How did you hear about us?")}
+              ariaLabel={L("سمعت عن AdLoop من؟", "How did you hear about us?")}
+              options={HEARD.map((h) => ({ value: h.v, label: ar ? h.ar : h.en }))}
+            />
           </div>
 
           <input className={FIELD} placeholder={L("كود إحالة (اختياري)", "Referral code (optional)")} value={f.referralSource} onChange={(e) => set("referralSource", e.target.value)} />

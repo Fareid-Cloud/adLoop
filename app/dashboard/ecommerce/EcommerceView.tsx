@@ -17,6 +17,7 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 import { TH, TD, TR, THEAD_ROW } from "@/app/components/ui/tableStyles";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { missingReturnKey, type ReturnResult } from "@/lib/returnMetrics";
+import { Select } from "@/app/components/ui/Select";
 
 export interface ProductRow {
   id: string;
@@ -67,7 +68,7 @@ const num = (n: number) => Math.round(n).toLocaleString("en-US");
 
 export function EcommerceView({
   workspaceName, products, winner, runnerUp, losing, totals,
-  windowDays, hasStoreConnection, storePlatform, currency, locale,
+  windowDays, hasStoreConnection, storePlatform, currency, locale, storePicker,
   adSpendAvailability,
 }: {
   workspaceName: string;
@@ -81,6 +82,8 @@ export function EcommerceView({
   storePlatform: string | null;
   currency: string;
   locale: Locale;
+  /** منتقي المتجر - يُبنى في الخادم ويُمرَّر، فالعرض هنا لا يعرف المتاجر */
+  storePicker?: React.ReactNode;
   adSpendAvailability: "OK" | "WINDOW_MISMATCH" | "NO_SHOPPING_DATA";
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `productsPage.${k}`, v);
@@ -140,6 +143,8 @@ export function EcommerceView({
         title={tr("title")}
         description={tr("subtitle")}
         actions={
+          <div className="flex flex-wrap items-center gap-2">
+          {storePicker}
           <div className="flex items-center gap-2 card px-3 py-2">
             <Store size={14} className={hasStoreConnection ? "text-verified" : "text-text-faint"} />
             {hasStoreConnection && storePlatform ? (
@@ -149,6 +154,7 @@ export function EcommerceView({
                 {tr("connectStore")}
               </a>
             )}
+          </div>
           </div>
         }
       />
@@ -288,13 +294,17 @@ export function EcommerceView({
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <select value={verdict} onChange={(e) => setVerdict(e.target.value)}
-                    className="field">
-              <option value="all">{tr("allStates")}</option>
-              {Object.entries(VERDICT_META).map(([k, v]) => (
-                <option key={k} value={k}>{tr(v.key)}</option>
-              ))}
-            </select>
+            <Select
+              locale={locale}
+              value={verdict}
+              onChange={setVerdict}
+              ariaLabel={tr("allStates")}
+              className="w-48"
+              options={[
+                { value: "all", label: tr("allStates") },
+                ...Object.entries(VERDICT_META).map(([k, v]) => ({ value: k, label: tr(v.key) })),
+              ]}
+            />
             <div className="relative">
               <Search size={14} className="absolute top-1/2 -translate-y-1/2 text-text-faint" style={{ insetInlineStart: 10 }} />
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tr("searchPlaceholder")}

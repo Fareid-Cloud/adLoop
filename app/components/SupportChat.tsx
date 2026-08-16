@@ -9,6 +9,7 @@ import { useLive } from "@/app/components/LiveData";
 import { Portal } from "@/app/components/ui/Portal";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { countriesForDisplay } from "@/lib/countries";
+import { Select } from "@/app/components/ui/Select";
 
 interface Msg { id: string; fromSupport: boolean; body: string; imageUrls: string[]; createdAt: string; }
 interface Thread { id: string; subject: string; status: string; messages: Msg[]; }
@@ -164,12 +165,17 @@ export function SupportChat({
                 )}
                 {step === 1 && (
                   <>
-                    <select className={INPUT} value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })}>
-                      <option value="">{locale === "en" ? "Country" : "الدولة"}</option>
-                      {countriesForDisplay(locale).map((c) => (
-                        <option key={c.code} value={c.code}>{locale === "en" ? c.en : c.ar}</option>
-                      ))}
-                    </select>
+                    <Select
+                      locale={locale}
+                      value={form.country}
+                      onChange={(v) => setForm({ ...form, country: v })}
+                      placeholder={locale === "en" ? "Country" : "الدولة"}
+                      ariaLabel={locale === "en" ? "Country" : "الدولة"}
+                      options={countriesForDisplay(locale).map((c) => ({
+                        value: c.code,
+                        label: locale === "en" ? c.en : c.ar,
+                      }))}
+                    />
                     <input className={INPUT} placeholder={tr("subject")} value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
                   </>
                 )}

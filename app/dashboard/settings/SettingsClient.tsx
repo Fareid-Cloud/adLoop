@@ -20,6 +20,7 @@ import { OptionGroup } from "@/app/components/ui/OptionGroup";
 import { TabNav } from "@/app/components/ui/TabNav";
 import { ThemeModeCard } from "@/app/components/ui/ThemeModeCard";
 import type { LucideIcon } from "lucide-react";
+import { Select } from "@/app/components/ui/Select";
 
 // سياق اللغة بدل تمريرها كخاصية عبر أربعة عشر مكوّناً فرعياً. الملف واحد
 // وشجرته كلها في العميل، فالسياق هنا أنظف وأقل عرضة للخطأ من تمرير
@@ -482,30 +483,27 @@ function PreferencesTab({ user }: { user: UserData }) {
           />
 
           <FieldLabel>{tr("idxTimezone")}</FieldLabel>
-          <select
+          {/* مجموعات بدل قائمة مسطّحة: القائمة صارت أطول من أن تُمسح بالعين */}
+          <Select
+            locale={locale as Locale}
             value={timezone}
-            onChange={(e) => setTimezone(e.target.value)}
-            className="field mb-4 w-full"
-          >
-            {/* مجموعات بدل قائمة مسطّحة: القائمة صارت أطول من أن تُمسح بالعين */}
-            <optgroup label={tr("tzGroupGulf")}>
-          <option value="Asia/Riyadh">{tr("tzRiyadh")}</option>
-          <option value="Africa/Cairo">{tr("tzCairo")}</option>
-          <option value="Asia/Dubai">{tr("tzDubai")}</option>
-          <option value="Asia/Kuwait">{tr("tzKuwait")}</option>
-          <option value="Europe/Istanbul">{tr("tzIstanbul")}</option>
-            </optgroup>
-            <optgroup label={tr("tzGroupEurope")}>
-          <option value="Europe/London">{tr("tzLondon")}</option>
-          <option value="Europe/Paris">{tr("tzParis")}</option>
-          <option value="Europe/Berlin">{tr("tzBerlin")}</option>
-            </optgroup>
-            <optgroup label={tr("tzGroupAmericas")}>
-          <option value="America/New_York">{tr("tzNewYork")}</option>
-          <option value="America/Chicago">{tr("tzChicago")}</option>
-          <option value="America/Los_Angeles">{tr("tzLosAngeles")}</option>
-            </optgroup>
-          </select>
+            onChange={setTimezone}
+            ariaLabel={tr("idxTimezone")}
+            className="mb-4"
+            options={[
+              { value: "Asia/Riyadh", label: tr("tzRiyadh"), group: tr("tzGroupGulf") },
+              { value: "Africa/Cairo", label: tr("tzCairo"), group: tr("tzGroupGulf") },
+              { value: "Asia/Dubai", label: tr("tzDubai"), group: tr("tzGroupGulf") },
+              { value: "Asia/Kuwait", label: tr("tzKuwait"), group: tr("tzGroupGulf") },
+              { value: "Europe/Istanbul", label: tr("tzIstanbul"), group: tr("tzGroupGulf") },
+              { value: "Europe/London", label: tr("tzLondon"), group: tr("tzGroupEurope") },
+              { value: "Europe/Paris", label: tr("tzParis"), group: tr("tzGroupEurope") },
+              { value: "Europe/Berlin", label: tr("tzBerlin"), group: tr("tzGroupEurope") },
+              { value: "America/New_York", label: tr("tzNewYork"), group: tr("tzGroupAmericas") },
+              { value: "America/Chicago", label: tr("tzChicago"), group: tr("tzGroupAmericas") },
+              { value: "America/Los_Angeles", label: tr("tzLosAngeles"), group: tr("tzGroupAmericas") },
+            ]}
+          />
         </div>
 
         <div className="md:border-s md:border-border md:ps-8">
@@ -819,22 +817,25 @@ function WorkspaceTab({
         </div>
       ) : (
         <>
-          <select
+          <Select
+            locale={tabLocale}
             value={currency}
-            onChange={(e) => setCurrency(e.target.value)}
-            className="field mb-1.5 w-full"
-          >
-            <option value="SAR">{tr("curSar")}</option>
-            <option value="EGP">{tr("curEgp")}</option>
-            <option value="AED">{tr("curAed")}</option>
-            <option value="KWD">{tr("curKwd")}</option>
-            <option value="QAR">{tr("curQar")}</option>
-            <option value="OMR">{tr("curOmr")}</option>
-            <option value="BHD">{tr("curBhd")}</option>
-            <option value="USD">{tr("curUsd")}</option>
-            <option value="EUR">{tr("curEur")}</option>
-            <option value="GBP">{tr("curGbp")}</option>
-          </select>
+            onChange={setCurrency}
+            ariaLabel={tr("idxCurrency")}
+            className="mb-1.5"
+            options={[
+              { value: "SAR", label: tr("curSar") },
+              { value: "EGP", label: tr("curEgp") },
+              { value: "AED", label: tr("curAed") },
+              { value: "KWD", label: tr("curKwd") },
+              { value: "QAR", label: tr("curQar") },
+              { value: "OMR", label: tr("curOmr") },
+              { value: "BHD", label: tr("curBhd") },
+              { value: "USD", label: tr("curUsd") },
+              { value: "EUR", label: tr("curEur") },
+              { value: "GBP", label: tr("curGbp") },
+            ]}
+          />
           <p className="mb-4 px-1 text-[11.5px] leading-relaxed text-text-faint">
             {workspace.isDemo ? tr("currencyDemoNote") : tr("currencyOpenNote")}
           </p>
@@ -843,17 +844,20 @@ function WorkspaceTab({
 
       <FieldLabel>{tr("idxMarket")}</FieldLabel>
       <FieldHint>{tr("idxMarketHint")}</FieldHint>
-      <select
+      <Select
+        locale={tabLocale}
         value={targetLocation}
-        onChange={(e) => setTargetLocation(e.target.value)}
-        className="field mb-4 w-full"
-      >
-        <option value="">{tr("marketNone")}</option>
-        <option value="SA">{tr("marketSa")}</option>
-        <option value="EG">{tr("marketEg")}</option>
-        <option value="AE">{tr("marketAe")}</option>
-        <option value="KW">{tr("marketKw")}</option>
-      </select>
+        onChange={setTargetLocation}
+        ariaLabel={tr("marketNone")}
+        className="mb-4"
+        options={[
+          { value: "", label: tr("marketNone") },
+          { value: "SA", label: tr("marketSa") },
+          { value: "EG", label: tr("marketEg") },
+          { value: "AE", label: tr("marketAe") },
+          { value: "KW", label: tr("marketKw") },
+        ]}
+      />
 
       <FieldLabel>{tr("profitMargin")}</FieldLabel>
       <p className="mb-2 text-xs text-text-faint">
@@ -1870,6 +1874,7 @@ function MfaFields() {
 
 function DangerZoneTab({ workspaces }: { workspaces: WorkspaceData[] }) {
   const tr = useT();
+  const tabLocale = useContext(SettingsLocaleContext);
   const router = useRouter();
   const [confirmText, setConfirmText] = useState("");
   const [targetId, setTargetId] = useState(workspaces[0]?.id ?? "");
@@ -1889,17 +1894,14 @@ function DangerZoneTab({ workspaces }: { workspaces: WorkspaceData[] }) {
         <p className="mb-3 text-xs text-text-muted">
           {tr("dzDeleteWorkspaceHint")}
         </p>
-        <select
+        <Select
+          locale={tabLocale}
           value={targetId}
-          onChange={(e) => setTargetId(e.target.value)}
-          className="field mb-2 w-full"
-        >
-          {workspaces.map((w) => (
-            <option key={w.id} value={w.id}>
-              {w.name}
-            </option>
-          ))}
-        </select>
+          onChange={setTargetId}
+          ariaLabel={tr("dzDeleteWorkspace")}
+          className="mb-2"
+          options={workspaces.map((w) => ({ value: w.id, label: w.name }))}
+        />
         <p className="mb-2 text-xs text-text-faint">{tr("dzTypeName", { name: target?.name ?? "" })}</p>
         <TextInput value={confirmText} onChange={setConfirmText} placeholder={target?.name ?? ""} />
         <button

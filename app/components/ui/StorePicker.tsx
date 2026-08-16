@@ -16,6 +16,7 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Store } from "lucide-react";
+import { Select } from "./Select";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export function StorePicker({
@@ -42,19 +43,21 @@ export function StorePicker({
   }
 
   return (
-    <label className="flex items-center gap-2 text-[12.5px]">
-      <Store size={14} className="shrink-0 text-text-faint" />
-      <span className="text-text-muted">{t(locale, "storePicker.label")}</span>
-      <select
-        value={selectedId ?? ""}
-        onChange={(e) => choose(e.target.value)}
-        className="field py-1.5 text-[12.5px]"
-      >
-        <option value="">{t(locale, "storePicker.all")}</option>
-        {options.map((o) => (
-          <option key={o.id} value={o.id}>{o.name}</option>
-        ))}
-      </select>
-    </label>
+    <Select
+      locale={locale}
+      value={selectedId ?? ""}
+      onChange={choose}
+      ariaLabel={t(locale, "storePicker.label")}
+      size="sm"
+      className="w-[200px]"
+      options={[
+        { value: "", label: t(locale, "storePicker.all"), icon: <Store size={14} className="text-text-faint" /> },
+        ...options.map((o) => ({
+          value: o.id,
+          label: o.name,
+          icon: <Store size={14} className="text-text-faint" />,
+        })),
+      ]}
+    />
   );
 }
