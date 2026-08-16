@@ -2651,6 +2651,20 @@ export const dictionary = {
       whereWoo: "من لوحة ووردبريس: WooCommerce ← الإعدادات ← Advanced ← Webhooks ← Add webhook، والموضوع Order created.",
       whereEasyOrders: "من لوحة إيزي أوردرز: الإعدادات ← الويب هوك، وأضف الرابط لحدث الطلب الجديد.",
     },
+    // ==== سحب الطلبات السابقة ====
+    orderBackfill: {
+      button: "اسحب طلبات آخر {days} يوماً",
+      hint: "الويب هوك يبدأ من لحظة تركيبه. هذا يجلب ما قبله، ولا يكرّر طلباً وصل.",
+      running: "جارٍ السحب…",
+      done: "{imported} طلباً دخل · {duplicates} كان موجوداً · {updated} تغيّرت حالته",
+      cappedNote: "توقّف السحب عند الحدّ، فما زال في متجرك تاريخٌ أقدم. أعد المحاولة لاحقاً ليكمل.",
+      none: "لا طلب في هذه الفترة عند متجرك.",
+      obNoStore: "لا متجر مربوط بهذه المساحة. اربط متجرك من صفحة ربط المنصّات أوّلاً.",
+      obNoToken: "هذا الربط بلا توكن قراءة. أضف توكن الواجهة البرمجية لمتجرك من صفحة ربط المنصّات.",
+      obPlatformUnsupported: "سحب الطلبات السابقة غير مدعوم لهذه المنصّة بعد.",
+      obPullFailed: "تعذّر الوصول إلى المتجر. تأكّد من صلاحية التوكن ومن أنّ المتجر يعمل.",
+      obPullFailedWithReason: "تعذّر الوصول إلى المتجر: {reason}",
+    },
     // ==== سحب المنتجات من المتجر ====
     productSync: {
       button: "اسحب المنتجات من متجرك",
@@ -7359,6 +7373,20 @@ export const dictionary = {
       whereZid: "In Zid: Settings -> Developers -> Webhooks -> Add, and pick the new-order event.",
       whereWoo: "In WordPress: WooCommerce -> Settings -> Advanced -> Webhooks -> Add webhook, topic Order created.",
       whereEasyOrders: "In EasyOrders: Settings -> Webhooks, and add the URL for the new-order event.",
+    },
+    // ==== Backfilling past orders ====
+    orderBackfill: {
+      button: "Pull the last {days} days of orders",
+      hint: "A webhook only starts when it is installed. This brings in what came before it, without re-counting an order that already arrived.",
+      running: "Pulling…",
+      done: "{imported} imported · {duplicates} already here · {updated} changed state",
+      cappedNote: "The pull stopped at its limit, so older history is still in your store. Run it again to continue.",
+      none: "Your store has no orders in this period.",
+      obNoStore: "No store is connected to this workspace. Connect one from Integrations first.",
+      obNoToken: "This connection has no read token. Add your store's API token from Integrations.",
+      obPlatformUnsupported: "Backfilling orders is not supported for this platform yet.",
+      obPullFailed: "Could not reach the store. Check the token is still valid and the store is up.",
+      obPullFailedWithReason: "Could not reach the store: {reason}",
     },
     // ==== Pulling products from the store ====
     productSync: {

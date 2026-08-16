@@ -18,6 +18,7 @@ import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { resolveStoreScope } from "@/lib/ecommerce/storeScope";
 import { StorePicker } from "@/app/components/ui/StorePicker";
+import { BackfillOrdersButton } from "@/app/components/BackfillOrdersButton";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +82,13 @@ export default async function OrdersPage({
           title={tr("noneTitle")}
           reason={tr("noneReason")}
         />
+        {/* 🔴 الفراغ هنا سببه الشائع أنّ الويب هوك رُكّب اليوم وتاريخُ
+            المتجر كلّه قبله. فالحلّ يُعرَض معه لا يُترك للتخمين. */}
+        {!workspace.isDemo && (
+          <div className="mt-5">
+            <BackfillOrdersButton workspaceId={workspace.id} locale={locale} />
+          </div>
+        )}
       </div>
     );
   }
@@ -137,7 +145,14 @@ export default async function OrdersPage({
         title={tr("title")}
         subtitle={`${tr("subtitle")} ${tc("lastNDays", { days: 30 })}.`}
         storeName={workspace.name}
-        action={<StorePicker options={scope.options} selectedId={scope.selectedId} locale={locale} />}
+        action={
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <StorePicker options={scope.options} selectedId={scope.selectedId} locale={locale} />
+            {!workspace.isDemo && (
+              <BackfillOrdersButton workspaceId={workspace.id} locale={locale} />
+            )}
+          </div>
+        }
       />
 
       <SectionHeading hint={tr("qualityHint", { total: fmtNum(quality.totalOrders) })}>{tr("quality")}</SectionHeading>
