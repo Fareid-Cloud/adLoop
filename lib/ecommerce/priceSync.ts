@@ -131,7 +131,9 @@ async function updateSalla(product: any, price: number, token: string): Promise<
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(`سلة أعادت ${res.status} ${body.slice(0, 160)}`);
+    // 🔴 الرسالة تصل المستخدم عبر `reason`، فلا تُكتب بلغةٍ واحدة:
+    // رمز الحالة وردّ المنصّة نفسها - بيانات لا عبارة من عندنا.
+    throw new Error(`${res.status} ${body.slice(0, 160)}`.trim());
   }
   return { ok: true, platform: "SALLA", platformKey: "SALLA" };
 }
@@ -159,7 +161,7 @@ async function updateShopify(
     }
   );
 
-  if (!res.ok) throw new Error(`شوبيفاي أعادت ${res.status}`);
+  if (!res.ok) throw new Error(String(res.status));
   return { ok: true, platform: "SHOPIFY", platformKey: "SHOPIFY" };
 }
 
@@ -185,7 +187,7 @@ async function updateZid(
     body: JSON.stringify({ price }),
   });
 
-  if (!res.ok) throw new Error(`زد أعادت ${res.status}`);
+  if (!res.ok) throw new Error(String(res.status));
   return { ok: true, platform: "ZID", platformKey: "ZID" };
 }
 
@@ -213,7 +215,7 @@ async function updateWoo(
     body: JSON.stringify({ regular_price: String(price) }),
   });
 
-  if (!res.ok) throw new Error(`ووكومرس أعادت ${res.status}`);
+  if (!res.ok) throw new Error(String(res.status));
   return { ok: true, platform: "WOOCOMMERCE", platformKey: "WOOCOMMERCE" };
 }
 
@@ -232,6 +234,6 @@ async function updateEasyOrders(
     body: JSON.stringify({ price }),
   });
 
-  if (!res.ok) throw new Error(`إيزي أوردرز أعادت ${res.status}`);
+  if (!res.ok) throw new Error(String(res.status));
   return { ok: true, platform: "EASY_ORDERS", platformKey: "EASY_ORDERS" };
 }

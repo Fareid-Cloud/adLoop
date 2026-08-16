@@ -2651,6 +2651,19 @@ export const dictionary = {
       whereWoo: "من لوحة ووردبريس: WooCommerce ← الإعدادات ← Advanced ← Webhooks ← Add webhook، والموضوع Order created.",
       whereEasyOrders: "من لوحة إيزي أوردرز: الإعدادات ← الويب هوك، وأضف الرابط لحدث الطلب الجديد.",
     },
+    // ==== سحب المنتجات من المتجر ====
+    productSync: {
+      button: "اسحب المنتجات من متجرك",
+      hint: "الاسم والسعر والمخزون تُقرأ من متجرك. وما تُدخله هنا - التكلفة والشحن والرسوم - لا يُمَسّ.",
+      running: "جارٍ السحب…",
+      done: "{created} منتجاً جديداً · {updated} محدَّثاً",
+      noneFound: "لم يُرجِع المتجر منتجاً واحداً. تأكّد أنّ المنتجات منشورة، وأنّ التوكن له صلاحية قراءة المنتجات.",
+      psNoStore: "لا متجر مربوط بهذه المساحة. اربط متجرك من صفحة ربط المنصّات أوّلاً.",
+      psNoToken: "هذا الربط بلا توكن قراءة. أضف توكن الواجهة البرمجية لمتجرك من صفحة ربط المنصّات.",
+      psPlatformUnsupported: "سحب المنتجات غير مدعوم لهذه المنصّة بعد.",
+      psPullFailed: "تعذّر الوصول إلى المتجر. تأكّد من صلاحية التوكن ومن أنّ المتجر يعمل.",
+      psPullFailedWithReason: "تعذّر الوصول إلى المتجر: {reason}",
+    },
     // ==== أسباب تعذّر كتابة السعر في المتجر ====
     priceSync: {
       noProduct: "المنتج غير موجود.",
@@ -7346,6 +7359,19 @@ export const dictionary = {
       whereZid: "In Zid: Settings -> Developers -> Webhooks -> Add, and pick the new-order event.",
       whereWoo: "In WordPress: WooCommerce -> Settings -> Advanced -> Webhooks -> Add webhook, topic Order created.",
       whereEasyOrders: "In EasyOrders: Settings -> Webhooks, and add the URL for the new-order event.",
+    },
+    // ==== Pulling products from the store ====
+    productSync: {
+      button: "Pull products from your store",
+      hint: "Name, price and stock are read from your store. What you enter here - cost, shipping, fees - is never touched.",
+      running: "Pulling…",
+      done: "{created} new · {updated} updated",
+      noneFound: "The store returned no products. Check that your products are published and that the token can read products.",
+      psNoStore: "No store is connected to this workspace. Connect one from Integrations first.",
+      psNoToken: "This connection has no read token. Add your store's API token from Integrations.",
+      psPlatformUnsupported: "Pulling products is not supported for this platform yet.",
+      psPullFailed: "Could not reach the store. Check the token is still valid and the store is up.",
+      psPullFailedWithReason: "Could not reach the store: {reason}",
     },
     // ==== Why the price could not be written to the store ====
     priceSync: {

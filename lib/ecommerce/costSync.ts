@@ -37,9 +37,17 @@ export interface CostSyncResult {
 const EMPTY: Omit<CostSyncResult, "ok"> = { updated: 0, emptyAtSource: 0, unmatched: 0 };
 
 export async function syncCostsFromStore(workspaceId: string): Promise<CostSyncResult> {
-  const connection = await prisma.ecommerceConnection.findFirst({
+  // 🔴 **«أوّل متجر» يعمل حتى يصير المتجران اثنين.** كان `findFirst` بلا
+  // ترتيبٍ ولا شرطٍ على المنصّة، فمن عنده سلّة وووكومرس قد يقع الاختيار
+  // على ووكومرس - وهي لا تُعرِّض التكلفة أصلاً - فيُقال له «منصّتك لا
+  // تدعم التكلفة» ومتجرُ سلّة عنده يدعمها. يُختار متجرٌ **قادر** إن وُجد.
+  const connections = await prisma.ecommerceConnection.findMany({
     where: { workspaceId, active: true },
+    orderBy: { createdAt: "asc" },
   });
+  const connection =
+    connections.find((c) => COST_CAPABLE_PLATFORMS.includes(c.platform as EcommercePlatform)) ??
+    connections[0];
 
   if (!connection) return { ok: false, ...EMPTY, reasonKey: "csNoStore" };
 

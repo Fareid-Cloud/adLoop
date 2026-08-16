@@ -19,6 +19,10 @@
     {
       "path": "/api/cron/marketing-emails",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/store-sync",
+      "schedule": "30 2 * * *"
     }
   ]
 }

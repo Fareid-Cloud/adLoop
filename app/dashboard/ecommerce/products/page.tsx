@@ -13,6 +13,7 @@ import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { resolveStoreScope } from "@/lib/ecommerce/storeScope";
 import { StorePicker } from "@/app/components/ui/StorePicker";
+import { PullProductsButton } from "@/app/components/PullProductsButton";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,13 @@ export default async function EcommerceProductsPage({
         <EmptyState
           title={t(locale, "store.noProducts")}
           description={t(locale, "store.noProductsHint")}
+          // 🔴 الحالة الفارغة تحمل حلّها: مَن ربط متجره للتوّ يرى هنا
+          // زرّاً يجلب منتجاته، لا دعوةً لإدخال مئة صنفٍ بيده.
+          action={
+            workspace.isDemo ? undefined : (
+              <PullProductsButton workspaceId={workspace.id} locale={locale} variant="primary" />
+            )
+          }
         />
       </div>
     );
@@ -66,7 +74,14 @@ export default async function EcommerceProductsPage({
       currency={overview.currency}
       adSpendAvailability={overview.adSpendAvailability}
       locale={(user.preferredLocale as "ar" | "en") ?? "ar"}
-      storePicker={<StorePicker options={scope.options} selectedId={scope.selectedId} locale={locale} />}
+      storePicker={
+        <>
+          <StorePicker options={scope.options} selectedId={scope.selectedId} locale={locale} />
+          {!workspace.isDemo && overview.hasStoreConnection && (
+            <PullProductsButton workspaceId={workspace.id} locale={locale} />
+          )}
+        </>
+      }
     />
   );
 }
