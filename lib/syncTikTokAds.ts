@@ -14,7 +14,7 @@ import { decryptToken } from "@/lib/encryption";
 import { t } from "@/lib/i18n/dictionary";
 import { assertNotDemo } from "@/lib/demo";
 import { recordDataCurrency } from "@/lib/dataCurrency";
-import { pickConnection } from "@/lib/platformConnections";
+import { pickConnection, connectionsForPlatform } from "@/lib/platformConnections";
 
 const TIKTOK_API_VERSION = "v1.3";
 
@@ -70,13 +70,11 @@ export async function syncTikTokAdsForWorkspace(workspaceId: string) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
-  if (!connection) return;
-
-  const accessToken = decryptToken(connection.accessToken);
-  const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
+  const anyConnection = pickConnection(grants, "TIKTOK_ADS");
+  if (!anyConnection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
@@ -86,6 +84,12 @@ export async function syncTikTokAdsForWorkspace(workspaceId: string) {
   const todayStr = new Date().toISOString().slice(0, 10);
 
   for (const [advertiserId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "TIKTOK_ADS", advertiserId) ?? anyConnection;
+    const accessToken = decryptToken(connection.accessToken);
+    const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
     const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
 
     await recordTikTokAccountCurrency(workspaceId, advertiserId, headers);
@@ -173,13 +177,11 @@ export async function syncTikTokVideoMetricsForWorkspace(workspaceId: string) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
-  if (!connection) return;
-
-  const accessToken = decryptToken(connection.accessToken);
-  const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
+  const anyConnection = pickConnection(grants, "TIKTOK_ADS");
+  if (!anyConnection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
@@ -189,6 +191,12 @@ export async function syncTikTokVideoMetricsForWorkspace(workspaceId: string) {
   const todayStr = new Date().toISOString().slice(0, 10);
 
   for (const [advertiserId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "TIKTOK_ADS", advertiserId) ?? anyConnection;
+    const accessToken = decryptToken(connection.accessToken);
+    const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
     const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
 
     try {
@@ -279,13 +287,11 @@ export async function syncTikTokWeeklyEngagementForWorkspace(workspaceId: string
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
-  if (!connection) return;
-
-  const accessToken = decryptToken(connection.accessToken);
-  const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
+  const anyConnection = pickConnection(grants, "TIKTOK_ADS");
+  if (!anyConnection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
@@ -303,6 +309,12 @@ export async function syncTikTokWeeklyEngagementForWorkspace(workspaceId: string
   lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
   for (const [advertiserId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "TIKTOK_ADS", advertiserId) ?? anyConnection;
+    const accessToken = decryptToken(connection.accessToken);
+    const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
     const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
 
     try {
@@ -582,13 +594,12 @@ export async function syncTikTokBidCapForWorkspace(workspaceId: string) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
+  const anyConnection = pickConnection(grants, "TIKTOK_ADS");
+  if (!anyConnection) return;
 
-  const accessToken = decryptToken(connection.accessToken);
-  const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
   const thirtyDaysAgo = new Date();
@@ -597,6 +608,12 @@ export async function syncTikTokBidCapForWorkspace(workspaceId: string) {
   const todayStr = new Date().toISOString().slice(0, 10);
 
   for (const [advertiserId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "TIKTOK_ADS", advertiserId) ?? anyConnection;
+    const accessToken = decryptToken(connection.accessToken);
+    const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
     const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
 
     try {
@@ -701,13 +718,12 @@ export async function syncTikTokLearningPhaseForWorkspace(workspaceId: string) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
+  const anyConnection = pickConnection(grants, "TIKTOK_ADS");
+  if (!anyConnection) return;
 
-  const accessToken = decryptToken(connection.accessToken);
-  const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
   const sevenDaysAgo = new Date();
@@ -716,6 +732,12 @@ export async function syncTikTokLearningPhaseForWorkspace(workspaceId: string) {
   const todayStr = new Date().toISOString().slice(0, 10);
 
   for (const [advertiserId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "TIKTOK_ADS", advertiserId) ?? anyConnection;
+    const accessToken = decryptToken(connection.accessToken);
+    const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
     const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
 
     try {
@@ -780,13 +802,12 @@ export async function syncTikTokLookalikeComparisonForWorkspace(workspaceId: str
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
+  const anyConnection = pickConnection(grants, "TIKTOK_ADS");
+  if (!anyConnection) return;
 
-  const accessToken = decryptToken(connection.accessToken);
-  const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
   const thirtyDaysAgo = new Date();
@@ -795,6 +816,12 @@ export async function syncTikTokLookalikeComparisonForWorkspace(workspaceId: str
   const todayStr = new Date().toISOString().slice(0, 10);
 
   for (const [advertiserId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "TIKTOK_ADS", advertiserId) ?? anyConnection;
+    const accessToken = decryptToken(connection.accessToken);
+    const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
     const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
 
     try {
@@ -918,13 +945,11 @@ function isLikelySpamComment(text: string): boolean {
 export async function syncTikTokSparkAdsCommentsForWorkspace(workspaceId: string) {
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
-  if (!connection) return;
-
-  const accessToken = decryptToken(connection.accessToken);
-  const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
+  const anyConnection = pickConnection(grants, "TIKTOK_ADS");
+  if (!anyConnection) return;
 
   // بس الإعلانات المصنّفة Spark Ads فعلاً - مش كل الإعلانات، زي ما اتفقنا
   const sparkAds = await prisma.tikTokVideoMetricSnapshot.findMany({
@@ -939,6 +964,13 @@ export async function syncTikTokSparkAdsCommentsForWorkspace(workspaceId: string
   });
   const advertiserId = links[0]?.externalAccountId;
   if (!advertiserId) return;
+
+  // التوكن يُحسم بعد معرفة الحساب لا قبلها: منحةُ عميلٍ آخر لا تقرأ تعليقات
+  // هذا الحساب، فتردّ المنصّة خطأً يُبتلع في `continue` ولا يظهر أثره إلّا
+  // كأصفارٍ في عمود التعليقات.
+  const connection = pickConnection(grants, "TIKTOK_ADS", advertiserId) ?? anyConnection;
+  const accessToken = decryptToken(connection.accessToken);
+  const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
 
   for (const ad of sparkAds) {
     try {
@@ -977,16 +1009,21 @@ export async function syncTikTokLeadFormsForWorkspace(workspaceId: string) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
+  const anyConnection = pickConnection(grants, "TIKTOK_ADS");
+  if (!anyConnection) return;
 
-  const accessToken = decryptToken(connection.accessToken);
-  const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
   for (const [advertiserId] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "TIKTOK_ADS", advertiserId) ?? anyConnection;
+    const accessToken = decryptToken(connection.accessToken);
+    const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
     try {
       // بنجيب قايمة الفورمز الأول - محتاجين form_id لكل نداء ليدز بعده
       const formsRes = await fetch(
@@ -1047,13 +1084,12 @@ export async function syncTikTokCreativesForWorkspace(workspaceId: string) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
+  const anyConnection = pickConnection(grants, "TIKTOK_ADS");
+  if (!anyConnection) return;
 
-  const accessToken = decryptToken(connection.accessToken);
-  const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
   const thirtyDaysAgo = new Date();
@@ -1062,6 +1098,12 @@ export async function syncTikTokCreativesForWorkspace(workspaceId: string) {
   const todayStr = new Date().toISOString().slice(0, 10);
 
   for (const [advertiserId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "TIKTOK_ADS", advertiserId) ?? anyConnection;
+    const accessToken = decryptToken(connection.accessToken);
+    const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
     const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
 
     try {
@@ -1152,13 +1194,12 @@ export async function checkTikTokBidStrategyProgressionForWorkspace(workspaceId:
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
+  const anyConnection = pickConnection(grants, "TIKTOK_ADS");
+  if (!anyConnection) return;
 
-  const accessToken = decryptToken(connection.accessToken);
-  const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
   const thirtyDaysAgo = new Date();
@@ -1169,6 +1210,12 @@ export async function checkTikTokBidStrategyProgressionForWorkspace(workspaceId:
   const { pushToActionFeed } = await import("@/lib/actionFeed");
 
   for (const [advertiserId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "TIKTOK_ADS", advertiserId) ?? anyConnection;
+    const accessToken = decryptToken(connection.accessToken);
+    const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
     const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
 
     try {
@@ -1242,9 +1289,12 @@ export async function applyTikTokBidStrategyChange(
   await assertNotDemo(workspaceId);
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
+  // الحساب معروفٌ هنا (`advertiserId` من المدخلات)، فتُحسم به المنحة.
+  // وهذه عملية كتابة على حساب إعلانيٍ حقيقي: توكن عميلٍ آخر يُرفض،
+  // فيرى المشترك ميزةً معطّلة لا سبب ظاهراً لها.
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS", advertiserId);
   if (!connection) throw new Error(t("ar", "alerts.noTiktokAccount"));
 
   const res = await fetch(`https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/adgroup/update/`, {
@@ -1278,9 +1328,12 @@ export async function pauseTikTokAd(workspaceId: string, advertiserId: string, a
   await assertNotDemo(workspaceId);
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS");
+  // الحساب معروفٌ هنا (`advertiserId` من المدخلات)، فتُحسم به المنحة.
+  // وهذه عملية كتابة على حساب إعلانيٍ حقيقي: توكن عميلٍ آخر يُرفض،
+  // فيرى المشترك ميزةً معطّلة لا سبب ظاهراً لها.
+  const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS", advertiserId);
   if (!connection) throw new Error(t("ar", "alerts.noTiktokAccount"));
 
   const res = await fetch(`https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/ad/status/update/`, {

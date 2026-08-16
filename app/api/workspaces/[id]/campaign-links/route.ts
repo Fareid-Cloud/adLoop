@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { backfillHistoricalData } from "@/lib/syncGoogleAds";
 import { computeSmartDefaults } from "@/lib/dashboardDefaults";
+import { checkAdAccountLimit } from "@/lib/entitlements";
 
 export async function GET(
   req: NextRequest,
@@ -44,6 +45,38 @@ export async function POST(
 
   if (!Array.isArray(campaigns)) {
     return NextResponse.json({ error: "invalid payload" }, { status: 400 });
+  }
+
+  // 🔴 حدّ الحسابات الإعلانية يُفحص **هنا** لا في مسار OAuth: الموافقة على
+  // OAuth قد تكون تجديداً لصلاحيةٍ منتهية ولا تُنشئ عبئاً بذاتها، بينما ربطُ
+  // حملةٍ من حسابٍ جديد يبدأ مزامنةً يومية له من الغد.
+  //
+  // ويُفحص لكلّ منصّة على حدة لأنّ الحدّ نفسه لكلّ منصّة: ثلاثة حسابات جوجل
+  // وثلاثة ميتا، لا ثلاثة موزّعة عليهما.
+  const byPlatform = new Map<string, string[]>();
+  for (const c of campaigns as Array<{ platform?: string; externalAccountId?: string }>) {
+    if (!c?.platform || !c?.externalAccountId) continue;
+    const list = byPlatform.get(c.platform) ?? [];
+    list.push(c.externalAccountId);
+    byPlatform.set(c.platform, list);
+  }
+  for (const [platform, accountIds] of byPlatform) {
+    const check = await checkAdAccountLimit(user.id, platform, accountIds, id);
+    if (!check.allowed) {
+      // الرفض يحمل معه ما يلزم لبناء رسالةٍ تقول ما الناقص وما الخطوة
+      // التالية - لا «تجاوزت الحدّ» مجرّدة تترك المستخدم بلا مخرج.
+      return NextResponse.json(
+        {
+          error: "plan_limit",
+          scope: "adAccounts",
+          platform,
+          limit: check.limit,
+          current: check.current,
+          suggestedPlan: check.suggestedPlan,
+        },
+        { status: 402 }
+      );
+    }
   }
 
   // هل ده أول ربط فعلي للـ Workspace ده؟ (مفيش بيانات مجمّعة قبل كده) -

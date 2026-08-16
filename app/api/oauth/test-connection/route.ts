@@ -37,8 +37,17 @@ export async function POST(req: NextRequest) {
   const add = (s: Step) => steps.push(s);
 
   // 1) الربط موجود؟
-  const connection = await prisma.connectedPlatform.findUnique({
-    where: { userId_platform: { userId: user.id, platform } },
+  //
+  // `connectionId` اختياريّ: تمرّره الواجهة حين تختبر **منحةً بعينها** من
+  // بين منحٍ عدّة لمنصّةٍ واحدة. وبدونه تُختبر الأقدم - وهو السلوك نفسه
+  // الذي كان حين لم تكن هناك إلّا واحدة.
+  const connection = await prisma.connectedPlatform.findFirst({
+    where: {
+      userId: user.id,
+      platform,
+      ...(typeof body?.connectionId === "string" ? { id: body.connectionId } : {}),
+    },
+    orderBy: { connectedAt: "asc" },
   });
 
   if (!connection) {

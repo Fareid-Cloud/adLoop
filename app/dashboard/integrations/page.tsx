@@ -33,6 +33,10 @@ export default async function IntegrationsPage({
     // حدّ الباقة: الرمز وحده لا يقول شيئاً للمستخدم، فيبقى واقفاً أمام
     // ربطٍ لم يتمّ بلا سبب معلَن.
     : raw === "plan_limit" ? "connPlanLimit"
+    // حدّ **تسجيلات الدخول** داخل المنصّة الواحدة - غير حدّ عدد المنصّات.
+    // خلطُهما يعطي المشترك جواباً عن سؤالٍ لم يسأله: هو يربط جوجل ثانيةً
+    // فيُقال له إنّ باقته تسمح بمنصّةٍ واحدة، وجوجل مربوطةٌ عنده أصلاً.
+    : raw === "account_limit" ? "connAccountLimit"
     : null;
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";

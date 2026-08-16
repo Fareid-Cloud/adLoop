@@ -204,6 +204,20 @@ model User {
 }
 
 // ربط المنصة على مستوى المستخدم (مرة واحدة لكل منصة)
+// ==================== منح الوصول إلى المنصّات الإعلانية ====================
+//
+// **الصفّ هنا ليس حساباً إعلانياً، بل بابٌ إليه.** منحة جوجل عبر حساب
+// إدارة (MCC) تصل إلى عشرات الحسابات بتوكن واحد، ولذلك يُنسَب الحساب
+// إلى `CampaignLink.externalAccountId` لا إلى هذا الجدول.
+//
+// 🔴 **سقط القيد `@@unique([userId, platform])`** الذي كان يحصر المشترك
+// في تسجيل دخولٍ واحدٍ لكلّ منصّة. وهو يكفي معلناً يدير حسابه، ويمنع
+// الوكالة التي أعطاها عميلان صلاحيةً من حسابين منفصلين: ربطُ الثاني كان
+// **يستبدل** الأوّل بصمت (`upsert` على المفتاح نفسه)، فتتوقّف مزامنة
+// العميل الأوّل بلا رسالةٍ ولا أثر.
+//
+// وسقوطُه يعني أنّ «أوّل منحة لهذه المنصّة» لم يعد جواباً صحيحاً - وهو ما
+// يحسمه `lib/platformConnections.ts` في موضعٍ واحد.
 model ConnectedPlatform {
   id            String   @id @default(cuid())
   userId        String
@@ -216,7 +230,35 @@ model ConnectedPlatform {
   expiresAt     DateTime?
   connectedAt   DateTime @default(now())
 
-  @@unique([userId, platform])
+  // اسمٌ يميّز المنحة حين تتعدّد («حساب عميل أ»). تسجيلا دخولٍ
+  // لمنصّةٍ واحدة لا يفرّقهما شيءٌ في الواجهة بغيره - كلاهما «جوجل».
+  label         String?
+  accounts      ConnectedAccount[]
+
+  @@index([userId, platform])
+}
+
+// ==================== الحسابات التي تصلها المنحة ====================
+//
+// تُكتَب من `available-campaigns` وحده - وهو ينادي المنصّة ويعدّد
+// حساباتها بالفعل قبل أن يعرضها للاختيار. **فالحفظ هنا لا يكلّف
+// نداءً واحداً إضافياً**، وهو ما يجعل السجلّ يستحقّ وجوده: بدونه لا
+// تعرف الواجهة ما الذي يصله كلّ تسجيل دخول، فيرى المشترك «جوجل»
+// و«جوجل» ولا يعرف أيّهما حساب أيّ عميل.
+model ConnectedAccount {
+  id                String            @id @default(cuid())
+  connectionId      String
+  connection        ConnectedPlatform @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  platform          Platform
+  externalAccountId String
+  name              String?
+  // آخر مرّة رأت المنصّة هذا الحساب ضمن ما تصله المنحة. حسابٌ لم
+  // يُرَ منذ مدّة يعني على الأرجح أنّ الصلاحية سُحبت - وهي إشارةٌ
+  // نعرضها ولا نحذف بها، لأنّ انقطاع نداءٍ واحد ليس سحباً للصلاحية.
+  lastSeenAt        DateTime          @default(now())
+
+  @@unique([connectionId, externalAccountId])
+  @@index([platform, externalAccountId])
 }
 
 

@@ -124,12 +124,15 @@ export function IntegrationsView({
 
   const rows = tab === "connected" ? connected : tab === "disconnected" ? broken : tab === "all" ? [...connected, ...broken] : [];
 
-  async function disconnect(key: string) {
-    setBusy(key);
+  // `connectionId` اختياريّ: بدونه تُفصل المنصّة كلّها بمنحها جميعاً - وهو
+  // ما يعنيه زرّ «افصل». وبه تُفصل **منحةٌ واحدة** وتبقى أخواتها تعمل، وهو
+  // ما يحتاجه من يدير حساب أكثر من عميل تحت المنصّة نفسها.
+  async function disconnect(key: string, connectionId?: string) {
+    setBusy(connectionId ?? key);
     const res = await fetch("/api/integrations/disconnect", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ workspaceId, key }),
+      body: JSON.stringify({ workspaceId, key, ...(connectionId ? { connectionId } : {}) }),
     }).catch(() => null);
     setBusy(null);
     if (res?.ok) router.refresh();
@@ -377,6 +380,7 @@ export function IntegrationsView({
             onClose={() => setSelectedKey(null)}
             onSync={() => syncNow(selected.platform)}
             onDisconnect={() => disconnect(selected.key)}
+            onDisconnectGrant={(connectionId) => disconnect(selected.key, connectionId)}
             onManageCampaigns={() => selected.platform && setPickerPlatform(selected.platform)}
           />
           </div>

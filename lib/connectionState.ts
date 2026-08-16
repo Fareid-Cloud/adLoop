@@ -78,8 +78,11 @@ export async function getPlatformStatus(
   const label = PLATFORM_LABEL[platform] ?? platform;
 
   const [connection, linkCount, snapshotCount] = await Promise.all([
-    prisma.connectedPlatform.findUnique({
-      where: { userId_platform: { userId, platform: platform as any } },
+    // أيّ منحةٍ لهذه المنصّة تكفي للقول إنّها «مربوطة» - وهو كلّ ما يُسأل
+    // عنه هنا. صحّةُ كلّ منحةٍ على حدة تُفحص في «اختبار الاتصال».
+    prisma.connectedPlatform.findFirst({
+      where: { userId, platform: platform as any },
+      orderBy: { connectedAt: "asc" },
     }),
     prisma.campaignLink.count({ where: { workspaceId, platform: platform as any } }),
     prisma.metricSnapshot.count({ where: { workspaceId, platform: platform as any } }),

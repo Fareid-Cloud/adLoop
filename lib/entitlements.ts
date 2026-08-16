@@ -197,6 +197,101 @@ export async function checkPlatformLimit(userId: string): Promise<LimitCheck> {
   return buildCheck(rows.length, limit, ent.planKey, "platforms");
 }
 
+/**
+ * حدّ الحسابات الإعلانية داخل المنصّة الواحدة.
+ *
+ * **يُعَدّ من `CampaignLink` لا من `ConnectedPlatform`** - وهذا هو الفرق
+ * الذي يجعل الحدّ عادلاً. فمنحة جوجل عبر حساب إدارة (MCC) تصل إلى عشرات
+ * الحسابات بتوكن واحد: لو عُدّت تسجيلات الدخول، لأخذ صاحب MCC عدداً بلا
+ * حدّ بينما يُحاسَب صاحب ميتا عن كلّ حساب - وهو تسعيرٌ يعاقب على المنصّة
+ * لا على الاستعمال.
+ *
+ * ولأنّ لحظةَ ربط الحملات هي أوّل لحظةٍ يبدأ فيها الحساب يكلّفنا مزامنةً
+ * يومية، فهي موضع الفحص - لا لحظةُ الموافقة على OAuth، التي لا تُنشئ عبئاً
+ * بذاتها وقد تكون مجرّد تجديدٍ لصلاحيةٍ منتهية.
+ *
+ * @param incomingAccountIds الحسابات التي يجري ربطها الآن. حسابٌ مربوطٌ
+ *   بالفعل لا يُحسَب إضافةً - وإلّا مُنع المشترك من **تعديل اختياره** في
+ *   حسابه هو: إضافة حملةٍ نسيها، أو إزالة أخرى. الحدّ يمنع التوسّع لا الصيانة.
+ *
+ * @param replacingWorkspaceId مساحةُ العمل التي **يُستبدَل** ربطها بالكامل.
+ *   فمسار الحفظ يمسح روابطها ثمّ يكتب المُرسَل، فلو عُدَّت روابطها القديمة
+ *   مع الجديدة لحُسب الحساب الواحد مرّتين - ولمُنع المشترك من إعادة حفظ
+ *   الاختيار نفسه بلا تغيير.
+ */
+export async function checkAdAccountLimit(
+  userId: string,
+  platform: string,
+  incomingAccountIds: string[],
+  replacingWorkspaceId?: string
+): Promise<LimitCheck> {
+  const [ent, existing] = await Promise.all([
+    getEntitlements(userId),
+    prisma.campaignLink.findMany({
+      where: {
+        platform: platform as never,
+        workspace: { userId },
+        ...(replacingWorkspaceId ? { workspaceId: { not: replacingWorkspaceId } } : {}),
+      },
+      select: { externalAccountId: true },
+      distinct: ["externalAccountId"],
+    }),
+  ]);
+
+  return resolveAdAccountLimit(
+    existing.map((r) => r.externalAccountId),
+    incomingAccountIds,
+    ent.limits.adAccounts
+  );
+}
+
+/**
+ * حساب الحدّ نفسه، منزوعاً من قاعدة البيانات ليكون قابلاً للتشغيل والاختبار.
+ *
+ * وهو الجزء الذي يستحقّ الفصل: القاعدة تقول «كم حساباً بعد الحفظ؟» لا «كم
+ * حساباً وصل؟» - فالفرق بين الاتّحاد والمجموع هو الفرق بين مشتركٍ يعيد حفظ
+ * اختياره بلا تغيير فيمرّ، وآخر يُرفض لأنّ حساباته حُسبت مرّتين.
+ */
+export function resolveAdAccountLimit(
+  knownAccountIds: string[],
+  incomingAccountIds: string[],
+  limit: number
+): LimitCheck {
+  // الاتّحاد لا المجموع: ما بعد الحفظ هو ما نقيسه، فالحساب المربوط الذي
+  // يُرسَل ثانيةً موجودٌ في الطرفين ويُحسَب مرّة.
+  const after = new Set([...knownAccountIds.filter(Boolean), ...incomingAccountIds.filter(Boolean)]);
+
+  if (limit === -1) return { allowed: true, limit: -1, current: after.size, suggestedPlan: null };
+  // `buildCheck` يسأل «هل يتّسع لواحدٍ آخر؟» بينما نحن نعرف العدد النهائيّ
+  // بالضبط، فنقارنه مباشرةً - والترقية المقترَحة تأتي من الجدول نفسه.
+  if (after.size <= limit) {
+    return { allowed: true, limit, current: after.size, suggestedPlan: null };
+  }
+  const upgrade = [...PLAN_BY_KEY.values()]
+    .sort((a, b) => a.order - b.order)
+    .find((p) => p.limits.adAccounts === -1 || p.limits.adAccounts >= after.size);
+  return { allowed: false, limit, current: after.size, suggestedPlan: upgrade?.key ?? null };
+}
+
+/**
+ * سقفُ عدد تسجيلات الدخول المحفوظة لمنصّةٍ واحدة.
+ *
+ * الحدُّ الحقيقيّ على الحسابات لا على المنح (`checkAdAccountLimit`)، لأنّ
+ * المنحة لا تكلّف شيئاً حتى تُربط بها حملة. لكنّ تركها بلا سقفٍ يعني أنّ
+ * ضغطاً متكرّراً على «أضف حساباً» يراكم صفوفَ توكناتٍ لا تنتهي - ولكلٍّ
+ * منها توكنٌ حيّ لحساب إعلانيّ حقيقيّ. **سطحُ الخطر يكبر بلا مقابل.**
+ *
+ * والسقف نفسه رقم الحسابات: منحةٌ لكلّ حساب هو أقصى ما يحتاجه أحد، وحساب
+ * الإدارة (MCC) يبلغ العدد نفسه بمنحةٍ واحدة.
+ */
+export async function checkGrantLimit(userId: string, platform: string): Promise<LimitCheck> {
+  const [ent, count] = await Promise.all([
+    getEntitlements(userId),
+    prisma.connectedPlatform.count({ where: { userId, platform: platform as never } }),
+  ]);
+  return buildCheck(count, ent.limits.adAccounts, ent.planKey, "adAccounts");
+}
+
 export async function checkAutomationRuleLimit(userId: string, workspaceId: string): Promise<LimitCheck> {
   const [ent, count] = await Promise.all([
     getEntitlements(userId),

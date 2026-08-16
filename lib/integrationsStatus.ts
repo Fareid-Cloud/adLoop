@@ -40,6 +40,26 @@ export interface ActiveIntegration {
   accountCount: number;
   /** الحساب باسمه وعدد حملاته - المعرّف وحده لا يقول شيئاً للمستخدم */
   accounts: Array<{ id: string; label: string; campaignCount: number }>;
+  /**
+   * تسجيلات الدخول لهذه المنصّة.
+   *
+   * منصّةٌ واحدة قد يصلها أكثر من تسجيل دخول (وكالةٌ أعطاها عميلان صلاحيةً
+   * من حسابين). وهي **بطاقةٌ واحدة** في الواجهة لا بطاقتان: المنصّة واحدة
+   * والشعار واحد، والفرق في المنح تحتها. وقبل هذا كان كلّ منحةٍ تُنتج
+   * بطاقةً كاملة باسم المنصّة نفسه - بطاقتا «جوجل» متطابقتان لا يفرّق
+   * بينهما شيء، وبمفتاح React واحد.
+   */
+  /** مسار بدء OAuth - تبنى منه الواجهة روابط «جدِّد» و«أضف تسجيل دخول» */
+  connectPath: string | null;
+  grants: Array<{
+    id: string;
+    /** اسمٌ يضعه المشترك ليعرف منحةَ أيّ عميل هي */
+    label: string | null;
+    connectedAt: Date;
+    expiresAt: Date | null;
+    /** الحسابات التي رأينا هذه المنحة تصلها - تُكتشف عند اختيار الحملات */
+    reachableAccounts: Array<{ id: string; name: string | null }>;
+  }>;
   connectedAt: Date | null;
   expiresAt: Date | null;
   lastSyncAt: Date | null;
@@ -105,7 +125,16 @@ export async function getIntegrationsOverview(
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
   const [connections, campaignLinks, ecommerce, messaging, runs, demoSet] = await Promise.all([
-    prisma.connectedPlatform.findMany({ where: { userId } }),
+    prisma.connectedPlatform.findMany({
+      where: { userId },
+      orderBy: { connectedAt: "asc" },
+      include: {
+        accounts: {
+          select: { externalAccountId: true, name: true },
+          orderBy: { externalAccountId: "asc" },
+        },
+      },
+    }),
     prisma.campaignLink.findMany({
       where: { workspaceId },
       select: { platform: true, externalAccountId: true, campaignName: true },
@@ -144,22 +173,48 @@ export async function getIntegrationsOverview(
     ...[...demoSet]
       .filter((p) => seededPlatforms.has(p as never) && !connections.some((c) => c.platform === p))
       .map((p) => ({
+        id: "",
+        label: null,
         platform: p as (typeof connections)[number]["platform"],
         expiresAt: null,
         // تاريخ ربط اسمي: المساحة التجريبية لا تنتهي صلاحيتها ولا تُجدَّد
         connectedAt: new Date(),
+        accounts: [] as Array<{ externalAccountId: string; name: string | null }>,
       })),
   ];
 
-  // ==== منصّات الإعلان ====
+  // 🔴 المنح تُجمَع بالمنصّة قبل بناء البطاقات. كان كلّ صفٍّ في
+  // `ConnectedPlatform` يُنتج بطاقةً كاملة، وهو صحيحٌ ما دام القيد يضمن
+  // صفّاً واحداً لكلّ منصّة. وبعد سقوطه صار المشترك ذو تسجيلَي دخولٍ لجوجل
+  // يرى **بطاقتَي «جوجل» متطابقتين** لا يفرّق بينهما شيء - وبمفتاح React
+  // واحد، فيخلط الإطار بينهما عند إعادة الرسم.
+  const byPlatform = new Map<string, typeof effectiveConnections>();
   for (const conn of effectiveConnections) {
-    const def = INTEGRATIONS.find((i) => i.platform === conn.platform);
+    const arr = byPlatform.get(conn.platform) ?? [];
+    arr.push(conn);
+    byPlatform.set(conn.platform, arr);
+  }
+
+  // ==== منصّات الإعلان ====
+  for (const [platform, grants] of byPlatform) {
+    const def = INTEGRATIONS.find((i) => i.platform === platform);
     if (!def) continue;
 
-    const accounts = campaignLinks.filter((l) => l.platform === conn.platform);
+    // المنحة الأقدم هي «الأصل»: تاريخُ الربط المعروض تاريخُها، فهو أوّل يوم
+    // اتّصلت فيه هذه المنصّة فعلاً.
+    const primary = grants[0];
+    // وأقربُ انتهاءٍ هو ما يُنذر: التدفّق يتعطّل جزئياً بانتهاء أيّ منحة،
+    // فعرضُ الأبعد يخفي عطباً واقعاً.
+    const soonestExpiry = grants
+      .map((g) => g.expiresAt)
+      .filter((d): d is Date => d instanceof Date)
+      .sort((a, b) => a.getTime() - b.getTime())[0] ?? null;
+    const conn = { ...primary, expiresAt: soonestExpiry };
+
+    const accounts = campaignLinks.filter((l) => l.platform === platform);
     const uniqueAccounts = [...new Map(accounts.map((a) => [a.externalAccountId, a])).values()];
 
-    const platformRuns = runsByPlatform.get(conn.platform) ?? [];
+    const platformRuns = runsByPlatform.get(platform) ?? [];
     const lastRun = platformRuns[0] ?? null;
     const lastSuccess = platformRuns.find((r) => r.status === "SUCCESS") ?? null;
 
@@ -195,6 +250,21 @@ export async function getIntegrationsOverview(
         label: a.externalAccountId,
         campaignCount: accounts.filter((c) => c.externalAccountId === a.externalAccountId).length,
       })),
+      // المساحة التجريبية تُشتقّ منحُها اشتقاقاً بلا صفوفٍ حقيقية، ولا
+      // معرّف لها - فلا تُعرض كمنحةٍ يمكن تجديدها أو فصلها.
+      connectPath: def.connectPath ?? null,
+      grants: grants
+        .filter((g) => g.id)
+        .map((g) => ({
+          id: g.id,
+          label: g.label,
+          connectedAt: g.connectedAt,
+          expiresAt: g.expiresAt,
+          reachableAccounts: g.accounts.map((a) => ({
+            id: a.externalAccountId,
+            name: a.name,
+          })),
+        })),
       connectedAt: conn.connectedAt,
       expiresAt: conn.expiresAt,
       lastSyncAt: lastSuccess?.startedAt ?? null,
@@ -242,6 +312,9 @@ export async function getIntegrationsOverview(
             : 55;
 
     active.push({
+      // المتاجر لا تُربط بـOAuth ولا منح لها - تسجيل دخولٍ واحد بمفتاح سرّ
+      grants: [],
+      connectPath: null,
       key: def.key,
       platform: store.platform,
       name: def.name,
@@ -293,6 +366,9 @@ export async function getIntegrationsOverview(
     if (!def) continue;
 
     active.push({
+      // قنوات المحادثة هويّتها حقلٌ على مساحة العمل لا منحةُ وصول
+      grants: [],
+      connectPath: null,
       key: def.key,
       platform: null,
       name: def.name,

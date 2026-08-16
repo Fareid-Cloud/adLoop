@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { decryptToken } from "@/lib/encryption";
-import { pickConnection } from "@/lib/platformConnections";
+import { connectionsForPlatform } from "@/lib/platformConnections";
 
 const META_API_VERSION = "v21.0";
 
@@ -95,16 +95,24 @@ export async function POST(req: NextRequest) {
 }
 
 async function resolveCampaignIdFromAd(adId: string, connectedPlatforms: any[]): Promise<string | null> {
-  const connection = pickConnection(connectedPlatforms, "META_ADS");
-  if (!connection) return null;
-
-  try {
-    const res = await fetch(
-      `https://graph.facebook.com/${META_API_VERSION}/${adId}?fields=campaign_id&access_token=${decryptToken(connection.accessToken)}`
-    );
-    const data = await res.json();
-    return data.campaign_id ?? null;
-  } catch {
-    return null;
+  // الويب هوك يحمل معرّف الإعلان ولا يحمل الحساب، فلا سبيل إلى معرفة المنحة
+  // مقدَّماً. ومع منحةٍ واحدة لا أثر لذلك؛ فإذا تعدّدت، صار أخذُ أولاها
+  // يُعيد `null` لكلّ إعلان عميلٍ ثانٍ - فتُسجَّل محادثته **بلا حملة**،
+  // أي تحوّلٌ متحقَّقٌ لا يُنسَب إلى ما جاء به. وهو صمتٌ تامّ: لا خطأ
+  // يُرفع ولا رقم ينقص ظاهرياً.
+  //
+  // فتُجرَّب المنح حتى تُجيب إحداها. وهذه قراءةٌ لا كتابة، فالمحاولة
+  // الفاشلة بلا أثر أصلاً.
+  for (const connection of connectionsForPlatform(connectedPlatforms, "META_ADS")) {
+    try {
+      const res = await fetch(
+        `https://graph.facebook.com/${META_API_VERSION}/${adId}?fields=campaign_id&access_token=${decryptToken(connection.accessToken)}`
+      );
+      const data = await res.json();
+      if (data.campaign_id) return data.campaign_id;
+    } catch {
+      continue;
+    }
   }
+  return null;
 }

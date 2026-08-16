@@ -17,7 +17,7 @@ import { pushToActionFeed } from "@/lib/actionFeed";
 import { t } from "@/lib/i18n/dictionary";
 import { assertNotDemo } from "@/lib/demo";
 import { recordDataCurrency } from "@/lib/dataCurrency";
-import { pickConnection } from "@/lib/platformConnections";
+import { pickConnection, connectionsForPlatform } from "@/lib/platformConnections";
 
 const META_API_VERSION = "v25.0";
 const ROLLING_WINDOW_DAYS = 28; // نفس نافذة إغلاق الإسناد بتاعة ميتا نفسها
@@ -46,17 +46,11 @@ export async function syncMetaAdsForWorkspace(workspaceId: string) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "META_ADS");
-  if (!connection) return;
-
-  // التوكن بتاع ميتا بينتهي بعد ~60 يوم بدون تجديد صامت (مختلف عن جوجل) -
-  // لو منتهي، بنسجل تحذير واضح بدل ما نفشل بصمت
-  if (connection.expiresAt && connection.expiresAt < new Date()) {
-    console.error(`توكن ميتا منتهي للـ Workspace ${workspaceId} - محتاج إعادة ربط الحساب`);
-    return;
-  }
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "META_ADS");
+  const anyConnection = pickConnection(grants, "META_ADS");
+  if (!anyConnection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
@@ -65,6 +59,22 @@ export async function syncMetaAdsForWorkspace(workspaceId: string) {
   from.setDate(from.getDate() - ROLLING_WINDOW_DAYS);
 
   for (const [accountId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "META_ADS", accountId) ?? anyConnection;
+
+    // التوكن بتاع ميتا بينتهي بعد ~60 يوم بدون تجديد صامت (مختلف عن جوجل) -
+    // لو منتهي، بنسجل تحذير واضح بدل ما نفشل بصمت.
+    //
+    // والفحص صار لكلّ منحة لا مرّةً للمساحة: منحةٌ منتهية كانت
+    // توقف مزامنة حسابات المنح السليمة معها - عميلان يفقدان بياناتهما
+    // لأنّ ثالثاً لم يُجدّد موافقته.
+    if (connection.expiresAt && connection.expiresAt < new Date()) {
+      console.error(`توكن ميتا منتهي للحساب ${accountId} - محتاج إعادة ربط`);
+      continue;
+    }
+
     const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
 
     for (const campaignId of campaignIds) {
@@ -163,16 +173,20 @@ export async function syncMetaAdSetsForWorkspace(workspaceId: string) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "META_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "META_ADS");
+  const anyConnection = pickConnection(grants, "META_ADS");
+  if (!anyConnection) return;
 
   const to = new Date();
   const from = new Date();
   from.setDate(from.getDate() - ROLLING_WINDOW_DAYS);
 
   for (const link of links) {
+    // منحةٌ لكلّ حساب: مع تسجيلي دخولٍ لميتا، توكنٌ واحد
+    // لحسابات الاثنين يُرفض عند ما لا يملكه، والخطأ يُبتلع.
+    const connection = pickConnection(grants, "META_ADS", link.externalAccountId) ?? anyConnection;
     try {
       // bid_strategy على مستوى الحملة نفسها (مش المجموعة الإعلانية) -
       // بنجيبها مرة واحدة لكل حملة، ونطبّقها على كل مجموعاتها الإعلانية.
@@ -310,16 +324,20 @@ export async function syncMetaCreativesForWorkspace(workspaceId: string) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "META_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "META_ADS");
+  const anyConnection = pickConnection(grants, "META_ADS");
+  if (!anyConnection) return;
 
   const to = new Date();
   const from = new Date();
   from.setDate(from.getDate() - ROLLING_WINDOW_DAYS);
 
   for (const link of links) {
+    // منحةٌ لكلّ حساب: مع تسجيلي دخولٍ لميتا، توكنٌ واحد
+    // لحسابات الاثنين يُرفض عند ما لا يملكه، والخطأ يُبتلع.
+    const connection = pickConnection(grants, "META_ADS", link.externalAccountId) ?? anyConnection;
     try {
       // creative{...} بيجيب تفاصيل الإعلان (صورة، عنوان) في نفس الطلب،
       // بدل استعلام منفصل لكل إعلان - أوفر على حصة الـ API
@@ -449,10 +467,11 @@ async function fetchMetaInsights(
 export async function syncMetaAccountHealthForWorkspace(workspaceId: string) {
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "META_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "META_ADS");
+  const anyConnection = pickConnection(grants, "META_ADS");
+  if (!anyConnection) return;
 
   const links = await prisma.campaignLink.findMany({
     where: { workspaceId, platform: "META_ADS" },
@@ -460,9 +479,11 @@ export async function syncMetaAccountHealthForWorkspace(workspaceId: string) {
   if (links.length === 0) return;
 
   const accountIds = [...new Set(links.map((l: CampaignLink) => l.externalAccountId))];
-  const accessToken = decryptToken(connection.accessToken);
 
   for (const accountId of accountIds) {
+    // التوكن يُحسم بعد معرفة الحساب لا قبلها.
+    const connection = pickConnection(grants, "META_ADS", accountId) ?? anyConnection;
+    const accessToken = decryptToken(connection.accessToken);
     try {
       // قيود الإنفاق على مستوى الحساب
       const accountRes = await fetch(
@@ -625,21 +646,25 @@ export async function checkMetaLearningPhaseAlertsForWorkspace(workspaceId: stri
 export async function syncCatalogCampaignsForWorkspace(workspaceId: string) {
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "META_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "META_ADS");
+  const anyConnection = pickConnection(grants, "META_ADS");
+  if (!anyConnection) return;
 
   const links = await prisma.campaignLink.findMany({
     where: { workspaceId, platform: "META_ADS" },
   });
   if (links.length === 0) return;
 
-  const accessToken = decryptToken(connection.accessToken);
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   for (const link of links) {
+    // منحةٌ لكلّ حساب: مع تسجيلي دخولٍ لميتا، توكنٌ واحد
+    // لحسابات الاثنين يُرفض عند ما لا يملكه، والخطأ يُبتلع.
+    const connection = pickConnection(grants, "META_ADS", link.externalAccountId) ?? anyConnection;
+    const accessToken = decryptToken(connection.accessToken);
     try {
       // بنتأكد الأول إن الحملة دي فعلاً مرتبطة بكتالوج - لو مفيهاش
       // promoted_object.product_set_id، مبنسجلهاش هنا (مش حملة تسوق)
@@ -814,23 +839,32 @@ export async function applyMetaBidStrategyChange(
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "META_ADS");
-  if (!connection) throw new Error(t("ar", "alerts.noMetaAccount"));
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "META_ADS");
+  if (grants.length === 0) throw new Error(t("ar", "alerts.noMetaAccount"));
 
-  const res = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${adSetId}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      bid_strategy: "COST_CAP",
-      bid_amount: bidAmountCents,
-      access_token: decryptToken(connection.accessToken),
-    }),
-  });
-
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(`فشل تعديل استراتيجية المزايدة عند ميتا: ${errorData.error?.message ?? res.statusText}`);
+  // ميتا تعمل على معرّف الكائن مباشرة، فلا حساب في المدخلات يُستدلّ به
+  // على المنحة. ومع منحةٍ واحدة لا أثر لذلك؛ فإذا تعدّدت، صار أخذُ
+  // أولاها يرفض إيقاف إعلان عميلٍ ثانٍ بحجّة «لا صلاحية» - والمشترك
+  // يرى ميزةً معطّلة لا سبب ظاهراً لها.
+  //
+  // فتُجرّب المنح بالترتيب حتّى تقبل إحداها. والمحاولة الفاشلة بلا
+  // أثر: ميتا تردّ خطأ صلاحيةٍ قبل أن تغيّر شيئاً، فلا خطر في المحاولة.
+  let lastError = "";
+  for (const grant of grants) {
+    const res = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${adSetId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bid_strategy: "COST_CAP",
+        bid_amount: bidAmountCents,
+        access_token: decryptToken(grant.accessToken),
+      }),
+    });
+    if (res.ok) return;
+    const errorData = await res.json().catch(() => ({}));
+    lastError = errorData.error?.message ?? res.statusText;
   }
+  throw new Error(`فشل تعديل استراتيجية المزايدة عند ميتا: ${lastError}`);
 }
 
 // ==================== تنفيذ حقيقي - إيقاف إعلان فردي عند ميتا ====================
@@ -843,20 +877,29 @@ export async function pauseMetaAd(workspaceId: string, adId: string) {
     where: { id: workspaceId },
     include: { user: { include: { connectedPlatforms: true } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "META_ADS");
-  if (!connection) throw new Error(t("ar", "alerts.noMetaAccount"));
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "META_ADS");
+  if (grants.length === 0) throw new Error(t("ar", "alerts.noMetaAccount"));
 
-  const res = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${adId}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      status: "PAUSED",
-      access_token: decryptToken(connection.accessToken),
-    }),
-  });
-
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(`فشل إيقاف الإعلان عند ميتا: ${errorData.error?.message ?? res.statusText}`);
+  // ميتا تعمل على معرّف الكائن مباشرة، فلا حساب في المدخلات يُستدلّ به
+  // على المنحة. ومع منحةٍ واحدة لا أثر لذلك؛ فإذا تعدّدت، صار أخذُ
+  // أولاها يرفض إيقاف إعلان عميلٍ ثانٍ بحجّة «لا صلاحية» - والمشترك
+  // يرى ميزةً معطّلة لا سبب ظاهراً لها.
+  //
+  // فتُجرّب المنح بالترتيب حتّى تقبل إحداها. والمحاولة الفاشلة بلا
+  // أثر: ميتا تردّ خطأ صلاحيةٍ قبل أن تغيّر شيئاً، فلا خطر في المحاولة.
+  let lastError = "";
+  for (const grant of grants) {
+    const res = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${adId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: "PAUSED",
+        access_token: decryptToken(grant.accessToken),
+      }),
+    });
+    if (res.ok) return;
+    const errorData = await res.json().catch(() => ({}));
+    lastError = errorData.error?.message ?? res.statusText;
   }
+  throw new Error(`فشل إيقاف الإعلان عند ميتا: ${lastError}`);
 }

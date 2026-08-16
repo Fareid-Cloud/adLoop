@@ -29,7 +29,15 @@ import type { Platform } from "@prisma/client";
  *  مستدعٍ على جلب حقولٍ لا يستعملها (والتوكنات منها). */
 export interface ConnectionLike {
   platform: Platform | string;
-  externalAccountId?: string | null;
+  /**
+   * الحسابات التي رأينا هذه المنحة تصلها.
+   *
+   * **هنا يقع الربط بين الحساب والتوكن**، لا في حقلٍ على المنحة نفسها:
+   * المنحة بابٌ قد يفتح على عشرات الحسابات (MCC)، فحقلٌ واحد عليها لا
+   * يسعها. ومَن لم يُدرج العلاقة يمرّ بلا ضرر - يعود الحسم إلى «المنحة
+   * الوحيدة»، وهو الصحيح ما دامت واحدة.
+   */
+  accounts?: Array<{ externalAccountId: string }>;
 }
 
 /**
@@ -54,14 +62,18 @@ export function pickConnection<T extends ConnectionLike>(
   if (ofPlatform.length === 1) return ofPlatform[0];
 
   if (externalAccountId) {
-    const exact = ofPlatform.find((c) => c.externalAccountId === externalAccountId);
+    const exact = ofPlatform.find((c) =>
+      c.accounts?.some((a) => a.externalAccountId === externalAccountId)
+    );
     if (exact) return exact;
   }
 
-  // البابُ العامّ: منحةٌ غير مقيَّدة بحسابٍ بعينه تصل - نظرياً - إلى ما
-  // تحتها. تُفضَّل على منحةٍ وُسمت بحسابٍ **آخر**، لأنّ الثانية ستُرفض من
-  // المنصّة يقيناً بينما الأولى قد تنجح.
-  return ofPlatform.find((c) => !c.externalAccountId) ?? ofPlatform[0];
+  // لم نعرف أيّ منحةٍ تصل هذا الحساب - إمّا لأنّ المستدعي لم يُدرج
+  // العلاقة، أو لأنّ الحسابات لم تُكتشف بعد (لم يُفتح «اختر الحملات» منذ
+  // إضافة المنحة). نُرجّح منحةً **لم نرَ لها حسابات** على منحةٍ رأينا
+  // حساباتها ولم يكن هذا منها: الأولى مجهولةٌ قد تصله، والثانية معلومٌ
+  // أنّها لا تصله.
+  return ofPlatform.find((c) => !c.accounts || c.accounts.length === 0) ?? ofPlatform[0];
 }
 
 /** كلّ منح هذه المنصّة - لواجهةٍ تعرضها، أو لفحصٍ يمرّ عليها جميعاً. */

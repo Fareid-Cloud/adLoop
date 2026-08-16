@@ -12,7 +12,17 @@ export async function GET(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const state = createOAuthState(user.id);
+  // النيّة تُقرأ هنا وتُوقَّع داخل `state`: أهذه **منحة إضافية** لحساب عميل
+  // آخر، أم **تجديدٌ** لمنحةٍ بعينها انتهت صلاحيتها؟ ردّ المنصّة واحدٌ في
+  // الحالتين، والفرق في من ضغط الزرّ - فلا سبيل لمعرفته إلّا بحمله معه.
+  //
+  // وحملُها موقَّعةً لا في `?query` الـ callback يمنع تحويل «جدِّد منحتي»
+  // إلى «أنشئ منحة» بالتلاعب في الرابط، ويمنع الإشارة إلى منحة غير مالكها.
+  const { searchParams } = new URL(req.url);
+  const state = createOAuthState(user.id, {
+    connectionId: searchParams.get("reconnect") ?? undefined,
+    addNew: searchParams.get("add") === "1",
+  });
   const redirectUri = `${getAppUrl()}/api/oauth/google-ads/callback`;
 
   const params = new URLSearchParams({

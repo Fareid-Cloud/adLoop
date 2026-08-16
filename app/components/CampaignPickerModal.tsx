@@ -16,7 +16,13 @@ import { t } from "@/lib/i18n/dictionary";
 type Platform = "GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS";
 
 interface Campaign { id: string; name: string; status: string; recentlyActive: boolean }
-interface Account { accountId: string; accountName: string; campaigns: Campaign[] }
+interface Account {
+  accountId: string;
+  accountName: string;
+  /** اسمُ تسجيل الدخول الذي وصل هذا الحساب - null قبل أن يسمّيه المشترك */
+  connectionLabel?: string | null;
+  campaigns: Campaign[];
+}
 
 const PLATFORM_LABEL: Record<Platform, string> = {
   GOOGLE_ADS: "Google Ads",
@@ -145,7 +151,14 @@ export function CampaignPickerModal({
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        setError(d.error ?? (ar ? tr("errSave") : "Could not save campaigns."));
+        // حدّ الحسابات يعود رمزاً لا جملة، لأنّ الرقمين (الحدّ والمطلوب)
+        // يُصاغان بلغة القارئ لا بلغة الخادم. وعرضُ الرمز كما هو («plan_limit»)
+        // يترك المشترك أمام رفضٍ لا يفهم سببه ولا يعرف مخرجه.
+        setError(
+          d.error === "plan_limit" && d.scope === "adAccounts"
+            ? tr("errAdAccountLimit", { limit: d.limit, current: d.current })
+            : d.error ?? (ar ? tr("errSave") : "Could not save campaigns.")
+        );
         setSaving(false);
         return;
       }
@@ -286,7 +299,14 @@ export function CampaignPickerModal({
 
           {!loading && !error && visible.map((acc) => (
             <div key={acc.accountId} className="mb-5 last:mb-0">
-              <div className="mb-2 text-[12px] font-medium text-text-muted">{acc.accountName}</div>
+              {/* اسمُ تسجيل الدخول بجانب اسم الحساب حين تتعدّد المنح - حسابان
+                  متشابها الاسم تحت عميلين مختلفين لا يفرّق بينهما غيره. */}
+              <div className="mb-2 flex flex-wrap items-baseline gap-x-2 text-[12px] font-medium text-text-muted">
+                <span>{acc.accountName}</span>
+                {acc.connectionLabel && (
+                  <span className="text-[11px] font-normal text-text-faint">· {acc.connectionLabel}</span>
+                )}
+              </div>
               <div className="flex flex-col gap-1.5">
                 {acc.campaigns.map((c) => {
                   const on = selected.has(c.id);

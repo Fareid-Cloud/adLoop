@@ -15,17 +15,27 @@ import { GoogleAdsApi } from "google-ads-api";
 import { prisma } from "@/lib/prisma";
 import { decryptToken } from "@/lib/encryption";
 import { platformLabel } from "@/lib/i18n/dictionary";
-import { pickConnection } from "@/lib/platformConnections";
+import { pickConnection, connectionsForPlatform } from "@/lib/platformConnections";
 
 const META_API_VERSION = "v25.0";
 const TIKTOK_API_VERSION = "v1.3";
 
-async function getConnection(workspaceId: string, platform: "GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS") {
+/**
+ * @param externalAccountId الحساب المقصود إن عُرف. وهذه كلّها عمليات
+ *   **كتابة** على حسابات إعلانية حقيقية (إيقاف حملة، تغيير ميزانية)،
+ *   فتمريره ليس تحسيناً: توكن عميلٍ آخر يُرفض، فيرى المشترك زرّاً
+ *   لا يعمل بلا سبب ظاهر.
+ */
+async function getConnection(
+  workspaceId: string,
+  platform: "GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS",
+  externalAccountId?: string
+) {
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, platform);
+  const connection = pickConnection(workspace?.user.connectedPlatforms, platform, externalAccountId);
   if (!connection) throw new Error(`حساب ${platformLabel("ar", platform)} غير متصل`);
   return connection;
 }
@@ -47,8 +57,8 @@ function googleClient() {
 }
 
 async function googleCustomer(workspaceId: string, campaignId: string) {
-  const connection = await getConnection(workspaceId, "GOOGLE_ADS");
   const link = await getLink(workspaceId, "GOOGLE_ADS", campaignId);
+  const connection = await getConnection(workspaceId, "GOOGLE_ADS", link.externalAccountId);
   const customer = googleClient().Customer({
     customer_id: link.externalAccountId,
     // الوكالة اختيارية: حساب مباشر بلا MCC لا يملك managerAccountId
@@ -73,7 +83,8 @@ export async function pauseGoogleCampaign(workspaceId: string, campaignId: strin
 }
 
 export async function pauseMetaCampaign(workspaceId: string, campaignId: string) {
-  const connection = await getConnection(workspaceId, "META_ADS");
+  const link = await getLink(workspaceId, "META_ADS", campaignId);
+  const connection = await getConnection(workspaceId, "META_ADS", link.externalAccountId);
   const res = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${campaignId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -86,8 +97,8 @@ export async function pauseMetaCampaign(workspaceId: string, campaignId: string)
 }
 
 export async function pauseTikTokCampaign(workspaceId: string, campaignId: string) {
-  const connection = await getConnection(workspaceId, "TIKTOK_ADS");
   const link = await getLink(workspaceId, "TIKTOK_ADS", campaignId);
+  const connection = await getConnection(workspaceId, "TIKTOK_ADS", link.externalAccountId);
 
   const res = await fetch(`https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/campaign/status/update/`, {
     method: "POST",
@@ -133,7 +144,8 @@ export async function changeGoogleCampaignBudget(workspaceId: string, campaignId
 }
 
 export async function changeMetaCampaignBudget(workspaceId: string, campaignId: string, pct: number) {
-  const connection = await getConnection(workspaceId, "META_ADS");
+  const link = await getLink(workspaceId, "META_ADS", campaignId);
+  const connection = await getConnection(workspaceId, "META_ADS", link.externalAccountId);
   const token = decryptToken(connection.accessToken);
 
   const readRes = await fetch(
@@ -165,8 +177,8 @@ export async function changeMetaCampaignBudget(workspaceId: string, campaignId: 
 }
 
 export async function changeTikTokCampaignBudget(workspaceId: string, campaignId: string, pct: number) {
-  const connection = await getConnection(workspaceId, "TIKTOK_ADS");
   const link = await getLink(workspaceId, "TIKTOK_ADS", campaignId);
+  const connection = await getConnection(workspaceId, "TIKTOK_ADS", link.externalAccountId);
   const token = decryptToken(connection.accessToken);
 
   const readRes = await fetch(
@@ -204,14 +216,34 @@ export async function changeTikTokCampaignBudget(workspaceId: string, campaignId
 // في الواجهة قبل التنفيذ بدل إخفائها.
 
 export async function changeMetaAdSetBudget(workspaceId: string, adSetId: string, pct: number) {
-  const connection = await getConnection(workspaceId, "META_ADS");
-  const token = decryptToken(connection.accessToken);
+  // المدخلات تحمل معرّف المجموعة ولا تحمل الحساب، فلا سبيل إلى معرفة
+  // المنحة مقدّماً. **والقراءة هي التي تحسمها**: المنحة التي تقرأ
+  // ميزانية هذه المجموعة هي وحدها التي تملك كتابتها - فلا نكتب بتوكنٍ لم
+  // نتحقّق منه أوّلاً، ولا نردّ «لا صلاحية» على مجموعةٍ يملكها المشترك فعلاً.
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
+  });
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "META_ADS");
+  if (grants.length === 0) throw new Error(`حساب ${platformLabel("ar", "META_ADS")} غير متصل`);
 
-  const readRes = await fetch(
-    `https://graph.facebook.com/${META_API_VERSION}/${adSetId}?fields=daily_budget,lifetime_budget,name&access_token=${token}`
-  );
-  const info = await readRes.json();
-  if (!readRes.ok) throw new Error(info.error?.message ?? "تعذّر قراءة ميزانية المجموعة الإعلانية");
+  let token = "";
+  let info: any = null;
+  let lastError = "";
+  for (const grant of grants) {
+    const candidate = decryptToken(grant.accessToken);
+    const res = await fetch(
+      `https://graph.facebook.com/${META_API_VERSION}/${adSetId}?fields=daily_budget,lifetime_budget,name&access_token=${candidate}`
+    );
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      token = candidate;
+      info = data;
+      break;
+    }
+    lastError = data.error?.message ?? res.statusText;
+  }
+  if (!info) throw new Error(lastError || "تعذّر قراءة ميزانية المجموعة الإعلانية");
 
   const isDaily = !!info.daily_budget;
   const current = Number(info.daily_budget ?? info.lifetime_budget ?? 0);
@@ -244,7 +276,7 @@ export async function changeTikTokAdGroupBudget(
   adGroupId: string,
   pct: number
 ) {
-  const connection = await getConnection(workspaceId, "TIKTOK_ADS");
+  const connection = await getConnection(workspaceId, "TIKTOK_ADS", advertiserId);
   const token = decryptToken(connection.accessToken);
 
   const readRes = await fetch(

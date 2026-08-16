@@ -249,9 +249,11 @@ async function sendToGoogle(
 
     const ws = await prisma.workspace.findUnique({
       where: { id: workspace.id },
-      include: { user: { include: { connectedPlatforms: true } } },
+      include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
     });
-    const connection = pickConnection(ws?.user.connectedPlatforms, "GOOGLE_ADS");
+    // الحساب معروفٌ من الرابط أعلاه، فتُحسم به المنحة: رفع التحويلات
+    // إلى حساب عميلٍ بتوكن عميلٍ آخر يُرفض، فتنقطع حلقة التحقّق نفسها.
+    const connection = pickConnection(ws?.user.connectedPlatforms, "GOOGLE_ADS", link.externalAccountId);
     if (!connection?.refreshToken) {
       return { platform: "GOOGLE_ADS", status: "SKIPPED", error: "حساب جوجل غير متصل" };
     }

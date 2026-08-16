@@ -22,14 +22,14 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const locale = localeOf(user);
 
-  let body: { workspaceId?: string; key?: string };
+  let body: { workspaceId?: string; key?: string; connectionId?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: t(locale, "apiErr.badRequest") }, { status: 400 });
   }
 
-  const { workspaceId, key } = body;
+  const { workspaceId, key, connectionId } = body;
   if (!workspaceId || !key) return NextResponse.json({ error: t(locale, "apiErr.missingFields") }, { status: 400 });
 
   const workspace = await prisma.workspace.findFirst({
@@ -48,14 +48,47 @@ export async function POST(req: NextRequest) {
       // التوكن على مستوى المستخدم، وربط الحملات على مستوى مساحة العمل.
       // نحذف الاثنين معاً وإلّا بقيت حملات مرتبطة بحساب لا نملك توكنه،
       // فتفشل كل مزامنة تالية بخطأ غامض بدل حالة "غير مربوط" الواضحة.
-      await prisma.$transaction([
-        prisma.campaignLink.deleteMany({
-          where: { workspaceId, platform: def.platform as never },
-        }),
-        prisma.connectedPlatform.deleteMany({
-          where: { userId: user.id, platform: def.platform as never },
-        }),
-      ]);
+      //
+      // 🔴 وحين يملك المشترك أكثر من تسجيل دخولٍ للمنصّة الواحدة، صار
+      // الحذف الشامل يعني أنّ فصل حساب عميلٍ **يفصل بقيّة العملاء معه**.
+      // فإن أُشير إلى منحةٍ بعينها، لا يُحذف إلّا ما يخصّها: حملاتُ
+      // الحسابات التي تصلها هي، ثمّ هي.
+      if (typeof connectionId === "string" && connectionId) {
+        const owned = await prisma.connectedPlatform.findFirst({
+          where: { id: connectionId, userId: user.id, platform: def.platform as never },
+          select: { id: true, accounts: { select: { externalAccountId: true } } },
+        });
+        if (!owned) {
+          return NextResponse.json({ error: "not found" }, { status: 404 });
+        }
+        const accountIds = owned.accounts.map((a) => a.externalAccountId);
+        await prisma.$transaction([
+          // حساباتٌ لم تُكتشف بعد (لم يُفتح «اختر الحملات» لهذه المنحة) تعني
+          // قائمةً فارغة - وحذفٌ بشرطٍ فارغ يمسح **كلّ** حملات المنصّة. لذلك
+          // لا يُحذف شيءٌ من الحملات حين لا نعرف ما يخصّها.
+          ...(accountIds.length > 0
+            ? [
+                prisma.campaignLink.deleteMany({
+                  where: {
+                    workspaceId,
+                    platform: def.platform as never,
+                    externalAccountId: { in: accountIds },
+                  },
+                }),
+              ]
+            : []),
+          prisma.connectedPlatform.delete({ where: { id: owned.id } }),
+        ]);
+      } else {
+        await prisma.$transaction([
+          prisma.campaignLink.deleteMany({
+            where: { workspaceId, platform: def.platform as never },
+          }),
+          prisma.connectedPlatform.deleteMany({
+            where: { userId: user.id, platform: def.platform as never },
+          }),
+        ]);
+      }
     } else {
       await prisma.ecommerceConnection.deleteMany({
         where: { workspaceId, platform: def.platform as never },

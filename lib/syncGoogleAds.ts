@@ -16,7 +16,7 @@ import { decryptToken } from "@/lib/encryption";
 import { recordDataCurrency } from "@/lib/dataCurrency";
 import { t } from "@/lib/i18n/dictionary";
 import { assertNotDemo } from "@/lib/demo";
-import { pickConnection } from "@/lib/platformConnections";
+import { pickConnection, connectionsForPlatform } from "@/lib/platformConnections";
 
 // حقول جودة الإعلان بترجع من Google API كـ enum (رقم/سلسلة)، وحقول Prisma
 // نوعها String? - بنحوّلها لنص، ونسيب null زي ما هي
@@ -33,10 +33,11 @@ export async function syncGoogleAdsForWorkspace(
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
+  const anyConnection = pickConnection(grants, "GOOGLE_ADS");
+  if (!anyConnection) return;
 
   const client = new GoogleAdsApi({
     client_id: process.env.GOOGLE_ADS_CLIENT_ID!,
@@ -54,6 +55,10 @@ export async function syncGoogleAdsForWorkspace(
   const to = dateRange?.to ?? yesterdayStr;
 
   for (const [accountId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "GOOGLE_ADS", accountId) ?? anyConnection;
     const customer = client.Customer({
       customer_id: accountId,
       login_customer_id: connection.managerAccountId!,
@@ -263,10 +268,11 @@ export async function syncCreativesForWorkspace(
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
+  const anyConnection = pickConnection(grants, "GOOGLE_ADS");
+  if (!anyConnection) return;
 
   const client = new GoogleAdsApi({
     client_id: process.env.GOOGLE_ADS_CLIENT_ID!,
@@ -283,6 +289,10 @@ export async function syncCreativesForWorkspace(
   const to = dateRange?.to ?? yesterdayStr;
 
   for (const [accountId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "GOOGLE_ADS", accountId) ?? anyConnection;
     const customer = client.Customer({
       customer_id: accountId,
       login_customer_id: connection.managerAccountId!,
@@ -373,10 +383,11 @@ export async function syncSearchTermsForWorkspace(
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
+  const anyConnection = pickConnection(grants, "GOOGLE_ADS");
+  if (!anyConnection) return;
 
   const client = new GoogleAdsApi({
     client_id: process.env.GOOGLE_ADS_CLIENT_ID!,
@@ -393,6 +404,10 @@ export async function syncSearchTermsForWorkspace(
   const to = dateRange?.to ?? yesterdayStr;
 
   for (const [accountId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "GOOGLE_ADS", accountId) ?? anyConnection;
     const customer = client.Customer({
       customer_id: accountId,
       login_customer_id: connection.managerAccountId!,
@@ -461,10 +476,11 @@ export async function syncBiddingStrategyForWorkspace(workspaceId: string) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
-  if (!connection) return [];
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
+  const anyConnection = pickConnection(grants, "GOOGLE_ADS");
+  if (!anyConnection) return [];
 
   const client = new GoogleAdsApi({
     client_id: process.env.GOOGLE_ADS_CLIENT_ID!,
@@ -479,6 +495,10 @@ export async function syncBiddingStrategyForWorkspace(workspaceId: string) {
   }> = [];
 
   for (const [accountId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "GOOGLE_ADS", accountId) ?? anyConnection;
     const customer = client.Customer({
       customer_id: accountId,
       login_customer_id: connection.managerAccountId!,
@@ -537,10 +557,11 @@ export async function syncAudiencePerformanceForWorkspace(
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
-  if (!connection) return { synced: [], skipped: [] };
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
+  const anyConnection = pickConnection(grants, "GOOGLE_ADS");
+  if (!anyConnection) return { synced: [], skipped: [] };
 
   const client = new GoogleAdsApi({
     client_id: process.env.GOOGLE_ADS_CLIENT_ID!,
@@ -560,6 +581,10 @@ export async function syncAudiencePerformanceForWorkspace(
   const skipped: string[] = [];
 
   for (const [accountId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "GOOGLE_ADS", accountId) ?? anyConnection;
     const customer = client.Customer({
       customer_id: accountId,
       login_customer_id: connection.managerAccountId!,
@@ -642,10 +667,11 @@ export async function syncQualityScoreForWorkspace(workspaceId: string) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
+  const anyConnection = pickConnection(grants, "GOOGLE_ADS");
+  if (!anyConnection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
@@ -656,6 +682,10 @@ export async function syncQualityScoreForWorkspace(workspaceId: string) {
   });
 
   for (const [accountId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "GOOGLE_ADS", accountId) ?? anyConnection;
     const customer = client.Customer({
       customer_id: accountId,
       login_customer_id: connection.managerAccountId!,
@@ -723,10 +753,11 @@ export async function syncShoppingProductsForWorkspace(workspaceId: string) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
+  const anyConnection = pickConnection(grants, "GOOGLE_ADS");
+  if (!anyConnection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
@@ -741,6 +772,10 @@ export async function syncShoppingProductsForWorkspace(workspaceId: string) {
   const fromStr = thirtyDaysAgo.toISOString().slice(0, 10);
 
   for (const [accountId] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "GOOGLE_ADS", accountId) ?? anyConnection;
     try {
       const customer = client.Customer({
         customer_id: accountId,
@@ -819,10 +854,11 @@ export async function syncPerformanceMaxChannelsForWorkspace(workspaceId: string
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
+  const anyConnection = pickConnection(grants, "GOOGLE_ADS");
+  if (!anyConnection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
@@ -841,6 +877,10 @@ export async function syncPerformanceMaxChannelsForWorkspace(workspaceId: string
     : CHANNEL_DATA_START;
 
   for (const [accountId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "GOOGLE_ADS", accountId) ?? anyConnection;
     const customer = client.Customer({
       customer_id: accountId,
       login_customer_id: connection.managerAccountId!,
@@ -910,10 +950,11 @@ export async function syncYoutubeMetricsForWorkspace(workspaceId: string) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
+  const anyConnection = pickConnection(grants, "GOOGLE_ADS");
+  if (!anyConnection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
@@ -928,6 +969,10 @@ export async function syncYoutubeMetricsForWorkspace(workspaceId: string) {
   const fromStr = thirtyDaysAgo.toISOString().slice(0, 10);
 
   for (const [accountId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "GOOGLE_ADS", accountId) ?? anyConnection;
     const customer = client.Customer({
       customer_id: accountId,
       login_customer_id: connection.managerAccountId!,
@@ -1004,10 +1049,11 @@ export async function syncDeviceAndGeoPerformanceForWorkspace(workspaceId: strin
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
+  const anyConnection = pickConnection(grants, "GOOGLE_ADS");
+  if (!anyConnection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
@@ -1022,6 +1068,10 @@ export async function syncDeviceAndGeoPerformanceForWorkspace(workspaceId: strin
   const fromStr = thirtyDaysAgo.toISOString().slice(0, 10);
 
   for (const [accountId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "GOOGLE_ADS", accountId) ?? anyConnection;
     const customer = client.Customer({
       customer_id: accountId,
       login_customer_id: connection.managerAccountId!,
@@ -1114,10 +1164,11 @@ export async function syncMatchTypePerformanceForWorkspace(workspaceId: string) 
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
+  const anyConnection = pickConnection(grants, "GOOGLE_ADS");
+  if (!anyConnection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
@@ -1132,6 +1183,10 @@ export async function syncMatchTypePerformanceForWorkspace(workspaceId: string) 
   const fromStr = thirtyDaysAgo.toISOString().slice(0, 10);
 
   for (const [accountId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "GOOGLE_ADS", accountId) ?? anyConnection;
     try {
       const customer = client.Customer({
         customer_id: accountId,
@@ -1213,10 +1268,11 @@ export async function syncDisplayPlacementsForWorkspace(workspaceId: string) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
+  const anyConnection = pickConnection(grants, "GOOGLE_ADS");
+  if (!anyConnection) return;
 
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
@@ -1231,6 +1287,10 @@ export async function syncDisplayPlacementsForWorkspace(workspaceId: string) {
   const fromStr = thirtyDaysAgo.toISOString().slice(0, 10);
 
   for (const [accountId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "GOOGLE_ADS", accountId) ?? anyConnection;
     try {
       const customer = client.Customer({
         customer_id: accountId,
@@ -1378,15 +1438,22 @@ export async function applyGoogleBidStrategyChange(
   const { ResourceNames } = await import("google-ads-api");
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
-  if (!connection) throw new Error(t("ar", "alerts.noGoogleAccount"));
-
   const link = await prisma.campaignLink.findFirst({
     where: { workspaceId, platform: "GOOGLE_ADS", externalCampaignId: campaignId },
   });
   if (!link) throw new Error(t("ar", "alerts.campaignNotFound"));
+
+  // المنحة تُحسم **بعد** معرفة الحساب لا قبله: هذه عملية كتابة على
+  // حساب إعلانيٍ حقيقي، وتوكن عميلٍ آخر لا يملكه - فيُرفض الطلب ويظنّ
+  // المشترك أنّ الميزة معطّلة.
+  const connection = pickConnection(
+    workspace?.user.connectedPlatforms,
+    "GOOGLE_ADS",
+    link.externalAccountId
+  );
+  if (!connection) throw new Error(t("ar", "alerts.noGoogleAccount"));
 
   const client = new GoogleAdsApi({
     client_id: process.env.GOOGLE_ADS_CLIENT_ID!,
@@ -1423,15 +1490,22 @@ export async function pauseGoogleAd(workspaceId: string, campaignId: string, adG
   const { ResourceNames } = await import("google-ads-api");
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
-  if (!connection) throw new Error(t("ar", "alerts.noGoogleAccount"));
-
   const link = await prisma.campaignLink.findFirst({
     where: { workspaceId, platform: "GOOGLE_ADS", externalCampaignId: campaignId },
   });
   if (!link) throw new Error(t("ar", "alerts.campaignNotFound"));
+
+  // المنحة تُحسم **بعد** معرفة الحساب لا قبله: هذه عملية كتابة على
+  // حساب إعلانيٍ حقيقي، وتوكن عميلٍ آخر لا يملكه - فيُرفض الطلب ويظنّ
+  // المشترك أنّ الميزة معطّلة.
+  const connection = pickConnection(
+    workspace?.user.connectedPlatforms,
+    "GOOGLE_ADS",
+    link.externalAccountId
+  );
+  if (!connection) throw new Error(t("ar", "alerts.noGoogleAccount"));
 
   const client = new GoogleAdsApi({
     client_id: process.env.GOOGLE_ADS_CLIENT_ID!,
@@ -1471,10 +1545,11 @@ export async function syncGoogleLeadFormsForWorkspace(workspaceId: string) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
-  if (!connection) return;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
+  const anyConnection = pickConnection(grants, "GOOGLE_ADS");
+  if (!anyConnection) return;
 
   const client = new GoogleAdsApi({
     client_id: process.env.GOOGLE_ADS_CLIENT_ID!,
@@ -1485,6 +1560,9 @@ export async function syncGoogleLeadFormsForWorkspace(workspaceId: string) {
   const byAccount = groupBy(links, (l: CampaignLink) => l.externalAccountId);
 
   for (const [customerId] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب: توكنٌ واحد لحسابات عملاءٍ مختلفين يُرفض
+    // عند ما لا يملكه، والخطأ يُبتلع في `catch` أدناه.
+    const connection = pickConnection(grants, "GOOGLE_ADS", customerId) ?? anyConnection;
     try {
       const customer = client.Customer({
         customer_id: customerId,
@@ -1540,10 +1618,11 @@ export async function countDisapprovedGoogleAds(workspaceId: string): Promise<nu
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
-  if (!connection) return 0;
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
+  const anyConnection = pickConnection(grants, "GOOGLE_ADS");
+  if (!anyConnection) return 0;
 
   const client = new GoogleAdsApi({
     client_id: process.env.GOOGLE_ADS_CLIENT_ID!,
@@ -1555,6 +1634,10 @@ export async function countDisapprovedGoogleAds(workspaceId: string): Promise<nu
   let totalDisapproved = 0;
 
   for (const [accountId, accountLinks] of Object.entries(byAccount)) {
+    // منحةٌ لكلّ حساب على حدة: الوكالة قد تصل حسابات عملائها
+    // بتسجيلات دخولٍ مختلفة، فتوكنٌ واحد لها جميعاً يُرفض عند أوّل
+    // حسابٍ لا يخصّه - وصمتاً، لأنّ الخطأ يُبتلع لكلّ حساب على حدة.
+    const connection = pickConnection(grants, "GOOGLE_ADS", accountId) ?? anyConnection;
     try {
       const customer = client.Customer({
         customer_id: accountId,

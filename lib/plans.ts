@@ -17,6 +17,17 @@ export type BillingCycle = "monthly" | "yearly";
 export interface PlanLimits {
   workspaces: number;
   platforms: number | "all";
+  /**
+   * الحسابات الإعلانية **لكلّ منصّة** - لا مجموعها. الباقة الاحترافية
+   * تعني ثلاثة حسابات جوجل وثلاثة ميتا وثلاثة تيك توك، لا ثلاثة موزّعة
+   * عليها. وهو ما يفهمه المشترك من «ثلاثة حسابات» حين يقرأ الجدول.
+   *
+   * **يُعَدّ الحساب الإعلانيّ لا تسجيل الدخول.** منحة جوجل عبر حساب
+   * إدارة (MCC) تصل إلى عشرات الحسابات بتوكن واحد، فلو كان العدّ على
+   * تسجيلات الدخول لأخذ صاحب MCC عدداً بلا حدّ مجّاناً بينما يدفع
+   * صاحب ميتا عن كلّ حساب - تسعيرٌ يعاقب على منصّةٍ لا على استعمال.
+   */
+  adAccounts: number;
   /** سقف الإنفاق المُدار شهرياً بالدولار - القيمة التي نحاسب عليها فعلاً */
   monthlySpendUsd: number;
   verifiedConversions: number;
@@ -54,7 +65,7 @@ export const PLANS: Plan[] = [
     highlighted: false,
     price: { EGP: 0, SAR: 0, USD: 0 },
     limits: {
-      workspaces: 1, platforms: 1, monthlySpendUsd: 2_000, verifiedConversions: 200,
+      workspaces: 1, platforms: 1, adAccounts: 1, monthlySpendUsd: 2_000, verifiedConversions: 200,
       historyMonths: 1, conversionSync: "none", automationRules: 0, scaleKill: "view",
       stores: 0, aiCredits: 0, deepScans: 0, aiModel: "claude-sonnet-4-6", savedViews: 1, scheduledReports: false,
     },
@@ -65,7 +76,7 @@ export const PLANS: Plan[] = [
     highlighted: false,
     price: { EGP: 899, SAR: 189, USD: 49 },
     limits: {
-      workspaces: 1, platforms: "all", monthlySpendUsd: 15_000, verifiedConversions: 2_000,
+      workspaces: 1, platforms: "all", adAccounts: 1, monthlySpendUsd: 15_000, verifiedConversions: 2_000,
       historyMonths: 12, conversionSync: "one", automationRules: 3, scaleKill: "apply",
       stores: 1, aiCredits: 50, deepScans: 0, aiModel: "claude-sonnet-4-6", savedViews: 5, scheduledReports: true,
     },
@@ -78,7 +89,7 @@ export const PLANS: Plan[] = [
     highlighted: true,
     price: { EGP: 2_499, SAR: 559, USD: 149 },
     limits: {
-      workspaces: 3, platforms: "all", monthlySpendUsd: 60_000, verifiedConversions: 10_000,
+      workspaces: 3, platforms: "all", adAccounts: 3, monthlySpendUsd: 60_000, verifiedConversions: 10_000,
       historyMonths: 24, conversionSync: "all", automationRules: 15, scaleKill: "apply",
       stores: 3, aiCredits: 200, deepScans: 5, aiModel: "claude-sonnet-5", savedViews: -1, scheduledReports: true,
     },
@@ -89,7 +100,7 @@ export const PLANS: Plan[] = [
     highlighted: false,
     price: { EGP: 6_999, SAR: 1_499, USD: 399 },
     limits: {
-      workspaces: 15, platforms: "all", monthlySpendUsd: 250_000, verifiedConversions: 50_000,
+      workspaces: 15, platforms: "all", adAccounts: 15, monthlySpendUsd: 250_000, verifiedConversions: 50_000,
       historyMonths: 24, conversionSync: "all", automationRules: -1, scaleKill: "apply",
       stores: 15, aiCredits: 600, deepScans: 20, aiModel: "claude-sonnet-5", savedViews: -1, scheduledReports: true,
     },
@@ -102,6 +113,7 @@ export const PLAN_BY_KEY = new Map(PLANS.map((p) => [p.key, p]));
 export const COMPARISON_ROWS: Array<{ key: keyof PlanLimits; kind: "number" | "text" | "bool" }> = [
   { key: "workspaces", kind: "number" },
   { key: "platforms", kind: "text" },
+  { key: "adAccounts", kind: "number" },
   { key: "monthlySpendUsd", kind: "number" },
   { key: "verifiedConversions", kind: "number" },
   { key: "conversionSync", kind: "text" },

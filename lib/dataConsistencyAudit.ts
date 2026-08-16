@@ -10,7 +10,7 @@ import { GoogleAdsApi } from "google-ads-api";
 import { prisma } from "@/lib/prisma";
 import type { ConnectedPlatform } from "@prisma/client";
 import { decryptToken } from "@/lib/encryption";
-import { pickConnection } from "@/lib/platformConnections";
+import { pickConnection, connectionsForPlatform } from "@/lib/platformConnections";
 
 export interface ConsistencyAuditResult {
   matches: boolean;
@@ -48,10 +48,11 @@ export async function auditDataConsistency(
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: { user: { include: { connectedPlatforms: true } } },
+    include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
   });
-  const connection = pickConnection(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
-  if (!connection) {
+  const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "GOOGLE_ADS");
+  const anyConnection = pickConnection(grants, "GOOGLE_ADS");
+  if (!anyConnection) {
     return { matches: true, storedClicks, liveClicks: 0, discrepancyPct: 0, checkedAt: new Date() };
   }
 
@@ -70,6 +71,10 @@ export async function auditDataConsistency(
 
   let liveClicks = 0;
   for (const [accountId, campaignIds] of byAccount.entries()) {
+    // منحةٌ لكلّ حساب. وهذا الفحص بالذات يقارن أرقامنا المخزّنة بأرقام
+    // جوجل الحيّة، فتوكنٌ مرفوض هنا يُقرأ صفراً حيّاً أمام رقمٍ مخزّن -
+    // أي أنّه يُبلّغ عن **تضارب بيانات** لا وجود له.
+    const connection = pickConnection(grants, "GOOGLE_ADS", accountId) ?? anyConnection;
     const customer = client.Customer({
       customer_id: accountId,
       login_customer_id: connection.managerAccountId!,

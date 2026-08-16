@@ -9,9 +9,10 @@
 // بدل عرض صفر يوحي بأن التكامل ميّت.
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   X, CircleDot, Activity, Clock, Users, Megaphone, ShoppingBag,
-  Database, RefreshCw, Radio, CalendarDays, KeyRound, ChevronLeft, ChevronRight, Plus,
+  Database, RefreshCw, Radio, CalendarDays, KeyRound, ChevronLeft, ChevronRight, Plus, Pencil,
 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import type { ActiveIntegration } from "@/lib/integrationsStatus";
@@ -20,7 +21,7 @@ import { t, relativeFromDate, durationFromHours, type Locale } from "@/lib/i18n/
 type DrawerTab = "overview" | "accounts" | "permissions" | "activity";
 
 export function IntegrationDrawer({
-  integration, locale, busy, onClose, onSync, onDisconnect, onManageCampaigns,
+  integration, locale, busy, onClose, onSync, onDisconnect, onDisconnectGrant, onManageCampaigns,
 }: {
   integration: ActiveIntegration;
   locale: Locale;
@@ -28,6 +29,8 @@ export function IntegrationDrawer({
   onClose: () => void;
   onSync: () => void;
   onDisconnect: () => void;
+  /** فصل تسجيل دخولٍ بعينه - غير فصل المنصّة كلّها */
+  onDisconnectGrant: (connectionId: string) => void;
   onManageCampaigns: () => void;
 }) {
   const onAddAccount = onManageCampaigns;
@@ -191,6 +194,41 @@ export function IntegrationDrawer({
               )}
             </ul>
 
+            {/* ==================== تسجيلات الدخول ====================
+
+                منحةٌ واحدة قد تصل حسابات كثيرة (MCC في جوجل، Business في
+                ميتا) - فالقائمة فوق هي الحسابات، وهذه هي المنح التي وصلتها.
+                وحين تتعدّد، لا يفرّق بينها في الواجهة شيء: الشعار واحد
+                والاسم واحد. فالتسمية هنا ليست زينة بل ما يجعل «افصل هذه»
+                قراراً واعياً بدل مقامرة. */}
+            {!isStore && integration.connectPath && integration.grants.length > 0 && (
+              <div className="mb-3">
+                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-text-faint">
+                  {tr("grantsTitle")}
+                </p>
+                <ul className="flex flex-col gap-1.5">
+                  {integration.grants.map((g, i) => (
+                    <GrantRow
+                      key={g.id}
+                      grant={g}
+                      index={i}
+                      locale={locale}
+                      connectPath={integration.connectPath!}
+                      canRemove={integration.grants.length > 1}
+                      onRemove={() => onDisconnectGrant(g.id)}
+                    />
+                  ))}
+                </ul>
+                <a
+                  href={`${integration.connectPath}?add=1`}
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 card-inset py-2.5 text-[12.5px] font-medium text-text-primary transition-colors hover:border-accent hover:bg-accent/[0.07] hover:text-accent"
+                >
+                  <Plus size={14} /> {tr("addGrant")}
+                </a>
+                <p className="mt-2 text-[11px] leading-relaxed text-text-faint">{tr("addGrantHint")}</p>
+              </div>
+            )}
+
             {/* حسابات متعدّدة تحت ربط واحد: MCC في جوجل وBusiness في ميتا
                 يعرضان عدّة حسابات إعلانية بنفس التفويض - فإضافة حساب هي
                 اختيار حملات منه، لا تفويض جديد. */}
@@ -338,5 +376,131 @@ function Row({
       </span>
       <span className="text-end font-medium">{children}</span>
     </div>
+  );
+}
+
+/**
+ * سطرُ تسجيل دخولٍ واحد.
+ *
+ * الاسم قابل للتحرير في مكانه لا في نافذة: تسميةُ منحةٍ فعلٌ صغير يُفعل
+ * مرّةً عند إضافتها، ونافذةٌ كاملة له تجعله يبدو أثقل ممّا هو فيُؤجَّل -
+ * ومنحةٌ بلا اسم هي أصل الالتباس الذي جاءت التسمية تحلّه.
+ */
+function GrantRow({
+  grant, index, locale, connectPath, canRemove, onRemove,
+}: {
+  grant: ActiveIntegration["grants"][number];
+  index: number;
+  locale: Locale;
+  connectPath: string;
+  /** آخر منحةٍ باقية لا تُفصَل من هنا - فصلُها فصلٌ للمنصّة كلّها، وله زرّه */
+  canRemove: boolean;
+  onRemove: () => void;
+}) {
+  const tr = (k: string, vars?: Record<string, string | number>) =>
+    t(locale, `integrations.${k}`, vars);
+
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(grant.label ?? "");
+  const [saving, setSaving] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const router = useRouter();
+
+  async function save() {
+    setSaving(true);
+    const res = await fetch(`/api/connected-platforms/${grant.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ label: value }),
+    }).catch(() => null);
+    setSaving(false);
+    setEditing(false);
+    if (res?.ok) router.refresh();
+  }
+
+  // اسمٌ افتراضيّ مرقَّم حتى يسمّيها المشترك - «تسجيل الدخول ١» يفرّق،
+  // و«جوجل» مكرّرةً لا تفرّق.
+  const shown = grant.label || tr("grantFallback", { n: index + 1 });
+  const connectedRel = relativeFromDate(locale, grant.connectedAt);
+
+  return (
+    <li className="card bg-surface-raised/70 px-3 py-2.5">
+      <div className="flex items-center gap-2">
+        {editing ? (
+          <>
+            <input
+              autoFocus
+              value={value}
+              maxLength={60}
+              onChange={(e) => setValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") save();
+                if (e.key === "Escape") { setValue(grant.label ?? ""); setEditing(false); }
+              }}
+              placeholder={tr("grantNamePlaceholder")}
+              className="min-w-0 flex-1 rounded-lg border border-border bg-surface px-2 py-1 text-[12.5px] text-text-primary outline-none focus:border-accent"
+            />
+            <button
+              onClick={save}
+              disabled={saving}
+              className="shrink-0 rounded-lg px-2 py-1 text-[11.5px] font-medium text-accent hover:bg-accent/10 disabled:opacity-50"
+            >
+              {tr("grantSave")}
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-text-primary" title={shown}>
+              {shown}
+            </span>
+            <button
+              onClick={() => setEditing(true)}
+              aria-label={tr("grantRename")}
+              title={tr("grantRename")}
+              className="shrink-0 rounded-lg p-1 text-text-faint hover:bg-surface hover:text-text-primary"
+            >
+              <Pencil size={13} />
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-text-faint">
+        {/* `relativeFromDate` قد تُرجع null لتاريخٍ غائب - و`connectedAt` لا
+            يغيب، لكن الصياغة تُبنى على ما يضمنه النوع لا على ما نتوقّعه. */}
+        {connectedRel && <span>{tr("grantConnectedAt", { d: connectedRel })}</span>}
+        {/* الحسابات تُكتشف عند فتح «اختر الحملات» - فقبله لا نعرفها، ولا
+            نكتب صفراً يوحي بأنّ المنحة لا تصل شيئاً. */}
+        {grant.reachableAccounts.length > 0 && (
+          <span title={grant.reachableAccounts.map((a) => a.name ?? a.id).join(" · ")}>
+            · {tr("grantReaches", { n: grant.reachableAccounts.length })}
+          </span>
+        )}
+      </div>
+
+      <div className="mt-2 flex items-center gap-1.5">
+        <a
+          href={`${connectPath}?reconnect=${encodeURIComponent(grant.id)}`}
+          className="rounded-lg px-2 py-1 text-[11.5px] font-medium text-text-muted transition-colors hover:bg-surface hover:text-text-primary"
+        >
+          {tr("grantReconnect")}
+        </a>
+        {canRemove && (
+          <button
+            // تأكيدٌ بضغطتين: فصلُ منحةٍ يوقف مزامنة حسابٍ حقيقيّ، وهو ما
+            // لا يصحّ أن يقع بضغطةٍ عابرة على زرٍّ صغير بين زرَّين.
+            onClick={() => (confirmRemove ? onRemove() : setConfirmRemove(true))}
+            onBlur={() => setConfirmRemove(false)}
+            className={`rounded-lg px-2 py-1 text-[11.5px] font-medium transition-colors ${
+              confirmRemove
+                ? "bg-critical/12 text-critical"
+                : "text-text-muted hover:bg-surface hover:text-critical"
+            }`}
+          >
+            {confirmRemove ? tr("grantRemoveConfirm") : tr("grantRemove")}
+          </button>
+        )}
+      </div>
+    </li>
   );
 }

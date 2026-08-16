@@ -11,7 +11,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyOAuthState } from "@/lib/oauthState";
 import { encryptToken } from "@/lib/encryption";
-import { checkPlatformLimit } from "@/lib/entitlements";
+import { checkPlatformLimit, checkGrantLimit } from "@/lib/entitlements";
+import { resolveGrantTarget } from "@/lib/oauthGrant";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -59,32 +60,62 @@ export async function GET(req: NextRequest) {
   //
   // إعادة ربط منصّة موجودة تمرّ: `checkPlatformLimit` يَعُدّ المنصّات
   // الفريدة، فتجديد ربطٍ منتهٍ لا يُحسَب منصّةً جديدة.
-  const platCheck = await checkPlatformLimit(verified.userId);
-  if (!platCheck.allowed) {
-    const already = await prisma.connectedPlatform.findUnique({
-      where: { userId_platform: { userId: verified.userId, platform: "TIKTOK_ADS" } },
+  // **أيّ صفٍّ نكتب فيه؟** جوابٌ لم يكن يُسأل حين كان لكلّ منصّة صفٌّ
+  // واحد: الموافقة الجديدة تكتب فوقه وكفى. وبعد أن صار للمشترك أكثر من
+  // تسجيل دخول، صارت الكتابة العمياء **تمحو منحة عميلٍ بتوكن عميلٍ آخر**.
+  const target = await resolveGrantTarget({
+    userId: verified.userId,
+    platform: "TIKTOK_ADS",
+    connectionId: verified.connectionId,
+    addNew: verified.addNew,
+  });
+
+  // 🔴 حدّ المنصّات كان معروضاً في جدول الباقات وغير مطبَّق هنا: الباقة
+  // المجّانية تَعِد بمنصّة واحدة، وكان المستخدم يربط الثلاث. الفحص قبل
+  // الحفظ لا بعده - بعده يكون الربط قد تمّ ولا معنى للمنع.
+  //
+  // ولا يُسأل إلّا عند إنشاء منحةٍ جديدة: تجديد منحةٍ قائمة ليس منصّةً
+  // جديدة، ومنعُه يقفل على المشترك ربطاً يملكه بالفعل.
+  if (target.mode === "create") {
+    const hasPlatform = await prisma.connectedPlatform.findFirst({
+      where: { userId: verified.userId, platform: "TIKTOK_ADS" },
       select: { id: true },
     });
-    if (!already) {
-      return NextResponse.redirect(`${returnUrl}?connection=plan_limit&limit=${platCheck.limit}`);
+    if (!hasPlatform) {
+      const platCheck = await checkPlatformLimit(verified.userId);
+      if (!platCheck.allowed) {
+        return NextResponse.redirect(`${returnUrl}?connection=plan_limit&limit=${platCheck.limit}`);
+      }
+    } else {
+      // منصّةٌ مربوطة بالفعل وهذه منحةٌ إضافية لها - يحكمها سقف المنح.
+      const grantCheck = await checkGrantLimit(verified.userId, "TIKTOK_ADS");
+      if (!grantCheck.allowed) {
+        return NextResponse.redirect(
+          `${returnUrl}?connection=account_limit&limit=${grantCheck.limit}&platform=TIKTOK_ADS`
+        );
+      }
     }
   }
 
-
-  await prisma.connectedPlatform.upsert({
-    where: { userId_platform: { userId: verified.userId, platform: "TIKTOK_ADS" } },
-    create: {
-      userId: verified.userId,
-      platform: "TIKTOK_ADS",
-      accessToken: encryptToken(tokenData.data.access_token),
-      refreshToken: null, // تيك توك مفيهاش refresh token منفصل زي جوجل - نفس access_token بيفضل شغال
-      expiresAt: null, // مش بينتهي افتراضياً - راجع الملاحظة أعلى الملف
-    },
-    update: {
-      accessToken: encryptToken(tokenData.data.access_token),
-      expiresAt: null,
-    },
-  });
+  if (target.mode === "update") {
+    await prisma.connectedPlatform.update({
+      where: { id: target.id },
+      data: {
+        accessToken: encryptToken(tokenData.data.access_token),
+        expiresAt: null,
+      },
+    });
+  } else {
+    await prisma.connectedPlatform.create({
+      data: {
+        userId: verified.userId,
+        platform: "TIKTOK_ADS",
+        accessToken: encryptToken(tokenData.data.access_token),
+        refreshToken: null, // تيك توك مفيهاش refresh token منفصل زي جوجل - نفس access_token بيفضل شغال
+        expiresAt: null, // مش بينتهي افتراضياً - راجع الملاحظة أعلى الملف
+      },
+    });
+  }
 
   return NextResponse.redirect(`${getAppUrl()}/dashboard?connection=success&platform=tiktok`);
 }

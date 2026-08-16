@@ -7,7 +7,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { decryptToken } from "@/lib/encryption";
-import { pickConnection } from "@/lib/platformConnections";
+import { pickConnection, connectionsForPlatform } from "@/lib/platformConnections";
 
 const META_API_VERSION = "v25.0";
 
@@ -21,14 +21,19 @@ export async function getFrequencyByPlatform(workspaceId: string): Promise<Recor
     if (links.length > 0) {
       const workspace = await prisma.workspace.findUnique({
         where: { id: workspaceId },
-        include: { user: { include: { connectedPlatforms: true } } },
+        include: { user: { include: { connectedPlatforms: { include: { accounts: true } } } } },
       });
-      const connection = pickConnection(workspace?.user.connectedPlatforms, "META_ADS");
+      const grants = connectionsForPlatform(workspace?.user.connectedPlatforms, "META_ADS");
+      const anyConnection = pickConnection(grants, "META_ADS");
 
-      if (connection) {
+      if (anyConnection) {
         let totalFrequency = 0;
         let count = 0;
         for (const link of links) {
+          // منحةٌ لكلّ حساب: حسابات عملاءٍ مختلفين لا يصلها توكنٌ واحد،
+          // والردّ الفاشل يُقرأ هنا صفراً فيخفض المتوسّط بلا أثر ظاهر.
+          const connection =
+            pickConnection(grants, "META_ADS", link.externalAccountId) ?? anyConnection;
           const res = await fetch(
             `https://graph.facebook.com/${META_API_VERSION}/${link.externalCampaignId}/insights` +
               `?fields=frequency&date_preset=last_7d&access_token=${decryptToken(connection.accessToken)}`
