@@ -25,6 +25,12 @@ export interface StoreOverview {
   orders: number;
   avgOrderValue: number | null;
   returningCustomersPct: number | null;
+  /** عدد مَن كان **أوّل طلبٍ له في حياته** داخل هذه الفترة.
+   *
+   *  وهو غير «العائد»: العائد يقول كم من مشتريك سبق أن اشترى، وهذا يقول
+   *  كم اكتسبتَ هذا الشهر. متجرٌ عائدوه ٧٠٪ وجدده صفر ليس وفيّاً بل
+   *  متوقّفٌ عن النموّ - والرقمان معاً هما ما يُظهر ذلك. */
+  newCustomers: number | null;
   /** `null` حين لا طلبات: «٠٪ إرجاع» بلا طلبٍ واحد رقمٌ مخترَع،
    *  ويُقرأ إنجازاً بينما لا شيء قيس أصلاً. */
   refundRatePct: number | null;
@@ -323,9 +329,16 @@ export async function getStoreOverview(
       where: { workspaceId, orderedAt: { gte: since }, ...(storeId ? { connectionId: storeId } : {}) },
       select: { total: true, isReturned: true, state: true, customerId: true },
     }),
+    // 🔴 كان استعلاماً مستقلّاً بلا وعيٍ بالمتجر المختار، فتبقى نسبة
+    // العائدين نسبةَ المساحة كلّها مهما اختار التاجر قناةً بعينها.
+    // صار يتبع الطلبات نفسها المفلترة أعلاه.
     prisma.customer.findMany({
-      where: { workspaceId, lastOrderAt: { gte: since } },
-      select: { ordersCount: true },
+      where: {
+        workspaceId,
+        lastOrderAt: { gte: since },
+        ...(storeId ? { orders: { some: { connectionId: storeId, orderedAt: { gte: since } } } } : {}),
+      },
+      select: { ordersCount: true, firstOrderAt: true },
     }),
     prisma.ecommerceConnection.findFirst({ where: { workspaceId, active: true } }),
     prisma.product.findMany({
@@ -357,6 +370,9 @@ export async function getStoreOverview(
 
   // "عميل عائد" = طلب أكثر من مرة. بلا جدول عملاء كان هذا المؤشّر مستحيلاً
   const returning = customers.filter((c) => c.ordersCount > 1).length;
+  // "جديد" = أوّل طلبٍ له وقع داخل هذه الفترة. ومن لا تاريخَ أوّلِ طلبٍ
+  // له لا يُحسَب جديداً ولا قديماً - غيابُ التاريخ ليس دليلاً على أيّهما.
+  const newcomers = customers.filter((c) => c.firstOrderAt && c.firstOrderAt >= since).length;
 
   // الفترة السابقة = نافذة مضاعفة ناقص الحالية (getProfitJourney تعمل بنافذة واحدة)
   const prevRevenue = prevJourney.revenue - journey.revenue;
@@ -369,6 +385,7 @@ export async function getStoreOverview(
     orders: ordersCount,
     avgOrderValue: ordersCount > 0 ? Math.round(journey.revenue / ordersCount) : null,
     returningCustomersPct: customers.length > 0 ? round1((returning / customers.length) * 100) : null,
+    newCustomers: customers.length > 0 ? newcomers : null,
     refundRatePct: live.length > 0 ? round1((returned / live.length) * 100) : null,
     inventoryRiskCount,
     // الربح هنا مقروءٌ من التكاليف الحقيقية لا مقدَّرٌ بنسبة هامش - وهي

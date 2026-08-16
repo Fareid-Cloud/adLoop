@@ -17,6 +17,7 @@ import { StoreFunnel } from "@/app/components/StoreFunnel";
 import { buildOpportunities } from "@/lib/ecommerce/opportunities";
 import {
   Wallet, TrendingUp, Percent, ShoppingCart, Receipt, Repeat, RotateCcw, PackageX,
+  UserPlus,
 } from "lucide-react";
 import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
@@ -213,6 +214,21 @@ export default async function EcommerceOverviewPage({
               : undefined
           }
           explainKey="repeatRate"
+          locale={locale}
+        />
+        {/* «عائد» و«جديد» سؤالان لا سؤال: الأوّل عن الولاء والثاني عن
+            النموّ، ومتجرٌ عالي الولاء بلا مكتسَبٍ جديد متوقّف لا وفيّ. */}
+        <MetricCard
+          label={tr("newCustomers")}
+          value={overview.newCustomers ?? "—"}
+          icon={UserPlus}
+          tone="accent"
+          caption={
+            overview.newCustomers === null
+              ? { text: tr("needsCustomerData"), tone: "muted" }
+              : undefined
+          }
+          explainKey="newCustomers"
           locale={locale}
         />
         <MetricCard
