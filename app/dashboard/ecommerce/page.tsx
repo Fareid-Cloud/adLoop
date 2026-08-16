@@ -20,11 +20,17 @@ import {
 } from "lucide-react";
 import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { resolveStoreScope } from "@/lib/ecommerce/storeScope";
+import { StorePicker } from "@/app/components/ui/StorePicker";
 import { missingReturnKey, revenueBasisKey, roiTone } from "@/lib/returnMetrics";
 
 export const dynamic = "force-dynamic";
 
-export default async function EcommerceOverviewPage() {
+export default async function EcommerceOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `store.${k}`, vars);
@@ -52,9 +58,13 @@ export default async function EcommerceOverviewPage() {
   const funnelTo = new Date();
   const funnelFrom = new Date(funnelTo.getTime() - 30 * 24 * 60 * 60 * 1000);
 
+
+  // القناة المختارة من الرابط، مُتحقَّقاً من انتمائها لهذه المساحة.
+  const scope = await resolveStoreScope(workspace.id, (await searchParams).store);
+
   const [overview, journey, opps, funnel] = await Promise.all([
-    getStoreOverview(workspace.id, 30),
-    getProfitJourney(workspace.id, 30),
+    getStoreOverview(workspace.id, 30, scope.selectedId),
+    getProfitJourney(workspace.id, 30, scope.selectedId),
     buildOpportunities(workspace.id, 30),
     getStoreFunnel(workspace.id, funnelFrom, funnelTo, workspace.currency),
   ]);
@@ -107,6 +117,7 @@ export default async function EcommerceOverviewPage() {
         title={tr("title")}
         subtitle={`${tr("subtitle")} ${tc("lastNDays", { days: 30 })}.`}
         storeName={workspace.name}
+        action={<StorePicker options={scope.options} selectedId={scope.selectedId} locale={locale} />}
       />
 
       <SectionHeading hint={tr("storeStatusHint")}>{tr("storeStatus")}</SectionHeading>

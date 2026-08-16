@@ -2650,6 +2650,10 @@ export const dictionary = {
       whereEasyOrders: "من لوحة إيزي أوردرز: الإعدادات ← الويب هوك، وأضف الرابط لحدث الطلب الجديد.",
     },
     // ==== متجري الإلكتروني ====
+    storePicker: {
+      label: "القناة",
+      all: "كلّ القنوات",
+    },
     storeCompare: {
       title: "قنوات البيع",
       subtitle: "قنوات بيع مساحة العمل هذه جنباً إلى جنب - أيّها يكسب فعلاً.",
@@ -7309,6 +7313,10 @@ export const dictionary = {
       whereEasyOrders: "In EasyOrders: Settings -> Webhooks, and add the URL for the new-order event.",
     },
     // ==== My Store ====
+    storePicker: {
+      label: "Channel",
+      all: "All channels",
+    },
     storeCompare: {
       title: "Sales channels",
       subtitle: "This workspace's sales channels side by side - which one actually wins.",

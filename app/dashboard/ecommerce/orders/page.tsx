@@ -16,6 +16,8 @@ import { getOrderQuality } from "@/lib/ecommerce/storeIntelligence";
 import { ShieldAlert } from "lucide-react";
 import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { resolveStoreScope } from "@/lib/ecommerce/storeScope";
+import { StorePicker } from "@/app/components/ui/StorePicker";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +42,11 @@ const TONE_TEXT = {
   neutral: "text-text-primary",
 } as const;
 
-export default async function OrdersPage() {
+export default async function OrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `orders.${k}`, v);
@@ -56,7 +62,11 @@ export default async function OrdersPage() {
     return <DataGate locale={locale} title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
-  const quality = await getOrderQuality(workspace.id, 30);
+
+  // القناة المختارة من الرابط، مُتحقَّقاً من انتمائها لهذه المساحة.
+  const scope = await resolveStoreScope(workspace.id, (await searchParams).store);
+
+  const quality = await getOrderQuality(workspace.id, 30, scope.selectedId);
   const c = quality.currency;
 
   if (!quality.hasData) {
@@ -127,6 +137,7 @@ export default async function OrdersPage() {
         title={tr("title")}
         subtitle={`${tr("subtitle")} ${tc("lastNDays", { days: 30 })}.`}
         storeName={workspace.name}
+        action={<StorePicker options={scope.options} selectedId={scope.selectedId} locale={locale} />}
       />
 
       <SectionHeading hint={tr("qualityHint", { total: fmtNum(quality.totalOrders) })}>{tr("quality")}</SectionHeading>

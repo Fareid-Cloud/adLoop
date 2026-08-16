@@ -18,13 +18,15 @@ import { MetricCard } from "@/app/components/ui/MetricCard";
 import { Wallet, TrendingUp, Percent, AlertTriangle } from "lucide-react";
 import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { resolveStoreScope } from "@/lib/ecommerce/storeScope";
+import { StorePicker } from "@/app/components/ui/StorePicker";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProfitPage({
   searchParams,
 }: {
-  searchParams: Promise<{ days?: string }>;
+  searchParams: Promise<{ days?: string; store?: string }>;
 }) {
   const sp = await searchParams;
   const windowDays = [7, 30, 90].includes(Number(sp.days)) ? Number(sp.days) : 30;
@@ -44,7 +46,11 @@ export default async function ProfitPage({
     return <DataGate locale={locale} title={tc("noWorkspace")} reason={tc("noWorkspaceHint")} href="/dashboard" hrefLabel={tc("toHome")} />;
   }
 
-  const journey = await getProfitJourney(workspace.id, windowDays);
+
+  // القناة المختارة من الرابط، مُتحقَّقاً من انتمائها لهذه المساحة.
+  const scope = await resolveStoreScope(workspace.id, sp.store);
+
+  const journey = await getProfitJourney(workspace.id, windowDays, scope.selectedId);
   const c = journey.currency;
 
   if (journey.revenue <= 0) {
@@ -128,6 +134,7 @@ export default async function ProfitPage({
         title={tr("title")}
         subtitle={`${tr("subtitle")} ${tc("lastNDays", { days: windowDays })}.`}
         storeName={workspace.name}
+        action={<StorePicker options={scope.options} selectedId={scope.selectedId} locale={locale} />}
       />
 
       <div className="mb-8 grid gap-3 sm:grid-cols-3">

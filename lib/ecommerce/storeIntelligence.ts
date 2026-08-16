@@ -83,9 +83,31 @@ export interface ProfitJourney {
   currency: string;
 }
 
-export async function getProfitJourney(workspaceId: string, windowDays = 30): Promise<ProfitJourney> {
+export async function getProfitJourney(
+  workspaceId: string,
+  windowDays = 30,
+  /**
+   * قناة البيع المختارة، أو `null` لكلّ القنوات.
+   *
+   * **ما يُفلتَر وما لا يُفلتَر:** الطلبات والمنتجات وأسطر البيع تحمل
+   * قناتها فتُفلتَر. والإنفاق الإعلانيّ يُفلتَر بنسبة الحملة إلى قناتها
+   * (`CampaignLink.connectionId`) - فحملةٌ بلا نسبة لا تدخل إنفاق قناةٍ
+   * بعينها، إذ لا يُعرف لأيّها اشتُريت.
+   */
+  storeId: string | null = null
+): Promise<ProfitJourney> {
   const since = new Date();
   since.setDate(since.getDate() - windowDays);
+
+  // معرّفات حملات هذه القناة - يُبنى مرّةً ويُستعمل في شرط الإنفاق.
+  const scopedCampaignIds = storeId
+    ? (
+        await prisma.campaignLink.findMany({
+          where: { workspaceId, connectionId: storeId },
+          select: { externalCampaignId: true },
+        })
+      ).map((l) => l.externalCampaignId)
+    : null;
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
@@ -95,18 +117,31 @@ export async function getProfitJourney(workspaceId: string, windowDays = 30): Pr
 
   const [orders, saleEvents, adSpend, products] = await Promise.all([
     prisma.order.findMany({
-      where: { workspaceId, orderedAt: { gte: since } },
+      where: { workspaceId, orderedAt: { gte: since }, ...(storeId ? { connectionId: storeId } : {}) },
       select: { total: true, shippingCost: true, isReturned: true, state: true, isCod: true },
     }),
     prisma.productSaleEvent.findMany({
-      where: { occurredAt: { gte: since }, product: { workspaceId } },
+      where: {
+        occurredAt: { gte: since },
+        product: { workspaceId },
+        ...(storeId ? { order: { connectionId: storeId } } : {}),
+      },
       select: { quantity: true, revenue: true, returned: true, product: true },
     }),
     prisma.metricSnapshot.aggregate({
-      where: { workspaceId, date: { gte: since }, platform: { in: AD_PLATFORMS as never } },
+      where: {
+        workspaceId,
+        date: { gte: since },
+        platform: { in: AD_PLATFORMS as never },
+        // حملات هذه القناة وحدها. وقائمةٌ فارغة تعني «لا حملة منسوبة»،
+        // فالإنفاق صفرٌ صادق لا إنفاقُ المساحة كلّها منسوباً إليها ظلماً.
+        ...(scopedCampaignIds ? { campaignId: { in: scopedCampaignIds } } : {}),
+      },
       _sum: { cost: true },
     }),
-    prisma.product.findMany({ where: { workspaceId } }),
+    prisma.product.findMany({
+      where: { workspaceId, ...(storeId ? { connectionId: storeId } : {}) },
+    }),
   ]);
 
   // مفاتيح لا نصّاً: هذه القائمة تُعرَض في صفحة الربح، فيلزم أن تتبع لغة
@@ -116,7 +151,10 @@ export async function getProfitJourney(workspaceId: string, windowDays = 30): Pr
   // الإيراد: الطلبات الحقيقية أولاً، وإلّا المجاميع اليومية
   let revenue = orders.filter((o) => o.state !== "CANCELLED").reduce((s, o) => s + o.total, 0);
   let usedSnapshots = false;
-  if (orders.length === 0) {
+  // المجاميع اليومية بديلٌ حين لا طلبات مفصَّلة - **ولا تحمل القناة**.
+  // فحين تُختار قناةٌ بعينها لا يصحّ الرجوع إليها: رقم المساحة كلّها
+  // معروضاً على قناةٍ واحدة أسوأ من صفرٍ صادق.
+  if (orders.length === 0 && !storeId) {
     const snap = await prisma.metricSnapshot.aggregate({
       where: { workspaceId, date: { gte: since } },
       _sum: { storeRevenue: true },
@@ -261,7 +299,11 @@ export async function getProfitJourney(workspaceId: string, windowDays = 30): Pr
   };
 }
 
-export async function getStoreOverview(workspaceId: string, windowDays = 30): Promise<StoreOverview> {
+export async function getStoreOverview(
+  workspaceId: string,
+  windowDays = 30,
+  storeId: string | null = null
+): Promise<StoreOverview> {
   const since = new Date();
   since.setDate(since.getDate() - windowDays);
   const prevSince = new Date();
@@ -273,10 +315,10 @@ export async function getStoreOverview(workspaceId: string, windowDays = 30): Pr
   });
 
   const [journey, prevJourney, orders, customers, connection, products] = await Promise.all([
-    getProfitJourney(workspaceId, windowDays),
-    getProfitJourney(workspaceId, windowDays * 2),
+    getProfitJourney(workspaceId, windowDays, storeId),
+    getProfitJourney(workspaceId, windowDays * 2, storeId),
     prisma.order.findMany({
-      where: { workspaceId, orderedAt: { gte: since } },
+      where: { workspaceId, orderedAt: { gte: since }, ...(storeId ? { connectionId: storeId } : {}) },
       select: { total: true, isReturned: true, state: true, customerId: true },
     }),
     prisma.customer.findMany({
@@ -285,7 +327,7 @@ export async function getStoreOverview(workspaceId: string, windowDays = 30): Pr
     }),
     prisma.ecommerceConnection.findFirst({ where: { workspaceId, active: true } }),
     prisma.product.findMany({
-      where: { workspaceId, stockQuantity: { not: null } },
+      where: { workspaceId, stockQuantity: { not: null }, ...(storeId ? { connectionId: storeId } : {}) },
       select: { id: true, stockQuantity: true },
     }),
   ]);
@@ -381,7 +423,11 @@ const DELAYED_AFTER_DAYS = 5;
 /** درجة مخاطرة تستدعي مراجعة بشرية */
 const FRAUD_REVIEW_THRESHOLD = 50;
 
-export async function getOrderQuality(workspaceId: string, windowDays = 30): Promise<OrderQuality> {
+export async function getOrderQuality(
+  workspaceId: string,
+  windowDays = 30,
+  storeId: string | null = null
+): Promise<OrderQuality> {
   const since = new Date();
   since.setDate(since.getDate() - windowDays);
 
@@ -391,7 +437,7 @@ export async function getOrderQuality(workspaceId: string, windowDays = 30): Pro
   });
 
   const orders = await prisma.order.findMany({
-    where: { workspaceId, orderedAt: { gte: since } },
+    where: { workspaceId, orderedAt: { gte: since }, ...(storeId ? { connectionId: storeId } : {}) },
     include: { customer: { select: { displayName: true } } },
     orderBy: { orderedAt: "desc" },
   });
