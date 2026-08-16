@@ -58,7 +58,14 @@ export async function resolveStoreConnection(
       // وُجد صاحب المعرّف - فالتوقيع إمّا يثبته أو يُرفض الطلب. ولا
       // نعود إلى المسح: طلبٌ يدّعي متجراً ثمّ يفشل توقيعه مرفوضٌ، لا
       // فرصةَ له في أن يُجرَّب على أسرار الآخرين.
-      const secret = tagged.webhookSecret ? decryptToken(tagged.webhookSecret) : undefined;
+      // ورميةٌ هنا ترتفع إلى المسار فتصير ٥٠٠ بدل ٤٠١: خطأ خادمٍ عن
+      // رسالةٍ لا نستطيع التحقّق منها، وهي بالضبط حالةُ الرفض.
+      let secret: string | undefined;
+      try {
+        secret = tagged.webhookSecret ? decryptToken(tagged.webhookSecret) : undefined;
+      } catch {
+        return null;
+      }
       if (!verifySignature(platform, rawBody, headers, secret, tagged.webhookUsername)) return null;
       return { connectionId: tagged.id, workspaceId: tagged.workspaceId };
     }
@@ -73,7 +80,17 @@ export async function resolveStoreConnection(
   });
 
   for (const candidate of untagged) {
-    const secret = candidate.webhookSecret ? decryptToken(candidate.webhookSecret) : undefined;
+    // 🔴 **سرٌّ واحدٌ لا يُفكّ كان يُسقط الحسم للجميع.** `decryptToken`
+    // ترمي حين لا يطابق المفتاحُ ما شُفِّر به (مفتاحٌ دُوِّر، أو صفٌّ
+    // كُتب قبل التشفير)، والرمية تخرج من الحلقة كلّها - فيُردّ ويب هوك
+    // تاجرٍ سليمٍ لأنّ سرَّ تاجرٍ آخرَ في القائمة معطوب. والمرشّح الذي
+    // لا يُفكّ سرُّه ليس مالكاً لهذه الرسالة قطعاً، فيُتخطّى ويُكمَل.
+    let secret: string | undefined;
+    try {
+      secret = candidate.webhookSecret ? decryptToken(candidate.webhookSecret) : undefined;
+    } catch {
+      continue;
+    }
     if (!verifySignature(platform, rawBody, headers, secret, candidate.webhookUsername)) continue;
 
     // وسمٌ يحدث مرّةً واحدة في عمر الربط. `updateMany` بشرط `null` تمنع

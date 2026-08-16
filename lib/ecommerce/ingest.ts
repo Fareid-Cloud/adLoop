@@ -11,6 +11,10 @@ import { prisma } from "@/lib/prisma";
 import { markEventAsProcessed } from "@/lib/webhookSecurity";
 import { isCancelledStatus, isCashOnDelivery, type NormalizedOrder, type NormalizedCustomer } from "./types";
 
+/** قيمة حقلَي التفصيل لصفٍّ غير إعلانيّ - هي الافتراضيّة في المخطَّط،
+ *  وتُكتب هنا صريحةً ليبقى البحث والإنشاء على قيمةٍ واحدة. */
+const PLACEMENT_NONE = "ALL";
+
 function hash(value: string | null | undefined): string | null {
   if (!value) return null;
   const normalized = value.trim().toLowerCase();
@@ -319,15 +323,21 @@ export async function ingestOrder(
   // مقاييس اليوم على مستوى المنصة - نفس الجدول الذي تقرأ منه بقية اللوحة
   await prisma.metricSnapshot.upsert({
     where: {
-      // المفتاح الفريد يشمل حقلي التفصيل (اللذين تستخدمهما ميتا) - نمرّر
-      // السلسلة الفارغة لهما كما تفعل بقية نقاط الكتابة غير الإعلانية
+      // 🔴🔴 **كانت السلسلة الفارغة، والقيمة الافتراضية في المخطَّط
+      // `"ALL"`.** فالبحث يطلب صفّاً بـ`""` ولا يجده أبداً، ويُنشئ
+      // الإنشاءُ صفّاً بـ`"ALL"`. يعمل مع أوّل طلبٍ في اليوم، وينفجر مع
+      // الثاني بخرق قيدٍ فريد - أي أنّ **كلّ طلبٍ بعد الأوّل في اليوم
+      // نفسه كان يُردّ بخطأ ٥٠٠**، وهو الحال الطبيعيّ لأيّ متجرٍ يبيع.
+      //
+      // ولم يمسكه الفحص القديم لأنّه يرسل طلباً واحداً لكلّ متجر.
+      // (أمسكه `checkPlatformIngest` عند أوّل تشغيل.)
       workspaceId_platform_campaignId_date_placementBreakdown_placementDetail: {
         workspaceId,
         platform: order.platform as any,
         campaignId: metricRowKey,
         date: dateOnly,
-        placementBreakdown: "",
-        placementDetail: "",
+        placementBreakdown: PLACEMENT_NONE,
+        placementDetail: PLACEMENT_NONE,
       },
     },
     create: {
@@ -335,6 +345,10 @@ export async function ingestOrder(
       platform: order.platform as any,
       campaignId: metricRowKey,
       date: dateOnly,
+      // صريحةً لا افتراضاً: تغييرُ الافتراض في المخطَّط يوماً يعيد العطب
+      // نفسه صامتاً، والصريح يبقى مطابقاً لما يبحث عنه `where` أعلاه.
+      placementBreakdown: PLACEMENT_NONE,
+      placementDetail: PLACEMENT_NONE,
       impressions: 0, clicks: 0, cost: 0,
       rawConversions: 1, verifiedConversions: 0,
       ordersCount: 1,
