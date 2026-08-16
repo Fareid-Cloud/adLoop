@@ -132,7 +132,14 @@ export async function POST(
   });
 }
 
-function msg(err: unknown): string {
+// 🔴 **الفشل المجهول يُخزَّن غياباً لا جملةً عربية.**
+//
+// كان يُكتب «خطأ غير معروف» في `SyncRun.errorMessage`، وهو حقلٌ يُعرَض
+// كما هو في سجلّ النشاط - فتظهر الجملة بالعربية داخل واجهةٍ إنجليزية
+// عند مَن لغته الإنجليزية. ورسالة المنصّة نفسها (حين توجد) تُخزَّن كما
+// جاءت: نصٌّ أجنبيّ ننقله لا نؤلّفه. وحين لا رسالة، يُترك الحقل فارغاً
+// وتكتب الواجهة بديلها بلغة قارئها - وهي تفعل ذلك أصلاً.
+function msg(err: unknown): string | undefined {
   if (err instanceof Error) return err.message.slice(0, 200);
-  return "خطأ غير معروف";
+  return undefined;
 }

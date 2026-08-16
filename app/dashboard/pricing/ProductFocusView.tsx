@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { calculateFullPricing, type FullPricingInputs } from "@/lib/pricingCalculator";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { PLATFORM_LABEL, type EcommercePlatform } from "@/lib/ecommerce/types";
 
 /** إحصاءات مبيعات حقيقية - تُعرض فقط عند وجودها فعلاً */
 export interface SalesStats {
@@ -134,8 +135,20 @@ export function ProductFocusView({
       }
       setSaved(true);
       // نُفرّق صراحةً: هل تغيّر السعر في متجرك فعلاً أم عندنا فقط؟
-      setStoreNotice(data.storeUpdated ? null : data.storeNotice ?? null);
-      setStoreName(data.storePlatform ?? null);
+      // المسار يُعيد مفتاحاً ومتغيّراته، وهنا تُعرَف اللغة فتُترجَم.
+      // واسم المنصّة يُترجَم هنا كذلك: كان يصل بالعربية دائماً.
+      const platformLabel = data.storePlatform
+        ? PLATFORM_LABEL[data.storePlatform as EcommercePlatform]?.[locale] ?? data.storePlatform
+        : null;
+      setStoreNotice(
+        data.storeUpdated || !data.storeNoticeKey
+          ? null
+          : t(locale, `priceSync.${data.storeNoticeKey}`, {
+              store: platformLabel ?? "",
+              ...(data.storeNoticeVars ?? {}),
+            })
+      );
+      setStoreName(platformLabel);
       router.refresh();
       // نُبقي النافذة مفتوحة عند وجود ملاحظة عن المتجر ليقرأها المستخدم
       if (data.storeUpdated) setTimeout(() => onClose(), 1100);

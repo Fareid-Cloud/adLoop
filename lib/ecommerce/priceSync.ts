@@ -17,9 +17,16 @@ import { assertNotDemo } from "@/lib/demo";
 export interface PriceSyncResult {
   ok: boolean;
   platform?: EcommercePlatform;
-  platformLabelAr?: string;
-  /** سبب عدم التنفيذ - يُعرض للمستخدم كما هو */
-  reasonAr?: string;
+  /** اسم المنصّة بلغة القارئ - يُحسَب عند العرض لا هنا */
+  platformKey?: EcommercePlatform;
+  /** 🔴 **سبب عدم التنفيذ مفتاحٌ لا جملة.**
+   *
+   *  كانت سبع جملٍ عربية تُعاد من هنا وتُعرَض للمستخدم كما هي
+   *  (`storeNotice` في صفحة التسعير)، فيقرؤها الإنجليزيّ بالعربية.
+   *  والقاعدة في هذا المنتج أنّ كلّ نصٍّ يمرّ بطبقةٍ غير الواجهة
+   *  يُحمَل مفتاحاً ومتغيّراته، ويُترجَم عند العرض. */
+  reasonKey?: string;
+  reasonVars?: Record<string, string | number>;
   needsSetup?: boolean;
 }
 
@@ -33,7 +40,7 @@ export async function syncPriceToStore(
   await assertNotDemo(workspaceId);
 
   const product = await prisma.product.findFirst({ where: { id: productId, workspaceId } });
-  if (!product) return { ok: false, reasonAr: "المنتج غير موجود." };
+  if (!product) return { ok: false, reasonKey: "noProduct" };
 
   // 🔴 **إلى أيّ متجرٍ يُكتب هذا السعر؟** كان الجواب «أوّل متجرٍ له صلاحية
   // كتابة في المساحة»، وهو صحيحٌ ما دام المتجر واحداً. فإذا صارا اثنين،
@@ -56,16 +63,14 @@ export async function syncPriceToStore(
     return {
       ok: false,
       needsSetup: true,
-      reasonAr:
-        "متجر هذا المنتج غير مربوط بصلاحية تعديل الأسعار. أضف توكن كتابة لذلك المتجر تحديداً - لن يُكتب السعر في متجرٍ آخر.",
+      reasonKey: "storeNotWritable",
     };
   }
   if (!connection && writable.length > 1) {
     return {
       ok: false,
       needsSetup: true,
-      reasonAr:
-        "هذا المنتج غير منسوب إلى متجرٍ بعينه، ولديك أكثر من متجر. اختر متجره أوّلاً حتى لا يُكتب السعر في المتجر الخطأ.",
+      reasonKey: "productHasNoStore",
     };
   }
 
@@ -73,45 +78,46 @@ export async function syncPriceToStore(
     return {
       ok: false,
       needsSetup: true,
-      reasonAr: "لم يُربط متجر إلكتروني بصلاحية تعديل الأسعار، فحُدِّث السعر عندنا فقط. اربط متجرك بتوكن كتابة ليُحدَّث السعر في متجرك تلقائياً.",
+      reasonKey: "noWritableStore",
     };
   }
 
   const platform = connection.platform as EcommercePlatform;
-  const label = PLATFORM_LABEL[platform]?.ar ?? platform;
 
   if (!connection.apiToken) {
-    return { ok: false, needsSetup: true, platform, platformLabelAr: label,
-      reasonAr: `ربط ${label} لا يحتوي على توكن كتابة. أضفه من الإعدادات ليُحدَّث السعر في متجرك.` };
+    return { ok: false, needsSetup: true, platform, platformKey: platform,
+      reasonKey: "noWriteToken" };
   }
 
   const token = decryptToken(connection.apiToken);
 
   try {
     switch (platform) {
-      case "SALLA": return await updateSalla(product, newPrice, token, label);
-      case "SHOPIFY": return await updateShopify(product, newPrice, token, connection.storeIdentifier, label);
-      case "ZID": return await updateZid(product, newPrice, token, connection.storeIdentifier, label);
-      case "WOOCOMMERCE": return await updateWoo(product, newPrice, token, connection, label);
-      case "EASY_ORDERS": return await updateEasyOrders(product, newPrice, token, label);
+      case "SALLA": return await updateSalla(product, newPrice, token);
+      case "SHOPIFY": return await updateShopify(product, newPrice, token, connection.storeIdentifier);
+      case "ZID": return await updateZid(product, newPrice, token, connection.storeIdentifier);
+      case "WOOCOMMERCE": return await updateWoo(product, newPrice, token, connection);
+      case "EASY_ORDERS": return await updateEasyOrders(product, newPrice, token);
       default:
-        return { ok: false, platform, platformLabelAr: label, reasonAr: `تحديث الأسعار غير مدعوم لمنصة ${label} بعد.` };
+        return { ok: false, platform, platformKey: platform, reasonKey: "platformUnsupported" };
     }
   } catch (err) {
     console.error(`فشل تحديث السعر على ${platform}:`, err);
     return {
-      ok: false, platform, platformLabelAr: label,
-      reasonAr: `تعذّر تحديث السعر في ${label}: ${err instanceof Error ? err.message : "خطأ غير معروف"}.`,
+      ok: false, platform, platformKey: platform,
+      // رسالة المنصّة تُنقَل كما جاءت - نصٌّ أجنبيّ ننقله لا نؤلّفه.
+      reasonKey: err instanceof Error ? "writeFailedWithReason" : "writeFailed",
+      reasonVars: err instanceof Error ? { reason: err.message } : undefined,
     };
   }
 }
 
 // ==================== سلة ====================
 // مؤكد من التوثيق الرسمي: POST /products/sku/{sku}/price بصلاحية products.read_write
-async function updateSalla(product: any, price: number, token: string, label: string): Promise<PriceSyncResult> {
+async function updateSalla(product: any, price: number, token: string): Promise<PriceSyncResult> {
   if (!product.sku) {
-    return { ok: false, platform: "SALLA", platformLabelAr: label,
-      reasonAr: "هذا المنتج بلا SKU، وسلة تحدّث السعر عبر الـSKU. أضف SKU مطابقاً لما في متجرك." };
+    return { ok: false, platform: "SALLA", platformKey: "SALLA",
+      reasonKey: "sallaNeedsSku" };
   }
 
   const res = await fetch(
@@ -127,21 +133,21 @@ async function updateSalla(product: any, price: number, token: string, label: st
     const body = await res.text().catch(() => "");
     throw new Error(`سلة أعادت ${res.status} ${body.slice(0, 160)}`);
   }
-  return { ok: true, platform: "SALLA", platformLabelAr: label };
+  return { ok: true, platform: "SALLA", platformKey: "SALLA" };
 }
 
 // ==================== شوبيفاي ====================
 // السعر يُحفظ على المتغيّر (variant) لا المنتج نفسه
 async function updateShopify(
-  product: any, price: number, token: string, storeDomain: string | null, label: string
+  product: any, price: number, token: string, storeDomain: string | null
 ): Promise<PriceSyncResult> {
   if (!storeDomain) {
-    return { ok: false, platform: "SHOPIFY", platformLabelAr: label, needsSetup: true,
-      reasonAr: "نطاق متجر شوبيفاي غير محفوظ. أضفه في إعدادات الربط (مثال: my-store.myshopify.com)." };
+    return { ok: false, platform: "SHOPIFY", platformKey: "SHOPIFY", needsSetup: true,
+      reasonKey: "shopifyNeedsDomain" };
   }
   if (!product.externalVariantId) {
-    return { ok: false, platform: "SHOPIFY", platformLabelAr: label,
-      reasonAr: "معرّف المتغيّر في شوبيفاي غير محفوظ لهذا المنتج، وشوبيفاي تحفظ السعر عليه لا على المنتج." };
+    return { ok: false, platform: "SHOPIFY", platformKey: "SHOPIFY",
+      reasonKey: "shopifyNeedsVariant" };
   }
 
   const res = await fetch(
@@ -154,7 +160,7 @@ async function updateShopify(
   );
 
   if (!res.ok) throw new Error(`شوبيفاي أعادت ${res.status}`);
-  return { ok: true, platform: "SHOPIFY", platformLabelAr: label };
+  return { ok: true, platform: "SHOPIFY", platformKey: "SHOPIFY" };
 }
 
 // ==================== زد ====================
@@ -162,11 +168,11 @@ async function updateShopify(
 // لكن أسماء الحقول الدقيقة لم نتمكن من قراءتها من مخططهم (يُحمَّل
 // بجافاسكريبت). يجب التأكد عند أول ربط حقيقي بمتجر زد.
 async function updateZid(
-  product: any, price: number, token: string, storeId: string | null, label: string
+  product: any, price: number, token: string, storeId: string | null
 ): Promise<PriceSyncResult> {
   if (!product.externalProductId) {
-    return { ok: false, platform: "ZID", platformLabelAr: label,
-      reasonAr: "معرّف المنتج في زد غير محفوظ لهذا المنتج." };
+    return { ok: false, platform: "ZID", platformKey: "ZID",
+      reasonKey: "zidNeedsProductId" };
   }
 
   const res = await fetch(`https://api.zid.sa/v1/products/${product.externalProductId}`, {
@@ -180,21 +186,21 @@ async function updateZid(
   });
 
   if (!res.ok) throw new Error(`زد أعادت ${res.status}`);
-  return { ok: true, platform: "ZID", platformLabelAr: label };
+  return { ok: true, platform: "ZID", platformKey: "ZID" };
 }
 
 // ==================== ووكومرس ====================
 // مصادقة أساسية بمفتاح وسرّ (consumer key/secret) - المعيار الموثّق
 async function updateWoo(
-  product: any, price: number, key: string, connection: any, label: string
+  product: any, price: number, key: string, connection: any
 ): Promise<PriceSyncResult> {
   if (!connection.storeUrl || !connection.apiSecret) {
-    return { ok: false, platform: "WOOCOMMERCE", platformLabelAr: label, needsSetup: true,
-      reasonAr: "ربط ووكومرس يحتاج رابط المتجر ومفتاح وسرّ الوصول معاً." };
+    return { ok: false, platform: "WOOCOMMERCE", platformKey: "WOOCOMMERCE", needsSetup: true,
+      reasonKey: "wooNeedsCredentials" };
   }
   if (!product.externalProductId) {
-    return { ok: false, platform: "WOOCOMMERCE", platformLabelAr: label,
-      reasonAr: "معرّف المنتج في ووكومرس غير محفوظ لهذا المنتج." };
+    return { ok: false, platform: "WOOCOMMERCE", platformKey: "WOOCOMMERCE",
+      reasonKey: "wooNeedsProductId" };
   }
 
   const secret = decryptToken(connection.apiSecret);
@@ -208,16 +214,16 @@ async function updateWoo(
   });
 
   if (!res.ok) throw new Error(`ووكومرس أعادت ${res.status}`);
-  return { ok: true, platform: "WOOCOMMERCE", platformLabelAr: label };
+  return { ok: true, platform: "WOOCOMMERCE", platformKey: "WOOCOMMERCE" };
 }
 
 // ==================== إيزي أوردرز ====================
 async function updateEasyOrders(
-  product: any, price: number, token: string, label: string
+  product: any, price: number, token: string
 ): Promise<PriceSyncResult> {
   if (!product.externalProductId) {
-    return { ok: false, platform: "EASY_ORDERS", platformLabelAr: label,
-      reasonAr: "معرّف المنتج في إيزي أوردرز غير محفوظ لهذا المنتج." };
+    return { ok: false, platform: "EASY_ORDERS", platformKey: "EASY_ORDERS",
+      reasonKey: "easyOrdersNeedsProductId" };
   }
 
   const res = await fetch(`https://api.easy-orders.net/api/v1/external-apps/products/${product.externalProductId}`, {
@@ -227,5 +233,5 @@ async function updateEasyOrders(
   });
 
   if (!res.ok) throw new Error(`إيزي أوردرز أعادت ${res.status}`);
-  return { ok: true, platform: "EASY_ORDERS", platformLabelAr: label };
+  return { ok: true, platform: "EASY_ORDERS", platformKey: "EASY_ORDERS" };
 }

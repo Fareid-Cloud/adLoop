@@ -232,7 +232,10 @@ export function DeepScanClient({ workspaceId, pastScans, locale }: { workspaceId
 
       {scan?.status === "FAILED" && (
         <div className="note mb-4 border-critical/35 bg-critical/10 p-4 text-critical">
-          {tr("scanFailed", { error: scan.errorMessage ?? "" })}
+          {/* «فشل الفحص: » بلا سبب جملةٌ مبتورة - وحالة «لا سبب» لها نصّها. */}
+          {scan.errorMessage
+            ? tr("scanFailed", { error: scan.errorMessage })
+            : tr("scanFailedNoReason")}
         </div>
       )}
 

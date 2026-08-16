@@ -316,7 +316,8 @@ export async function applyActionFeedItem(itemId: string) {
       });
       // فشل الكتابة على المتجر ليس فشلاً كاملاً - السعر صحيح عندنا الآن،
       // لكن يجب أن يعرف المستخدم أن متجره لم يتغيّر بعد.
-      if (!sync.ok) throw new Error(sync.reasonAr ?? "تعذّر تحديث السعر في المتجر.");
+      // المفتاح لا الجملة: الرسالة تُترجَم عند عرضها لا عند رميها.
+      if (!sync.ok) throw new Error(`priceSync.${sync.reasonKey ?? "unknown"}`);
       break;
     }
     default:

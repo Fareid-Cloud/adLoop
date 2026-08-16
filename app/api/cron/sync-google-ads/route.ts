@@ -72,7 +72,9 @@ export async function GET(req: NextRequest) {
     } catch (err) {
       await finishSyncRun(runId, {
         ok: false,
-        error: err instanceof Error ? err.message.slice(0, 200) : "خطأ غير معروف",
+        // نصّ المنصّة إن وُجد؛ وإلّا يبقى الحقل فارغاً لتكتب الواجهة
+        // بديلها بلغة قارئها - راجع `homeActivity.ts`.
+        error: err instanceof Error ? err.message.slice(0, 200) : undefined,
       });
       console.error(`فشلت مزامنة ${platform} لمساحة العمل ${workspaceId}:`, err);
     }

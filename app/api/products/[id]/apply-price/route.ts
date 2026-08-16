@@ -71,8 +71,11 @@ export async function POST(
     price: newPrice,
     // نُفرّق بوضوح: هل تغيّر السعر في المتجر فعلاً أم عندنا فقط؟
     storeUpdated: sync.ok,
-    storePlatform: sync.platformLabelAr ?? null,
-    storeNotice: sync.ok ? null : sync.reasonAr ?? null,
+    // المفتاح ومتغيّراته لا الجملة: الواجهة تعرف لغة قارئها، وهذا
+    // المسار لا يعرفها. راجع `priceSync.ts`.
+    storePlatform: sync.platformKey ?? null,
+    storeNoticeKey: sync.ok ? null : sync.reasonKey ?? "unknown",
+    storeNoticeVars: sync.ok ? null : (sync.reasonVars ?? null),
     needsSetup: sync.needsSetup ?? false,
   });
 }

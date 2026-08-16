@@ -126,7 +126,9 @@ export async function POST(req: NextRequest) {
         where: { id: scan.id },
         data: {
           status: "FAILED",
-          errorMessage: err instanceof Error ? err.message : "خطأ غير معروف",
+          // رسالة المنصّة أو المتصفّح إن وُجدت؛ وإلّا يبقى الحقل فارغاً
+          // فتكتب الواجهة بديلها بلغة قارئها بدل جملةٍ عربية محفوظة.
+          errorMessage: err instanceof Error ? err.message : null,
           completedAt: new Date(),
         },
       });
