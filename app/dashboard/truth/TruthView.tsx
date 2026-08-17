@@ -88,6 +88,14 @@ export function TruthView({
         actions={periodSlot}
       />
 
+      {/* 🔴 اختار مقارنةً ولم تُوجَد بيانات في الفترة المقابلة: تُقال
+          صراحةً. اختفاءُ الفروق بلا كلمة يُقرأ خياراً معطّلاً. */}
+      {snapshot.comparisonRequestedButEmpty && (
+        <p className="note mb-4 border-gap/30 bg-gap/[0.06] text-[12.5px] text-text-primary">
+          {tr("comparisonEmpty")}
+        </p>
+      )}
+
       {/* ============ ١) شبكة المؤشّرات ============ */}
       <SectionTitle icon={Gauge}>{tr("kpis")}</SectionTitle>
       <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

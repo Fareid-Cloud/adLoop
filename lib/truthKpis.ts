@@ -123,6 +123,12 @@ export interface TruthSnapshot {
   sync: SyncHealth;
   /** هل توجد بيانات لمسات أصلاً - يحدّد إن كان قسم الإسناد يُعرض أم يُشرح */
   hasTouchpointData: boolean;
+  /** 🔴 **اختار مقارنةً ولم يجد شيئاً: تُقال لا تُبتلَع.**
+   *
+   *  من يختار «مقابل العام الماضي» وحسابه عمره شهران تختفي الفروق أمامه
+   *  بلا كلمة، فيقرأ الخيار معطّلاً. وهذه الراية تفرّق بين «لم يطلب
+   *  مقارنة» و«طلبها والفترة المقابلة فارغة». */
+  comparisonRequestedButEmpty: boolean;
   probabilistic: ProbabilisticAttribution;
 }
 
@@ -172,9 +178,16 @@ export async function getTruthSnapshot(
   const since = range.from;
   const to = range.to;
 
+  // 🔴 **«بلا مقارنة» كانت تُقارِن.** كان الغياب يُفهَم «لم يختر بعد»
+  // فتُحسَب الفترة السابقة تلقائياً - فيطفئ القارئ المقارنة صراحةً
+  // وتبقى «٤٪ مقابل الفترة السابقة» تحت كلّ رقم. وخيارٌ لا أثر له
+  // خيارٌ كاذب.
+  //
+  // والافتراضيّ في هذا المنتج مطفأ (راجع `periodFromParams`)، فمن يريد
+  // المقارنة يطلبها - وحينها وحدها تُحسَب.
   const spanMs = to.getTime() - since.getTime();
-  const prevFrom = compareRange?.from ?? new Date(since.getTime() - spanMs - 1);
-  const prevTo = compareRange?.to ?? new Date(since.getTime() - 1);
+  const prevFrom = compareRange?.from ?? null;
+  const prevTo = compareRange?.to ?? null;
 
   // هامشُ الربح من المساحة: بدونه لا يُحسَب العائد على الاستثمار - ولا
   // يُخمَّن. رقمُ ربحٍ مبنيٌّ على هامشٍ مفترَض تُتَّخذ عليه قرارات ميزانية.
@@ -195,12 +208,14 @@ export async function getTruthSnapshot(
       },
       orderBy: { date: "asc" },
     }),
-    prisma.metricSnapshot.findMany({
+    // بلا فترةِ مقارنة لا استعلامَ أصلاً: مصفوفةٌ فارغة تُسقط كلّ فرقٍ
+    // إلى `null`، فلا يُرسَم شيء.
+    prevFrom && prevTo ? prisma.metricSnapshot.findMany({
       where: { workspaceId, date: { gte: prevFrom, lte: prevTo } },
       select: {
         platform: true, cost: true, rawConversions: true, verifiedConversions: true, revenue: true,
       },
-    }),
+    }) : Promise.resolve([]),
     buildConversionPaths(workspaceId, since, to),
     prisma.conversionSyncLog.findMany({
       where: { workspaceId, createdAt: { gte: since, lte: to } },
@@ -356,6 +371,7 @@ export async function getTruthSnapshot(
     // العدد يُشتقّ من الفترة نفسها لا يُمرَّر بجانبها - فلا يفترقان.
     days: Math.max(1, Math.round(spanMs / 86_400_000) + 1),
     totals,
+    comparisonRequestedButEmpty: !!(prevFrom && prevTo) && previous.length === 0,
     previousTotals:
       prevVerificationRate !== null
         ? {
