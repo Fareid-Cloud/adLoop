@@ -1636,6 +1636,15 @@ function MfaFields() {
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
   /** الأكواد الصريحة - في الذاكرة فقط ولحظةَ توليدها. */
   const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
+  /** 🔴 **«حفظتها» لا تُصدَّق بلا فعل.**
+   *
+   *  الزرّ كان يُغلق اللوحة فوراً، والأكواد لا تُعرَض مرّةً ثانية أبداً
+   *  (المخزَّن مجزّأ). فضغطةٌ بالغلط - أو استعجالٌ - تكلّف المستخدم
+   *  أوراقه كلّها، ولا يكتشف ذلك إلّا يوم يفقد هاتفه.
+   *
+   *  فلا يُفتَح الزرّ إلّا بعد نسخٍ أو تنزيلٍ فعليّ. وهو ليس تعطيلاً
+   *  للطريق: الطريق نفسه هو النسخ، والزرّ إقرارٌ بما جرى لا بديلٌ عنه. */
+  const [codesTaken, setCodesTaken] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -1666,8 +1675,33 @@ function MfaFields() {
     setLoading(false);
     if (res.ok && Array.isArray(data.backupCodes)) {
       setBackupCodes(data.backupCodes);
-      setRemaining(data.backupCodes.length);
+      setCodesTaken(false);
+      // العدّاد لا يتغيّر بعد: الجديدة معلَّقة والقديمة عاملة، والرقم
+      // المعروض هو ما يملكه فعلاً إلى أن يُقرّ.
     }
+  }
+
+  /** الإقرار: هنا تُبطَل القديمة وتُفعَّل الجديدة في الخادم. */
+  async function confirmCodesSaved() {
+    await fetch("/api/auth/mfa/backup-codes", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...getCsrfHeader() },
+    }).catch(() => {});
+    setRemaining(backupCodes?.length ?? null);
+    setBackupCodes(null);
+    setCodesTaken(false);
+  }
+
+  function downloadCodes() {
+    if (!backupCodes) return;
+    const nl = String.fromCharCode(10);
+    const blob = new Blob([backupCodes.join(nl) + nl], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "adloop-recovery-codes.txt";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setCodesTaken(true);
   }
 
   async function startSetup() {
@@ -1775,16 +1809,34 @@ function MfaFields() {
               ))}
             </div>
 
+            <p className="px-5 pb-1 text-[11.5px] leading-relaxed text-text-faint">
+              {codesTaken ? tr("bcOldStillValid") : tr("bcTakeFirst")}
+            </p>
+
             <div className="flex flex-wrap justify-end gap-2 border-t border-border p-4">
               <button
-                onClick={() => navigator.clipboard?.writeText(backupCodes.join(String.fromCharCode(10)))}
+                onClick={() => {
+                  navigator.clipboard?.writeText(backupCodes.join(String.fromCharCode(10)));
+                  setCodesTaken(true);
+                }}
                 className="btn btn-secondary btn-sm"
               >
                 {tr("bcCopy")}
               </button>
+              {/* التنزيل بديلٌ عن النسخ لا زينة: حافظةٌ تُمسح بعد دقائق،
+                  وملفٌّ يبقى. وأحدهما يكفي لفتح زرّ الإقرار. */}
+              <button onClick={downloadCodes} className="btn btn-secondary btn-sm">
+                {tr("bcDownload")}
+              </button>
               {/* لا زرَّ إغلاقٍ صامت (X) ولا إغلاقَ بالنقر خارجها: الإغلاق
-                  هنا يعني فقدَ الأكواد، فيكون بإقرارٍ صريح لا بحركةٍ عابرة. */}
-              <button onClick={() => setBackupCodes(null)} className="btn btn-primary btn-sm">
+                  هنا يعني فقدَ الأكواد، فيكون بإقرارٍ صريح لا بحركةٍ عابرة.
+                  ولا يُفتَح الإقرار قبل نسخٍ أو تنزيلٍ فعليّ. */}
+              <button
+                onClick={confirmCodesSaved}
+                disabled={!codesTaken}
+                title={codesTaken ? undefined : tr("bcTakeFirst")}
+                className="btn btn-primary btn-sm"
+              >
                 {tr("bcSaved")}
               </button>
             </div>
