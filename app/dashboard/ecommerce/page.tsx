@@ -24,6 +24,7 @@ import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { resolveStoreScope } from "@/lib/ecommerce/storeScope";
 import { StorePicker } from "@/app/components/ui/StorePicker";
 import { missingReturnKey, revenueBasisKey, roiTone } from "@/lib/returnMetrics";
+import { Sparkline } from "@/app/components/ui/Sparkline";
 
 export const dynamic = "force-dynamic";
 
@@ -145,6 +146,8 @@ export default async function EcommerceOverviewPage({
           }
           explainKey="revenue"
           locale={locale}
+          // الاتّجاه من الطلبات نفسها لا من تقدير: يومٌ بلا بيعٍ صفرٌ صادق.
+          trend={<Sparkline values={overview.dailyRevenue} tone="accent" />}
         />
         <MetricCard
           label={tr("netProfit")}
@@ -191,6 +194,7 @@ export default async function EcommerceOverviewPage({
         <MetricCard label={tr("orders")} value={fmtNum(overview.orders)} icon={ShoppingCart} tone="default"
           explainKey="orders"
           locale={locale}
+          trend={<Sparkline values={overview.dailyOrders} tone="verified" />}
         />
 
         <MetricCard

@@ -27,6 +27,7 @@ import { computeHealthScore } from "@/lib/healthScore";
 import { compareMetric } from "@/lib/periodComparison";
 import { costPerVerified } from "@/lib/kpiEngine";
 import { PageHeader } from "@/app/components/ui/PageHeader";
+import { Sparkline } from "@/app/components/ui/Sparkline";
 
 // ألوان رسمية حقيقية (مؤكدة من مصادر العلامات التجارية) - شارة لونية
 // بدل الشعار الفعلي (ملف صورة محمي بحقوق ملكية مش متاح لينا). ملاحظة:
@@ -140,7 +141,7 @@ export async function PlatformHub({
     }),
     prisma.metricSnapshot.findMany({
       where: { workspaceId: workspace.id, platform, date: { gte: fourteenDaysAgo } },
-      select: { date: true, rawConversions: true, verifiedConversions: true },
+      select: { date: true, rawConversions: true, verifiedConversions: true, cost: true },
       orderBy: { date: "asc" },
     }),
   ]);
@@ -183,6 +184,21 @@ export async function PlatformHub({
       .entries()
   ).map(([date, x]) => ({ date, ...x }));
 
+  // سلسلتان للبطاقات - من الصفوف اليومية نفسها المقروءة أعلاه، فلا
+  // استعلام إضافيّ ولا رقمٌ مقدَّر. يومٌ بلا صفٍّ لا يظهر: غيابُ اللقطة
+  // ليس إنفاقاً صفراً، بل مزامنةً لم تجرِ.
+  const dailyByDate = new Map<string, { cost: number; verified: number }>();
+  for (const row of daily) {
+    const k = row.date.toISOString().slice(0, 10);
+    const e = dailyByDate.get(k) ?? { cost: 0, verified: 0 };
+    e.cost += row.cost;
+    e.verified += row.verifiedConversions;
+    dailyByDate.set(k, e);
+  }
+  const sortedDays = [...dailyByDate.keys()].sort();
+  const costSeries = sortedDays.map((k) => Math.round(dailyByDate.get(k)!.cost));
+  const verifiedSeries = sortedDays.map((k) => dailyByDate.get(k)!.verified);
+
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -219,6 +235,7 @@ export async function PlatformHub({
           locale={locale}
           value={Math.round(cost).toLocaleString("en-US")}
           unit={workspace.currency}
+          trend={<Sparkline values={costSeries} tone="accent" />}
           icon={Icons.Wallet}
           tone="accent"
         />
@@ -227,6 +244,7 @@ export async function PlatformHub({
           explainKey="verifiedConversions"
           locale={locale}
           value={verified.toLocaleString("en-US")}
+          trend={<Sparkline values={verifiedSeries} tone="verified" />}
           icon={Icons.ShieldCheck}
           tone="verified"
           verified

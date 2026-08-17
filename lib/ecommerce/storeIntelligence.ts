@@ -31,6 +31,13 @@ export interface StoreOverview {
    *  كم اكتسبتَ هذا الشهر. متجرٌ عائدوه ٧٠٪ وجدده صفر ليس وفيّاً بل
    *  متوقّفٌ عن النموّ - والرقمان معاً هما ما يُظهر ذلك. */
   newCustomers: number | null;
+  /** سلسلةٌ يوميّة للنافذة المعروضة - رسمُ الاتجاه داخل البطاقة.
+   *
+   *  🔴 الرقم وحده يقول «أين أنت» ولا يقول «إلى أين تسير»: حسابٌ استقرّ
+   *  عند إيرادٍ ما وآخرُ انهار إليه هذا الأسبوع يعرضان الرقم نفسه.
+   *  وتُبنى من الطلبات لا من تقدير - فما لا طلبات له لا خطّ له. */
+  dailyRevenue: number[];
+  dailyOrders: number[];
   /** `null` حين لا طلبات: «٠٪ إرجاع» بلا طلبٍ واحد رقمٌ مخترَع،
    *  ويُقرأ إنجازاً بينما لا شيء قيس أصلاً. */
   refundRatePct: number | null;
@@ -327,7 +334,7 @@ export async function getStoreOverview(
     getProfitJourney(workspaceId, windowDays * 2, storeId),
     prisma.order.findMany({
       where: { workspaceId, orderedAt: { gte: since }, ...(storeId ? { connectionId: storeId } : {}) },
-      select: { total: true, isReturned: true, state: true, customerId: true },
+      select: { total: true, isReturned: true, state: true, customerId: true, orderedAt: true },
     }),
     // 🔴 كان استعلاماً مستقلّاً بلا وعيٍ بالمتجر المختار، فتبقى نسبة
     // العائدين نسبةَ المساحة كلّها مهما اختار التاجر قناةً بعينها.
@@ -374,6 +381,27 @@ export async function getStoreOverview(
   // له لا يُحسَب جديداً ولا قديماً - غيابُ التاريخ ليس دليلاً على أيّهما.
   const newcomers = customers.filter((c) => c.firstOrderAt && c.firstOrderAt >= since).length;
 
+  // ── السلسلة اليومية ────────────────────────────────────────────────
+  // يومٌ بلا طلبٍ صفرٌ صادق لا فجوةٌ في الخطّ: المتجر لم يبع فيه، وحذفُه
+  // من السلسلة يجعل أسبوعاً ميّتاً يبدو أسبوعاً متّصلاً.
+  const dayKey = (d: Date) => d.toISOString().slice(0, 10);
+  const revenueByDay = new Map<string, number>();
+  const ordersByDay = new Map<string, number>();
+  for (const o of live) {
+    const k = dayKey(o.orderedAt);
+    revenueByDay.set(k, (revenueByDay.get(k) ?? 0) + o.total);
+    ordersByDay.set(k, (ordersByDay.get(k) ?? 0) + 1);
+  }
+  const dailyRevenue: number[] = [];
+  const dailyOrders: number[] = [];
+  for (let i = windowDays - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const k = dayKey(d);
+    dailyRevenue.push(Math.round(revenueByDay.get(k) ?? 0));
+    dailyOrders.push(ordersByDay.get(k) ?? 0);
+  }
+
   // الفترة السابقة = نافذة مضاعفة ناقص الحالية (getProfitJourney تعمل بنافذة واحدة)
   const prevRevenue = prevJourney.revenue - journey.revenue;
   const prevProfit = prevJourney.netProfit - journey.netProfit;
@@ -386,6 +414,8 @@ export async function getStoreOverview(
     avgOrderValue: ordersCount > 0 ? Math.round(journey.revenue / ordersCount) : null,
     returningCustomersPct: customers.length > 0 ? round1((returning / customers.length) * 100) : null,
     newCustomers: customers.length > 0 ? newcomers : null,
+    dailyRevenue,
+    dailyOrders,
     refundRatePct: live.length > 0 ? round1((returned / live.length) * 100) : null,
     inventoryRiskCount,
     // الربح هنا مقروءٌ من التكاليف الحقيقية لا مقدَّرٌ بنسبة هامش - وهي
