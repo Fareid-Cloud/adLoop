@@ -62,7 +62,11 @@ export function DateRangePicker({
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as HTMLElement;
+      // لوحةٌ مبوَّبة من داخل هذا الحوار (قائمة نمط المقارنة) تعيش في
+      // `<body>` لا في شجرتنا - فهي ليست «خارجاً» وإن بدت كذلك.
+      if (target.closest?.("[data-portal-panel]")) return;
+      if (boxRef.current && !boxRef.current.contains(target)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     document.addEventListener("mousedown", onDown);
@@ -263,7 +267,19 @@ export function DateRangePicker({
                     checked={cmpOn}
                     onChange={(e) => {
                       setCmpOn(e.target.checked);
-                      if (e.target.checked) setDraftCmp(resolveCompare(draft, draftCmpMode === "custom" ? "previous" : draftCmpMode));
+                      if (e.target.checked) {
+                        // 🔴 **كانت تُترك «none»، فتُعرَض القائمة فارغة
+                        // («اختر…») ولا تُحسَب مقارنة.** يعلّم المستخدم
+                        // «قارن» فلا يتغيّر شيء - وهو يظنّ أنّه اختار.
+                        // التعليم نفسه اختيارٌ ضمنيّ: أوضحُ ما يريده
+                        // «الفترة السابقة»، ويبدّله إن أراد غيره.
+                        const nextMode: CompareMode =
+                          draftCmpMode === "none" ? "previous" : draftCmpMode;
+                        setDraftCmpMode(nextMode);
+                        setDraftCmp(
+                          resolveCompare(draft, nextMode === "custom" ? "previous" : nextMode)
+                        );
+                      }
                       else { setDraftCmp(null); setPicking("main"); }
                     }}
                   />

@@ -1252,7 +1252,11 @@ function WorkspaceSwitcher({
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (!boxRef.current?.contains(e.target as Node)) setOpen(false);
+      // لوحةٌ مبوَّبة (قائمة اختيار) تعيش في `<body>` لا في شجرتنا،
+      // فدوستُها تُقرأ «خارجاً» وتُغلق ما هي بداخله. راجع `Select.tsx`.
+      const target = e.target as HTMLElement;
+      if (target.closest?.("[data-portal-panel]")) return;
+      if (!boxRef.current?.contains(target)) setOpen(false);
     };
     const onEsc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     document.addEventListener("mousedown", onDown);
