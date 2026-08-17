@@ -604,6 +604,35 @@ export async function seedDemoData(
     select: { id: true, externalCustomerId: true },
   });
 
+  // 🔴 **كان `oi % ORDER_DAYS`: العدد نفسه في كلّ يومٍ بالضبط.**
+  //
+  // ومتجرٌ يبيع الرقم نفسه ستّين يوماً لا وجود له. وأثرُه ليس تجميلياً:
+  // خطّ الاتّجاه داخل بطاقة «الطلبات» يرفض الرسم على سلسلةٍ مسطّحة -
+  // وهو رفضٌ صحيح - فتبقى ميزةٌ مبنيّة غير مرئيّةٍ في الديمو كلّه.
+  //
+  // الشكل هنا حتميٌّ لا عشوائيّ (البذرة نفسها تُنتج الأرقام نفسها في كلّ
+  // تشغيل): موجةٌ أسبوعية - نهاية الأسبوع أعلى - مع تموّجٍ خفيفٍ فوقها.
+  const dayWeights = Array.from({ length: ORDER_DAYS }, (_, d) => {
+    const dow = d % 7;
+    const weekend = dow === 5 || dow === 6 ? 1.35 : dow === 0 ? 1.1 : 0.88;
+    // تموّجٌ لطيف يمنع تكرار الأسبوع حرفياً سبع مرّات
+    return weekend * (1 + 0.18 * Math.sin(d / 3.1));
+  });
+  const weightSum = dayWeights.reduce((a, b) => a + b, 0);
+  const TOTAL_ORDERS = ORDERS_PER_DAY * ORDER_DAYS;
+  /** يوم الطلب رقم `oi` - يتبع الأوزان أعلاه، ومجموع الطلبات لا يتغيّر. */
+  const dayOfOrder: number[] = [];
+  {
+    let assigned = 0;
+    dayWeights.forEach((w, d) => {
+      const n = Math.round((w / weightSum) * TOTAL_ORDERS);
+      for (let k = 0; k < n && assigned < TOTAL_ORDERS; k++, assigned++) dayOfOrder.push(d);
+    });
+    // ما تبقّى بعد التقريب يُلحق باليوم الأحدث
+    while (dayOfOrder.length < TOTAL_ORDERS) dayOfOrder.push(0);
+  }
+  const orderDayFor = (oi: number) => dayOfOrder[oi % dayOfOrder.length];
+
   const orders: Prisma.OrderCreateManyInput[] = [];
   // العدد مشتقّ لا مكتوب: `ORDERS_PER_DAY` تتبع التحويلات المتحقَّقة من
   // الحملات، و`oi % ORDER_DAYS` توزّعها بالتساوي على الأفق - فيخرج بالضبط
@@ -638,7 +667,7 @@ export async function seedDemoData(
       connectionId: isWholesale ? wholesaleStoreId : retailStoreId,
       externalOrderId: `demo-order-${oi}`,
       customerId: cust.id,
-      orderedAt: day(oi % ORDER_DAYS),
+      orderedAt: day(orderDayFor(oi)),
       total, shippingCost: m(22), currency,
       state: returned ? "RETURNED" : "FULFILLED",
       isReturned: returned,
