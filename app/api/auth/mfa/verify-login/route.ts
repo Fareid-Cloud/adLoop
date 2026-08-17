@@ -5,7 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { verifyMfaPendingToken, createSessionToken } from "@/lib/auth";
 import {
-  decryptMfaSecret, verifyMfaCode, matchBackupCode,
+  decryptMfaSecret, verifyMfaCode, matchBackupCode, matchEmailCode,
   generateDeviceToken, hashDeviceToken, describeDevice,
   TRUSTED_DEVICE_COOKIE, TRUSTED_DEVICE_DAYS,
 } from "@/lib/mfa";
@@ -15,9 +15,49 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { t } from "@/lib/i18n/dictionary";
 import { localeOfRequest } from "@/lib/apiLocale";
 
+
+/** **الجلسة وكوكيّاتها في مكانٍ واحد.**
+ *
+ * كانت الكتلة نفسها مكتوبةً مرّتين (كود التطبيق، وكود الورقة)، والثالث
+ * كان سيصير ثلاثاً. وثلاثُ نسخٍ من ضبط الكوكيّات تعني أنّ إصلاح واحدةٍ
+ * يوماً يترك الاثنتين - وأخطرها كوكي CSRF: نسيانها في فرعٍ واحد يجعل
+ * المستخدم يدخل ثمّ يفشل أوّلُ طلبٍ يكتب شيئاً، وهو عطلٌ يظهر بعد النجاح
+ * فيصعب ربطه بسببه.
+ */
+async function finishLogin(
+  userId: string,
+  req: NextRequest,
+  rememberDeviceRequested: boolean,
+  extra: Record<string, unknown> = {},
+): Promise<NextResponse> {
+  const response = NextResponse.json({ success: true, ...extra });
+
+  response.cookies.set("session", createSessionToken(userId), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 30,
+    path: "/",
+  });
+  response.cookies.set(CSRF_COOKIE_NAME, generateCsrfToken(), {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 30,
+    path: "/",
+  });
+
+  if (rememberDeviceRequested) {
+    await rememberDevice(response, userId, req.headers.get("user-agent"));
+  }
+  return response;
+}
+
 const schema = z.object({
   pendingToken: z.string().min(1),
-  code: z.string().length(6, "الكود 6 أرقام"),
+  // ثلاثة أشكال لا شكل: ستّة أرقام من التطبيق أو من البريد، وعشرة محارف
+  // من ورقة الاسترجاع. والحدّ الأدنى يمنع الفارغ، والأعلى يمنع الإغراق.
+  code: z.string().min(6).max(24),
 });
 
 /** يمنح الجهازَ الحاليَّ ثقةً موقّتة إن طلب المستخدم ذلك.
@@ -97,8 +137,23 @@ export async function POST(req: NextRequest) {
     });
     const matchedId = await matchBackupCode(code, stored);
 
+    // 🔴 **المخرج الثالث: كودٌ أُرسل إلى بريد الحساب.**
+    //
+    // ترتيبُ المحاولة مقصود - التطبيق، فالورقة، فالبريد - لأنّ البريد
+    // آخر الطرق لا أسهلها. ويُحرَق فور نجاحه كما تُحرَق الورقة.
     if (!matchedId) {
-      return NextResponse.json({ error: t(locale, "apiErr.codeInvalid") }, { status: 401 });
+      const emailOk = await matchEmailCode(code, {
+        hash: user.mfaEmailCodeHash,
+        expiresAt: user.mfaEmailCodeExpiresAt,
+      });
+      if (!emailOk) {
+        return NextResponse.json({ error: t(locale, "apiErr.codeInvalid") }, { status: 401 });
+      }
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { mfaEmailCodeHash: null, mfaEmailCodeExpiresAt: null },
+      });
+      return finishLogin(user.id, req, rememberDeviceRequested, { usedEmailCode: true });
     }
 
     // يُحرَق فور استعماله: ورقةٌ مصوَّرةٌ أو منسوخة لا تفتح الحساب مرّتين.
@@ -107,32 +162,10 @@ export async function POST(req: NextRequest) {
       data: { usedAt: new Date() },
     });
 
-    const token = createSessionToken(user.id);
-    const response = NextResponse.json({
-      success: true,
+    return finishLogin(user.id, req, rememberDeviceRequested, {
       usedBackupCode: true,
       remainingBackupCodes: stored.length - 1,
     });
-    if (rememberDeviceRequested) {
-      await rememberDevice(response, user.id, req.headers.get("user-agent"));
-    }
-    response.cookies.set("session", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30,
-      path: "/",
-    });
-    // ⚠️ كوكي CSRF مع الجلسة **دائماً**: بدونها يدخل المستخدم ثمّ يفشل
-    // أوّلُ طلبٍ يكتب شيئاً - وهو عطلٌ يظهر بعد النجاح فيصعب ربطه بسببه.
-    response.cookies.set(CSRF_COOKIE_NAME, generateCsrfToken(), {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30,
-      path: "/",
-    });
-    return response;
   }
 
   // منع إعادة الاستخدام (Replay): نفس الكود لو نجح قبل كده، مرفوض تاني
@@ -143,27 +176,5 @@ export async function POST(req: NextRequest) {
 
   await prisma.user.update({ where: { id: user.id }, data: { mfaLastUsedCode: code } });
 
-  const token = createSessionToken(user.id);
-  const response = NextResponse.json({ success: true });
-
-  response.cookies.set("session", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30,
-    path: "/",
-  });
-  response.cookies.set(CSRF_COOKIE_NAME, generateCsrfToken(), {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30,
-    path: "/",
-  });
-
-  if (rememberDeviceRequested) {
-    await rememberDevice(response, user.id, req.headers.get("user-agent"));
-  }
-
-  return response;
+  return finishLogin(user.id, req, rememberDeviceRequested);
 }

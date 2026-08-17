@@ -95,6 +95,50 @@ export async function matchBackupCode(
 }
 
 
+// ==================== كود البريد: المخرج الثالث ====================
+//
+// 🔴 **لمن ضاع هاتفه وورقة الاسترجاع معاً.** المخرجان القائمان يفترضان
+// أنّ المستخدم يملك أحدهما، ومن لا يملك أيّاً منهما يبقى مقفولاً خارج
+// حسابه بلا حيلة - وهي نهايةٌ يقع فيها مستخدمون حقيقيون.
+//
+// **ولا يخفض هذا سقف الأمان:** المنتج يثق بالبريد أصلاً في استعادة كلمة
+// المرور، فمن يملك الصندوق يملك الحساب على أيّ حال. والفرق أنّه يُطلَب
+// **بعد** إثبات كلمة المرور، وبعد فشل المخرجين، فلا يصير طريقاً أسهل بل
+// آخر الطرق.
+
+/** ستّة أرقام: يُقرأ من إشعارٍ على الشاشة ويُكتب بيدٍ واحدة. والقِصَر
+ *  يُعوَّض بعمرٍ قصيرٍ وحدٍّ صارم للمحاولات، لا بطول الكود. */
+const EMAIL_CODE_DIGITS = 6;
+/** عشر دقائق: تكفي لفتح البريد ونسخ الرقم، ولا تكفي لتخمينٍ بطيء. */
+export const EMAIL_CODE_TTL_MINUTES = 10;
+/** لا يُعاد الإرسال قبل دقيقة - وإلّا صار الزرّ أداةَ إغراقٍ لصندوق غيرك. */
+export const EMAIL_CODE_RESEND_SECONDS = 60;
+
+export function generateEmailCode(): string {
+  // `crypto` لا `Math.random`: الثانية متوقَّعة ولا تصلح لسرّ.
+  const n = crypto.getRandomValues(new Uint32Array(1))[0] % 10 ** EMAIL_CODE_DIGITS;
+  return String(n).padStart(EMAIL_CODE_DIGITS, "0");
+}
+
+export async function hashEmailCode(code: string): Promise<string> {
+  return bcrypt.hash(code, 10);
+}
+
+/** يطابق كود البريد المُدخَل بالمخزَّن، بشرط ألّا يكون قد انتهى عمره.
+ *  والمقارنة تجري **حتى مع الانتهاء** ثمّ يُرفض - فزمنُ الردّ لا يفرّق
+ *  بين «منتهٍ» و«خاطئ»، ولا يُستدَلّ منه على شيء. */
+export async function matchEmailCode(
+  input: string,
+  stored: { hash: string | null; expiresAt: Date | null },
+): Promise<boolean> {
+  const normalized = input.trim().replace(/\D/g, "");
+  if (!stored.hash || normalized.length !== EMAIL_CODE_DIGITS) return false;
+  const matches = await bcrypt.compare(normalized, stored.hash);
+  const alive = !!stored.expiresAt && stored.expiresAt.getTime() > Date.now();
+  return matches && alive;
+}
+
+
 // ==================== الأجهزة الموثوقة ====================
 
 /** ثلاثون يوماً: طويلةٌ بما يكفي لتنتهي المضايقة، قصيرةٌ بما يكفي لتنتهي

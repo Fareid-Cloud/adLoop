@@ -11,6 +11,9 @@ export const dictionary = {
     auth: {
       rememberDevice: "لا تسألني على هذا الجهاز لمدّة ٣٠ يوماً",
       mfaLostPhone: "فقدت هاتفك؟ اكتب أحد أكواد الاسترجاع التي حفظتها عند التفعيل.",
+      mfaEmailSend: "فقدت الورقة أيضاً؟ أرسِل كوداً إلى بريد الحساب",
+      mfaEmailSending: "جارٍ الإرسال…",
+      mfaEmailSent: "إن كان لحسابك بريدٌ مسجَّل فقد وصله كودٌ يعمل ١٠ دقائق",
       loginTitle: "تسجيل الدخول",
       signupTitle: "إنشاء حساب",
       email: "البريد الإلكتروني",
@@ -4147,6 +4150,9 @@ export const dictionary = {
     auth: {
       rememberDevice: "Do not ask again on this device for 30 days",
       mfaLostPhone: "Lost your phone? Enter one of the recovery codes you saved when you turned this on.",
+      mfaEmailSend: "Lost the paper too? Send a code to the account email",
+      mfaEmailSending: "Sending…",
+      mfaEmailSent: "If this account has an email on file, a code is on its way — it works for 10 minutes",
       loginTitle: "Log in",
       signupTitle: "Create an account",
       email: "Email",

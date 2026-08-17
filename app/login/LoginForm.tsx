@@ -19,6 +19,7 @@ export function LoginForm({ nextPath = "/dashboard", expired = false }: { nextPa
   const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
   const [rememberDevice, setRememberDevice] = useState(false);
+  const [emailCodeState, setEmailCodeState] = useState<"idle" | "sending" | "sent">("idle");
   const [showPw, setShowPw] = useState(false);
 
   const ar = locale === "ar";
@@ -46,6 +47,21 @@ export function LoginForm({ nextPath = "/dashboard", expired = false }: { nextPa
     // راوتر العميل قد يخدم حمولة RSC مخبّأة من قبل تسجيل الدخول - فتبقى
     // الصفحة مكانها بلا رسالة ولا انتقال. التحميل الكامل يقرأ الجلسة الجديدة.
     window.location.assign(nextPath);
+  }
+
+  /** يطلب كوداً على بريد الحساب. الردّ واحدٌ مهما كانت الحقيقة، فلا
+   *  يُقال هنا «أُرسل» إلّا بمعنى «إن كان لحسابك بريدٌ فقد وصله». */
+  async function sendEmailCode() {
+    setEmailCodeState("sending");
+    setError("");
+    try {
+      await fetch("/api/auth/mfa/email-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pendingToken }),
+      });
+    } catch {}
+    setEmailCodeState("sent");
   }
 
   async function handleMfaSubmit(e: React.FormEvent) {
@@ -126,9 +142,26 @@ export function LoginForm({ nextPath = "/dashboard", expired = false }: { nextPa
           <button type="submit" disabled={loading} className={PRIMARY_BTN}>
             {loading ? t(locale, "auth.mfaVerifying") : t(locale, "auth.mfaConfirm")}
           </button>
+          {/* 🔴 **المخرج الثالث لمن فقد هاتفه وورقته معاً.**
+              كانت الجملة تقول «استعمل كود الاسترجاع» - وهي بلا معنى لمن
+              لم يحفظ الورقة، فيبقى مقفولاً خارج حسابه بلا طريق. */}
           <p className="mt-3 text-center text-[11.5px] leading-relaxed text-text-faint">
             {t(locale, "auth.mfaLostPhone")}
           </p>
+          <div className="mt-2 text-center">
+            <button
+              type="button"
+              onClick={sendEmailCode}
+              disabled={emailCodeState === "sending" || emailCodeState === "sent"}
+              className="text-[12px] text-accent underline-offset-2 hover:underline disabled:text-text-faint disabled:no-underline"
+            >
+              {emailCodeState === "sending"
+                ? t(locale, "auth.mfaEmailSending")
+                : emailCodeState === "sent"
+                  ? t(locale, "auth.mfaEmailSent")
+                  : t(locale, "auth.mfaEmailSend")}
+            </button>
+          </div>
         </form>
       ) : (
         <>
