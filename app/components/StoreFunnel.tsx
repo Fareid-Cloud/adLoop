@@ -97,11 +97,24 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
   // مقياسٌ لوغاريتميّ للرسم وحده - **الأرقام المكتوبة تبقى حقيقية.** الخطّيّ
   // ينهار إلى خيطٍ بعد المرحلة الثانية (الطلبات جزءٌ من ألفٍ من الظهور)،
   // فلا يبقى في الشكل ما يُقرأ.
-  const height = (v: number) => {
-    if (top <= 0) return H * 0.08;
-    const r = Math.log10(1 + v) / Math.log10(1 + top);
-    return Math.max(0.08, r) * (H - 12);
+  //
+  // 🔴 **مصدرٌ واحد للمقياس، يخدم الاتّجاهين.** الرسم يُدار على الشاشات
+  // الضيّقة ولا يُعاد تصميمه، فلو بقي لكلّ اتّجاهٍ حسابُه انحرف أحدهما عن
+  // الآخر عند أوّل تعديل - ونسبةُ الاتّساع هي كلّ ما يختلف بينهما.
+  const spanRatio = (v: number) => {
+    if (top <= 0) return 0.08;
+    return Math.max(0.08, Math.log10(1 + v) / Math.log10(1 + top));
   };
+  const height = (v: number) => spanRatio(v) * (H - 12);
+
+  // ═══ مقاسات النسخة الرأسية (تحت sm) ═══
+  // **الوحدات بكسلاتٌ حقيقية لا وحدات viewBox مُمدّدة:** الأفقيّ يُمدَّد
+  // بـ`preserveAspectRatio="none"` فتصير نقاطُه شُرَطاً على شاشةٍ ضيّقة -
+  // وهو ما بدا مكسوراً في الهاتف. هنا الرسم بمقاسه، فتبقى النقطة نقطة.
+  const MW = 76; //  عرض الشريط - محور الاتّساع
+  const MH = 104; // طول قطعة المرحلة الواحدة
+  const MCAP = 13; // نصف محور الفوهة
+  const girth = (v: number) => spanRatio(v) * (MW - 6);
 
   const money = (v: number) =>
     new Intl.NumberFormat(loc, { maximumFractionDigits: 0 }).format(Math.round(v));
@@ -114,6 +127,12 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
         <span className="text-[11.5px] text-text-muted">{tr("subtitle")}</span>
       </div>
 
+      {/* ═══ الأفقيّ - من sm فما فوق ═══
+          🔴 خمس مراحل على ٣٦٠ بكسل تعني **عموداً بستّةٍ وثلاثين بكسلاً
+          للنصّ**: الأسماء تُقصّ إلى حرفين، والرقم بحجم ٢٤ أوسع من عموده
+          فيركب جاره، وشارة التغيّر تنطّ تحته وتغطّيه. لا يُعالَج بتصغير
+          مقاسات - يُعالَج بتبديل المحور. */}
+      <div className="hidden sm:block">
       {/* الصفّ العلويّ - أعمدةٌ متساوية تقف كلٌّ منها فوق قطعتها */}
       <div className="no-scrollbar mb-5 grid grid-cols-5" style={{ paddingInlineStart: `${(CAP / W) * 100}%` }}>
         {stages.map((s, i) => {
@@ -263,6 +282,125 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
                   {weak && ` · ${tr("weakest")}`}
                 </span>
               )}
+            </div>
+          );
+        })}
+      </div>
+      </div>
+
+      {/* ═══ الرأسيّ - تحت sm ═══
+          **الرسم نفسه مُداراً، لا رسمٌ ثانٍ:** المقياس `spanRatio` نفسه،
+          والنقاط من `dots` نفسها **بالبذرة نفسها** ثمّ تُبدَّل إحداثيّاها،
+          والفوهة بيضاويٌّ كامل نصفُه خلف الجسم كما هي، والمرحلة الأضعف
+          بخطّها المتقطّع. تبدّل المحور وحده.
+
+          والقِطَع تتلامس بلا فاصل - فنسبةُ البقاء تقف **بجانب** الشريط لا
+          بينه وبين ما تحته، وإلّا انقطع المخروط عند كلّ نسبة. */}
+      <div className="sm:hidden">
+        {stages.map((s, i) => {
+          const next = stages[i + 1];
+          const g1 = girth(s.value);
+          const g2 = girth(next ? next.value : s.value * 0.9);
+          const isFirst = i === 0;
+          const y0 = isFirst ? MCAP : 0;
+          const vh = MH + (isFirst ? MCAP : 0);
+          const weak = s.key === data.weakestStepKey;
+          const up = (s.changePct ?? 0) >= 0;
+          const diff = s.value - s.prevValue;
+
+          return (
+            <div key={s.key} className="flex items-stretch gap-3">
+              <svg
+                width={MW}
+                height={vh}
+                viewBox={`0 0 ${MW} ${vh}`}
+                className="block shrink-0"
+                aria-hidden
+              >
+                <polygon
+                  points={`${(MW - g1) / 2},${y0} ${(MW + g1) / 2},${y0} ${(MW + g2) / 2},${y0 + MH} ${(MW - g2) / 2},${y0 + MH}`}
+                  fill={TINT[i]}
+                  opacity={s.measured ? 0.13 : 0.05}
+                />
+                {s.measured &&
+                  // النقاط نفسها بالبذرة نفسها، ثمّ `(x,y)` تصير `(y,x)`:
+                  // النمط الناتج هو النمط الأفقيّ مُداراً حرفيّاً.
+                  dots(y0, y0 + MH, g1, g2, i + 1, MW / 2).map((d, n) => (
+                    <circle key={n} cx={d.cy} cy={d.cx} r={3.2} fill={TINT[i]} opacity={0.85} />
+                  ))}
+                {weak && (
+                  <line
+                    x1={(MW - g1) / 2 - 8}
+                    y1={y0}
+                    x2={(MW + g1) / 2 + 8}
+                    y2={y0}
+                    stroke="var(--gap)"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 3"
+                  />
+                )}
+                {isFirst && (
+                  <ellipse cx={MW / 2} cy={MCAP} rx={g1 / 2} ry={MCAP} fill={TINT[0]} />
+                )}
+              </svg>
+
+              <div className="min-w-0 flex-1 py-1">
+                {i > 0 && s.keptFromPrevPct !== null && (
+                  <div className={`mb-1 text-[11px] ${weak ? "font-medium text-gap" : "text-text-faint"}`}>
+                    {tr("stepKept", { pct: s.keptFromPrevPct.toFixed(1) })}
+                    {weak && ` · ${tr("weakest")}`}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${s.measured ? "" : "opacity-35"}`}
+                    style={{ background: TINT[i] }}
+                  />
+                  <span
+                    className={`text-[13px] font-medium ${s.measured ? "text-text-primary" : "text-text-muted"}`}
+                  >
+                    {tr(s.key)}
+                  </span>
+                </div>
+
+                {!s.measured ? (
+                  <>
+                    <div className="mt-1 text-[14px] font-medium text-text-faint">{tr("notMeasured")}</div>
+                    <div className="mt-1 text-[11px] leading-relaxed text-text-faint">
+                      {data.trackingLive ? tr("notMeasuredEvent") : tr("notMeasuredNoTracking")}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                      <span className="font-mono text-[22px] font-bold leading-none text-text-primary">
+                        {compact.format(s.value)}
+                      </span>
+                      {s.changePct !== null && (
+                        <span
+                          className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-medium ${
+                            up ? "bg-verified/12 text-verified" : "bg-critical/12 text-critical"
+                          }`}
+                        >
+                          {up ? "↑" : "↓"} {Math.abs(s.changePct).toFixed(0)}%
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mt-1 text-[11px] text-text-faint">
+                      {diff >= 0 ? "+" : "−"}
+                      {compact.format(Math.abs(diff))} {tr("vsPrev")}
+                    </div>
+
+                    {s.costPer !== null && (
+                      <div className="mt-0.5 font-mono text-[11px] text-text-muted">
+                        {money(s.costPer)} {data.currency} · {tr("each")}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           );
         })}
