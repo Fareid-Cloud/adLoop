@@ -22,6 +22,12 @@ export interface ResolvedPeriod {
   range: DateRange;
   /** فترة المقارنة - null إذا أطفأها المستخدم */
   compare: DateRange | null;
+  /** 🔴 **النمط المختار نفسه، لا نتيجته وحدها.**
+   *
+   *  كان يُحسَب هنا ويُرمى، فيُعيد المنتقي فتحَه على «بلا مقارنة» مهما
+   *  اختار القارئ - يختار «مقابل العام الماضي»، فتُطبَّق على الأرقام
+   *  ويفتح المنتقي فارغاً كأنّه لم يختر. */
+  compareMode: CompareMode;
 }
 
 /** أقدم تاريخ منطقي للبيانات حين يختار المستخدم "الأقصى" */
@@ -183,7 +189,7 @@ export function periodFromParams(
         ? { from: cmpFrom, to: cmpTo }
         : resolveCompare(range, cmpMode);
 
-  return { preset, range, compare };
+  return { preset, range, compare, compareMode: cmpMode };
 }
 
 export function periodToQuery(p: ResolvedPeriod, cmpMode: CompareMode): Record<string, string> {

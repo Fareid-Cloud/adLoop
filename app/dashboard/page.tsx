@@ -356,6 +356,9 @@ export default async function GlancePage({
           preset={period.preset}
           range={period.range}
           compare={period.compare}
+          // النمط المختار يعود إلى المنتقي: كان يُطبَّق على الأرقام ويفتح
+          // المنتقي فارغاً، فيظنّ القارئ أنّ اختياره ضاع.
+          compareMode={period.compareMode}
           // الصفحة تقرأ فترة المقارنة فعلاً في استعلامَي «السابقة» و«حسب
           // المصدر»، فيحقّ لها عرض الخيار - راجع `PeriodBar`.
           allowCompare

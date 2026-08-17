@@ -46,7 +46,15 @@ export default async function TruthPage({
     );
   }
 
-  const snapshot = await getTruthSnapshot(workspace.id, days);
+  // الفترة كما اختارها القارئ، والمقارنة كما اختارها - أو السابقة
+  // مباشرةً بالطول نفسه إن لم يختر. راجع `getTruthSnapshot`.
+  const bounds = toDateBounds(period.range);
+  const cmp = period.compare ? toDateBounds(period.compare) : null;
+  const snapshot = await getTruthSnapshot(
+    workspace.id,
+    { from: bounds.gte, to: bounds.lte },
+    cmp ? { from: cmp.gte, to: cmp.lte } : null
+  );
 
   return (
     <TruthView
@@ -60,6 +68,11 @@ export default async function TruthPage({
           preset={period.preset}
           range={period.range}
           compare={period.compare}
+          compareMode={period.compareMode}
+          // تُعرَض هنا لأنّ الصفحة تقرؤها فعلاً: `getTruthSnapshot` يأخذ
+          // فترة المقارنة ويبني عليها فروق نسبة التحقّق وتكلفة العميل
+          // والإنفاق المهدور. ولولا ذلك لَما ظهرت - راجع `allowCompare`.
+          allowCompare
         />
       }
     />

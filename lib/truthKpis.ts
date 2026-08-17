@@ -153,12 +153,28 @@ function summarize(rows: SnapshotRow[]) {
   );
 }
 
-export async function getTruthSnapshot(workspaceId: string, days: number): Promise<TruthSnapshot> {
-  const to = new Date();
-  const since = new Date();
-  since.setDate(since.getDate() - days);
-  const prevSince = new Date();
-  prevSince.setDate(prevSince.getDate() - days * 2);
+export async function getTruthSnapshot(
+  workspaceId: string,
+  /** 🔴🔴 **كان `days: number` وحده، فكان المنتقي زينةً على هذه الصفحة.**
+   *
+   *  من يختار «يناير» في مارس كان يُحسَب له **آخر واحدٍ وثلاثين يوماً من
+   *  اليوم** - أي مارس وفبراير - ويُعرَض له باعتباره يناير. لم يكن الرقم
+   *  غير مقارَن، بل **عن فترةٍ أخرى تماماً**. والعدد وحده لا يكفي: مدّةُ
+   *  الفترة شيء، وموضعُها من التقويم شيءٌ آخر.
+   *
+   *  فصارت الحدود صريحةً تُمرَّر كما اختارها القارئ. */
+  range: { from: Date; to: Date },
+  /** الفترة التي يُقارَن بها - ما اختاره القارئ في المنتقي إن اختار،
+   *  وإلّا فالسابقة مباشرةً بالطول نفسه. وطرفان بمدّتين مختلفتين لا تصحّ
+   *  بينهما نسبة، فالطول محفوظٌ في الحالين. */
+  compareRange?: { from: Date; to: Date } | null
+): Promise<TruthSnapshot> {
+  const since = range.from;
+  const to = range.to;
+
+  const spanMs = to.getTime() - since.getTime();
+  const prevFrom = compareRange?.from ?? new Date(since.getTime() - spanMs - 1);
+  const prevTo = compareRange?.to ?? new Date(since.getTime() - 1);
 
   // هامشُ الربح من المساحة: بدونه لا يُحسَب العائد على الاستثمار - ولا
   // يُخمَّن. رقمُ ربحٍ مبنيٌّ على هامشٍ مفترَض تُتَّخذ عليه قرارات ميزانية.
@@ -170,7 +186,9 @@ export async function getTruthSnapshot(workspaceId: string, days: number): Promi
 
   const [current, previous, paths, syncLogs, syncConfig, probabilisticRaw] = await Promise.all([
     prisma.metricSnapshot.findMany({
-      where: { workspaceId, date: { gte: since } },
+      // حدّان لا حدّ: `gte` وحدها تبتلع كلّ ما بعد البداية إلى اليوم،
+      // فتُحسَب فترةٌ منتهية وكأنّها ممتدّة إلى الآن.
+      where: { workspaceId, date: { gte: since, lte: to } },
       select: {
         date: true, platform: true, cost: true, clicks: true, impressions: true,
         rawConversions: true, verifiedConversions: true, revenue: true,
@@ -178,14 +196,14 @@ export async function getTruthSnapshot(workspaceId: string, days: number): Promi
       orderBy: { date: "asc" },
     }),
     prisma.metricSnapshot.findMany({
-      where: { workspaceId, date: { gte: prevSince, lt: since } },
+      where: { workspaceId, date: { gte: prevFrom, lte: prevTo } },
       select: {
         platform: true, cost: true, rawConversions: true, verifiedConversions: true, revenue: true,
       },
     }),
     buildConversionPaths(workspaceId, since, to),
     prisma.conversionSyncLog.findMany({
-      where: { workspaceId, createdAt: { gte: since } },
+      where: { workspaceId, createdAt: { gte: since, lte: to } },
       select: { status: true, platform: true, matchQualityScore: true, sentAt: true, errorMessage: true },
     }),
     prisma.workspace.findUnique({
@@ -335,7 +353,8 @@ export async function getTruthSnapshot(workspaceId: string, days: number): Promi
   totals.verifiedSeries = sumAcrossPlatforms((p) => p.verifiedSeries);
 
   return {
-    days,
+    // العدد يُشتقّ من الفترة نفسها لا يُمرَّر بجانبها - فلا يفترقان.
+    days: Math.max(1, Math.round(spanMs / 86_400_000) + 1),
     totals,
     previousTotals:
       prevVerificationRate !== null
