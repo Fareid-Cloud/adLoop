@@ -96,7 +96,6 @@ export const NAV_GROUPS: NavGroup[] = [
       // بلا `usesAi`: مركز الحقيقة يقارن المُعلَن بالمتحقَّق بحسابٍ ثابت لا
       // بنموذج لغويّ. شارةٌ هنا كانت تَعِد بذكاءٍ لا يعمل في الصفحة.
       { href: "/dashboard/truth", labelAr: "مركز الحقيقة", labelEn: "Truth Center", iconName: "ShieldCheck" },
-      { href: "/dashboard/pricing", labelAr: "التسعير", labelEn: "Pricing", iconName: "Tag" },
       {
         // الترتيب يتبع طريقة تفكير صاحب المتجر لا نوع البيانات: يبدأ بالوضع
         // العام، ثم أين يذهب المال، ثم ما يبيعه، ثم كيف يسعّره، ثم ما لديه،
@@ -116,6 +115,7 @@ export const NAV_GROUPS: NavGroup[] = [
           { href: "/dashboard/ecommerce/reports", labelAr: "التقارير", labelEn: "Reports" },
         ],
       },
+      { href: "/dashboard/pricing", labelAr: "التسعير", labelEn: "Pricing", iconName: "Tag" },
       { href: "/dashboard/site-scan", labelAr: "فحص الموقع", labelEn: "Site Scan", iconName: "ScanSearch", usesAi: true },
       {
         href: "/dashboard/diagnostics", labelAr: "صحة الحساب", labelEn: "Account Health", iconName: "Stethoscope",
