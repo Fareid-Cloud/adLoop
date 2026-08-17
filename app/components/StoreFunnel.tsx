@@ -195,11 +195,12 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
         })}
       </div>
 
-      {/* المخروط */}
+      {/* المخروط - `chart-flip-rtl` يقلبه مع اتّجاه القراءة ليقف تحت
+          عناوينه لا معكوساً عنها. الشرح في `theme.css` عند القاعدة. */}
       <svg
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
-        className="h-[210px] w-full"
+        className="chart-flip-rtl h-[210px] w-full"
         role="img"
         aria-label={tr("title")}
       >
