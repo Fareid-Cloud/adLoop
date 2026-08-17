@@ -2657,6 +2657,14 @@ export const dictionary = {
       whereWoo: "من لوحة ووردبريس: WooCommerce ← الإعدادات ← Advanced ← Webhooks ← Add webhook، والموضوع Order created.",
       whereEasyOrders: "من لوحة إيزي أوردرز: الإعدادات ← الويب هوك، وأضف الرابط لحدث الطلب الجديد.",
     },
+    // ==== اختيار بطاقات المؤشّرات ====
+    metricGrid: {
+      customize: "اختر المؤشّرات",
+      customizeWithCount: "اختر المؤشّرات · {n} مخفيّ",
+      hint: "أخفِ ما لا تقرؤه. الاختيار محفوظٌ في هذا المتصفّح، ولا يمسّ أرقام أحد.",
+      showAll: "أظهر الكلّ",
+      alwaysOn: "لا يُخفى - الصفحة تفقد معناها بدونه",
+    },
     // ==== سحب الطلبات السابقة ====
     orderBackfill: {
       button: "اسحب طلبات آخر {days} يوماً",
@@ -7386,6 +7394,14 @@ export const dictionary = {
       whereZid: "In Zid: Settings -> Developers -> Webhooks -> Add, and pick the new-order event.",
       whereWoo: "In WordPress: WooCommerce -> Settings -> Advanced -> Webhooks -> Add webhook, topic Order created.",
       whereEasyOrders: "In EasyOrders: Settings -> Webhooks, and add the URL for the new-order event.",
+    },
+    // ==== Choosing which metric cards show ====
+    metricGrid: {
+      customize: "Choose metrics",
+      customizeWithCount: "Choose metrics · {n} hidden",
+      hint: "Hide what you do not read. The choice is saved in this browser and changes nobody's numbers.",
+      showAll: "Show all",
+      alwaysOn: "Cannot be hidden - the page loses its point without it",
     },
     // ==== Backfilling past orders ====
     orderBackfill: {

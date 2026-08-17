@@ -25,6 +25,7 @@ import { resolveStoreScope } from "@/lib/ecommerce/storeScope";
 import { StorePicker } from "@/app/components/ui/StorePicker";
 import { missingReturnKey, revenueBasisKey, roiTone } from "@/lib/returnMetrics";
 import { Sparkline } from "@/app/components/ui/Sparkline";
+import { MetricGrid } from "@/app/components/ui/MetricGrid";
 
 export const dynamic = "force-dynamic";
 
@@ -127,190 +128,256 @@ export default async function EcommerceOverviewPage({
       {/* عشرُ بطاقاتٍ في خمسة أعمدة = صفّان تامّان، وفي عمودين = خمسة صفوف
           تامّة. وهو التقسيم الوحيد الذي لا يترك بطاقةً وحيدةً في صفٍّ ناقص
           عند أيّ عرضٍ للشاشة - وأربعةُ أعمدةٍ كانت تترك اثنتين. */}
-      <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <MetricCard
-          label={tc("revenue")}
-          value={fmtNum(overview.revenue)}
-          unit={c}
-          icon={Wallet}
-          tone="accent"
-          delta={
-            overview.revenueChangePct !== null
-              ? {
-                  value: `${Math.abs(overview.revenueChangePct)}%`,
-                  direction: overview.revenueChangePct >= 0 ? "up" : "down",
-                  positive: overview.revenueChangePct >= 0,
-                  caption: tc("lastNDays", { days: 30 }),
+      {/* الشبكة من مصفوفةٍ لا JSX مباشر: القارئ يُخفي ما لا يقرؤه،
+          وثلاثةٌ لا تُخفى - الإيراد والربح والطلبات - لأنّ الصفحة
+          بدونها لا تقول شيئاً. */}
+      <MetricGrid
+        sectionId="store-overview"
+        locale={locale}
+        className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
+        items={[
+        {
+          key: "revenue",
+          label: tc("revenue"),
+          required: true,
+          node: (
+              <MetricCard
+                label={tc("revenue")}
+                value={fmtNum(overview.revenue)}
+                unit={c}
+                icon={Wallet}
+                tone="accent"
+                delta={
+                  overview.revenueChangePct !== null
+                    ? {
+                        value: `${Math.abs(overview.revenueChangePct)}%`,
+                        direction: overview.revenueChangePct >= 0 ? "up" : "down",
+                        positive: overview.revenueChangePct >= 0,
+                        caption: tc("lastNDays", { days: 30 }),
+                      }
+                    : undefined
                 }
-              : undefined
-          }
-          explainKey="revenue"
-          locale={locale}
-          // الاتّجاه من الطلبات نفسها لا من تقدير: يومٌ بلا بيعٍ صفرٌ صادق.
-          trend={<Sparkline values={overview.dailyRevenue} tone="accent" />}
-        />
-        <MetricCard
-          label={tr("netProfit")}
-          value={fmtNum(overview.netProfit)}
-          unit={c}
-          icon={TrendingUp}
-          tone={overview.netProfit >= 0 ? "verified" : "critical"}
-          delta={
-            overview.profitChangePct !== null
-              ? {
-                  value: `${Math.abs(overview.profitChangePct)}%`,
-                  direction: overview.profitChangePct >= 0 ? "up" : "down",
-                  positive: overview.profitChangePct >= 0,
-                  caption: tc("lastNDays", { days: 30 }),
+                explainKey="revenue"
+                locale={locale}
+                // الاتّجاه من الطلبات نفسها لا من تقدير: يومٌ بلا بيعٍ صفرٌ صادق.
+                trend={<Sparkline values={overview.dailyRevenue} tone="accent" />}
+              />
+          ),
+        },
+        {
+          key: "netProfit",
+          label: tr("netProfit"),
+          required: true,
+          node: (
+              <MetricCard
+                label={tr("netProfit")}
+                value={fmtNum(overview.netProfit)}
+                unit={c}
+                icon={TrendingUp}
+                tone={overview.netProfit >= 0 ? "verified" : "critical"}
+                delta={
+                  overview.profitChangePct !== null
+                    ? {
+                        value: `${Math.abs(overview.profitChangePct)}%`,
+                        direction: overview.profitChangePct >= 0 ? "up" : "down",
+                        positive: overview.profitChangePct >= 0,
+                        caption: tc("lastNDays", { days: 30 }),
+                      }
+                    : undefined
                 }
-              : undefined
-          }
-          caption={
-            overview.netProfit < 0
-              ? { text: tr("losingMoney"), tone: "negative" }
-              : undefined
-          }
-          explainKey="netProfit"
-          locale={locale}
-        />
-        <MetricCard
-          label={tr("grossMargin")}
-          value={overview.grossMarginPct ?? "—"}
-          unit={overview.grossMarginPct !== null ? "%" : undefined}
-          icon={Percent}
-          tone={
-            overview.grossMarginPct === null
-              ? "neutral"
-              : overview.grossMarginPct >= 20
-                ? "verified"
-                : overview.grossMarginPct >= 10
-                  ? "gap"
-                  : "critical"
-          }
-          bar={overview.grossMarginPct !== null ? { pct: Math.max(0, overview.grossMarginPct) } : undefined}
-          explainKey="grossMargin"
-          locale={locale}
-        />
-        <MetricCard label={tr("orders")} value={fmtNum(overview.orders)} icon={ShoppingCart} tone="default"
-          explainKey="orders"
-          locale={locale}
-          trend={<Sparkline values={overview.dailyOrders} tone="verified" />}
-        />
-
-        <MetricCard
-          label={tr("aov")}
-          value={overview.avgOrderValue !== null ? fmtNum(overview.avgOrderValue) : "—"}
-          unit={overview.avgOrderValue !== null ? c : undefined}
-          icon={Receipt}
-          tone="default"
-          explainKey="aov"
-          locale={locale}
-        />
-        <MetricCard
-          label={tr("returningCustomers")}
-          value={overview.returningCustomersPct ?? "—"}
-          unit={overview.returningCustomersPct !== null ? "%" : undefined}
-          icon={Repeat}
-          tone="verified"
-          caption={
-            overview.returningCustomersPct === null
-              ? { text: tr("needsCustomerData"), tone: "muted" }
-              : undefined
-          }
-          explainKey="repeatRate"
-          locale={locale}
-        />
-        {/* «عائد» و«جديد» سؤالان لا سؤال: الأوّل عن الولاء والثاني عن
-            النموّ، ومتجرٌ عالي الولاء بلا مكتسَبٍ جديد متوقّف لا وفيّ. */}
-        <MetricCard
-          label={tr("newCustomers")}
-          value={overview.newCustomers ?? "—"}
-          icon={UserPlus}
-          tone="accent"
-          caption={
-            overview.newCustomers === null
-              ? { text: tr("needsCustomerData"), tone: "muted" }
-              : undefined
-          }
-          explainKey="newCustomers"
-          locale={locale}
-        />
-        <MetricCard
-          label={tr("refundRate")}
-          value={overview.refundRatePct ?? "—"}
-          unit={overview.refundRatePct === null ? undefined : "%"}
-          icon={RotateCcw}
-          tone={
-            overview.refundRatePct === null
-              ? "default"
-              : overview.refundRatePct >= 15
-                ? "critical"
-                : overview.refundRatePct >= 8
-                  ? "gap"
-                  : "verified"
-          }
-          caption={
-            overview.refundRatePct === null
-              ? { text: tc("needsOrders"), tone: "muted" }
-              : overview.refundRatePct >= 15
-                ? { text: tr("refundHigh"), tone: "negative" }
-                : undefined
-          }
-          explainKey="refundRate"
-          locale={locale}
-        />
-        <MetricCard
-          label={tr("inventoryRisk")}
-          value={overview.inventoryRiskCount}
-          icon={PackageX}
-          tone={overview.inventoryRiskCount > 0 ? "critical" : "neutral"}
-          caption={
-            overview.inventoryRiskCount > 0
-              ? { text: tr("stockRiskHint"), tone: "negative" }
-              : { text: tr("stockSafe"), tone: "positive" }
-          }
-          explainKey="capitalTied"
-          locale={locale}
-        />
-
-        {/* 🔴 **العائدان كانا غائبين تماماً عن صفحة المتجر** - وهما أوّل ما
-            يسأل عنه صاحب متجرٍ يُعلن: «بكم باع كلّ ريالٍ أنفقتُه، وهل ربحت».
-            وكلاهما هنا من خطّافٍ حقيقيّ: البسط مبيعات متجره الفعلية (ويب هوك
-            المتجر)، والمقام إنفاقه المسحوب من المنصّات - لا تقدير.
-
-            ويُعرضان معاً لا أحدهما: العائد على الإنفاق يتجاهل ثمن البضاعة،
-            فقد يقول «٤×» بينما العائد على الاستثمار يقول إنّك خسرت. */}
-        <MetricCard
-          label={tr("roas")}
-          value={overview.returns.roas !== null ? `${overview.returns.roas}` : "—"}
-          unit={overview.returns.roas !== null ? "x" : undefined}
-          icon={TrendingUp}
-          tone="accent"
-          caption={
-            overview.returns.roas !== null
-              ? { text: t(locale, revenueBasisKey(overview.returns.revenueBasis)), tone: "muted" }
-              : { text: t(locale, missingReturnKey(overview.returns.missing)!), tone: "muted" }
-          }
-          explainKey="storeRoas"
-          locale={locale}
-        />
-        <MetricCard
-          label={tr("roi")}
-          value={overview.returns.roiPct !== null ? `${overview.returns.roiPct}` : "—"}
-          unit={overview.returns.roiPct !== null ? "%" : undefined}
-          icon={TrendingUp}
-          tone={roiTone(overview.returns.roiPct)}
-          caption={
-            overview.returns.roiPct === null
-              ? { text: t(locale, missingReturnKey(overview.returns.missing)!), tone: "muted" }
-              : overview.returns.roiPct < 0
-                ? { text: tr("roiNegative"), tone: "negative" }
-                : { text: tr("roiRealCosts"), tone: "positive" }
-          }
-          explainKey="storeRoi"
-          locale={locale}
-        />
-      </div>
+                caption={
+                  overview.netProfit < 0
+                    ? { text: tr("losingMoney"), tone: "negative" }
+                    : undefined
+                }
+                explainKey="netProfit"
+                locale={locale}
+              />
+          ),
+        },
+        {
+          key: "grossMargin",
+          label: tr("grossMargin"),
+          node: (
+              <MetricCard
+                label={tr("grossMargin")}
+                value={overview.grossMarginPct ?? "—"}
+                unit={overview.grossMarginPct !== null ? "%" : undefined}
+                icon={Percent}
+                tone={
+                  overview.grossMarginPct === null
+                    ? "neutral"
+                    : overview.grossMarginPct >= 20
+                      ? "verified"
+                      : overview.grossMarginPct >= 10
+                        ? "gap"
+                        : "critical"
+                }
+                bar={overview.grossMarginPct !== null ? { pct: Math.max(0, overview.grossMarginPct) } : undefined}
+                explainKey="grossMargin"
+                locale={locale}
+              />
+          ),
+        },
+        {
+          key: "orders",
+          label: tr("orders"),
+          required: true,
+          node: (
+              <MetricCard label={tr("orders")} value={fmtNum(overview.orders)} icon={ShoppingCart} tone="default"
+                explainKey="orders"
+                locale={locale}
+                trend={<Sparkline values={overview.dailyOrders} tone="verified" />}
+              />
+          ),
+        },
+        {
+          key: "aov",
+          label: tr("aov"),
+          node: (
+              <MetricCard
+                label={tr("aov")}
+                value={overview.avgOrderValue !== null ? fmtNum(overview.avgOrderValue) : "—"}
+                unit={overview.avgOrderValue !== null ? c : undefined}
+                icon={Receipt}
+                tone="default"
+                explainKey="aov"
+                locale={locale}
+              />
+          ),
+        },
+        {
+          key: "returningCustomers",
+          label: tr("returningCustomers"),
+          node: (
+              <MetricCard
+                label={tr("returningCustomers")}
+                value={overview.returningCustomersPct ?? "—"}
+                unit={overview.returningCustomersPct !== null ? "%" : undefined}
+                icon={Repeat}
+                tone="verified"
+                caption={
+                  overview.returningCustomersPct === null
+                    ? { text: tr("needsCustomerData"), tone: "muted" }
+                    : undefined
+                }
+                explainKey="repeatRate"
+                locale={locale}
+              />
+          ),
+        },
+        {
+          key: "newCustomers",
+          label: tr("newCustomers"),
+          node: (
+              <MetricCard
+                label={tr("newCustomers")}
+                value={overview.newCustomers ?? "—"}
+                icon={UserPlus}
+                tone="accent"
+                caption={
+                  overview.newCustomers === null
+                    ? { text: tr("needsCustomerData"), tone: "muted" }
+                    : undefined
+                }
+                explainKey="newCustomers"
+                locale={locale}
+              />
+          ),
+        },
+        {
+          key: "refundRate",
+          label: tr("refundRate"),
+          node: (
+              <MetricCard
+                label={tr("refundRate")}
+                value={overview.refundRatePct ?? "—"}
+                unit={overview.refundRatePct === null ? undefined : "%"}
+                icon={RotateCcw}
+                tone={
+                  overview.refundRatePct === null
+                    ? "default"
+                    : overview.refundRatePct >= 15
+                      ? "critical"
+                      : overview.refundRatePct >= 8
+                        ? "gap"
+                        : "verified"
+                }
+                caption={
+                  overview.refundRatePct === null
+                    ? { text: tc("needsOrders"), tone: "muted" }
+                    : overview.refundRatePct >= 15
+                      ? { text: tr("refundHigh"), tone: "negative" }
+                      : undefined
+                }
+                explainKey="refundRate"
+                locale={locale}
+              />
+          ),
+        },
+        {
+          key: "inventoryRisk",
+          label: tr("inventoryRisk"),
+          node: (
+              <MetricCard
+                label={tr("inventoryRisk")}
+                value={overview.inventoryRiskCount}
+                icon={PackageX}
+                tone={overview.inventoryRiskCount > 0 ? "critical" : "neutral"}
+                caption={
+                  overview.inventoryRiskCount > 0
+                    ? { text: tr("stockRiskHint"), tone: "negative" }
+                    : { text: tr("stockSafe"), tone: "positive" }
+                }
+                explainKey="capitalTied"
+                locale={locale}
+              />
+          ),
+        },
+        {
+          key: "roas",
+          label: tr("roas"),
+          node: (
+              <MetricCard
+                label={tr("roas")}
+                value={overview.returns.roas !== null ? `${overview.returns.roas}` : "—"}
+                unit={overview.returns.roas !== null ? "x" : undefined}
+                icon={TrendingUp}
+                tone="accent"
+                caption={
+                  overview.returns.roas !== null
+                    ? { text: t(locale, revenueBasisKey(overview.returns.revenueBasis)), tone: "muted" }
+                    : { text: t(locale, missingReturnKey(overview.returns.missing)!), tone: "muted" }
+                }
+                explainKey="storeRoas"
+                locale={locale}
+              />
+          ),
+        },
+        {
+          key: "roi",
+          label: tr("roi"),
+          node: (
+              <MetricCard
+                label={tr("roi")}
+                value={overview.returns.roiPct !== null ? `${overview.returns.roiPct}` : "—"}
+                unit={overview.returns.roiPct !== null ? "%" : undefined}
+                icon={TrendingUp}
+                tone={roiTone(overview.returns.roiPct)}
+                caption={
+                  overview.returns.roiPct === null
+                    ? { text: t(locale, missingReturnKey(overview.returns.missing)!), tone: "muted" }
+                    : overview.returns.roiPct < 0
+                      ? { text: tr("roiNegative"), tone: "negative" }
+                      : { text: tr("roiRealCosts"), tone: "positive" }
+                }
+                explainKey="storeRoi"
+                locale={locale}
+              />
+          ),
+        },
+        ]}
+      />
 
       {!overview.hasOrderLevelData && (
         <div className="mb-8 rounded-2xl border border-gap/30 bg-gap/[0.06] p-4 text-[12.5px] leading-relaxed text-text-muted">
