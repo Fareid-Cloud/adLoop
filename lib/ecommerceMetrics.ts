@@ -237,7 +237,12 @@ export interface PricingHealthCheckResult {
   suggestedPrice: number;
   gapPct: number; // % الفرق بين السعر الحالي والمطلوب (سالب = السعر الحالي أقل من المطلوب)
   status: PricingHealthStatus;
+  /** الجملة مبنيّةً - للعرض الفوريّ في الصفحة، ولا تُخزَّن أبداً */
   message: string;
+  /** 🔴 **ما يُخزَّن: المفتاح ومتغيّراته لا الجملة.** الصفّ المحفوظ
+   *  يُقرأ بعد شهرٍ بلغةٍ قد تكون غير لغة كتابته. */
+  messageKey: string;
+  messageVars: Record<string, string | number>;
   contributingFactors: MarginDiagnosisResult | null; // عوامل مساعدة (مرتجعات، تكلفة قديمة..) - سياق إضافي مش بديل عن فحص السعر
 }
 
@@ -261,14 +266,31 @@ export function runPricingHealthCheck(
   if (gapPct < -15) status = "CRITICAL";
   else if (gapPct < -5) status = "WARNING";
 
-  const message =
+  // 🔴🔴 **الجملة تُبنى هنا للعرض الفوريّ، ومفتاحُها يُعاد معها لِما يُخزَّن.**
+  //
+  // كانت الجملة وحدها تُعاد، فتُحقَن في `descVars` لتنبيهٍ يُحفظ في قاعدة
+  // البيانات - أي أنّ **لغةَ لحظة الكتابة تُثبَّت في الصفّ إلى الأبد**.
+  // والنتيجة التي رآها المالك: عنوانٌ عربيّ ووصفٌ إنجليزيّ في البطاقة
+  // نفسها («خطر تسعير - Gentle cleanser» ثمّ جملةٌ إنجليزية كاملة)، لأنّ
+  // القالب مُترجَم والمتغيّر المحقون فيه نصٌّ جاهز.
+  //
+  // فالمفتاح ومتغيّراته يُعادان معها: مَن يعرض الآن يستعمل `message`،
+  // ومَن يُخزّن يستعمل `messageKey`/`messageVars` فتُترجَم عند القراءة.
+  const messageKey =
     status === "SAFE"
-      ? t(locale, "pricingHealth.safe", { price: currentPrice, suggested: suggestion.suggestedPrice })
-      : t(locale, status === "CRITICAL" ? "pricingHealth.critical" : "pricingHealth.warning", {
+      ? "pricingHealth.safe"
+      : status === "CRITICAL"
+        ? "pricingHealth.critical"
+        : "pricingHealth.warning";
+  const messageVars: Record<string, string | number> =
+    status === "SAFE"
+      ? { price: currentPrice, suggested: suggestion.suggestedPrice }
+      : {
           price: currentPrice,
           suggested: suggestion.suggestedPrice,
           gap: Math.abs(gapPct),
-        });
+        };
+  const message = t(locale, messageKey, messageVars);
 
   // العوامل المساعدة بتتفحص كمان (مش بديل عن فحص السعر، لكن سياق إضافي
   // يوضح "ليه" السعر المطلوب زاد، مش بس "إن" السعر غلط)
@@ -283,6 +305,8 @@ export function runPricingHealthCheck(
     gapPct,
     status,
     message,
+    messageKey,
+    messageVars,
     contributingFactors,
   };
 }

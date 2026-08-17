@@ -23,8 +23,14 @@ export interface PricingRow {
   suggestedPrice: number;
   gapPct: number;
   status: "SAFE" | "WARNING" | "CRITICAL";
+  /** الجملة مبنيّةً للعرض في الصفحة - لا تُخزَّن */
   message: string;
   actualLossAlert: string | null;
+  /** ما يُخزَّن: المفتاح ومتغيّراته الرقمية - راجع `checkPricingHealthAlertsForWorkspace` */
+  messageKey: string;
+  messageVars: Record<string, string | number>;
+  /** خسارةٌ فعلية بالرقم لا بالجملة - `null` إن لم تقع */
+  actualLossValue: number | null;
 }
 
 export async function getWorkspacePricing(
@@ -78,7 +84,7 @@ export async function getWorkspacePricing(
     const result = runPricingHealthCheck(p.name, p.currentPrice, pricingInputsOf(p), locale, marginDiagnosisInput);
 
     const events = byProduct.get(p.id) ?? [];
-    let actualLossAlert: string | null = null;
+    let actualLossValue: number | null = null;
     if (events.length > 0) {
       const ordersCount = events.reduce((s: number, e: any) => s + e.quantity, 0);
       const revenue = events.reduce((s: number, e: any) => s + e.revenue, 0);
@@ -93,13 +99,22 @@ export async function getWorkspacePricing(
         marginDiagnosisInput, locale
       );
       if (safetyNet.slippedThrough) {
-        actualLossAlert = `الفحص الاستباقي لم يتوقّع ذلك، لكن خلال آخر 30 يوماً هذا المنتج يحقّق خسارة فعلية (${Math.round(safetyNet.after!.grossProfit)} ${currency}).`;
+        // رقمٌ لا جملة: النصّ يُبنى عند العرض بلغة قارئه.
+        actualLossValue = Math.round(safetyNet.after!.grossProfit);
       }
     }
 
     return {
       id: p.id, name: p.name, currentPrice: p.currentPrice, suggestedPrice: result.suggestedPrice,
-      gapPct: result.gapPct, status: result.status, message: result.message, actualLossAlert,
+      gapPct: result.gapPct, status: result.status, message: result.message,
+      messageKey: result.messageKey, messageVars: result.messageVars,
+      actualLossValue,
+      actualLossAlert: actualLossValue !== null
+        ? t(locale, "alerts.pricingBodyActualLoss", {
+            loss: actualLossValue, currency,
+            suggestedPrice: Math.round(result.suggestedPrice),
+          })
+        : null,
     };
   });
 
@@ -140,7 +155,10 @@ export async function checkPricingHealthAlertsForWorkspace(workspaceId: string) 
   if (!ws) return;
 
   const currency = ws.currency;
-  const { rows } = await getWorkspacePricing(workspaceId, currency, await ownerLocaleFor(workspaceId));
+  // لغةُ المالك تُقرأ مرّةً وتُستعمل للنصّ الاحتياطيّ وحده - المفاتيح
+  // المخزَّنة لا تعرف لغةً أصلاً.
+  const locale = await ownerLocaleFor(workspaceId);
+  const { rows } = await getWorkspacePricing(workspaceId, currency, locale);
 
   const cooldownStart = new Date();
   cooldownStart.setDate(cooldownStart.getDate() - COOLDOWN_DAYS);
@@ -159,9 +177,20 @@ export async function checkPricingHealthAlertsForWorkspace(workspaceId: string) 
     });
     if (recent) continue;
 
-    const pricingDescVars = {
-      message: r.actualLossAlert ?? r.message,
-      price: Math.round(r.suggestedPrice),
+    // 🔴 **المفتاح ومتغيّراته الرقمية - لا جملةٌ مبنيّة.**
+    //
+    // كان `message` جملةً كاملة تُبنى بلغة لحظة الكتابة وتُحقَن في قالبٍ
+    // مُترجَم، فتخرج البطاقة بعنوانٍ عربيّ ووصفٍ إنجليزيّ. صار الصفُّ
+    // يحمل مفتاحه كاملاً وأرقامَه، فيُترجَم عند القراءة بلغة قارئه.
+    const descKey =
+      r.actualLossValue !== null
+        ? "alerts.pricingBodyActualLoss"
+        : r.status === "CRITICAL"
+          ? "alerts.pricingBodyCritical"
+          : "alerts.pricingBodyWarning";
+    const pricingDescVars: Record<string, string | number> = {
+      ...(r.actualLossValue !== null ? { loss: r.actualLossValue } : r.messageVars),
+      suggestedPrice: Math.round(r.suggestedPrice),
       currency,
     };
 
@@ -172,11 +201,13 @@ export async function checkPricingHealthAlertsForWorkspace(workspaceId: string) 
       source: "PRICING",
       type: r.suggestedPrice > r.currentPrice ? "SUGGESTION" : "ALERT",
       severity: r.actualLossAlert ? "URGENT" : "HIGH",
-      title: t("ar", "alerts.pricingTitle", { name: r.name }),
+      // النصّ المبنيّ احتياطٌ لواجهةٍ قديمة لا تقرأ المفاتيح - ويُبنى
+      // بلغة **مالك المساحة** لا بـ"ar" مثبَّتة كما كان.
+      title: t(locale, "alerts.pricingTitle", { name: r.name }),
       titleKey: "alerts.pricingTitle",
       titleVars: { name: r.name },
-      description: t("ar", "alerts.pricingBody", pricingDescVars),
-      descKey: "alerts.pricingBody",
+      description: t(locale, descKey, pricingDescVars),
+      descKey,
       descVars: pricingDescVars,
       linkUrl: "/dashboard/pricing",
       ...(r.suggestedPrice > r.currentPrice

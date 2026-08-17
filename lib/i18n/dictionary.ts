@@ -2658,6 +2658,21 @@ export const dictionary = {
       whereWoo: "من لوحة ووردبريس: WooCommerce ← الإعدادات ← Advanced ← Webhooks ← Add webhook، والموضوع Order created.",
       whereEasyOrders: "من لوحة إيزي أوردرز: الإعدادات ← الويب هوك، وأضف الرابط لحدث الطلب الجديد.",
     },
+    // ==== قرارات مساحة العرض ====
+    //
+    // 🔴 مفاتيح لا نصّاً محفوظاً: كانت تُبذَر بلغة إنشاء المساحة، فمن
+    // بذر ديمو بالإنجليزية ثمّ بدّل الواجهة للعربية يقرأ بطاقاتٍ
+    // إنجليزية وسط صفحةٍ عربية إلى الأبد.
+    demoFeed: {
+      broadTitle: "«تيك توك — جمهور واسع» تصرف بلا تحويل مؤكَّد واحد",
+      broadBody: "{daily} يومياً منذ اثني عشر يوماً، وصفر تحويل متحقّق. الإيقاف يوفّر نحو {monthly} شهرياً.",
+      scaleTitle: "«سلة متروكة — صورة» يستحقّ زيادة ميزانية",
+      scaleBody: "تكلفة العميل أرخص من متوسّط الحساب بـ٣٨٪ عبر تسعة أيام متتالية.",
+      inflationTitle: "فجوة تضخيم ٦٩٪ في «ميتا — وعي بالعلامة»",
+      inflationBody: "ميتا تعلن ٥٨ تحويلاً يومياً، وما تحقّق منها ١٨ فقط.",
+      lossTitle: "«مجموعة العناية الكاملة» تُباع بخسارة",
+      lossBody: "التكلفة الحقيقية للطلب تتجاوز سعر البيع بـ{gap} {currency}.",
+    },
     // ==== اختيار بطاقات المؤشّرات ====
     metricGrid: {
       customize: "اختر المؤشّرات",
@@ -3327,7 +3342,12 @@ export const dictionary = {
       formatTitle: "{cheap} يجلب عميلاً أرخص بـ{diffPct}% من {expensive}",
       formatBody: "تكلفة العميل عبر {cheap} ({cheapCpa}) أرخص بوضوح من {expensive} ({expensiveCpa}) - يستحقّ تحويل ميزانية أكبر إلى الشكل الأرخص.",
       pricingTitle: "خطر تسعير - {name}",
-      pricingBody: "{message} السعر المقترح {price} {currency}.",
+      // 🔴 `{message}` حُذف: كان يستقبل **جملةً مبنيّةً** بلغة لحظة
+      // الكتابة، فتظهر إنجليزيّةً داخل هذه الجملة العربية. صار لكلّ حالةٍ
+      // مفتاحُها الكامل، ومتغيّراتُه أرقامٌ لا نصّ.
+      pricingBodyCritical: "السعر الحالي ({price}) أقلّ بخطورة بنسبة {gap}% ممّا يلزم ({suggested}) - المنتج يُباع بخسارة الآن على الأرجح. السعر المقترح {suggestedPrice} {currency}.",
+      pricingBodyWarning: "إنذار مبكر: السعر الحالي ({price}) أقلّ بنسبة {gap}% ممّا يلزم لبلوغ الهامش المستهدف ({suggested}). راجعه قبل أن يصير خسارةً فعلية. السعر المقترح {suggestedPrice} {currency}.",
+      pricingBodyActualLoss: "الفحص الاستباقي لم يتوقّع ذلك، لكنّ هذا المنتج حقّق خلال آخر ٣٠ يوماً خسارةً فعلية ({loss} {currency}). السعر المقترح {suggestedPrice} {currency}.",
       stockTitle: "مخزون - {name}",
       stockTitleWithAction: "مخزون - {name}: {action}",
       stockActionPause: "إيقاف الحملة",
@@ -5961,7 +5981,9 @@ export const dictionary = {
       formatTitle: "{cheap} brings a customer {diffPct}% cheaper than {expensive}",
       formatBody: "Cost per customer through {cheap} ({cheapCpa}) is clearly cheaper than {expensive} ({expensiveCpa}) - worth moving more budget to the cheaper format.",
       pricingTitle: "Pricing risk - {name}",
-      pricingBody: "{message} Suggested price {price} {currency}.",
+      pricingBodyCritical: "The current price ({price}) is dangerously {gap}% below what is needed ({suggested}) - this product is most likely being sold at a loss right now. Suggested price {suggestedPrice} {currency}.",
+      pricingBodyWarning: "Early warning: the current price ({price}) is {gap}% below what is needed to hit the target margin ({suggested}). Review it before it turns into a real loss. Suggested price {suggestedPrice} {currency}.",
+      pricingBodyActualLoss: "The proactive check did not predict this, but over the last 30 days this product made an actual loss ({loss} {currency}). Suggested price {suggestedPrice} {currency}.",
       stockTitle: "Stock - {name}",
       stockTitleWithAction: "Stock - {name}: {action}",
       stockActionPause: "Pause the campaign",
@@ -7399,6 +7421,17 @@ export const dictionary = {
       whereZid: "In Zid: Settings -> Developers -> Webhooks -> Add, and pick the new-order event.",
       whereWoo: "In WordPress: WooCommerce -> Settings -> Advanced -> Webhooks -> Add webhook, topic Order created.",
       whereEasyOrders: "In EasyOrders: Settings -> Webhooks, and add the URL for the new-order event.",
+    },
+    // ==== Demo workspace decisions ====
+    demoFeed: {
+      broadTitle: "\"TikTok — Broad audience\" is spending with zero confirmed conversions",
+      broadBody: "{daily} a day for twelve days, and zero verified conversions. Pausing saves around {monthly} a month.",
+      scaleTitle: "\"Abandoned cart — image\" deserves more budget",
+      scaleBody: "Cost per customer is 38% below the account average across nine consecutive days.",
+      inflationTitle: "69% inflation gap on \"Meta — Brand awareness\"",
+      inflationBody: "Meta reports 58 conversions a day; only 18 were verified.",
+      lossTitle: "\"Complete care set\" is sold at a loss",
+      lossBody: "The true cost per order exceeds the selling price by {gap} {currency}.",
     },
     // ==== Choosing which metric cards show ====
     metricGrid: {

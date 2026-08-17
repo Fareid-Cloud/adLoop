@@ -12,6 +12,8 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma, type Platform, type TouchpointChannel } from "@prisma/client";
 import { demoCurrencyScale, roundForCurrency } from "@/lib/demoCurrency";
+// النصّ الاحتياطيّ وحده يُبنى هنا؛ المفاتيح تُترجَم عند القراءة.
+import { t } from "@/lib/i18n/dictionary";
 
 // ==================== القصّة ====================
 //
@@ -411,42 +413,47 @@ export async function seedDemoData(
   });
 
   // ---------- قرارات معلّقة ----------
+  //
+  // 🔴 **مفتاحٌ ومتغيّراته لا نصّاً مبنيّاً.** كانت البطاقات تُبذَر
+  // بلغة إنشاء المساحة (`ar ? ... : ...`)، فمن بذر ديمو بالإنجليزية ثمّ
+  // بدّل واجهته للعربية يقرأ أربع بطاقاتٍ إنجليزية وسط صفحةٍ عربية -
+  // ولا سبيل لإصلاحها بعدها لأنّ النصّ محفوظٌ لا محسوب.
+  const feed = (k: string) => `demoFeed.${k}`;
   await prisma.actionFeedItem.createMany({
     data: [
       {
         workspaceId, type: "SUGGESTION" as const, severity: "HIGH" as const,
-        title: ar ? "«تيك توك — جمهور واسع» تصرف بلا تحويل مؤكَّد واحد" : "\"TikTok — Broad audience\" is spending with zero confirmed conversions",
-        // 🔴 كان الرقمان واسمُ العملة مكتوبين في النصّ: «٢٩٥ ريالاً»
-        // و«SAR 8,850». فمساحةٌ بالجنيه تعرض بطاقاتٍ بالجنيه وتنبيهاً
-        // يتحدّث بالريال - في الشاشة الواحدة. الرقمان يُحوَّلان بالدالة
-        // نفسها التي تحوّل كلّ رقمٍ آخر، واسم العملة يُشتقّ منها.
-        description: ar
-          ? `${fmt(m(295))} يومياً منذ اثني عشر يوماً، وصفر تحويل متحقّق. الإيقاف يوفّر نحو ${fmt(m(8850))} شهرياً.`
-          : `${fmt(m(295))} a day for twelve days, and zero verified conversions. Pausing saves around ${fmt(m(8850))} a month.`,
+        titleKey: feed("broadTitle"),
+        descKey: feed("broadBody"),
+        // الأرقام تُحوَّل بالعملة كما يُحوَّل كلّ رقمٍ آخر - راجع `fmt`/`m`
+        descVars: { daily: fmt(m(295)), monthly: fmt(m(8850)) },
+        title: t(locale, "demoFeed.broadTitle"),
+        description: t(locale, "demoFeed.broadBody", { daily: fmt(m(295)), monthly: fmt(m(8850)) }),
         linkUrl: "/dashboard/campaigns/creatives",
       },
       {
         workspaceId, type: "SUGGESTION" as const, severity: "MEDIUM" as const,
-        title: ar ? "«سلة متروكة — صورة» يستحقّ زيادة ميزانية" : "\"Abandoned cart — image\" deserves more budget",
-        description: ar
-          ? "تكلفة العميل أرخص من متوسّط الحساب بـ٣٨٪ عبر تسعة أيام متتالية."
-          : "Cost per customer is 38% below the account average across nine consecutive days.",
+        titleKey: feed("scaleTitle"),
+        descKey: feed("scaleBody"),
+        title: t(locale, "demoFeed.scaleTitle"),
+        description: t(locale, "demoFeed.scaleBody"),
         linkUrl: "/dashboard/campaigns/creatives",
       },
       {
         workspaceId, type: "ALERT" as const, severity: "URGENT" as const,
-        title: ar ? "فجوة تضخيم ٦٩٪ في «ميتا — وعي بالعلامة»" : "69% inflation gap on \"Meta — Brand awareness\"",
-        description: ar
-          ? "ميتا تعلن ٥٨ تحويلاً يومياً، وما تحقّق منها ١٨ فقط."
-          : "Meta reports 58 conversions a day; only 18 were verified.",
+        titleKey: feed("inflationTitle"),
+        descKey: feed("inflationBody"),
+        title: t(locale, "demoFeed.inflationTitle"),
+        description: t(locale, "demoFeed.inflationBody"),
         linkUrl: "/dashboard/truth",
       },
       {
         workspaceId, type: "ALERT" as const, severity: "HIGH" as const,
-        title: ar ? "«مجموعة العناية الكاملة» تُباع بخسارة" : "\"Complete care set\" is sold at a loss",
-        description: ar
-          ? `التكلفة الحقيقية للطلب تتجاوز سعر البيع بـ${m(41)} ${currency}.`
-          : `The true cost per order exceeds the selling price by ${m(41)} ${currency}.`,
+        titleKey: feed("lossTitle"),
+        descKey: feed("lossBody"),
+        descVars: { gap: m(41), currency },
+        title: t(locale, "demoFeed.lossTitle"),
+        description: t(locale, "demoFeed.lossBody", { gap: m(41), currency }),
         linkUrl: "/dashboard/pricing",
       },
     ],
