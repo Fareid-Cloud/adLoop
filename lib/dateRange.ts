@@ -11,6 +11,19 @@ export type PresetKey =
   | "last28" | "last30" | "thisWeek" | "lastWeek" | "thisMonth"
   | "lastMonth" | "last90" | "thisYear" | "maximum" | "custom";
 
+/** المفاتيح المعروفة - يُفحَص بها ما يصل من الرابط قبل استعماله.
+ *  مشتقّةٌ من النوع نفسه، فإضافةُ مفتاحٍ إليه تُلزِم إضافته هنا. */
+export const PRESET_KEYS: PresetKey[] = [
+  "today", "yesterday", "last7", "todayAndYesterday", "last14",
+  "last28", "last30", "thisWeek", "lastWeek", "thisMonth",
+  "lastMonth", "last90", "thisYear", "maximum", "custom",
+];
+
+/** أنماط المقارنة المعروفة - للسبب نفسه أعلاه */
+export const COMPARE_MODES_ALL: CompareMode[] = [
+  "previous", "previousYear", "sameWeekday", "custom", "none",
+];
+
 export interface DateRange {
   /** بصيغة YYYY-MM-DD - نصّ لا Date حتى ينتقل في الـURL بلا التباس منطقة زمنية */
   from: string;
@@ -170,7 +183,16 @@ export function periodFromParams(
     const v = params[k];
     return Array.isArray(v) ? v[0] : v;
   };
-  const preset = (get("preset") as PresetKey) ?? "last30";
+  // 🔴 **كان تحويلاً أعمى (`as PresetKey`)، فأيّ نصٍّ في الرابط يمرّ.**
+  //
+  // رابطٌ قديم أو معدَّل بيدٍ (`?preset=last_30_days`) يعبر بلا فحص، ثمّ
+  // يُطلَب اسمُه من القاموس فلا يُوجَد، فيُطبَع **المفتاح الخام** على
+  // الزرّ: «period.p_last_30_days». والمستخدم يقرأ عطلاً في المنتج لا
+  // خطأً في رابطه. وما لا نعرفه يعود إلى الافتراضيّ صامتاً.
+  const rawPreset = get("preset");
+  const preset: PresetKey = PRESET_KEYS.includes(rawPreset as PresetKey)
+    ? (rawPreset as PresetKey)
+    : "last30";
   const from = get("from");
   const to = get("to");
 
@@ -179,7 +201,10 @@ export function periodFromParams(
 
   // المقارنة مطفأة افتراضياً: فتح كل صفحة على وضع مقارنة يضاعف كل رقم
   // معروض ويحوّل قراءة بسيطة إلى مقارنة لم يطلبها أحد. من يريدها يفعّلها.
-  const cmpMode = (get("cmp") as CompareMode) ?? "none";
+  const rawCmp = get("cmp");
+  const cmpMode: CompareMode = COMPARE_MODES_ALL.includes(rawCmp as CompareMode)
+    ? (rawCmp as CompareMode)
+    : "none";
   const cmpFrom = get("cmpFrom");
   const cmpTo = get("cmpTo");
   const compare =
