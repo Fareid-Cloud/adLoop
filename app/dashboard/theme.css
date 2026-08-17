@@ -47,8 +47,9 @@
      `<body>`، وأسبقيّةُ الصنف تغلب قاعدة العنصر - فكانت تفرض خطّ النظام
      فوق كلّ شيء. صارت تشير إلى الخطّين المحمَّلين، ويبقى `system-ui`
      آخرَ الصفّ احتياطاً لا أوّله. */
-  --font-display: var(--font-latin), var(--font-arabic), system-ui, sans-serif;
-  --font-mono: var(--font-latin), ui-monospace, monospace;
+  --font-display: "Inter", var(--font-arabic), var(--font-latin), system-ui, sans-serif;
+  /* الأرقام بخطّ النصّ نفسه - وما يميّزها `tabular-nums` لا ملفُّ خطٍّ ثانٍ */
+  --font-mono: "Inter", var(--font-arabic), var(--font-latin), ui-monospace, monospace;
 
   /* افتراضي (أزرق) - عشان أي صفحة مش محطوط عليها data-accent متطلعش
      بلون شفاف. [data-accent] بيغطيه لما يتحدد */
@@ -255,14 +256,16 @@
      مختلفة عن توكن @theme لتجنّب المرجعية الدائرية). @theme بيشاور عليها،
      فـ.font-display / .font-mono بيتحلّوا للخط المُحمّل فعلاً، مش system.
      (كان system-ui ثابت محقون هنا = سبب إن الخط مايتغيّرش أبداً) */
-  /* **الترتيب هو الآلية.** Inter أوّلاً وليس فيه حرفٌ عربيّ واحد، فالمتصفّح
-     يسقط تلقائياً إلى Plex العربيّ عند أوّل حرفٍ عربيّ - في الجملة نفسها إن
-     خُلطت. لا فرعَ في الكود ولا `dir` يُفحَص: الخطّ يتبع الحرف. */
-  --font-sans: var(--font-latin), var(--font-arabic), system-ui, sans-serif;
+  /* **الترتيب هو الآلية، و«Inter» تُسمّى صريحةً لا عبر متغيّرها.**
+     المتغيّر يحمل الخطّ **وتوأمَه الاحتياطيّ** (`"Inter","Inter Fallback"`)،
+     والتوأم مبنيٌّ على خطّ نظامٍ فيه حروفٌ عربية، فيلتقط العربية قبل أن
+     تبلغ Plex. راجع الشرح المطوّل عند `body` أدناه - قِيس بالفعل على
+     الشاشة لا استُنتج. */
+  --font-sans: "Inter", var(--font-arabic), var(--font-latin), system-ui, sans-serif;
   --font-display: var(--font-sans);
   /* الأرقام بخطّ النصّ نفسه - ما يميّزها `tabular-nums` أدناه لا ملفُّ خطٍّ
      ثانٍ. كان يُحمَّل Inter مرّتين لفرقٍ مصدرُه CSS. */
-  --font-mono: var(--font-latin), ui-monospace, monospace;
+  --font-mono: "Inter", var(--font-arabic), var(--font-latin), ui-monospace, monospace;
 
   --radius-card: var(--radius);
 
@@ -299,7 +302,19 @@ body {
    *
    * والترتيب هو الآلية: Inter أوّلاً وليس فيه حرفٌ عربيّ، فيسقط المتصفّح
    * إلى Plex العربيّ عند أوّل حرفٍ عربيّ - في الجملة نفسها إن خُلطت. */
-  font-family: var(--font-latin), var(--font-arabic), system-ui, sans-serif;
+  /* 🔴🔴 **`var(--font-latin)` ليس «Inter» وحده - بل `"Inter","Inter
+   * Fallback"`.** والتوأم الاحتياطيّ الذي يولّده `next/font` مبنيٌّ على
+   * خطّ نظامٍ محلّيّ **فيه حروفٌ عربية**، فيلتقط العربية قبل أن تصل إلى
+   * Plex إطلاقاً. قِيس على الشاشة: عرض «القرارات المعلقة» بخطّ الجسم
+   * ١٦٤ بكسل، وبـPlex ١٧٣ - أي أنّ العربية كانت تُرسَم بالاحتياطيّ.
+   *
+   * والتعليق القديم قال «Inter ليس فيه حرفٌ عربيّ فيسقط إلى Plex» - وهو
+   * صحيحٌ عن Inter نفسه، **وغيرُ صحيحٍ عن توأمه** الساكن في المتغيّر نفسه.
+   *
+   * فيُسمّى Inter صريحاً أوّلاً، ثمّ العربيّ، ثمّ المتغيّر كاملاً شبكةَ
+   * أمان. والحرفُ يتبع أوّل خطٍّ يملكه: اللاتينيّ يجد Inter، والعربيّ لا
+   * يجده فيهبط إلى Plex مباشرةً. */
+  font-family: "Inter", var(--font-arabic), var(--font-latin), system-ui, sans-serif;
   /* الأحجام البصرية: Inter متغيّرٌ يعدّل ثخن الحروف حسب الحجم تلقائياً */
   font-optical-sizing: auto;
 }
