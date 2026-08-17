@@ -363,7 +363,17 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
                 )}
               </svg>
 
-              <div className="relative px-3 py-2.5 text-center">
+              {/* 🔴 **لوحةٌ شفّافة خلف النصّ - لا زينة.** النصّ يقف فوق
+                  نقاطٍ ملوّنة، فالأسطر الصغيرة (الفارق والتكلفة) تشتبك
+                  بها ولا تُقرأ. واللوحة تفصل الحرف عن الملمس دون أن تحجب
+                  المخروط: حوافّه ونقاطُه ظاهرةٌ حولها.
+                  وأوّل قطعةٍ تُزاح لأسفل بمقدار الفوهة، وإلّا وقف اسم
+                  المرحلة على البيضاويّ المصمت في أعلى الرسم. */}
+              <div
+                className="relative px-3 py-2.5 text-center"
+                style={isFirst ? { paddingTop: VCAP + 13 } : undefined}
+              >
+              <div className="inline-block rounded-2xl bg-surface/[0.82] px-3 py-2">
                 {i > 0 && s.keptFromPrevPct !== null && (
                   <div className={`mb-1.5 text-[11px] ${weak ? "font-medium text-gap" : "text-text-faint"}`}>
                     {tr("stepKept", { pct: s.keptFromPrevPct.toFixed(1) })}
@@ -421,6 +431,7 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
                     </div>
                   </>
                 )}
+              </div>
               </div>
             </div>
           );
