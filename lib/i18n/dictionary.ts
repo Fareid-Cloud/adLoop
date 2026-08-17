@@ -309,7 +309,7 @@ export const dictionary = {
       syncPlatforms: "المنصات المفعَّلة:",
       syncNoPlatforms: "لا توجد منصة مضبوطة بالكامل بعد.",
       syncTopSkip: "أكثر أسباب التخطّي تكراراً: {reason}",
-      vsPrev: "عن الفترة السابقة",
+      vsPrev: "عن الفترة المقارَنة",
       points: "{n} نقطة",
     },
     // ==== فرص التسعير ====
@@ -4457,7 +4457,7 @@ export const dictionary = {
       syncPlatforms: "Enabled platforms:",
       syncNoPlatforms: "No platform is fully configured yet.",
       syncTopSkip: "Most common reason for skipping: {reason}",
-      vsPrev: "vs previous period",
+      vsPrev: "vs the compared period",
       points: "{n} points",
     },
     // ==== Pricing opportunities ====

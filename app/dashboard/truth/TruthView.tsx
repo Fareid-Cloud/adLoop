@@ -175,7 +175,10 @@ export function TruthView({
                   value: pctChange(previousTotals.wastedSpend, totals.wastedSpend),
                   direction: totals.wastedSpend >= previousTotals.wastedSpend ? "up" : "down",
                   positive: totals.wastedSpend < previousTotals.wastedSpend,
-                  caption: tr("vsPrevPeriod"),
+                  // مفتاحٌ واحد للبطاقتين: كانت الثانية تنادي مفتاحاً من
+                  // نطاقٍ آخر يقول «السابقة» دائماً، فتختلف الجملتان على
+                  // الشاشة الواحدة وتكذب إحداهما عند اختيار نمطٍ غيرها.
+                  caption: tr("vsPrev"),
                 }
               : undefined
           }
