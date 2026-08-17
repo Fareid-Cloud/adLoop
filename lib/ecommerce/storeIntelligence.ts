@@ -12,6 +12,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { computeReturn, type ReturnResult } from "@/lib/returnMetrics";
+import { rollingRatio } from "@/lib/rollingSeries";
 import type { LocalizedText } from "./opportunities";
 
 const AD_PLATFORMS = ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS", "SNAPCHAT_ADS"] as const;
@@ -38,6 +39,15 @@ export interface StoreOverview {
    *  وتُبنى من الطلبات لا من تقدير - فما لا طلبات له لا خطّ له. */
   dailyRevenue: number[];
   dailyOrders: number[];
+  /** 🔴 **النِّسَب بنافذةٍ منزلقة سبعةَ أيّام لا يومياً.**
+   *
+   *  يومٌ بطلبٍ واحد يقفز بمتوسّط قيمة الطلب إلى قيمة ذلك الطلب، ويومٌ
+   *  بلا طلبٍ يجعل معدّل الإرجاع قسمةً على صفر. فيخرج خطٌّ مسنَّنٌ يوهم
+   *  بتقلّبٍ لم يقع. راجع `lib/rollingSeries.ts`. */
+  aovSeries: number[];
+  refundRateSeries: number[];
+  /** عددٌ يوميّ - النموّ سؤالُ اتّجاهٍ بطبعه */
+  newCustomersSeries: number[];
   /** `null` حين لا طلبات: «٠٪ إرجاع» بلا طلبٍ واحد رقمٌ مخترَع،
    *  ويُقرأ إنجازاً بينما لا شيء قيس أصلاً. */
   refundRatePct: number | null;
@@ -392,15 +402,38 @@ export async function getStoreOverview(
     revenueByDay.set(k, (revenueByDay.get(k) ?? 0) + o.total);
     ordersByDay.set(k, (ordersByDay.get(k) ?? 0) + 1);
   }
+  // المرتجعات والعملاء الجدد يوماً بيوم - من الصفوف نفسها المقروءة أعلاه
+  const returnedByDay = new Map<string, number>();
+  for (const o of orders) {
+    if (!o.isReturned) continue;
+    const k = dayKey(o.orderedAt);
+    returnedByDay.set(k, (returnedByDay.get(k) ?? 0) + 1);
+  }
+  const newCustByDay = new Map<string, number>();
+  for (const c of customers) {
+    if (!c.firstOrderAt || c.firstOrderAt < since) continue;
+    const k = dayKey(c.firstOrderAt);
+    newCustByDay.set(k, (newCustByDay.get(k) ?? 0) + 1);
+  }
+
   const dailyRevenue: number[] = [];
   const dailyOrders: number[] = [];
+  const dailyReturned: number[] = [];
+  const newCustomersSeries: number[] = [];
   for (let i = windowDays - 1; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     const k = dayKey(d);
     dailyRevenue.push(Math.round(revenueByDay.get(k) ?? 0));
     dailyOrders.push(ordersByDay.get(k) ?? 0);
+    dailyReturned.push(returnedByDay.get(k) ?? 0);
+    newCustomersSeries.push(newCustByDay.get(k) ?? 0);
   }
+  const aovSeries = rollingRatio(dailyRevenue, dailyOrders);
+  const refundRateSeries = rollingRatio(
+    dailyReturned.map((v) => v * 100),
+    dailyOrders
+  );
 
   // الفترة السابقة = نافذة مضاعفة ناقص الحالية (getProfitJourney تعمل بنافذة واحدة)
   const prevRevenue = prevJourney.revenue - journey.revenue;
@@ -416,6 +449,9 @@ export async function getStoreOverview(
     newCustomers: customers.length > 0 ? newcomers : null,
     dailyRevenue,
     dailyOrders,
+    aovSeries,
+    refundRateSeries,
+    newCustomersSeries,
     refundRatePct: live.length > 0 ? round1((returned / live.length) * 100) : null,
     inventoryRiskCount,
     // الربح هنا مقروءٌ من التكاليف الحقيقية لا مقدَّرٌ بنسبة هامش - وهي

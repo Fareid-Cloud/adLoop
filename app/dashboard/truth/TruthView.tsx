@@ -17,6 +17,7 @@ import {
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { Sparkline } from "@/app/components/ui/Sparkline";
+import { GapSparkline } from "@/app/components/ui/GapSparkline";
 import { AttributionModelTable } from "./AttributionModelTable";
 import type { TruthSnapshot } from "@/lib/truthKpis";
 import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
@@ -127,6 +128,7 @@ export function TruthView({
           label={tr("verificationRate")}
           value={totals.verificationRatePct}
           unit="%"
+          trend={<Sparkline values={totals.verificationRateSeries} tone="verified" />}
           icon={Percent}
           tone={totals.verificationRatePct >= 60 ? "verified" : totals.verificationRatePct >= 30 ? "gap" : "critical"}
           delta={
@@ -158,6 +160,7 @@ export function TruthView({
           label={tr("totalSpend")}
           value={num(totals.cost)}
           unit={currency}
+          trend={<Sparkline values={totals.costSeries} tone="accent" />}
           icon={Wallet}
           tone="accent"
           explainKey="cost"
@@ -167,6 +170,8 @@ export function TruthView({
           label={tr("wastedSpend")}
           value={num(totals.wastedSpend)}
           unit={currency}
+          // الهدر اليوميّ: الإنفاق × نسبة ما لم يتحقّق من تحويلات اليوم
+          trend={<Sparkline values={totals.wastedSeries} tone="critical" />}
           icon={AlertTriangle}
           tone="critical"
           delta={
@@ -202,6 +207,15 @@ export function TruthView({
           unit={totals.cpaVerified !== null ? currency : undefined}
           icon={Users}
           tone="critical"
+          // 🔴 **الفجوة نفسها مرسومة.** خطّان: ما تقوله المنصّة (منقّط
+          // باهت) وما تحقّق (متّصل)، والمساحة بينهما هي ما يبيعه المنتج.
+          // ومسافتُهما تقول ما لا يقوله الرقمان: تتّسع أم تضيق؟
+          trend={
+            <GapSparkline
+              reported={totals.cpaReportedSeries}
+              verified={totals.cpaVerifiedSeries}
+            />
+          }
           verified
           caption={
             totals.cpaGapAmount !== null

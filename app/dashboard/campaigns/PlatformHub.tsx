@@ -28,6 +28,7 @@ import { compareMetric } from "@/lib/periodComparison";
 import { costPerVerified } from "@/lib/kpiEngine";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { Sparkline } from "@/app/components/ui/Sparkline";
+import { rollingRatio } from "@/lib/rollingSeries";
 
 // ألوان رسمية حقيقية (مؤكدة من مصادر العلامات التجارية) - شارة لونية
 // بدل الشعار الفعلي (ملف صورة محمي بحقوق ملكية مش متاح لينا). ملاحظة:
@@ -198,6 +199,9 @@ export async function PlatformHub({
   const sortedDays = [...dailyByDate.keys()].sort();
   const costSeries = sortedDays.map((k) => Math.round(dailyByDate.get(k)!.cost));
   const verifiedSeries = sortedDays.map((k) => dailyByDate.get(k)!.verified);
+  // تكلفة العميل نسبةٌ لا عدّ: بنافذةٍ منزلقة سبعةَ أيّام، وإلّا قفز
+  // اليومُ ذو التحويل الواحد بها إلى إنفاق اليوم كلّه.
+  const cpaSeries = rollingRatio(costSeries, verifiedSeries);
 
 
   return (
@@ -258,12 +262,18 @@ export async function PlatformHub({
           icon={Icons.Target}
           tone="default"
           verified={!!cpa}
+          // 🔴 الفتحة الواحدة تحمل الاثنين: نسبةُ التغيّر عن الفترة
+          // السابقة (رقمٌ يقارن طرفين) والخطّ (شكلُ الطريق بينهما).
+          // وكانت `trend` تُمرَّر مرّتين فتسقط إحداهما صامتة.
           trend={
-            cpaChange?.changePct != null ? (
-              <span className={`text-xs ${cpaChange.changePct < 0 ? "text-verified" : "text-critical"}`}>
-                {cpaChange.changePct < 0 ? "▼" : "▲"} {Math.abs(cpaChange.changePct)}% {t(locale, "home.vsPrevPeriod")}
-              </span>
-            ) : undefined
+            <div className="space-y-1.5">
+              {cpaChange?.changePct != null && (
+                <span className={`block text-xs ${cpaChange.changePct < 0 ? "text-verified" : "text-critical"}`}>
+                  {cpaChange.changePct < 0 ? "▼" : "▲"} {Math.abs(cpaChange.changePct)}% {t(locale, "home.vsPrevPeriod")}
+                </span>
+              )}
+              <Sparkline values={cpaSeries} tone="critical" />
+            </div>
           }
           caption={cpa ? undefined : { text: t(locale, "campPages.hubNoCpa"), tone: "muted" }}
         />

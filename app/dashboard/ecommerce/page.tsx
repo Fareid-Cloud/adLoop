@@ -243,6 +243,9 @@ export default async function EcommerceOverviewPage({
                 tone="default"
                 explainKey="aov"
                 locale={locale}
+                // نسبة: بنافذةٍ منزلقة لا يومياً - يومٌ بطلبٍ واحد يقفز
+                // بها إلى قيمة ذلك الطلب وحده.
+                trend={<Sparkline values={overview.aovSeries} tone="accent" />}
               />
           ),
         },
@@ -282,6 +285,7 @@ export default async function EcommerceOverviewPage({
                 }
                 explainKey="newCustomers"
                 locale={locale}
+                trend={<Sparkline values={overview.newCustomersSeries} tone="accent" />}
               />
           ),
         },
@@ -312,6 +316,7 @@ export default async function EcommerceOverviewPage({
                 }
                 explainKey="refundRate"
                 locale={locale}
+                trend={<Sparkline values={overview.refundRateSeries} tone="critical" />}
               />
           ),
         },

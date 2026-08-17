@@ -7,6 +7,7 @@
 // "لا نعرف" هو أخطر رقم في أي لوحة تحليل.
 
 import { prisma } from "@/lib/prisma";
+import { rollingRatio } from "@/lib/rollingSeries";
 import { buildConversionPaths } from "@/lib/touchpointPaths";
 import { getAttributionSummaryForWorkspace } from "@/lib/attributionSummary";
 import {
@@ -37,6 +38,8 @@ export interface PlatformTruthRow {
   wastedSpend: number;
   reportedSeries: number[];
   verifiedSeries: number[];
+  /** الإنفاق يوماً بيوم - مقامُ نِسَب تكلفة العميل والهدر */
+  costSeries: number[];
 }
 
 export interface TruthTotals {
@@ -71,6 +74,18 @@ export interface TruthTotals {
    *  مختلفة: حسابٌ استقرّ عند الرقم وآخرُ بلغه صاعداً ليسا سواءً في القرار. */
   reportedSeries: number[];
   verifiedSeries: number[];
+  /** 🔴 **الفجوة مرسومةً لا مقروءةً من رقمين.**
+   *
+   *  تكلفة العميل المُعلَنة والمتحقَّقة، كلٌّ بنافذةٍ منزلقة سبعةَ أيّام.
+   *  رقمان في بطاقتين يقولان أنّ الفجوة قائمة اليوم، ولا يقولان إن كانت
+   *  تتّسع أو تضيق - وهو الفارق بين حسابٍ يتحسّن تتبّعُه وحسابٍ يفلت. */
+  cpaReportedSeries: number[];
+  cpaVerifiedSeries: number[];
+  /** نسبة التحقّق بنافذةٍ منزلقة - «٣٤٪» رقم، و«٣٤٪ ونازلة» إنذار */
+  verificationRateSeries: number[];
+  /** الإنفاق بلا نتيجة متحقَّقة، يوماً بيوم */
+  wastedSeries: number[];
+  costSeries: number[];
 }
 
 export interface SyncHealth {
@@ -268,6 +283,11 @@ export async function getTruthSnapshot(
     // تُملأ بعد بناء المنصّات أدناه: سلاسلُها هي مصدرها.
     reportedSeries: [],
     verifiedSeries: [],
+    cpaReportedSeries: [],
+    cpaVerifiedSeries: [],
+    verificationRateSeries: [],
+    wastedSeries: [],
+    costSeries: [],
   };
 
   // ==== لكل منصة ====
@@ -282,12 +302,14 @@ export async function getTruthSnapshot(
     const cpaRep = s.raw > 0 ? round2(s.cost / s.raw) : null;
     const cpaVer = s.verified > 0 ? round2(s.cost / s.verified) : null;
 
-    const byDay = new Map<string, { raw: number; verified: number }>();
+    const byDay = new Map<string, { raw: number; verified: number; cost: number }>();
     for (const r of rows) {
       const k = r.date.toISOString().slice(0, 10);
-      const cur = byDay.get(k) ?? { raw: 0, verified: 0 };
+      const cur = byDay.get(k) ?? { raw: 0, verified: 0, cost: 0 };
       cur.raw += r.rawConversions;
       cur.verified += r.verifiedConversions;
+      // التكلفة اليومية: منها تُبنى نِسَبُ تكلفة العميل والإنفاق المهدور
+      cur.cost += r.cost ?? 0;
       byDay.set(k, cur);
     }
     const dayKeys = [...byDay.keys()].sort();
@@ -312,6 +334,7 @@ export async function getTruthSnapshot(
       wastedSpend: s.raw > 0 ? Math.round(s.cost * (1 - s.verified / s.raw)) : 0,
       reportedSeries: dayKeys.map((k) => byDay.get(k)!.raw),
       verifiedSeries: dayKeys.map((k) => byDay.get(k)!.verified),
+      costSeries: dayKeys.map((k) => byDay.get(k)!.cost),
     };
   });
 
@@ -366,6 +389,22 @@ export async function getTruthSnapshot(
     );
   totals.reportedSeries = sumAcrossPlatforms((p) => p.reportedSeries);
   totals.verifiedSeries = sumAcrossPlatforms((p) => p.verifiedSeries);
+  totals.costSeries = sumAcrossPlatforms((p) => p.costSeries);
+
+  // النِّسَب بنافذةٍ منزلقة لا يومياً: يومٌ بتحويلٍ واحد يقفز بتكلفة
+  // العميل إلى إنفاق اليوم كلّه. راجع `lib/rollingSeries.ts`.
+  totals.cpaReportedSeries = rollingRatio(totals.costSeries, totals.reportedSeries);
+  totals.cpaVerifiedSeries = rollingRatio(totals.costSeries, totals.verifiedSeries);
+  totals.verificationRateSeries = rollingRatio(
+    totals.verifiedSeries.map((v) => v * 100),
+    totals.reportedSeries
+  );
+  // الهدر اليوميّ: الإنفاق × نسبة ما لم يتحقّق من تحويلات ذلك اليوم
+  totals.wastedSeries = totals.costSeries.map((cost, i) => {
+    const raw = totals.reportedSeries[i] ?? 0;
+    const ver = totals.verifiedSeries[i] ?? 0;
+    return raw > 0 ? cost * (1 - ver / raw) : 0;
+  });
 
   return {
     // العدد يُشتقّ من الفترة نفسها لا يُمرَّر بجانبها - فلا يفترقان.
