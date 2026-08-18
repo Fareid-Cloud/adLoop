@@ -11,7 +11,7 @@
 // إلى الأخضر - يقول المنتج «تمّ» قبل أن يسأل.
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, Copy, KeyRound, Loader2, ShieldCheck, Trash2 } from "lucide-react";
+import { Check, Copy, KeyRound, Loader2, ShieldCheck, Trash2, X } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { Select } from "@/app/components/ui/Select";
 
@@ -24,13 +24,16 @@ interface TokenRow {
   createdAt: string;
 }
 
-type ClientKey = "claudeCode" | "desktop" | "cursor" | "web" | "custom";
+type ClientKey = "claudeCode" | "desktop" | "cursor" | "gemini" | "kimi" | "web" | "gpt" | "custom";
 
 const CLIENTS: Array<{ key: ClientKey; label: string }> = [
   { key: "claudeCode", label: "Claude Code" },
   { key: "desktop", label: "Claude Desktop" },
   { key: "cursor", label: "Cursor" },
+  { key: "gemini", label: "Gemini CLI" },
+  { key: "kimi", label: "Kimi CLI" },
   { key: "web", label: "claude.ai" },
+  { key: "gpt", label: "ChatGPT" },
   { key: "custom", label: "JSON-RPC" },
 ];
 
@@ -92,7 +95,19 @@ export function McpClient({
     if (client === "claudeCode") {
       return `claude mcp add --transport http adloop ${mcpUrl} --header "Authorization: Bearer ${key}"`;
     }
-    if (client === "web") return mcpUrl;
+    if (client === "web" || client === "gpt") return mcpUrl;
+    // 🔴 كلٌّ بمفتاح النقل الخاصّ به: Gemini تميّز النقل باسم الحقل
+    // (`httpUrl` لا `url`)، فحقلٌ خاطئ يجعلها تحاول SSE وتفشل بصمت.
+    if (client === "gemini") {
+      return JSON.stringify(
+        { mcpServers: { adloop: { httpUrl: mcpUrl, headers: { Authorization: `Bearer ${key}` } } } },
+        null, 2);
+    }
+    if (client === "kimi") {
+      return JSON.stringify(
+        { mcpServers: { adloop: { url: mcpUrl, headers: { Authorization: `Bearer ${key}` } } } },
+        null, 2);
+    }
     if (client === "custom") {
       return `curl -X POST ${mcpUrl} \
   -H "Authorization: Bearer ${key}" \
@@ -151,6 +166,9 @@ export function McpClient({
   }
 
   const scopes = ["scopeCampaigns", "scopeAds", "scopeStores", "scopeOrders", "scopeDecisions"];
+  // 🔴 ما **لا** يصل إليه يقف مع ما يصل إليه: هذه هي الحقائق التي يُبنى
+  // عليها قرارُ الربط، فمكانها حيث يُتّخذ القرار لا مطويّةً في آخر الصفحة.
+  const limits = ["scopeNoWrite", "scopeNoPii", "scopeOneWs"];
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -174,6 +192,17 @@ export function McpClient({
               key={k}
               className="rounded-full border border-border-visible px-2.5 py-1 text-[12px] text-text-muted"
             >
+              {tr(k)}
+            </span>
+          ))}
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-border pt-2">
+          {limits.map((k) => (
+            <span
+              key={k}
+              className="flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-[12px] text-text-faint"
+            >
+              <X size={11} />
               {tr(k)}
             </span>
           ))}
@@ -263,9 +292,15 @@ export function McpClient({
               ? tr("installDesktop")
               : client === "cursor"
                 ? tr("installCursor")
-                : client === "web"
-                  ? tr("installWeb")
-                  : tr("installCustom")}
+                : client === "gemini"
+                  ? tr("installGemini")
+                  : client === "kimi"
+                    ? tr("installKimi")
+                    : client === "web"
+                      ? tr("installWeb")
+                      : client === "gpt"
+                        ? tr("installGpt")
+                        : tr("installCustom")}
         </p>
         {client === "desktop" && (
           <div className="mb-2 font-mono text-[11px] leading-relaxed text-text-faint" dir="ltr">
@@ -297,6 +332,11 @@ export function McpClient({
 
         {client === "web" && (
           <p className="mt-2 text-[11.5px] leading-relaxed text-gap">{tr("installWebNote")}</p>
+        )}
+        {/* الحدّ يُقال في مكانه ومعه ما يعمل بدلاً منه - لا وعدٌ في العنوان
+            وخيبةٌ عند التركيب */}
+        {client === "gpt" && (
+          <p className="mt-2 text-[11.5px] leading-relaxed text-critical">{tr("installGptBlocked")}</p>
         )}
 
         <div className="mt-4 rounded-xl border border-border-visible p-3">
@@ -362,6 +402,9 @@ export function McpClient({
             ))}
           </div>
         )}
+        <p className="mt-3 border-t border-border pt-2.5 text-[11px] leading-relaxed text-text-faint">
+          {tr("keysLeakNote")}
+        </p>
       </div>
 
       {/* مثالٌ واحد يشرح ما لا تشرحه قائمة أدوات: شكلُ السؤال وشكلُ الجواب */}
@@ -395,19 +438,6 @@ export function McpClient({
         <p className="text-[11.5px] leading-relaxed text-text-faint">{tr("clientsAny")}</p>
       </div>
 
-      <div className="card pad-md mt-5">
-        <div className="mb-2 text-[13px] font-medium text-text-primary">{tr("faqTitle")}</div>
-        <div className="divide-y divide-border">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <div key={n} className="py-2.5">
-              <div className="mb-0.5 text-[12.5px] font-medium text-text-primary">
-                {tr(`faq${n}Q`)}
-              </div>
-              <p className="text-[12px] leading-relaxed text-text-muted">{tr(`faq${n}A`)}</p>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
