@@ -131,6 +131,16 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
   //
   // والربط بين الرقم ورسمه تحمله **نقطة اللون** - وهو جهاز التصميم
   // الأصليّ نفسه، لا حيلةً استُحدثت هنا.
+  //
+  // 🔴 **ومحور الطول أقصر، وإلّا صارت النقاط شُرَطاً.** الرسم يُمدَّد
+  // بـ`preserveAspectRatio="none"`، فإن باعدت نسبةُ الـviewBox نسبةَ
+  // الصندوق المرسوم فيه انسحقت الدائرة إلى بيضاويّ. الديسكتوب ٧٠٥×٢١٠
+  // (٣٫٤:١) قريبٌ من viewBox ١٠٠٠×٢١٠ (٤٫٨:١) فالفرق لا يكاد يُرى؛ أمّا
+  // ٢٨٥×١٠٦ على الهاتف (٢٫٧:١) فيسحق النقطة إلى ضعف طولها. وبطولٍ ٥٢٠
+  // تصير النسبة ٢٫٥:١ - أي مطابقةً تقريباً، فتبقى النقطة نقطة.
+  const WM = 520;
+  const CAPM = (WM / stages.length) * 0.16;
+  const SEGM = (WM - CAPM) / stages.length;
 
   const money = (v: number) =>
     new Intl.NumberFormat(loc, { maximumFractionDigits: 0 }).format(Math.round(v));
@@ -310,7 +320,7 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
             والفوهة ونصفها خلف الجسم، والخطّ المتقطّع للأضعف. الارتفاع وحده
             نصفُ ارتفاعه، فتبقى النسبة نسبة الديسكتوب. */}
         <svg
-          viewBox={`0 0 ${W} ${H}`}
+          viewBox={`0 0 ${WM} ${H}`}
           preserveAspectRatio="none"
           className="chart-flip-rtl mb-4 h-[106px] w-full"
           role="img"
@@ -320,8 +330,8 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
             const next = stages[i + 1];
             const h1 = height(s.value);
             const h2 = height(next ? next.value : s.value * 0.9);
-            const x1 = CAP + i * seg;
-            const x2 = CAP + (i + 1) * seg;
+            const x1 = CAPM + i * SEGM;
+            const x2 = CAPM + (i + 1) * SEGM;
             const weak = s.key === data.weakestStepKey;
             return (
               <g key={s.key}>
@@ -331,7 +341,7 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
                   opacity={s.measured ? 0.16 : 0.05}
                 />
                 {s.measured &&
-                  dots(i === 0 ? CAP : x1, x2, h1, h2, i + 1, MID, 4, 4).map((d, n) => (
+                  dots(i === 0 ? CAPM : x1, x2, h1, h2, i + 1, MID, 4, 4).map((d, n) => (
                     <circle key={n} cx={d.cx} cy={d.cy} r={5} fill={TINT[i]} opacity={0.85} />
                   ))}
                 {weak && (
@@ -350,9 +360,9 @@ export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale
             );
           })}
           <ellipse
-            cx={CAP}
+            cx={CAPM}
             cy={MID}
-            rx={CAP}
+            rx={CAPM}
             ry={height(stages[0]?.value ?? 0) / 2}
             fill={TINT[0]}
           />
