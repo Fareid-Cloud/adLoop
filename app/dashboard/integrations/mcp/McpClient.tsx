@@ -254,20 +254,25 @@ export function McpClient({
           </div>
         )}
 
-        <div className="relative">
+        {/* 🔴 زرّ النسخ في شريطٍ فوق الكود لا معلَّقاً فوقه: الأمر سطرٌ
+            واحد طويل يتمرّر أفقياً، وزرٌّ مطلقُ الموضع يقف **على** النصّ لا
+            بعده - فيغطّي آخره، وهو موضع المفتاح بالذات. */}
+        <div className="overflow-hidden rounded-xl bg-surface-raised">
+          <div className="flex items-center justify-end border-b border-border px-2 py-1">
+            <button
+              onClick={() => copy(snippet, "snippet")}
+              className="btn btn-ghost !px-2 !py-1 text-[11.5px]"
+            >
+              {copied === "snippet" ? <Check size={12} /> : <Copy size={12} />}
+              {copied === "snippet" ? tr("copied") : tr("copy")}
+            </button>
+          </div>
           <pre
             dir="ltr"
-            className="overflow-x-auto rounded-xl bg-surface-raised p-3 pe-16 font-mono text-[12px] leading-relaxed text-text-primary"
+            className="overflow-x-auto p-3 font-mono text-[12px] leading-relaxed text-text-primary"
           >
             {snippet}
           </pre>
-          <button
-            onClick={() => copy(snippet, "snippet")}
-            className="btn btn-ghost absolute end-2 top-2 !px-2 !py-1 text-[11.5px]"
-          >
-            {copied === "snippet" ? <Check size={12} /> : <Copy size={12} />}
-            {copied === "snippet" ? tr("copied") : tr("copy")}
-          </button>
         </div>
 
         {client === "web" && (
