@@ -366,7 +366,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             />
           </div>
         )}
-        <div className="flex-1 px-4 pb-10 sm:px-6 lg:px-10">{children}</div>
+        {/* حشوةٌ أوسع على الهاتف: مربّع السؤال مثبَّتٌ هناك فوق المحتوى،
+            فبلا مساحةٍ تحته يبقى آخرُ سطرٍ في الصفحة مغطّى لا يُقرأ أبداً. */}
+        <div className="flex-1 px-4 pb-24 sm:px-6 sm:pb-10 lg:px-10">{children}</div>
 
         {/* تذييل قانوني في كلّ صفحة داخل اللوحة: الصفحات الثلاث كانت
             مبنيّة بلا رابط واحد إليها في المنتج كلّه. */}
