@@ -10,14 +10,16 @@ import type { Locale } from "@/lib/i18n/dictionary";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
+/** تُرجع نتيجةً تُقرأ لا `void`: مسارُ دخولٍ يبتلع فشله يترك صاحب الحساب
+ *  ينتظر بريداً لن يصل، ويتركنا بلا أثرٍ نفحصه. */
 export async function sendMfaEmailCode(params: {
   toEmail: string;
   code: string;
   locale: Locale;
-}) {
+}): Promise<{ ok: boolean; reason?: string }> {
   if (!resend) {
     console.warn("RESEND_API_KEY not set - MFA email code was not sent");
-    return;
+    return { ok: false, reason: "RESEND_API_KEY missing" };
   }
 
   const isAr = params.locale === "ar";
@@ -54,7 +56,9 @@ export async function sendMfaEmailCode(params: {
         ],
       }),
     });
+    return { ok: true };
   } catch (err) {
     console.error("Failed to send MFA email code:", err);
+    return { ok: false, reason: err instanceof Error ? err.message : "unknown" };
   }
 }

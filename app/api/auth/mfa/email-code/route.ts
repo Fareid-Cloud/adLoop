@@ -57,12 +57,27 @@ export async function POST(req: NextRequest) {
   // ردٌّ واحد مهما كانت الحقيقة - راجع الشرط الرابع أعلاه.
   const sameAnswer = NextResponse.json({ sent: true, ttlMinutes: EMAIL_CODE_TTL_MINUTES });
 
-  if (!user || !user.mfaEnabled || !user.email) return sameAnswer;
+  // 🔴 **الردّ موحَّد للخارج، والسبب مسجَّل عندنا.**
+  //
+  // توحيدُ الردّ مقصودٌ ويبقى: لولاه لصارت هذه الصفحة أداةَ استعلامٍ عن
+  // البُرد المسجَّلة. لكنّه كان يبتلع السبب عنّا نحن أيضاً - فمن لا يصله
+  // الكود لا يعرف، ولا نعرف نحن أين انقطع المسار. السطر هنا يفصل
+  // الأمرين: الجوابُ واحدٌ للجميع، والتشخيصُ في سجلّ الخادم.
+  if (!user || !user.mfaEnabled || !user.email) {
+    console.warn(
+      `[mfa-email] لم يُرسَل: ${!user ? "لا مستخدم لهذا الرمز" : !user.mfaEnabled ? "التحقّق بخطوتين غير مفعَّل على الحساب" : "لا بريد على الحساب"}`
+    );
+    return sameAnswer;
+  }
 
   // إعادة إرسالٍ متقاربة: يُقال «أُرسل» ولا يُرسَل ثانياً. والصندوق أهمّ
   // من دقّة الرسالة هنا - ورسالةٌ في الطريق أصلاً.
   const lastSent = user.mfaEmailCodeSentAt?.getTime() ?? 0;
-  if (Date.now() - lastSent < EMAIL_CODE_RESEND_SECONDS * 1000) return sameAnswer;
+  if (Date.now() - lastSent < EMAIL_CODE_RESEND_SECONDS * 1000) {
+    const left = Math.ceil((EMAIL_CODE_RESEND_SECONDS * 1000 - (Date.now() - lastSent)) / 1000);
+    console.warn(`[mfa-email] لم يُرسَل: مهلة إعادة الإرسال - باقٍ ${left} ثانية`);
+    return sameAnswer;
+  }
 
   const code = generateEmailCode();
   await prisma.user.update({
@@ -74,11 +89,18 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  await sendMfaEmailCode({
+  // 🔴 **الإرسال نفسه كان يبتلع فشله.** `sendMfaEmailCode` تلتقط الخطأ
+  // وتطبعه وتعود بهدوء، فمفتاحٌ ناقص أو نطاقٌ غير موثَّق عند المزوّد
+  // يُنهي المسار كأنّه نجح. صارت تُرجع نتيجةً تُقرأ - والردّ للخارج يبقى
+  // موحَّداً كما هو.
+  const sent = await sendMfaEmailCode({
     toEmail: user.email,
     code,
     locale: (user.preferredLocale as Locale) ?? locale,
   });
+  if (!sent.ok) {
+    console.error(`[mfa-email] فشل الإرسال فعلياً: ${sent.reason}`);
+  }
 
   return sameAnswer;
 }
