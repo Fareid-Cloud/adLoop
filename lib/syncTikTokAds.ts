@@ -9,6 +9,7 @@
 // "structure" و"insights" زي ميتا، ولا GAQL منفصل زي جوجل.
 
 import { prisma } from "@/lib/prisma";
+import { countedFetch } from "@/lib/platformUsage";
 import type { CampaignLink, ConnectedPlatform } from "@prisma/client";
 import { decryptToken } from "@/lib/encryption";
 import { t } from "@/lib/i18n/dictionary";
@@ -43,7 +44,7 @@ async function recordTikTokAccountCurrency(
   headers: Record<string, string>,
 ): Promise<void> {
   try {
-    const res = await fetch(
+    const res = await countedFetch(workspaceId, "TIKTOK_ADS", 
       `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/advertiser/info/` +
         `?advertiser_ids=${encodeURIComponent(JSON.stringify([advertiserId]))}` +
         `&fields=${encodeURIComponent(JSON.stringify(["currency"]))}`,
@@ -112,7 +113,7 @@ export async function syncTikTokAdsForWorkspace(workspaceId: string) {
         page_size: "1000",
       });
 
-      const res = await fetch(
+      const res = await countedFetch(workspaceId, "TIKTOK_ADS", 
         `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/report/integrated/get/?${params.toString()}`,
         { headers }
       );
@@ -220,7 +221,7 @@ export async function syncTikTokVideoMetricsForWorkspace(workspaceId: string) {
         page_size: "1000",
       });
 
-      const res = await fetch(
+      const res = await countedFetch(workspaceId, "TIKTOK_ADS", 
         `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/report/integrated/get/?${params.toString()}`,
         { headers }
       );
@@ -332,7 +333,7 @@ export async function syncTikTokWeeklyEngagementForWorkspace(workspaceId: string
         page_size: "1000",
       });
 
-      const res = await fetch(
+      const res = await countedFetch(workspaceId, "TIKTOK_ADS", 
         `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/report/integrated/get/?${params.toString()}`,
         { headers }
       );
@@ -617,7 +618,7 @@ export async function syncTikTokBidCapForWorkspace(workspaceId: string) {
     const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
 
     try {
-      const adGroupsRes = await fetch(
+      const adGroupsRes = await countedFetch(workspaceId, "TIKTOK_ADS", 
         `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/adgroup/get/` +
           `?advertiser_id=${advertiserId}&filtering=${encodeURIComponent(JSON.stringify({ campaign_ids: campaignIds }))}&page_size=100`,
         { headers }
@@ -628,7 +629,7 @@ export async function syncTikTokBidCapForWorkspace(workspaceId: string) {
       for (const adGroup of adGroupsData.data?.list ?? []) {
         const adGroupId = String(adGroup.adgroup_id);
 
-        const insightsRes = await fetch(
+        const insightsRes = await countedFetch(workspaceId, "TIKTOK_ADS", 
           `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/report/integrated/get/` +
             `?advertiser_id=${advertiserId}&report_type=BASIC&data_level=AUCTION_ADGROUP` +
             `&dimensions=${encodeURIComponent(JSON.stringify(["adgroup_id"]))}` +
@@ -755,7 +756,7 @@ export async function syncTikTokLearningPhaseForWorkspace(workspaceId: string) {
         page_size: "1000",
       });
 
-      const res = await fetch(
+      const res = await countedFetch(workspaceId, "TIKTOK_ADS", 
         `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/report/integrated/get/?${params.toString()}`,
         { headers }
       );
@@ -826,7 +827,7 @@ export async function syncTikTokLookalikeComparisonForWorkspace(workspaceId: str
 
     try {
       // 1) بنجيب كل الجماهير المخصصة، ونحدد أنهي واحد فيهم Lookalike فعلاً
-      const audiencesRes = await fetch(
+      const audiencesRes = await countedFetch(workspaceId, "TIKTOK_ADS", 
         `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/dmp/custom_audience/list/` +
           `?advertiser_id=${advertiserId}&page_size=100`,
         { headers }
@@ -842,7 +843,7 @@ export async function syncTikTokLookalikeComparisonForWorkspace(workspaceId: str
       if (lookalikeIds.size === 0) continue; // مفيش Lookalike أصلاً في الحساب ده
 
       // 2) بنجيب المجموعات الإعلانية، ونشوف أنهي منهم مستخدم جمهور Lookalike
-      const adGroupsRes = await fetch(
+      const adGroupsRes = await countedFetch(workspaceId, "TIKTOK_ADS", 
         `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/adgroup/get/` +
           `?advertiser_id=${advertiserId}&filtering=${encodeURIComponent(JSON.stringify({ campaign_ids: campaignIds }))}&page_size=100`,
         { headers }
@@ -875,7 +876,7 @@ export async function syncTikTokLookalikeComparisonForWorkspace(workspaceId: str
           end_date: todayStr,
           page_size: "1000",
         });
-        const res = await fetch(
+        const res = await countedFetch(workspaceId, "TIKTOK_ADS", 
           `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/report/integrated/get/?${params.toString()}`,
           { headers }
         );
@@ -974,7 +975,7 @@ export async function syncTikTokSparkAdsCommentsForWorkspace(workspaceId: string
 
   for (const ad of sparkAds) {
     try {
-      const commentsRes = await fetch(
+      const commentsRes = await countedFetch(workspaceId, "TIKTOK_ADS", 
         `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/comment/list/` +
           `?advertiser_id=${advertiserId}&ad_id=${ad.adId}&page_size=100`,
         { headers }
@@ -1026,7 +1027,7 @@ export async function syncTikTokLeadFormsForWorkspace(workspaceId: string) {
     const headers = { "Access-Token": accessToken, "Content-Type": "application/json" };
     try {
       // بنجيب قايمة الفورمز الأول - محتاجين form_id لكل نداء ليدز بعده
-      const formsRes = await fetch(
+      const formsRes = await countedFetch(workspaceId, "TIKTOK_ADS", 
         `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/page/form/list/` +
           `?advertiser_id=${advertiserId}&page_size=50`,
         { headers }
@@ -1037,7 +1038,7 @@ export async function syncTikTokLeadFormsForWorkspace(workspaceId: string) {
       for (const form of formsData.data?.list ?? []) {
         const formId = String(form.page_id ?? form.form_id);
 
-        const leadsRes = await fetch(
+        const leadsRes = await countedFetch(workspaceId, "TIKTOK_ADS", 
           `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/leadgen/get/` +
             `?advertiser_id=${advertiserId}&form_id=${formId}&page_size=100`,
           { headers }
@@ -1126,7 +1127,7 @@ export async function syncTikTokCreativesForWorkspace(workspaceId: string) {
         page_size: "1000",
       });
 
-      const res = await fetch(
+      const res = await countedFetch(workspaceId, "TIKTOK_ADS", 
         `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/report/integrated/get/?${params.toString()}`,
         { headers }
       );
@@ -1219,7 +1220,7 @@ export async function checkTikTokBidStrategyProgressionForWorkspace(workspaceId:
     const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
 
     try {
-      const adGroupsRes = await fetch(
+      const adGroupsRes = await countedFetch(workspaceId, "TIKTOK_ADS", 
         `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/adgroup/get/` +
           `?advertiser_id=${advertiserId}&filtering=${encodeURIComponent(JSON.stringify({ campaign_ids: campaignIds }))}&page_size=100`,
         { headers }
@@ -1231,7 +1232,7 @@ export async function checkTikTokBidStrategyProgressionForWorkspace(workspaceId:
         if (adGroup.bid_type && adGroup.bid_type !== "BID_TYPE_NO_BID") continue;
 
         const adGroupId = String(adGroup.adgroup_id);
-        const insightsRes = await fetch(
+        const insightsRes = await countedFetch(workspaceId, "TIKTOK_ADS", 
           `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/report/integrated/get/` +
             `?advertiser_id=${advertiserId}&report_type=BASIC&data_level=AUCTION_ADGROUP` +
             `&dimensions=${encodeURIComponent(JSON.stringify(["adgroup_id"]))}` +
@@ -1297,7 +1298,7 @@ export async function applyTikTokBidStrategyChange(
   const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS", advertiserId);
   if (!connection) throw new Error(t("ar", "alerts.noTiktokAccount"));
 
-  const res = await fetch(`https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/adgroup/update/`, {
+  const res = await countedFetch(workspaceId, "TIKTOK_ADS", `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/adgroup/update/`, {
     method: "POST",
     headers: {
       "Access-Token": decryptToken(connection.accessToken),
@@ -1336,7 +1337,7 @@ export async function pauseTikTokAd(workspaceId: string, advertiserId: string, a
   const connection = pickConnection(workspace?.user.connectedPlatforms, "TIKTOK_ADS", advertiserId);
   if (!connection) throw new Error(t("ar", "alerts.noTiktokAccount"));
 
-  const res = await fetch(`https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/ad/status/update/`, {
+  const res = await countedFetch(workspaceId, "TIKTOK_ADS", `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/ad/status/update/`, {
     method: "POST",
     headers: {
       "Access-Token": decryptToken(connection.accessToken),

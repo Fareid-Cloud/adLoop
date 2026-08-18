@@ -11,6 +11,7 @@
 // 4) الليدز بتتقاس عن طريق حقل "actions" بفلتر action_type=lead، مش حقل مستقل مباشر
 
 import { prisma } from "@/lib/prisma";
+import { countedFetch } from "@/lib/platformUsage";
 import type { CampaignLink, ConnectedPlatform } from "@prisma/client";
 import { decryptToken } from "@/lib/encryption";
 import { pushToActionFeed } from "@/lib/actionFeed";
@@ -82,15 +83,15 @@ export async function syncMetaAdsForWorkspace(workspaceId: string) {
         // 3 مستويات محاولة - من الأدق للأبسط. مصفوفة توافق الـ breakdowns
         // عند ميتا غير موثّقة بالكامل رسمياً، فبنجرب الأدق (منصة + مكان
         // مع بعض) وننزل درجة لو اترفض، بدل ما نفشل المزامنة كلها
-        let rows = await fetchMetaInsights(campaignId, decryptToken(connection.accessToken), from, to, "full");
+        let rows = await fetchMetaInsights(workspaceId, campaignId, decryptToken(connection.accessToken), from, to, "full");
         let breakdownLevel: "full" | "platform_only" | "none" = "full";
 
         if (rows === null) {
-          rows = await fetchMetaInsights(campaignId, decryptToken(connection.accessToken), from, to, "platform_only");
+          rows = await fetchMetaInsights(workspaceId, campaignId, decryptToken(connection.accessToken), from, to, "platform_only");
           breakdownLevel = "platform_only";
         }
         if (rows === null) {
-          rows = await fetchMetaInsights(campaignId, decryptToken(connection.accessToken), from, to, "none");
+          rows = await fetchMetaInsights(workspaceId, campaignId, decryptToken(connection.accessToken), from, to, "none");
           breakdownLevel = "none";
         }
 
@@ -192,7 +193,7 @@ export async function syncMetaAdSetsForWorkspace(workspaceId: string) {
       // بنجيبها مرة واحدة لكل حملة، ونطبّقها على كل مجموعاتها الإعلانية.
       // بنجيب عملة الحساب الفعلية هنا كمان - مش بنفترضها من عملة العرض
       // بتاعة الـ Workspace (ممكن تكون مختلفة فعلياً، خصوصاً في حسابات وكالات)
-      const campaignRes = await fetch(
+      const campaignRes = await countedFetch(workspaceId, "META_ADS", 
         `https://graph.facebook.com/${META_API_VERSION}/${link.externalCampaignId}` +
           `?fields=bid_strategy,account{currency}&access_token=${decryptToken(connection.accessToken)}`
       );
@@ -202,7 +203,7 @@ export async function syncMetaAdSetsForWorkspace(workspaceId: string) {
 
       // بنجيب المجموعات الإعلانية تحت الحملة دي + نوع استهدافها + bid_amount
       // (القيمة الفعلية للمزايدة - دي على مستوى المجموعة، مش الحملة)
-      const adSetsRes = await fetch(
+      const adSetsRes = await countedFetch(workspaceId, "META_ADS", 
         `https://graph.facebook.com/${META_API_VERSION}/${link.externalCampaignId}/adsets` +
           `?fields=id,name,targeting,bid_amount&access_token=${decryptToken(connection.accessToken)}`
       );
@@ -221,7 +222,7 @@ export async function syncMetaAdSetsForWorkspace(workspaceId: string) {
           fields: "impressions,clicks,spend,actions,action_values",
         });
 
-        const insightsRes = await fetch(
+        const insightsRes = await countedFetch(workspaceId, "META_ADS", 
           `https://graph.facebook.com/${META_API_VERSION}/${adSet.id}/insights?${insightsParams.toString()}`
         );
         const insightsData = await insightsRes.json();
@@ -274,7 +275,7 @@ export async function syncMetaAdSetsForWorkspace(workspaceId: string) {
             fields: "actions",
           });
 
-          const dailyRes = await fetch(
+          const dailyRes = await countedFetch(workspaceId, "META_ADS", 
             `https://graph.facebook.com/${META_API_VERSION}/${adSet.id}/insights?${dailyParams.toString()}`
           );
           const dailyData = await dailyRes.json();
@@ -341,7 +342,7 @@ export async function syncMetaCreativesForWorkspace(workspaceId: string) {
     try {
       // creative{...} بيجيب تفاصيل الإعلان (صورة، عنوان) في نفس الطلب،
       // بدل استعلام منفصل لكل إعلان - أوفر على حصة الـ API
-      const adsRes = await fetch(
+      const adsRes = await countedFetch(workspaceId, "META_ADS", 
         `https://graph.facebook.com/${META_API_VERSION}/${link.externalCampaignId}/ads` +
           // adset_id مطلوب لتنفيذ قرار Scale على إعلان بعينه: الميزانية عند
           // ميتا تُضبط على المجموعة الإعلانية لا على الإعلان، فمن دون هذا
@@ -362,7 +363,7 @@ export async function syncMetaCreativesForWorkspace(workspaceId: string) {
           fields: "impressions,clicks,spend,actions,action_values",
         });
 
-        const insightsRes = await fetch(
+        const insightsRes = await countedFetch(workspaceId, "META_ADS", 
           `https://graph.facebook.com/${META_API_VERSION}/${ad.id}/insights?${insightsParams.toString()}`
         );
         if (!insightsRes.ok) continue;
@@ -421,6 +422,9 @@ export async function syncMetaCreativesForWorkspace(workspaceId: string) {
 // الباراميتر - بيرجع null لو فشل، عشان المستدعي يقدر يجرب البديل بدل ما
 // يفشل خالص (نفس المبدأ من المراجعة الشاملة: فشل جزئي يتعامل معاه جزئياً)
 async function fetchMetaInsights(
+  // من يُحسَب عليه النداء - أُضيف حين كشف المترجم أنّ هذه وحدها من بين
+  // مواضع النداء لا تعرف مساحتَها.
+  workspaceId: string,
   campaignId: string,
   accessToken: string,
   from: Date,
@@ -447,7 +451,7 @@ async function fetchMetaInsights(
     params.set("breakdowns", "publisher_platform");
   }
 
-  const res = await fetch(
+  const res = await countedFetch(workspaceId, "META_ADS", 
     `https://graph.facebook.com/${META_API_VERSION}/${campaignId}/insights?${params.toString()}`
   );
 
@@ -486,7 +490,7 @@ export async function syncMetaAccountHealthForWorkspace(workspaceId: string) {
     const accessToken = decryptToken(connection.accessToken);
     try {
       // قيود الإنفاق على مستوى الحساب
-      const accountRes = await fetch(
+      const accountRes = await countedFetch(workspaceId, "META_ADS", 
         `https://graph.facebook.com/${META_API_VERSION}/act_${accountId}?fields=spend_cap,amount_spent,currency&access_token=${accessToken}`
       );
       const accountData = await accountRes.json();
@@ -524,7 +528,7 @@ export async function syncMetaAccountHealthForWorkspace(workspaceId: string) {
       }
 
       // حالة الإعلانات - أي إعلان في حالة DISAPPROVED
-      const adsRes = await fetch(
+      const adsRes = await countedFetch(workspaceId, "META_ADS", 
         `https://graph.facebook.com/${META_API_VERSION}/act_${accountId}/ads?fields=id,name,effective_status&effective_status=["DISAPPROVED"]&access_token=${accessToken}`
       );
       const adsData = await adsRes.json();
@@ -668,7 +672,7 @@ export async function syncCatalogCampaignsForWorkspace(workspaceId: string) {
     try {
       // بنتأكد الأول إن الحملة دي فعلاً مرتبطة بكتالوج - لو مفيهاش
       // promoted_object.product_set_id، مبنسجلهاش هنا (مش حملة تسوق)
-      const campaignRes = await fetch(
+      const campaignRes = await countedFetch(workspaceId, "META_ADS", 
         `https://graph.facebook.com/${META_API_VERSION}/${link.externalCampaignId}` +
           `?fields=promoted_object&access_token=${accessToken}`
       );
@@ -685,7 +689,7 @@ export async function syncCatalogCampaignsForWorkspace(workspaceId: string) {
         fields: "impressions,clicks,spend,actions",
       });
 
-      const insightsRes = await fetch(
+      const insightsRes = await countedFetch(workspaceId, "META_ADS", 
         `https://graph.facebook.com/${META_API_VERSION}/${link.externalCampaignId}/insights?${insightsParams.toString()}`
       );
       const insightsData = await insightsRes.json();
@@ -851,7 +855,7 @@ export async function applyMetaBidStrategyChange(
   // أثر: ميتا تردّ خطأ صلاحيةٍ قبل أن تغيّر شيئاً، فلا خطر في المحاولة.
   let lastError = "";
   for (const grant of grants) {
-    const res = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${adSetId}`, {
+    const res = await countedFetch(workspaceId, "META_ADS", `https://graph.facebook.com/${META_API_VERSION}/${adSetId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -889,7 +893,7 @@ export async function pauseMetaAd(workspaceId: string, adId: string) {
   // أثر: ميتا تردّ خطأ صلاحيةٍ قبل أن تغيّر شيئاً، فلا خطر في المحاولة.
   let lastError = "";
   for (const grant of grants) {
-    const res = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${adId}`, {
+    const res = await countedFetch(workspaceId, "META_ADS", `https://graph.facebook.com/${META_API_VERSION}/${adId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

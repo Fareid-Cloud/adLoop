@@ -10,6 +10,7 @@
 // كامبينز شغالة من زمان - مش هيبدأ من صفر، هيجيب تاريخها الفعلي.
 
 import { GoogleAdsApi } from "google-ads-api";
+import { countedGoogleQuery } from "@/lib/platformUsage";
 import { prisma } from "@/lib/prisma";
 import type { CampaignLink, ConnectedPlatform } from "@prisma/client";
 import { decryptToken } from "@/lib/encryption";
@@ -71,7 +72,7 @@ export async function syncGoogleAdsForWorkspace(
     // هناك كان يخاطر بأهمّ استعلام في المنتج مقابل حقلٍ واحد - وهذا رخيص
     // (صفٌّ واحد) ويفشل وحده إن فشل.
     try {
-      const [me] = await customer.query(`SELECT customer.currency_code FROM customer LIMIT 1`);
+      const [me] = await countedGoogleQuery(workspaceId, customer, `SELECT customer.currency_code FROM customer LIMIT 1`);
       await recordDataCurrency(workspaceId, "GOOGLE_ADS", me?.customer?.currency_code);
     } catch (err) {
       console.error("[syncGoogleAds] تعذّر قراءة عملة الحساب:", err);
@@ -80,7 +81,7 @@ export async function syncGoogleAdsForWorkspace(
     // استعلام واحد بمدى تاريخ كامل (مش لوب على كل يوم لوحده) - جوجل
     // بترجع صف لكل يوم لكل كامبين تلقائياً لو استخدمنا segments.date
     // في نطاق زمني، وده أسرع وأقل استهلاكاً لحصة الـ API من تكرار الاستعلام
-    const rows = await customer.query(`
+    const rows = await countedGoogleQuery(workspaceId, customer, `
       SELECT
         campaign.id,
         segments.date,
@@ -106,7 +107,7 @@ export async function syncGoogleAdsForWorkspace(
     // تقسيمين في استعلامٍ واحد يفسد الاثنين.
     const categoryByAction = new Map<string, string>();
     try {
-      const actionRows = await customer.query(`
+      const actionRows = await countedGoogleQuery(workspaceId, customer, `
         SELECT conversion_action.resource_name, conversion_action.category
         FROM conversion_action
         WHERE conversion_action.status = 'ENABLED'
@@ -124,7 +125,7 @@ export async function syncGoogleAdsForWorkspace(
     const stageByKey = new Map<string, { addToCart: number; checkout: number }>();
     if (categoryByAction.size > 0) {
       try {
-        const stageRows = await customer.query(`
+        const stageRows = await countedGoogleQuery(workspaceId, customer, `
           SELECT
             campaign.id,
             segments.date,
@@ -301,7 +302,7 @@ export async function syncCreativesForWorkspace(
 
     const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
 
-    const rows = await customer.query(`
+    const rows = await countedGoogleQuery(workspaceId, customer, `
       SELECT
         campaign.id,
         ad_group.id,
@@ -416,7 +417,7 @@ export async function syncSearchTermsForWorkspace(
 
     const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
 
-    const rows = await customer.query(`
+    const rows = await countedGoogleQuery(workspaceId, customer, `
       SELECT
         campaign.id,
         search_term_view.search_term,
@@ -509,7 +510,7 @@ export async function syncBiddingStrategyForWorkspace(workspaceId: string) {
 
     // بنجيب الهدف من أي مكان ممكن يكون متسجّل فيه (TargetCpa المباشرة، أو
     // MaximizeConversions اللي حاطط عليها هدف) - نفس المبدأ لـ ROAS
-    const rows = await customer.query(`
+    const rows = await countedGoogleQuery(workspaceId, customer, `
       SELECT
         campaign.id,
         campaign.bidding_strategy_type,
@@ -596,7 +597,7 @@ export async function syncAudiencePerformanceForWorkspace(
     // campaign_audience_view بترجع صفوف بس للحملات اللي فعلاً عندها
     // بيانات جمهور موثوقة - مش هنفلتر بأنفسنا نوع الحملة مقدماً، بنسيب
     // الـ API نفسها ترجع اللي عندها بيانات فعلياً بس
-    const rows = await customer.query(`
+    const rows = await countedGoogleQuery(workspaceId, customer, `
       SELECT
         campaign.id,
         campaign_criterion.criterion_id,
@@ -696,7 +697,7 @@ export async function syncQualityScoreForWorkspace(workspaceId: string) {
 
     // بنستبعد الكلمات اللي معندهاش درجة جودة لسه (حديثة جداً أو ظهور
     // قليل - جوجل ماحسبتش الدرجة بعد، مش صفر حقيقي)
-    const rows = await customer.query(`
+    const rows = await countedGoogleQuery(workspaceId, customer, `
       SELECT
         campaign.id,
         ad_group_criterion.criterion_id,
@@ -785,7 +786,7 @@ export async function syncShoppingProductsForWorkspace(workspaceId: string) {
 
       // لو الحساب مش مربوط بـ Merchant Center خالص، الاستعلام ده بيرجع
       // نتيجة فاضية بهدوء (مش خطأ) - بنتعامل معاها كـ "مفيش بيانات تسوق"
-      const rows = await customer.query(`
+      const rows = await countedGoogleQuery(workspaceId, customer, `
         SELECT
           shopping_product.item_id,
           shopping_product.feed_label,
@@ -890,7 +891,7 @@ export async function syncPerformanceMaxChannelsForWorkspace(workspaceId: string
     const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
 
     try {
-      const rows = await customer.query(`
+      const rows = await countedGoogleQuery(workspaceId, customer, `
         SELECT
           campaign.id,
           segments.ad_network_type,
@@ -982,7 +983,7 @@ export async function syncYoutubeMetricsForWorkspace(workspaceId: string) {
     const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
 
     try {
-      const rows = await customer.query(`
+      const rows = await countedGoogleQuery(workspaceId, customer, `
         SELECT
           campaign.id,
           segments.date,
@@ -1082,7 +1083,7 @@ export async function syncDeviceAndGeoPerformanceForWorkspace(workspaceId: strin
 
     // استعلام 1: الجهاز بس - منفصل تماماً عن الموقع الجغرافي
     try {
-      const deviceRows = await customer.query(`
+      const deviceRows = await countedGoogleQuery(workspaceId, customer, `
         SELECT campaign.id, segments.date, segments.device,
           metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
         FROM campaign
@@ -1118,7 +1119,7 @@ export async function syncDeviceAndGeoPerformanceForWorkspace(workspaceId: strin
     // استعلام 2: الموقع الجغرافي بس (على مستوى الدولة - أقل مخاطرة لحذف
     // صفوف null من التفاصيل الأدق زي المدينة/المنطقة)
     try {
-      const geoRows = await customer.query(`
+      const geoRows = await countedGoogleQuery(workspaceId, customer, `
         SELECT campaign.id, segments.date, segments.geo_target_country,
           metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
         FROM geographic_view
@@ -1196,7 +1197,7 @@ export async function syncMatchTypePerformanceForWorkspace(workspaceId: string) 
 
       const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
 
-      const rows = await customer.query(`
+      const rows = await countedGoogleQuery(workspaceId, customer, `
         SELECT
           campaign.id,
           ad_group_criterion.criterion_id,
@@ -1300,7 +1301,7 @@ export async function syncDisplayPlacementsForWorkspace(workspaceId: string) {
 
       const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
 
-      const rows = await customer.query(`
+      const rows = await countedGoogleQuery(workspaceId, customer, `
         SELECT
           campaign.id,
           detail_placement_view.display_name,
@@ -1570,7 +1571,7 @@ export async function syncGoogleLeadFormsForWorkspace(workspaceId: string) {
         refresh_token: decryptToken(connection.refreshToken!),
       });
 
-      const rows = await customer.query(`
+      const rows = await countedGoogleQuery(workspaceId, customer, `
         SELECT
           lead_form_submission_data.id,
           lead_form_submission_data.asset,
@@ -1646,7 +1647,7 @@ export async function countDisapprovedGoogleAds(workspaceId: string): Promise<nu
       });
 
       const campaignIds = accountLinks.map((l: CampaignLink) => l.externalCampaignId);
-      const rows = await customer.query(`
+      const rows = await countedGoogleQuery(workspaceId, customer, `
         SELECT ad_group_ad.ad.id
         FROM ad_group_ad
         WHERE ad_group_ad.policy_summary.approval_status = 'DISAPPROVED'

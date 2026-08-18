@@ -12,6 +12,7 @@
 // login_customer_id لحسابات الوكالة (MCC) - إغفاله يُفشل كل حساب تحت وكالة.
 
 import { GoogleAdsApi } from "google-ads-api";
+import { countedFetch, countedGoogleQuery } from "@/lib/platformUsage";
 import { prisma } from "@/lib/prisma";
 import { decryptToken } from "@/lib/encryption";
 import { platformLabel } from "@/lib/i18n/dictionary";
@@ -85,7 +86,7 @@ export async function pauseGoogleCampaign(workspaceId: string, campaignId: strin
 export async function pauseMetaCampaign(workspaceId: string, campaignId: string) {
   const link = await getLink(workspaceId, "META_ADS", campaignId);
   const connection = await getConnection(workspaceId, "META_ADS", link.externalAccountId);
-  const res = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${campaignId}`, {
+  const res = await countedFetch(workspaceId, "META_ADS", `https://graph.facebook.com/${META_API_VERSION}/${campaignId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status: "PAUSED", access_token: decryptToken(connection.accessToken) }),
@@ -100,7 +101,7 @@ export async function pauseTikTokCampaign(workspaceId: string, campaignId: strin
   const link = await getLink(workspaceId, "TIKTOK_ADS", campaignId);
   const connection = await getConnection(workspaceId, "TIKTOK_ADS", link.externalAccountId);
 
-  const res = await fetch(`https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/campaign/status/update/`, {
+  const res = await countedFetch(workspaceId, "TIKTOK_ADS", `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/campaign/status/update/`, {
     method: "POST",
     headers: { "Access-Token": decryptToken(connection.accessToken), "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -121,7 +122,7 @@ export async function pauseTikTokCampaign(workspaceId: string, campaignId: strin
 export async function changeGoogleCampaignBudget(workspaceId: string, campaignId: string, pct: number) {
   const { customer, link } = await googleCustomer(workspaceId, campaignId);
 
-  const rows = await customer.query(`
+  const rows = await countedGoogleQuery(workspaceId, customer, `
     SELECT campaign.id, campaign_budget.resource_name, campaign_budget.amount_micros
     FROM campaign
     WHERE campaign.id = ${campaignId}
@@ -148,7 +149,7 @@ export async function changeMetaCampaignBudget(workspaceId: string, campaignId: 
   const connection = await getConnection(workspaceId, "META_ADS", link.externalAccountId);
   const token = decryptToken(connection.accessToken);
 
-  const readRes = await fetch(
+  const readRes = await countedFetch(workspaceId, "META_ADS", 
     `https://graph.facebook.com/${META_API_VERSION}/${campaignId}?fields=daily_budget,lifetime_budget&access_token=${token}`
   );
   const info = await readRes.json();
@@ -163,7 +164,7 @@ export async function changeMetaCampaignBudget(workspaceId: string, campaignId: 
   }
 
   const next = Math.max(1, Math.round(current * (1 + pct / 100)));
-  const res = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${campaignId}`, {
+  const res = await countedFetch(workspaceId, "META_ADS", `https://graph.facebook.com/${META_API_VERSION}/${campaignId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ [isDaily ? "daily_budget" : "lifetime_budget"]: next, access_token: token }),
@@ -181,7 +182,7 @@ export async function changeTikTokCampaignBudget(workspaceId: string, campaignId
   const connection = await getConnection(workspaceId, "TIKTOK_ADS", link.externalAccountId);
   const token = decryptToken(connection.accessToken);
 
-  const readRes = await fetch(
+  const readRes = await countedFetch(workspaceId, "TIKTOK_ADS", 
     `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/campaign/get/` +
       `?advertiser_id=${link.externalAccountId}&filtering=${encodeURIComponent(JSON.stringify({ campaign_ids: [campaignId] }))}`,
     { headers: { "Access-Token": token, "Content-Type": "application/json" } }
@@ -193,7 +194,7 @@ export async function changeTikTokCampaignBudget(workspaceId: string, campaignId
   if (current <= 0) throw new Error("تعذّر قراءة ميزانية الحملة الحالية");
 
   const next = Math.max(1, Math.round(current * (1 + pct / 100) * 100) / 100);
-  const res = await fetch(`https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/campaign/update/`, {
+  const res = await countedFetch(workspaceId, "TIKTOK_ADS", `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/campaign/update/`, {
     method: "POST",
     headers: { "Access-Token": token, "Content-Type": "application/json" },
     body: JSON.stringify({ advertiser_id: link.externalAccountId, campaign_id: campaignId, budget: next }),
@@ -232,7 +233,7 @@ export async function changeMetaAdSetBudget(workspaceId: string, adSetId: string
   let lastError = "";
   for (const grant of grants) {
     const candidate = decryptToken(grant.accessToken);
-    const res = await fetch(
+    const res = await countedFetch(workspaceId, "META_ADS", 
       `https://graph.facebook.com/${META_API_VERSION}/${adSetId}?fields=daily_budget,lifetime_budget,name&access_token=${candidate}`
     );
     const data = await res.json().catch(() => ({}));
@@ -256,7 +257,7 @@ export async function changeMetaAdSetBudget(workspaceId: string, adSetId: string
   }
 
   const next = Math.max(1, Math.round(current * (1 + pct / 100)));
-  const res = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${adSetId}`, {
+  const res = await countedFetch(workspaceId, "META_ADS", `https://graph.facebook.com/${META_API_VERSION}/${adSetId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ [isDaily ? "daily_budget" : "lifetime_budget"]: next, access_token: token }),
@@ -279,7 +280,7 @@ export async function changeTikTokAdGroupBudget(
   const connection = await getConnection(workspaceId, "TIKTOK_ADS", advertiserId);
   const token = decryptToken(connection.accessToken);
 
-  const readRes = await fetch(
+  const readRes = await countedFetch(workspaceId, "TIKTOK_ADS", 
     `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/adgroup/get/` +
       `?advertiser_id=${advertiserId}&filtering=${encodeURIComponent(JSON.stringify({ adgroup_ids: [adGroupId] }))}`,
     { headers: { "Access-Token": token, "Content-Type": "application/json" } }
@@ -291,7 +292,7 @@ export async function changeTikTokAdGroupBudget(
   if (current <= 0) throw new Error("تعذّر قراءة ميزانية المجموعة الإعلانية الحالية");
 
   const next = Math.max(1, Math.round(current * (1 + pct / 100) * 100) / 100);
-  const res = await fetch(
+  const res = await countedFetch(workspaceId, "TIKTOK_ADS", 
     `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/adgroup/update/`,
     {
       method: "POST",

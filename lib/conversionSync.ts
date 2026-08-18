@@ -17,6 +17,7 @@
 // مسافات، صيغة E.164 للهاتف) قبل مغادرته الخادم. لا نرسل نصاً صريحاً أبداً.
 
 import { createHash } from "node:crypto";
+import { countedFetch } from "@/lib/platformUsage";
 import { prisma } from "@/lib/prisma";
 import { decryptToken } from "@/lib/encryption";
 import {
@@ -176,7 +177,7 @@ async function sendToMeta(
   };
 
   try {
-    const res = await fetch(
+    const res = await countedFetch(workspace.id, "META_ADS", 
       `https://graph.facebook.com/${META_API_VERSION}/${workspace.metaPixelId}/events`,
       {
         method: "POST",
@@ -368,7 +369,7 @@ async function sendToTikTok(
   if (conv.clientUserAgent) user.user_agent = conv.clientUserAgent;
 
   try {
-    const res = await fetch(
+    const res = await countedFetch(workspace.id, "TIKTOK_ADS", 
       `https://business-api.tiktok.com/open_api/${TIKTOK_API_VERSION}/event/track/`,
       {
         method: "POST",

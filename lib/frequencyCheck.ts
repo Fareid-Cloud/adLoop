@@ -6,6 +6,7 @@
 // معندهاش مفهوم Frequency مباشر بنفس الطريقة - مش هنخترع رقم ليها.
 
 import { prisma } from "@/lib/prisma";
+import { countedFetch } from "@/lib/platformUsage";
 import { decryptToken } from "@/lib/encryption";
 import { pickConnection, connectionsForPlatform } from "@/lib/platformConnections";
 
@@ -34,7 +35,7 @@ export async function getFrequencyByPlatform(workspaceId: string): Promise<Recor
           // والردّ الفاشل يُقرأ هنا صفراً فيخفض المتوسّط بلا أثر ظاهر.
           const connection =
             pickConnection(grants, "META_ADS", link.externalAccountId) ?? anyConnection;
-          const res = await fetch(
+          const res = await countedFetch(workspaceId, "META_ADS", 
             `https://graph.facebook.com/${META_API_VERSION}/${link.externalCampaignId}/insights` +
               `?fields=frequency&date_preset=last_7d&access_token=${decryptToken(connection.accessToken)}`
           );

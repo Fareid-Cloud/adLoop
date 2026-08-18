@@ -7,6 +7,7 @@
 // (بره هامش معقول)، المشكلة عندنا في المزامنة، مش في "التضخيم".
 
 import { GoogleAdsApi } from "google-ads-api";
+import { countedGoogleQuery } from "@/lib/platformUsage";
 import { prisma } from "@/lib/prisma";
 import type { ConnectedPlatform } from "@prisma/client";
 import { decryptToken } from "@/lib/encryption";
@@ -84,7 +85,7 @@ export async function auditDataConsistency(
     // بنطلب المجموع مباشرة من جوجل حية (مش من نسخة مخزّنة عندنا) - ده
     // بالظبط الفرق عن أي استعلام تاني في النظام، هنا الهدف تحديداً نتأكد
     // إن نسختنا المخزّنة متطابقة مع المصدر الحي وقت الفحص
-    const rows = await customer.query(`
+    const rows = await countedGoogleQuery(workspaceId, customer, `
       SELECT metrics.clicks
       FROM campaign
       WHERE segments.date BETWEEN '${dateRange.from}' AND '${dateRange.to}'

@@ -568,6 +568,7 @@ model Workspace {
   automationMonthlyBudgetChangeCeilingPct Int?        @default(50)
   agentChats                              AgentChat[]
   mcpTokens                               McpToken[]
+  platformUsage                           PlatformUsage[]
 }
 
 // أي كامبين (من جوجل أو ميتا) تم اختياره ليتبع لـ Workspace معين
@@ -2626,4 +2627,32 @@ model WaClick {
   @@index([visitorId], map: "wa_clicks_visitor_idx")
   @@index([clientId, createdAt(sort: Desc)], map: "wa_clicks_client_created_idx")
   @@map("wa_clicks")
+}
+
+/// استهلاك نداءات المنصّات - عملياتٌ لا «مزامنات».
+///
+/// حصّة جوجل مربوطة بتوكن المطوّر أي بتطبيقنا كلّه (١٥٬٠٠٠ عملية/يوم على
+/// Basic)، وحصّة تيك توك بتطبيق المطوّر كذلك: حوضٌ واحد يشرب منه كلّ
+/// العملاء. فمساحةٌ بمئتَي حملة ومساحةٌ بخمس ليستا نداءً واحداً، وعدُّ
+/// «المزامنات» يقيس الشيء الخطأ ويعطي إحساساً كاذباً بالأمان.
+///
+/// هذه المرحلة **عدٌّ بلا سقف**: كلّ رقمٍ في جدول التخصيص المقترَح تخمينٌ
+/// حتى تُقاس التكلفة الحقيقية للمساحة الواحدة - وهي بين ٢٠ عمليةً و٥٠٠،
+/// والفرق بينهما هو الفرق بين ستّمئة مشتركٍ وأربعةٍ وعشرين.
+///
+/// وحوض المنصّة يُجمع بـSUM على اليوم لا بصفٍّ عامّ موازٍ: الصفّ الموازي
+/// يلزم عند الإنفاذ حين يُقرأ مع كلّ نداء، لا عند العدّ حيث يُقرأ مرّةً في
+/// التقرير - وبناؤه الآن تعقيدٌ سابقٌ لموجبه.
+model PlatformUsage {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  platform    Platform
+  /// اليوم بتوقيت UTC - حدود الحصص اليومية عند المنصّات تُحسب به
+  day         DateTime @db.Date
+  operations  Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([workspaceId, platform, day])
+  @@index([platform, day])
 }
