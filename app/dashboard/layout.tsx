@@ -375,11 +375,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         <Suspense fallback={null}>
           <SearchHighlight />
         </Suspense>
-        {/* الحشوة السفلية تحجز مكان مربّع السؤال المثبَّت فوقها.
-            كانت `sm:pb-10` أي أربعين بكسلاً بينما ارتفاع المربّع مئةٌ
-            وتسعةٌ وعشرون: آخرُ المحتوى يختفي خلفه على كلّ شاشةٍ عريضة.
-            وهي واحدةٌ لكلّ العروض لأنّ المربّع صار مثبَّتاً في كلّها. */}
-        <div className="flex-1 px-4 pb-44 sm:px-6 lg:px-10">{children}</div>
+        <div className="flex-1 px-4 pb-24 sm:px-6 sm:pb-10 lg:px-10">{children}</div>
 
         {/* تذييل قانوني في كلّ صفحة داخل اللوحة: الصفحات الثلاث كانت
             مبنيّة بلا رابط واحد إليها في المنتج كلّه. */}

@@ -91,16 +91,6 @@ export function SidebarNav({
     if (localStorage.getItem(COLLAPSE_STORAGE_KEY) === "true") setCollapsed(true);
   }, []);
 
-  // عرض الشريط يُنشَر كمتغيّر CSS ليقرأه أيُّ عنصر مثبَّت يجب ألّا يمرّ تحته
-  // - مربّع السؤال أوّلهم. **من `collapsed` نفسها** التي تقود الفاصلة أعلاه:
-  // مصدرٌ واحد لثلاثة قرّاء، فيستحيل أن يفترقوا.
-  //
-  // ولا يصحّ أن تخمّنه CSS من `.is-collapsed`: ذلك المحدّد يصف الشريط وحده،
-  // ولا يصل إلى عنصرٍ في شجرة أخرى. المتغيّر على الجذر يصل إلى الجميع.
-  useEffect(() => {
-    document.documentElement.style.setProperty("--sidebar-w", collapsed ? "68px" : "240px");
-  }, [collapsed]);
-
   function toggleCollapse() {
     const next = !collapsed;
     setCollapsed(next);
