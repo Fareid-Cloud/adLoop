@@ -7,7 +7,7 @@ import { Search } from "lucide-react";
 import { NAV_GROUPS } from "@/lib/navConfig";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { t, type Locale } from "@/lib/i18n/dictionary";
-import { searchSections } from "@/lib/sectionSearch";
+import { searchProduct } from "@/lib/productSearch";
 
 function plat(href: string): string | null {
   if (/google|youtube|pmax|shopping/.test(href)) return "GOOGLE_ADS";
@@ -55,14 +55,8 @@ export function TopSearch({ locale }: { locale: "ar" | "en" }) {
 
   // عناوين الأقسام داخل الصفحات: البحث كان يقف عند اسم الصفحة، فمن يبحث
   // عن قسمٍ فيها يُجاب «لا نتائج» وهو على بُعد تمريرةٍ داخل صفحةٍ يعرفها.
-  const sectionResults = query
-    ? searchSections(query, locale).slice(0, 5).map((r) => ({
-        href: r.href,
-        text: r.label,
-        context: r.context,
-        platform: null as string | null,
-      }))
-    : [];
+  // كلُّ نصٍّ يراه المشترك، لا العناوين وحدها - ومعه موضعُ المطابقة ليُظلَّل
+  const productHits = query ? searchProduct(q, locale, 8) : [];
 
   // ═══ ما في المساحة فعلاً: حملاتٌ ومنتجات ═══
   // الصفحات تُطابَق محلّياً فتظهر فوراً؛ وهذه رحلةُ شبكةٍ مؤجَّلة كي لا
@@ -79,10 +73,28 @@ export function TopSearch({ locale }: { locale: "ar" | "en" }) {
     return () => clearTimeout(id);
   }, [query]);
 
-  const results = [
-    ...pageResults.map((r) => ({ ...r, kind: "page" as const, label: r.text })),
-    ...sectionResults.map((r) => ({ ...r, kind: "section" as const, label: r.text })),
-    ...hits,
+  // نتيجةٌ واحدة الشكل مهما اختلف مصدرها: صفحة، أو نصٌّ داخلها، أو كيان.
+  // و`mark` موضعُ المطابقة - يُظلَّل ليعرف القارئ **لماذا** ظهرت هذه النتيجة
+  // بدل أن يفتّش عن الكلمة فيها.
+  type Row = {
+    kind: string;
+    label: string;
+    context: string | null;
+    href: string;
+    platform: string | null;
+    mark: [number, number] | null;
+  };
+  const results: Row[] = [
+    ...pageResults.map((r) => ({ ...r, kind: "page" as const, label: r.text, mark: null })),
+    ...productHits.map((h) => ({
+      kind: "text" as const,
+      label: h.label,
+      context: h.trail,
+      href: h.href,
+      platform: null,
+      mark: [h.start, h.end] as [number, number],
+    })),
+    ...hits.map((h) => ({ ...h, mark: null })),
   ];
 
   return (
@@ -113,7 +125,19 @@ export function TopSearch({ locale }: { locale: "ar" | "en" }) {
                 ) : (
                   <Search size={13} className="shrink-0 text-text-faint" />
                 )}
-                <span className="min-w-0 flex-1 truncate text-[13px] text-text-primary">{r.label}</span>
+                <span className="min-w-0 flex-1 truncate text-[13px] text-text-primary">
+                  {r.mark ? (
+                    <>
+                      {r.label.slice(0, r.mark[0])}
+                      <mark className="rounded-[3px] bg-accent/20 px-0.5 text-text-primary">
+                        {r.label.slice(r.mark[0], r.mark[1])}
+                      </mark>
+                      {r.label.slice(r.mark[1])}
+                    </>
+                  ) : (
+                    r.label
+                  )}
+                </span>
                 {/* السياق على اليمين: يفصل المتشابهات بلا أن يزاحم الاسم */}
                 {r.context && (
                   <span className="shrink-0 text-[11px] text-text-faint">{r.context}</span>

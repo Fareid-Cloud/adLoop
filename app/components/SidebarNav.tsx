@@ -14,7 +14,7 @@ import { NAV_GROUPS, type NavItem } from "@/lib/navConfig";
 import { BrandMark } from "@/app/components/BrandMark";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { t, type Locale } from "@/lib/i18n/dictionary";
-import { searchSections } from "@/lib/sectionSearch";
+import { searchProduct } from "@/lib/productSearch";
 
 // 🔴 سبب عطل إنتاج حقيقي: كانت هذه خريطة يدوية بأحد عشر اسماً فقط. أي
 // عنصر تنقّل بأيقونة خارجها كان يُرجع undefined، فيُرمى React error #130
@@ -141,15 +141,8 @@ export function SidebarNav({
       ).filter((r) => r.text.toLowerCase().includes(query))
     : [];
 
-  // عناوين الأقسام داخل الصفحات - المصدر نفسه الذي يقرؤه بحث الرأس
-  const sectionResults = query
-    ? searchSections(query, locale).map((r) => ({
-        href: r.href,
-        text: r.label,
-        context: r.context,
-        platform: null as string | null,
-      }))
-    : [];
+  // كلُّ نصٍّ يراه المشترك - المصدر نفسه الذي يقرؤه بحث الرأس
+  const productHits = query ? searchProduct(query, locale, 8) : [];
 
   // 🔴 **حقلا بحثٍ في المنتج، وكان أحدهما يبحث في الصفحات وحدها.**
   //
@@ -190,7 +183,17 @@ export function SidebarNav({
     };
   }, [query]);
 
-  const searchResults = [...pageResults, ...sectionResults, ...entityResults];
+  const searchResults = [
+    ...pageResults.map((r) => ({ ...r, mark: null as [number, number] | null })),
+    ...productHits.map((h) => ({
+      href: h.href,
+      text: h.label,
+      context: h.trail,
+      platform: null as string | null,
+      mark: [h.start, h.end] as [number, number] | null,
+    })),
+    ...entityResults.map((r) => ({ ...r, mark: null as [number, number] | null })),
+  ];
 
   return (
     <>
@@ -280,7 +283,19 @@ export function SidebarNav({
               searchResults.map((r) => (
                 <a key={r.href} href={r.href} className="btn btn-secondary py-[7px]">
                   {r.platform ? <PlatformLogo platform={r.platform} size={15} /> : <Search size={14} className="opacity-60" />}
-                  <span className="min-w-0 flex-1 truncate text-start">{r.text}</span>
+                  <span className="min-w-0 flex-1 truncate text-start">
+                    {r.mark ? (
+                      <>
+                        {r.text.slice(0, r.mark[0])}
+                        <mark className="rounded-[3px] bg-accent/20 px-0.5 text-text-primary">
+                          {r.text.slice(r.mark[0], r.mark[1])}
+                        </mark>
+                        {r.text.slice(r.mark[1])}
+                      </>
+                    ) : (
+                      r.text
+                    )}
+                  </span>
                   {r.context && (
                     <span className="shrink-0 text-[10.5px] text-text-faint">{r.context}</span>
                   )}
