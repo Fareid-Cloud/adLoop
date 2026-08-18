@@ -557,6 +557,49 @@ export function AiAsk({
           </div>
         )}
 
+        {/* 🔴 فوق المربّع لا تحته - وهذا موضعٌ لا زينة.
+            الاثنان يخفتان بـ`opacity` ويبقيان في التخطيط. وتحت المربّع
+            المرسّى من أسفل كان ذلك يدفع المربّعَ المرئيّ لأعلى بقدر ما
+            يشغلانه وهما لا يُريان: ثلاثةٌ وثمانون بكسلاً في مساحة العرض،
+            واثنان وعشرون في غيرها. فالصندوق قاعُه على ٣٦ من قاع الشاشة
+            كما يجب، والمربّع الذي تراه على ١١٩ - وهو «واقفٌ في النصّ».
+            وفوقه لا يدفع شيئاً: الرسوّ من أسفل، فما زاد فوقه امتدّ لأعلى. */
+        }
+        {/* أمثلة مساحة العرض: ما يعمل عليه الاستعراض معروضٌ صراحةً بدل أن
+            يُنتظر مرورُه في الكتابة التدريجية. */}
+        {demo && !open && (
+          <div aria-hidden={!solid} className={`mb-2 space-y-1.5 transition-opacity duration-200 ${
+              solid ? "opacity-100" : "pointer-events-none opacity-0"
+            }`}>
+            <p className="px-1 text-[11px] text-text-faint">{tr("demoHint")}</p>
+            <div className="flex flex-wrap gap-1.5">
+                {examples.map((e, n) => (
+                  <button
+                    key={n}
+                    onClick={() => pick(n)}
+                    className="chip max-w-full border border-border bg-surface text-text-secondary transition-colors hover:border-accent/45 hover:text-text-primary"
+                  >
+                    <span className="truncate">{e}</span>
+                  </button>
+              ))}
+              </div>
+          </div>
+        )}
+        {/* سطر التكلفة: النداء يُخصم من الرصيد المعلَن، وإخفاء ذلك حتى ينفد
+            الرصيد هو ما يجعل الحدّ يبدو مفاجأةً لا شرطاً معروفاً. يظهر عند
+            الرسوّ أو التركيز فقط - سطرٌ دائم يطفو فوق المحتوى ضجيج.
+            وفي مساحة العرض لا يُخصم شيء، فلا يُقال إنّه يُخصم. */}
+        {!open && !demo && (
+          <p
+            aria-hidden={!solid}
+            className={`mb-1.5 px-4 text-[11px] text-text-faint transition-opacity duration-200 ${
+              solid ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            {tr("costNote")}
+          </p>
+        )}
+
         <div
           // هالةٌ خفيفة بلون الهوية حول الحلقة: تفصل المربّع عمّا يمرّ
           // تحته وهو طافٍ، وتُعلّم أنّه العنصر الحيّ في الصفحة - بلا أن
@@ -615,44 +658,6 @@ export function AiAsk({
           </button>
         </div>
 
-        {/* سطر التكلفة: النداء يُخصم من الرصيد المعلَن، وإخفاء ذلك حتى ينفد
-            الرصيد هو ما يجعل الحدّ يبدو مفاجأةً لا شرطاً معروفاً. يظهر عند
-            الرسوّ أو التركيز فقط - سطرٌ دائم يطفو فوق المحتوى ضجيج.
-            وفي مساحة العرض لا يُخصم شيء، فلا يُقال إنّه يُخصم. */}
-        {!open && !demo && (
-          <p
-            aria-hidden={!solid}
-            className={`mt-1.5 px-4 text-[11px] text-text-faint transition-opacity duration-200 ${
-              solid ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            {tr("costNote")}
-          </p>
-        )}
-
-        {/* أمثلة مساحة العرض: ما يعمل عليه الاستعراض معروضٌ صراحةً بدل أن
-            يُنتظر مرورُه في الكتابة التدريجية. */}
-        {demo && !open && (
-          <div
-            aria-hidden={!solid}
-            className={`mt-2 space-y-1.5 transition-opacity duration-200 ${
-              solid ? "opacity-100" : "pointer-events-none opacity-0"
-            }`}
-          >
-            <p className="px-1 text-[11px] text-text-faint">{tr("demoHint")}</p>
-            <div className="flex flex-wrap gap-1.5">
-              {examples.map((e, n) => (
-                <button
-                  key={n}
-                  onClick={() => pick(n)}
-                  className="chip max-w-full border border-border bg-surface text-text-secondary transition-colors hover:border-accent/45 hover:text-text-primary"
-                >
-                  <span className="truncate">{e}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
     </>
