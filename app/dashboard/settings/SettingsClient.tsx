@@ -739,7 +739,7 @@ function WorkspaceTab({
   const [waPhoneNumberId, setWaPhoneNumberId] = useState(workspace.whatsappPhoneNumberId ?? "");
   const [waBusinessPhone, setWaBusinessPhone] = useState(workspace.whatsappBusinessPhone ?? "");
   const [googleAdsCustomerId, setGoogleAdsCustomerId] = useState(workspace.googleAdsCustomerId ?? "");
-  const [linkCopied, setLinkCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState<string | null>(null);
   const [notifyUrgentByEmail, setNotifyUrgentByEmail] = useState(workspace.notifyUrgentByEmail);
   const [notifyHighByEmail, setNotifyHighByEmail] = useState(workspace.notifyHighByEmail);
   const [notificationEmail, setNotificationEmail] = useState(workspace.notificationEmail ?? "");
@@ -940,9 +940,9 @@ function WorkspaceTab({
         ready={Boolean(waPhoneNumberId.trim() && waBusinessPhone.trim())}
         copied={linkCopied}
         isOwner={isOwner}
-        onCopied={() => {
-          setLinkCopied(true);
-          setTimeout(() => setLinkCopied(false), 2000);
+        onCopied={(id) => {
+          setLinkCopied(id);
+          setTimeout(() => setLinkCopied(null), 2000);
         }}
       />
 
@@ -998,16 +998,28 @@ function TrackerAdLink({
 }: {
   workspaceId: string;
   ready: boolean;
-  copied: boolean;
-  onCopied: () => void;
+  /** معرّف الرابط المنسوخ للتوّ - زرّان الآن، فالقيمة المنطقية لا تكفي */
+  copied: string | null;
+  onCopied: (id: string) => void;
   /** مالك المنتج وحده يرى العطب التقنيّ باسمه - هو من يملك إصلاحه */
   isOwner: boolean;
 }) {
   const tr = useT();
   const base = process.env.NEXT_PUBLIC_TRACKER_BASE_URL;
-  const link = base
-    ? `${base.replace(/\/$/, "")}/api/track-click?gclid={gclid}&ws=${workspaceId}`
-    : null;
+  // 🔴 **رابطان لا رابط واحد - والسبب أنّ المنصّات لا تتصرّف بالطريقة نفسها.**
+  //
+  // كان المولَّد واحداً بصيغة جوجل (`?gclid={gclid}`) للجميع، فمن يعلن على
+  // ميتا ينسخه كما هو: ميتا لا تعرف هذا الماكرو فيصل **حرفياً**، والمتتبّع
+  // كان يراه قيمةً موجودة فيسجّل **نقرة ميتا على أنّها نقرة جوجل** بمعرّفٍ
+  // مخترَع - تلويثٌ لطبقة الحقيقة نفسها، أسوأ من ألّا يُسجَّل شيء.
+  //
+  // والصحيح بحسب توثيق كلّ منصّة: جوجل وحدها لا تُلحق المعرّف تلقائياً
+  // فتحتاج الماكرو صراحةً؛ وميتا وتيك توك وسناب تُلحقه بنفسها، وإضافته
+  // يدوياً عندها تُنتج نسخةً مكرّرة تُضعف الإسناد. فالرابط الثاني **بلا
+  // أيّ ماكرو** - وهو ليس نقصاً بل هو الصواب.
+  const root = base ? `${base.replace(/\/$/, "")}/api/track-click?ws=${workspaceId}` : null;
+  const googleLink = root ? `${root}&gclid={gclid}` : null;
+  const link = root;
 
   // كلّ حالة تقول ما الناقص وأين يُضبط، لا "غير متاح" وتصمت.
   //
@@ -1037,26 +1049,42 @@ function TrackerAdLink({
     );
   }
 
+  const rows: Array<{ id: string; label: string; why: string; url: string }> = [
+    { id: "google", label: tr("waLinkGoogle"), why: tr("waLinkGoogleWhy"), url: googleLink! },
+    { id: "rest", label: tr("waLinkOthers"), why: tr("waLinkOthersWhy"), url: link },
+  ];
+
   return (
     <div className="mb-4 rounded-xl border border-accent/30 bg-accent/[0.06] p-3.5">
       <div className="mb-1 text-[12.5px] font-medium text-text-primary">{tr("waLinkTitle")}</div>
-      <p className="mb-2.5 text-[11.5px] leading-relaxed text-text-muted">{tr("waLinkHint")}</p>
-      <div className="flex items-center gap-2">
-        <code
-          dir="ltr"
-          className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-lg bg-surface px-2.5 py-2 font-mono text-[11.5px] text-text-primary"
-        >
-          {link}
-        </code>
-        <button
-          onClick={() => {
-            navigator.clipboard.writeText(link);
-            onCopied();
-          }}
-          className="btn btn-primary shrink-0"
-        >
-          {copied ? tr("waCopied") : tr("waCopy")}
-        </button>
+      <p className="mb-3 text-[11.5px] leading-relaxed text-text-muted">{tr("waLinkHint")}</p>
+
+      <div className="space-y-3">
+        {rows.map((row) => (
+          <div key={row.id}>
+            <div className="mb-1 text-[11.5px] font-medium text-text-primary">{row.label}</div>
+            {/* السبب بجوار الرابط لا في دليلٍ منفصل: من ينسخ رابطاً بلا
+                ماكرو يظنّه ناقصاً ويضيفه بنفسه - فيكسر ما جاء ليصلحه. */}
+            <p className="mb-1.5 text-[11px] leading-relaxed text-text-faint">{row.why}</p>
+            <div className="flex items-center gap-2">
+              <code
+                dir="ltr"
+                className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-lg bg-surface px-2.5 py-2 font-mono text-[11.5px] text-text-primary"
+              >
+                {row.url}
+              </code>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(row.url);
+                  onCopied(row.id);
+                }}
+                className="btn btn-primary shrink-0"
+              >
+                {copied === row.id ? tr("waCopied") : tr("waCopy")}
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
