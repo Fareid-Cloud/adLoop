@@ -200,7 +200,11 @@ export function CampaignsOverview({
               {filtered.length === 0 ? (
                 <tr><td colSpan={6} className="p-10 text-center text-[13px] text-text-muted">{tr("ovNoMatch")}</td></tr>
               ) : filtered.map((r) => (
-                <tr key={`${r.platform}-${r.campaignId}`} className="border-b border-border last:border-0 hover:bg-surface-raised/45">
+                <tr
+                  key={`${r.platform}-${r.campaignId}`}
+                  data-search-id={r.campaignId}
+                  className="border-b border-border last:border-0 hover:bg-surface-raised/45"
+                >
                   <td className="px-4 py-3.5">
                     <div className="flex min-w-0 items-start gap-2.5">
                       <PlatformLogo platform={r.platform} size={16} />

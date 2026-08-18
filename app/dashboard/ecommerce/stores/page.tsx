@@ -148,6 +148,7 @@ export default async function StoreComparisonPage({
             {cmp.stores.map((s) => (
               <tr
                 key={s.connectionId}
+                data-search-id={s.connectionId}
                 className={`border-b border-border/50 last:border-0 ${
                   s.connectionId === cmp.winnerId ? "bg-verified/[0.05]" : ""
                 }`}

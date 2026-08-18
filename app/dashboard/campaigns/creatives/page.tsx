@@ -205,7 +205,7 @@ function CreativeGrid({
             ? Math.round(((item.cpa - reportedCpa) / reportedCpa) * 100)
             : null;
         return (
-        <div key={item.adId} className="card flex flex-col gap-2 p-3.5">
+        <div key={item.adId} data-search-id={item.adId} className="card flex flex-col gap-2 p-3.5">
           {/* الاسم سطرُ سياق لا عنوان: أخفّ وزناً ممّا تحته عمداً */}
           {item.headline && (
             <p className="line-clamp-2 text-[11.5px] leading-snug text-text-muted">{item.headline}</p>

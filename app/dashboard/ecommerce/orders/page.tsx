@@ -180,7 +180,7 @@ export default async function OrdersPage({
             const state = STATE_META[o.state] ?? STATE_META.PLACED;
             const risky = (o.fraudRiskScore ?? 0) >= 50;
             return (
-              <Tr key={o.id}>
+              <Tr key={o.id} searchId={o.id}>
                 <Td>
                   <span className="font-medium text-text-primary">#{o.externalOrderId}</span>
                 </Td>

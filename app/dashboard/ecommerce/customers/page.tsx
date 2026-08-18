@@ -197,7 +197,7 @@ export default async function CustomersPage({
       <div className="card-shadow overflow-hidden card">
         <DataTable headers={[tr("colCustomer"), tr("colCity"), tr("colOrders"), tr("colSpent"), tr("colReturnRate"), tr("colLastOrder")]}>
           {analytics.topCustomers.map((cust, i) => (
-            <Tr key={cust.id}>
+            <Tr key={cust.id} searchId={cust.id}>
               <Td>
                 <span className="font-medium text-text-primary">
                   {cust.displayName ?? tr("anonymous", { n: i + 1 })}

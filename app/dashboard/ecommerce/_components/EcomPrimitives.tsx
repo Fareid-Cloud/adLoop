@@ -291,6 +291,13 @@ export function Td({ children, className = "" }: { children: ReactNode; classNam
   return <td className={`px-4 py-2.5 ${className}`}>{children}</td>;
 }
 
-export function Tr({ children }: { children: ReactNode }) {
-  return <tr className="border-b border-border/50 last:border-0">{children}</tr>;
+/** `searchId`: هدفُ نتيجة البحث. `SearchHighlight` يبحث عن
+ *  `data-search-id` ثمّ يمرّر إليه ويعلّمه - فبدونه يفتح البحث الصفحة
+ *  ويترك القارئ يدوّر على الصفّ الذي بحث عنه أصلاً. */
+export function Tr({ children, searchId }: { children: ReactNode; searchId?: string }) {
+  return (
+    <tr className="border-b border-border/50 last:border-0" data-search-id={searchId}>
+      {children}
+    </tr>
+  );
 }

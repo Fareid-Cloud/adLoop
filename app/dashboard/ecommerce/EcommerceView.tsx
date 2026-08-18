@@ -261,7 +261,7 @@ export function EcommerceView({
           </div>
           <ul className="divide-y divide-border">
             {losing.map((p) => (
-              <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+              <li key={p.id} data-search-id={p.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
                 <div className="min-w-0">
                   <div className="text-[13.5px] font-medium text-text-primary">{p.name}</div>
                   <p className="text-[12.5px] text-text-muted">{t(locale, `productVerdict.${p.verdictKey}`, p.verdictVars)}</p>
@@ -339,7 +339,7 @@ export function EcommerceView({
               ) : filtered.map((p) => {
                 const v = VERDICT_META[p.verdict];
                 return (
-                  <tr key={p.id} className={TR}>
+                  <tr key={p.id} data-search-id={p.id} className={TR}>
                     <td className={TD}>
                       <div className="text-[13px] font-medium text-text-primary">{p.name}</div>
                       {p.sku && <div className="font-mono text-[11px] text-text-faint">{p.sku}</div>}
