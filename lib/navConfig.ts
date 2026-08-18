@@ -144,6 +144,9 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/dashboard/reports", labelAr: "التقارير", labelEn: "Reports", iconName: "FileBarChart" },
       { href: "/dashboard/integrations", labelAr: "ربط المنصات", labelEn: "Integrations", iconName: "Plug" },
+      // قسمٌ بذاته لا صفحةٌ داخل ربط المنصّات: تلك شبكةُ مصادرٍ نسحب منها،
+      // وهذا قناةٌ يقرأ منها ذكاءُ المشترك - جيرانٌ في الفكرة لا في الشجرة.
+      { href: "/dashboard/mcp", labelAr: "MCP", labelEn: "MCP", iconName: "Sparkles" },
       { href: "/dashboard/billing", labelAr: "الاشتراك والباقة", labelEn: "Billing & Plan", iconName: "CreditCard" },
       { href: "/dashboard/settings", labelAr: "الإعدادات", labelEn: "Settings", iconName: "SettingsIcon" },
     ],

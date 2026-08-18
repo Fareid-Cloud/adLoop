@@ -1,6 +1,6 @@
 "use client";
 
-// app/dashboard/integrations/mcp/McpClient.tsx
+// app/dashboard/mcp/McpClient.tsx
 //
 // عمودٌ من ثلاث خطوات، لا نموذج. كلّ خطوةٍ تفتح التالية وتنطوي هي إلى
 // سطرٍ بعلامة تمام.
@@ -24,14 +24,19 @@ interface TokenRow {
   createdAt: string;
 }
 
-type ClientKey = "claudeCode" | "desktop" | "cursor" | "web";
+type ClientKey = "claudeCode" | "desktop" | "cursor" | "web" | "custom";
 
 const CLIENTS: Array<{ key: ClientKey; label: string }> = [
   { key: "claudeCode", label: "Claude Code" },
   { key: "desktop", label: "Claude Desktop" },
   { key: "cursor", label: "Cursor" },
   { key: "web", label: "claude.ai" },
+  { key: "custom", label: "JSON-RPC" },
 ];
+
+/** تُعرَض كقائمةٍ لا كتبويبات: إعدادها هو إعداد الجدول نفسه (نفس النطاق
+ *  ونفس الترويسة)، فتبويبٌ لكلٍّ يكرّر الشيء ذاته خمس مرّات. */
+const ALSO_WORKS = ["Windsurf", "Continue", "Zed", "LangChain", "LlamaIndex", "n8n"];
 
 export function McpClient({
   locale,
@@ -88,6 +93,12 @@ export function McpClient({
       return `claude mcp add --transport http adloop ${mcpUrl} --header "Authorization: Bearer ${key}"`;
     }
     if (client === "web") return mcpUrl;
+    if (client === "custom") {
+      return `curl -X POST ${mcpUrl} \
+  -H "Authorization: Bearer ${key}" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`;
+    }
     return JSON.stringify(
       client === "cursor"
         ? { mcpServers: { adloop: { url: mcpUrl, headers: { Authorization: `Bearer ${key}` } } } }
@@ -143,6 +154,13 @@ export function McpClient({
 
   return (
     <div className="mx-auto max-w-3xl">
+      <div className="mb-5">
+        <h2 className="mb-1.5 text-[19px] font-semibold leading-snug text-text-primary">
+          {tr("heroTitle")}
+        </h2>
+        <p className="text-[13px] leading-relaxed text-text-muted">{tr("heroBody")}</p>
+      </div>
+
       {/* نطاق الوصول رقائقُ لا فقرات - يُقرأ في ثانية ويُقرّر */}
       <div className="card pad-md mb-5">
         <div className="mb-2 text-[12.5px] font-medium text-text-primary">{tr("scopeTitle")}</div>
@@ -245,7 +263,9 @@ export function McpClient({
               ? tr("installDesktop")
               : client === "cursor"
                 ? tr("installCursor")
-                : tr("installWeb")}
+                : client === "web"
+                  ? tr("installWeb")
+                  : tr("installCustom")}
         </p>
         {client === "desktop" && (
           <div className="mb-2 font-mono text-[11px] leading-relaxed text-text-faint" dir="ltr">
@@ -342,6 +362,51 @@ export function McpClient({
             ))}
           </div>
         )}
+      </div>
+
+      {/* مثالٌ واحد يشرح ما لا تشرحه قائمة أدوات: شكلُ السؤال وشكلُ الجواب */}
+      <div className="card pad-md mt-5">
+        <div className="mb-2.5 text-[13px] font-medium text-text-primary">{tr("exampleTitle")}</div>
+        <p className="mb-2.5 rounded-xl bg-surface-raised px-3 py-2 text-[12.5px] text-text-primary">
+          {tr("exampleQ")}
+        </p>
+        <div className="mb-2 flex items-center gap-2 text-[11px] text-text-faint">
+          <span className="rounded-md bg-accent-dim px-1.5 py-0.5 font-mono text-accent">
+            compare_periods
+          </span>
+          {tr("exampleCall")}
+        </div>
+        <p className="text-[12.5px] leading-relaxed text-text-muted">{tr("exampleA")}</p>
+        <p className="mt-2 text-[11px] text-text-faint">{tr("exampleNote")}</p>
+      </div>
+
+      <div className="card pad-md mt-5">
+        <div className="mb-2.5 text-[13px] font-medium text-text-primary">{tr("clientsTitle")}</div>
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {[...CLIENTS.map((c) => c.label), ...ALSO_WORKS].map((n) => (
+            <span
+              key={n}
+              className="rounded-full border border-border-visible px-2.5 py-1 text-[12px] text-text-muted"
+            >
+              {n}
+            </span>
+          ))}
+        </div>
+        <p className="text-[11.5px] leading-relaxed text-text-faint">{tr("clientsAny")}</p>
+      </div>
+
+      <div className="card pad-md mt-5">
+        <div className="mb-2 text-[13px] font-medium text-text-primary">{tr("faqTitle")}</div>
+        <div className="divide-y divide-border">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <div key={n} className="py-2.5">
+              <div className="mb-0.5 text-[12.5px] font-medium text-text-primary">
+                {tr(`faq${n}Q`)}
+              </div>
+              <p className="text-[12px] leading-relaxed text-text-muted">{tr(`faq${n}A`)}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

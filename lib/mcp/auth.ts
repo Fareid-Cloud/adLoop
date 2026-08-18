@@ -79,10 +79,10 @@ export async function authenticate(authHeader: string | null): Promise<AuthOk | 
     return { ok: false, reason: "unknown", message: "This AdLoop key is not recognised. It may have been revoked." };
   }
   if (record.revokedAt) {
-    return { ok: false, reason: "revoked", message: "This AdLoop key was revoked. Generate a new one in AdLoop under Integrations." };
+    return { ok: false, reason: "revoked", message: "This AdLoop key was revoked. Generate a new one in AdLoop under MCP." };
   }
   if (record.expiresAt && record.expiresAt < new Date()) {
-    return { ok: false, reason: "expired", message: "This AdLoop key has expired. Generate a new one in AdLoop under Integrations." };
+    return { ok: false, reason: "expired", message: "This AdLoop key has expired. Generate a new one in AdLoop under MCP." };
   }
 
   const idleSince = record.lastUsedAt ?? record.createdAt;
@@ -92,7 +92,7 @@ export async function authenticate(authHeader: string | null): Promise<AuthOk | 
     return {
       ok: false,
       reason: "idle",
-      message: `This AdLoop key went unused for more than ${IDLE_REVOKE_DAYS} days and was retired. Generate a new one in AdLoop under Integrations.`,
+      message: `This AdLoop key went unused for more than ${IDLE_REVOKE_DAYS} days and was retired. Generate a new one in AdLoop under MCP.`,
     };
   }
 
