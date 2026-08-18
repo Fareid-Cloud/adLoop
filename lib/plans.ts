@@ -52,6 +52,23 @@ export interface PlanLimits {
   /** نموذج Claude لهذه الباقة. الباقات الأعلى على الأحدث - الفرق يظهر في
    *  عمق التحليل، وهو ما تدفع الباقة الأعلى من أجله. */
   aiModel: string;
+  /**
+   * مقاعد الاطّلاع - **مجّانية عمداً، ولا تُسعَّر أبداً.**
+   *
+   * غايتها أمنيّة لا تجارية: صاحبُ المتجر ومعه محاسبٌ سيُدخله بحسابه هو إن
+   * لم يجد له مقعداً، فنخسر سجلَّ من فعل ماذا، والتحقّقَ بخطوتين للثاني،
+   * والمقعدَ الذي رفضنا بيعه ثمّ استُعمل مجّاناً. **ووضعُ ثمنٍ عليه يعيد
+   * السلوكَ نفسَه** - يشارك كلمةَ المرور ليوفّر الرسم، فندفع ثمن البناء
+   * ونكسب صفراً.
+   */
+  seatsViewer: number;
+  /**
+   * مقاعد التنفيذ - تُباع.
+   *
+   * قيمتُها تشغيلية لا أمنيّة: من ينفّذ قرارات الأتمتة ويربط الحسابات
+   * يمثّل عملاً حقيقياً يحتمل ثمناً، بخلاف من يقرأ فحسب.
+   */
+  seatsOperator: number;
   savedViews: number;
   scheduledReports: boolean;
   /**
@@ -93,6 +110,7 @@ export const PLANS: Plan[] = [
     highlighted: false,
     price: { EGP: 0, SAR: 0, USD: 0 },
     limits: {
+      seatsViewer: 0, seatsOperator: 0,
       workspaces: 1, platforms: 1, adAccounts: 1, monthlySpendUsd: 2_000, verifiedConversions: 200,
       historyMonths: 1, conversionSync: "none", automationRules: 0, scaleKill: "view",
       stores: 1, aiCredits: 0, deepScans: 0, aiModel: "claude-sonnet-4-6", savedViews: 1, scheduledReports: false, mcp: false,
@@ -104,6 +122,7 @@ export const PLANS: Plan[] = [
     highlighted: false,
     price: { EGP: 899, SAR: 189, USD: 49 },
     limits: {
+      seatsViewer: 1, seatsOperator: 0,
       workspaces: 1, platforms: "all", adAccounts: 1, monthlySpendUsd: 15_000, verifiedConversions: 2_000,
       historyMonths: 12, conversionSync: "one", automationRules: 3, scaleKill: "apply",
       stores: 2, aiCredits: 50, deepScans: 0, aiModel: "claude-sonnet-4-6", savedViews: 5, scheduledReports: true, mcp: true,
@@ -117,6 +136,7 @@ export const PLANS: Plan[] = [
     highlighted: true,
     price: { EGP: 2_499, SAR: 559, USD: 149 },
     limits: {
+      seatsViewer: 3, seatsOperator: 0,
       workspaces: 3, platforms: "all", adAccounts: 3, monthlySpendUsd: 60_000, verifiedConversions: 10_000,
       historyMonths: 24, conversionSync: "all", automationRules: 15, scaleKill: "apply",
       stores: 9, aiCredits: 200, deepScans: 5, aiModel: "claude-sonnet-5", savedViews: -1, scheduledReports: true, mcp: true,
@@ -128,6 +148,7 @@ export const PLANS: Plan[] = [
     highlighted: false,
     price: { EGP: 6_999, SAR: 1_499, USD: 399 },
     limits: {
+      seatsViewer: 10, seatsOperator: 3,
       workspaces: 15, platforms: "all", adAccounts: 15, monthlySpendUsd: 250_000, verifiedConversions: 50_000,
       historyMonths: 24, conversionSync: "all", automationRules: -1, scaleKill: "apply",
       stores: 30, aiCredits: 600, deepScans: 20, aiModel: "claude-sonnet-5", savedViews: -1, scheduledReports: true, mcp: true,
@@ -149,6 +170,7 @@ export const PLANS: Plan[] = [
     contactOnly: true,
     price: { EGP: 0, SAR: 0, USD: 0 },
     limits: {
+      seatsViewer: -1, seatsOperator: -1,
       workspaces: -1, platforms: "all", adAccounts: -1, monthlySpendUsd: -1, verifiedConversions: -1,
       historyMonths: 24, conversionSync: "all", automationRules: -1, scaleKill: "apply",
       // **ليست بلا حدّ**: كلّ تحليلٍ نداءٌ مدفوع إلى Claude، وسقفٌ مفتوح
@@ -175,6 +197,8 @@ export const COMPARISON_ROWS: Array<{ key: keyof PlanLimits; kind: "number" | "t
   { key: "deepScans", kind: "number" },
   { key: "stores", kind: "number" },
   { key: "historyMonths", kind: "number" },
+  { key: "seatsViewer", kind: "number" },
+  { key: "seatsOperator", kind: "number" },
   { key: "savedViews", kind: "number" },
   { key: "scheduledReports", kind: "bool" },
   { key: "mcp", kind: "bool" },
