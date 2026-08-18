@@ -117,7 +117,7 @@ export function SidebarNav({
 
   // نتائج البحث (مسطّحة) - عنصر أو عنصر فرعي عنوانه بيطابق
   const query = q.trim().toLowerCase();
-  const searchResults = query
+  const pageResults = query
     ? NAV_GROUPS.flatMap((g) =>
         g.items.flatMap((it) => [
           { href: it.href, text: label(it), platform: null as string | null },
@@ -125,6 +125,46 @@ export function SidebarNav({
         ])
       ).filter((r) => r.text.toLowerCase().includes(query))
     : [];
+
+  // 🔴 **حقلا بحثٍ في المنتج، وكان أحدهما يبحث في الصفحات وحدها.**
+  //
+  // كتابةُ اسم حملةٍ هنا كانت تُرجع «لا نتائج» بينما بحث الرأس يجدها -
+  // فيقرؤها المشترك «غير موجودة عندي» لا «هذا الحقل لا يبحث عنها». وهو
+  // الحقل الأقرب إلى يده، فوقوفُه عند عناوين الصفحات يجعل نصفَ البحث
+  // في المنتج كاذباً.
+  const [entityResults, setEntityResults] = useState<
+    Array<{ href: string; text: string; platform: string | null }>
+  >([]);
+  useEffect(() => {
+    if (query.length < 2) {
+      setEntityResults([]);
+      return;
+    }
+    // مهلةٌ قصيرة: نداءٌ مع كلّ حرفٍ يُغرق الخادم بطلباتٍ يُلغيها الحرف التالي
+    let alive = true;
+    const timer = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        if (!r.ok || !alive) return;
+        const { hits } = await r.json();
+        setEntityResults(
+          (hits ?? []).map((h: { label: string; href: string; platform: string | null }) => ({
+            href: h.href,
+            text: h.label,
+            platform: h.platform,
+          }))
+        );
+      } catch {
+        // البحث عن كيانٍ يفشل بصمتٍ - نتائج الصفحات تبقى، فلا تُفرَغ القائمة
+      }
+    }, 220);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [query]);
+
+  const searchResults = [...pageResults, ...entityResults];
 
   return (
     <>
