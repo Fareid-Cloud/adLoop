@@ -6,6 +6,7 @@
 // أرقام جاءت من العميل يعني أن أي شخص يستطيع إرسال بريد بأرقام يخترعها.
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { Resend } from "resend";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const workspace = await prisma.workspace.findFirst({ where: { id, userId: user.id } });
+  const workspace = await prisma.workspace.findFirst({ where: { id, ...workspaceAccess(user.id) } });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const body = await req.json().catch(() => null);

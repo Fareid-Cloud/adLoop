@@ -1,6 +1,7 @@
 // app/api/monitored-pages/[id]/check/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { checkTrackingPresence } from "@/lib/trackingCoverage";
@@ -14,7 +15,7 @@ export async function POST(
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const page = await prisma.monitoredPage.findFirst({
-    where: { id: id, workspace: { userId: user.id } },
+    where: { id: id, workspace: workspaceAccess(user.id) },
   });
   if (!page) return NextResponse.json({ error: "not found" }, { status: 404 });
 

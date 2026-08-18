@@ -5,6 +5,7 @@
 // هيوصل لصفحة داشبورد مفيش وراها أي بيانات ممكن تتبنى عليها.
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { computeSmartDefaults } from "@/lib/dashboardDefaults";
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const workspaces = await prisma.workspace.findMany({
-    where: { userId: user.id },
+    where: workspaceAccess(user.id),
     orderBy: { createdAt: "asc" },
   });
 

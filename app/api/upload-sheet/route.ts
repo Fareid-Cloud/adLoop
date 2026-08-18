@@ -14,6 +14,7 @@
 // Date | Campaign | Impressions | Clicks | Cost | Conversions
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { readSheet } from "read-excel-file/node";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
   }
 
   const workspace = await prisma.workspace.findFirst({
-    where: { id: workspaceId, userId: user.id },
+    where: { id: workspaceId, ...workspaceAccess(user.id) },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 

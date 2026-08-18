@@ -1,6 +1,7 @@
 // app/api/workspaces/[id]/products/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { t } from "@/lib/i18n/dictionary";
@@ -15,7 +16,7 @@ export async function GET(
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const workspace = await prisma.workspace.findFirst({
-    where: { id: id, userId: user.id },
+    where: { id: id, ...workspaceAccess(user.id) },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
@@ -37,7 +38,7 @@ export async function POST(
   const locale = localeOf(user);
 
   const workspace = await prisma.workspace.findFirst({
-    where: { id: id, userId: user.id },
+    where: { id: id, ...workspaceAccess(user.id) },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 

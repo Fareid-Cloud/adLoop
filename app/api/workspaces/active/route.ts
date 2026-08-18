@@ -4,6 +4,7 @@
 // وكل الصفحات تقرأها من مكان واحد بدل أن تفترض كل صفحة "أول مساحة".
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   // الملكية تُتحقّق دائماً: بدونها يمكن تمرير معرّف مساحة عمل لمستخدم آخر
   const workspace = await prisma.workspace.findFirst({
-    where: { id: workspaceId, userId: user.id },
+    where: { id: workspaceId, ...workspaceAccess(user.id) },
     select: { id: true },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });

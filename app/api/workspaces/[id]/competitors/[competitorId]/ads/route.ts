@@ -4,6 +4,7 @@
 // "أكّد أنه ما زال يعمل" عملية أولى الدرجة لا تفصيلة.
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 
@@ -16,7 +17,7 @@ async function owned(req: NextRequest, workspaceId: string, competitorId: string
   const user = await getSessionUser(req);
   if (!user) return false;
   const row = await prisma.competitor.findFirst({
-    where: { id: competitorId, workspaceId, workspace: { userId: user.id } },
+    where: { id: competitorId, workspaceId, workspace: workspaceAccess(user.id) },
     select: { id: true },
   });
   return !!row;

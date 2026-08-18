@@ -4,6 +4,7 @@
 // كاملة من بياناته بصيغة قابلة للقراءة (JSON) في أي وقت.
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
       },
     }),
     prisma.workspace.findMany({
-      where: { userId: user.id },
+      where: workspaceAccess(user.id),
       include: {
         campaignLinks: true,
         products: true,

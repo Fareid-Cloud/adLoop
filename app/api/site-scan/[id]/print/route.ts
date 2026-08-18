@@ -4,6 +4,7 @@
 // اللي كان مبني من زمان بس معندوش أي نقطة استخدام فعلية لحد الآن.
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { generateAuditReportHtml } from "@/lib/generateAuditReportHtml";
@@ -20,7 +21,7 @@ export async function GET(
   const locale = localeOf(user);
 
   const scan = await prisma.siteScanResult.findFirst({
-    where: { id: id, workspace: { userId: user.id } },
+    where: { id: id, workspace: workspaceAccess(user.id) },
     include: { workspace: true },
   });
 

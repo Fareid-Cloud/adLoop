@@ -1,6 +1,7 @@
 // app/api/workspaces/[id]/campaign-links/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
@@ -17,7 +18,7 @@ export async function GET(
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const workspace = await prisma.workspace.findFirst({
-    where: { id: id, userId: user.id },
+    where: { id: id, ...workspaceAccess(user.id) },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
@@ -36,7 +37,7 @@ export async function POST(
   // لازم نتأكد إن الـ Workspace ده فعلاً ملك المستخدم قبل أي تعديل - نفس
   // مبدأ التحقق من الملكية اللي حددناه في الـ ADR §7
   const workspace = await prisma.workspace.findFirst({
-    where: { id: id, userId: user.id },
+    where: { id: id, ...workspaceAccess(user.id) },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 

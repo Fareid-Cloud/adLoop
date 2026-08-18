@@ -7,6 +7,7 @@
 // منتجاته، ويقرأ الصفحةَ الفارغة عطلاً في الربط لا انتظاراً لدورة.
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { syncProductsForWorkspace } from "@/lib/ecommerce/productSync";
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // الملكية أوّلاً: المعرّف يصل من العميل، فلا يُقرأ منه شيءٌ قبل إثباتها.
   const workspace = await prisma.workspace.findFirst({
-    where: { id, userId: user.id },
+    where: { id, ...workspaceAccess(user.id) },
     select: { id: true, isDemo: true },
   });
   if (!workspace) return NextResponse.json({ error: "unauthorized" }, { status: 401 });

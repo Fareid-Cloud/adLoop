@@ -8,6 +8,7 @@
 // إيقاف إعلانات مُعلن آخر بمجرد معرفة معرّف الإعلان.
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { applyAdDecision, type Decision } from "@/lib/adDecisions";
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
   }
 
   const workspace = await prisma.workspace.findFirst({
-    where: { id: workspaceId, userId: user.id },
+    where: { id: workspaceId, ...workspaceAccess(user.id) },
     select: { id: true },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });

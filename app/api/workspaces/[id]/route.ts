@@ -1,6 +1,7 @@
 // app/api/workspaces/[id]/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { verifyCsrfToken } from "@/lib/csrf";
@@ -61,7 +62,7 @@ export async function PATCH(
 
   // تحقق الملكية - نفس المبدأ في كل مكان (ADR §7)
   const workspace = await prisma.workspace.findFirst({
-    where: { id: id, userId: user.id },
+    where: { id: id, ...workspaceAccess(user.id) },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
@@ -181,7 +182,7 @@ export async function DELETE(
   }
 
   const workspace = await prisma.workspace.findFirst({
-    where: { id: id, userId: user.id },
+    where: { id: id, ...workspaceAccess(user.id) },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 

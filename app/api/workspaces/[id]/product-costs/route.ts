@@ -6,6 +6,7 @@
 // فمن يستخدمها يحتاج طريقاً لا يمرّ بالمنصة، وإلا بقي قسم التسعير معطَّلاً.
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { syncCostsFromStore } from "@/lib/ecommerce/costSync";
@@ -18,7 +19,7 @@ async function authorize(req: NextRequest, workspaceId: string) {
   const user = await getSessionUser(req);
   if (!user) return null;
   const workspace = await prisma.workspace.findFirst({
-    where: { id: workspaceId, userId: user.id },
+    where: { id: workspaceId, ...workspaceAccess(user.id) },
     select: { id: true },
   });
   return workspace ? user : null;

@@ -8,6 +8,7 @@
 // المتجر يترك رقمين مختلفين ويُظهر المنتج سليماً وهو ليس كذلك.
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { syncPriceToStore } from "@/lib/ecommerce/priceSync";
@@ -25,7 +26,7 @@ export async function POST(
   const locale = localeOf(user);
 
   const product = await prisma.product.findFirst({
-    where: { id, workspace: { userId: user.id } },
+    where: { id, workspace: workspaceAccess(user.id) },
     include: { workspace: { select: { id: true, currency: true } } },
   });
   if (!product) return NextResponse.json({ error: "not found" }, { status: 404 });

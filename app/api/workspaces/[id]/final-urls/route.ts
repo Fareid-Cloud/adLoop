@@ -4,6 +4,7 @@
 // عشان صفحة "فحص الموقع" تقترحها تلقائياً بدل ما المستخدم يكتبها يدوي.
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 
@@ -16,7 +17,7 @@ export async function GET(
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const workspace = await prisma.workspace.findFirst({
-    where: { id: id, userId: user.id },
+    where: { id: id, ...workspaceAccess(user.id) },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 

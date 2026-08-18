@@ -1,6 +1,7 @@
 // app/api/creatives/quality-check/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { getSessionUser } from "@/lib/auth";
 import { auditAdImageQuality } from "@/lib/imageQualityAudit";
 import { checkAndConsumeImageQualityQuota, refundImageQualityQuota, isAiConfigured } from "@/lib/aiRateLimit";
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
   // ملكيّة المساحة تُتحقَّق قبل أيّ نداء: المعرّف يصل من العميل، فقبوله كما
   // ورد يعني أنّ أيّ حساب يصرف من حصّة غيره.
   const workspace = await prisma.workspace.findFirst({
-    where: { id: workspaceId, userId: user.id },
+    where: { id: workspaceId, ...workspaceAccess(user.id) },
     select: { id: true },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });

@@ -1,6 +1,7 @@
 // app/api/workspaces/[id]/competitors/[competitorId]/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 
@@ -9,7 +10,7 @@ async function owned(req: NextRequest, workspaceId: string, competitorId: string
   if (!user) return false;
   // الملكية تُفحص على الصفّ نفسه لا على مساحة العمل وحدها
   const row = await prisma.competitor.findFirst({
-    where: { id: competitorId, workspaceId, workspace: { userId: user.id } },
+    where: { id: competitorId, workspaceId, workspace: workspaceAccess(user.id) },
     select: { id: true },
   });
   return !!row;

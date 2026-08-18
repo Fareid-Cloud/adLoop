@@ -1,6 +1,7 @@
 // app/api/workspaces/[id]/report-views/[viewId]/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 
@@ -15,7 +16,7 @@ export async function PATCH(
   // الملكية تُفحص على الصفّ نفسه لا على مساحة العمل وحدها - بدون ذلك يستطيع
   // مستخدم في نفس مساحة العمل تعديل عرض غيره بمعرّف مخمَّن.
   const existing = await prisma.savedReportView.findFirst({
-    where: { id: viewId, workspaceId: id, userId: user.id },
+    where: { id: viewId, workspaceId: id, ...workspaceAccess(user.id) },
     select: { id: true },
   });
   if (!existing) return NextResponse.json({ error: "not found" }, { status: 404 });
@@ -39,7 +40,7 @@ export async function DELETE(
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const existing = await prisma.savedReportView.findFirst({
-    where: { id: viewId, workspaceId: id, userId: user.id },
+    where: { id: viewId, workspaceId: id, ...workspaceAccess(user.id) },
     select: { id: true },
   });
   if (!existing) return NextResponse.json({ error: "not found" }, { status: 404 });

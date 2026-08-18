@@ -4,6 +4,7 @@
 // فتح من بيانات اليوم، وإلا صار العرض صورة قديمة تُتّخذ عليها قرارات جديدة.
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { METRICS } from "@/lib/reports/reportEngine";
@@ -18,11 +19,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const workspace = await prisma.workspace.findFirst({ where: { id, userId: user.id }, select: { id: true } });
+  const workspace = await prisma.workspace.findFirst({ where: { id, ...workspaceAccess(user.id) }, select: { id: true } });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const views = await prisma.savedReportView.findMany({
-    where: { workspaceId: id, userId: user.id },
+    where: { workspaceId: id, ...workspaceAccess(user.id) },
     orderBy: [{ isFavorite: "desc" }, { updatedAt: "desc" }],
     take: MAX_VIEWS,
   });
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const workspace = await prisma.workspace.findFirst({ where: { id, userId: user.id }, select: { id: true } });
+  const workspace = await prisma.workspace.findFirst({ where: { id, ...workspaceAccess(user.id) }, select: { id: true } });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const body = await req.json().catch(() => null);
@@ -57,11 +58,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     platforms: Array.isArray(raw.platforms) ? raw.platforms.filter((p: unknown) => typeof p === "string").slice(0, 10) : [],
   };
 
-  const count = await prisma.savedReportView.count({ where: { workspaceId: id, userId: user.id } });
+  const count = await prisma.savedReportView.count({ where: { workspaceId: id, ...workspaceAccess(user.id) } });
   if (count >= MAX_VIEWS) return NextResponse.json({ error: "limit reached" }, { status: 400 });
 
   const view = await prisma.savedReportView.create({
-    data: { workspaceId: id, userId: user.id, name, config },
+    data: { workspaceId: id, ...workspaceAccess(user.id), name, config },
   });
   return NextResponse.json({ view });
 }

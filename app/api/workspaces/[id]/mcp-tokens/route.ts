@@ -4,6 +4,7 @@
 // في جواب الإنشاء ولا يُسترجَع بعدها - المخزَّن بصمتُه لا هو.
 
 import { NextRequest, NextResponse } from "next/server";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { getEntitlements } from "@/lib/entitlements";
@@ -16,7 +17,7 @@ async function ownedWorkspace(req: NextRequest, id: string) {
   const user = await getSessionUser(req);
   if (!user) return null;
   const workspace = await prisma.workspace.findFirst({
-    where: { id, userId: user.id },
+    where: { id, ...workspaceAccess(user.id) },
     select: { id: true, userId: true },
   });
   return workspace ? { workspace, userId: user.id } : null;
