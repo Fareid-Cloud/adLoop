@@ -14,8 +14,8 @@ import { getSessionUserFromCookies } from "@/lib/auth";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export interface SearchHit {
-  /** `campaign` | `product` - الصفحات تُطابَق في العميل بلا رحلةِ شبكة */
-  kind: "campaign" | "product";
+  /** الصفحات تُطابَق في العميل بلا رحلةِ شبكة، والباقي من القاعدة */
+  kind: "campaign" | "product" | "creative" | "store" | "customer" | "order";
   label: string;
   /** سطرٌ يفصل المتشابهات: المنصّة للحملة، ورمز المنتج له */
   context: string | null;
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) return NextResponse.json({ hits: [] });
 
-  const [campaigns, products] = await Promise.all([
+  const [campaigns, products, creatives, stores, customers, orders] = await Promise.all([
     prisma.campaignLink.findMany({
       where: { workspaceId: workspace.id, campaignName: { contains: q, mode: "insensitive" } },
       select: { campaignName: true, platform: true, externalCampaignId: true },
@@ -45,6 +45,32 @@ export async function GET(req: NextRequest) {
       where: { workspaceId: workspace.id, name: { contains: q, mode: "insensitive" } },
       select: { id: true, name: true, sku: true },
       take: 6,
+    }),
+    // 🔴 الإعلان الفردي يتكرّر يومياً في `CreativeSnapshot`، فالبحث فيه
+    // بلا تمييزٍ يُرجع الاسم نفسه ثلاثين مرّة. `distinct` على معرّف
+    // الإعلان يُبقي صفّاً واحداً لكلّ إعلان.
+    prisma.creativeSnapshot.findMany({
+      where: { workspaceId: workspace.id, adName: { contains: q, mode: "insensitive" } },
+      select: { adId: true, adName: true, platform: true },
+      distinct: ["adId"],
+      take: 6,
+    }),
+    prisma.ecommerceConnection.findMany({
+      where: { workspaceId: workspace.id, storeName: { contains: q, mode: "insensitive" } },
+      select: { id: true, storeName: true, platform: true },
+      take: 4,
+    }),
+    // الاسم الأوّل وحده مخزَّنٌ عندنا، والهاتف والبريد مجزوءان - فالبحث
+    // بالاسم هو الممكن، والمطابقة بهما مستحيلةٌ بحكم التصميم لا بالسهو.
+    prisma.customer.findMany({
+      where: { workspaceId: workspace.id, displayName: { contains: q, mode: "insensitive" } },
+      select: { id: true, displayName: true, city: true },
+      take: 4,
+    }),
+    prisma.order.findMany({
+      where: { workspaceId: workspace.id, externalOrderId: { contains: q, mode: "insensitive" } },
+      select: { id: true, externalOrderId: true, platform: true, total: true },
+      take: 4,
     }),
   ]);
 
@@ -63,6 +89,34 @@ export async function GET(req: NextRequest) {
       context: p.sku,
       href: `/dashboard/ecommerce/products?highlight=${encodeURIComponent(p.id)}`,
       platform: null,
+    })),
+    ...creatives.map((c) => ({
+      kind: "creative" as const,
+      label: c.adName ?? c.adId,
+      context: c.platform,
+      href: `/dashboard/campaigns/creatives?highlight=${encodeURIComponent(c.adId)}`,
+      platform: c.platform,
+    })),
+    ...stores.map((st) => ({
+      kind: "store" as const,
+      label: st.storeName ?? st.platform,
+      context: st.platform,
+      href: `/dashboard/ecommerce/stores?highlight=${encodeURIComponent(st.id)}`,
+      platform: st.platform,
+    })),
+    ...customers.map((c) => ({
+      kind: "customer" as const,
+      label: c.displayName ?? "",
+      context: c.city,
+      href: `/dashboard/ecommerce/customers?highlight=${encodeURIComponent(c.id)}`,
+      platform: null,
+    })),
+    ...orders.map((o) => ({
+      kind: "order" as const,
+      label: o.externalOrderId,
+      context: o.platform,
+      href: `/dashboard/ecommerce/orders?highlight=${encodeURIComponent(o.id)}`,
+      platform: o.platform,
     })),
   ];
 

@@ -982,3 +982,36 @@ select.field {
 [dir="rtl"] .chart-flip-rtl {
   transform: scaleX(-1);
 }
+
+/* 🔴 **علامةُ «هذا هو ما بحثتَ عنه».**
+ *
+ * خطٌّ تحت العنصر كما في المحرّرات، مع تظليلٍ خفيف يخفت وحده. والخطُّ
+ * أسفلَه لا إطارٌ حوله: الإطار يزيح ما جاوره بسُمكه فترتجف الصفحة عند
+ * الوصول، والخطُّ يُرسَم في مكانه بلا أن يأخذ حيّزاً.
+ *
+ * ويخفت خلال ثانيتين ونصف: علامةٌ تبقى تُقرأ حالةً دائمة للصفّ - «معطَّل»
+ * أو «محدَّد» - لا إشارةَ وصول. */
+@keyframes search-found-fade {
+  0%,
+  60% {
+    background-color: color-mix(in srgb, var(--accent) 14%, transparent);
+    box-shadow: inset 0 -2px 0 0 var(--accent);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: inset 0 -2px 0 0 transparent;
+  }
+}
+
+.search-found {
+  animation: search-found-fade 2.6s ease-out forwards;
+  border-radius: 0.5rem;
+  scroll-margin-block: 6rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-found {
+    animation-duration: 0.01ms;
+    background-color: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+}

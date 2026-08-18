@@ -38,6 +38,8 @@ import { MobileNavButton } from "@/app/components/MobileNavButton";
 import { isDemoExpired } from "@/lib/demo";
 import { DemoExpiredGate } from "@/app/components/DemoExpiredGate";
 import { isOwnerEmail } from "@/lib/owner";
+import { Suspense } from "react";
+import { SearchHighlight } from "@/app/components/SearchHighlight";
 // next/font/google بيحمّل ملف الخط فعلياً وقت الـ build ويربطه بمتغير CSS -
 // ده الفرق عن مجرد كتابة اسم الخط في font-family من غير ما يكون مستورد
 // فعلياً (المشكلة اللي حصلت في المعاينة السابقة)
@@ -368,6 +370,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         )}
         {/* حشوةٌ أوسع على الهاتف: مربّع السؤال مثبَّتٌ هناك فوق المحتوى،
             فبلا مساحةٍ تحته يبقى آخرُ سطرٍ في الصفحة مغطّى لا يُقرأ أبداً. */}
+        {/* قارئُ `?highlight=` - مرّةً واحدة للوحة كلّها، فأيّ صفحةٍ
+            تحمل عناصرها `data-search-id` تعمل بلا تعديلٍ فيها. */}
+        <Suspense fallback={null}>
+          <SearchHighlight />
+        </Suspense>
         <div className="flex-1 px-4 pb-24 sm:px-6 sm:pb-10 lg:px-10">{children}</div>
 
         {/* تذييل قانوني في كلّ صفحة داخل اللوحة: الصفحات الثلاث كانت
