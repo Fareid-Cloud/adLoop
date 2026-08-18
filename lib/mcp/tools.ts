@@ -17,6 +17,9 @@ import { getStoreFunnel } from "@/lib/storeFunnel";
 import { getWorkspaceCreativePerformances } from "@/lib/creativeAnalysis";
 import { getStoreComparison } from "@/lib/ecommerce/storeComparison";
 import { HELP_SECTIONS } from "@/lib/helpContent";
+import { t } from "@/lib/i18n/dictionary";
+import { getCustomerAnalytics } from "@/lib/ecommerce/storeIntelligence";
+import { getLtvByChannel, getCohorts, getCustomerJourney } from "@/lib/ecommerce/customerCohorts";
 
 export interface McpTool {
   name: string;
@@ -274,6 +277,123 @@ export const MCP_TOOLS: McpTool[] = [
       }
       scored.sort((x, y) => y.score - x.score);
       return { matches: scored.slice(0, 6).map((s) => s.article) };
+    },
+  },
+  {
+    name: "get_customer_analytics",
+    description:
+      "Lifetime value, repeat purchase rate, how much more a returning customer is worth than a one-time buyer, customer segments (VIP, at-risk, one-time) and the top customers by spend.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        store_id: { type: "string", description: "Limit to one connected store. Omit for the whole workspace." },
+      },
+    },
+    run: async (workspaceId, args) => {
+      const storeId = args.store_id ? String(args.store_id) : null;
+      const a = await getCustomerAnalytics(workspaceId, storeId);
+      return {
+        total_customers: a.totalCustomers,
+        repeat_purchase_rate_pct: a.repeatPurchaseRatePct,
+        avg_lifetime_value: a.avgLtv,
+        repeat_customer_value_multiple: a.repeatCustomerValueMultiple,
+        segments: a.segments.map((s) => ({
+          key: s.key,
+          // `label` مفتاحُ ترجمةٍ لا عبارة (قاعدةُ المشروع في النصّ المخزَّن)،
+          // فيُحَلّ هنا عند الحدّ: أدواتُ MCP إنجليزيةٌ كلّها، ومفتاحٌ خام
+          // مثل `ecom.segmentVip` لا يعني شيئاً لذكاءٍ خارجيّ.
+          label: t("en", s.label.key, s.label.vars),
+          customers: s.count, revenue: s.revenue, avg_ltv: s.avgLtv,
+        })),
+        top_customers: a.topCustomers.map((c) => ({
+          name: c.displayName, city: c.city, orders: c.ordersCount,
+          total_spent: c.totalSpent, last_order_at: c.lastOrderAt, return_rate_pct: c.returnRatePct,
+        })),
+        currency: a.currency,
+        has_data: a.hasData,
+      };
+    },
+  },
+  {
+    name: "get_ltv_by_channel",
+    description:
+      "Lifetime value per acquisition channel, with cost to acquire a customer on that channel and the LTV-to-CAC ratio. A ratio below 1 means the channel loses money over the customer's life, not just on the first order. Always report the `basis` field with the answer.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        days: { type: "number", description: "Window for ad spend and newly acquired customers. Default 365." },
+      },
+    },
+    run: async (workspaceId, args) => {
+      const days = Math.min(1095, Math.max(30, Number(args.days) || 365));
+      const r = await getLtvByChannel(workspaceId, days);
+      return {
+        channels: r.channels.map((c) => ({
+          platform: c.platform, customers: c.customers, avg_lifetime_value: c.avgLtv,
+          lifetime_revenue: c.lifetimeRevenue, avg_orders_per_customer: c.avgOrdersPerCustomer,
+          repeat_rate_pct: c.repeatRatePct, cac: c.cac, ltv_to_cac: c.ltvToCac,
+        })),
+        window_days: days,
+        currency: r.currency,
+        basis: r.basis,
+        has_data: r.hasData,
+      };
+    },
+  },
+  {
+    name: "get_cohorts",
+    description:
+      "Customers grouped by the month of their first order: size, revenue, average lifetime value, repeat rate, and how many days it took repeat buyers to come back. Shows whether newer customers behave better or worse than older ones.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        months: { type: "number", description: "How many months back. Default 12, max 36." },
+      },
+    },
+    run: async (workspaceId, args) => {
+      const months = Math.min(36, Math.max(1, Number(args.months) || 12));
+      const r = await getCohorts(workspaceId, months);
+      return {
+        cohorts: r.cohorts.map((c) => ({
+          month: c.month, customers: c.customers, revenue: c.revenue, avg_lifetime_value: c.avgLtv,
+          repeat_rate_pct: c.repeatRatePct, avg_days_to_second_order: c.avgDaysToSecondOrder,
+        })),
+        currency: r.currency,
+        has_data: r.hasData,
+      };
+    },
+  },
+  {
+    name: "get_customer_journey",
+    description:
+      "One customer's full purchase history: every order with its date, channel and amount, which channels they bought from, and their totals. Looks up by display name only - phone and email are stored hashed, so they cannot be searched.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Part of the customer's display name." },
+      },
+      required: ["name"],
+    },
+    run: async (workspaceId, args) => {
+      const j = await getCustomerJourney(workspaceId, String(args.name ?? ""));
+      if (!j.found) return { found: false, basis: j.basis };
+      return {
+        found: true,
+        name: j.displayName,
+        city: j.city,
+        first_order_at: j.firstOrderAt,
+        last_order_at: j.lastOrderAt,
+        orders_count: j.ordersCount,
+        total_spent: j.totalSpent,
+        total_returned: j.totalReturned,
+        channels: j.channels,
+        orders: j.orders.map((o) => ({
+          ordered_at: o.orderedAt, platform: o.platform, total: o.total,
+          returned: o.isReturned, state: o.state,
+        })),
+        currency: j.currency,
+        basis: j.basis,
+      };
     },
   },
 ];

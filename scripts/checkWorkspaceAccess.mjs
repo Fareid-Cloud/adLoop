@@ -33,6 +33,18 @@ function check(file) {
   // الوصول لا معنى له فيه - وإلزامُه به يعني اختراع مستخدمٍ وهميّ.
   if (rel.includes("/api/cron/")) return;
 
+  // ولوحةُ المالك تقرأ مساحاتِ الآخرين بحكم وظيفتها كذلك - لكنّ إعفاءها
+  // إعفاءً مطلقاً يفتح تحت `/api/admin/` باباً بلا حارسٍ أصلاً.
+  //
+  // فالإعفاء **مشروط**: يمرّ المسار الإداريّ إن أثبت أنّ له حارسَه هو
+  // (`isAdmin`). ومسارٌ إداريّ بلا أيّ فحصٍ للصفة ليس معفىً، بل مكشوف -
+  // وهذا الفحص يمسكه.
+  if (rel.includes("/api/admin/")) {
+    if (/\bisAdmin\b/.test(src)) return;
+    problems.push(`${rel}  مسارٌ إداريّ بلا فحص isAdmin`);
+    return;
+  }
+
   const lines = src.split("\n");
 
   lines.forEach((line, i) => {
@@ -55,7 +67,7 @@ function check(file) {
     // المساحة نفسها: `id` و`userId` في شرطٍ واحد - و`where` شرطُ التمييز
     // عن أيّ كائنٍ آخر يحمل الحقلين.
     const isWhere = /\bwhere\s*:/.test(line);
-    if (isWhere && (/\bid\s*:.*\buserId\s*:\s*\w/.test(line) || /\bid\s*,\s*userId\s*:\s*\w/.test(line))) {
+    if (isWhere && (/\bid\s*:.*\buserId\s*:\s*["'`\w]/.test(line) || /\bid\s*,\s*userId\s*:\s*["'`\w]/.test(line))) {
       problems.push(`${rel}:${i + 1}  شرطُ مساحةٍ مكتوبٌ بيد (id + userId)`);
     }
   });
@@ -65,7 +77,7 @@ function check(file) {
   let m;
   while ((m = re.exec(src))) {
     const window = src.slice(m.index, m.index + 260);
-    if (/userId\s*:\s*\w/.test(window) && !/workspaceAccess\(/.test(window)) {
+    if (/userId\s*:\s*["'`\w]/.test(window) && !/workspaceAccess\(/.test(window)) {
       const lineNo = src.slice(0, m.index).split("\n").length;
       problems.push(`${rel}:${lineNo}  استعلامُ مساحةٍ بشرطٍ مكتوبٍ بيد`);
     }
