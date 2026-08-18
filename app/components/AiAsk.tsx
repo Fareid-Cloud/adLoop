@@ -616,7 +616,7 @@ export function AiAsk({
           // فيتبدّل أساسُ العيّنة كلّه دفعةً واحدة.
           // أُزيل التضبيب. وما كان يؤدّيه (منعُ قراءة ما تحت المربّع) يؤدّيه
           // السطحُ المعتم بلا أثرٍ متخلّف.
-          className={`flex items-center gap-2 rounded-full border px-2 py-1.5 transition-all ${
+          className={`ask-pill flex items-center gap-2 rounded-full border px-2 py-1.5 transition-all ${
             solid ? "border-accent/55 bg-surface" : "border-accent/30 bg-surface"
           }`}
           style={{
