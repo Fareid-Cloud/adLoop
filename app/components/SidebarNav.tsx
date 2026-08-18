@@ -14,6 +14,7 @@ import { NAV_GROUPS, type NavItem } from "@/lib/navConfig";
 import { BrandMark } from "@/app/components/BrandMark";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { searchSettingsEntries } from "@/lib/settingsSearchIndex";
 
 // 🔴 سبب عطل إنتاج حقيقي: كانت هذه خريطة يدوية بأحد عشر اسماً فقط. أي
 // عنصر تنقّل بأيقونة خارجها كان يُرجع undefined، فيُرمى React error #130
@@ -120,10 +121,34 @@ export function SidebarNav({
   const pageResults = query
     ? NAV_GROUPS.flatMap((g) =>
         g.items.flatMap((it) => [
-          { href: it.href, text: label(it), platform: null as string | null },
-          ...(it.children ?? []).map((c) => ({ href: c.href, text: label(c), platform: childPlatform(c.href) })),
+          {
+            href: it.href,
+            text: label(it),
+            // السياق كان هنا مفقوداً وحده: «التسعير» تتكرّر في موضعين،
+            // فبلا اسم ما تندرج تحته يختار الباحث بالحظّ. بحث الرأس يعرضه
+            // من قبل، وحقلان يجيبان جوابين مختلفَي الوضوح عن سؤالٍ واحد
+            // هو نصفُ بحثٍ لا بحثان.
+            context: g.labelAr && g.labelEn ? (ar ? g.labelAr : g.labelEn) : null,
+            platform: null as string | null,
+          },
+          ...(it.children ?? []).map((c) => ({
+            href: c.href,
+            text: label(c),
+            context: label(it),
+            platform: childPlatform(c.href),
+          })),
         ])
       ).filter((r) => r.text.toLowerCase().includes(query))
+    : [];
+
+  // حقول الإعدادات - المصدر نفسه الذي يقرؤه بحث الرأس وصفحةُ الإعدادات
+  const settingsResults = query
+    ? searchSettingsEntries(query, locale).map((r) => ({
+        href: r.href,
+        text: r.label,
+        context: r.context,
+        platform: null as string | null,
+      }))
     : [];
 
   // 🔴 **حقلا بحثٍ في المنتج، وكان أحدهما يبحث في الصفحات وحدها.**
@@ -133,7 +158,7 @@ export function SidebarNav({
   // الحقل الأقرب إلى يده، فوقوفُه عند عناوين الصفحات يجعل نصفَ البحث
   // في المنتج كاذباً.
   const [entityResults, setEntityResults] = useState<
-    Array<{ href: string; text: string; platform: string | null }>
+    Array<{ href: string; text: string; context: string | null; platform: string | null }>
   >([]);
   useEffect(() => {
     if (query.length < 2) {
@@ -148,9 +173,10 @@ export function SidebarNav({
         if (!r.ok || !alive) return;
         const { hits } = await r.json();
         setEntityResults(
-          (hits ?? []).map((h: { label: string; href: string; platform: string | null }) => ({
+          (hits ?? []).map((h: { label: string; href: string; context: string | null; platform: string | null }) => ({
             href: h.href,
             text: h.label,
+            context: h.context ?? null,
             platform: h.platform,
           }))
         );
@@ -164,7 +190,7 @@ export function SidebarNav({
     };
   }, [query]);
 
-  const searchResults = [...pageResults, ...entityResults];
+  const searchResults = [...pageResults, ...settingsResults, ...entityResults];
 
   return (
     <>
@@ -254,7 +280,10 @@ export function SidebarNav({
               searchResults.map((r) => (
                 <a key={r.href} href={r.href} className="btn btn-secondary py-[7px]">
                   {r.platform ? <PlatformLogo platform={r.platform} size={15} /> : <Search size={14} className="opacity-60" />}
-                  <span className="truncate">{r.text}</span>
+                  <span className="min-w-0 flex-1 truncate text-start">{r.text}</span>
+                  {r.context && (
+                    <span className="shrink-0 text-[10.5px] text-text-faint">{r.context}</span>
+                  )}
                 </a>
               ))
             )}

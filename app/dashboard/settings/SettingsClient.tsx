@@ -21,6 +21,12 @@ import { TabNav } from "@/app/components/ui/TabNav";
 import { ThemeModeCard } from "@/app/components/ui/ThemeModeCard";
 import type { LucideIcon } from "lucide-react";
 import { Select } from "@/app/components/ui/Select";
+import {
+  SETTINGS_SEARCH_INDEX,
+  SETTINGS_TAB_LABEL_KEYS,
+  settingsEntryHref,
+  type SettingsTabKey,
+} from "@/lib/settingsSearchIndex";
 
 // سياق اللغة بدل تمريرها كخاصية عبر أربعة عشر مكوّناً فرعياً. الملف واحد
 // وشجرته كلها في العميل، فالسياق هنا أنظف وأقل عرضة للخطأ من تمرير
@@ -145,41 +151,7 @@ const TAB_GROUPS: ReadonlyArray<{
   { titleKey: "grpAdvanced", keys: ["danger"] },
 ];
 
-// فهرس بحث حقيقي - كل سطر هنا يمثّل حقلاً موجوداً فعلاً في أحد التبويبات
-// أعلاه، لا أسماء وهمية. أي حقل جديد يُضاف إلى تبويب يجب أن يُضاف هنا
-// أيضاً كي يبقى البحث دقيقاً ومطابقاً للواقع.
-const SEARCH_INDEX: Array<{ labelKey: string; tab: (typeof TABS)[number]["key"] }> = [
-  { labelKey: "idxName", tab: "profile" },
-  { labelKey: "idxAvatar", tab: "profile" },
-  { labelKey: "idxLanguage", tab: "preferences" },
-  { labelKey: "idxMode", tab: "preferences" },
-  { labelKey: "idxAccent", tab: "preferences" },
-  { labelKey: "idxTimezone", tab: "preferences" },
-  { labelKey: "idxGoogle", tab: "accounts" },
-  { labelKey: "idxMeta", tab: "accounts" },
-  { labelKey: "idxWorkspaceName", tab: "workspace" },
-  { labelKey: "idxCurrency", tab: "workspace" },
-  { labelKey: "idxMarket", tab: "workspace" },
-  { labelKey: "idxCampaigns", tab: "workspace" },
-  { labelKey: "idxAi", tab: "automation" },
-  { labelKey: "idxRules", tab: "automation" },
-  { labelKey: "idxDaily", tab: "automation" },
-  { labelKey: "idxPricingHealth", tab: "automation" },
-  { labelKey: "idxModeled", tab: "automation" },
-  { labelKey: "idxResponse", tab: "automation" },
-  { labelKey: "idxFatigue", tab: "automation" },
-  { labelKey: "idxCtr", tab: "automation" },
-  { labelKey: "idxPriceWarn", tab: "automation" },
-  { labelKey: "idxPriceCrit", tab: "automation" },
-  { labelKey: "idxRto", tab: "automation" },
-  { labelKey: "idxCeiling", tab: "automation" },
-  { labelKey: "idxSyncEnable", tab: "conversionSync" },
-  { labelKey: "idxMetaPixel", tab: "conversionSync" },
-  { labelKey: "idxCapiToken", tab: "conversionSync" },
-  { labelKey: "idxGoogleAction", tab: "conversionSync" },
-  { labelKey: "idxTiktokPixel", tab: "conversionSync" },
-  { labelKey: "idxDeleteWorkspace", tab: "danger" },
-];
+
 
 export function SettingsClient({
   user,
@@ -195,10 +167,11 @@ export function SettingsClient({
   // التبويب الأوّلي من الرابط: بدونه كان كل زرّ يشير إلى إعداد بعينه
   // يهبط بالمستخدم على «الملف الشخصي» ويتركه يبحث عمّا أُرسل إليه.
   const searchParams = useSearchParams();
+  const settingsRouter = useRouter();
   const requestedTab = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useState<(typeof TABS)[number]["key"]>(
+  const [activeTab, setActiveTab] = useState<SettingsTabKey>(
     TABS.some((t) => t.key === requestedTab)
-      ? (requestedTab as (typeof TABS)[number]["key"])
+      ? (requestedTab as SettingsTabKey)
       : "profile"
   );
   const [activeWorkspaceId, setActiveWorkspaceId] = useState(workspaces[0]?.id ?? "");
@@ -211,9 +184,67 @@ export function SettingsClient({
   const searchResults = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return [];
-    return SEARCH_INDEX.filter((item) => tr(item.labelKey).toLowerCase().includes(q));
+    return SETTINGS_SEARCH_INDEX.filter((item) => tr(item.labelKey).toLowerCase().includes(q));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, locale]);
+
+  // ═══ الهبوط عند الحقل نفسه ═══
+  //
+  // 🔴 **بالاسم المعروض لا بسمةٍ على كلّ حقل.** البديل أن يحمل كلٌّ من
+  // الحقول الثلاثين `data-search-id`، وهي قائمةٌ موازيةٌ للفهرس تُصان
+  // يدوياً - وأوّلُ حقلٍ يُضاف بعدها يظهر في البحث ولا يُهبَط عنده، وهو
+  // عطلٌ صامت لا يشكو منه أحد.
+  //
+  // والفهرس يضمن أصلاً أنّ لكلّ بندٍ فيه حقلاً حقيقياً بهذا الاسم بعينه،
+  // فالاسمُ رابطٌ قائمٌ لا رابطٌ نخترعه. يبقى مصدرٌ واحد يُصان.
+  //
+  // وإن لم يُطابَق شيء لم يُكسر شيء: التبويب الصحيح مفتوح، وهو ما كان
+  // يحدث قبل هذا كلّه.
+  const highlightKey = searchParams.get("highlight");
+  useEffect(() => {
+    if (!highlightKey) return;
+    const entry = SETTINGS_SEARCH_INDEX.find((e) => e.labelKey === highlightKey);
+    if (!entry) return;
+    setActiveTab(entry.tab);
+
+    const wanted = t(locale, `settings.${entry.labelKey}`).trim();
+    let cancelled = false;
+    let observer: MutationObserver | null = null;
+
+    function tryFind(): boolean {
+      if (cancelled) return false;
+      const nodes = Array.from(
+        document.querySelectorAll<HTMLElement>("label, h2, h3, h4, p, span, div")
+      );
+      // الأعمقُ نصّاً: عنصرٌ نصُّه هو الاسم وحده ولا يحتوي ابناً يقوله كذلك -
+      // وإلّا وقع الاختيار على غلافٍ كبير يبتلع نصف التبويب.
+      const hit = nodes.find(
+        (el) =>
+          el.textContent?.trim() === wanted &&
+          !Array.from(el.children).some((c) => c.textContent?.trim() === wanted)
+      );
+      if (!hit) return false;
+      const box = (hit.closest("li, section, .card") as HTMLElement | null) ?? hit;
+      box.scrollIntoView({ behavior: "smooth", block: "center" });
+      box.classList.add("search-found");
+      window.setTimeout(() => box.classList.remove("search-found"), 2600);
+      observer?.disconnect();
+      return true;
+    }
+
+    // التبويب يُصيَّر بعد هذا التأثير، فالحقل قد لا يكون في الصفحة بعد.
+    if (tryFind()) return;
+    observer = new MutationObserver(() => {
+      tryFind();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    const stop = window.setTimeout(() => observer?.disconnect(), 8000);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(stop);
+      observer?.disconnect();
+    };
+  }, [highlightKey, locale]);
 
   return (
     <SettingsLocaleContext.Provider value={locale}>
@@ -241,12 +272,17 @@ export function SettingsClient({
                 onClick={() => {
                   setActiveTab(r.tab);
                   setSearchQuery("");
+                  // 🔴 فتحُ التبويب نصفُ الوصول. التبويب الواحد يحمل عشرة
+                  // حقول، فمن بحث عن «السقف الشهري» يُترك يقرؤها ليجده.
+                  // `highlight` هو ما ينزل به `SearchHighlight` عند الحقل
+                  // نفسه ويُعلّمه - والمعرّف هو `labelKey` بلا جدولٍ وسيط.
+                  settingsRouter.replace(settingsEntryHref(r), { scroll: false });
                 }}
                 className="block w-full rounded-lg px-4 py-2.5 text-start text-sm text-text-primary transition-colors hover:bg-surface"
               >
                 {tr(r.labelKey)}
                 <span className="ms-2 text-xs text-text-faint">
-                  {tr("inTab", { tab: tr(TABS.find((x) => x.key === r.tab)?.labelKey ?? "") })}
+                  {tr("inTab", { tab: tr(SETTINGS_TAB_LABEL_KEYS[r.tab]) })}
                 </span>
               </button>
             ))}
@@ -259,7 +295,7 @@ export function SettingsClient({
       <TabNav
         items={TABS.map((tab) => ({ key: tab.key, label: tr(tab.labelKey), icon: tab.icon }))}
         active={activeTab}
-        onChange={(k) => setActiveTab(k as (typeof TABS)[number]["key"])}
+        onChange={(k) => setActiveTab(k as SettingsTabKey)}
         ariaLabel={tr("title")}
         className="mb-7 md:hidden"
       />
