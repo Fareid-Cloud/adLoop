@@ -569,6 +569,7 @@ model Workspace {
   agentChats                              AgentChat[]
   mcpTokens                               McpToken[]
   platformUsage                           PlatformUsage[]
+  mcpAuthCodes                            McpAuthCode[]
 }
 
 // أي كامبين (من جوجل أو ميتا) تم اختياره ليتبع لـ Workspace معين
@@ -2655,4 +2656,49 @@ model PlatformUsage {
 
   @@unique([workspaceId, platform, day])
   @@index([platform, day])
+}
+
+/// عميلُ OAuth مسجَّلٌ ديناميكياً (RFC 7591).
+///
+/// عملاءُ MCP لا يُسجَّلون بيدٍ عندنا: claude.ai وChatGPT وغيرُهما يكتشفون
+/// الخادم ثمّ يسجّلون أنفسهم قبل أوّل تفويض. وبدون ذلك يبقى الربط مقصوراً
+/// على مَن نضيفه نحن يدوياً - وهو ما يُبقي البابَ مغلقاً أمام الأكثرية.
+model McpOAuthClient {
+  id           String   @id @default(cuid())
+  clientId     String   @unique
+  /// مُجزَّأ لا خاماً - كبقيّة أسرارنا
+  clientSecretHash String?
+  clientName   String
+  redirectUris String[]
+  createdAt    DateTime @default(now())
+
+  codes McpAuthCode[]
+
+  @@index([clientId])
+}
+
+/// رمزُ تفويضٍ قصير العمر مع تحدّي PKCE.
+///
+/// OAuth 2.1 يوجب PKCE على كلّ عميل، لا على العامّ منها وحده: بدونه يُعترَض
+/// الرمزُ في رحلة إعادة التوجيه فيُستبدَل توكناً كاملاً. ويُخزَّن التحدّي
+/// لا المُتحقِّق - فلو سُرّبت القاعدة لم يُغنِ السارقَ شيئاً.
+model McpAuthCode {
+  id                  String   @id @default(cuid())
+  code                String   @unique
+  clientId            String
+  client              McpOAuthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  workspaceId         String
+  workspace           Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId              String
+  redirectUri         String
+  codeChallenge       String
+  codeChallengeMethod String   @default("S256")
+  scope               String   @default("mcp:read")
+  /// دقيقتان - الرمز يُستبدَل فوراً بعد إعادة التوجيه، وطولُ العمر هنا خطر بلا فائدة
+  expiresAt           DateTime
+  usedAt              DateTime?
+  createdAt           DateTime @default(now())
+
+  @@index([code])
+  @@index([expiresAt])
 }
