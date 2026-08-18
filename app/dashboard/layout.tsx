@@ -373,7 +373,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         {/* قارئُ `?highlight=` - مرّةً واحدة للوحة كلّها، فأيّ صفحةٍ
             تحمل عناصرها `data-search-id` تعمل بلا تعديلٍ فيها. */}
         <Suspense fallback={null}>
-          <SearchHighlight />
+          <SearchHighlight locale={locale} />
         </Suspense>
         <div className="flex-1 px-4 pb-24 sm:px-6 sm:pb-10 lg:px-10">{children}</div>
 

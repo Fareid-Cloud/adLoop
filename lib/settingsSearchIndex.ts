@@ -11,8 +11,6 @@
 // ولا يُنسخ الفهرس هنا وهناك: نسختان تفترقان أوّلَ إعدادٍ يُضاف إلى
 // إحداهما، فيصير البحثان يجيبان جوابين مختلفين عن السؤال نفسه.
 
-import { t, type Locale } from "@/lib/i18n/dictionary";
-
 /** مفاتيح التبويبات - مصدرها `TABS` في `SettingsClient`، وهي الوجهة في `?tab=`. */
 export type SettingsTabKey =
   | "profile"
@@ -84,23 +82,4 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
  *  `data-search-id`، فلا جدول ثالث يربط بينهما. */
 export function settingsEntryHref(entry: SettingsSearchEntry): string {
   return `/dashboard/settings?tab=${entry.tab}&highlight=${encodeURIComponent(entry.labelKey)}`;
-}
-
-/** نتائج الإعدادات لأيّ حقل بحثٍ عامّ - بصيغة النتيجة نفسها التي تعرضها.
- *
- *  دالةٌ واحدة يناديها الشريط الجانبيّ والرأس، فيستحيل أن يجيب أحدهما
- *  بما لا يجيب به الآخر. */
-export function searchSettingsEntries(
-  query: string,
-  locale: Locale
-): Array<{ label: string; context: string; href: string }> {
-  const q = query.trim().toLowerCase();
-  if (!q) return [];
-  const tr = (k: string) => t(locale, `settings.${k}`);
-  return SETTINGS_SEARCH_INDEX.filter((e) => tr(e.labelKey).toLowerCase().includes(q)).map((e) => ({
-    label: tr(e.labelKey),
-    // «في تبويب كذا» - المفتاح موجود أصلاً ويُستعمل داخل الصفحة، فلا نصّ جديد
-    context: t(locale, "settings.inTab", { tab: tr(SETTINGS_TAB_LABEL_KEYS[e.tab]) }),
-    href: settingsEntryHref(e),
-  }));
 }

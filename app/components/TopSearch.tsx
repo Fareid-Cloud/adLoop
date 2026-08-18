@@ -7,7 +7,7 @@ import { Search } from "lucide-react";
 import { NAV_GROUPS } from "@/lib/navConfig";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { t, type Locale } from "@/lib/i18n/dictionary";
-import { searchSettingsEntries } from "@/lib/settingsSearchIndex";
+import { searchSections } from "@/lib/sectionSearch";
 
 function plat(href: string): string | null {
   if (/google|youtube|pmax|shopping/.test(href)) return "GOOGLE_ADS";
@@ -53,11 +53,10 @@ export function TopSearch({ locale }: { locale: "ar" | "en" }) {
   const query = q.trim().toLowerCase();
   const pageResults = query ? all.filter((r) => r.text.toLowerCase().includes(query)).slice(0, 6) : [];
 
-  // الإعدادات ليست صفحةً واحدة بل ثلاثون حقلاً في ثمانية تبويبات. البحث
-  // عن «العملة» كان يقف عند عنوان الصفحة، فيُنزل الباحثَ عند أوّل تبويب
-  // ويتركه يفتّش السبعة الباقية بنفسه.
-  const settingsResults = query
-    ? searchSettingsEntries(query, locale).slice(0, 5).map((r) => ({
+  // عناوين الأقسام داخل الصفحات: البحث كان يقف عند اسم الصفحة، فمن يبحث
+  // عن قسمٍ فيها يُجاب «لا نتائج» وهو على بُعد تمريرةٍ داخل صفحةٍ يعرفها.
+  const sectionResults = query
+    ? searchSections(query, locale).slice(0, 5).map((r) => ({
         href: r.href,
         text: r.label,
         context: r.context,
@@ -82,7 +81,7 @@ export function TopSearch({ locale }: { locale: "ar" | "en" }) {
 
   const results = [
     ...pageResults.map((r) => ({ ...r, kind: "page" as const, label: r.text })),
-    ...settingsResults.map((r) => ({ ...r, kind: "setting" as const, label: r.text })),
+    ...sectionResults.map((r) => ({ ...r, kind: "section" as const, label: r.text })),
     ...hits,
   ];
 

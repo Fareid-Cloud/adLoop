@@ -14,8 +14,9 @@
 
 import { useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
-export function SearchHighlight() {
+export function SearchHighlight({ locale }: { locale: Locale }) {
   const params = useSearchParams();
   const pathname = usePathname();
   const id = params.get("highlight");
@@ -38,14 +39,35 @@ export function SearchHighlight() {
       observer?.disconnect();
     }
 
-    const found = document.querySelector(`[data-search-id="${CSS.escape(id)}"]`);
+    // 🔴 هدفان لا واحد: كيانٌ بمعرّفه، وعنوانُ قسمٍ باسمه المعروض.
+    //
+    // العناوين لا تحمل `data-search-id`، ولا يصحّ أن تحمله: ثمانيةٌ
+    // وثلاثون عنواناً توسَم بيدٍ هي قائمةٌ موازيةٌ لفهرسٍ يُولَّد من الكود،
+    // وأوّلُ عنوانٍ يُضاف بعدها يظهر في البحث ولا يُهبَط عنده - عطلٌ صامت.
+    // والفهرس مُولَّدٌ من العناوين نفسها، فالاسم رابطٌ قائمٌ لا مخترَع.
+    // نسخةٌ مضيَّقة النوع: التضييق عند الحارس أعلاه لا يعبر إلى دالةٍ
+    // مُعرَّفة قد تُستدعى لاحقاً (المراقب يناديها بعد حين).
+    const targetId: string = id;
+    const sectionKey = targetId.startsWith("s:") ? targetId.slice(2) : null;
+    const wantedText = sectionKey === null ? null : t(locale, sectionKey).trim();
+
+    function locate(): Element | null {
+      if (wantedText !== null) {
+        if (wantedText === sectionKey) return null; // مفتاحٌ بلا ترجمة
+        const heads = Array.from(document.querySelectorAll("h1, h2, h3, h4"));
+        return heads.find((el) => el.textContent?.trim() === wantedText) ?? null;
+      }
+      return document.querySelector(`[data-search-id="${CSS.escape(targetId)}"]`);
+    }
+
+    const found = locate();
     if (found) {
       apply(found);
       return;
     }
 
     observer = new MutationObserver(() => {
-      const el = document.querySelector(`[data-search-id="${CSS.escape(id)}"]`);
+      const el = locate();
       if (el) apply(el);
     });
     observer.observe(document.body, { childList: true, subtree: true });
@@ -58,7 +80,7 @@ export function SearchHighlight() {
       clearTimeout(stop);
       observer?.disconnect();
     };
-  }, [id, pathname]);
+  }, [id, pathname, locale]);
 
   return null;
 }

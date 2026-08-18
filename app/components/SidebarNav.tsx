@@ -14,7 +14,7 @@ import { NAV_GROUPS, type NavItem } from "@/lib/navConfig";
 import { BrandMark } from "@/app/components/BrandMark";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { t, type Locale } from "@/lib/i18n/dictionary";
-import { searchSettingsEntries } from "@/lib/settingsSearchIndex";
+import { searchSections } from "@/lib/sectionSearch";
 
 // 🔴 سبب عطل إنتاج حقيقي: كانت هذه خريطة يدوية بأحد عشر اسماً فقط. أي
 // عنصر تنقّل بأيقونة خارجها كان يُرجع undefined، فيُرمى React error #130
@@ -141,9 +141,9 @@ export function SidebarNav({
       ).filter((r) => r.text.toLowerCase().includes(query))
     : [];
 
-  // حقول الإعدادات - المصدر نفسه الذي يقرؤه بحث الرأس وصفحةُ الإعدادات
-  const settingsResults = query
-    ? searchSettingsEntries(query, locale).map((r) => ({
+  // عناوين الأقسام داخل الصفحات - المصدر نفسه الذي يقرؤه بحث الرأس
+  const sectionResults = query
+    ? searchSections(query, locale).map((r) => ({
         href: r.href,
         text: r.label,
         context: r.context,
@@ -190,7 +190,7 @@ export function SidebarNav({
     };
   }, [query]);
 
-  const searchResults = [...pageResults, ...settingsResults, ...entityResults];
+  const searchResults = [...pageResults, ...sectionResults, ...entityResults];
 
   return (
     <>
