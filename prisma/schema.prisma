@@ -109,14 +109,14 @@ model User {
   /// المرور، فمن يملك الصندوق يملك الحساب على أيّ حال. وهو أضعف من
   /// TOTP بلا شكّ، فلا يُعرَض بديلاً بل مخرجاً بعد فشل الاثنين، ولا
   /// يُرسَل إلّا بعد إثبات كلمة المرور (رمز الانتظار).
-  mfaEmailCodeHash            String?
-  mfaEmailCodeExpiresAt       DateTime?
+  mfaEmailCodeHash      String?
+  mfaEmailCodeExpiresAt DateTime?
   /// لمنع إغراق صندوق المستخدم بالطلب المتكرّر
-  mfaEmailCodeSentAt          DateTime?
+  mfaEmailCodeSentAt    DateTime?
   // حماية من محاولات الدخول المتكررة (Brute Force) - قفل مؤقت بعد محاولات فاشلة كتير
-  failedLoginAttempts         Int                @default(0)
-  lockedUntil                 DateTime?
-  createdAt                   DateTime           @default(now())
+  failedLoginAttempts   Int       @default(0)
+  lockedUntil           DateTime?
+  createdAt             DateTime  @default(now())
 
   // ==================== الاشتراك والدفع (Paymob) ====================
   // على مستوى User مش Workspace - المنتج "اشتراك لمستخدم واحد بمساحات
@@ -567,6 +567,7 @@ model Workspace {
   // الميزانية بمرور الوقت حتى لو كل قرار فردي كان معقولاً وقت اتخاذه
   automationMonthlyBudgetChangeCeilingPct Int?        @default(50)
   agentChats                              AgentChat[]
+  mcpTokens                               McpToken[]
 }
 
 // أي كامبين (من جوجل أو ميتا) تم اختياره ليتبع لـ Workspace معين
@@ -1338,6 +1339,37 @@ model PushSubscription {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+/// مفتاحُ ربطٍ لخادم MCP: يقرأ به ذكاءُ المشترك الخاصّ بياناتِ **مساحة عملٍ
+/// واحدة**، قراءةً فقط. مربوطٌ بالمساحة لا بالحساب - مفتاحٌ مسرَّب يكشف
+/// مساحةً واحدة لا كلّ عملاء الوكالة.
+model McpToken {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  /// اسمٌ يكتبه المشترك ليعرف أيّ مفتاحٍ يُلغي («لابتوب الشغل»)
+  label String
+
+  /// 🔴 **مجزوءٌ لا نصّ.** يُعرَض مرّةً واحدة عند التوليد ثم لا يُسترجَع:
+  /// قاعدةٌ مسرَّبة تكشف مفاتيح كلّ المشتركين لو كانت نصّاً.
+  tokenHash String @unique
+  /// آخر أربعة محارف - بها يميّز المشترك مفتاحه في الجدول بلا كشفه
+  lastFour  String
+
+  /// آخرُ نداءٍ وصل بهذا المفتاح. **يخدم غرضين:** مؤشّر «اشتغل» في شاشة
+  /// التركيب، وإلغاءُ المنسيّ - تسعون يوماً بلا استعمالٍ تُنهيه.
+  lastUsedAt DateTime?
+  /// مدّةٌ اختيارية يضبطها من تُلزمه سياسةُ مؤسّسته. `null` = بلا انتهاء،
+  /// وهو الافتراضيّ: مفتاحٌ ينتهي بصمتٍ يُفشل ذكاءَ المشترك في تطبيقٍ آخر
+  /// والسببُ عندنا.
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([workspaceId])
+  @@index([lastUsedAt])
 }
 
 model MessengerConversation {

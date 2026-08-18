@@ -54,6 +54,15 @@ export interface PlanLimits {
   aiModel: string;
   savedViews: number;
   scheduledReports: boolean;
+  /**
+   * ربطُ ذكاءِ المشترك الخاصّ بـMCP.
+   *
+   * **منطقُه معكوسٌ عن كلّ حدٍّ آخر هنا:** بقيّةُ الحدود تُقنِّن ما يكلّفنا،
+   * وهذا **يوفّر** - المشترك يحلّل برصيده هو لا برصيدنا. فحصرُه في
+   * الباقات العليا يعاقبنا قبله. ويبقى خارج المجّانية وحدها، وإلّا صار
+   * الطريق: حسابٌ مجّانيّ + اشتراك ذكاءٍ شخصيّ = المنتج كاملاً بلا دفع.
+   */
+  mcp: boolean;
 }
 
 export interface Plan {
@@ -86,7 +95,7 @@ export const PLANS: Plan[] = [
     limits: {
       workspaces: 1, platforms: 1, adAccounts: 1, monthlySpendUsd: 2_000, verifiedConversions: 200,
       historyMonths: 1, conversionSync: "none", automationRules: 0, scaleKill: "view",
-      stores: 1, aiCredits: 0, deepScans: 0, aiModel: "claude-sonnet-4-6", savedViews: 1, scheduledReports: false,
+      stores: 1, aiCredits: 0, deepScans: 0, aiModel: "claude-sonnet-4-6", savedViews: 1, scheduledReports: false, mcp: false,
     },
   },
   {
@@ -97,7 +106,7 @@ export const PLANS: Plan[] = [
     limits: {
       workspaces: 1, platforms: "all", adAccounts: 1, monthlySpendUsd: 15_000, verifiedConversions: 2_000,
       historyMonths: 12, conversionSync: "one", automationRules: 3, scaleKill: "apply",
-      stores: 2, aiCredits: 50, deepScans: 0, aiModel: "claude-sonnet-4-6", savedViews: 5, scheduledReports: true,
+      stores: 2, aiCredits: 50, deepScans: 0, aiModel: "claude-sonnet-4-6", savedViews: 5, scheduledReports: true, mcp: true,
     },
   },
   {
@@ -110,7 +119,7 @@ export const PLANS: Plan[] = [
     limits: {
       workspaces: 3, platforms: "all", adAccounts: 3, monthlySpendUsd: 60_000, verifiedConversions: 10_000,
       historyMonths: 24, conversionSync: "all", automationRules: 15, scaleKill: "apply",
-      stores: 9, aiCredits: 200, deepScans: 5, aiModel: "claude-sonnet-5", savedViews: -1, scheduledReports: true,
+      stores: 9, aiCredits: 200, deepScans: 5, aiModel: "claude-sonnet-5", savedViews: -1, scheduledReports: true, mcp: true,
     },
   },
   {
@@ -121,7 +130,7 @@ export const PLANS: Plan[] = [
     limits: {
       workspaces: 15, platforms: "all", adAccounts: 15, monthlySpendUsd: 250_000, verifiedConversions: 50_000,
       historyMonths: 24, conversionSync: "all", automationRules: -1, scaleKill: "apply",
-      stores: 30, aiCredits: 600, deepScans: 20, aiModel: "claude-sonnet-5", savedViews: -1, scheduledReports: true,
+      stores: 30, aiCredits: 600, deepScans: 20, aiModel: "claude-sonnet-5", savedViews: -1, scheduledReports: true, mcp: true,
     },
   },
   {
@@ -145,7 +154,7 @@ export const PLANS: Plan[] = [
       // **ليست بلا حدّ**: كلّ تحليلٍ نداءٌ مدفوع إلى Claude، وسقفٌ مفتوح
       // هنا سقفٌ مفتوح على فاتورتنا نحن. الرقم يُرفع بالاتّفاق لا بالجدول.
       stores: -1, aiCredits: 2_000, deepScans: 50, aiModel: "claude-sonnet-5",
-      savedViews: -1, scheduledReports: true,
+      savedViews: -1, scheduledReports: true, mcp: true,
     },
   },
 ];
@@ -168,6 +177,7 @@ export const COMPARISON_ROWS: Array<{ key: keyof PlanLimits; kind: "number" | "t
   { key: "historyMonths", kind: "number" },
   { key: "savedViews", kind: "number" },
   { key: "scheduledReports", kind: "bool" },
+  { key: "mcp", kind: "bool" },
 ];
 
 // ==================== كريدت الذكاء الاصطناعي ====================

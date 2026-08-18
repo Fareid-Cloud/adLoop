@@ -9,7 +9,13 @@
 //
 // بلا استيراد - يُستخدم في الخادم وفي مكوّنات العميل معاً.
 
-export type IntegrationCategory = "AD_PLATFORM" | "ECOMMERCE" | "ANALYTICS" | "SHIPPING" | "MESSAGING";
+export type IntegrationCategory =
+  | "AD_PLATFORM"
+  | "ECOMMERCE"
+  | "ANALYTICS"
+  | "SHIPPING"
+  | "MESSAGING"
+  | "OWN_AI";
 
 export type IntegrationStatus = "LIVE" | "SOON";
 
@@ -39,6 +45,13 @@ export const INTEGRATION_CATEGORIES: Array<{
   descriptionAr: string;
   descriptionEn: string;
 }> = [
+  {
+    key: "OWN_AI",
+    labelAr: "ذكاؤك الخاصّ",
+    labelEn: "Your own AI",
+    descriptionAr: "اربط اشتراك الذكاء الاصطناعيّ الذي تملكه، فيقرأ أرقامك ويحلّلها برصيدك أنت.",
+    descriptionEn: "Connect the AI subscription you already pay for so it reads and analyses your numbers on your credit.",
+  },
   {
     key: "AD_PLATFORM",
     labelAr: "منصّات الإعلان",
@@ -77,6 +90,19 @@ export const INTEGRATION_CATEGORIES: Array<{
 ];
 
 export const INTEGRATIONS: IntegrationDef[] = [
+  {
+    key: "own-ai",
+    platform: null,
+    logoKey: "own-ai",
+    name: "Your own AI",
+    nameAr: "ذكاؤك الخاصّ",
+    category: "OWN_AI",
+    status: "LIVE",
+    valueAr: "حلّل أرقامك من Claude أو Cursor أو أيّ تطبيقٍ يدعم MCP، برصيد اشتراكك أنت.",
+    valueEn: "Analyse your numbers from Claude, Cursor or any MCP-capable app, on your own subscription.",
+    connectPath: "/dashboard/integrations/mcp",
+    color: "#8B5CF6",
+  },
   // ==== منصّات الإعلان ====
   {
     key: "google_ads",
