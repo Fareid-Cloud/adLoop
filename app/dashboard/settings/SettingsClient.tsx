@@ -276,11 +276,22 @@ export function SettingsClient({
       {/* حدٌّ خفيفٌ **ثابت**: يرسم حدود المنطقة، ولا يستجيب للمرور فوقه.
           `.card` تُفتّح حدَّها عند التأشير لأنّها عنصرٌ يُتعامَل معه؛ وهذه
           مساحةُ صفحةٍ لا تُضغط ولا تُفتَح، فتفاعلُها يَعِد بفعلٍ لا وجود له. */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-surface md:grid md:grid-cols-[15rem_minmax(0,1fr)]">
+      {/* 🔴 **`overflow-hidden` هنا كانت تُبطل `sticky` في العمود الأيسر.**
+          أيّ قيمةِ `overflow` غير `visible` على أيّ سلفٍ تجعله حاويةَ تمرير،
+          فيلتصق الابن بها لا بالشاشة - أي لا يلتصق بشيءٍ عملياً. كانت
+          موضوعةً لقصّ الأبناء عند الحواف الدائرية، وتلك تُنجَز بتدوير
+          العمودين نفسيهما بلا قصٍّ يكسر شيئاً. */}
+      <div className="rounded-2xl border border-border bg-surface md:grid md:grid-cols-[15rem_minmax(0,1fr)]">
         {/* الشاشة الواسعة: عمودٌ مجمَّع. `sticky` كي يبقى مرئياً في تبويب
             طويل - التنقّل الذي يمرّ خارج الشاشة يعادل غيابه. */}
-        <nav className="hidden border-e border-border md:block" aria-label={tr("title")}>
-          <div className="sticky top-6 flex flex-col gap-6 p-5">
+        <nav
+          className="hidden border-e border-border md:block md:rounded-s-2xl"
+          aria-label={tr("title")}
+        >
+          {/* بارتفاعٍ محدود وتمريرٍ داخليّ: قائمةٌ أطول من الشاشة كانت
+              ستُخفي آخرَ أقسامها بلا سبيلٍ للوصول إليها. والتمرير على هذا
+              العنصر نفسه لا على سلفه، فلا يُبطل التصاقَه. */}
+          <div className="sticky top-6 flex max-h-[calc(100dvh-3rem)] flex-col gap-6 overflow-y-auto p-5">
             {TAB_GROUPS.map((group) => (
               <div key={group.titleKey}>
                 <div className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">
