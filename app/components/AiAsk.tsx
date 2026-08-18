@@ -405,7 +405,7 @@ export function AiAsk({
         className={`z-30 mt-6 transition-opacity duration-300 ${
           open
             ? "relative"
-            : "fixed inset-x-4 bottom-[calc(2.25rem+env(safe-area-inset-bottom))] sm:sticky sm:inset-x-auto sm:bottom-5"
+            : "ask-dock"
         } ${solid ? "opacity-100" : "opacity-[0.94] hover:opacity-100"}`}
         // طبقةُ تركيبٍ خاصّة بالعنصر الملتصق: بدونها يُعاد رسمه ضمن طبقة
         // الصفحة مع كلّ حرفٍ يُكتَب، فيتخلّف أثرُه عند حدّ الالتصاق.

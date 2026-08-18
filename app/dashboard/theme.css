@@ -1015,3 +1015,28 @@ select.field {
     background-color: color-mix(in srgb, var(--accent) 14%, transparent);
   }
 }
+
+/* 🔴 **موضع مربّع السؤال على الهاتف - في CSS لا في أصناف Tailwind.**
+ *
+ * كُتب أوّلاً `fixed inset-x-4 bottom-[calc(2.25rem+env(safe-area-inset-bottom))]`،
+ * فلم يولّد Tailwind أيّاً منها: القيمة المخصّصة فيها أقواسٌ متداخلة داخل
+ * الأقواس المربّعة، فينكسر التقاط المرشّحات لسلسلة الأصناف كلّها - لا
+ * لتلك القيمة وحدها. النتيجة: أصنافٌ في الترميز بلا قواعد، والمربّع لم
+ * يتحرّك شعرة.
+ *
+ * وهنا لا مُلتقِط ولا مرشّحات: قاعدةٌ تُكتب فتُطبَّق. */
+.ask-dock {
+  position: fixed;
+  inset-inline: 1rem;
+  bottom: calc(2.25rem + env(safe-area-inset-bottom));
+  z-index: 30;
+}
+
+@media (min-width: 640px) {
+  /* من sm فأعلى يعود لاصقاً في مجرى الصفحة كما كان بالضبط */
+  .ask-dock {
+    position: sticky;
+    inset-inline: auto;
+    bottom: 1.25rem;
+  }
+}
