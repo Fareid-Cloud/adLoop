@@ -389,6 +389,7 @@ export const dictionary = {
     },
     // ==== التقارير ====
     storeReports: {
+      perMonth: "شهرياً",
       title: "التقارير",
       subtitle: "تقرير تنفيذي قابل للمشاركة.",
       subtitleWindow: "تقرير تنفيذي لآخر {days} يوماً — جاهز للطباعة أو المشاركة كما هو.",
@@ -2815,6 +2816,8 @@ export const dictionary = {
     },
     // ==== صفحة المنتجات ====
     productsPage: {
+      noMatch: "لا توجد منتجات مطابقة.",
+      gap: "بفارق",
       colProduct: "المنتج",
       colRealProfit: "الربح الحقيقي",
       colUnitProfit: "ربح الوحدة",
@@ -4642,6 +4645,7 @@ export const dictionary = {
     },
     // ==== Reports ====
     storeReports: {
+      perMonth: "per month",
       title: "Reports",
       subtitle: "A shareable executive report.",
       subtitleWindow: "An executive report for the last {days} days — ready to print or share as is.",
@@ -7658,6 +7662,8 @@ export const dictionary = {
     },
     // ==== Products page ====
     productsPage: {
+      noMatch: "No matching products.",
+      gap: "ahead by",
       colProduct: "Product",
       colRealProfit: "Real profit",
       colUnitProfit: "Profit per unit",

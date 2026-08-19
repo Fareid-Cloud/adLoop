@@ -62,14 +62,36 @@ for (const file of files) {
   // تُستنتَج المساحة من تعريف `tr` نفسه. وإن تعدّدت في الملفّ الواحد لم
   // نستطع النسبة بثقة، فيُتخطّى - **إنذارٌ كاذبٌ واحد يُفقد الفحص قيمته**
   // لأنّ من يراه مرّتين يتجاهله بعدها.
-  const nsDefs = [...src.matchAll(/t\(\s*\w+\s*,\s*`(\w+)\.\$\{/g)].map((m) => m[1]);
-  const uniqueNs = [...new Set(nsDefs)];
-  if (uniqueNs.length !== 1) continue;
-  const ns = uniqueNs[0];
+  // 🔴 **كان يتخطّى الملفّ كلَّه إن تعدّدت فيه المساحات، ويفحص الاسم `tr`
+  // وحده.** وثمنُ ذلك ثلاثةَ عشرَ ملفّاً من خمسةٍ وثمانين لا يُفحَص منها
+  // حرفٌ - منها إحدى عشرة صفحةَ متجر - فوصل مفتاحان خامّان إلى الإنتاج
+  // يقرؤهما المشترك: `productsPage.gap` و`storeReports.perMonth`.
+  //
+  // والعلّة أنّ التخطّي عولج كأنّه احتياط، وهو إسقاطٌ صامت. والصواب أن
+  // يُنسَب كلُّ اسمٍ مستعارٍ إلى مساحته هو، فلا يبقى التباسٌ يُتّقى بالتخطّي.
+  const aliases = new Map();
+  // `const tr = (k) => t(locale, `ns.${k}`)`
+  // 🔴 القالبُ كلُّه لا بدايتُه: `` `ns.${k}` `` وحدها تُنسَب.
+  //
+  // القالب `` `legal.${doc}.${id}${suffix}` `` يبدأ ببادئةٍ كذلك، لكنّ
+  // مفتاحه يُركَّب من ثلاثة أجزاء - فنسبتُه إلى `legal` تُنتج `legal.Title`
+  // وهو مفتاحٌ لا يناديه أحد. **وإنذارٌ كاذبٌ واحد يُفقد الفحص قيمته**،
+  // فيُشترَط أن ينتهي القالب فور التعويض.
+  for (const m of src.matchAll(/const\s+(\w+)\s*=\s*\([^)]*\)\s*=>\s*t\(\s*\w+\s*,\s*`([\w.]+)\.\$\{\w+\}`/g)) {
+    aliases.set(m[1], m[2]);
+  }
+  // `const tp = (k) => t(locale, ("ns." + k))` - الصيغة بالجمع لا بالقالب
+  for (const m of src.matchAll(/const\s+(\w+)\s*=\s*\([^)]*\)\s*=>\s*t\(\s*\w+\s*,\s*\(?\s*"([\w.]+)\."\s*\+/g)) {
+    if (!aliases.has(m[1])) aliases.set(m[1], m[2]);
+  }
+  if (aliases.size === 0) continue;
 
-  for (const m of src.matchAll(/\btr\(\s*["'`]([\w]+)["'`]/g)) {
-    const path = `${ns}.${m[1]}`;
-    if (!available.has(path)) missing.push({ file, key: path });
+  for (const [name, ns] of aliases) {
+    const re = new RegExp(`\\b${name}\\(\\s*["'\`]([\\w]+)["'\`]`, "g");
+    for (const m of src.matchAll(re)) {
+      const path = `${ns}.${m[1]}`;
+      if (!available.has(path)) missing.push({ file, key: path });
+    }
   }
 }
 
