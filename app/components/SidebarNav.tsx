@@ -1,20 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import {
   // `LayoutDashboard` مستوردة كنوعٍ فقط (توقيع `resolveIcon`). بقيّة الأسماء
   // هنا مستعملة في JSX - ما عداها كان بقايا خريطة الأيقونات اليدوية القديمة.
   LayoutDashboard,
   ChevronDown, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
-  Search, PlayCircle,
+  ChevronsDown, PlayCircle,
 } from "lucide-react";
 import * as Icons from "lucide-react";
 import { NAV_GROUPS, type NavItem } from "@/lib/navConfig";
 import { BrandMark } from "@/app/components/BrandMark";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { t, type Locale } from "@/lib/i18n/dictionary";
-import { searchProduct } from "@/lib/productSearch";
 
 // 🔴 سبب عطل إنتاج حقيقي: كانت هذه خريطة يدوية بأحد عشر اسماً فقط. أي
 // عنصر تنقّل بأيقونة خارجها كان يُرجع undefined، فيُرمى React error #130
@@ -86,7 +85,6 @@ export function SidebarNav({
   const ar = locale === "ar";
   const [collapsed, setCollapsed] = useState(false);
   const [manuallyToggled, setManuallyToggled] = useState<Record<string, boolean>>({});
-  const [q, setQ] = useState("");
 
   useEffect(() => {
     if (localStorage.getItem(COLLAPSE_STORAGE_KEY) === "true") setCollapsed(true);
@@ -106,6 +104,40 @@ export function SidebarNav({
     ? collapsed ? PanelRightOpen : PanelRightClose
     : collapsed ? PanelLeftOpen : PanelLeftClose;
 
+  // ── «فيه أسفلُ هذا» ────────────────────────────────────────────
+  //
+  // القائمة أطول من الشاشة على أغلب الارتفاعات، وحافّتُها السفلية تنتهي
+  // نظيفةً فتُقرأ **نهايةً** لا انقطاعاً - فلا يمرّر أحدٌ ولا يعرف أنّ تحتها
+  // أقساماً. والمؤشّر يظهر حين يكون ثمّة ما يُرى فعلاً، ويختفي عند الوصول:
+  // علامةٌ دائمة تصير جزءاً من الأثاث ويكفّ النظر عن قراءتها.
+  const navRef = useRef<HTMLElement | null>(null);
+  const [moreBelow, setMoreBelow] = useState(false);
+
+  function measureMore() {
+    const el = navRef.current;
+    if (!el) return;
+    // هامشُ بكسلين: التمرير الكسريّ على الشاشات عالية الكثافة لا يبلغ
+    // القاع تماماً، فيبقى المؤشّر ظاهراً وقد وصل القارئ آخرَها.
+    setMoreBelow(el.scrollTop + el.clientHeight < el.scrollHeight - 2);
+  }
+
+  useEffect(() => {
+    measureMore();
+    const el = navRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    // الارتفاع يتغيّر بلا تمرير: طيُّ الشريط، وفتحُ قسمٍ بأبناء، وتبدّلُ
+    // ارتفاع النافذة. المراقب يرى ذلك كلَّه بلا مستمعٍ لكلّ حالة.
+    const ro = new ResizeObserver(measureMore);
+    ro.observe(el);
+    for (const child of Array.from(el.children)) ro.observe(child);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collapsed, manuallyToggled, pathname]);
+
+  function scrollToEnd() {
+    navRef.current?.scrollTo({ top: navRef.current.scrollHeight, behavior: "smooth" });
+  }
+
   function isItemActiveOrInside(item: NavItem): boolean {
     if (pathname === item.href) return true;
     return item.children?.some((c) => pathname === c.href || pathname.startsWith(c.href + "/")) ?? false;
@@ -116,84 +148,6 @@ export function SidebarNav({
     return manuallyToggled[item.href] === true;
   }
 
-  // نتائج البحث (مسطّحة) - عنصر أو عنصر فرعي عنوانه بيطابق
-  const query = q.trim().toLowerCase();
-  const pageResults = query
-    ? NAV_GROUPS.flatMap((g) =>
-        g.items.flatMap((it) => [
-          {
-            href: it.href,
-            text: label(it),
-            // السياق كان هنا مفقوداً وحده: «التسعير» تتكرّر في موضعين،
-            // فبلا اسم ما تندرج تحته يختار الباحث بالحظّ. بحث الرأس يعرضه
-            // من قبل، وحقلان يجيبان جوابين مختلفَي الوضوح عن سؤالٍ واحد
-            // هو نصفُ بحثٍ لا بحثان.
-            context: g.labelAr && g.labelEn ? (ar ? g.labelAr : g.labelEn) : null,
-            platform: null as string | null,
-          },
-          ...(it.children ?? []).map((c) => ({
-            href: c.href,
-            text: label(c),
-            context: label(it),
-            platform: childPlatform(c.href),
-          })),
-        ])
-      ).filter((r) => r.text.toLowerCase().includes(query))
-    : [];
-
-  // كلُّ نصٍّ يراه المشترك - المصدر نفسه الذي يقرؤه بحث الرأس
-  const productHits = query ? searchProduct(query, locale, 8) : [];
-
-  // 🔴 **حقلا بحثٍ في المنتج، وكان أحدهما يبحث في الصفحات وحدها.**
-  //
-  // كتابةُ اسم حملةٍ هنا كانت تُرجع «لا نتائج» بينما بحث الرأس يجدها -
-  // فيقرؤها المشترك «غير موجودة عندي» لا «هذا الحقل لا يبحث عنها». وهو
-  // الحقل الأقرب إلى يده، فوقوفُه عند عناوين الصفحات يجعل نصفَ البحث
-  // في المنتج كاذباً.
-  const [entityResults, setEntityResults] = useState<
-    Array<{ href: string; text: string; context: string | null; platform: string | null }>
-  >([]);
-  useEffect(() => {
-    if (query.length < 2) {
-      setEntityResults([]);
-      return;
-    }
-    // مهلةٌ قصيرة: نداءٌ مع كلّ حرفٍ يُغرق الخادم بطلباتٍ يُلغيها الحرف التالي
-    let alive = true;
-    const timer = setTimeout(async () => {
-      try {
-        const r = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-        if (!r.ok || !alive) return;
-        const { hits } = await r.json();
-        setEntityResults(
-          (hits ?? []).map((h: { label: string; href: string; context: string | null; platform: string | null }) => ({
-            href: h.href,
-            text: h.label,
-            context: h.context ?? null,
-            platform: h.platform,
-          }))
-        );
-      } catch {
-        // البحث عن كيانٍ يفشل بصمتٍ - نتائج الصفحات تبقى، فلا تُفرَغ القائمة
-      }
-    }, 220);
-    return () => {
-      alive = false;
-      clearTimeout(timer);
-    };
-  }, [query]);
-
-  const searchResults = [
-    ...pageResults.map((r) => ({ ...r, mark: null as [number, number] | null })),
-    ...productHits.map((h) => ({
-      href: h.href,
-      text: h.label,
-      context: h.trail,
-      platform: null as string | null,
-      mark: [h.start, h.end] as [number, number] | null,
-    })),
-    ...entityResults.map((r) => ({ ...r, mark: null as [number, number] | null })),
-  ];
 
   return (
     <>
@@ -257,54 +211,16 @@ export function SidebarNav({
         {brandSlot && !collapsed && <div className="ms-auto shrink-0">{brandSlot}</div>}
       </div>
 
-      {/* البحث خارج منطقة التمرير: `shrink-0` داخل عمود `h-screen` يعني أنه
-          لا يتقلّص ولا يتمرّر مهما طالت القائمة تحته - وهو ما كان يجعله
-          يختفي عند الوصول لآخر الصفحة. */}
-      {!collapsed && (
-        <div className="shrink-0 border-b border-border/60 px-3 py-3">
-          <div className="relative">
-            <Search size={14} className="absolute inset-y-0 my-auto ms-2.5 text-text-faint" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder={t(locale, "sidebar.search")}
-              className="w-full card-inset py-1.5 ps-8 pe-2 text-[13px] text-text-primary placeholder:text-text-faint outline-none focus:border-accent"
-            />
-          </div>
-        </div>
-      )}
-
-      <nav className="no-scrollbar flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-4">
-        {query ? (
-          <div className="flex flex-col gap-0.5">
-            {searchResults.length === 0 ? (
-              <div className="px-2.5 py-2 text-[13px] text-text-faint">{t(locale, "sidebar.noResults")}</div>
-            ) : (
-              searchResults.map((r) => (
-                <a key={r.href} href={r.href} className="btn btn-secondary py-[7px]">
-                  {r.platform ? <PlatformLogo platform={r.platform} size={15} /> : <Search size={14} className="opacity-60" />}
-                  <span className="min-w-0 flex-1 truncate text-start">
-                    {r.mark ? (
-                      <>
-                        {r.text.slice(0, r.mark[0])}
-                        <mark className="rounded-[3px] bg-accent/20 px-0.5 text-text-primary">
-                          {r.text.slice(r.mark[0], r.mark[1])}
-                        </mark>
-                        {r.text.slice(r.mark[1])}
-                      </>
-                    ) : (
-                      r.text
-                    )}
-                  </span>
-                  {r.context && (
-                    <span className="shrink-0 text-[10.5px] text-text-faint">{r.context}</span>
-                  )}
-                </a>
-              ))
-            )}
-          </div>
-        ) : (
-          NAV_GROUPS.map((group, i) => (
+      {/* 🔴 **حقل بحثٍ ثانٍ أُزيل من هنا.** كان يبحث في المصدر نفسه الذي
+          يبحث فيه حقلُ الرأس بعد توحيدهما، فصار يعطي النتيجة نفسها في
+          مكانين - وحقلان يجيبان جواباً واحداً ليسا خياراً بل تردّداً:
+          يسأل القارئ أيّهما «البحث الحقيقيّ». */}
+      <nav
+        ref={navRef}
+        onScroll={measureMore}
+        className="no-scrollbar flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-4"
+      >
+        {NAV_GROUPS.map((group, i) => (
             <div key={i}>
               {(ar ? group.labelAr : group.labelEn) && !collapsed && (
                 <div className="mb-1.5 px-2 text-[11px] font-medium uppercase tracking-wider text-text-faint">
@@ -419,8 +335,7 @@ export function SidebarNav({
                 })}
               </div>
             </div>
-          ))
-        )}
+        ))}
 
         {/* مبدّل مساحات العمل - عنصر أساسي أسفل القائمة */}
         {/* 🔴 كان يُصيَّر في حالة الطيّ أيضاً بينما `supportSlot` تحته يحترمها:
@@ -447,6 +362,25 @@ export function SidebarNav({
           {!collapsed && <span>{t(locale, "sidebar.collapseMenu")}</span>}
         </button>
       </nav>
+
+      {/* مؤشّر «تحته المزيد».
+          تدرّجٌ يذوب فيه آخرُ سطرٍ بدل أن يُقصّ نظيفاً - الحافّة النظيفة
+          تُقرأ نهايةً، والذائبة تُقرأ استمراراً. والسهم فوقه هو الفعل:
+          صغيرٌ وهادئ، ولا يزاحم عنصراً في القائمة. */}
+      {moreBelow && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-2">
+          <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-surface via-surface/85 to-transparent" />
+          <button
+            type="button"
+            onClick={scrollToEnd}
+            aria-label={t(locale, "sidebar.moreBelow")}
+            title={t(locale, "sidebar.moreBelow")}
+            className="pointer-events-auto relative flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface-raised text-text-faint shadow-sm transition-colors hover:border-accent hover:text-accent"
+          >
+            <ChevronsDown size={13} strokeWidth={2} />
+          </button>
+        </div>
+      )}
     </aside>
     </>
   );

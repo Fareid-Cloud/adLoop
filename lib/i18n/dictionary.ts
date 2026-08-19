@@ -2986,6 +2986,7 @@ export const dictionary = {
       collapseSection: "طيّ",
       expandSection: "توسيع",
       collapseMenu: "طيّ القائمة",
+      moreBelow: "أقسامٌ أخرى بالأسفل",
       expandMenu: "توسيع القائمة",
     },
     // ==== لوحة المساعدة ====
@@ -5727,11 +5728,12 @@ export const dictionary = {
     },
     // ==== Sidebar ====
     sidebar: {
-      search: "Search...",
       noResults: "No results",
       collapseSection: "Collapse",
+      search: "Search...",
       expandSection: "Expand",
       collapseMenu: "Collapse menu",
+      moreBelow: "More below",
       expandMenu: "Expand menu",
     },
     // ==== Help panel ====
