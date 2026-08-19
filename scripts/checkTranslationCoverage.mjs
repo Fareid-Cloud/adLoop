@@ -12,7 +12,7 @@
 //
 // هذا الفحص يسأل السؤال الآخر: **كلُّ مفتاحٍ يناديه الكود، هل له نصّ؟**
 
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { execSync } from "node:child_process";
 
 const dictSource = readFileSync("lib/i18n/dictionary.ts", "utf8");
@@ -46,6 +46,10 @@ const missing = [];
 
 for (const file of files) {
   if (file.endsWith("lib/i18n/dictionary.ts")) continue;
+  // git ls-files بيقرا الفهرس مش القرص، فملفّ اتمسح ولسه ما اتسجّلش
+  // مسحه بيفضل في القائمة ويكسر الفحص كله بـENOENT - وده فشل بناء
+  // سببه توقيت التسجيل لا خطأ حقيقي في الكود.
+  if (!existsSync(file)) continue;
   const src = readFileSync(file, "utf8");
 
   // ═══ ١) النداء الكامل: t(locale, "ns.key") ═══

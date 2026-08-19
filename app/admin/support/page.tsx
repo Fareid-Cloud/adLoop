@@ -5,11 +5,21 @@ import { AdminSupportClient } from "./AdminSupportClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminSupportPage() {
+export default async function AdminSupportPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ thread?: string }>;
+}) {
+  const { thread } = await searchParams;
   const threads = await prisma.supportThread.findMany({
     orderBy: { updatedAt: "desc" },
     include: { messages: { orderBy: { createdAt: "asc" } } },
     take: 100,
   });
-  return <AdminSupportClient threads={JSON.parse(JSON.stringify(threads))} />;
+  return (
+    <AdminSupportClient
+      threads={JSON.parse(JSON.stringify(threads))}
+      initialThreadId={thread}
+    />
+  );
 }

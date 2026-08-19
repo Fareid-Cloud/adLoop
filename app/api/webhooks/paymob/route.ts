@@ -17,6 +17,7 @@ import { prisma } from "@/lib/prisma";
 import { markEventAsProcessed } from "@/lib/webhookSecurity";
 import { pushToActionFeed } from "@/lib/actionFeed";
 import { fulfillPaymentIntent } from "@/lib/billing";
+import { logSubscriptionEvent } from "@/lib/subscriptionEvents";
 
 const HMAC_FIELD_ORDER = [
   "amount_cents", "created_at", "currency", "error_occured",
@@ -63,6 +64,34 @@ export async function POST(req: NextRequest) {
   if (!isNew) return NextResponse.json({ received: true, duplicate: true });
 
   if (transaction.success !== true) {
+    // 🔴 كان الفرع ده بيرجع صامتاً تماماً، فنيّة الدفع بتفضل `PENDING`
+    // للأبد بعد رفض حقيقي من البنك - يعني "مدفوعات فاشلة" في أي تقرير
+    // رقم صفر دايماً، والعميل اللي كارته اترفض مايظهرش في أي قائمة.
+    const failedExtras = transaction.order?.extras ?? transaction.extras ?? {};
+    const failedIntentId = failedExtras.intentId;
+    if (failedIntentId) {
+      const failed = await prisma.paymentIntent.updateMany({
+        where: { id: String(failedIntentId), status: "PENDING" },
+        data: {
+          status: "FAILED",
+          transactionId: String(transaction.id),
+          failureReason: String(transaction.data?.message ?? "declined").slice(0, 300),
+        },
+      });
+      if (failed.count > 0 && failedExtras.userId) {
+        const intent = await prisma.paymentIntent.findUnique({
+          where: { id: String(failedIntentId) },
+          select: { planKey: true, amountCents: true, currency: true },
+        });
+        await logSubscriptionEvent({
+          userId: String(failedExtras.userId),
+          type: "PAYMENT_FAILED",
+          toPlan: intent?.planKey ?? null,
+          amountCents: intent?.amountCents ?? null,
+          currency: intent?.currency ?? null,
+        });
+      }
+    }
     return NextResponse.json({ received: true });
   }
 

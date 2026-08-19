@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticate } from "@/lib/mcp/auth";
 import { MCP_TOOLS, TOOL_BY_NAME } from "@/lib/mcp/tools";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { logFeatureUse } from "@/lib/productTelemetry";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -116,6 +117,8 @@ export async function POST(req: NextRequest) {
         const args = (params?.arguments ?? {}) as Record<string, unknown>;
         try {
           const data = await tool.run(auth.workspaceId, args);
+          // قياس المنتج: نداء أداة فعليّ، مش المصافحة الأولى للبروتوكول
+          logFeatureUse(auth.userId, "mcp_query", auth.workspaceId);
           return rpcResult(id, {
             content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
           });

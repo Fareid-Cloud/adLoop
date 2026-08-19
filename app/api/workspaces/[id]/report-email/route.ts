@@ -16,6 +16,7 @@ import { clampRangeForUser } from "@/lib/historyWindow";
 import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 import { renderEmail, EMAIL_BRAND } from "@/lib/emailTemplate";
 import { getAppUrl } from "@/lib/appUrl";
+import { logFeatureUse } from "@/lib/productTelemetry";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const VALID_METRICS = new Set<string>(METRICS.map((m) => m.key));
@@ -220,6 +221,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }),
   });
 
+  logFeatureUse(user.id, "report_generated", id);
   return NextResponse.json({ ok: true });
 }
 

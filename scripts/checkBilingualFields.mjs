@@ -11,7 +11,7 @@
 //
 // القاعدة: أيّ `‹شيء›.xxxAr` يُعرَض داخل JSX يجب أن يكون معه فحصُ لغة.
 
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { execSync } from "node:child_process";
 
 const files = execSync('git ls-files "app/**/*.tsx"', { encoding: "utf8" })
@@ -20,6 +20,10 @@ const files = execSync('git ls-files "app/**/*.tsx"', { encoding: "utf8" })
 const offenders = [];
 
 for (const file of files) {
+  // git ls-files بيقرا الفهرس مش القرص، فملفّ اتمسح ولسه ما اتسجّلش
+  // مسحه بيفضل في القائمة ويكسر الفحص كله بـENOENT - وده فشل بناء
+  // سببه توقيت التسجيل لا خطأ حقيقي في الكود.
+  if (!existsSync(file)) continue;
   const src = readFileSync(file, "utf8");
   for (const m of src.matchAll(/\{([\w.]+\.\w+Ar)\}/g)) {
     // السياق: هل يظهر اختيارُ لغةٍ في السطر نفسه أو الذي قبله؟

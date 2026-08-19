@@ -38,6 +38,8 @@ export type AuthFailure =
 export interface AuthOk {
   ok: true;
   workspaceId: string;
+  /** صاحب المساحة - المفتاح مربوط بمساحة، والقياس بيتنسب لحساب */
+  userId: string;
   tokenId: string;
 }
 export interface AuthNo {
@@ -111,5 +113,5 @@ export async function authenticate(authHeader: string | null): Promise<AuthOk | 
     data: { lastUsedAt: new Date() },
   });
 
-  return { ok: true, workspaceId: record.workspaceId, tokenId: record.id };
+  return { ok: true, workspaceId: record.workspaceId, userId: record.workspace.userId, tokenId: record.id };
 }

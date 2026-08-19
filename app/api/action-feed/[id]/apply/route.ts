@@ -9,6 +9,8 @@ import { workspaceAccess } from "@/lib/workspaceAccess";
 import { getSessionUser } from "@/lib/auth";
 import { applyActionFeedItem } from "@/lib/actionFeed";
 import { prisma } from "@/lib/prisma";
+import { logFeatureUse } from "@/lib/productTelemetry";
+import { isFeatureEnabled } from "@/lib/featureFlags";
 
 export async function POST(
   req: NextRequest,
@@ -23,8 +25,21 @@ export async function POST(
   });
   if (!item) return NextResponse.json({ error: "not found" }, { status: 404 });
 
+  // نفس مفتاح الكرون: إيقاف التنفيذ الآليّ من اللوحة لازم يوقف
+  // الزرّ اليدويّ كمان، وإلا كان الإيقاف نص إيقاف.
+  if (!(await isFeatureEnabled("automation.apply"))) {
+    return NextResponse.json({ error: "automation is temporarily disabled" }, { status: 503 });
+  }
+
   try {
     await applyActionFeedItem(id);
+    // قياس المنتج: التنفيذ الفعليّ - مش فتح الصفحة. الفرق بينهم هو الفرق
+    // بين "الميزة اتشافت" و"الميزة اشتغلت".
+    logFeatureUse(
+      user.id,
+      item.actionType?.startsWith("SET_BID_STRATEGY") ? "bid_strategy_apply" : "scale_kill_apply",
+      item.workspaceId
+    );
     return NextResponse.json({ success: true });
   } catch (err) {
     // فشل تنفيذ حقيقي (زي فشل استدعاء API عند المنصة) - لازم يوصل

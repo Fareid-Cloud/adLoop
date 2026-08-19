@@ -1,44 +1,53 @@
 // app/admin/layout.tsx
 //
-// بوابة وصول - بس المستخدم اللي isAdmin=true (انت، صاحب المنتج) يقدر
-// يشوف القسم ده. مش جزء من لوحة تحكم العميل العادي على الإطلاق.
+// بوابة الوصول للوحة المالك - ثلاث بوابات متتالية قبل ما أي صفحة تتحمّل:
+// جلسة، دور إداري، وتحقّق بخطوتين مفعّل.
+//
+// **اللوحة إنجليزية بالكامل** بقرار صريح من المالك، عكس قرار سابق كان
+// بيخلّيها عربية. الاختلاط بين اللغتين أسوأ من أي منهما لوحدها، فالتحويل
+// شمل النصوص القديمة مش الجديدة بس. ومش بتتبع `preferredLocale` بتاع
+// الحساب: دي سطح تشغيل داخلي، مش واجهة عميل.
 
 import { redirect } from "next/navigation";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import type { ReactNode } from "react";
-import { isOwnerEmail } from "@/lib/owner";
+import { resolveAdminRole, adminCapabilities } from "@/lib/adminRole";
+import { adminNavFor } from "@/lib/adminNavConfig";
+import { AdminShell } from "./components/AdminShell";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const user = await getSessionUserFromCookies();
 
-  // الوصول للمالك: إمّا isAdmin=true في قاعدة البيانات، أو بريده مطابق
-  // لـ OWNER_EMAIL (عشان تقدر تدخل لوحة المالك بمجرد ضبط المتغير، من غير
-  // تعديل يدوي في قاعدة البيانات)
   // التمييز بين الحالتين مقصود: من ليس مسجّلاً يحتاج تسجيل دخول (ويعود
   // إلى هنا بعده)، ومن هو مسجّل لكنه ليس المالك لا يحتاج نموذج دخول - هو
-  // في المكان الخطأ ببساطة. إرسال الأوّل إلى لوحة العميل كان يخفي وجود
-  // القسم عمّن يملكه فعلاً.
+  // في المكان الخطأ ببساطة.
   if (!user) redirect("/login?next=/admin");
-  if (!user.isAdmin && !isOwnerEmail(user.email)) redirect("/dashboard");
+
+  // الدور بيتحسم من مكان واحد (lib/adminRole.ts): بريد المالك، أو الحقل
+  // الصريح، أو isAdmin بلا دور → OWNER. الفحص هنا مش نسخة من المنطق ده.
+  const role = resolveAdminRole(user);
+  if (!role) redirect("/dashboard");
+
+  // أدمن معلَّق مايدخلش لوحته - نفس فحص `guardAdmin` بالظبط، بس على
+  // مستوى الصفحة كمان: إخفاء الواجهة بلا رفض الـAPI (أو العكس) نصّ حماية.
+  if (user.isSuspended) redirect("/dashboard");
+
+  // 🔴 التحقّق بخطوتين إجباري للوصول للوحة المالك - مش اختياري زي باقي
+  // الحسابات. اللوحة دي بتقدر توقف/تمدّد/تسعّر أي حساب في المنتج، فكلمة
+  // سر وحدها مش كافية لحمايتها. حساب أدمن من غير MFA بيتوجّه لتفعيله
+  // الأول، مش بيدخل صامتاً.
+  if (!user.mfaEnabled) {
+    redirect("/dashboard/settings?tab=security&mfaRequired=1");
+  }
 
   return (
-    <div dir="rtl" data-accent="red" data-mode="dark" className="min-h-screen bg-bg px-8 py-7">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="chip bg-critical/15 text-critical">
-              لوحة المالك
-            </span>
-            <span className="text-xs text-text-faint">ليست جزءاً من واجهة العميل</span>
-          </div>
-          <div className="flex items-center gap-4 text-xs">
-            <a href="/admin" className="text-text-muted no-underline hover:text-text-primary">المستخدمون</a>
-            <a href="/admin/support" className="text-text-muted no-underline hover:text-text-primary">الدعم</a>
-            <a href="/dashboard" className="text-text-muted no-underline hover:text-text-primary">← الرجوع للوحة العادية</a>
-          </div>
-        </div>
-        {children}
-      </div>
-    </div>
+    <AdminShell
+      groups={adminNavFor(adminCapabilities(role))}
+      ownerName={user.name ?? user.email.split("@")[0]}
+      ownerEmail={user.email}
+      role={role}
+    >
+      {children}
+    </AdminShell>
   );
 }

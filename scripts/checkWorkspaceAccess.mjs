@@ -40,7 +40,11 @@ function check(file) {
   // (`isAdmin`). ومسارٌ إداريّ بلا أيّ فحصٍ للصفة ليس معفىً، بل مكشوف -
   // وهذا الفحص يمسكه.
   if (rel.includes("/api/admin/")) {
-    if (/\bisAdmin\b/.test(src)) return;
+    // guardAdmin (lib/adminGuard.ts) هو الحارس المعتمَد: بيفحص الجلسة
+    // والتعليق والدور والـCSRF والرفعة في نقطة واحدة - أصرم من فحص
+    // isAdmin الخام، فقبوله هنا مش تخفيف بل ترقية. والفحص الخام بيفضل
+    // مقبولاً للمسارات القديمة اللي لسه ما اتنقلتش عليه.
+    if (/\bguardAdmin\b/.test(src) || /\bisAdmin\b/.test(src)) return;
     problems.push(`${rel}  مسارٌ إداريّ بلا فحص isAdmin`);
     return;
   }

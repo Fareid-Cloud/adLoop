@@ -16,10 +16,13 @@
 
 import { prisma } from "@/lib/prisma";
 import { createPaymentIntention, getUnifiedCheckoutUrl } from "@/lib/paymob";
+import { logSubscriptionEvent } from "@/lib/subscriptionEvents";
+import type { SubscriptionEventType } from "@prisma/client";
+import { isFeatureEnabled } from "@/lib/featureFlags";
 import {
-  PLAN_BY_KEY, planPrice, priceForCredits,
+  PLAN_BY_KEY, planPrice, priceForCredits, YEARLY_MONTHS_CHARGED,
   MIN_CUSTOM_CREDITS, MAX_CUSTOM_CREDITS,
-  type BillingCurrency, type BillingCycle, type PlanKey,
+  type BillingCurrency, type BillingCycle, type Plan, type PlanKey,
 } from "@/lib/plans";
 
 /**
@@ -49,16 +52,25 @@ interface StartInput {
 export async function startSubscriptionCheckout(
   input: StartInput & { planKey: PlanKey; cycle: BillingCycle }
 ): Promise<StartResult> {
+  if (!(await isFeatureEnabled("billing.checkout"))) return { ok: false, errorKey: "errGateway" };
+
   const plan = PLAN_BY_KEY.get(input.planKey);
   if (!plan || plan.key === "free") return { ok: false, errorKey: "errUnknownPlan" };
 
-  const amount = planPrice(plan, input.currency, input.cycle);
-  if (amount <= 0) return { ok: false, errorKey: "errUnknownPlan" };
-
   const user = await prisma.user.findUnique({
     where: { id: input.userId },
-    select: { subscriptionPlan: true, subscriptionStatus: true, currentPeriodEnd: true },
+    select: {
+      subscriptionPlan: true, subscriptionStatus: true, currentPeriodEnd: true,
+      customPriceOverrideCents: true, customPriceCurrency: true,
+    },
   });
+
+  // سعر متّفق عليه لهذا الحساب وحده يسبق الكتالوج - بديل عن اختراع باقة
+  // جديدة لعميل واحد. **والعملة شرطٌ لا تحسين:** رقمٌ اتّفق عليه بالجنيه
+  // لا يُحصَّل بالدولار لأنّ عملة المساحة تغيّرت، فعند اختلافها نرجع
+  // للسعر المعلَن - رجوعٌ إلى ما يعرفه العميل أأمن من تحصيلٍ مفاجئ.
+  const amount = resolveMonthlyChargeable(plan, input.currency, input.cycle, user);
+  if (amount <= 0) return { ok: false, errorKey: "errUnknownPlan" };
 
   // شراء الباقة نفسها وهي فعّالة: لا فائدة منه وقد يكون ضغطة مكرّرة
   if (
@@ -81,11 +93,35 @@ export async function startSubscriptionCheckout(
   });
 }
 
+/**
+ * المبلغ المُحصَّل فعلاً لهذه الباقة على هذا الحساب.
+ *
+ * مفصولة عن `planPrice` عمداً: تلك تجيب سعر الكتالوج المعلَن (وبتتستخدم
+ * في صفحة الأسعار وجدول المقارنة)، ودي بتجيب المبلغ المُحصَّل - والاتنين
+ * بيختلفوا لحساب واحد بس ومعاه اتّفاق. خلطهما كان معناه إن صفحة الأسعار
+ * العامة تعرض خصماً خاصاً بحساب واحد لكل الزوّار.
+ */
+export function resolveMonthlyChargeable(
+  plan: Plan,
+  currency: BillingCurrency,
+  cycle: BillingCycle,
+  override: { customPriceOverrideCents?: number | null; customPriceCurrency?: string | null } | null
+): number {
+  const cents = override?.customPriceOverrideCents;
+  if (cents && cents > 0 && override?.customPriceCurrency === currency) {
+    const monthly = cents / 100;
+    return cycle === "yearly" ? monthly * YEARLY_MONTHS_CHARGED : monthly;
+  }
+  return planPrice(plan, currency, cycle);
+}
+
 // ==================== كريدت ====================
 
 export async function startCreditsCheckout(
   input: StartInput & { credits: number }
 ): Promise<StartResult> {
+  if (!(await isFeatureEnabled("billing.checkout"))) return { ok: false, errorKey: "errGateway" };
+
   const credits = Math.floor(input.credits);
   if (!Number.isFinite(credits) || credits < MIN_CUSTOM_CREDITS || credits > MAX_CUSTOM_CREDITS) {
     return {
@@ -226,6 +262,13 @@ export async function fulfillPaymentIntent(
     if (intent.cycle === "yearly") periodEnd.setFullYear(periodEnd.getFullYear() + 1);
     else periodEnd.setMonth(periodEnd.getMonth() + 1);
 
+    // الباقة السابقة تُقرأ **قبل** التحديث: بعده يصير الصفّ يحمل الجديدة،
+    // فيضيع الفرق الذي يُصنَّف منه الحدث (ترقية أم تخفيض أم تجديد).
+    const before = await prisma.user.findUnique({
+      where: { id: intent.userId },
+      select: { subscriptionPlan: true, subscriptionStatus: true, currentPeriodEnd: true },
+    });
+
     await prisma.user.update({
       where: { id: intent.userId },
       data: {
@@ -234,6 +277,15 @@ export async function fulfillPaymentIntent(
         currentPeriodEnd: periodEnd,
         cancelAtPeriodEnd: false,
       },
+    });
+
+    await logSubscriptionEvent({
+      userId: intent.userId,
+      type: classifyPaidEvent(before, intent.planKey),
+      fromPlan: before?.subscriptionPlan ?? null,
+      toPlan: intent.planKey,
+      amountCents: intent.amountCents,
+      currency: intent.currency,
     });
   } else if (intent.kind === "CREDITS" && intent.credits) {
     await prisma.user.update({
@@ -252,4 +304,26 @@ export async function getIntentStatus(userId: string, intentId: string) {
     select: { status: true, kind: true, planKey: true, credits: true, failureReason: true },
   });
   return intent;
+}
+
+
+// ==================== تسجيل أحداث الاشتراك ====================
+
+/**
+ * تصنيف حدث الدفع الناجح: تفعيل أوّل، أم تجديد، أم تغيير باقة.
+ *
+ * **التصنيف هنا لا في التقرير.** حسابه وقت العرض معناه إعادة استنتاجه من
+ * تواريخ متفرّقة كلّ مرّة، وبنتيجة مختلفة كلّما تغيّر منطق الاستنتاج -
+ * بينما اللحظة التي نعرف فيها الحقيقة يقيناً هي هذه، ونحن نمسك الحالتين.
+ */
+function classifyPaidEvent(
+  before: { subscriptionPlan: string | null; subscriptionStatus: string; currentPeriodEnd: Date | null } | null,
+  toPlan: string
+): SubscriptionEventType {
+  if (!before || before.subscriptionPlan === null) return "ACTIVATED";
+  if (before.subscriptionPlan !== toPlan) return "PLAN_CHANGED";
+  // نفس الباقة وفترتها لم تنتهِ بعد = تجديد. انتهت = عودة بعد انقطاع،
+  // وهي تفعيل في حساب النموّ لا تجديداً - الفرق يظهر في معدّل العودة.
+  const stillActive = !!before.currentPeriodEnd && before.currentPeriodEnd > new Date();
+  return stillActive ? "RENEWED" : "ACTIVATED";
 }

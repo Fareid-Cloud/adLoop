@@ -39,6 +39,17 @@ async function getUserFromToken(token: string | undefined) {
       if (user.sessionInvalidatedAt.getTime() > tokenIssuedAt) return null;
     }
 
+    // 🔴 **التعليق كان بيتفحص عند تسجيل الدخول وبس.** يعني حساب معلَّق
+    // ومعاه جلسة مفتوحة بيفضل شغّال بكامل صلاحياته لحد ما التوكن ينتهي -
+    // تلاتين يوم. وهو بالظبط عكس الغرض من التعليق: بيتعمل عشان الحساب
+    // يقف **دلوقتي**، مش الشهر الجاي.
+    //
+    // مسار التعليق في اللوحة بيضبط `sessionInvalidatedAt` كمان، لكن
+    // الفحص هنا هو الضمان: تعليق اتعمل بأي طريق تانية (تعديل مباشر في
+    // قاعدة البيانات مثلاً) بيسري فوراً من غير ما يعتمد على إنّ اللي
+    // عمله فاكر يضبط حقل تاني معاه.
+    if (user.isSuspended) return null;
+
     return user;
   } catch {
     return null;
@@ -74,6 +85,35 @@ export function verifyMfaPendingToken(token: string): string | null {
       mfaPending?: boolean;
     };
     return payload.mfaPending ? payload.userId : null;
+  } catch {
+    return null;
+  }
+}
+
+// 🔴 **ثغرة أمنية حقيقية اتصلحت هنا:** كوكي "impersonating_by" كانت بتتخزن
+// كمعرّف خام (admin.id نص صريح)، ومسار stop-impersonating كان بياخدها
+// وينده createSessionToken(adminId) عليها من غير أي توقيع أو فحص - يعني
+// أي حد يعرف معرّف مستخدم (حتى معرّفه هو) يقدر يبعت
+// Cookie: impersonating_by=<أي معرّف> ويطلع بجلسة صالحة كاملة لصاحبه،
+// بلا تسجيل دخول خالص. httpOnly مش حماية هنا لأنها بتمنع JS من قراءة
+// الكوكي، مش بتمنع إرسال ترويسة Cookie يدوياً.
+//
+// الحل: توكن موقّع خاص بالانتحال، منفصل عن createSessionToken العادي -
+// لو استُخدم توكن الجلسة الكامل هنا، سرقة كوكي "impersonating_by" كانت
+// هتديك جلسة أدمن صالحة 30 يوم، مش مجرد إمكانية الرجوع لحسابك. عمر أقصر
+// (4 ساعات، نفس مدة صلاحية جلسة الانتحال نفسها) وclaim مخصّص يمنع إعادة
+// استخدامه كتوكن جلسة عادي.
+export function createImpersonatorToken(adminId: string): string {
+  return jwt.sign({ adminId, impersonating: true }, process.env.JWT_SECRET!, { expiresIn: "4h" });
+}
+
+export function verifyImpersonatorToken(token: string): string | null {
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET!, { algorithms: ["HS256"] }) as {
+      adminId: string;
+      impersonating?: boolean;
+    };
+    return payload.impersonating ? payload.adminId : null;
   } catch {
     return null;
   }

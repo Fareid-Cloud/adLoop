@@ -12,8 +12,10 @@ import {
 import { validateOrError } from "@/lib/validation/schemas";
 import { CSRF_COOKIE_NAME, generateCsrfToken } from "@/lib/csrf";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
-import { t } from "@/lib/i18n/dictionary";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 import { localeOfRequest } from "@/lib/apiLocale";
+import { sendNewAdminDeviceAlert } from "@/lib/adminSecurityAlerts";
+import { isAdminUser } from "@/lib/adminRole";
 
 
 /** **الجلسة وكوكيّاتها في مكانٍ واحد.**
@@ -25,14 +27,14 @@ import { localeOfRequest } from "@/lib/apiLocale";
  * فيصعب ربطه بسببه.
  */
 async function finishLogin(
-  userId: string,
+  user: { id: string; email: string; isAdmin: boolean; preferredLocale: string | null },
   req: NextRequest,
   rememberDeviceRequested: boolean,
   extra: Record<string, unknown> = {},
 ): Promise<NextResponse> {
   const response = NextResponse.json({ success: true, ...extra });
 
-  response.cookies.set("session", createSessionToken(userId), {
+  response.cookies.set("session", createSessionToken(user.id), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -47,9 +49,21 @@ async function finishLogin(
     path: "/",
   });
 
+  const userAgent = req.headers.get("user-agent");
   if (rememberDeviceRequested) {
-    await rememberDevice(response, userId, req.headers.get("user-agent"));
+    await rememberDevice(response, user.id, userAgent);
   }
+
+  // الوصول لهنا معناه دخول من جهاز مش موثوق (الجهاز الموثوق بيتخطى MFA
+  // كله في route.ts) - لحظة الإنذار الصحيحة لحساب أدمن، مش بعدها
+  if (isAdminUser(user)) {
+    await sendNewAdminDeviceAlert({
+      toEmail: user.email,
+      locale: (user.preferredLocale as Locale) ?? "ar",
+      userAgent,
+    });
+  }
+
   return response;
 }
 
@@ -159,7 +173,7 @@ export async function POST(req: NextRequest) {
         where: { id: user.id },
         data: { mfaEmailCodeHash: null, mfaEmailCodeExpiresAt: null },
       });
-      return finishLogin(user.id, req, rememberDeviceRequested, { usedEmailCode: true });
+      return finishLogin(user, req, rememberDeviceRequested, { usedEmailCode: true });
     }
 
     // يُحرَق فور استعماله: ورقةٌ مصوَّرةٌ أو منسوخة لا تفتح الحساب مرّتين.
@@ -168,7 +182,7 @@ export async function POST(req: NextRequest) {
       data: { usedAt: new Date() },
     });
 
-    return finishLogin(user.id, req, rememberDeviceRequested, {
+    return finishLogin(user, req, rememberDeviceRequested, {
       usedBackupCode: true,
       remainingBackupCodes: stored.length - 1,
     });
@@ -182,5 +196,5 @@ export async function POST(req: NextRequest) {
 
   await prisma.user.update({ where: { id: user.id }, data: { mfaLastUsedCode: code } });
 
-  return finishLogin(user.id, req, rememberDeviceRequested);
+  return finishLogin(user, req, rememberDeviceRequested);
 }

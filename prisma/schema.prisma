@@ -244,6 +244,50 @@ model User {
   /// على المحدَّثة.
   acceptedTermsAt          DateTime?
   agentChats               AgentChat[]
+
+  // ==================== لوحة المالك (Admin Panel) ====================
+  //
+  // الحقول دي كلها **إضافية بحتة**: كل واحد فيها إمّا اختياري أو له
+  // قيمة افتراضية، فالحساب اللي مالوش أي تدخّل إداريّ بيتصرّف بالظبط
+  // زي ما كان قبل ما اللوحة تتبني.
+
+  /// دور الأدمن. null + isAdmin=true → OWNER (راجع lib/adminRole.ts).
+  adminRole AdminRole?
+
+  /// شقيق `planLimitOverrides` للحقول المنطقية/التعدادية في `PlanLimits`
+  /// (`mcp`, `scheduledReports`, `scaleKill`, `conversionSync`). فُصل عنه
+  /// لأنّ التحقّق مختلف: ذاك أرقام، وده منطقيّات وقيم من قوائم مغلقة -
+  /// خلطهما كان هيجبر `parseOverrides` على فحصين في دالة واحدة.
+  featureOverrides Json?
+
+  /// سعر تجديد خاصّ بهذا الحساب بالسنت - اتّفاق أو خصم دائم، بدل اختراع
+  /// باقة جديدة في الكتالوج لعميل واحد. `null` = سعر الباقة المعلَن.
+  /// يُقرأ في مسار الدفع قبل الرجوع إلى `PLAN_BY_KEY`. القيمة **شهرية**،
+  /// والسنويّ بيتحسب منها بنفس معادلة الكتالوج (`YEARLY_MONTHS_CHARGED`).
+  customPriceOverrideCents Int?
+
+  /// 🔴 **العملة إجبارية مع السعر المخصّص، مش تفصيلة.** الرقم لوحده
+  /// بلا عملة كان هيتطبّق على أي عملة يقع عليها الحساب وقت الدفع، و899
+  /// جنيه مصري و899 دولار رقمان مختلفان بخمسين ضعفاً. لو العملة
+  /// اتغيّرت (اتغيّرت عملة مساحة العمل مثلاً)، مسار الدفع بيتجاهل
+  /// السعر المخصّص ويرجع لسعر الكتالوج - رجوع لسعر معلن أأمن من تحصيل
+  /// رقم بعملة مالهاش علاقة.
+  customPriceCurrency String?
+
+  /// تمييز يدويّ بحكم المالك، لا استنتاج خوارزميّ. القائمة المحسوبة
+  /// (الأعلى إيراداً) مجرّد اقتراح يظهر جنبه، مش بديل عنه.
+  isVip Boolean @default(false)
+
+  /// ملاحظة داخلية عن الحساب - لا تظهر للعميل أبداً
+  adminNotes String?  @db.Text
+  /// وسوم قصيرة للتصنيف الداخليّ ("وكالة"، "تجربة"، "متابعة")
+  adminTags  String[]
+
+  subscriptionEvents SubscriptionEvent[]
+  adminEmails        AdminEmailLog[]
+  activityDays       UserActivityDay[]
+  featureEvents      FeatureEvent[]
+  usageSnapshots     AdminUsageSnapshot[]
 }
 
 // ربط المنصة على مستوى المستخدم (مرة واحدة لكل منصة)
@@ -565,7 +609,7 @@ model Workspace {
   // سقف إجمالي شهري لأي تغييرات ميزانية عن طريق الأتمتة (زيادة أو تقليل)،
   // بغض النظر عن عدد القواعد أو القرارات المعتمدة - حماية أخيرة من انجراف
   // الميزانية بمرور الوقت حتى لو كل قرار فردي كان معقولاً وقت اتخاذه
-  automationMonthlyBudgetChangeCeilingPct Int?        @default(50)
+  automationMonthlyBudgetChangeCeilingPct Int?            @default(50)
   agentChats                              AgentChat[]
   mcpTokens                               McpToken[]
   platformUsage                           PlatformUsage[]
@@ -1868,6 +1912,142 @@ model CronRunLog {
   errors          String?  @db.Text // ملخص الأخطاء لو فيه، JSON مبسّط
 }
 
+// ==================== أدوار لوحة المالك ====================
+//
+// `isAdmin` بتفتح الباب، والدور بيحدّد إيه المسموح جوّه. الفصل مقصود:
+// موظّف دعم يحتاج يشوف حساب عميل ويردّ عليه، من غير ما يقدر يهدي اشتراك
+// أو يغيّر سعر أو يرقّي حساب لأدمن.
+//
+// الحقل **اختياري عمداً** بدل `@default`: قيمة افتراضية كانت هتدّي الدور
+// لكل مستخدم في الجدول (مليون صف مش أدمن)، والـnull هنا معناها "ارجع
+// لـisAdmin" - يعني كل حساب أدمن قائم دلوقتي بيفضل OWNER بلا أي ترحيل
+// بيانات. الحسم كله في `resolveAdminRole` (lib/adminRole.ts).
+enum AdminRole {
+  OWNER // صاحب المنتج - كل شيء بما فيه المال والصلاحيات
+  SUPPORT // دعم فنّي - عرض ومساعدة، بلا مال ولا صلاحيات
+}
+
+// ==================== مفاتيح تشغيل/إيقاف الميزات ====================
+// مفتاح عام لكل المنتج (إيقاف مزامنة ميتا أثناء عطل مثلاً، أو فتح ميزة
+// تجريبية) - منفصل تماماً عن حدود الباقة. التخصيص لحساب بعينه بيتم عبر
+// `User.featureOverrides` مش هنا.
+model FeatureFlag {
+  key             String   @id
+  description     String?
+  enabledGlobally Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ==================== أحداث الاشتراك ====================
+//
+// 🔴 **ده اللي بيخلّي "النمو والانكماش" رقم حقيقي مش استنتاج.** حالة
+// الاشتراك الحالية (`User.subscriptionStatus`) بتقول الوضع دلوقتي بس -
+// مبتقولش إمتى اتغيّر ولا من أنهي باقة لأنهي. من غير الجدول ده، معدّل
+// الإلغاء والترقية/التخفيض بيتحسبوا بالتخمين من تواريخ متفرّقة.
+model SubscriptionEvent {
+  id     String                @id @default(cuid())
+  userId String
+  user   User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type   SubscriptionEventType
+
+  fromPlan    String?
+  toPlan      String?
+  /// بالسنت وبعملة الحدث - عشان تصنيف الحركة (نموّ/انكماش) يبقى حسابياً
+  /// لا اجتهادياً. `null` للأحداث اللي مالهاش قيمة (إلغاء مثلاً).
+  amountCents Int?
+  currency    String?
+
+  /// null = النظام (ويب هوك الدفع)، وقيمة = فعل إداريّ بيد أدمن.
+  /// التفرقة دي هي الفرق بين "إيراد حقيقي" و"هدية" في تقارير الإيراد.
+  actorAdminId String?
+  note         String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+}
+
+enum SubscriptionEventType {
+  ACTIVATED
+  RENEWED
+  CANCELLED
+  EXPIRED
+  EXTENDED // تمديد يدويّ من الأدمن
+  GIFTED // اشتراك ممنوح بلا دفع
+  PLAN_CHANGED
+  PAYMENT_FAILED
+}
+
+// ==================== رسائل الأدمن الفردية للعملاء ====================
+// منفصل عن `MarketingEmailLog` عمداً: هدف ذاك منع تكرار رسالة الحملة
+// الواحدة (قيد تفرّد على messageId)، وده مجرّد سجلّ إرسال يدويّ يتكرّر
+// بطبيعته - نفس الأدمن ممكن يبعت لنفس العميل عشر مرّات بعشر رسائل.
+model AdminEmailLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adminUserId String
+  subject     String
+  body        String   @db.Text
+  sentAt      DateTime @default(now())
+
+  @@index([userId, sentAt])
+}
+
+// ==================== أيام النشاط الفعليّ ====================
+//
+// 🔴 `User.lastActiveAt` طابع زمنيّ **واحد بيتكتب فوق نفسه** - بيجاوب
+// "آخر مرّة دخل إمتى" ومش قادر يجاوب "كام حساب نشط النهاردة/الأسبوع ده".
+// صفّ واحد لكل مستخدم في اليوم بيحوّل السؤال ده لعدّة بسيطة.
+model UserActivityDay {
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime @db.Date
+
+  @@unique([userId, date])
+  @@index([date])
+}
+
+// ==================== استخدام الميزات ====================
+// سجلّ عامّ خفيف: مفتاح الميزة + مين + إمتى. الميزات المدفوعة بالذكاء
+// الاصطناعي عندها عدّادات خاصة أصلاً على User، لكن باقي المنتج مفيهوش
+// أي قياس - من غير الجدول ده، "أنهي ميزة بتتستخدم فعلاً" سؤال بلا إجابة.
+model FeatureEvent {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId String?
+  key         String // "scale_kill_apply" | "report_generated" | ...
+  createdAt   DateTime @default(now())
+
+  @@index([key, createdAt])
+  @@index([userId, createdAt])
+}
+
+// ==================== لقطة استهلاك يومية ====================
+//
+// عدّادات الاستهلاك على `User` بتتصفّر شهرياً/بالساعة في مكانها، يعني
+// مفيش تاريخ يُرسم منه اتجاه. اللقطة اليومية دي (بيكتبها الكرون قبل
+// التصفير) هي اللي بتحوّل "الاستهلاك دلوقتي" إلى "الاستهلاك عبر الزمن".
+model AdminUsageSnapshot {
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime @db.Date
+
+  aiRefreshCount    Int   @default(0)
+  imageQualityCount Int   @default(0)
+  siteScanCount     Int   @default(0)
+  aiCreditsLeft     Int   @default(0)
+  spendUsd          Float @default(0)
+  verifiedConv      Int   @default(0)
+
+  @@unique([userId, date])
+  @@index([date])
+}
+
 // ==================== أداء المجموعات الإعلانية في ميتا (Lookalike/جمهور) ====================
 // بديل ميتا لمفهوم "عرض الجمهور" في جوجل - هنا الاستهداف بيتحدد على مستوى
 // المجموعة الإعلانية نفسها، مش عرض منفصل.
@@ -2099,6 +2279,13 @@ model SupportThread {
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
   messages  SupportMessage[]
+  /// موضوع المشكلة، يختاره الأدمن عند الرد/الإغلاق - قائمة مغلقة في
+  /// `lib/supportCategories.ts`. من غيره "أكتر مشكلة بتتكرر" سؤال بلا
+  /// إجابة: نصّ الرسالة حرّ، وتصنيفه آلياً محتاج تحليل لغة لا داعي له.
+  category  String?
+  /// لحظة الإغلاق الصريح. `updatedAt` مش بديل: بيتحرّك مع كل رد، فزمن
+  /// الحل المحسوب منه بيبقى غلط لأي محادثة اتردّ عليها بعد الإغلاق.
+  closedAt  DateTime?
 
   @@index([userId])
 }
@@ -2645,14 +2832,14 @@ model WaClick {
 /// يلزم عند الإنفاذ حين يُقرأ مع كلّ نداء، لا عند العدّ حيث يُقرأ مرّةً في
 /// التقرير - وبناؤه الآن تعقيدٌ سابقٌ لموجبه.
 model PlatformUsage {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   platform    Platform
   /// اليوم بتوقيت UTC - حدود الحصص اليومية عند المنصّات تُحسب به
-  day         DateTime @db.Date
-  operations  Int      @default(0)
-  updatedAt   DateTime @updatedAt
+  day         DateTime  @db.Date
+  operations  Int       @default(0)
+  updatedAt   DateTime  @updatedAt
 
   @@unique([workspaceId, platform, day])
   @@index([platform, day])
@@ -2664,13 +2851,13 @@ model PlatformUsage {
 /// الخادم ثمّ يسجّلون أنفسهم قبل أوّل تفويض. وبدون ذلك يبقى الربط مقصوراً
 /// على مَن نضيفه نحن يدوياً - وهو ما يُبقي البابَ مغلقاً أمام الأكثرية.
 model McpOAuthClient {
-  id           String   @id @default(cuid())
-  clientId     String   @unique
+  id               String   @id @default(cuid())
+  clientId         String   @unique
   /// مُجزَّأ لا خاماً - كبقيّة أسرارنا
   clientSecretHash String?
-  clientName   String
-  redirectUris String[]
-  createdAt    DateTime @default(now())
+  clientName       String
+  redirectUris     String[]
+  createdAt        DateTime @default(now())
 
   codes McpAuthCode[]
 
@@ -2683,21 +2870,21 @@ model McpOAuthClient {
 /// الرمزُ في رحلة إعادة التوجيه فيُستبدَل توكناً كاملاً. ويُخزَّن التحدّي
 /// لا المُتحقِّق - فلو سُرّبت القاعدة لم يُغنِ السارقَ شيئاً.
 model McpAuthCode {
-  id                  String   @id @default(cuid())
-  code                String   @unique
+  id                  String         @id @default(cuid())
+  code                String         @unique
   clientId            String
   client              McpOAuthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
   workspaceId         String
-  workspace           Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace           Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   userId              String
   redirectUri         String
   codeChallenge       String
-  codeChallengeMethod String   @default("S256")
-  scope               String   @default("mcp:read")
+  codeChallengeMethod String         @default("S256")
+  scope               String         @default("mcp:read")
   /// دقيقتان - الرمز يُستبدَل فوراً بعد إعادة التوجيه، وطولُ العمر هنا خطر بلا فائدة
   expiresAt           DateTime
   usedAt              DateTime?
-  createdAt           DateTime @default(now())
+  createdAt           DateTime       @default(now())
 
   @@index([code])
   @@index([expiresAt])

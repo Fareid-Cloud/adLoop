@@ -11,6 +11,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { markActiveToday } from "@/lib/productTelemetry";
 import { IBM_Plex_Sans_Arabic, Inter } from "next/font/google";
 import { SupportChat } from "@/app/components/SupportChat";
 import { ImpersonationBanner } from "@/app/components/ImpersonationBanner";
@@ -128,6 +129,12 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         console.error("[layout] تعذّر تسجيل النشاط:", err);
       }
     }
+
+    // صفّ يوم النشاط - **خارج شرط الـthrottle عن قصد.** الـupsert بلا
+    // أثر لو الصفّ موجود، والشرط فوق بيتخطّى نص ساعة كاملة: مستخدم فتح
+    // المنتج مرّة واحدة بعد آخر كتابة بأقلّ من نص ساعة كان هيختفي من
+    // عدّ النشطين اليوم بالكامل.
+    void markActiveToday(user.id);
   }
 
   // بوابة الإعداد الإجبارية: مستخدم لم يربط أي منصة بعد يُحوَّل إلى شاشة

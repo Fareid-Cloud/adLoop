@@ -16,6 +16,8 @@ import { checkAndConsumeSiteScanQuota, refundSiteScanQuota, isAiConfigured } fro
 import { blockAiInDemo } from "@/lib/demo";
 import { t } from "@/lib/i18n/dictionary";
 import { localeOf } from "@/lib/apiLocale";
+import { logFeatureUse } from "@/lib/productTelemetry";
+import { isFeatureEnabled } from "@/lib/featureFlags";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
@@ -47,6 +49,12 @@ export async function POST(req: NextRequest) {
   //
   // القاعدة الآن في كلّ مسار مدفوع: هويّة ← تحقّق ← ملكيّة ← حارس العرض
   // ← **ثمّ** الخصم. لا يُخصَم إلّا ما سيُنفَّذ فعلاً.
+  // إيقاف عامّ من لوحة المالك - **قبل الخصم** زي كل الحرّاس التانية:
+  // ميزة موقوفة عالمياً مالهاش الحقّ تحرق رصيد حدّ.
+  if (!(await isFeatureEnabled("ai.siteScan"))) {
+    return NextResponse.json({ error: t(locale, "apiErr.aiUnavailable") }, { status: 503 });
+  }
+
   // خدمةٌ غير مضبوطة لا تُخصَم مقابلها
   if (!isAiConfigured()) {
     return NextResponse.json({ error: t(locale, "apiErr.aiUnavailable") }, { status: 503 });
@@ -75,6 +83,7 @@ export async function POST(req: NextRequest) {
       status: "PENDING",
     },
   });
+  logFeatureUse(user.id, "deep_scan_started", workspaceId);
 
   after(async () => {
     try {

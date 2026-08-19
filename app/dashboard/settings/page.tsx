@@ -24,7 +24,10 @@ export default async function SettingsPage() {
 
   return (
     <SettingsClient
-      isOwner={isOwnerEmail(user.email)}
+      // isAdmin مضافة هنا كمان: "تسجيل الخروج من كل مكان" إجراء أمان
+      // لأي حساب له وصول للوحة المالك، مش لصاحب المنتج (isOwnerEmail)
+      // بس - قبل ما تتبنى الأدوار الداخلية (OWNER/SUPPORT) في مرحلة لاحقة.
+      isOwner={isOwnerEmail(user.email) || user.isAdmin}
       user={{
         name: user.name,
         email: user.email,

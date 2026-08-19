@@ -13,6 +13,7 @@ import { checkStoreLimit } from "@/lib/entitlements";
 import { authSpecFor } from "@/lib/ecommerce/webhookAuth";
 import { t } from "@/lib/i18n/dictionary";
 import { localeOf } from "@/lib/apiLocale";
+import { logFeatureUse } from "@/lib/productTelemetry";
 
 const ALLOWED: EcommercePlatform[] = ["SALLA", "SHOPIFY", "ZID", "WOOCOMMERCE", "EASY_ORDERS"];
 
@@ -150,6 +151,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     select: { id: true, platform: true, storeName: true, active: true },
   });
 
+  logFeatureUse(user.id, "store_connected", id);
   return NextResponse.json({ connection }, { status: 201 });
 }
 

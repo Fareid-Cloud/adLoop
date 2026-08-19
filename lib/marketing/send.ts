@@ -19,6 +19,7 @@ import { getAppUrl } from "@/lib/appUrl";
 import { getEntitlements } from "@/lib/entitlements";
 import { ALL_MESSAGES, DAY_TOLERANCE, type MarketingMessage } from "./campaigns";
 import { BUILDERS, type MarketingContext } from "./copy";
+import { isFeatureEnabled } from "@/lib/featureFlags";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -37,6 +38,14 @@ export interface MarketingRunResult {
 
 export async function runMarketingCampaigns(): Promise<MarketingRunResult> {
   const result: MarketingRunResult = { considered: 0, sent: 0, skippedNoData: 0, skippedAlreadySent: 0 };
+
+  // إيقاف عامّ من لوحة المالك - **قبل أي استعلام**: الغرض من الإيقاف
+  // منع الإرسال، ومافيش داعي نبني قائمة مستقبِلين مش هتتبعت.
+  if (!(await isFeatureEnabled("marketing.emails"))) {
+    console.warn("[marketing] الحملات موقوفة من لوحة المالك - لم تُرسَل أيّ رسالة.");
+    return result;
+  }
+
   if (!resend) {
     console.warn("[marketing] RESEND_API_KEY غير مضبوط - لم تُرسَل أيّ حملة.");
     return result;

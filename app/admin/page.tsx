@@ -1,219 +1,232 @@
 // app/admin/page.tsx
+//
+// نظرة عامة - الشاشة اللي بتتفتح الأول كل يوم.
+//
+// الترتيب مقصود: **الرؤى فوق الأرقام.** الأرقام بتقول "الوضع إيه"،
+// والجُمل بتقول "بُصّ على إيه" - واللي بيتفتح كل يوم محتاج التانية أوّلاً.
+// اللي تحت الرؤى ملخّص، والتفصيل في صفحته.
 
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { UserActions } from "./UserActions";
+import { getSessionUserFromCookies } from "@/lib/auth";
+import { resolveAdminRole, adminCapabilities } from "@/lib/adminRole";
 import { MetricCard } from "@/app/components/ui/MetricCard";
-import { Users, Building2, Plug, AlertTriangle } from "lucide-react";
-import { TH } from "@/app/components/ui/tableStyles";
+import { Sparkline } from "@/app/components/ui/Sparkline";
+import {
+  LayoutDashboard, Users, DollarSign, Activity, AlertTriangle, Sparkles, Star, LifeBuoy,
+} from "lucide-react";
+import { lastNDays } from "@/lib/admin/shared";
+import { getBusinessSummary } from "@/lib/admin/business";
+import { getCustomerAnalytics } from "@/lib/admin/customers";
+import { getProductAnalytics } from "@/lib/admin/product";
+import { getOperationalAnalytics } from "@/lib/admin/operational";
+import { getUsageOverview } from "@/lib/admin/usage";
+import { getSystemHealth } from "@/lib/admin/system";
+import { buildInsights } from "@/lib/admin/insights";
+import { AdminPageHeader, Card, SectionTitle, InsightStrip, Badge, money, ago, dateTime } from "./components/AdminUI";
 
-const AT_RISK_DAYS = 14; // مفيش دخول من أسبوعين = مؤشر خطر، مش قرار نهائي
+export const dynamic = "force-dynamic";
 
-export default async function AdminDashboard() {
-  const atRiskThreshold = new Date();
-  atRiskThreshold.setDate(atRiskThreshold.getDate() - AT_RISK_DAYS);
+export default async function AdminOverview() {
+  const user = await getSessionUserFromCookies();
+  const role = resolveAdminRole(user);
+  const caps = adminCapabilities(role);
+  const canSeeMoney = caps.includes("analytics.financial");
 
-  const [users, workspaces, connectedPlatforms, activeIssuesByWorkspace, recentFeedback, lastCronRun, recentAuditLog] =
-    await Promise.all([
-      prisma.user.findMany({
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true, email: true, name: true, createdAt: true, isSuspended: true,
-          aiRefreshMonthlyCount: true, businessScale: true, emailVerified: true, lastLoginAt: true,
-        },
-      }),
-      prisma.workspace.findMany({
-        include: { user: { select: { email: true } } },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.connectedPlatform.groupBy({ by: ["platform"], _count: true }),
-      prisma.dailyTask.groupBy({
-        by: ["workspaceId"],
-        where: { completed: false },
-        _count: true,
-      }),
-      prisma.feedback.findMany({
-        orderBy: { createdAt: "desc" },
-        take: 10,
-        include: { user: { select: { email: true } } },
-      }).catch(() => []),
-      prisma.cronRunLog.findFirst({ orderBy: { runAt: "desc" } }).catch(() => null),
-      prisma.adminAuditLog.findMany({ orderBy: { createdAt: "desc" }, take: 10 }).catch(() => []),
-    ]);
+  const range = lastNDays(30);
 
-  const issuesMap = new Map<string, number>(
-    activeIssuesByWorkspace.map((i: any) => [i.workspaceId, i._count])
-  );
+  const [customers, product, operational, usage, system, business, recentAudit] = await Promise.all([
+    getCustomerAnalytics(range),
+    getProductAnalytics(30),
+    getOperationalAnalytics(range),
+    getUsageOverview(30),
+    getSystemHealth(),
+    // الأرقام المالية ما تتحسبش أصلاً لمن ماعندوش صلاحيتها - إخفاء البطاقة
+    // بس معناه إنّ الاستعلام اتنفّذ والبيانات وصلت للخادم بلا داعي.
+    canSeeMoney ? getBusinessSummary(range) : Promise.resolve(undefined),
+    prisma.adminAuditLog.findMany({ orderBy: { createdAt: "desc" }, take: 8 }).catch(() => []),
+  ]);
 
-  const atRiskUsers = users.filter(
-    (u: any) => !u.lastLoginAt || u.lastLoginAt < atRiskThreshold
-  );
+  const insights = buildInsights({ business, customers, product, operational, usage, system });
+
+  const activitySeries = product.activityTrend.map((p) => p.users);
+  const revenueSeries = business?.revenue.map((p) => p.usdCents / 100) ?? [];
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold text-text-primary">نظرة عامة على المنصة</h1>
+      <AdminPageHeader
+        title="Overview"
+        subtitle={`Last 30 days · ${role === "OWNER" ? "Full access" : "Support access"}`}
+        icon={LayoutDashboard}
+      />
 
-      {/* ملخص سريع */}
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="إجمالي المشتركين" value={users.length} icon={Users} />
-        <StatCard label="مساحات العمل" value={workspaces.length} icon={Building2} />
-        <StatCard
-          label="حسابات مربوطة"
-          value={connectedPlatforms.reduce((s: number, p: any) => s + p._count, 0)}
-          icon={Plug}
-        />
-        <StatCard
-          label="عملاء في خطر"
-          value={atRiskUsers.length}
-          critical={atRiskUsers.length > 0}
-          icon={AlertTriangle}
-        />
-      </div>
+      <InsightStrip insights={insights} />
 
-      <div className="mb-6 rounded-2xl bg-gap/10 p-4 text-xs text-gap">
-        <strong>ملاحظة صريحة:</strong> بيانات الاشتراكات والمدفوعات غير متاحة هنا
-        لأن نظام الدفع نفسه غير مبني بعد (مسجّل في README.md كفجوة MVP حرجة).
-        كل حاجة تانية هنا (المشتركين، الحسابات، الاستهلاك، المشاكل) بيانات حقيقية.
-      </div>
-
-      {/* صحة النظام */}
-      <SectionTitle>صحة النظام (آخر مزامنة يومية)</SectionTitle>
-      <div className="card mb-6 p-4">
-        {lastCronRun ? (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-text-primary">
-              {new Date(lastCronRun.runAt).toLocaleString("ar")}
-            </span>
-            <span className={lastCronRun.failed > 0 ? "text-critical" : "text-verified"}>
-              {lastCronRun.succeeded}/{lastCronRun.totalWorkspaces} نجحت
-              {lastCronRun.failed > 0 && ` — ${lastCronRun.failed} فشلت`}
-            </span>
-            <span className="text-text-faint">
-              {lastCronRun.durationMs ? `${Math.round(lastCronRun.durationMs / 1000)}ث` : "—"}
-            </span>
-          </div>
-        ) : (
-          <p className="text-xs text-text-faint">لا يوجد تشغيل مسجّل بعد — سيظهر بعد أول تشغيل للـ Cron.</p>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {canSeeMoney && business && (
+          <MetricCard
+            locale="en"
+            label="MRR"
+            value={money(business.mrr.usd.usd)}
+            icon={DollarSign}
+            tone="verified"
+            subLabel={`${business.mrr.payingCustomers} paying`}
+            trend={revenueSeries.length >= 4 ? <Sparkline values={revenueSeries} tone="verified" /> : undefined}
+            delta={
+              business.revenueDeltaPct !== null
+                ? {
+                    value: `${Math.abs(business.revenueDeltaPct).toFixed(0)}%`,
+                    direction: business.revenueDeltaPct >= 0 ? "up" : "down",
+                    positive: business.revenueDeltaPct >= 0,
+                    caption: "vs previous month",
+                  }
+                : undefined
+            }
+          />
         )}
+        <MetricCard
+          locale="en"
+          label="Customers"
+          value={customers.total.toLocaleString("en-US")}
+          icon={Users}
+          tone="accent"
+          subLabel={`${customers.paying} paying · ${customers.trialing} trialing`}
+          delta={
+            customers.newDeltaPct !== null
+              ? {
+                  value: `${Math.abs(customers.newDeltaPct).toFixed(0)}%`,
+                  direction: customers.newDeltaPct >= 0 ? "up" : "down",
+                  positive: customers.newDeltaPct >= 0,
+                  caption: "new signups vs previous",
+                }
+              : undefined
+          }
+        />
+        <MetricCard
+          locale="en"
+          label="Active (30d)"
+          value={product.mau.toLocaleString("en-US")}
+          icon={Activity}
+          tone="accent"
+          subLabel={product.stickinessPct !== null ? `${product.stickinessPct.toFixed(0)}% stickiness` : "DAU/MAU pending"}
+          trend={activitySeries.length >= 4 ? <Sparkline values={activitySeries} tone="accent" /> : undefined}
+        />
+        <MetricCard
+          locale="en"
+          label="At risk"
+          value={customers.atRisk.toLocaleString("en-US")}
+          icon={AlertTriangle}
+          tone={customers.atRisk > 0 ? "gap" : "verified"}
+          subLabel="no login in 14 days"
+          href="/admin/customers?atRisk=1"
+        />
+        <MetricCard
+          locale="en"
+          label="AI calls (period)"
+          value={usage.totalAiCalls.toLocaleString("en-US")}
+          icon={Sparkles}
+          tone={usage.anomalies.length > 0 ? "gap" : "accent"}
+          subLabel={
+            usage.totalEstimatedCostUsd !== null
+              ? `~$${usage.totalEstimatedCostUsd.toFixed(2)} est.`
+              : `~${(usage.totalEstimatedTokens / 1_000_000).toFixed(1)}M tokens`
+          }
+          href="/admin/analytics?tab=usage"
+        />
+        <MetricCard
+          locale="en"
+          label="Open issues"
+          value={(system.urgentIssues + operational.tickets.open).toLocaleString("en-US")}
+          icon={LifeBuoy}
+          tone={system.urgentIssues + operational.tickets.open > 0 ? "critical" : "verified"}
+          subLabel={`${operational.tickets.open} tickets · ${system.urgentIssues} account alerts`}
+          href="/admin/support"
+        />
       </div>
 
-      {/* المشتركين */}
-      <SectionTitle>المشتركين</SectionTitle>
-      <div className="card mb-6 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-start text-xs text-text-faint">
-              <th className={TH}>البريد</th>
-              <th className={TH}>مؤكد؟</th>
-              <th className={TH}>آخر دخول</th>
-              <th className={TH}>استهلاك AI</th>
-              <th className={TH}>إجراءات</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u: any) => {
-              const isAtRisk = !u.lastLoginAt || u.lastLoginAt < atRiskThreshold;
-              return (
-                <tr key={u.id} className="border-b border-border text-text-primary last:border-0">
-                  <td className="px-4 py-2.5">
-                    {u.email} {u.isSuspended && <span className="text-critical">(معلّق)</span>}
-                  </td>
-                  <td className="px-4 py-2.5">{u.emailVerified ? "✓" : "✗"}</td>
-                  <td className={`px-4 py-2.5 text-xs ${isAtRisk ? "text-gap" : "text-text-faint"}`}>
-                    {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString("ar") : "لم يسجّل الدخول بعد"}
-                  </td>
-                  <td className="px-4 py-2.5 font-mono">{u.aiRefreshMonthlyCount}</td>
-                  <td className="px-4 py-2.5">
-                    <UserActions userId={u.id} isSuspended={u.isSuspended} />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* مساحات العمل ومشاكلها */}
-      <SectionTitle>مساحات العمل والمشاكل النشطة</SectionTitle>
-      <div className="mb-6 flex flex-col gap-2">
-        {workspaces.map((w: any) => {
-          const issueCount = issuesMap.get(w.id) ?? 0;
-          return (
-            <div key={w.id} className="card flex items-center justify-between p-4">
-              <div>
-                <div className="text-sm text-text-primary">{w.name}</div>
-                <div className="text-xs text-text-faint">{w.user.email} — {w.industryVertical ?? "غير محدد"}</div>
-              </div>
-              <span className={`font-mono text-sm ${issueCount > 0 ? "text-critical" : "text-verified"}`}>
-                {issueCount} مشكلة نشطة
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* الفيدباك */}
-      <SectionTitle>آخر الملاحظات من المستخدمين</SectionTitle>
-      {recentFeedback.length === 0 ? (
-        <p className="mb-6 text-sm text-text-faint">لا توجد ملاحظات بعد.</p>
-      ) : (
-        <div className="mb-6 flex flex-col gap-2">
-          {recentFeedback.map((f: any) => (
-            <div key={f.id} className="card p-4">
-              <div className="mb-1 flex items-center justify-between">
-                <span className="text-xs text-text-faint">{f.user.email}</span>
-                <span className="text-xs text-text-faint">
-                  {new Date(f.createdAt).toLocaleDateString("ar")}
+      <div className="mt-6 grid gap-4 lg:grid-cols-3">
+        {/* صحة المزامنة */}
+        <Card>
+          <SectionTitle hint={system.lastCronRun ? ago(system.lastCronRun.runAt) : undefined}>
+            Sync health
+          </SectionTitle>
+          {system.lastCronRun ? (
+            <>
+              <div className="mb-3 flex items-baseline gap-2">
+                <span className="text-2xl font-semibold tabular-nums text-text-primary">
+                  {system.lastCronRun.succeeded}/{system.lastCronRun.totalWorkspaces}
                 </span>
+                <span className="text-[12px] text-text-faint">workspaces synced</span>
               </div>
-              <p className="text-sm text-text-primary">{f.message}</p>
-            </div>
-          ))}
-        </div>
-      )}
+              <div className="flex flex-wrap gap-1.5">
+                {(["STUCK", "FAILED", "STALE", "NEVER", "RUNNING", "OK"] as const).map((k) =>
+                  system.counts[k] > 0 ? (
+                    <Badge
+                      key={k}
+                      tone={k === "OK" ? "ok" : k === "RUNNING" ? "info" : k === "STALE" || k === "NEVER" ? "warn" : "bad"}
+                    >
+                      {system.counts[k]} {k.toLowerCase()}
+                    </Badge>
+                  ) : null
+                )}
+              </div>
+              <Link href="/admin/system" className="mt-3 inline-block text-[12px] text-accent no-underline hover:underline">
+                Open system health →
+              </Link>
+            </>
+          ) : (
+            <p className="text-[12px] text-text-faint">No cron run logged yet.</p>
+          )}
+        </Card>
 
-      {/* سجل تدقيق الأدمن */}
-      <SectionTitle>سجل تدقيق الأدمن (آخر 10)</SectionTitle>
-      {recentAuditLog.length === 0 ? (
-        <p className="text-sm text-text-faint">لا توجد إجراءات إدارية مسجّلة بعد.</p>
-      ) : (
-        <div className="flex flex-col gap-1">
-          {recentAuditLog.map((log: any) => (
-            <div key={log.id} className="card px-4 py-2 text-xs text-text-faint">
-              {new Date(log.createdAt).toLocaleString("ar")} — {log.action} — {log.details}
-            </div>
-          ))}
-        </div>
-      )}
+        {/* أعلى الحسابات قيمة */}
+        <Card>
+          <SectionTitle hint="by monthly value">Top accounts</SectionTitle>
+          {customers.topByMrr.length === 0 ? (
+            <p className="text-[12px] text-text-faint">No paying accounts yet.</p>
+          ) : (
+            <ul className="m-0 list-none space-y-1.5 p-0">
+              {customers.topByMrr.slice(0, 6).map((c) => (
+                <li key={c.id} className="flex items-center justify-between gap-2">
+                  <Link
+                    href={`/admin/customers/${c.id}`}
+                    className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-text-primary no-underline hover:underline"
+                  >
+                    {c.isVip && <Star size={11} className="shrink-0 fill-gap text-gap" />}
+                    <span className="truncate">{c.email}</span>
+                  </Link>
+                  {canSeeMoney && (
+                    <span className="shrink-0 text-[12px] tabular-nums text-text-muted">{money(c.usdCents)}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        {/* آخر أفعال الأدمن */}
+        <Card>
+          <SectionTitle hint="last 8">Admin activity</SectionTitle>
+          {recentAudit.length === 0 ? (
+            <p className="text-[12px] text-text-faint">Nothing logged yet.</p>
+          ) : (
+            <ul className="m-0 list-none space-y-1.5 p-0">
+              {recentAudit.map((log) => (
+                <li key={log.id} className="text-[12px] leading-snug">
+                  <span className="font-mono text-[10.5px] uppercase tracking-wide text-text-faint">{log.action}</span>
+                  <div className="truncate text-text-muted" title={log.details ?? undefined}>
+                    {log.details ?? "—"}
+                  </div>
+                  <div className="text-[10.5px] text-text-faint">{dateTime(log.createdAt)}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Link href="/admin/audit" className="mt-3 inline-block text-[12px] text-accent no-underline hover:underline">
+            Full audit log →
+          </Link>
+        </Card>
+      </div>
     </div>
   );
-}
-
-// غلاف رفيع حول بطاقة المؤشّر الموحّدة - لوحة المالك تتبع نظام التصميم
-// نفسه بدل نسخة مبسّطة تتباعد عنه
-function StatCard({
-  label,
-  value,
-  critical,
-  icon,
-}: {
-  label: string;
-  value: number;
-  critical?: boolean;
-  icon: typeof Users;
-}) {
-  return (
-    <MetricCard
-      label={label}
-      value={value.toLocaleString("en-US")}
-      icon={icon}
-      tone={critical ? "critical" : "accent"}
-      // استثناء مقصود لا سهو: لوحة المالك عربية بالكامل (عناوينها مكتوبة
-      // عربياً أعلاه)، وليست واجهة عميل تتبع تفضيل لغته.
-      locale="ar"
-    />
-  );
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h2 className="mb-2 text-sm font-semibold text-text-primary">{children}</h2>;
 }

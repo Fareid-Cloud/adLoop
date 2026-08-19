@@ -7,6 +7,7 @@ import { getSessionUser } from "@/lib/auth";
 import { checkAutomationRuleLimit } from "@/lib/entitlements";
 import { t } from "@/lib/i18n/dictionary";
 import { localeOf } from "@/lib/apiLocale";
+import { logFeatureUse } from "@/lib/productTelemetry";
 
 export async function GET(
   req: NextRequest,
@@ -144,5 +145,6 @@ const body = await req.json().catch(() => null);
     },
   });
 
+  logFeatureUse(user.id, "automation_rule_created", id);
   return NextResponse.json({ rule }, { status: 201 });
 }

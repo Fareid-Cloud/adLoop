@@ -25,9 +25,26 @@ const HOURLY_LIMIT = 2;
 export interface QuotaResult {
   allowed: boolean;
   remainingThisMonth: number;
-  reason?: "monthly_exhausted" | "hourly_exhausted";
+  /** `disabled` = إيقاف عامّ من لوحة المالك، مش نفاد رصيد. الفرق مهمّ:
+   *  الأول مؤقّت ومش ذنب المستخدم، والتاني بيتحلّ بترقية. */
+  reason?: "monthly_exhausted" | "hourly_exhausted" | "disabled";
   retryAfterMinutes?: number; // لو اترفض بسبب الحد الساعي، تقول له يستنى قد إيه
 }
+
+/**
+ * مفتاح الإيقاف العامّ للذكاء الاصطناعي.
+ *
+ * **بيتفحص هنا مش في كل مسار على حدة**: التلات مسارات (التحليلات، مربّع
+ * السؤال، فحص الصور) بتعدّي كلها من دوال الرصيد دي، فالفحص هنا بيغطّيهم
+ * الأربعة بضمانة إن أي مسار AI جديد يستخدم الرصيد بيتغطّى تلقائياً -
+ * وده بالظبط النوع اللي بيُنسى لو الفحص كان متكرّر في كل مسار.
+ */
+async function aiGloballyEnabled(): Promise<boolean> {
+  const { isFeatureEnabled } = await import("@/lib/featureFlags");
+  return isFeatureEnabled("ai.insights");
+}
+
+const AI_DISABLED: QuotaResult = { allowed: false, remainingThisMonth: 0, reason: "disabled" };
 
 /**
  * هل خدمة الذكاء الاصطناعي مضبوطة أصلاً؟
@@ -67,6 +84,8 @@ export async function refundAiRefreshQuota(userId: string): Promise<void> {
 export async function checkAndConsumeAIRefreshQuota(
   userId: string
 ): Promise<QuotaResult> {
+  if (!(await aiGloballyEnabled())) return AI_DISABLED;
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -171,6 +190,8 @@ export async function checkAndConsumeAIRefreshQuota(
 const CHAT_HOURLY_LIMIT = 12;
 
 export async function checkAndConsumeChatQuota(userId: string): Promise<QuotaResult> {
+  if (!(await aiGloballyEnabled())) return AI_DISABLED;
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -261,6 +282,8 @@ export async function refundImageQualityQuota(userId: string): Promise<void> {
 }
 
 export async function checkAndConsumeImageQualityQuota(userId: string): Promise<QuotaResult> {
+  if (!(await aiGloballyEnabled())) return AI_DISABLED;
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -367,6 +390,8 @@ export async function refundSiteScanQuota(userId: string): Promise<void> {
 }
 
 export async function checkAndConsumeSiteScanQuota(userId: string): Promise<QuotaResult> {
+  if (!(await aiGloballyEnabled())) return AI_DISABLED;
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {

@@ -8,6 +8,7 @@ import { workspaceAccess } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { METRICS } from "@/lib/reports/reportEngine";
+import { logFeatureUse } from "@/lib/productTelemetry";
 
 const VALID_METRICS = new Set<string>(METRICS.map((m) => m.key));
 const VALID_SOURCES = ["REPORTED", "VERIFIED", "BOTH"];
@@ -64,5 +65,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const view = await prisma.savedReportView.create({
     data: { workspaceId: id, ...workspaceAccess(user.id), name, config },
   });
+  logFeatureUse(user.id, "saved_view_created", id);
   return NextResponse.json({ view });
 }

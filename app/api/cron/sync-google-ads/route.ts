@@ -35,6 +35,8 @@ import { checkExpiringConnections } from "@/lib/connectionHealthCheck";
 import { purgeExpiredData } from "@/lib/dataRetention";
 import { ownerLocaleFor } from "@/lib/workspaceLocale";
 import { isSyncBlocked, refreshUsageAndNotify } from "@/lib/usageCaps";
+import { loadFeatureFlags, type FeatureFlagKey } from "@/lib/featureFlags";
+import { captureUsageSnapshots } from "@/lib/admin/usage";
 
 // أزواج العملات المدعومة في اختيار "العملة" بصفحة الإعدادات - بنسجل
 // سعرها يومياً كلهم مع بعض، بدل ما نحاول نحدد عملة فوترة كل حساب Google
@@ -50,6 +52,24 @@ export async function GET(req: NextRequest) {
   }
 
   const startTime = Date.now();
+
+  // مفاتيح التشغيل العامة تُقرأ **مرّة واحدة لكلّ تشغيل** لا لكلّ مساحة:
+  // قراءتها داخل الحلقة تعني استعلاماً لكلّ مساحة × كلّ نداء، وهي قيمة لا
+  // تتغيّر أثناء التشغيل الواحد أصلاً.
+  const flags = await loadFeatureFlags();
+
+  /**
+   * ينفّذ النداء إن كان مفتاحه مفتوحاً.
+   *
+   * الغرض عمليّ لا تجميليّ: حين تتعطّل منصّة من جهتها، كلّ نداء إليها
+   * يُنفق وقتاً ثمّ يفشل - فتطول دورة الكرون كلّها وتمتلئ سجلّات الأخطاء
+   * بضجيج يُخفي الأعطال الحقيقية. الإيقاف من اللوحة يوقف الأربعين نداءً
+   * للمنصّة، لا نداء المزامنة الأساسيّ وحده.
+   */
+  async function ifOn(flag: FeatureFlagKey, fn: () => Promise<unknown>) {
+    if (!flags[flag]) return;
+    await fn();
+  }
 
   const { startSyncRun, finishSyncRun } = await import("@/lib/integrationsStatus");
 
@@ -141,42 +161,42 @@ export async function GET(req: NextRequest) {
       // المزامنة الأساسية للمنصات الثلاث تُسجَّل في SyncRun - وهي مصدر
       // "آخر مزامنة" وصحّة التكامل وسجلّ النشاط في قسم التكاملات. تسجيل
       // اليدوية وحدها كان سيُظهر الحساب "قديم البيانات" رغم عمل الكرون.
-      await trackedSync(workspaceId, "GOOGLE_ADS", () => syncGoogleAdsForWorkspace(workspaceId));
-      await trackedSync(workspaceId, "META_ADS", () => syncMetaAdsForWorkspace(workspaceId));
-      await syncMetaAdSetsForWorkspace(workspaceId);
-      await checkMetaBidStrategyAlertsForWorkspace(workspaceId);
-      await syncMetaAccountHealthForWorkspace(workspaceId);
-      await syncCatalogCampaignsForWorkspace(workspaceId);
-      await checkMetaLearningPhaseAlertsForWorkspace(workspaceId);
-      await checkMetaBidStrategyProgressionForWorkspace(workspaceId);
-      await checkCatalogSpendAlertsForWorkspace(workspaceId);
-      await trackedSync(workspaceId, "TIKTOK_ADS", () => syncTikTokAdsForWorkspace(workspaceId));
-      await syncTikTokVideoMetricsForWorkspace(workspaceId);
-      await syncTikTokSparkAdsCommentsForWorkspace(workspaceId);
-      await syncTikTokLeadFormsForWorkspace(workspaceId);
-      await syncTikTokCreativesForWorkspace(workspaceId);
-      await syncTikTokWeeklyEngagementForWorkspace(workspaceId);
-      await checkTikTokAlertsForWorkspace(workspaceId);
-      await syncTikTokBidCapForWorkspace(workspaceId);
-      await checkTikTokBidStrategyProgressionForWorkspace(workspaceId);
-      await syncTikTokLearningPhaseForWorkspace(workspaceId);
-      await syncTikTokLookalikeComparisonForWorkspace(workspaceId);
-      await syncMetaCreativesForWorkspace(workspaceId);
-      await syncCreativesForWorkspace(workspaceId);
-      await syncSearchTermsForWorkspace(workspaceId);
-      await syncAudiencePerformanceForWorkspace(workspaceId);
-      await syncQualityScoreForWorkspace(workspaceId);
-      await syncShoppingProductsForWorkspace(workspaceId);
-      await checkShoppingSpendAlertsForWorkspace(workspaceId);
-      await syncGoogleLeadFormsForWorkspace(workspaceId);
-      await checkBidStrategyProgressionForWorkspace(workspaceId);
-      await syncPerformanceMaxChannelsForWorkspace(workspaceId);
-      await syncYoutubeMetricsForWorkspace(workspaceId);
-      await syncDeviceAndGeoPerformanceForWorkspace(workspaceId);
-      await syncMatchTypePerformanceForWorkspace(workspaceId);
-      await syncDisplayPlacementsForWorkspace(workspaceId);
+      await ifOn("sync.google", () => trackedSync(workspaceId, "GOOGLE_ADS", () => syncGoogleAdsForWorkspace(workspaceId)));
+      await ifOn("sync.meta", () => trackedSync(workspaceId, "META_ADS", () => syncMetaAdsForWorkspace(workspaceId)));
+      await ifOn("sync.meta", () => syncMetaAdSetsForWorkspace(workspaceId));
+      await ifOn("sync.meta", () => checkMetaBidStrategyAlertsForWorkspace(workspaceId));
+      await ifOn("sync.meta", () => syncMetaAccountHealthForWorkspace(workspaceId));
+      await ifOn("sync.meta", () => syncCatalogCampaignsForWorkspace(workspaceId));
+      await ifOn("sync.meta", () => checkMetaLearningPhaseAlertsForWorkspace(workspaceId));
+      await ifOn("sync.meta", () => checkMetaBidStrategyProgressionForWorkspace(workspaceId));
+      await ifOn("sync.meta", () => checkCatalogSpendAlertsForWorkspace(workspaceId));
+      await ifOn("sync.tiktok", () => trackedSync(workspaceId, "TIKTOK_ADS", () => syncTikTokAdsForWorkspace(workspaceId)));
+      await ifOn("sync.tiktok", () => syncTikTokVideoMetricsForWorkspace(workspaceId));
+      await ifOn("sync.tiktok", () => syncTikTokSparkAdsCommentsForWorkspace(workspaceId));
+      await ifOn("sync.tiktok", () => syncTikTokLeadFormsForWorkspace(workspaceId));
+      await ifOn("sync.tiktok", () => syncTikTokCreativesForWorkspace(workspaceId));
+      await ifOn("sync.tiktok", () => syncTikTokWeeklyEngagementForWorkspace(workspaceId));
+      await ifOn("sync.tiktok", () => checkTikTokAlertsForWorkspace(workspaceId));
+      await ifOn("sync.tiktok", () => syncTikTokBidCapForWorkspace(workspaceId));
+      await ifOn("sync.tiktok", () => checkTikTokBidStrategyProgressionForWorkspace(workspaceId));
+      await ifOn("sync.tiktok", () => syncTikTokLearningPhaseForWorkspace(workspaceId));
+      await ifOn("sync.tiktok", () => syncTikTokLookalikeComparisonForWorkspace(workspaceId));
+      await ifOn("sync.meta", () => syncMetaCreativesForWorkspace(workspaceId));
+      await ifOn("sync.google", () => syncCreativesForWorkspace(workspaceId));
+      await ifOn("sync.google", () => syncSearchTermsForWorkspace(workspaceId));
+      await ifOn("sync.google", () => syncAudiencePerformanceForWorkspace(workspaceId));
+      await ifOn("sync.google", () => syncQualityScoreForWorkspace(workspaceId));
+      await ifOn("sync.google", () => syncShoppingProductsForWorkspace(workspaceId));
+      await ifOn("sync.google", () => checkShoppingSpendAlertsForWorkspace(workspaceId));
+      await ifOn("sync.google", () => syncGoogleLeadFormsForWorkspace(workspaceId));
+      await ifOn("sync.google", () => checkBidStrategyProgressionForWorkspace(workspaceId));
+      await ifOn("sync.google", () => syncPerformanceMaxChannelsForWorkspace(workspaceId));
+      await ifOn("sync.google", () => syncYoutubeMetricsForWorkspace(workspaceId));
+      await ifOn("sync.google", () => syncDeviceAndGeoPerformanceForWorkspace(workspaceId));
+      await ifOn("sync.google", () => syncMatchTypePerformanceForWorkspace(workspaceId));
+      await ifOn("sync.google", () => syncDisplayPlacementsForWorkspace(workspaceId));
 
-      const bidData = await syncBiddingStrategyForWorkspace(workspaceId);
+      const bidData = flags["sync.google"] ? await syncBiddingStrategyForWorkspace(workspaceId) : [];
       for (const b of bidData) {
         await prisma.campaignLink.updateMany({
           where: { workspaceId, platform: "GOOGLE_ADS", externalCampaignId: b.campaignId },
@@ -188,10 +208,10 @@ export async function GET(req: NextRequest) {
           },
         });
       }
-      await checkBidStrategyAlertsForWorkspace(workspaceId);
-      await checkGoogleLearningPhaseAlertsForWorkspace(workspaceId);
+      await ifOn("sync.google", () => checkBidStrategyAlertsForWorkspace(workspaceId));
+      await ifOn("sync.google", () => checkGoogleLearningPhaseAlertsForWorkspace(workspaceId));
 
-      await runDailyDiagnosticsForWorkspace(workspaceId);
+      await ifOn("ai.insights", () => runDailyDiagnosticsForWorkspace(workspaceId));
       await checkMonthlyForecastAlertForWorkspace(workspaceId);
       await checkConversionGapAlertForWorkspace(workspaceId);
       await checkTrafficQualityForWorkspace(workspaceId);
@@ -203,7 +223,7 @@ export async function GET(req: NextRequest) {
       await checkScaleKillDecisionsForWorkspace(workspaceId);
       // فحص التسعير لم يعد هنا - يعمل الآن لكل مساحة عندها منتجات، بمعزل
       // عن المنصات الإعلانية (انظر الحلقة المستقلة بعد هذه الحلقة).
-      await runAutomationForWorkspace(workspaceId, await ownerLocaleFor(workspaceId));
+      await ifOn("automation.apply", async () => runAutomationForWorkspace(workspaceId, await ownerLocaleFor(workspaceId)));
       // قياس التجارب التي اكتملت نافذتها - نتيجة كل قرار نُفِّذ فعلاً
       await measurePendingExperiments(workspaceId);
       results.push({ workspaceId, status: "ok" });
@@ -250,6 +270,17 @@ export async function GET(req: NextRequest) {
     } catch (err) {
       console.error(`فشل قياس استهلاك المستخدم ${userId}:`, err);
     }
+  }
+
+  // ===== لقطة الاستهلاك اليومية =====
+  // **بعد قياس الاستهلاك فوق مباشرةً وقبل أي تصفير**: دي اللي بتحوّل
+  // "الاستهلاك دلوقتي" (عدّادات بتتكتب فوق نفسها) إلى "الاستهلاك عبر
+  // الزمن" - من غيرها مافيش ترند ولا كشف شذوذ، لأنّ مافيش ماضي يتقارن به.
+  try {
+    const snapshots = await captureUsageSnapshots();
+    console.log(`[cron] سُجّلت ${snapshots} لقطة استهلاك.`);
+  } catch (err) {
+    console.error("[cron] فشل تسجيل لقطات الاستهلاك:", err);
   }
 
   const succeeded = results.filter((r) => r.status === "ok").length;

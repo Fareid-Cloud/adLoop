@@ -404,8 +404,14 @@ export function SettingsClient({
       )}
       {activeTab === "security" && (
         <SettingsSection icon={ShieldCheck} title={tr("tabSecurity")} boxed description={tr("secSecurityDesc")}>
+          {searchParams.get("mfaRequired") === "1" && isOwner && (
+            <div className="mb-4 rounded-xl border border-critical/30 bg-critical/10 px-4 py-3 text-[13px] text-critical">
+              {tr("mfaRequiredBanner")}
+            </div>
+          )}
           <ChangePasswordFields />
           <MfaFields />
+          {isOwner && <SignOutEverywhereField />}
         </SettingsSection>
       )}
       {activeTab === "danger" && workspaces.length > 0 && (
@@ -1697,6 +1703,32 @@ function ChangePasswordFields() {
 
       <button onClick={submit} disabled={!ready} className="btn btn-primary btn-sm mt-3">
         {busy ? tr("pwSaving") : tr("pwSave")}
+      </button>
+    </div>
+  );
+}
+
+/** إبطال كل جلسة مفتوحة فوراً - نفس آلية تسجيل الخروج العادي بالظبط
+ *  (`sessionInvalidatedAt`)، لكن مستدعاة عمداً كإجراء طوارئ من صاحب
+ *  لوحة تحكم شاملة يشكّ إن حسابه اتفتح من حد غيره. بيسجّل خروج الجهاز
+ *  ده كمان - ده مقصود، مش عيب: أي توكن أصدر قبل اللحظة دي بيترفض. */
+function SignOutEverywhereField() {
+  const tr = useT();
+  const [busy, setBusy] = useState(false);
+
+  async function submit() {
+    if (!window.confirm(tr("signOutConfirm"))) return;
+    setBusy(true);
+    await fetch("/api/auth/logout", { method: "POST", headers: getCsrfHeader() });
+    window.location.href = "/login";
+  }
+
+  return (
+    <div className="mt-6 border-t border-border pt-5">
+      <div className="mb-1 text-[13px] font-medium text-text-primary">{tr("signOutTitle")}</div>
+      <p className="mb-3 text-[12px] leading-5 text-text-muted">{tr("signOutHint")}</p>
+      <button onClick={submit} disabled={busy} className="btn btn-danger btn-sm">
+        {tr("signOutButton")}
       </button>
     </div>
   );

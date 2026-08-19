@@ -13,14 +13,9 @@ import { getSessionUser } from "@/lib/auth";
 import { getUsageState } from "@/lib/usageCaps";
 import { t } from "@/lib/i18n/dictionary";
 import { localeOf } from "@/lib/apiLocale";
+import { resyncWorkspace } from "@/lib/resyncWorkspace";
 
 export const maxDuration = 60;
-
-interface SyncOutcome {
-  platform: string;
-  ok: boolean;
-  error?: string;
-}
 
 export async function POST(
   req: NextRequest,
@@ -74,50 +69,9 @@ export async function POST(
     );
   }
 
-  const results: SyncOutcome[] = [];
-  const linked = new Set(links.map((l) => l.platform));
-
-  const { startSyncRun, finishSyncRun } = await import("@/lib/integrationsStatus");
-
-  // كل تشغيل يُسجَّل بنتيجته - هو المصدر الوحيد لـ"آخر مزامنة" وسجلّ النشاط
-  // وصحّة التكامل في قسم التكاملات. من دونه تصبح تلك الأرقام مُختلَقة.
-  async function runSync(platform: string, fn: () => Promise<unknown>) {
-    const before = await prisma.metricSnapshot.count({ where: { workspaceId: id, platform: platform as never } });
-    const runId = await startSyncRun(id, platform, "MANUAL");
-    try {
-      await fn();
-      const after = await prisma.metricSnapshot.count({ where: { workspaceId: id, platform: platform as never } });
-      await finishSyncRun(runId, { ok: true, recordsWritten: Math.max(0, after - before) });
-      results.push({ platform, ok: true });
-    } catch (err) {
-      await finishSyncRun(runId, { ok: false, error: msg(err) });
-      results.push({ platform, ok: false, error: msg(err) });
-    }
-  }
-
-  if (linked.has("GOOGLE_ADS")) {
-    await runSync("GOOGLE_ADS", async () => {
-      const { syncGoogleAdsForWorkspace } = await import("@/lib/syncGoogleAds");
-      await syncGoogleAdsForWorkspace(id);
-    });
-  }
-
-  if (linked.has("META_ADS")) {
-    await runSync("META_ADS", async () => {
-      const { syncMetaAdsForWorkspace } = await import("@/lib/syncMetaAds");
-      await syncMetaAdsForWorkspace(id);
-    });
-  }
-
-  if (linked.has("TIKTOK_ADS")) {
-    await runSync("TIKTOK_ADS", async () => {
-      const { syncTikTokAdsForWorkspace } = await import("@/lib/syncTikTokAds");
-      await syncTikTokAdsForWorkspace(id);
-    });
-  }
-
-  const snapshotCount = await prisma.metricSnapshot.count({ where: { workspaceId: id } });
-  const succeeded = results.filter((r) => r.ok).length;
+  // التنفيذ في `lib/resyncWorkspace.ts` - نفس الدالة اللي بتستخدمها أدوات
+  // الإصلاح في لوحة المالك، فتسجيل `SyncRun` واحد في الحالتين.
+  const { results, succeeded, snapshotCount } = await resyncWorkspace(id, "MANUAL");
 
   return NextResponse.json({
     ok: succeeded > 0,
@@ -133,14 +87,3 @@ export async function POST(
   });
 }
 
-// 🔴 **الفشل المجهول يُخزَّن غياباً لا جملةً عربية.**
-//
-// كان يُكتب «خطأ غير معروف» في `SyncRun.errorMessage`، وهو حقلٌ يُعرَض
-// كما هو في سجلّ النشاط - فتظهر الجملة بالعربية داخل واجهةٍ إنجليزية
-// عند مَن لغته الإنجليزية. ورسالة المنصّة نفسها (حين توجد) تُخزَّن كما
-// جاءت: نصٌّ أجنبيّ ننقله لا نؤلّفه. وحين لا رسالة، يُترك الحقل فارغاً
-// وتكتب الواجهة بديلها بلغة قارئها - وهي تفعل ذلك أصلاً.
-function msg(err: unknown): string | undefined {
-  if (err instanceof Error) return err.message.slice(0, 200);
-  return undefined;
-}

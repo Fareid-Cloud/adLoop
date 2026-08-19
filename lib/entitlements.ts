@@ -56,6 +56,7 @@ export async function getEntitlements(userId: string): Promise<Entitlements> {
       currentPeriodEnd: true,
       aiCreditsPurchased: true,
       planLimitOverrides: true,
+      featureOverrides: true,
       createdAt: true,
     },
   });
@@ -69,7 +70,10 @@ export async function getEntitlements(userId: string): Promise<Entitlements> {
   // بخمسين عميلاً مثلاً). تُطبّق على كلّ مسارات الإرجاع تحت، لا على
   // مسار الاشتراك النشط وحده: الاتفاق الخاصّ لا يسقط لأنّ الدفعة
   // تأخّرت يوماً.
-  const overrides = parseOverrides(user.planLimitOverrides);
+  const overrides = {
+    ...parseOverrides(user.planLimitOverrides),
+    ...parseFeatureOverrides(user.featureOverrides),
+  };
 
   // المالك أوّلاً: قبل الاشتراك وقبل التجربة، فلا تنتهي صلاحيته بمرور
   // يومٍ ولا تتوقّف على صفٍّ في جدول الاشتراكات قد يُعاد ضبطه.
@@ -149,6 +153,40 @@ function parseOverrides(raw: unknown): Partial<PlanLimits> | undefined {
       out[key] = v;
     }
   }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/**
+ * قراءة `featureOverrides` - شقيق الدالة اللي فوق، للحقول اللي مش أرقام.
+ *
+ * **فُصلت عن `parseOverrides` عمداً**: ذاك بيفحص "رقم موجب أو -1"،
+ * وده بيفحص "منطقيّ" و"قيمة من قائمة مغلقة". دمجهما كان معناه دالة
+ * واحدة فيها ثلاث فروع تحقّق مختلفة على نفس المدخل - والفرع اللي
+ * بيُنسى في دالة زي دي هو اللي بيسرّب قيمة غلط لكل فحوص الحدود.
+ *
+ * القيم المسموحة **مكتوبة هنا صراحة مش مستنتجة**: قائمة مغلقة معناها إن
+ * `scaleKill: "delete"` (قيمة مالهاش وجود) بترجع مرفوضة، بدل ما تعدّي
+ * وتخلّي كل مقارنة عليها تتصرّف بشكل غير متوقّع.
+ */
+function parseFeatureOverrides(raw: unknown): Partial<PlanLimits> | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const src = raw as Record<string, unknown>;
+  const out: Partial<PlanLimits> = {};
+
+  for (const key of ["scheduledReports", "mcp"] as const) {
+    if (typeof src[key] === "boolean") out[key] = src[key] as boolean;
+  }
+  if (src.scaleKill === "view" || src.scaleKill === "apply") {
+    out.scaleKill = src.scaleKill;
+  }
+  if (src.conversionSync === "none" || src.conversionSync === "one" || src.conversionSync === "all") {
+    out.conversionSync = src.conversionSync;
+  }
+  // "all" قيمة مشروعة هنا زي الرقم - الحقل نفسه `number | "all"`
+  if (src.platforms === "all" || (typeof src.platforms === "number" && src.platforms >= 0)) {
+    out.platforms = src.platforms as number | "all";
+  }
+
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
