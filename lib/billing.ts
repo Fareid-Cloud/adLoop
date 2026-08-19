@@ -192,9 +192,27 @@ async function startOrReuse(input: {
     amountCents, input.currency,
   ].join(":");
 
-  let intent;
-  try {
-    intent = await prisma.paymentIntent.create({
+  // 🔴 **قفلٌ على مستوى المعاملة، لا قيدُ تفرّدٍ في المخطّط.**
+  //
+  // المطلوب أن يمرّ الطلبان المتوازيان واحداً بعد الآخر، فيرى الثاني ما
+  // أنشأه الأوّل بدل أن ينشئ رابط دفعٍ ثانياً. وقيدُ `@unique` كان يفعلها،
+  // لكنّ إضافته تجعل `prisma db push` يطلب `--accept-data-loss` - وهي راية
+  // تُسقط أعمدةً وجداول، ورفضُها في سكربت البناء صحيح. فلا يُضعَّف البناء
+  // لأجل قفل.
+  //
+  // و`pg_advisory_xact_lock` يُحرَّر عند انتهاء المعاملة نفسِها، فلا يبقى
+  // معلّقاً على اتصالٍ في المجمّع (pooler) إن انقطع الطلب - وهو الفرق بينه
+  // وبين قفل الجلسة الذي لا يصحّ خلف مجمّع اتصالات.
+  const existingByKey = await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${dedupeKey}))`;
+
+    const pending = await tx.paymentIntent.findFirst({
+      where: { dedupeKey, status: "PENDING" },
+      orderBy: { createdAt: "desc" },
+    });
+    if (pending) return pending;
+
+    return tx.paymentIntent.create({
       data: {
         userId: input.userId,
         kind: input.kind,
@@ -207,17 +225,14 @@ async function startOrReuse(input: {
         dedupeKey,
       },
     });
-  } catch (err) {
-    const code = (err as { code?: string })?.code;
-    if (code !== "P2002") throw err;
-    // سبَقنا طلبٌ آخر بأجزاء الثانية. ننتظر أن يكتب رابطه ثمّ نعيده -
-    // ولا ننشئ ثانياً، فذلك بالضبط ما يُخصَم مرّتين.
-    const winner = await prisma.paymentIntent.findUnique({ where: { dedupeKey } });
-    if (winner?.checkoutUrl) {
-      return { ok: true, url: winner.checkoutUrl, intentId: winner.id, reused: true };
-    }
-    return { ok: false, errorKey: "errCheckoutInProgress" };
+  });
+
+  // نيّةٌ سابقةٌ لها رابطٌ جاهز: تُعاد كما هي ولا يُنشأ رابطٌ ثانٍ.
+  if (existingByKey.checkoutUrl) {
+    return { ok: true, url: existingByKey.checkoutUrl, intentId: existingByKey.id, reused: true };
   }
+
+  const intent = existingByKey;
 
   try {
     const intention = await createPaymentIntention({

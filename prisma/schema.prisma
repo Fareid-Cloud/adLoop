@@ -846,7 +846,11 @@ model PaymentIntent {
   ///
   /// ويُفرَغ عند الدفع أو الفشل: القيد يمنع نيّتين معلّقتين لنفس الشراء،
   /// لا أن يشتري العميل الشيءَ نفسَه مرّتين في حياته.
-  dedupeKey String? @unique
+  /// 🔴 **بلا `@unique` عمداً.** إضافة قيد تفرّدٍ تجعل `prisma db push`
+  /// يطلب `--accept-data-loss`، والبناء يرفضها بحقّ - فتلك الراية تُسقط
+  /// أعمدةً وجداول. فالتسلسل يأتي من قفل معاملةٍ في `lib/billing.ts` لا
+  /// من قيدٍ يمنع النشر.
+  dedupeKey String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
