@@ -327,7 +327,7 @@ export function SettingsClient({
           {/* بارتفاعٍ محدود وتمريرٍ داخليّ: قائمةٌ أطول من الشاشة كانت
               ستُخفي آخرَ أقسامها بلا سبيلٍ للوصول إليها. والتمرير على هذا
               العنصر نفسه لا على سلفه، فلا يُبطل التصاقَه. */}
-          <div className="sticky top-6 flex max-h-[calc(100dvh-3rem)] flex-col gap-6 overflow-y-auto p-5">
+          <div className="settings-rail sticky flex flex-col gap-6 overflow-y-auto p-5">
             {TAB_GROUPS.map((group) => (
               <div key={group.titleKey}>
                 <div className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-faint">

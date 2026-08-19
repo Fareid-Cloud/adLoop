@@ -317,7 +317,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         {/* ارتفاع ثابت ٦٨ بكسل مطابق لصفّ الشعار في القائمة الجانبية، فيصير
             الحدّان السفليّان خطّاً واحداً متّصلاً. الارتفاع الحرّ السابق كان
             يتبع محتواه فينكسر الخطّ عند حدّ العمودين. */}
-        <div className="sticky top-0 z-40 mb-5 flex h-[68px] items-center gap-1.5 border-b border-border bg-bg px-3 sm:gap-3 sm:px-6 lg:px-10">
+        <div className="app-header sticky top-0 z-40 mb-5 flex items-center gap-1.5 border-b border-border bg-bg px-3 sm:gap-3 sm:px-6 lg:px-10">
           <MobileNavButton locale={locale} />
           <TopSearch locale={locale} />
           <div className="flex flex-1 items-center justify-end gap-1.5">

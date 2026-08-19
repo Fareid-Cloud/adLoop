@@ -18,6 +18,8 @@ export function PeriodBar({
   compareMode = "none",
   allowCompare = false,
   children,
+
+  flush,
 }: {
   locale: Locale;
   preset: PresetKey;
@@ -40,9 +42,22 @@ export function PeriodBar({
   allowCompare?: boolean;
   /** أي أدوات إضافية تخصّ الصفحة - تظهر بجوار المنتقي */
   children?: React.ReactNode;
+  /**
+   * بلا الهامش السفليّ - حين يوضع المنتقي **داخل صفٍّ** بجانب عنصرٍ آخر.
+   *
+   * 🔴 `mb-4` مكتوبةٌ هنا لأنّ المنتقي في أغلب الصفحات يقف وحده فوق
+   * المحتوى ويحتاج فاصلاً. لكنّه حين يصير أحدَ عنصرَي صفٍّ متوسِّطٍ رأسياً،
+   * يصير ذلك الهامشُ جزءاً من صندوقه: فيوسِّط الأبُ صندوقاً أطولَ بستّة
+   * عشر بكسلاً من جاره، ويرتفع **محتواه** ثمانيةً - نصفَ الفرق.
+   *
+   * قِيس على الصفحة الحيّة: فرقُ المركزين ثمانية بكسلات، وبإلغاء الهامش
+   * صار صفراً. وليست مشكلةَ ارتفاعٍ - كلاهما أربعةٌ وأربعون بكسلاً بالضبط،
+   * ولذلك لم يُصلحه ضبطُ الارتفاعات مرّةً بعد مرّة.
+   */
+  flush?: boolean;
 }) {
   return (
-    <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+    <div className={`${flush ? "" : "mb-4"} flex flex-wrap items-center justify-end gap-2`}>
       {children}
       <DateRangePicker
         locale={locale}
