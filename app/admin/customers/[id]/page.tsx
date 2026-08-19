@@ -106,14 +106,14 @@ export default async function CustomerDetail({ params }: { params: Promise<{ id:
               url={`/api/admin/customers/${id}/vip`}
               label={user.isVip ? "Remove VIP" : "Mark VIP"}
               confirmLabel="Confirm?"
-              icon={Star}
+              icon="Star"
               size="sm"
             />
             <AdminAction
               url={`/api/admin/customers/${id}/resync`}
               label="Force re-sync"
               confirmLabel="Re-sync now?"
-              icon={RefreshCw}
+              icon="RefreshCw"
               size="sm"
               disabled={user.workspaces.length === 0}
             />
@@ -123,7 +123,7 @@ export default async function CustomerDetail({ params }: { params: Promise<{ id:
                 body={{ targetUserId: id }}
                 label="View as"
                 confirmLabel="Enter account?"
-                icon={Eye}
+                icon="Eye"
                 tone="primary"
                 size="sm"
                 needsElevation
@@ -135,7 +135,7 @@ export default async function CustomerDetail({ params }: { params: Promise<{ id:
               body={{ targetUserId: id, suspend: !user.isSuspended }}
               label={user.isSuspended ? "Unsuspend" : "Suspend"}
               confirmLabel={user.isSuspended ? "Restore access?" : "Lock them out?"}
-              icon={user.isSuspended ? CheckCircle2 : Ban}
+              icon={user.isSuspended ? "CheckCircle2" : "Ban"}
               tone={user.isSuspended ? "default" : "danger"}
               size="sm"
               needsElevation
@@ -291,7 +291,7 @@ export default async function CustomerDetail({ params }: { params: Promise<{ id:
                         url={`/api/admin/system/resync/${w.id}`}
                         label="Re-sync"
                         confirmLabel="Run now?"
-                        icon={RefreshCw}
+                        icon="RefreshCw"
                         size="sm"
                       />
                     </td>
@@ -417,7 +417,7 @@ export default async function CustomerDetail({ params }: { params: Promise<{ id:
                   url={`/api/admin/system/reset-limits/${id}`}
                   label="Reset AI counters"
                   confirmLabel="Give back the quota?"
-                  icon={Sparkles}
+                  icon="Sparkles"
                   size="sm"
                   needsElevation
                 />

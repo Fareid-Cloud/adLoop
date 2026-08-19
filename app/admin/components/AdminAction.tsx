@@ -14,6 +14,7 @@
 // مهما اختلفت خطورته، فبتتقري بسرعة وبتتدَوَّس بلا قراءة.
 
 import { useRef, useState, type ComponentType, type ReactNode } from "react";
+import * as Icons from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Lock } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
@@ -28,7 +29,19 @@ export interface AdminActionProps {
   label: string;
   /** النصّ اللي بيظهر على الدوسة الأولى - بيقول إيه اللي هيحصل بالظبط */
   confirmLabel?: string;
-  icon?: ComponentType<{ size?: number; className?: string }>;
+  /**
+   * اسمُ الأيقونة نصّاً لا المكوّنَ نفسه.
+   *
+   * 🔴 **تمريرُ المكوّن كان يُسقط الصفحة كلَّها بخمسمئة.** هذا مكوّنُ عميل،
+   * وصفحاتُ اللوحة خوادم: وأيقونةُ lucide كائنُ `forwardRef` لا يعبر حدَّ
+   * الخادم/العميل، فيرمي Next «Functions cannot be passed directly to Client
+   * Components». وقد أسقط ذلك فعلاً `/admin/system` و`/admin/customers/[id]`
+   * في الإنتاج، وكان سيُسقط `/admin/staff` فور تجاوز بوّابة التحقّق.
+   *
+   * والاسمُ نصٌّ يعبر بلا شيء، ويُحَلّ هنا في العميل - وهو النمط نفسه
+   * المستعمَل في قائمة التنقّل للسبب نفسه بالضبط.
+   */
+  icon?: string;
   tone?: "default" | "danger" | "primary";
   disabled?: boolean;
   /** فعل بلا رجعة أو بيمسّ فلوس - بيتوقّع `elevation_required` */
@@ -48,7 +61,11 @@ export function AdminAction(props: AdminActionProps) {
   const [error, setError] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const Icon = props.icon;
+  // بديلٌ مضمون عند أيّ اسمٍ غير معروف: خطأٌ إملائيّ في اسم أيقونة لا يجوز
+  // أن يُسقط زرَّ إجراءٍ إداريّ، فضلاً عن الصفحة.
+  const Icon = props.icon
+    ? ((Icons as unknown as Record<string, ComponentType<{ size?: number; className?: string }>>)[props.icon] ?? null)
+    : null;
   const confirmLabel = props.confirmLabel ?? "Confirm?";
 
   async function run(): Promise<Response> {

@@ -109,7 +109,7 @@ export default async function StaffPage() {
                             body={{ role: "OWNER" }}
                             label="Owner"
                             confirmLabel="Grant full access?"
-                            icon={ShieldAlert}
+                            icon="ShieldAlert"
                             tone="danger"
                             size="sm"
                             needsElevation
@@ -121,7 +121,7 @@ export default async function StaffPage() {
                             body={{ role: "SUPPORT" }}
                             label="Support"
                             confirmLabel="Limit to support?"
-                            icon={ShieldCheck}
+                            icon="ShieldCheck"
                             size="sm"
                             needsElevation
                           />
@@ -132,7 +132,7 @@ export default async function StaffPage() {
                             body={{ role: "NONE" }}
                             label="Revoke"
                             confirmLabel="Remove all access?"
-                            icon={ShieldOff}
+                            icon="ShieldOff"
                             tone="danger"
                             size="sm"
                             needsElevation

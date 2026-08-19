@@ -130,7 +130,7 @@ export default async function SystemPage() {
                           url={`/api/admin/system/resync/${w.workspaceId}`}
                           label="Re-sync"
                           confirmLabel="Run now?"
-                          icon={RefreshCw}
+                          icon="RefreshCw"
                           size="sm"
                         />
                         {stuck && (
@@ -138,7 +138,7 @@ export default async function SystemPage() {
                             url={`/api/admin/system/close-run/${stuck.id}`}
                             label="Close stuck run"
                             confirmLabel="Mark failed?"
-                            icon={XCircle}
+                            icon="XCircle"
                             tone="danger"
                             size="sm"
                           />
