@@ -74,6 +74,8 @@ export async function POST(req: NextRequest) {
         where: { id: String(failedIntentId), status: "PENDING" },
         data: {
           status: "FAILED",
+          // يُفرَغ القيد كي يستطيع العميل إعادة المحاولة بعد الرفض.
+          dedupeKey: null,
           transactionId: String(transaction.id),
           failureReason: String(transaction.data?.message ?? "declined").slice(0, 300),
         },
@@ -111,7 +113,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true, unmatched: true });
   }
 
-  const result = await fulfillPaymentIntent(String(intentId), String(transaction.id));
+  // ما دفعه العميل فعلاً - يُطابَق بما طلبناه داخل الانتقال الذرّي نفسه.
+  const paidCents = Number(transaction.amount_cents);
+  const paidCurrency = String(transaction.currency ?? "").toUpperCase();
+  const result = await fulfillPaymentIntent(String(intentId), String(transaction.id), {
+    amountCents: paidCents,
+    currency: paidCurrency,
+    userId: String(userId),
+  });
+  if (result.mismatch) {
+    // لا نمنح شيئاً، ولا نُخفي الحدث: يُردّ استلامٌ كي لا يعيد Paymob
+    // المحاولة إلى الأبد، والسجلّ أعلاه يحمل ما لم يتطابق.
+    return NextResponse.json({ received: true, mismatch: true });
+  }
   if (!result.ok || result.alreadyDone) return NextResponse.json({ received: true });
 
   const workspace = await prisma.workspace.findFirst({ where: { userId } });

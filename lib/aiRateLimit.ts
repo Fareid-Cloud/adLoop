@@ -66,18 +66,80 @@ export function isAiConfigured(): boolean {
  * المزوّد - رصيدٌ نفد، مفتاحٌ غير صالح، انقطاعُ خدمة. المستخدم لا يدفع
  * ثمن ما لم يصله.
  */
+/**
+ * مطالبةٌ ذرّيةٌ بحصّة: تُمنَح أو لا تُمنَح، بلا نافذةٍ بينهما.
+ *
+ * 🔴 **كان النمط: اقرأ العدّاد، افحصه في الذاكرة، ثمّ اكتب `العدد + 1`.**
+ * وبين القراءة والكتابة يمرّ طلبٌ آخر: نداءان متوازيان عند الحدّ يقرآن
+ * الرقم نفسَه، فيُسمَح للاثنين، وينادي كلاهما المزوّد - ثمّ تتصادم
+ * الكتابتان فيستقرّ العدّاد على قيمةٍ أقلّ، فيُسمَح لثالثٍ بعدهما.
+ *
+ * أي أنّ الحدّ الذي بيع للعميل لا يحدّ فاتورةَ المزوّد. وهذا مالٌ يُنفَق
+ * خارج ما بيع، لا مجرّد تجاوزِ عدّاد.
+ *
+ * والعلاج شرطٌ داخل جملة التحديث نفسِها: `increment` ذرّيّ في قاعدة
+ * البيانات، و`lt` يُقيَّم في الجملة عينها - فإن سبقنا غيرُنا إلى آخر
+ * حصّةٍ عاد التحديث بصفر صفوف، وهو رفضٌ صريح لا تخمين.
+ */
+async function claimQuotaAtomically(o: {
+  userId: string;
+  now: Date;
+  monthlyCountField: string;
+  monthlyResetField: string;
+  monthlyLimit: number;
+  prevMonthlyReset: Date;
+  isNewMonth: boolean;
+  hourlyCountField: string;
+  hourlyResetField: string;
+  hourlyLimit: number;
+  prevHourlyReset: Date;
+  isNewHour: boolean;
+}): Promise<boolean> {
+  // تدوير الشهر/الساعة بمقارنةٍ وتبديل: الشرط على قيمة الضبط السابقة، فلا
+  // يصفّر العدّادَ إلّا أوّلُ من يصل - ومن يليه يجد الضبط قد تغيّر فيتخطّى.
+  if (o.isNewMonth) {
+    await prisma.user.updateMany({
+      where: { id: o.userId, [o.monthlyResetField]: o.prevMonthlyReset } as never,
+      data: { [o.monthlyCountField]: 0, [o.monthlyResetField]: o.now } as never,
+    });
+  }
+  if (o.isNewHour) {
+    await prisma.user.updateMany({
+      where: { id: o.userId, [o.hourlyResetField]: o.prevHourlyReset } as never,
+      data: { [o.hourlyCountField]: 0, [o.hourlyResetField]: o.now } as never,
+    });
+  }
+
+  const claimed = await prisma.user.updateMany({
+    where: {
+      id: o.userId,
+      [o.monthlyCountField]: { lt: o.monthlyLimit },
+      [o.hourlyCountField]: { lt: o.hourlyLimit },
+    } as never,
+    data: {
+      [o.monthlyCountField]: { increment: 1 },
+      [o.hourlyCountField]: { increment: 1 },
+    } as never,
+  });
+  return claimed.count === 1;
+}
+
 export async function refundAiRefreshQuota(userId: string): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { email: true, aiRefreshMonthlyCount: true, aiRefreshHourlyCount: true },
   });
   if (!user || isOwnerEmail(user.email)) return; // المالك لم يُخصَم منه أصلاً
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      aiRefreshMonthlyCount: Math.max(0, user.aiRefreshMonthlyCount - 1),
-      aiRefreshHourlyCount: Math.max(0, user.aiRefreshHourlyCount - 1),
-    },
+  // إنقاصٌ ذرّيّ مشروط: استردادان متوازيان بالنمط القديم يقرآن الرقم
+  // نفسه فينقص واحداً - فيخسر العميل حصّةً دفع ثمنها ولم تُستهلك.
+  // والشرط `gt: 0` يمنع النزول تحت الصفر بلا قراءةٍ سابقة.
+  await prisma.user.updateMany({
+    where: { id: userId, aiRefreshMonthlyCount: { gt: 0 } },
+    data: { aiRefreshMonthlyCount: { decrement: 1 } },
+  });
+  await prisma.user.updateMany({
+    where: { id: userId, aiRefreshHourlyCount: { gt: 0 } },
+    data: { aiRefreshHourlyCount: { decrement: 1 } },
   });
 }
 
@@ -156,15 +218,26 @@ export async function checkAndConsumeAIRefreshQuota(
     };
   }
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      aiRefreshMonthlyCount: monthlyCount + 1,
-      aiRefreshMonthlyReset: isNewMonth ? now : user.aiRefreshMonthlyReset,
-      aiRefreshHourlyCount: hourlyCount + 1,
-      aiRefreshHourlyReset: isNewHour ? now : user.aiRefreshHourlyReset,
-    },
+  // مطالبةٌ ذرّية: تُمنَح الحصّة أو تُرفَض في جملةٍ واحدة - راجع
+  // `claimQuotaAtomically`. والرفض هنا ليس خطأً بل سباقٌ خسرناه: نداءٌ
+  // متوازٍ أخذ آخر حصّةٍ بيننا وبين الفحص أعلاه.
+  const granted = await claimQuotaAtomically({
+    userId,
+    now,
+    monthlyCountField: "aiRefreshMonthlyCount",
+    monthlyResetField: "aiRefreshMonthlyReset",
+    monthlyLimit: effectiveMonthly,
+    prevMonthlyReset: user.aiRefreshMonthlyReset,
+    isNewMonth,
+    hourlyCountField: "aiRefreshHourlyCount",
+    hourlyResetField: "aiRefreshHourlyReset",
+    hourlyLimit: HOURLY_LIMIT,
+    prevHourlyReset: user.aiRefreshHourlyReset,
+    isNewHour,
   });
+  if (!granted) {
+    return { allowed: false, remainingThisMonth: 0, reason: "monthly_exhausted" };
+  }
 
   // الخصم من الرصيد المشترى يبدأ بعد نفاد مخصّص الباقة وحده - وإلّا كان
   // المستخدم يدفع ثمن رصيد إضافي لا يُستهلك.
@@ -244,15 +317,26 @@ export async function checkAndConsumeChatQuota(userId: string): Promise<QuotaRes
     };
   }
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      aiRefreshMonthlyCount: monthlyCount + 1,
-      aiRefreshMonthlyReset: isNewMonth ? now : user.aiRefreshMonthlyReset,
-      aiChatHourlyCount: hourlyCount + 1,
-      aiChatHourlyReset: isNewHour ? now : user.aiChatHourlyReset,
-    },
+  // مطالبةٌ ذرّية: تُمنَح الحصّة أو تُرفَض في جملةٍ واحدة - راجع
+  // `claimQuotaAtomically`. والرفض هنا ليس خطأً بل سباقٌ خسرناه: نداءٌ
+  // متوازٍ أخذ آخر حصّةٍ بيننا وبين الفحص أعلاه.
+  const granted = await claimQuotaAtomically({
+    userId,
+    now,
+    monthlyCountField: "aiRefreshMonthlyCount",
+    monthlyResetField: "aiRefreshMonthlyReset",
+    monthlyLimit: effectiveMonthly,
+    prevMonthlyReset: user.aiRefreshMonthlyReset,
+    isNewMonth,
+    hourlyCountField: "aiChatHourlyCount",
+    hourlyResetField: "aiChatHourlyReset",
+    hourlyLimit: CHAT_HOURLY_LIMIT,
+    prevHourlyReset: user.aiChatHourlyReset,
+    isNewHour,
   });
+  if (!granted) {
+    return { allowed: false, remainingThisMonth: 0, reason: "monthly_exhausted" };
+  }
 
   await consumePurchasedCreditIfNeeded(userId, monthlyCount + 1);
 
@@ -272,12 +356,16 @@ export async function refundImageQualityQuota(userId: string): Promise<void> {
     select: { email: true, imageQualityMonthlyCount: true, imageQualityHourlyCount: true },
   });
   if (!user || isOwnerEmail(user.email)) return;
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      imageQualityMonthlyCount: Math.max(0, user.imageQualityMonthlyCount - 1),
-      imageQualityHourlyCount: Math.max(0, user.imageQualityHourlyCount - 1),
-    },
+  // إنقاصٌ ذرّيّ مشروط: استردادان متوازيان بالنمط القديم يقرآن الرقم
+  // نفسه فينقص واحداً - فيخسر العميل حصّةً دفع ثمنها ولم تُستهلك.
+  // والشرط `gt: 0` يمنع النزول تحت الصفر بلا قراءةٍ سابقة.
+  await prisma.user.updateMany({
+    where: { id: userId, imageQualityMonthlyCount: { gt: 0 } },
+    data: { imageQualityMonthlyCount: { decrement: 1 } },
+  });
+  await prisma.user.updateMany({
+    where: { id: userId, imageQualityHourlyCount: { gt: 0 } },
+    data: { imageQualityHourlyCount: { decrement: 1 } },
   });
 }
 
@@ -337,15 +425,26 @@ export async function checkAndConsumeImageQualityQuota(userId: string): Promise<
     return { allowed: false, remainingThisMonth: IMAGE_QUALITY_MONTHLY_LIMIT - monthlyCount, reason: "hourly_exhausted", retryAfterMinutes };
   }
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      imageQualityMonthlyCount: monthlyCount + 1,
-      imageQualityMonthlyReset: isNewMonth ? now : user.imageQualityMonthlyReset,
-      imageQualityHourlyCount: hourlyCount + 1,
-      imageQualityHourlyReset: isNewHour ? now : user.imageQualityHourlyReset,
-    },
+  // مطالبةٌ ذرّية: تُمنَح الحصّة أو تُرفَض في جملةٍ واحدة - راجع
+  // `claimQuotaAtomically`. والرفض هنا ليس خطأً بل سباقٌ خسرناه: نداءٌ
+  // متوازٍ أخذ آخر حصّةٍ بيننا وبين الفحص أعلاه.
+  const granted = await claimQuotaAtomically({
+    userId,
+    now,
+    monthlyCountField: "imageQualityMonthlyCount",
+    monthlyResetField: "imageQualityMonthlyReset",
+    monthlyLimit: effectiveMonthly,
+    prevMonthlyReset: user.imageQualityMonthlyReset,
+    isNewMonth,
+    hourlyCountField: "imageQualityHourlyCount",
+    hourlyResetField: "imageQualityHourlyReset",
+    hourlyLimit: IMAGE_QUALITY_HOURLY_LIMIT,
+    prevHourlyReset: user.imageQualityHourlyReset,
+    isNewHour,
   });
+  if (!granted) {
+    return { allowed: false, remainingThisMonth: 0, reason: "monthly_exhausted" };
+  }
 
   return { allowed: true, remainingThisMonth: IMAGE_QUALITY_MONTHLY_LIMIT - (monthlyCount + 1) };
 }
@@ -380,12 +479,16 @@ export async function refundSiteScanQuota(userId: string): Promise<void> {
     select: { email: true, siteScanMonthlyCount: true, siteScanHourlyCount: true },
   });
   if (!user) return;
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      siteScanMonthlyCount: Math.max(0, user.siteScanMonthlyCount - 1),
-      siteScanHourlyCount: Math.max(0, user.siteScanHourlyCount - 1),
-    },
+  // إنقاصٌ ذرّيّ مشروط: استردادان متوازيان بالنمط القديم يقرآن الرقم
+  // نفسه فينقص واحداً - فيخسر العميل حصّةً دفع ثمنها ولم تُستهلك.
+  // والشرط `gt: 0` يمنع النزول تحت الصفر بلا قراءةٍ سابقة.
+  await prisma.user.updateMany({
+    where: { id: userId, siteScanMonthlyCount: { gt: 0 } },
+    data: { siteScanMonthlyCount: { decrement: 1 } },
+  });
+  await prisma.user.updateMany({
+    where: { id: userId, siteScanHourlyCount: { gt: 0 } },
+    data: { siteScanHourlyCount: { decrement: 1 } },
   });
 }
 
@@ -445,15 +548,26 @@ export async function checkAndConsumeSiteScanQuota(userId: string): Promise<Quot
     return { allowed: false, remainingThisMonth: monthlyLimit - monthlyCount, reason: "hourly_exhausted", retryAfterMinutes };
   }
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      siteScanMonthlyCount: monthlyCount + 1,
-      siteScanMonthlyReset: isNewMonth ? now : user.siteScanMonthlyReset,
-      siteScanHourlyCount: hourlyCount + 1,
-      siteScanHourlyReset: isNewHour ? now : user.siteScanHourlyReset,
-    },
+  // مطالبةٌ ذرّية: تُمنَح الحصّة أو تُرفَض في جملةٍ واحدة - راجع
+  // `claimQuotaAtomically`. والرفض هنا ليس خطأً بل سباقٌ خسرناه: نداءٌ
+  // متوازٍ أخذ آخر حصّةٍ بيننا وبين الفحص أعلاه.
+  const granted = await claimQuotaAtomically({
+    userId,
+    now,
+    monthlyCountField: "siteScanMonthlyCount",
+    monthlyResetField: "siteScanMonthlyReset",
+    monthlyLimit: monthlyLimit,
+    prevMonthlyReset: user.siteScanMonthlyReset,
+    isNewMonth,
+    hourlyCountField: "siteScanHourlyCount",
+    hourlyResetField: "siteScanHourlyReset",
+    hourlyLimit: SITE_SCAN_HOURLY_LIMIT,
+    prevHourlyReset: user.siteScanHourlyReset,
+    isNewHour,
   });
+  if (!granted) {
+    return { allowed: false, remainingThisMonth: 0, reason: "monthly_exhausted" };
+  }
 
   return { allowed: true, remainingThisMonth: monthlyLimit - (monthlyCount + 1) };
 }

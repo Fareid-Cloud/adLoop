@@ -182,18 +182,42 @@ async function startOrReuse(input: {
   // السجلّ يُنشأ **قبل** النداء الخارجي: لو نجح الإنشاء عند Paymob ثم
   // انقطع الاتصال، تبقى لدينا نيّة معلّقة نطابق بها الويب هوك - بدلها
   // كان الدفع سيصل بلا ما يقابله عندنا.
-  const intent = await prisma.paymentIntent.create({
-    data: {
-      userId: input.userId,
-      kind: input.kind,
-      planKey: input.planKey,
-      cycle: input.cycle,
-      credits: input.credits,
-      amountCents,
-      currency: input.currency,
-      status: "PENDING",
-    },
-  });
+  //
+  // 🔴 والتفرّد من قاعدة البيانات: البحثُ أعلاه يخدم الحالة الشائعة، لكنّه
+  // لا يمنع طلبين متوازيين يريان معاً «لا شيء معلّق» فينشئان رابطَي دفعٍ
+  // صالحين. القيد وحده يمنع ذلك، والتصادمُ ليس خطأً بل هو الجواب: نيّةُ
+  // الطلب الآخر قائمة، فتُعاد.
+  const dedupeKey = [
+    input.userId, input.kind, input.planKey ?? "-", input.credits ?? "-",
+    amountCents, input.currency,
+  ].join(":");
+
+  let intent;
+  try {
+    intent = await prisma.paymentIntent.create({
+      data: {
+        userId: input.userId,
+        kind: input.kind,
+        planKey: input.planKey,
+        cycle: input.cycle,
+        credits: input.credits,
+        amountCents,
+        currency: input.currency,
+        status: "PENDING",
+        dedupeKey,
+      },
+    });
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    if (code !== "P2002") throw err;
+    // سبَقنا طلبٌ آخر بأجزاء الثانية. ننتظر أن يكتب رابطه ثمّ نعيده -
+    // ولا ننشئ ثانياً، فذلك بالضبط ما يُخصَم مرّتين.
+    const winner = await prisma.paymentIntent.findUnique({ where: { dedupeKey } });
+    if (winner?.checkoutUrl) {
+      return { ok: true, url: winner.checkoutUrl, intentId: winner.id, reused: true };
+    }
+    return { ok: false, errorKey: "errCheckoutInProgress" };
+  }
 
   try {
     const intention = await createPaymentIntention({
@@ -217,7 +241,10 @@ async function startOrReuse(input: {
     await prisma.paymentIntent.update({
       where: { id: intent.id },
       data: {
+        // القيد يُفرَغ مع الخروج من التعليق: يمنع نيّتين معلّقتين لنفس
+        // الشراء، لا أن يشتري العميل الشيء نفسه مرّةً أخرى لاحقاً.
         status: "FAILED",
+        dedupeKey: null,
         failureReason: err instanceof Error ? err.message.slice(0, 300) : "unknown",
       },
     });
@@ -233,6 +260,8 @@ export interface FulfillResult {
   planKey?: string | null;
   credits?: number | null;
   alreadyDone?: boolean;
+  /** معاملةٌ موقّعةٌ لا تطابق اقتصاد نيّتها - تُسوّى يدوياً */
+  mismatch?: boolean;
 }
 
 /**
@@ -242,18 +271,52 @@ export interface FulfillResult {
  */
 export async function fulfillPaymentIntent(
   intentId: string,
-  transactionId: string
+  transactionId: string,
+  /**
+   * ما دفعه العميل فعلاً كما ورد من المزوّد - يُطابَق بما طلبناه.
+   *
+   * 🔴 **كان الإتمام يثق بـ`intentId` وحده.** توقيعُ HMAC يثبت أنّ الرسالة
+   * من Paymob، ولا يثبت أنّ هذه المعاملة تخصّ هذه النيّة: معاملةٌ موقّعةٌ
+   * صحيحةً يشير `extras` فيها إلى نيّةٍ أخرى - بخطأ ربطٍ عند المزوّد أو
+   * تكاملٍ مُعدٍّ خطأً - كانت تفعّل الخطّة أو تزيد الرصيد بلا أن يُقارَن
+   * مبلغٌ ولا عملة. أي: يُدفع جنيهٌ ويُمنَح اشتراكُ ألف.
+   *
+   * والمطابقة داخل شرط `updateMany` نفسِه لا قبله: فحصٌ سابقٌ للتحديث
+   * يترك نافذةً بينهما، وهذا يجعل الانتقال والتحقّق فعلاً واحداً.
+   */
+  observed?: { amountCents: number; currency: string; userId: string }
 ): Promise<FulfillResult> {
   const flipped = await prisma.paymentIntent.updateMany({
-    where: { id: intentId, status: "PENDING" },
-    data: { status: "PAID", paidAt: new Date(), transactionId },
+    where: {
+      id: intentId,
+      status: "PENDING",
+      ...(observed
+        ? { amountCents: observed.amountCents, currency: observed.currency, userId: observed.userId }
+        : {}),
+    },
+    // القيد يُفرَغ مع الدفع - راجع `dedupeKey` في المخطّط.
+    data: { status: "PAID", paidAt: new Date(), transactionId, dedupeKey: null },
   });
 
   const intent = await prisma.paymentIntent.findUnique({ where: { id: intentId } });
   if (!intent) return { ok: false };
 
   if (flipped.count === 0) {
-    // عولجت سابقاً - نُبلغ بالنجاح دون تكرار الأثر
+    // 🔴 صفرٌ له سببان مختلفان تماماً، وخلطُهما يمنح اشتراكاً بلا ثمنه.
+    //
+    // إن كانت النيّة قد صارت مدفوعةً فعلاً فهذا تكرارُ ويب هوك: نُبلغ
+    // بالنجاح ولا نكرّر الأثر. أمّا إن بقيت معلّقةً فالشرط لم يتطابق -
+    // مبلغٌ أو عملةٌ أو صاحبُ حسابٍ مختلف - وهذه **ليست نجاحاً**: تُرفض
+    // وتُسجَّل بما لا يتطابق كي تُسوّى يدوياً، لا أن تمرّ صامتة.
+    if (intent.status !== "PAID") {
+      console.error("[billing] معاملة موقّعة لا تطابق نيّتها - رُفض الإتمام", {
+        intentId,
+        transactionId,
+        expected: { amountCents: intent.amountCents, currency: intent.currency, userId: intent.userId },
+        observed,
+      });
+      return { ok: false, mismatch: true };
+    }
     return { ok: true, alreadyDone: true, kind: intent.kind, planKey: intent.planKey, credits: intent.credits };
   }
 
