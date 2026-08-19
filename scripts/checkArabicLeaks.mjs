@@ -62,6 +62,27 @@ function scan(path, rel) {
     // نصّ ظاهر مباشرةً بين وسمين
     if (ts.isJsxText(node) && ARABIC.test(node.text)) report(node, node.text);
 
+    // 🔴 **ونصٌّ داخل تعبيرٍ بين وسمين: `{ar ? "مرحباً" : "Hello"}`.**
+    //
+    // لم يكن يُفحَص، لأنّه ليس `JsxText` ولا خاصّية - بل حرفيّةٌ داخل
+    // `JsxExpression`. ومرّ به عشرون نصّاً في مكوّنين جديدين مرورَ الكرام،
+    // كلٌّ منها لغتان مكتوبتان بيدٍ خارج القاموس: فلا يراهما مترجِمٌ، ولا
+    // يمسك تكافؤَهما فحصُ القاموس، ولا يُغيَّران إلّا بتعديل الكود.
+    //
+    // والنمط يبدو بريئاً لأنّه ثنائيّ اللغة ظاهرياً - وهو بالضبط ما يجعله
+    // يفلت من العين البشرية أيضاً.
+    if ((ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) && ARABIC.test(node.text)) {
+      // داخل تعبيرٍ في JSX فقط - لا كلّ حرفيّةٍ في الملفّ (المفاتيح والأصناف
+      // والمسارات تمرّ بلا معنى لو فُحصت).
+      let p = node.parent;
+      while (p && !ts.isJsxExpression(p) && !ts.isJsxAttribute(p)) p = p.parent;
+      // حرفان عربيّان على الأقلّ: الفاصلةُ «،» وحدَها فاصلٌ لا نصٌّ يُترجَم،
+      // والإبلاغ عنها ضجيجٌ يُفقد الفحصَ قيمته.
+      if (p && ts.isJsxExpression(p) && (node.text.match(/[؀-ۿ]/g) || []).length >= 2) {
+        report(node, node.text);
+      }
+    }
+
     // خاصّية يقرؤها المستخدم بقيمة نصّية
     if (ts.isJsxAttribute(node) && node.initializer) {
       const name = node.name.getText();
@@ -171,11 +192,51 @@ if (apiFindings.length > 0) {
   process.exit(1);
 }
 
-if (findings.length === 0) {
-  console.log("✓ لا نصّ عربيّ مثبَّت في مكوّن ولا في رسالة خطأ.");
+// ── دَينٌ موروث، بعددٍ مرصود لكلّ ملفّ ─────────────────────────────
+//
+// وُسّع هذا الفحص ليرى النصّ داخل تعبيرٍ في JSX (`{ar ? "…" : "…"}`)، فكشف
+// أربعةً وثلاثين نصّاً في خمسة ملفّاتٍ **سابقةٍ لهذا التوسيع**. وإسقاطُ
+// البناء عليها يعاقب من لم يكتبها ويُعطّل الجميع، وتجاهلُها يعيد الفحص إلى
+// عماه.
+//
+// فالعدد مرصودٌ لكلّ ملفّ: الدَّين لا يزيد أبداً - أيّ نصٍّ جديد في هذه
+// الملفّات نفسها يُسقط البناء - **ولا يُنسى**، لأنّه مكتوبٌ هنا بالأرقام.
+// وكلّما نُقل نصٌّ إلى القاموس نقص رقمُه هنا حتى يبلغ صفراً فيُحذف سطرُه.
+const GRANDFATHERED = {
+  "app/signup/SignupForm.tsx": 25,
+  "app/onboarding/OnboardingFlow.tsx": 3,
+  "app/login/LoginForm.tsx": 3,
+  "app/components/SupportChat.tsx": 2,
+  "app/components/AuthShell.tsx": 1,
+};
+
+const byFile = new Map();
+for (const f of findings) {
+  const key = f.rel.replace(/\\/g, "/");
+  byFile.set(key, (byFile.get(key) ?? 0) + 1);
+}
+
+const fresh = [];
+for (const f of findings) {
+  const key = f.rel.replace(/\\/g, "/");
+  const allowed = GRANDFATHERED[key] ?? 0;
+  if (byFile.get(key) > allowed) fresh.push(f);
+}
+// ملفٌّ نقص دَينُه: يُذكَّر به كي يُحدَّث الرقم فلا يبقى بابٌ مفتوح
+const shrunk = Object.entries(GRANDFATHERED).filter(([k, n]) => (byFile.get(k) ?? 0) < n);
+
+if (fresh.length === 0) {
+  const debt = Object.values(GRANDFATHERED).reduce((a, b) => a + b, 0);
+  console.log(
+    `✓ لا نصّ عربيّ مثبَّت جديد.` +
+      (debt ? ` (دَينٌ موروث: ${debt} نصّاً في ${Object.keys(GRANDFATHERED).length} ملفّات)` : "")
+  );
+  for (const [k, n] of shrunk) {
+    console.log(`  ↓ ${k}: بقي ${byFile.get(k) ?? 0} من ${n} - أنقص الرقم في GRANDFATHERED.`);
+  }
   process.exit(0);
 }
 
-console.error(`✗ ${findings.length} نصّاً عربياً مثبَّتاً في مكوّنات - سيراه مستخدم الواجهة الإنجليزية كما هو:\n`);
-for (const f of findings) console.error(`   ${f.rel}:${f.line}  «${f.text}»`);
+console.error(`✗ ${fresh.length} نصّاً عربياً مثبَّتاً في مكوّنات - سيراه مستخدم الواجهة الإنجليزية كما هو:\n`);
+for (const f of fresh) console.error(`   ${f.rel}:${f.line}  «${f.text}»`);
 process.exit(1);

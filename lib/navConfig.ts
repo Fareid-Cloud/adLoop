@@ -152,3 +152,14 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
 ];
+
+/** معرّف عنصر التنقّل الذي تستهدفه الجولة التعريفية.
+ *
+ * 🔴 **مصدرٌ واحد لأنّ النسختين افترقتا فعلاً.** كان الشريط يولّد المعرّف
+ * بـ`href.replace(/\//g, "-")` فينتج `tour-nav--dashboard`، والجولةُ تبحث
+ * عن `#tour-nav-/dashboard` مكتوباً بيد - فلا تجد شيئاً أبداً. والأسوأ أنّ
+ * الشرطة المائلة غيرُ صالحة في محدّد CSS، فـ`querySelector` يرمي
+ * `SyntaxError` بدل أن يعود فارغاً: أوّلُ خطوةٍ في الجولة تُسقط الصفحة. */
+export function tourNavId(href: string): string {
+  return `tour-nav-${href.replace(/\//g, "-")}`;
+}

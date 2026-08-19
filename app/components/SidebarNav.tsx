@@ -10,7 +10,7 @@ import {
   ChevronsDown, PlayCircle,
 } from "lucide-react";
 import * as Icons from "lucide-react";
-import { NAV_GROUPS, type NavItem } from "@/lib/navConfig";
+import { NAV_GROUPS, tourNavId, type NavItem } from "@/lib/navConfig";
 import { BrandMark } from "@/app/components/BrandMark";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -243,7 +243,7 @@ export function SidebarNav({
                       <div className="flex items-center">
                         <a
                           href={item.href}
-                          id={`tour-nav-${item.href.replace(/\//g, "-")}`}
+                          id={tourNavId(item.href)}
                           title={collapsed ? label(item) : undefined}
                           className={`relative flex flex-1 items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13.5px] no-underline transition-colors ${
                             active ? "bg-accent font-medium text-white shadow-sm" : "text-text-muted hover:bg-surface-raised hover:text-text-primary"

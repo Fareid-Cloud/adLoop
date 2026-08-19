@@ -22,6 +22,7 @@ import { SetupProgressPanel, RecentActivityPanel, ConnectedPlatformsPanel, After
 import { getRecentActivity, getPlatformCards } from "@/lib/homeActivity";
 import { getSetupProgress } from "@/lib/setupProgress";
 import { PostConnectCampaignPrompt } from "@/app/components/PostConnectCampaignPrompt";
+import { ValueMomentGate } from "@/app/components/ValueMomentGate";
 import { Suspense } from "react";
 import { PlatformSwitcher } from "@/app/components/PlatformSwitcher";
 import { KpiSection } from "@/app/components/KpiSection";
@@ -397,6 +398,16 @@ export default async function GlancePage({
         </Link>
         </>}
       />
+
+      {/* اللحظة الأولى: المستخدم يرى الفجوة بين ما تقوله المنصة والحقيقة */}
+      {hasAnyData && (
+        <ValueMomentGate
+          reportedConversions={totalRaw}
+          verifiedConversions={totalVerified}
+          currency={workspace.currency}
+          locale={locale}
+        />
+      )}
 
       {/* اختيار الحملات يفتح تلقائياً فور العودة من ربط المنصة */}
       <Suspense fallback={null}>

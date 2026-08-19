@@ -4,6 +4,7 @@ import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CampaignsOverview, type CampaignRow } from "./CampaignsOverview";
 import { EmptyState } from "@/app/components/ui/EmptyState";
+import { CampaignsEmpty } from "@/app/components/ui/PageEmptyStates";
 import { AiAsk } from "@/app/components/AiAsk";
 import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
@@ -106,10 +107,7 @@ export default async function CampaignsPage({
       />
 
       {rows.length === 0 ? (
-        <EmptyState
-          title={t(locale, "campPages.noneTitle")}
-          description={t(locale, "campPages.noneBody")}
-        />
+        <CampaignsEmpty locale={locale} />
       ) : (
         <CampaignsOverview rows={rows} currency={workspace.currency} locale={locale} />
       )}

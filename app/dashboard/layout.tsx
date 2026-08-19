@@ -41,6 +41,7 @@ import { DemoExpiredGate } from "@/app/components/DemoExpiredGate";
 import { isOwnerEmail } from "@/lib/owner";
 import { Suspense } from "react";
 import { SearchHighlight } from "@/app/components/SearchHighlight";
+import { GuidedTourGate } from "@/app/components/GuidedTourGate";
 // next/font/google بيحمّل ملف الخط فعلياً وقت الـ build ويربطه بمتغير CSS -
 // ده الفرق عن مجرد كتابة اسم الخط في font-family من غير ما يكون مستورد
 // فعلياً (المشكلة اللي حصلت في المعاينة السابقة)
@@ -409,6 +410,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         />
       )}
       <NotificationToast locale={locale} />
+      {showOnboarding && <GuidedTourGate locale={locale} />}
       </LiveDataProvider>
     </div>
   );
