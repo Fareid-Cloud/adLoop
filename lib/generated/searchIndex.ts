@@ -180,7 +180,6 @@ export const SEARCH_INDEX: SearchEntry[] = [
   { k: "campPages.mtNone", h: "/dashboard/campaigns/match-types" },
   { k: "campPages.mtNoneBody", h: "/dashboard/campaigns/match-types" },
   { k: "campPages.mtTitle", h: "/dashboard/campaigns/match-types" },
-  { k: "campPages.noneTitle", h: "/dashboard/campaigns" },
   { k: "campPages.ovAllPlatforms", h: "/dashboard/campaigns" },
   { k: "campPages.ovAllStates", h: "/dashboard/campaigns" },
   { k: "campPages.ovNeedAction", h: "/dashboard/campaigns" },

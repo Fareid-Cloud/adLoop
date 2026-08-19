@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AdLoop Production Code Audit — August 19, 2026</title>
+<style>
+  @page { margin: 2cm; size: A4; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 11pt; line-height: 1.6; color: #1a1a1a; background: #fff; padding: 40px; max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 22pt; color: #0f172a; border-bottom: 3px solid #2563eb; padding-bottom: 10px; margin-bottom: 8px; }
+  h2 { font-size: 16pt; color: #1e293b; margin-top: 32px; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid #e2e8f0; }
+  h3 { font-size: 13pt; color: #334155; margin-top: 20px; margin-bottom: 8px; }
+  .meta { color: #64748b; font-size: 10pt; margin-bottom: 24px; }
+  .meta span { margin-right: 18px; }
+  .severity-critical { background: #fef2f2; border-left: 4px solid #dc2626; padding: 14px 16px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+  .severity-high { background: #fff7ed; border-left: 4px solid #ea580c; padding: 14px 16px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+  .severity-medium { background: #fefce8; border-left: 4px solid #ca8a04; padding: 14px 16px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+  .severity-low { background: #f0f9ff; border-left: 4px solid #2563eb; padding: 14px 16px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+  .severity-info { background: #f8fafc; border-left: 4px solid #94a3b8; padding: 14px 16px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+  .badge { display: inline-block; font-size: 8pt; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; margin-right: 6px; }
+  .badge-critical { background: #dc2626; color: #fff; }
+  .badge-high { background: #ea580c; color: #fff; }
+  .badge-medium { background: #ca8a04; color: #fff; }
+  .badge-low { background: #2563eb; color: #fff; }
+  .badge-info { background: #94a3b8; color: #fff; }
+  .file { font-family: 'Consolas', 'Courier New', monospace; font-size: 9pt; color: #7c3aed; background: #f5f3ff; padding: 1px 6px; border-radius: 3px; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 12px 16px; border-radius: 6px; overflow-x: auto; font-size: 9pt; margin: 8px 0; line-height: 1.5; }
+  code { font-family: 'Consolas', 'Courier New', monospace; font-size: 9pt; background: #f1f5f9; padding: 1px 4px; border-radius: 3px; }
+  pre code { background: none; padding: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 10pt; }
+  th { background: #f1f5f9; text-align: left; padding: 8px 10px; border: 1px solid #e2e8f0; font-weight: 600; }
+  td { padding: 8px 10px; border: 1px solid #e2e8f0; vertical-align: top; }
+  tr:nth-child(even) { background: #f8fafc; }
+  .finding-title { font-weight: 700; font-size: 11pt; margin-bottom: 6px; }
+  .section-label { font-weight: 600; color: #475569; font-size: 10pt; margin-top: 10px; margin-bottom: 2px; }
+  ul { padding-left: 20px; margin: 4px 0; }
+  li { margin-bottom: 3px; }
+  .score-box { display: inline-block; font-size: 28pt; font-weight: 800; color: #2563eb; margin: 8px 0; }
+  .cover { text-align: center; padding: 80px 0 40px 0; page-break-after: always; }
+  .cover h1 { border: none; font-size: 28pt; }
+  .cover .subtitle { font-size: 14pt; color: #475569; margin-top: 8px; }
+  .cover .date { font-size: 12pt; color: #64748b; margin-top: 24px; }
+  .page-break { page-break-before: always; }
+  .toc { page-break-after: always; }
+  .toc h2 { border: none; }
+  .toc ul { list-style: none; padding: 0; }
+  .toc li { padding: 6px 0; border-bottom: 1px dotted #e2e8f0; }
+  .toc li a { text-decoration: none; color: #1e40af; }
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+  .summary-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; text-align: center; }
+  .summary-card .number { font-size: 24pt; font-weight: 800; }
+  .summary-card .label { font-size: 9pt; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover">
+  <h1>🔒 AdLoop Production Code Audit</h1>
+  <p class="subtitle">Comprehensive Security &amp; Reliability Review</p>
+  <p class="date">August 19, 2026</p>
+  <div style="margin-top: 40px;">
+    <p style="font-size: 11pt; color: #475569;">
+      Scope: Full codebase — authentication, authorization, billing, webhooks,<br>
+      platform sync, AI rate limiting, data integrity, security headers, edge cases<br><br>
+      Method: Static code analysis, data flow tracing, adversarial reasoning<br><br>
+      Status: <strong>READ-ONLY — No files modified</strong>
+    </p>
+  </div>
+</div>
+
+<!-- EXECUTIVE SUMMARY -->
+<h2>Executive Summary</h2>
+
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="number" style="color: #dc2626;">3</div>
+    <div class="label">Critical Findings</div>
+  </div>
+  <div class="summary-card">
+    <div class="number" style="color: #ea580c;">5</div>
+    <div class="label">High-Risk Findings</div>
+  </div>
+  <div class="summary-card">
+    <div class="number" style="color: #ca8a04;">7</div>
+    <div class="label">Medium-Low Findings</div>
+  </div>
+  <div class="summary-card">
+    <div class="number" style="color: #2563eb;">5</div>
+    <div class="label">False Positives</div>
+  </div>
+</div>
+
+<p><strong>Overall Production-Readiness Score: <span class="score-box">82/100</span></strong></p>
+
+<p style="margin-top: 12px;">The AdLoop codebase demonstrates a mature security posture for a pre-revenue SaaS. Authentication, authorization, and billing logic are well-implemented with multiple defense layers. The three critical findings (CSP weakness, OAuth account linking, OAuth rate limiting) must be addressed before scaling to paying customers. The Paymob HMAC verification order is a deployment blocker that requires manual confirmation.</p>
+
+<table>
+  <tr><th>Area</th><th>Score</th><th>Notes</th></tr>
+  <tr><td>Authentication</td><td>85/100</td><td>Strong JWT, MFA, backup codes. OAuth linking is the main gap.</td></tr>
+  <tr><td>Authorization</td><td>90/100</td><td>BOLA protection via workspaceAccessFilter, admin guard with elevation.</td></tr>
+  <tr><td>Data Security</td><td>80/100</td><td>Encryption at rest, TLS in transit. CSP is weak.</td></tr>
+  <tr><td>Billing</td><td>85/100</td><td>Double-charge prevention is solid. Paymob HMAC unverified.</td></tr>
+  <tr><td>API Security</td><td>75/100</td><td>Rate limiting on critical endpoints, fail-open design, missing CSRF.</td></tr>
+  <tr><td>Platform Sync</td><td>85/100</td><td>Robust Google Ads. Meta webhook missing idempotency.</td></tr>
+  <tr><td>AI/Rate Limiting</td><td>90/100</td><td>Multi-layer quota system, owner bypass intentional.</td></tr>
+  <tr><td>Data Integrity</td><td>85/100</td><td>Unique constraints, idempotent upserts. Missing retention policies.</td></tr>
+</table>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc page-break">
+<h2>Table of Contents</h2>
+<ul>
+  <li><a href="#critical">🔴 Critical Findings (1-3)</a></li>
+  <li><a href="#high">🟠 High-Risk Findings (4-8)</a></li>
+  <li><a href="#medium">🟡 Medium-Low Findings (9-17)</a></li>
+  <li><a href="#false">🔵 False Positives &amp; Uncertain Findings</a></li>
+  <li><a href="#score">📊 Production-Readiness Assessment</a></li>
+  <li><a href="#top3">🚀 Top 3 Fixes Before Launch</a></li>
+</ul>
+</div>
+
+<!-- CRITICAL FINDINGS -->
+<h2 id="critical">🔴 Critical Findings</h2>
+
+<div class="severity-critical">
+  <div class="finding-title"><span class="badge badge-critical">Critical</span> Finding #1 — CSP Allows 'unsafe-inline' 'unsafe-eval'</div>
+  <p class="section-label">File:</p>
+  <p><span class="file">next.config.js</span> lines 55-56</p>
+  <p class="section-label">Code:</p>
+<pre><code>"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
+"style-src 'self' 'unsafe-inline'",</code></pre>
+  <p class="section-label">What is wrong:</p>
+  <p>The Content-Security-Policy includes both <code>'unsafe-inline'</code> and <code>'unsafe-eval'</code> for scripts. This completely neutralizes CSP as an XSS defense — any injected <code>&lt;script&gt;</code> tag will execute freely.</p>
+  <p class="section-label">Why it is wrong:</p>
+  <p>CSP is supposed to be the last line of defense against XSS. With these flags, an XSS vulnerability anywhere in the app (including AI-generated markdown content) gives an attacker full script execution.</p>
+  <p class="section-label">Real-world impact:</p>
+  <p>If any input is reflected without proper sanitization, an attacker can steal session cookies, admin tokens, or OAuth tokens.</p>
+  <p class="section-label">How to reproduce:</p>
+  <p>Inspect response headers on any page — the CSP header contains <code>unsafe-inline</code> and <code>unsafe-eval</code>.</p>
+  <p class="section-label">Recommended fix:</p>
+  <p>Use nonce-based CSP for inline scripts. Next.js supports this via dynamic nonces. Remove <code>'unsafe-eval'</code> entirely.</p>
+</div>
+
+<div class="severity-critical">
+  <div class="finding-title"><span class="badge badge-critical">Critical</span> Finding #2 — No Rate Limiting on OAuth Login Callbacks</div>
+  <p class="section-label">Files:</p>
+  <p><span class="file">app/api/oauth/login-google/callback/route.ts</span>, <span class="file">app/api/oauth/login-facebook/callback/route.ts</span></p>
+  <p class="section-label">What is wrong:</p>
+  <p>Both OAuth login callbacks create sessions without any rate limiting. The email/password login has IP-based rate limiting (10/15 min), but OAuth login has none.</p>
+  <p class="section-label">Why it is wrong:</p>
+  <p>This creates an inconsistency where the weaker path (OAuth) is the unprotected one. An attacker with a valid OAuth code can create unlimited sessions.</p>
+  <p class="section-label">Real-world impact:</p>
+  <p>Session creation flooding, potential account abuse.</p>
+  <p class="section-label">How to reproduce:</p>
+  <p>Call <code>POST /api/oauth/login-google/callback</code> repeatedly with valid codes.</p>
+  <p class="section-label">Recommended fix:</p>
+  <p>Add rate limiting to OAuth callback endpoints, at minimum per-IP.</p>
+</div>
+
+<div class="severity-critical">
+  <div class="finding-title"><span class="badge badge-critical">Critical</span> Finding #3 — OAuth Account Linking Allows Silent Account Takeover</div>
+  <p class="section-label">Files:</p>
+  <p><span class="file">app/api/oauth/login-google/callback/route.ts</span>, <span class="file">app/api/oauth/login-facebook/callback/route.ts</span></p>
+  <p class="section-label">Code:</p>
+<pre><code>const existingByEmail = await prisma.user.findUnique({ where: { email: profile.email } });
+if (existingByEmail) {
+  user = await prisma.user.update({
+    where: { id: existingByEmail.id },
+    data: { googleLoginId: profile.sub, ... },
+  });
+}</code></pre>
+  <p class="section-label">What is wrong:</p>
+  <p>If a user signs up with email/password, an attacker who controls that email on Google can log in via OAuth and the code will <strong>automatically link</strong> the attacker's Google ID to the existing account. No consent is required from the original account holder.</p>
+  <p class="section-label">Why it is wrong:</p>
+  <p>The OAuth flow trusts the email from Google's profile without verifying that the original account holder linked their Google account. Anyone with access to an email address on Google can claim it.</p>
+  <p class="section-label">Real-world impact:</p>
+  <p><strong>Account takeover.</strong> An attacker creates a Google account with a victim's email, then uses Google OAuth to gain access to the victim's AdLoop account.</p>
+  <p class="section-label">How to reproduce:</p>
+  <ol style="padding-left: 20px;">
+    <li>Create AdLoop account with <code>victim@example.com</code> + password.</li>
+    <li>Create Google account with <code>victim@example.com</code>.</li>
+    <li>Use Google OAuth login — the code links the Google ID to the existing account and issues a session.</li>
+  </ol>
+  <p class="section-label">Recommended fix:</p>
+  <p>When linking an OAuth provider to an existing email/password account, require the user to be logged in first and confirm the linking explicitly. Do NOT auto-link on email match.</p>
+</div>
+
+<!-- HIGH-RISK FINDINGS -->
+<div class="page-break"></div>
+<h2 id="high">🟠 High-Risk Findings</h2>
+
+<div class="severity-high">
+  <div class="finding-title"><span class="badge badge-high">High</span> Finding #4 — Rate Limiter Fails Open Under DB Pressure</div>
+  <p class="section-label">File:</p>
+  <p><span class="file">lib/rateLimit.ts</span></p>
+  <p class="section-label">Code:</p>
+<pre><code>} catch (err) {
+  console.error("فشل فحص حد الاستخدام:", err);
+  return { allowed: true, remaining: maxRequests };
+}</code></pre>
+  <p class="section-label">What is wrong:</p>
+  <p>When the database is unreachable or slow, the rate limiter defaults to allowing all requests ("fail open"). Under a DDoS or database outage, rate limiting disappears exactly when it's most needed.</p>
+  <p class="section-label">Real-world impact:</p>
+  <p>During database issues, all rate-limited endpoints (login, signup, CTA tracking, password reset) become unprotected.</p>
+  <p class="section-label">Recommended fix:</p>
+  <p>Use an in-memory rate limiter as a fallback when DB is unavailable, or set a hard ceiling on concurrent requests.</p>
+</div>
+
+<div class="severity-high">
+  <div class="finding-title"><span class="badge badge-high">High</span> Finding #5 — GAQL Queries Use String Interpolation for Campaign IDs</div>
+  <p class="section-label">File:</p>
+  <p><span class="file">lib/syncGoogleAds.ts</span> (multiple locations)</p>
+  <p class="section-label">Code:</p>
+<pre><code>WHERE segments.date BETWEEN '${from}' AND '${to}'
+  AND campaign.id IN (${campaignIds.join(",")})</code></pre>
+  <p class="section-label">What is wrong:</p>
+  <p>Campaign IDs and date ranges are interpolated directly into GAQL query strings. While IDs come from the database, if a malicious workspace owner crafted campaign link records with specially crafted IDs, they could inject GAQL syntax.</p>
+  <p class="section-label">Real-world impact:</p>
+  <p>Potential unauthorized data access from Google Ads API, or garbled queries returning incorrect data.</p>
+  <p class="section-label">Recommended fix:</p>
+  <p>Validate campaign IDs against a strict pattern (e.g., <code>/^\d+$/</code>) before interpolation.</p>
+</div>
+
+<div class="severity-high">
+  <div class="finding-title"><span class="badge badge-high">High</span> Finding #6 — Meta Messenger Webhook Missing Idempotency</div>
+  <p class="section-label">File:</p>
+  <p><span class="file">app/api/webhooks/meta-messenger/route.ts</span></p>
+  <p class="section-label">What is wrong:</p>
+  <p>Unlike Salla and Shopify webhooks which use <code>markEventAsProcessed</code> for idempotency, the Meta Messenger webhook has no deduplication. Meta can redeliver webhooks, and the code will process them again.</p>
+  <p class="section-label">Real-world impact:</p>
+  <p>Inflated message counts, potential double-counting of verified conversions, incorrect response time metrics.</p>
+  <p class="section-label">How to reproduce:</p>
+  <p>Trigger the same Meta webhook event twice — <code>messageCount</code> increments twice.</p>
+  <p class="section-label">Recommended fix:</p>
+  <p>Add a unique message ID or timestamp-based deduplication using <code>ProcessedWebhookEvent</code>.</p>
+</div>
+
+<div class="severity-high">
+  <div class="finding-title"><span class="badge badge-high">High</span> Finding #7 — Paymob HMAC Field Order Is a Guess</div>
+  <p class="section-label">File:</p>
+  <p><span class="file">app/api/webhooks/paymob/route.ts</span></p>
+  <p class="section-label">What is wrong:</p>
+  <p>The HMAC verification field order is a guess based on old Paymob documentation. If the order is wrong, ALL payment webhooks will be rejected (fail closed), meaning subscriptions will never activate after payment.</p>
+  <p class="section-label">Real-world impact:</p>
+  <p>Users who pay will never have their subscriptions activated. Revenue loss.</p>
+  <p class="section-label">Recommended fix:</p>
+  <p>Confirm field order from Paymob dashboard (Settings → Payment Integrations → HMAC). Add monitoring alert when ALL webhook verifications fail.</p>
+</div>
+
+<div class="severity-high">
+  <div class="finding-title"><span class="badge badge-high">High</span> Finding #8 — $queryRawUnsafe in Health Endpoint</div>
+  <p class="section-label">File:</p>
+  <p><span class="file">app/api/health/schema/route.ts</span></p>
+  <p class="section-label">Code:</p>
+<pre><code>const rows = await prisma.$queryRawUnsafe&lt;...&gt;(
+  `SELECT table_name, column_name
+   FROM information_schema.columns
+   WHERE table_schema = current_schema()`
+);</code></pre>
+  <p class="section-label">What is wrong:</p>
+  <p>While the specific query has no user input, using <code>$queryRawUnsafe</code> is a dangerous pattern. Any future modification that adds user input would create a SQL injection vulnerability.</p>
+  <p class="section-label">Recommended fix:</p>
+  <p>Replace with <code>$queryRaw</code> with tagged template literals.</p>
+</div>
+
+<!-- MEDIUM-LOW FINDINGS -->
+<div class="page-break"></div>
+<h2 id="medium">🟡 Medium-Low Findings</h2>
+
+<div class="severity-medium">
+  <div class="finding-title"><span class="badge badge-medium">Medium</span> Finding #9 — Middleware Only Checks Cookie Existence</div>
+  <p class="section-label">File:</p>
+  <p><span class="file">middleware.ts</span></p>
+  <p class="section-label">What is wrong:</p>
+  <p>The middleware only checks if the session cookie exists, not if it's valid. An expired or tampered cookie passes middleware and only fails at the route handler level.</p>
+  <p class="section-label">Real-world impact:</p>
+  <p>Minor performance waste. Security is maintained by route-level checks.</p>
+</div>
+
+<div class="severity-medium">
+  <div class="finding-title"><span class="badge badge-medium">Medium</span> Finding #10 — Missing CSRF on Many Mutation Endpoints</div>
+  <p class="section-label">What is wrong:</p>
+  <p>CSRF protection is on admin routes (impersonate, suspend, reauth) but missing on workspace creation, product updates, campaign link changes, and other mutation endpoints.</p>
+  <p class="section-label">Real-world impact:</p>
+  <p>An attacker could craft a page that makes authenticated users unknowingly modify their data.</p>
+</div>
+
+<div class="severity-medium">
+  <div class="finding-title"><span class="badge badge-medium">Medium</span> Finding #11 — OAuth Login Doesn't Check isSuspended Before Linking</div>
+  <p class="section-label">What is wrong:</p>
+  <p>The <code>isSuspended</code> check happens after the account is linked/linked. The database write succeeds even for suspended users.</p>
+</div>
+
+<div class="severity-medium">
+  <div class="finding-title"><span class="badge badge-medium">Medium</span> Finding #12 — getEntitlements Called Too Frequently Without Caching</div>
+  <p class="section-label">File:</p>
+  <p><span class="file">lib/entitlements.ts</span></p>
+  <p class="section-label">What is wrong:</p>
+  <p><code>getEntitlements</code> makes a database query every time it's called. It's invoked from multiple places per request — potentially 10+ DB queries for entitlement checks alone.</p>
+  <p class="section-label">Recommended fix:</p>
+  <p>Cache entitlements per-request using <code>AsyncLocalStorage</code> or pass through request context.</p>
+</div>
+
+<div class="severity-medium">
+  <div class="finding-title"><span class="badge badge-medium">Medium</span> Finding #13 — No Data Retention for UnmatchedClick and AttributionResult</div>
+  <p class="section-label">File:</p>
+  <p><span class="file">lib/dataRetention.ts</span></p>
+  <p class="section-label">What is wrong:</p>
+  <p><code>purgeExpiredData</code> only cleans <code>CtaClickEvent</code> and <code>RateLimitEntry</code>. <code>UnmatchedClick</code> (IP addresses, user agents) and <code>AttributionResult</code> accumulate indefinitely.</p>
+  <p class="section-label">Real-world impact:</p>
+  <p>Growing database size, potential legal liability under PDPC regulations.</p>
+</div>
+
+<div class="severity-medium">
+  <div class="finding-title"><span class="badge badge-medium">Medium</span> Finding #14 — Image Quality Quota Inconsistently Capped</div>
+  <p class="section-label">File:</p>
+  <p><span class="file">lib/aiRateLimit.ts</span></p>
+  <p class="section-label">What is wrong:</p>
+  <p>Image quality quota uses <code>Math.min(MONTHLY_LIMIT, credits.left)</code> (capped at 80), while refresh quota correctly uses <code>credits.left</code>. A Pro plan user with 150 credits gets only 80 for image quality.</p>
+</div>
+
+<div class="severity-low">
+  <div class="finding-title"><span class="badge badge-low">Low</span> Finding #15 — SQL String Interpolation for Date Ranges in GAQL</div>
+  <p class="section-label">File:</p>
+  <p><span class="file">lib/syncGoogleAds.ts</span></p>
+  <p class="section-label">What is wrong:</p>
+  <p>Date strings are interpolated into GAQL queries. While dates come from code, a bug in date formatting could inject unexpected characters.</p>
+</div>
+
+<div class="severity-low">
+  <div class="finding-title"><span class="badge badge-low">Low</span> Finding #16 — isOwnerEmail Hardcoded Fallback</div>
+  <p class="section-label">File:</p>
+  <p><span class="file">lib/owner.ts</span></p>
+  <p class="section-label">Code:</p>
+<pre><code>export const OWNER_EMAIL = (process.env.OWNER_EMAIL ?? "manfareiduwk@gmail.com")
+  .trim().toLowerCase();</code></pre>
+  <p class="section-label">What is wrong:</p>
+  <p>If <code>OWNER_EMAIL</code> env var is not set, the hardcoded email becomes the owner. Risky if deployed to production without the env var.</p>
+</div>
+
+<div class="severity-low">
+  <div class="finding-title"><span class="badge badge-low">Low</span> Finding #17 — safeFetch DNS Resolution TOCTOU Gap</div>
+  <p class="section-label">File:</p>
+  <p><span class="file">lib/safeFetch.ts</span></p>
+  <p class="section-label">What is wrong:</p>
+  <p>DNS resolution happens once before the fetch. Between resolution and connection, the DNS record could change (DNS rebinding). Very low practical risk.</p>
+</div>
+
+<!-- FALSE POSITIVES -->
+<div class="page-break"></div>
+<h2 id="false">🔵 False Positives &amp; Uncertain Findings</h2>
+
+<div class="severity-info">
+  <div class="finding-title"><span class="badge badge-info">Info</span> SQL Injection via Prisma</div>
+  <p>Prisma uses parameterized queries by default. The only raw query (<code>$queryRawUnsafe</code> in health check) has no user input. <strong>Not a vulnerability.</strong></p>
+</div>
+
+<div class="severity-info">
+  <div class="finding-title"><span class="badge badge-info">Info</span> child_process in Build Scripts</div>
+  <p>Only used in <code>scripts/*.mjs</code> build scripts, not in runtime code. <strong>Not a vulnerability.</strong></p>
+</div>
+
+<div class="severity-info">
+  <div class="finding-title"><span class="badge badge-info">Info</span> Hardcoded JWT Secret in Comments</div>
+  <p>Comments reference <code>JWT_SECRET</code> but it's always read from <code>process.env</code>. <strong>Not a vulnerability.</strong></p>
+</div>
+
+<div class="severity-info">
+  <div class="finding-title"><span class="badge badge-info">Info</span> Meta Webhook Signature Verification</div>
+  <p>Correctly uses HMAC-SHA256 with timing-safe comparison. <strong>Secure.</strong></p>
+</div>
+
+<div class="severity-info">
+  <div class="finding-title"><span class="badge badge-info">Info</span> Encryption Key Management</div>
+  <p>AES-256-GCM with random IVs, keys from environment variables. <strong>Secure.</strong></p>
+</div>
+
+<!-- ASSESSMENT -->
+<h2 id="score">📊 Production-Readiness Assessment</h2>
+
+<table>
+  <tr><th>Area</th><th>Score</th><th>Notes</th></tr>
+  <tr><td>Authentication</td><td>85/100</td><td>Strong JWT implementation, MFA, backup codes. OAuth account linking is the main gap.</td></tr>
+  <tr><td>Authorization</td><td>90/100</td><td>BOLA protection via workspaceAccessFilter, admin guard with elevation.</td></tr>
+  <tr><td>Data Security</td><td>80/100</td><td>Encryption at rest, TLS in transit. CSP is weak (unsafe-inline/unsafe-eval).</td></tr>
+  <tr><td>Billing</td><td>85/100</td><td>Double-charge prevention is solid. Paymob HMAC order is unverified.</td></tr>
+  <tr><td>API Security</td><td>75/100</td><td>Rate limiting on critical endpoints, but fail-open design and missing CSRF on many routes.</td></tr>
+  <tr><td>Platform Sync</td><td>85/100</td><td>Robust Google Ads integration. Meta webhook missing idempotency.</td></tr>
+  <tr><td>AI/Rate Limiting</td><td>90/100</td><td>Multi-layer quota system, owner bypass is intentional and documented.</td></tr>
+  <tr><td>Data Integrity</td><td>85/100</td><td>Unique constraints, idempotent upserts. Missing retention for some tables.</td></tr>
+  <tr style="font-weight: 700; background: #eff6ff;"><td>Overall</td><td>82/100</td><td>Production-ready for pre-revenue SaaS with small user base. Critical fixes needed before scaling.</td></tr>
+</table>
+
+<!-- TOP 3 FIXES -->
+<h2 id="top3">🚀 Top 3 Fixes Before Production Launch</h2>
+
+<table>
+  <tr><th>#</th><th>Issue</th><th>Impact</th></tr>
+  <tr>
+    <td style="font-size: 16pt; font-weight: 800; color: #dc2626; text-align: center;">1</td>
+    <td><strong>Fix OAuth account linking</strong> (Finding #3)<br>Require explicit user consent before linking OAuth to existing accounts</td>
+    <td>Prevents account takeover via email-based OAuth linking</td>
+  </tr>
+  <tr>
+    <td style="font-size: 16pt; font-weight: 800; color: #ea580c; text-align: center;">2</td>
+    <td><strong>Remove unsafe-inline/unsafe-eval from CSP</strong> (Finding #1)<br>Use nonce-based CSP for inline scripts</td>
+    <td>Restores XSS protection as defense-in-depth</td>
+  </tr>
+  <tr>
+    <td style="font-size: 16pt; font-weight: 800; color: #ca8a04; text-align: center;">3</td>
+    <td><strong>Verify Paymob HMAC field order</strong> (Finding #7)<br>Test with real Paymob sandbox before going live</td>
+    <td>Ensures billing system actually works with real payments</td>
+  </tr>
+</table>
+
+<div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e2e8f0; text-align: center; color: #64748b; font-size: 9pt;">
+  <p>Generated by AdLoop Code Audit — August 19, 2026</p>
+  <p>Scope: READ-ONLY audit — no files were modified</p>
+</div>
+
+</body>
+</html>

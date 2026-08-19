@@ -1,0 +1,132 @@
+
+> adloop-saas@0.1.0 build
+> prisma generate && node scripts/generateLogoManifest.mjs && node scripts/generateSearchIndex.mjs && node scripts/verify-nav-icons.mjs && node scripts/checkTranslations.mjs && node scripts/checkTranslationCoverage.mjs && node scripts/checkArabicLeaks.mjs && node scripts/checkBilingualFields.mjs && node scripts/checkWebhookAuth.mjs && npx tsx scripts/checkCronAuth.mts && node scripts/checkPlatformCallsCounted.mjs && node scripts/checkWorkspaceAccess.mjs && npx tsx scripts/checkSettingsSearchIndex.mts && node scripts/db-push-safe.mjs && npx tsx scripts/checkOrderPipeline.mts && npx tsx scripts/checkPlatformIngest.mts && node scripts/build-next.mjs
+
+[2mEnvironment variables loaded from .env[22m
+[2mPrisma schema loaded from prisma\schema.prisma[22m
+
+✔ Generated [1mPrisma Client[22m (v5.22.0)[2m to .\node_modules\@prisma\client[22m in 1.70s
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Want to react to database changes in your app as they happen? Discover how with Pulse: https://pris.ly/tip-1-pulse
+
+[logo-manifest] 12 شعاراً: ARAMEX.svg, BOSTA.png, CLARITY.png, EASY_ORDERS.png, MESSENGER.svg, MYLERZ.png, SALLA.svg, SHOPIFY.svg, SMSA.svg, WHATSAPP.svg, WOOCOMMERCE.png, ZID.svg
+✓ فهرس البحث: 1255 نصّاً من 58 صفحة (تُرك 221 نصّاً أطول من 60 حرفاً، و196 فيها متغيّرات)
+[nav-icons] 16 اسم أيقونة، كلها صالحة.
+✓ القاموس متكافئ - 3721 مفتاحاً في اللغتين.
+✓ كلّ مفتاحٍ يناديه الكود له نصّ - 3486 مفتاحاً متاحاً.
+✓ لا نصّ عربيّ مثبَّت جديد. (دَينٌ موروث: 34 نصّاً في 5 ملفّات)
+✓ كلّ حقلٍ ثنائيّ اللغة يُعرَض بحسب لغة الواجهة.
+الحالة                                     النتيجة
+------------------------------------------------------------
+  شوبيفاي - توقيع صحيح                     يمرّ
+  شوبيفاي - سرّ غيره                       يُرفض
+  شوبيفاي - بلا ترويسة                     يُرفض
+  ووكومرس - توقيع صحيح                     يمرّ
+  ووكومرس - سرّ غيره                       يُرفض
+  سلّة - توقيع (الافتراضيّ)                يمرّ
+  سلّة - توقيع بسرّ غيره                   يُرفض
+  سلّة - توكن مُعلَن                       يمرّ
+  سلّة - توكن بـBearer                     يمرّ
+  سلّة - توكن خاطئ                         يُرفض
+  سلّة - توكن مُعلَن بلا Authorization     يُرفض
+  إيزي أوردرز - سرّ صحيح                   يمرّ
+  إيزي أوردرز - سرّ غيره                   يُرفض
+  زد - مصادقة صحيحة                        يمرّ
+  زد - كلمة مرور خاطئة                     يُرفض
+  زد - اسم مستخدم آخر                      يُرفض
+  زد - بلا اسم مستخدم محفوظ                يُرفض
+  زد - بلا مصادقة إطلاقاً                  يُرفض
+  زد - ترويسة توقيع مُختلَقة تُرفض         يُرفض
+
+✓ مصادقة الويب هوك صحيحة على المنصّات الخمس
+[cron] CRON_SECRET غير مضبوط - المهمّة مرفوضة. المهامّ المجدولة كلّها متوقّفة لحد ما يتضبط.
+  بلا سرٍّ مضبوط: طلبٌ بلا ترويسة يُرفض
+[cron] CRON_SECRET غير مضبوط - المهمّة مرفوضة. المهامّ المجدولة كلّها متوقّفة لحد ما يتضبط.
+  بلا سرٍّ مضبوط: "Bearer undefined" يُرفض (الثغرة الأصلية)
+[cron] CRON_SECRET غير مضبوط - المهمّة مرفوضة. المهامّ المجدولة كلّها متوقّفة لحد ما يتضبط.
+  بلا سرٍّ مضبوط: أيّ سرٍّ صحيحٍ سابقاً يُرفض
+  بسرٍّ مضبوط: الترويسة الصحيحة تعدّي
+  بسرٍّ مضبوط: ترويسة غلط تُرفض
+  بسرٍّ مضبوط: بلا ترويسة يُرفض
+  بسرٍّ مضبوط: "Bearer undefined" يُرفض
+  بسرٍّ مضبوط: السرّ بلا بادئة Bearer يُرفض
+  بسرٍّ مضبوط: بادئةٌ مطابقةٌ جزئياً تُرفض
+
+  6 مسار كرون:
+  app/api/cron/backup/route.ts: يمرّ من denyUnlessCron
+  app/api/cron/backup/route.ts: لا يقرأ CRON_SECRET مباشرةً
+  app/api/cron/conversion-sync/route.ts: يمرّ من denyUnlessCron
+  app/api/cron/conversion-sync/route.ts: لا يقرأ CRON_SECRET مباشرةً
+  app/api/cron/marketing-emails/route.ts: يمرّ من denyUnlessCron
+  app/api/cron/marketing-emails/route.ts: لا يقرأ CRON_SECRET مباشرةً
+  app/api/cron/push-notifications/route.ts: يمرّ من denyUnlessCron
+  app/api/cron/push-notifications/route.ts: لا يقرأ CRON_SECRET مباشرةً
+  app/api/cron/store-sync/route.ts: يمرّ من denyUnlessCron
+  app/api/cron/store-sync/route.ts: لا يقرأ CRON_SECRET مباشرةً
+  app/api/cron/sync-google-ads/route.ts: يمرّ من denyUnlessCron
+  app/api/cron/sync-google-ads/route.ts: لا يقرأ CRON_SECRET مباشرةً
+
+✓ حارس الكرون يفشل مقفولاً، وكلّ مسارٍ مجدول يمرّ منه.
+✓ كلّ نداءات المنصّات تمرّ على العدّاد.
+✓ كلّ شروط الوصول إلى المساحة تمرّ من lib/workspaceAccess.ts
+✓ فهرس بحث الإعدادات: 30 بنداً، مترجَمةٌ بلغتيها وبلا تصادم أسماء داخل التبويب.
+[db-push] مزامنة البنية عبر DATABASE_URL (لم يُضبط DIRECT_URL).
+[2mEnvironment variables loaded from .env[22m
+[2mPrisma schema loaded from prisma\schema.prisma[22m
+[2mDatasource "db": PostgreSQL database "neondb", schema "public" at "ep-little-night-awwnvzlk-pooler.c-12.us-east-1.aws.neon.tech"[22m
+
+The database is already in sync with the Prisma schema.
+
+[db-push] بنية قاعدة البيانات متزامنة.
+(node:18840) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+  طلب متجر أ يُقبل ويُنسب إلى متجر أ                     
+  الرقم نفسه من متجر ب يُقبل ولا يُقرأ مكرَّراً          ok
+  إعادة إرسال الطلب نفسه تُهمَل                          duplicate
+  توقيع بسرّ متجرٍ آخر يُرفض                             
+  بلا توقيع يُرفض                                        
+  إشعار الإرجاع للطلب نفسه يُقرأ تحديثاً لا تكراراً      updated
+  إعادة إشعار الإرجاع نفسه تُهمَل                        duplicate
+  المقارنة تعرض متجرين                                   2
+  متجر أ: طلبٌ واحد بقيمة 300، مُحصىً مرتجعاً            1 · 300 · ارتجاع 1
+  متجر ب: طلبٌ واحد بقيمة 700                            1 · 700
+  لا طلب بلا متجر                                        0
+  الفائز بالإيراد هو متجر ب                              
+
+✓ السلسلة موصولة: ويب هوك ← حسم المتجر ← الطلب ← صفحة المقارنة
+  سلّة (توقيع): يُقبل ويصل إلى متجره                         ok
+  سلّة (توقيع): الإجمالي يصل 300                             300
+  سلّة (توقيع): مصادقة خاطئة تُرفض                           
+  سلّة (توقيع): إعادة الإرسال تُهمَل                         duplicate
+  سلّة (توكن): يُقبل ويصل إلى متجره                          ok
+  سلّة (توكن): الإجمالي يصل 450                              450
+  سلّة (توكن): مصادقة خاطئة تُرفض                            
+  سلّة (توكن): إعادة الإرسال تُهمَل                          duplicate
+  شوبيفاي: يُقبل ويصل إلى متجره                              ok
+  شوبيفاي: الإجمالي يصل 250                                  250
+  شوبيفاي: مصادقة خاطئة تُرفض                                
+  شوبيفاي: إعادة الإرسال تُهمَل                              duplicate
+  زد (مصادقة أساسية): يُقبل ويصل إلى متجره                   ok
+  زد (مصادقة أساسية): الإجمالي يصل 600                       600
+  زد (مصادقة أساسية): مصادقة خاطئة تُرفض                     
+  زد (مصادقة أساسية): إعادة الإرسال تُهمَل                   duplicate
+  ووكومرس: يُقبل ويصل إلى متجره                              ok
+  ووكومرس: الإجمالي يصل 800                                  800
+  ووكومرس: مصادقة خاطئة تُرفض                                
+  ووكومرس: إعادة الإرسال تُهمَل                              duplicate
+  إيزي أوردرز (مفتاح مشترك): يُقبل ويصل إلى متجره            ok
+  إيزي أوردرز (مفتاح مشترك): الإجمالي يصل 150                150
+  إيزي أوردرز (مفتاح مشترك): مصادقة خاطئة تُرفض              
+  إيزي أوردرز (مفتاح مشترك): إعادة الإرسال تُهمَل            duplicate
+  مجموع الطلبات ستّة، لا تكرار ولا فقد                       6
+  لا متجر يحمل طلب غيره                                      2/1/1/1/1
+
+✓ الخمس منصّات: تُقبل بمصادقتها، وتُرفض بدونها، ولا تُعَدّ مرّتين
+   [1m[38;2;173;127;168m▲ Next.js 15.5.20[39m[22m
+   - Environments: .env
+   - Experiments (use with caution):
+     · optimizePackageImports
+
+ [37m[1m [22m[39m Creating an optimized production build ...

@@ -7,9 +7,10 @@
 // والصفّ اللي فاضل `RUNNING` بعد ساعة معناه إنّ التشغيل مات في نصّه.
 
 import Link from "next/link";
-import { Activity, RefreshCw, XCircle, Plug } from "lucide-react";
+import { Activity, RefreshCw, XCircle, Plug, Rocket, ShieldAlert } from "lucide-react";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { getSystemHealth, STALE_AFTER_HOURS, STUCK_AFTER_MINUTES } from "@/lib/admin/system";
+import { checkReadiness, type ReadinessSeverity } from "@/lib/launchReadiness";
 import { TABLE, TABLE_WRAP, THEAD_ROW, TH, TH_NUM, TR, TD, TD_MUTED, TD_NUM } from "@/app/components/ui/tableStyles";
 import { prisma } from "@/lib/prisma";
 import { AdminAction } from "../components/AdminAction";
@@ -21,8 +22,19 @@ const STATE_TONE = {
   OK: "ok", RUNNING: "info", STUCK: "bad", FAILED: "bad", STALE: "warn", NEVER: "muted",
 } as const;
 
+const SEVERITY_TONE: Record<ReadinessSeverity, "bad" | "warn" | "muted"> = {
+  BLOCKER: "bad", REVENUE: "bad", FEATURE: "warn", OPTIONAL: "muted",
+};
+const SEVERITY_LABEL: Record<ReadinessSeverity, string> = {
+  BLOCKER: "product down",
+  REVENUE: "no revenue",
+  FEATURE: "feature down",
+  OPTIONAL: "minor",
+};
+
 export default async function SystemPage() {
   const health = await getSystemHealth();
+  const readiness = checkReadiness();
 
   // صفوف "معلّقة" بمعرّفاتها - محتاجينها عشان زرّ الإغلاق يعرف يقفل أنهي
   // تشغيل بالظبط، مش أحدث تشغيل للمساحة.
@@ -46,6 +58,70 @@ export default async function SystemPage() {
         subtitle={health.lastCronRun ? `Last daily run ${ago(health.lastCronRun.runAt)}` : "No daily run logged yet"}
         icon={Activity}
       />
+
+      {readiness.missing.length > 0 && (
+        <div className="mb-4">
+          <div
+            className={`mb-2 flex items-start gap-2 rounded-2xl border p-3 ${
+              readiness.readyToLaunch
+                ? "border-gap/30 bg-gap/8"
+                : "border-critical/30 bg-critical/8"
+            }`}
+          >
+            {readiness.readyToLaunch
+              ? <Rocket size={14} className="mt-0.5 shrink-0 text-gap" />
+              : <ShieldAlert size={14} className="mt-0.5 shrink-0 text-critical" />}
+            <div className="text-[12.5px] leading-relaxed text-text-primary">
+              {readiness.readyToLaunch ? (
+                <>Nothing blocks a launch. {readiness.missing.length} setting{readiness.missing.length === 1 ? " is" : "s are"} missing, all of them features or minor extras.</>
+              ) : (
+                <>
+                  <strong>Do not launch yet:</strong>{" "}
+                  {readiness.countsBySeverity.BLOCKER > 0 && <>{readiness.countsBySeverity.BLOCKER} setting{readiness.countsBySeverity.BLOCKER === 1 ? "" : "s"} that take the product down</>}
+                  {readiness.countsBySeverity.BLOCKER > 0 && readiness.countsBySeverity.REVENUE > 0 && ", and "}
+                  {readiness.countsBySeverity.REVENUE > 0 && <>{readiness.countsBySeverity.REVENUE} that stop any money arriving</>}.
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className={TABLE_WRAP}>
+            <table className={TABLE}>
+              <thead>
+                <tr className={THEAD_ROW}>
+                  <th className={TH}>Missing setting</th>
+                  <th className={TH}>Impact</th>
+                  <th className={TH}>What stops working</th>
+                </tr>
+              </thead>
+              <tbody>
+                {readiness.missing.map(({ item }) => (
+                  <tr key={item.key} className={TR}>
+                    <td className={TD}>
+                      <div className="font-mono text-[11.5px]">{item.key}</div>
+                      <div className="text-[10.5px] text-text-faint">{item.group}</div>
+                    </td>
+                    <td className={TD}>
+                      <Badge tone={SEVERITY_TONE[item.severity]}>{SEVERITY_LABEL[item.severity]}</Badge>
+                    </td>
+                    <td className={TD}>
+                      <span className="text-[12px] leading-relaxed text-text-muted">{item.breaks}</span>
+                      {item.fallback && (
+                        <div className="mt-0.5 text-[11px] text-text-faint">Built-in fallback: {item.fallback}</div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <p className="mt-2 text-[11px] leading-relaxed text-text-faint">
+            This checks only that a value is present — <strong>not that it is correct</strong>. A key set to the
+            wrong value passes here and fails on first real use. No secret value is ever read or rendered.
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard

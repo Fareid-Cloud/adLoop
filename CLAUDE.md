@@ -13,8 +13,9 @@ AdLoop — "طبقة الحقيقة" لأصحاب الإعلانات: بيقار
   بـ adloop-saas** عبر محرك الإسناد (`/api/attribution/*` endpoints):
   كليك بيتسجّل (`sync-click`)، تحقق حقيقي بيزوّد `verifiedConversions`
   فعلياً (`mark-matched`)، إسناد احتمالي للمحادثات المجهولة (`unattributed`).
-  **الفجوة المتبقية مختلفة**: رفع التحويل رجوعاً للمنصة نفسها (Offline
-  Conversion) لغير جوجل - شوف "لسه ناقص فعلاً" تحت.
+  **والحلقة بتقفل فعلاً**: `lib/conversionSync.ts` بيرفع التحويل المتحقَّق
+  رجوعاً للتلات منصات (Meta CAPI، TikTok Events API، Google
+  uploadClickConversions) عبر كرون `/api/cron/conversion-sync` اليومي.
 
 # Engineering Principles
 
@@ -108,7 +109,9 @@ Next Steps
 
 **تيك توك:** OAuth + مزامنة + خطّاف + تعب + Spark Ads + Cost Cap + فترة تعلّم + Lookalike + تعليقات + Scale/Kill + تدرّج مزايدة — كلها مكتملة. Smart+ (items 6-10) مؤجّل لحد أول ربط حساب حقيقي.
 
-**الربط بين المنتجين (adloop-saas ↔ wa-conversion-tracker):** محرك الإسناد شغال بالكامل (`/api/attribution/sync-click`, `mark-matched`, `unattributed`). الفجوة المتبقية: رفع التحويل رجوعاً للمنصة (Offline Conversion) لغير جوجل — `sendMetaConversion`/`sendTikTokConversion` مش مبنيين.
+**الربط بين المنتجين (adloop-saas ↔ wa-conversion-tracker):** محرك الإسناد شغال بالكامل (`/api/attribution/sync-click`, `mark-matched`, `unattributed`)، **والحلقة بتقفل**: `lib/conversionSync.ts` بيرفع التحويل المتحقَّق رجوعاً للتلات منصات — Meta CAPI (`v25.0`)، TikTok Events API (`v1.3`)، وGoogle `uploadClickConversions` — مع تهشيم SHA-256 لكل PII وتطبيع E.164 للهاتف وتقييم جودة المطابقة قبل الإرسال (`lib/matchQuality.ts`، وأي تحويل تحت `MIN_WORTH_SENDING_SCORE` بيتسكّب). الكرون اليومي `/api/cron/conversion-sync` هو اللي بيشغّلها (`syncPendingConversions`).
+
+> ⚠️ التوثيق ده كان بيقول لفترة إنّ `sendMetaConversion`/`sendTikTokConversion` مش مبنيين - **وده كان غلط**. الاسمين مش موجودين لأنّ التنفيذ اسمه غير كده، والكرون بيستورد الملف بـ`await import()` ديناميكي فالـgrep الساكن مابيشوفوش. **grep على اسم دالة متوقَّع مش دليل غياب** - دوّر على السلوك (`graph.facebook.com`، `uploadClickConversions`) مش على الاسم اللي في دماغك.
 
 **تصميم/UX:** ربط المنصات (`/dashboard/integrations`) أعيد بناؤه بالكامل (5 كروت مؤشّرات، 4 تبويبات، درج جانبي لصيق). منتقي فترة موحّد (`lib/dateRange.ts`) على 17 صفحة. التقارير أعيد بناؤها ديناميكية بالكامل. شرح المؤشّرات (`MetricInfo`) على 14 مؤشّر. بوابة الترحيب بقت خطوات فعلية بشرط حقيقي في قاعدة البيانات، مش مجرد "التالي".
 
@@ -121,8 +124,7 @@ Next Steps
 2. الديمو + التسعير/الباقات — القرار المرجَّح: مساحة عمل تجريبية (`isDemo`) داخل الحساب، بشرط حارس كتابة يمنع أي نداء خارجي حقيقي من مساحة تجريبية. قرار غير نهائي بعد.
 3. Partnership Ads، Page Quality، Meta Shops checkout tracking (ميتا) — فاضيين تماماً
 4. TikTok Smart+ — مؤجّل لحد ربط حساب حقيقي
-5. Offline Conversion upload لغير جوجل (Meta/TikTok) — غير مبني
-6. مراجعة أمنية جديدة قبل أي إطلاق حقيقي
+5. مراجعة أمنية جديدة قبل أي إطلاق حقيقي
 
 ## اقرأ الملفات دي بالترتيب قبل أي تعديل
 0. `adloop-saas/SECURITY.md` — **معمارية الأمان الكاملة، وثيقة حية.** أي ميزة جديدة تؤثر على الأمان لازم تُحدّث هنا قبل ما تُعتبر مكتملة

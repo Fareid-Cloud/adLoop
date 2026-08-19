@@ -10,6 +10,7 @@
 // العمل لا في الليل.
 
 import { NextRequest, NextResponse } from "next/server";
+import { denyUnlessCron } from "@/lib/cronAuth";
 import { runMarketingCampaigns } from "@/lib/marketing/send";
 
 export const maxDuration = 300;
@@ -17,10 +18,8 @@ export const maxDuration = 300;
 export async function GET(req: NextRequest) {
   // نفس حارس بقيّة مهامّ الكرون: بدونه يستطيع أيّ أحد إطلاق حملة بريدية
   // على كلّ المشتركين بطلب واحد.
-  const secret = process.env.CRON_SECRET;
-  if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const denied = denyUnlessCron(req);
+  if (denied) return denied;
 
   const started = Date.now();
   const result = await runMarketingCampaigns();

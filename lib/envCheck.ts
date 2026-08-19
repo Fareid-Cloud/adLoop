@@ -1,35 +1,46 @@
 // lib/envCheck.ts
 //
-// بيتأكد إن المتغيرات السرية الأساسية موجودة وقت تشغيل السيرفر، مش وقت
-// أول مستخدم يحاول يسجل دخول. بدون الملف ده، لو حد نسي يضبط JWT_SECRET
-// مثلاً، أول خطأ هيظهره هيبقى غامض جوه محاولة تسجيل دخول مستخدم حقيقي.
+// فحص الإعداد وقت إقلاع الخادم - بيتنده من `instrumentation.ts` قبل أوّل
+// طلب، عشان الإعداد الناقص يبان دلوقتي مش في وش أوّل مستخدم.
+//
+// 🔴 **الفحص كان بيغطّي خمسة متغيّرات من تسعةٍ وأربعين.** يعني كان بيقوم
+// ويعدّي بينما مفاتيح Paymob كلّها ناقصة - وهو بالظبط اللي حصل: خمس
+// محاولات دفع في ١ أغسطس ٢٠٢٦ فشلت بـ401، ومحدش عرف غير باستعلامٍ يدويّ
+// على `PaymentIntent.failureReason` بعدها بأسابيع. القائمة الكاملة بقت
+// في `lib/launchReadiness.ts`، مشتقّة من grep على الكود مش من الذاكرة.
+//
+// **التدرّج هنا مقصود، والرمي أضيق ما يكون:**
+//   • `haltsBoot` → بيرمي. المنتج بلاها مايردّش على أي طلب أصلاً، وقيامُه
+//     ناقصاً أسوأ من عدم قيامه (صفحات ٥٠٠ بدل نشرٍ فاشلٍ واضح).
+//   • أي شيء تاني → تحذيرٌ مسجَّل بس. `RESEND_API_KEY` بيوقّف التسجيل
+//     الجديد بالكامل - وده خطيرٌ فعلاً - لكنّ كلّ مشترك قائم بيفضل شغّال،
+//     ووقف الخادم بسببه بيحوّل عطلاً جزئياً لانقطاعٍ تامّ صنعناه بإيدينا.
+//
+// اللوحة (صحّة النظام) بتعرض القائمة كاملةً بأثر كلّ بند - وهي المكان
+// اللي بتتراجع فيه قبل النشر، مش سجلّ الإقلاع.
 
-const REQUIRED_ENV_VARS = ["DATABASE_URL", "JWT_SECRET"] as const;
-
-// متغيرات مطلوبة بس لو الميزة المرتبطة بيها مستخدمة فعلاً - بنحذّر بس
-// مننعش التشغيل، لأن مش كل Workspace هيستخدم كل تكامل من أول يوم
-const OPTIONAL_BUT_RECOMMENDED_ENV_VARS = [
-  "ANTHROPIC_API_KEY",
-  "GOOGLE_ADS_DEVELOPER_TOKEN",
-  "SALLA_WEBHOOK_SECRET",
-] as const;
+import { checkReadiness } from "@/lib/launchReadiness";
 
 export function validateEnvOrThrow() {
-  const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
+  const { missing } = checkReadiness();
+  if (missing.length === 0) return;
 
-  if (missing.length > 0) {
+  const fatal = missing.filter((m) => m.item.haltsBoot);
+  if (fatal.length > 0) {
     throw new Error(
-      `متغيرات بيئة أساسية ناقصة: ${missing.join(", ")}. ` +
-        `راجع ملف .env.local وتأكد إنها كلها متضبطة قبل تشغيل السيرفر.`
+      "متغيّرات بيئة أساسية ناقصة، والخادم مايقومش من غيرها:\n" +
+        fatal.map((f) => `  • ${f.item.key} — ${f.item.breaks}`).join("\n")
     );
   }
 
-  const missingRecommended = OPTIONAL_BUT_RECOMMENDED_ENV_VARS.filter(
-    (key) => !process.env[key]
-  );
-  if (missingRecommended.length > 0) {
+  // مجمَّعة بالخطورة عشان السطر الأوّل في سجلّ النشر يقول الأهمّ، مش
+  // أوّل ما اتصادف أبجدياً.
+  for (const severity of ["BLOCKER", "REVENUE", "FEATURE"] as const) {
+    const hits = missing.filter((m) => m.item.severity === severity);
+    if (hits.length === 0) continue;
     console.warn(
-      `تنبيه: هذه المتغيّرات غير مضبوطة، وبعض الميزات لن تعمل: ${missingRecommended.join(", ")}`
+      `[env] ${severity}: ${hits.length} إعداداً ناقصاً — ` +
+        hits.map((h) => h.item.key).join(", ")
     );
   }
 }

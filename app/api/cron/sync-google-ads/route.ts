@@ -9,6 +9,7 @@
 // Google Ads من غير داعي، أو حتى يسبب استدعاءات مكررة لو اتنادى بسرعة).
 
 import { NextRequest, NextResponse } from "next/server";
+import { denyUnlessCron } from "@/lib/cronAuth";
 import { prisma } from "@/lib/prisma";
 import { syncGoogleAdsForWorkspace, syncCreativesForWorkspace, syncSearchTermsForWorkspace, syncBiddingStrategyForWorkspace, syncAudiencePerformanceForWorkspace, syncQualityScoreForWorkspace, syncShoppingProductsForWorkspace, syncPerformanceMaxChannelsForWorkspace, syncYoutubeMetricsForWorkspace, syncDeviceAndGeoPerformanceForWorkspace, syncMatchTypePerformanceForWorkspace, syncDisplayPlacementsForWorkspace, checkShoppingSpendAlertsForWorkspace, syncGoogleLeadFormsForWorkspace } from "@/lib/syncGoogleAds";
 import { checkBidStrategyAlertsForWorkspace, checkGoogleLearningPhaseAlertsForWorkspace } from "@/lib/bidStrategyAudit";
@@ -45,11 +46,17 @@ const CURRENCY_PAIRS: Array<[string, string]> = [
   ["USD", "SAR"], ["USD", "EGP"], ["USD", "AED"], ["USD", "KWD"],
 ];
 
+// 🔴 **أتقل شغل في المنتج كان شغّال على المهلة الافتراضية.** الدالّة دي
+// بتعمل أربعين نداء منصة لكلّ مساحة عمل بالتتابع، وكانت الوحيدة من
+// الكرونات التقيلة اللي مابتعلنش مهلتها - يعني ١٥ ثانية (افتراضيّ Pro)
+// بدل ٣٠٠. والأسوأ إنّ `CronRunLog` بيتكتب في آخر سطر، فالتشغيل المقطوع
+// ما كانش بيسيب أثر أصلاً: مساحات ما اتزامنتش، وسجلّ يقول إنّ الكرون
+// عمره ما جرى. الرقم هنا هو سقف Vercel على باقة Pro.
+export const maxDuration = 300;
+
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const denied = denyUnlessCron(req);
+  if (denied) return denied;
 
   const startTime = Date.now();
 
@@ -129,14 +136,34 @@ export async function GET(req: NextRequest) {
 
   // مالك كلّ مساحة: سقفا الاستهلاك على المستخدم لا على المساحة (الاشتراك
   // على المستخدم، وباقة الوكالات تجمع خمس عشرة مساحة تحت سقف واحد).
-  const owners = new Map<string, string>();
-  for (const { workspaceId } of workspaceIds) {
-    const ws = await prisma.workspace.findUnique({
-      where: { id: workspaceId },
-      select: { userId: true },
-    });
-    if (ws) owners.set(workspaceId, ws.userId);
-  }
+  //
+  // استعلام واحد مش واحد لكلّ مساحة: كان `findUnique` جوّه حلقة، يعني مية
+  // رحلة لقاعدة البيانات قبل أوّل نداء نافع - وكلّها من الوقت المحدود
+  // للدالّة نفسها.
+  const ownerRows = await prisma.workspace.findMany({
+    where: { id: { in: workspaceIds.map((w) => w.workspaceId) } },
+    select: { id: true, userId: true },
+  });
+  const owners = new Map(ownerRows.map((w) => [w.id, w.userId]));
+
+  // ===== الأقدم نجاحاً الأول =====
+  // الترتيب كان ثابتاً (ترتيب ما ترجّعه قاعدة البيانات)، فلو التشغيل انقطع
+  // عند المساحة الأربعين، **نفس** الستّين اللي بعدها بيتحرموا بكرة وبعده -
+  // مجاعة دايمة لآخر الطابور، مش تأخيرة مرّة واحدة. الترتيب بآخر نجاح
+  // تصاعديّاً بيحوّلها لتناوب: اللي فاتته دورة بياخد الأولوية في اللي
+  // بعدها، واللي عمره ما اتزامن بياخدها قبل الكلّ.
+  //
+  // مش بديل عن طابور مهامّ حقيقيّ - بديل عن أن يكون العطل صامتاً وثابتاً.
+  const lastSuccess = await prisma.syncRun.groupBy({
+    by: ["workspaceId"],
+    where: { status: "SUCCESS", workspaceId: { in: workspaceIds.map((w) => w.workspaceId) } },
+    _max: { startedAt: true },
+  });
+  const lastSuccessAt = new Map(lastSuccess.map((r) => [r.workspaceId, r._max.startedAt?.getTime() ?? 0]));
+  // مساحة عمرها ما نجحت (مش في الخريطة) بتاخد صفر، يعني أوّل الطابور.
+  workspaceIds.sort(
+    (a, b) => (lastSuccessAt.get(a.workspaceId) ?? 0) - (lastSuccessAt.get(b.workspaceId) ?? 0)
+  );
 
   const results: Array<{ workspaceId: string; status: "ok" | "failed" | "capped"; error?: string }> = [];
 

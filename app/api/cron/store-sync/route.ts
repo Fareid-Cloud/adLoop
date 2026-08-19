@@ -14,15 +14,14 @@
 // خارجيّ منها مخالفٌ لحارس الديمو.
 
 import { NextRequest, NextResponse } from "next/server";
+import { denyUnlessCron } from "@/lib/cronAuth";
 import { prisma } from "@/lib/prisma";
 
 export const maxDuration = 300;
 
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const denied = denyUnlessCron(req);
+  if (denied) return denied;
 
   // المساحات التي لها متجرٌ نشطٌ فعلاً - لا كلّ المساحات
   const workspaces = await prisma.workspace.findMany({

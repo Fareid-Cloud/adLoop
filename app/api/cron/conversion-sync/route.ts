@@ -11,17 +11,21 @@
 // يمنع بقية الحسابات - وهو خطأ شائع في مهامّ الكرون الجماعية.
 
 import { NextRequest, NextResponse } from "next/server";
+import { denyUnlessCron } from "@/lib/cronAuth";
 import { prisma } from "@/lib/prisma";
 
 export const maxDuration = 300;
 
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const denied = denyUnlessCron(req);
+  if (denied) return denied;
 
-  const workspaces = await prisma.workspace.findMany({ select: { id: true, name: true } });
+  // مساحة بلا أي ربط بمنصة مالهاش تحويلات ترفعها ولا قرارات تتقيّم -
+  // كانت بتاخد دورة كاملة من وقت الدالّة المحدود مقابل صفر شغل.
+  const workspaces = await prisma.workspace.findMany({
+    where: { campaignLinks: { some: { platform: { in: ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"] } } } },
+    select: { id: true, name: true },
+  });
 
   const results: Array<{
     workspaceId: string;
