@@ -3162,6 +3162,7 @@ export const dictionary = {
     // لا متصفّح): رسائلها معرّفاتٌ إنجليزية ثابتة عمداً، لأنّ ترجمة نصٍّ
     // لا يقرؤه بشرٌ تُصعّب تتبّعه في السجلّات بلا فائدة تقابلها.
     apiErr: {
+      platformActionFailed: "رفضت المنصّة هذا التغيير، ولم يُطبَّق شيء. اذكر المرجع {ref} للدعم.",
       badRequest: "طلب غير صالح",
       missingFields: "بيانات ناقصة",
       wrongPassword: "كلمة المرور غير صحيحة",
@@ -5920,6 +5921,7 @@ export const dictionary = {
       errFailed: "Could not answer right now. Try again — nothing was deducted from your balance.",
     },
     apiErr: {
+      platformActionFailed: "The platform refused this change. Nothing was applied. Quote reference {ref} to support.",
       badRequest: "Invalid request",
       missingFields: "Some required information is missing",
       wrongPassword: "That password is not correct",

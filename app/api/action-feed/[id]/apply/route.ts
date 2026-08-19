@@ -5,6 +5,9 @@
 // تماماً (زي إيقاف حملة أو تغيير ميزانية) لو عرف الـ ID بس.
 
 import { NextRequest, NextResponse } from "next/server";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
+import { randomUUID } from "crypto";
 import { workspaceAccess } from "@/lib/workspaceAccess";
 import { getSessionUser } from "@/lib/auth";
 import { applyActionFeedItem } from "@/lib/actionFeed";
@@ -18,6 +21,7 @@ export async function POST(
 ) {
   const { id } = await params;
   const user = await getSessionUser(req);
+  const locale = localeOf(user);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const item = await prisma.actionFeedItem.findFirst({
@@ -42,12 +46,20 @@ export async function POST(
     );
     return NextResponse.json({ success: true });
   } catch (err) {
-    // فشل تنفيذ حقيقي (زي فشل استدعاء API عند المنصة) - لازم يوصل
-    // للمستخدم بوضوح، مش يختفي كإنه نجح
-    console.error(`فشل تنفيذ إجراء ${id}:`, err);
+    // 🔴 **الفشل يظهر، وتفصيلُه لا يظهر.**
+    //
+    // كان `err.message` يُرسَل كما هو - ونصُّه من ميتا أو تيك توك أو من
+    // داخلنا: يسرّب تفصيلاً تشغيلياً، ويصل بالعربية إلى قارئٍ إنجليزيّ،
+    // ولا يقول للمشترك ماذا يفعل. وإخفاءُ الفشل ليس البديل - فذلك يجعله
+    // يظنّ أنّ ميزانيته تغيّرت ولم يحدث شيء.
+    //
+    // فالمرجع هو الجسر: يُسجَّل التفصيل عندنا مقروناً به، ويُذكَر للمشترك
+    // رقماً يقوله للدعم - فيصل التشخيص كاملاً بلا أن يُعرَض.
+    const ref = randomUUID().slice(0, 8);
+    console.error(`[platform-action] ref=${ref}`, { itemId: id, err });
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "فشل التنفيذ" },
-      { status: 500 }
+      { error: t(locale, "apiErr.platformActionFailed", { ref }), ref },
+      { status: 502 }
     );
   }
 }
