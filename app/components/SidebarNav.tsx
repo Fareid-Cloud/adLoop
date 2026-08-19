@@ -218,7 +218,13 @@ export function SidebarNav({
       <nav
         ref={navRef}
         onScroll={measureMore}
-        className="no-scrollbar flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-4"
+        // 🔴 `pb-11` لا `py-4`: المؤشّر يطفو فوق آخر القائمة، فبلا مساحةٍ
+        // محجوزةٍ له يقف على عنصرٍ حقيقيّ ويبتلع دوسته - قِيس على الصفحة
+        // الحيّة فوجِد فوق رابط «MCP» بالضبط، فالنقر يمرّر بدل أن يفتح.
+        //
+        // والحشوة ثابتةٌ لا مشروطةٌ بظهوره: لو تغيّرت بظهوره لغيّرت ارتفاع
+        // المحتوى، فأعادت قياسه، فأظهرته أو أخفته - حلقةٌ تهتزّ عند الحدّ.
+        className="no-scrollbar flex flex-1 flex-col gap-5 overflow-y-auto px-3 pt-4 pb-11"
       >
         {NAV_GROUPS.map((group, i) => (
             <div key={i}>
