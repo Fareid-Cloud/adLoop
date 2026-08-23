@@ -6,6 +6,7 @@
 //   ٢) كلّ كتابةٍ مُصادَقةٍ بكوكي تُرفَض إن جاءت من أصلٍ آخر.
 
 import { NextRequest, NextResponse } from "next/server";
+import { PATHNAME_HEADER } from "@/lib/demoGate";
 
 const UNSAFE = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -60,7 +61,16 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  return NextResponse.next();
+  // المسار إلى الخادم في ترويسةٍ داخلية: التخطيط الذي يلفّ صفحات اللوحة
+  // كلَّها لا يعرف أيّها يُصيَّر، وبوابة انتهاء العرض التجريبي تحتاج أن
+  // تعرف - لتحجب صفحات الأرقام وتترك صفحات الحساب (الربط، الاشتراك) مفتوحة،
+  // وهي بعينها ما تدلّ عليه البوابة. الشرح كاملاً في `lib/demoGate.ts`.
+  //
+  // في `request.headers` لا على الاستجابة: هكذا تصعد إلى الصفحة ولا تُرسَل
+  // إلى المتصفّح.
+  const headers = new Headers(req.headers);
+  headers.set(PATHNAME_HEADER, req.nextUrl.pathname);
+  return NextResponse.next({ request: { headers } });
 }
 
 export const config = {

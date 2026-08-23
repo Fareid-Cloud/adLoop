@@ -3472,6 +3472,7 @@ export const dictionary = {
       demoExpiredBody: "بيانات العرض التجريبي كانت أمثلة لا أرقاماً حقيقية، وقد انتهت مدّتها. اربط حساباتك الإعلانية لترى أرقامك أنت، أو اختر باقة للبدء.",
       demoExpiredConnect: "اربط حساباتي",
       demoExpiredPlans: "عرض الباقات",
+      demoExpiredBack: "الرجوع إلى {name}",
     },
     publicReport: {
       kicker: "تقرير أداء",
@@ -6226,6 +6227,7 @@ export const dictionary = {
       demoExpiredBody: "The demo data was illustrative, never real numbers, and its window has closed. Connect your ad accounts to see your own numbers, or pick a plan to get started.",
       demoExpiredConnect: "Connect my accounts",
       demoExpiredPlans: "See plans",
+      demoExpiredBack: "Back to {name}",
     },
     publicReport: {
       kicker: "Performance report",

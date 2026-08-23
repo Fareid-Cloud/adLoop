@@ -7,7 +7,7 @@
 // theme.css بقى بيتحمّل من app/layout.tsx (الجذري) مش هنا - عشان يوصل
 // لكل صفحة في المنتج (تسجيل الدخول، التسجيل، إلخ)، مش الداشبورد بس
 import type { ReactNode } from "react";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -38,6 +38,7 @@ import { LegalLinks } from "@/app/components/LegalLinks";
 import { MobileNavButton } from "@/app/components/MobileNavButton";
 import { isDemoExpired } from "@/lib/demo";
 import { DemoExpiredGate } from "@/app/components/DemoExpiredGate";
+import { PATHNAME_HEADER, isOpenAfterDemo } from "@/lib/demoGate";
 import { isOwnerEmail } from "@/lib/owner";
 import { Suspense } from "react";
 import { SearchHighlight } from "@/app/components/SearchHighlight";
@@ -216,16 +217,32 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   // 🔴 العدّاد كان يصل إلى صفر ولا يحدث شيء: `isDemoExpired` مبنيّة ولا
   // تُستدعى من أيّ مكان، فالعرض التجريبي مفتوح إلى الأبد. أرقام أمثلة
   // تبقى معروضة كأنها حقيقية هي أسوأ حالة ممكنة في منتج جوهره التحقّق.
-  if (demoWs && activeWorkspace && (await isDemoExpired(activeWorkspace.id))) {
-    return (
-      <DemoExpiredGate
-        locale={locale}
-        accent={accent}
-        mode={mode}
-        fontVars={`${latin.variable} ${arabic.variable}`}
-      />
-    );
-  }
+  //
+  // 🔴 **ثمّ صارت البوابة تحلّ محلّ اللوحة كلّها - وهذا عطلٌ أسوأ من الأوّل.**
+  // بطاقةٌ في وسط شاشةٍ فارغة: لا رأس، ولا قائمة، ولا قائمة حساب - فلا تسجيل
+  // خروج ولا تبديل مساحة. وزرّاها يشيران إلى `/dashboard/integrations` و
+  // `/dashboard/billing`، وهذا الملفّ يلفّهما فتُرسم البطاقة نفسها مكانهما:
+  // زرّان لا يفعلان شيئاً بالمرّة، ومستخدمٌ محبوس بلا باب - وهي الحالة نفسها
+  // التي أُصلحت أعلاه لجلسةٍ منتهية، عادت من بابٍ آخر.
+  //
+  // الحجب الآن على **المحتوى** وحده: القشرة تبقى بمخرجها، وصفحات الحساب
+  // تمرّ (`lib/demoGate.ts` يفصّل أيّها ولماذا).
+  const demoExpired =
+    !!demoWs && !!activeWorkspace && (await isDemoExpired(activeWorkspace.id));
+
+  // حساب المالك/الطاقم لا يُحجب: الديمو عنده أداة فحصٍ للمنتج لا عرضٌ
+  // للشراء، وشارة DEMO تبقى ظاهرة فلا يُقرأ رقمٌ منه على أنّه حقيقي.
+  const isStaff = user.isAdmin || isOwnerEmail(user.email);
+
+  // المسار من الوسيط. غيابه يعني الحجب - لا الفتح: صفحات الأرقام هي الغالبية،
+  // وفتحها عند أوّل خللٍ في الترويسة يعرض أمثلةً كأنها حقيقية، بينما حجبُ
+  // صفحةٍ آمنة يترك المستخدم أمام قشرةٍ فيها مخرجه كاملاً.
+  const pathname = (await headers()).get(PATHNAME_HEADER);
+
+  const demoGateActive = demoExpired && !isStaff && !isOpenAfterDemo(pathname);
+
+  // أوّل مساحةٍ حقيقية - المخرج الأقرب لمن له واحدة، في البوابة والشارة معاً
+  const realWorkspace = allWorkspaces.find((w) => !w.isDemo) ?? null;
 
   // حالة الربط تُقرأ فقط حين تظهر البوابة فعلاً - استعلامان لكل تحميل
   // صفحة لمستخدم أنهى الإعداد هدر بلا مقابل.
@@ -286,7 +303,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             <DemoBadge
               locale={locale}
               daysLeft={demoDaysLeft}
-              hasRealWorkspace={allWorkspaces.length > 1}
+              expired={demoExpired}
+              realWorkspaceId={realWorkspace?.id ?? null}
             />
           ) : null
         }
@@ -295,7 +313,13 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             <WorkspaceSwitcher
               current={activeWorkspace}
               workspaces={allWorkspaces}
-              canAddMore={allWorkspaces.length < workspaceLimit}
+              // نفس عدّ `checkWorkspaceLimit` حرفاً بحرف: الديمو خارج الحدّ،
+              // و`-1` بلا حدّ. اختلافُ الاثنين يعني زرّاً ظاهراً يردّه المسار،
+              // أو زرّاً مخفيّاً عمّن يحقّ له.
+              canAddMore={
+                workspaceLimit === -1 ||
+                allWorkspaces.filter((w) => !w.isDemo).length < workspaceLimit
+              }
               limit={workspaceLimit}
               locale={locale}
             />
@@ -383,7 +407,13 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         <Suspense fallback={null}>
           <SearchHighlight locale={locale} />
         </Suspense>
-        <div className="flex-1 px-4 pb-24 sm:px-6 sm:pb-10 lg:px-10">{children}</div>
+        <div className="flex-1 px-4 pb-24 sm:px-6 sm:pb-10 lg:px-10">
+          {demoGateActive ? (
+            <DemoExpiredGate locale={locale} realWorkspace={realWorkspace} />
+          ) : (
+            children
+          )}
+        </div>
 
         {/* تذييل قانوني في كلّ صفحة داخل اللوحة: الصفحات الثلاث كانت
             مبنيّة بلا رابط واحد إليها في المنتج كلّه. */}
