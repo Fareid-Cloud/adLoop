@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>سجلّ المراجعات — AdLoop</title>
+<style>
+  @page { size: A4; margin: 15mm }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font:11pt/1.75 "Segoe UI",Tahoma,sans-serif;color:#16202b;background:#fff;
+       max-width:960px;margin:0 auto;padding:36px 28px}
+  h1{font-size:24pt;color:#0f172a;border-bottom:3px solid #2563eb;padding-bottom:10px;margin-bottom:6px}
+  h2{font-size:15pt;color:#12213a;margin:30px 0 10px;padding-bottom:5px;border-bottom:2px solid #e2e8f0}
+  h3{font-size:12pt;color:#334155;margin:18px 0 6px}
+  .sub{color:#5b6b7c;font-size:10.5pt;margin-bottom:20px}
+  table{width:100%;border-collapse:collapse;margin:10px 0 16px;font-size:10pt}
+  th{background:#12213a;color:#fff;text-align:right;padding:7px 9px;border:1px solid #cbd5e1}
+  td{padding:7px 9px;border:1px solid #cbd5e1;vertical-align:top}
+  tr:nth-child(even) td{background:#f6f9fb}
+  code{font:9.5pt Consolas,monospace;background:#eef2f6;padding:1px 5px;border-radius:3px;direction:ltr;display:inline-block}
+  .item{border-inline-start:5px solid #94a3b8;background:#fafbfc;padding:11px 14px;margin:12px 0;break-inside:avoid}
+  .env{border-color:#0e7490}.dec{border-color:#b45309}.code{border-color:#be123c}.arch{border-color:#4f46e5}
+  .done{border-color:#15803d;background:#f2fbf5}
+  .tag{display:inline-block;font-size:8.5pt;font-weight:700;padding:2px 9px;border-radius:99px;color:#fff;margin-inline-end:7px}
+  .t-env{background:#0e7490}.t-dec{background:#b45309}.t-code{background:#be123c}.t-arch{background:#4f46e5}.t-done{background:#15803d}
+  .label{font-weight:700;color:#12213a}
+  .note{background:#eef7f6;border-inline-start:5px solid #0d9488;padding:11px 14px;margin:14px 0}
+  .warn{background:#fff6e5;border-inline-start:5px solid #d97706;padding:11px 14px;margin:14px 0}
+  ul{padding-inline-start:22px;margin:5px 0}
+  li{margin-bottom:4px}
+  .foot{border-top:1px solid #dbe3ea;margin-top:26px;padding-top:8px;font-size:9pt;color:#64748b}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+  .card{border:1px solid #dbe3ea;border-radius:8px;padding:12px;text-align:center}
+  .card .n{font-size:21pt;font-weight:800;line-height:1.2}
+  .card .l{font-size:8.5pt;color:#64748b}
+</style>
+</head>
+<body>
+
+<h1>سجلّ المراجعات الخارجية — AdLoop</h1>
+<p class="sub">
+  مراجعتان خارجيتان في ١٩ أغسطس ٢٠٢٦ على النسخة <code>2803620f</code>:
+  <strong>Terra 5.6</strong> (جاهزية الإنتاج) و<strong>Mimo 2.5</strong> (الأمن والموثوقية).
+  هذا السجلّ يجمع ما أُغلق وما بقي، بعد التحقّق من كلّ بندٍ في الكود.
+</p>
+
+<div class="grid">
+  <div class="card"><div class="n" style="color:#15803d">٩</div><div class="l">أُغلقت وتحقَّقنا منها</div></div>
+  <div class="card"><div class="n" style="color:#be123c">١٠</div><div class="l">مؤكَّدة ولم تُصلَح</div></div>
+  <div class="card"><div class="n" style="color:#b45309">٣</div><div class="l">تحتاج قرارك</div></div>
+  <div class="card"><div class="n" style="color:#4f46e5">٤</div><div class="l">معماريّة أو خارجية</div></div>
+</div>
+
+<div class="warn">
+  <strong>قاعدةٌ قبل أيّ عمل بهذين التقريرين:</strong> كلاهما أخطأ في مواضع.
+  يُتحقَّق من كلّ بندٍ في الكود قبل تنفيذه، ويُصحَّح وصفُه إن لزم — التقرير يدلّ
+  على موضع النظر، ولا يُغني عن النظر. أمثلةٌ محدَّدة في آخر الصفحة.
+</div>
+
+<!-- ═══════════════ أُغلق ═══════════════ -->
+<h2>ما أُغلق ونُشر ومُتحقَّقٌ منه حيّاً</h2>
+
+<table>
+  <tr><th style="width:16%">البند</th><th>ما كان</th><th>ما صار</th></tr>
+  <tr><td>PR-001 ازدواج الدفع</td><td>طلبان متوازيان يُنتجان رابطَي دفعٍ صالحين</td><td>تسلسلٌ بقفل معاملة — الثاني يرى نيّة الأوّل</td></tr>
+  <tr><td>PR-002 الويب هوك</td><td>يثق بالمعرّف وحده بلا مقارنة مبلغٍ ولا عملة</td><td>المبلغ والعملة وصاحب الحساب داخل الشرط الذرّي نفسه</td></tr>
+  <tr><td>PR-003 حصص الذكاء</td><td>قراءةٌ ثمّ كتابة تُتجاوَز بالتوازي</td><td>مطالبة ذرّية ×٤، واسترداد ذرّيّ ×٣</td></tr>
+  <tr><td>PR-006 / 009 تسريب الأخطاء</td><td>نصّ المزوّد الخام + عربيٌّ مثبَّت</td><td>رسالةٌ مستقرّةٌ بلغته + مرجعٌ للدعم، والتفصيل في السجلّ</td></tr>
+  <tr><td>PR-007 / Mimo CSRF</td><td>٩ مسارات من ١٠٠ تتحقّق</td><td>حارس أصلٍ مركزيّ في الوسيط — مُختبَرٌ حيّاً بأربع حالات</td></tr>
+  <tr><td>PR-008 التسريب العربيّ</td><td>٧٠ موضعاً</td><td>صفرٌ جديد + مِسنَنةٌ على ٣٤ موروثة</td></tr>
+  <tr><td>PR-010 فحص البيئة</td><td>متغيّران إجباريّان، والملفّ كودٌ ميّت لا يُنادى</td><td>أُغلق في الجلسة الموازية: ٤٩ متغيّراً بدرجات خطورة، موصولٌ بالإقلاع</td></tr>
+  <tr><td>PR-011 التوثيق</td><td>«٧١ نقطة، وMCP لم يُبدأ»</td><td>١٣٣ نقطة، وMCP مبنيٌّ بـOAuth 2.1 كاملاً</td></tr>
+  <tr><td>Mimo BOLA</td><td>—</td><td>أُغلق قبل التقرير: <code>workspaceAccess</code> على ٥٤ موضعاً + بوّابة بناء</td></tr>
+</table>
+
+<div class="item done">
+  <span class="tag t-done">درسٌ مدفوع الثمن</span>
+  <strong>نشرتان فشلتا وأنا أظنّهما نجحتا.</strong> قيدُ <code>@unique</code> جعل
+  <code>prisma db push</code> يطلب <code>--accept-data-loss</code>، وسكربت البناء
+  رفضها بحقّ — فبقيت إصلاحاتُ الفلوس غيرَ منشورة. اكتُشف ذلك بالاختبار الحيّ لا
+  بالافتراض. والتسلسل نُقل من قيدٍ في المخطّط إلى قفلٍ في الكود، فتحقّقت الضمانة
+  بلا إضعاف بوّابة البناء.
+</div>
+
+<!-- ═══════════════ يحتاج بيئة ═══════════════ -->
+<h2>يحتاج بيئةً خارجية</h2>
+
+<div class="item env">
+  <span class="tag t-env">A1</span><strong>ترتيب حقول HMAC عند Paymob</strong>
+  <p><code>app/api/webhooks/paymob/route.ts</code> · Terra PR-004 · Mimo #7</p>
+  <p>الترتيب مستنتَجٌ من توثيقٍ قديم لا مؤكَّدٌ من لوحة المزوّد. والكود
+  <span class="label">يفشل مغلقاً</span> — وهو الاتجاه الصحيح، لكنّ ثمنه أنّ
+  الترتيب لو كان خاطئاً رُفض كلُّ ويب هوك: يدفع العميل ولا يُفعَّل اشتراكه أبداً.</p>
+  <p class="label">ما يلزم:</p>
+  <ul>
+    <li>اختبارٌ في بيئة Paymob التجريبية: ناجحة، فاشلة، مكرّرة، مُستردَّة، وبعملةٍ أخرى.</li>
+    <li>حفظُ حمولةٍ موقّعةٍ كعيّنةِ اختبارٍ دائمة.</li>
+    <li>تنبيهٌ حين تفشل <em>كلّ</em> عمليات التحقّق — الفشل الشامل علامةُ ترتيبٍ خاطئ لا علامةُ مهاجم.</li>
+  </ul>
+</div>
+
+<!-- ═══════════════ قرارات ═══════════════ -->
+<h2>يحتاج قرارك</h2>
+
+<div class="item dec">
+  <span class="tag t-dec">B1</span><strong>سياسة أمن المحتوى تسمح بـ<code>unsafe-inline</code> و<code>unsafe-eval</code></strong>
+  <p><code>next.config.js:43-44</code> · Mimo #1 (حرج)</p>
+  <p>الرايتان معاً تُلغيان قيمة السياسة كخطّ دفاعٍ أخير عن XSS: أيّ نصٍّ يُحقَن يُنفَّذ.</p>
+  <p class="label">لماذا هو قرارٌ لا إصلاحٌ مباشر:</p>
+  <p>Next.js يحقن سكربتاتٍ داخلية، وبعض المكتبات تحتاج <code>eval</code>. فالتشديد
+  الأعمى يكسر صفحاتٍ بصمت. <span class="label">تُوضَع السياسة في وضع
+  <code>Report-Only</code> أوّلاً</span> وتُجمَع المخالفات، ثمّ تُشدَّد على قياس.</p>
+</div>
+
+<div class="item dec">
+  <span class="tag t-dec">B2</span><strong>الحدّ يفشل مفتوحاً</strong>
+  <p><code>lib/rateLimit.ts:37-40</code> · Mimo #4 (عالٍ)</p>
+  <p>عند تعذّر قراءة العدّاد يُسمَح بالطلب. القرار موثَّقٌ في الكود: لا يُمنَع
+  مشتركٌ شرعيّ بسبب عطلٍ عندنا.</p>
+  <p><span class="label">والوجه الآخر:</span> أثناء ضغطٍ على قاعدة البيانات — وهو
+  بالضبط وقت الهجوم — يختفي الحدّ عن الدخول والتسجيل واستعادة كلمة المرور.</p>
+  <p><span class="label">القرار:</span> أيّهما نحتمل — رفضُ شرعيٍّ أثناء عطل، أم
+  فتحُ الباب أثناءه؟ والحلّ الوسط حدٌّ في الذاكرة يعمل حين تعجز قاعدة البيانات.</p>
+</div>
+
+<div class="item dec">
+  <span class="tag t-dec">B3</span><strong>أرقام دفتر تخصيص حصص المنصّات</strong>
+  <p><code>docs/api-quota-plan.md</code> · مرتبطٌ بعدّاد <code>PlatformUsage</code></p>
+  <p>العدّاد يعمل منذ أيام. بعد ٢–٤ أسابيع من البيانات تُثبَّت أرقام
+  <code>dailyOperations</code> لكلّ باقة من الاستهلاك المقيس لا من التخمين.</p>
+</div>
+
+<!-- ═══════════════ مؤكَّدة ═══════════════ -->
+<h2>مؤكَّدةٌ في الكود ولم تُصلَح بعد</h2>
+
+<div class="item code">
+  <span class="tag t-code">C1</span><strong>ربط حساب OAuth بلا التحقّق من ملكية البريد</strong>
+  <p><code>oauth/login-google/callback:55-62</code> · <code>oauth/login-facebook/callback:61-68</code> · Mimo #3 (حرج)</p>
+  <p>عند غياب مطابقةٍ بمعرّف المزوّد، يُبحَث بالبريد ويُربَط المزوّد بالحساب
+  القائم <span class="label">تلقائياً بلا موافقة صاحبه</span>.</p>
+  <div class="note">
+    <strong>تصحيحٌ لوصف المراجعة.</strong> قالت إنّ المهاجم «ينشئ حساب جوجل ببريد
+    الضحية» — وهذا <strong>غير ممكن</strong>: جوجل تتحقّق من ملكية البريد، ومن
+    يملكه يستطيع أخذ الحساب بـ«نسيت كلمة المرور» أصلاً.
+    <br><br>
+    <strong>والخطر الحقيقيّ أضيق وأدقّ:</strong> <code>email_verified</code> لا
+    يُفحَص عند أيٍّ من المزوّدَين. والبريد الذي يعيده فيسبوك ليس مضموناً أنّه
+    متحقَّقٌ منه — وهي الثغرة الكلاسيكية لهذا النمط بعينه. فالمسار: يضع المهاجم
+    بريد الضحية على حسابٍ عند مزوّدٍ لا يتحقّق، ثمّ يدخل فيُربَط بحسابها.
+  </div>
+  <p class="label">الإصلاح:</p>
+  <ul>
+    <li>رفضُ الربط التلقائيّ ما لم يكن البريد متحقَّقاً عند المزوّد.</li>
+    <li>اشتراطُ جلسةٍ قائمةٍ وموافقةٍ صريحة لربط مزوّدٍ بحسابٍ له كلمة مرور.</li>
+  </ul>
+</div>
+
+<div class="item code">
+  <span class="tag t-code">C2</span><strong>لا حدَّ معدّل على ردود OAuth</strong>
+  <p><code>app/api/oauth/login-*/callback/route.ts</code> · Mimo #2 (حرج)</p>
+  <p>الدخول بالبريد وكلمة المرور عليه <code>checkRateLimit</code> مرّتين، وردود
+  OAuth عليها <span class="label">صفر</span>. فالمسار الأضعف هو غير المحروس.</p>
+</div>
+
+<div class="item code">
+  <span class="tag t-code">C3</span><strong>ويب هوك ماسنجر بلا إخماد تكرار</strong>
+  <p><code>app/api/webhooks/meta-messenger/route.ts</code> · Mimo #6 (عالٍ)</p>
+  <p>سلّة تستعمل <code>markEventAsProcessed</code> مرّتين؛ ماسنجر <span class="label">صفر</span>.
+  وميتا تُعيد الإرسال عند تعذّر التأكيد، فتُعَدّ الرسالة مرّتين.</p>
+  <div class="note">
+    <strong>أخطر ممّا وصفه التقرير:</strong> التحويلات المتحقَّقة تُزاد من مسار
+    ماسنجر، والعدّ المزدوج هنا يفسد <strong>الرقم الذي يقوم عليه ادّعاء المنتج
+    كلُّه</strong>. وقد وقع عدٌّ مزدوجٌ حقيقيّ من قبل في <code>mark-matched</code>
+    لنسيان فحص الوجود المسبق.
+  </div>
+</div>
+
+<div class="item code">
+  <span class="tag t-code">C4</span><strong>بناء استعلامات GAQL بدمج نصوص</strong>
+  <p><code>lib/syncGoogleAds.ts</code> · Mimo #5 و#15</p>
+  <p>معرّفات الحملات والتواريخ تُدمَج في نصّ الاستعلام. المصدر قاعدةُ بياناتنا لا
+  مدخلُ مستخدم، فالخطر غيرُ مباشر — لكن تحقّقاً بنمطٍ صارم <code>/^\d+$/</code>
+  قبل الدمج رخيصٌ ويغلق الباب.</p>
+</div>
+
+<div class="item code">
+  <span class="tag t-code">C5</span><strong><code>$queryRawUnsafe</code> في فحص المخطّط</strong>
+  <p><code>app/api/health/schema/route.ts</code> · Mimo #8</p>
+  <p>لا مدخلَ مستخدمٍ في الاستعلام الحاليّ، فليست ثغرةً اليوم. لكنّ الاسم نفسه
+  دعوةٌ لأوّل من يضيف متغيّراً. يُستبدَل بـ<code>$queryRaw</code> بقالبٍ موسوم.</p>
+</div>
+
+<div class="item code">
+  <span class="tag t-code">C6</span><strong>سياسة الاحتفاظ لا تشمل جدولين يحملان بياناتٍ شخصية</strong>
+  <p><code>lib/dataRetention.ts</code> · Mimo #13</p>
+  <p><code>purgeExpiredData</code> ينظّف <code>CtaClickEvent</code> و<code>RateLimitEntry</code>
+  فقط. و<code>UnmatchedClick</code> يحمل عناوين IP وبصمات متصفّح،
+  و<code>AttributionResult</code> يتراكم بلا حدّ.</p>
+  <p><span class="label">وقانون حماية البيانات المصريّ بموعدٍ نهائيّ ٣١ أكتوبر ٢٠٢٦</span>
+  — راجع <code>docs/security-audit-2026-07-18.md</code>.</p>
+</div>
+
+<div class="item code">
+  <span class="tag t-code">C7</span><strong>سقفُ جودة الصور مسطَّحٌ فوق الباقة</strong>
+  <p><code>lib/aiRateLimit.ts</code> · Mimo #14</p>
+  <p>يستعمل <code>Math.min(MONTHLY_LIMIT, credits.left)</code> بينما مسار التحديث
+  يستعمل <code>credits.left</code> وحده. فمشترك Pro برصيد ١٥٠ يحصل على ٨٠ في هذا
+  المسار — أي أنّ ما دفع فيه رقمٌ لا يصل إليه. (نفس العلّة أُصلحت في مسارٍ آخر
+  وبقيت هنا.)</p>
+</div>
+
+<div class="item code">
+  <span class="tag t-code">C8</span><strong>بريد المالك بقيمةٍ احتياطيةٍ مثبَّتة</strong>
+  <p><code>lib/owner.ts</code> · Mimo #16</p>
+  <p>نشرٌ بلا المتغيّر يجعل البريد المثبَّت مالكاً. يُفضَّل الرمي عند غيابه في الإنتاج.</p>
+</div>
+
+<div class="item code">
+  <span class="tag t-code">C9</span><strong>الوسيط يفحص وجود الكوكي لا صلاحيتها</strong>
+  <p><code>middleware.ts</code> · Mimo #9</p>
+  <p>مقصودٌ وموثَّق (التحقّق الكامل داخل كلّ مسار)، والأثر أداءٌ لا أمن. يُذكَر
+  للاكتمال لا للإصلاح العاجل.</p>
+</div>
+
+<div class="item code">
+  <span class="tag t-code">C10</span><strong><code>getEntitlements</code> بلا تخزينٍ مؤقّت للطلب الواحد</strong>
+  <p><code>lib/entitlements.ts</code> · Mimo #12</p>
+  <p>استعلامٌ في كلّ نداء، وتُنادى مرّاتٍ في الطلب الواحد. يُخزَّن على مستوى الطلب.</p>
+</div>
+
+<!-- ═══════════════ معماريّ ═══════════════ -->
+<h2>معماريّ — يحتاج عملاً لا إصلاحاً</h2>
+
+<div class="item arch">
+  <span class="tag t-arch">D1</span><strong>كرونٌ يوميّ واحد متسلسل عالي التفرّع</strong>
+  <p><code>vercel.json</code> · <code>app/api/cron/sync-google-ads/route.ts</code> · Terra PR-005</p>
+  <p>يمرّ على كلّ مساحةٍ متسلسلاً وينادي عشرات العمليات لكلّ واحدة، بلا طابورٍ
+  دائمٍ ولا إعادةِ محاولةٍ لكلّ مهمّة.</p>
+  <p><span class="label">حالته:</span> الجلسة الموازية رفعت <code>maxDuration</code>
+  وأضافت <code>lib/cronAuth.ts</code> — وهذا يؤجّل السقف ولا يلغيه. الحلّ الكامل
+  تقسيمٌ إلى طابورٍ خاملِ الأثر بحصصٍ ومحاولاتٍ مُعادة، مع هدفٍ معلنٍ لطزاجة البيانات.</p>
+</div>
+
+<div class="item arch">
+  <span class="tag t-arch">D2</span><strong>فهارس غير مكتملة على جداول متعدّدة المستأجرين</strong>
+  <p><code>prisma/schema.prisma</code> · Terra PR-012</p>
+  <p>بلا فهرس <code>workspaceId</code> ظاهر: <code>UploadedSheet</code>،
+  <code>AutomationRule</code>، <code>LandingPageAudit</code>، <code>SiteScanResult</code>،
+  <code>SharedReportLink</code>، <code>ConversionValueConfig</code>.</p>
+  <p><span class="label">ولا تُضاف قبل الدليل:</span> فهرسٌ يُضاف بالحدس يكلّف
+  كتابةً ولا يخدم قراءة. تُجمَع خطط الاستعلام على حجمٍ شبيهٍ بالإنتاج أوّلاً.</p>
+</div>
+
+<div class="item arch">
+  <span class="tag t-arch">D3</span><strong>لا عدّة اختبارٍ للمسارات الحرجة</strong>
+  <p>Terra PR-013 · لا <code>test</code> script في <code>package.json</code></p>
+  <p>التحقّق اليوم عبر سلسلة بوّابات البناء و<code>tsc</code>. وهي تمسك أصنافاً
+  بعينها ولا تمسك <span class="label">التزامن</span> — وهو بالضبط ما كانت عليه
+  ثلاثةٌ من أخطر ما وُجد.</p>
+  <p class="label">الأولى بالتغطية:</p>
+  <ul>
+    <li>ذرّية الدفع، ومطابقة الويب هوك بنيّته.</li>
+    <li>تزامن الحصص.</li>
+    <li>حدود المساحات (BOLA).</li>
+    <li>خمولُ أثر الكرون (idempotency).</li>
+  </ul>
+</div>
+
+<!-- ═══════════════ الترتيب ═══════════════ -->
+<h2>الترتيب المقترَح للتنفيذ</h2>
+
+<table>
+  <tr><th style="width:8%">الترتيب</th><th>البند</th><th>السبب</th></tr>
+  <tr><td><strong>١</strong></td><td>C1 + C2 معاً</td><td>الاثنان في الملفّين نفسيهما، وكلاهما أمنُ دخول</td></tr>
+  <tr><td><strong>٢</strong></td><td>C3 إخماد تكرار ماسنجر</td><td>يمسّ رقم التحقّق الذي يقوم عليه المنتج</td></tr>
+  <tr><td><strong>٣</strong></td><td>C6 الاحتفاظ بالبيانات</td><td>موعدٌ قانونيّ نهائيّ ٣١ أكتوبر ٢٠٢٦</td></tr>
+  <tr><td><strong>٤</strong></td><td>C4 · C5 · C7 · C8</td><td>رخيصةٌ ومحدودةُ الأثر</td></tr>
+  <tr><td><strong>٥</strong></td><td>B1 (CSP) بوضع Report-Only أوّلاً</td><td>التشديد الأعمى يكسر صفحاتٍ بصمت</td></tr>
+</table>
+
+<!-- ═══════════════ تصحيحات ═══════════════ -->
+<h2>تصحيحاتٌ على التقريرين</h2>
+
+<div class="warn">
+  <p><strong>Mimo</strong> وصف ثغرة OAuth بسيناريو <strong>غير ممكن</strong>
+  (إنشاء حساب جوجل ببريد الغير). والثغرة الحقيقية في مكانٍ أضيق —
+  <code>email_verified</code> غير مفحوص — <strong>وهي أخطر لأنّها أصدق</strong>.</p>
+
+  <p style="margin-top:10px"><strong>Terra</strong> عدّ ٧٠ تسريباً عربياً من نسخةٍ
+  <em>سبقت</em> إصلاحها، وقال إنّ CSRF «ناقصةٌ على كثير» بينما الرقم الحقيقيّ
+  <strong>٩ من ١٠٠</strong> — أي أسوأ ممّا وصف لا أهون.</p>
+
+  <p style="margin-top:10px"><strong>وكلاهما</strong> أعطى درجاتٍ إجمالية متباعدة
+  (٤/١٠ مقابل ٨٢/١٠٠) على النسخة نفسها. الدرجة رأيٌ، والبندُ المُتحقَّق منه دليل —
+  فالعمل على البنود لا على الدرجات.</p>
+</div>
+
+<p class="foot">
+  حُرّر بعد التحقّق من كلّ بندٍ في الكود على النسخة <code>9c3bd254</code>.
+  المصدر النصّيّ المرافق: <code>docs/open-audit-findings.md</code>.
+  التقريران الأصليّان في المجلّد نفسه.
+</p>
+
+</body>
+</html>
