@@ -20,8 +20,15 @@ const passwordSchema = z
   .regex(/[0-9]/, "يجب أن تحتوي على رقم واحد على الأقلّ")
   .regex(/[^a-zA-Z0-9]/, "يجب أن تحتوي على رمز واحد على الأقلّ (!@#$...)");
 
+// البريد يُطبَّع دائماً: قصّ المسافات وتصغير الأحرف. بدونه كان
+// `Foo@x.com` صفّاً مختلفاً عن `foo@x.com` في فهرس فريدٍ حسّاسٍ للحالة -
+// وهو ما فتح مسار انتحال المالك (تسجيلٌ بنسخةٍ مختلفة الحالة من بريده).
+// نقطةٌ واحدة تُطبِّق كلّ المسارات (تسجيل، دخول، استعادة) فلا يختلف
+// المخزَّن عن المبحوث عنه أبداً.
+const emailSchema = z.string().trim().toLowerCase().pipe(z.string().email().max(255));
+
 export const signupSchema = z.object({
-  email: z.string().email("بريد إلكتروني غير صحيح").max(255),
+  email: emailSchema,
   password: passwordSchema,
   name: z.string().max(100).optional(),
   preferredLocale: z.enum(["ar", "en"]).optional(),
@@ -34,12 +41,12 @@ export const signupSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.string().email().max(255),
+  email: emailSchema,
   password: z.string().min(1).max(200),
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().email().max(255),
+  email: emailSchema,
 });
 
 export const resetPasswordSchema = z.object({
