@@ -11,7 +11,6 @@ import { getSessionUser } from "@/lib/auth";
 import { startSubscriptionCheckout, startCreditsCheckout } from "@/lib/billing";
 import { billingCurrencyFor, PLAN_BY_KEY, type BillingCycle, type PlanKey } from "@/lib/plans";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
-import { getActiveWorkspace } from "@/lib/activeWorkspace";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
@@ -24,9 +23,19 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => null);
 
-  // العملة من مساحة عمل المستخدم لا من العميل - وإلا اختار الأرخص
-  const workspace = await getActiveWorkspace(user.id);
-  const currency = billingCurrencyFor(workspace?.currency ?? "USD");
+  // 🔴 عملة الفوترة من `dataCurrency` (عملة حساب الإعلانات، غير قابلة
+  // للتعديل - قاعدة "العملة تتبع المال")، لا من `workspace.currency`
+  // الذي يحرّره المستخدم من الإعدادات. الشكل القديم كان يقرأ العملة
+  // المحرَّرة، فمن لم يربط حساباً (أو أبقى كوكي الديمو نشطاً) كان يختار
+  // الجنيه ويدفع سعر مصر لباقة الدولار - خصمُ ~65% خدمةً ذاتية.
+  // بلا `dataCurrency` في أيّ مساحةٍ حقيقية → سعر القائمة بالدولار، لا
+  // ما اختاره المستخدم.
+  const realWorkspaceWithCurrency = await prisma.workspace.findFirst({
+    where: { userId: user.id, isDemo: false, dataCurrency: { not: null } },
+    select: { dataCurrency: true },
+    orderBy: { createdAt: "asc" },
+  });
+  const currency = billingCurrencyFor(realWorkspaceWithCurrency?.dataCurrency ?? "USD");
 
   if (body?.mode === "credits") {
     const result = await startCreditsCheckout({
