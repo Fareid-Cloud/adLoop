@@ -32,46 +32,60 @@ export async function POST(req: NextRequest) {
     data: { matched: true },
   });
 
-  // 🔴 إصلاح باگ عد مزدوج حقيقي: كان upsert بيتفحص، لكن الزيادة تحت
-  // كانت بتحصل دائماً بغض النظر - لو نفس المحادثة وصلت هنا مرتين (إعادة
-  // محاولة webhook بعد timeout مثلاً)، كان العداد بيزيد مرتين لنفس
-  // العميل الحقيقي الواحد. لازم نعرف هل ده أول مرة فعلاً قبل ما نزوّد.
-  const existing = await prisma.attributionResult.findUnique({ where: { conversationId } });
-  const isGenuinelyNew = !existing;
+  // منع التكرار **ذرّياً** عبر قيد `conversationId` الفريد، لا بفحصٍ ثمّ
+  // تصرّفٍ منفصلَين. الشكل القديم (`findUnique` ثمّ increment) كان يترك
+  // نافذةً بين القراءة والكتابة: تسليمان متزامنان لنفس المحادثة (إعادة
+  // إرسال webhook بعد timeout) يقرآن كلاهما "غير موجود" فيزيدان العدّاد
+  // مرّتين لعميلٍ واحد. هنا: `create` ينجح مرّةً واحدة، والثانية تسقط على
+  // `P2002` فلا تزيد شيئاً. والعلامة والزيادة في `$transaction` واحدة:
+  // انهيارٌ بينهما لا يترك محادثةً معلَّمةً بلا عدّها، ولا العكس.
+  //
+  // 🔴 قيدٌ معماريٌّ موثَّق (لم يُصلَح هنا عمداً): الزيادة على
+  // `MetricSnapshot` المقسَّم بالـplacement تفشل لميتا (لا صفّ `ALL`)،
+  // وللمزامنة نفس-اليوم في جوجل (لا صفّ لليوم بعد). العلاج الصحيح جدولُ
+  // تحقّقٍ مستقلٌّ يُجمَع منه القرّاء - تغييرٌ يلمس المخطَّط والقاعدة
+  // المشتركة، ومحجوزٌ خلف إرسال التراكر لـ`campaignId` (لا يُرسَل اليوم).
+  // فهذه الدالة صارت الآن **صحيحةً في الذرّية ومنع التكرار**، ويبقى مكان
+  // تخزين الرقم قراراً معلَّقاً بمراجعةٍ على بيئةٍ تجريبية.
+  const receivedDate = new Date(receivedAt);
+  // مفتاح اليوم من شريحة UTC صريحة لا من توقيت الخادم المحلّي: عمود
+  // `MetricSnapshot.date` هو `@db.Date` بمنتصف ليل UTC، وبناؤه بـ
+  // `new Date(y,m,d)` على مضيفٍ غير UTC ينتج يوماً مختلفاً فلا يطابق.
+  const dayStart = new Date(receivedDate.toISOString().slice(0, 10));
 
-  await prisma.attributionResult.upsert({
-    where: { conversationId },
-    create: {
-      workspaceId,
-      conversationId,
-      receivedAt: new Date(receivedAt),
-      attributionType: "VERIFIED",
-      probabilityDistribution: { [platform]: 1.0 },
-      primarySignal: null,
-    },
-    update: {},
-  });
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.attributionResult.create({
+        data: {
+          workspaceId,
+          conversationId,
+          receivedAt: receivedDate,
+          attributionType: "VERIFIED",
+          probabilityDistribution: { [platform]: 1.0 },
+          primarySignal: null,
+        },
+      });
 
-  // الإصلاح الجذري - زيادة رقم التحويل المؤكد الحقيقي على نفس صف اليوم
-  // اللي المزامنة اليومية كانت عاملاه بصفر. لو الصف مش موجود لسه (نادر -
-  // مثلاً الرسالة وصلت قبل أول مزامنة يومية للحملة دي)، منعملش حاجة
-  // بدل ما نفشل بصمت أو ننشئ صف ناقص البيانات التانية (impressions/cost)
-  // + لازم يكون فعلاً أول مرة (مش إعادة معالجة نفس المحادثة)
-  if (campaignId && isGenuinelyNew) {
-    const receivedDate = new Date(receivedAt);
-    const dayStart = new Date(receivedDate.getFullYear(), receivedDate.getMonth(), receivedDate.getDate());
-
-    await prisma.metricSnapshot.updateMany({
-      where: {
-        workspaceId,
-        platform,
-        campaignId,
-        date: dayStart,
-        placementBreakdown: "ALL",
-        placementDetail: "ALL",
-      },
-      data: { verifiedConversions: { increment: 1 } },
+      if (campaignId) {
+        await tx.metricSnapshot.updateMany({
+          where: {
+            workspaceId,
+            platform,
+            campaignId,
+            date: dayStart,
+            placementBreakdown: "ALL",
+            placementDetail: "ALL",
+          },
+          data: { verifiedConversions: { increment: 1 } },
+        });
+      }
     });
+  } catch (err: any) {
+    // تسليمٌ مكرَّر لمحادثةٍ عُولِجت سلفاً: نجاحٌ بلا تكرار أثر.
+    if (err?.code === "P2002") {
+      return NextResponse.json({ ok: true, duplicate: true });
+    }
+    throw err;
   }
 
   return NextResponse.json({ ok: true });
