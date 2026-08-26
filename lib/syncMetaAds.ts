@@ -39,6 +39,16 @@ function convertMinorUnitsToCurrency(amount: number, currencyCode: string): numb
   return amount / 100;
 }
 
+// العكس: من وحدة العملة إلى الوحدة الصغرى التي يتوقّعها `bid_amount` عند
+// ميتا. بدونه كان سقف التكلفة المقترح (محسوبٌ بالعملة من متوسط CPA) يُرسَل
+// كأنّه قروش: سقف 100 ريال يصير 115 هللة ≈ 1.15 ريال - فتوقف ميتا التوصيل
+// تقريباً، قتلٌ صامتٌ لمجموعةٍ رابحة على مسارٍ يُنفَّذ فعلاً. العملات
+// صفريّة الكسور (JPY/KRW) بلا ضرب، كالقراءة تماماً.
+function convertCurrencyToMinorUnits(amount: number, currencyCode: string): number {
+  if (ZERO_DECIMAL_CURRENCIES.has(currencyCode.toUpperCase())) return Math.round(amount);
+  return Math.round(amount * 100);
+}
+
 // **رقم "المنصّة تدّعي" لميتا - من حدث التحويل الفعلي للحملة، لا من `lead` وحده.**
 //
 // كان الكود يقرأ `action_type === "lead"` فقط، فأيّ حملةٍ مُحسَّنةٍ للشراء أو
@@ -833,6 +843,16 @@ const META_COST_CAP_SAFETY_MARGIN_PCT = 15;
 export async function checkMetaBidStrategyProgressionForWorkspace(workspaceId: string) {
   const { pushToActionFeed } = await import("@/lib/actionFeed");
 
+  // عملة حساب الإعلانات (قاعدة "العملة تتبع المال") لتحويل السقف إلى وحدةٍ
+  // صغرى صحيحة قبل إرساله لميتا. غيابها → افتراض دولار (2 كسور)، وهو
+  // الصحيح للأغلبية؛ الخطأ الوحيد الباقي عندها عملةٌ صفريّة الكسور بلا
+  // `dataCurrency` مضبوطة - حالةٌ نادرة، والبديل (تركُ الخطأ ×100) أسوأ.
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { dataCurrency: true, currency: true },
+  });
+  const accountCurrency = workspace?.dataCurrency ?? workspace?.currency ?? "USD";
+
   const adSets = await prisma.metaAdSetSnapshot.findMany({
     where: { workspaceId, OR: [{ bidStrategyType: null }, { bidStrategyType: "" }] },
   });
@@ -841,7 +861,12 @@ export async function checkMetaBidStrategyProgressionForWorkspace(workspaceId: s
     if (adSet.conversions < META_MIN_CONVERSIONS_FOR_COST_CAP || adSet.cost <= 0) continue;
 
     const avgCpa = adSet.cost / adSet.conversions;
-    const suggestedCostCap = Math.round(avgCpa * (1 + META_COST_CAP_SAFETY_MARGIN_PCT / 100));
+    // السقف بالعملة (للعرض)، ثمّ بالوحدة الصغرى (للإرسال) - القيمتان منفصلتان.
+    const suggestedCostCapCurrency = Math.round(avgCpa * (1 + META_COST_CAP_SAFETY_MARGIN_PCT / 100));
+    const suggestedCostCap = convertCurrencyToMinorUnits(
+      avgCpa * (1 + META_COST_CAP_SAFETY_MARGIN_PCT / 100),
+      accountCurrency,
+    );
 
     const cooldownStart = new Date();
     cooldownStart.setDate(cooldownStart.getDate() - 14);
@@ -856,7 +881,7 @@ export async function checkMetaBidStrategyProgressionForWorkspace(workspaceId: s
       type: "SUGGESTION",
       severity: "MEDIUM",
       title: `${adSet.adSetName ?? adSet.adSetId}: جاهزة لتحديد Cost Cap`,
-      description: `${adSet.conversions} تحويل بمتوسط تكلفة ${Math.round(avgCpa)} - نقترح Cost Cap عند ${suggestedCostCap} (فوق متوسطك الفعلي بـ${META_COST_CAP_SAFETY_MARGIN_PCT}% - رقم أقل بيقيّد التوصيل بشدة).`,
+      description: `${adSet.conversions} تحويل بمتوسط تكلفة ${Math.round(avgCpa)} - نقترح Cost Cap عند ${suggestedCostCapCurrency} (فوق متوسطك الفعلي بـ${META_COST_CAP_SAFETY_MARGIN_PCT}% - رقم أقل بيقيّد التوصيل بشدة).`,
       linkUrl: "/dashboard/diagnostics",
       actionType: "SET_BID_STRATEGY_META",
       actionPayload: { adSetId: adSet.adSetId, bidAmountCents: suggestedCostCap, changePct: META_COST_CAP_SAFETY_MARGIN_PCT },
