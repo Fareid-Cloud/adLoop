@@ -39,6 +39,33 @@ function convertMinorUnitsToCurrency(amount: number, currencyCode: string): numb
   return amount / 100;
 }
 
+// **رقم "المنصّة تدّعي" لميتا - من حدث التحويل الفعلي للحملة، لا من `lead` وحده.**
+//
+// كان الكود يقرأ `action_type === "lead"` فقط، فأيّ حملةٍ مُحسَّنةٍ للشراء أو
+// تثبيت التطبيق أو الرسائل - وهي لا تُصدِر حدث `lead` أبداً - تُكتب بصفر
+// تحويلات كلّ يوم. وهو بسط فجوة الحقيقة كلّها، فتظهر "المنصّة تدّعي صفراً"
+// بجانب صرفٍ حقيقي - مطابقٌ لحملةٍ ميّتة، وهو ما يدفع لقتل حملةٍ رابحة.
+//
+// نأخذ أوّل نوع تحويلٍ حاضرٍ بترتيب الأولوية لا مجموعَ الكلّ: الحملة تُحسَّن
+// لحدثٍ واحد، والجمع يُضاعف حين يحضر أكثر من نوع (شراء + ليد على البكسل).
+// نفس نمط `revenue = actionValue("purchase") ?? ...` المستقرّ في هذا الملفّ.
+const META_CONVERSION_ACTION_TYPES = [
+  "purchase", "omni_purchase", "offsite_conversion.fb_pixel_purchase", "onsite_web_purchase",
+  "lead", "offsite_conversion.fb_pixel_lead", "onsite_conversion.lead_grouped",
+  "complete_registration", "offsite_conversion.fb_pixel_complete_registration",
+  "onsite_conversion.messaging_conversation_started_7d",
+  "subscribe", "start_trial", "submit_application", "contact", "schedule",
+];
+
+function metaReportedConversions(actions: unknown): number {
+  const list = Array.isArray(actions) ? actions : [];
+  for (const type of META_CONVERSION_ACTION_TYPES) {
+    const hit = list.find((a: any) => a?.action_type === type);
+    if (hit) return Number(hit.value ?? 0);
+  }
+  return 0;
+}
+
 export async function syncMetaAdsForWorkspace(workspaceId: string) {
   const links = await prisma.campaignLink.findMany({
     where: { workspaceId, platform: "META_ADS" },
@@ -112,8 +139,7 @@ export async function syncMetaAdsForWorkspace(workspaceId: string) {
             const hit = (row.actions ?? []).find((a: any) => a.action_type === type);
             return hit ? Number(hit.value ?? 0) : null;
           };
-          const leadAction = (row.actions ?? []).find((a: any) => a.action_type === "lead");
-          const rawConversions = leadAction ? Number(leadAction.value ?? 0) : 0;
+          const rawConversions = metaReportedConversions(row.actions);
 
           // 🔴 **مرحلتا السلّة والدفع كانتا مهمَلتين في المصفوفة نفسها.**
           // كان يُقرأ منها `lead` وحده ويُترك الباقي - بينما `add_to_cart`
@@ -231,7 +257,7 @@ export async function syncMetaAdSetsForWorkspace(workspaceId: string) {
         const row = insightsData.data?.[0];
         if (!row) continue;
 
-        const leadAction = (row.actions ?? []).find((a: any) => a.action_type === "lead");
+        const adSetConversions = metaReportedConversions(row.actions);
 
         const bidAmount = adSet.bid_amount
           ? convertMinorUnitsToCurrency(Number(adSet.bid_amount), accountCurrency)
@@ -250,7 +276,7 @@ export async function syncMetaAdSetsForWorkspace(workspaceId: string) {
             impressions: Number(row.impressions ?? 0),
             clicks: Number(row.clicks ?? 0),
             cost: Number(row.spend ?? 0),
-            conversions: leadAction ? Number(leadAction.value ?? 0) : 0,
+            conversions: adSetConversions,
           },
           update: {
             targetingType,
@@ -258,7 +284,7 @@ export async function syncMetaAdSetsForWorkspace(workspaceId: string) {
             impressions: Number(row.impressions ?? 0),
             clicks: Number(row.clicks ?? 0),
             cost: Number(row.spend ?? 0),
-            conversions: leadAction ? Number(leadAction.value ?? 0) : 0,
+            conversions: adSetConversions,
           },
         });
 
@@ -282,13 +308,13 @@ export async function syncMetaAdSetsForWorkspace(workspaceId: string) {
 
           if (dailyRes.ok) {
             for (const dayRow of dailyData.data ?? []) {
-              const dayLead = (dayRow.actions ?? []).find((a: any) => a.action_type === "lead");
+              const dayConversions = metaReportedConversions(dayRow.actions);
               const date = new Date(dayRow.date_start);
 
               await prisma.adSetDailyConversions.upsert({
                 where: { workspaceId_adSetId_date: { workspaceId, adSetId: adSet.id, date } },
-                create: { workspaceId, adSetId: adSet.id, date, conversions: dayLead ? Number(dayLead.value ?? 0) : 0 },
-                update: { conversions: dayLead ? Number(dayLead.value ?? 0) : 0 },
+                create: { workspaceId, adSetId: adSet.id, date, conversions: dayConversions },
+                update: { conversions: dayConversions },
               });
             }
           }
@@ -373,7 +399,7 @@ export async function syncMetaCreativesForWorkspace(workspaceId: string) {
         const headline = ad.creative?.object_story_spec?.link_data?.name ?? null;
 
         for (const row of insightsData.data ?? []) {
-          const leadAction = (row.actions ?? []).find((a: any) => a.action_type === "lead");
+          const creativeConversions = metaReportedConversions(row.actions);
           // نفس منطق مطابقة "purchase"/"omni_purchase" المستخدم في أماكن
           // تانية بالمشروع (الكتالوج مثلاً) - action_values حقل رسمي
           // موثّق من ميتا نفسها (اتأكدنا منه في مثال حقيقي في توثيقهم)
@@ -396,8 +422,11 @@ export async function syncMetaCreativesForWorkspace(workspaceId: string) {
               impressions: Number(row.impressions ?? 0),
               clicks: Number(row.clicks ?? 0),
               cost: Number(row.spend ?? 0),
-              rawConversions: leadAction ? Number(leadAction.value ?? 0) : 0,
-              conversionsValue: purchaseValue ? Number(purchaseValue.value ?? 0) : 0,
+              rawConversions: creativeConversions,
+              // القيمة `null` لا `0` حين لا قيمةَ شراء: طبقة تحليل الإبداعات
+              // (`creativeAnalysis.ts`) تُميّز "غير معروف" عن "صفر" بالـ`null`،
+              // فـ`0` كان يُحسب ROAS صفراً → مرشّح Kill لإبداعٍ إيراده مجهول.
+              conversionsValue: purchaseValue ? Number(purchaseValue.value ?? 0) : null,
             },
             update: {
               // يُحدَّث في التحديث أيضاً: الصفوف المزامَنة قبل إضافة الحقل
@@ -406,8 +435,11 @@ export async function syncMetaCreativesForWorkspace(workspaceId: string) {
               impressions: Number(row.impressions ?? 0),
               clicks: Number(row.clicks ?? 0),
               cost: Number(row.spend ?? 0),
-              rawConversions: leadAction ? Number(leadAction.value ?? 0) : 0,
-              conversionsValue: purchaseValue ? Number(purchaseValue.value ?? 0) : 0,
+              rawConversions: creativeConversions,
+              // القيمة `null` لا `0` حين لا قيمةَ شراء: طبقة تحليل الإبداعات
+              // (`creativeAnalysis.ts`) تُميّز "غير معروف" عن "صفر" بالـ`null`،
+              // فـ`0` كان يُحسب ROAS صفراً → مرشّح Kill لإبداعٍ إيراده مجهول.
+              conversionsValue: purchaseValue ? Number(purchaseValue.value ?? 0) : null,
             },
           });
         }
@@ -439,7 +471,11 @@ async function fetchMetaInsights(
       until: to.toISOString().slice(0, 10),
     }),
     time_increment: "1", // صف منفصل لكل يوم، مش رقم مجمّع للفترة كلها
-    fields: "impressions,clicks,spend,actions,account_currency",
+    // `action_values` توأم `actions` وتحمل قيمة كلّ حدث: بدونها كان حقل
+    // `revenue` على مستوى الحملة يخرج `null` دائماً (يُقرأ من مصفوفةٍ لم
+    // تُطلَب أصلاً)، فتتعذّر ROAS ميتا. أُدرِجت في طلبَي المجموعة والإبداع
+    // وسقطت من الطلب الرئيسي وحده.
+    fields: "impressions,clicks,spend,actions,action_values,account_currency",
   });
 
   // "full" = المنصة (فيسبوك/إنستجرام) + المكان التفصيلي (Feed/Stories/
