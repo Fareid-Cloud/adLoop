@@ -21,6 +21,7 @@ export interface DetectedSystem {
 }
 
 import { auditPageHtml, type PageAuditResult } from "./pageAudit";
+import { safeFetch } from "./safeFetch";
 
 export interface TrackingCheckResult {
   detected: boolean;
@@ -102,13 +103,15 @@ export async function checkTrackingPresence(rawUrl: string): Promise<TrackingChe
   let url = rawUrl.trim();
   if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
 
+  // 🔴 عبر `safeFetch` لا `fetch` خام: هذا المسار يقبل رابطاً من المستخدم
+  // (صفحة يراد فحص تتبّعها) ثمّ يجلبه ويعكس نتيجته - أي SSRF مباشر لو تُرك
+  // خاماً (رابطٌ إلى `169.254.169.254` أو شبكةٍ داخلية). `safeFetch` يرفض
+  // النطاقات الخاصة، ويعيد التحقّق بعد كلّ توجيه، وله حدّه الزمنيّ وحدّ حجمه.
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
   try {
-    const res = await fetch(url, {
-      redirect: "follow",
-      signal: controller.signal,
+    const res = await safeFetch(url, {
       headers: {
         // ترويسة متصفح حقيقية: كثير من الاستضافات تحجب الوكلاء غير المعروفين
         // فتُرجع 403 فيبدو الموقع كأنه بلا تتبع - وهو سبب آخر للنتيجة الخاطئة.
