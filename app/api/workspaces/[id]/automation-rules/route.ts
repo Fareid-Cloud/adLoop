@@ -135,8 +135,15 @@ const body = await req.json().catch(() => null);
       consecutiveDays: Math.min(Math.max(Number(body.consecutiveDays) || 1, 1), 30),
       attributionBasis: body.attributionBasis ?? "VERIFIED_ONLY",
       action: body.action,
-      actionValue: typeof body.actionValue === "number" ? body.actionValue : null,
-      maxSingleJumpPct: body.maxSingleJumpPct ?? 20,
+      // حدود صريحة من ناحية الخادم: القيمة تُقيَّد وقت التقييم بـ
+      // `maxSingleJumpPct`، لكن إن قُبِل الأخير من الجسم بلا حدّ (999 مثلاً)
+      // هُزِم السقف كلّه. نحصر الاثنين هنا: زيادةٌ لا تتعدّى 100%، وسقفُ
+      // قفزةٍ لا يتعدّى 20% (الحدّ الآمن المعتمد في محرّك القرارات).
+      actionValue:
+        typeof body.actionValue === "number"
+          ? Math.min(Math.max(body.actionValue, 0), 100)
+          : null,
+      maxSingleJumpPct: Math.min(Math.max(Number(body.maxSingleJumpPct) || 20, 1), 20),
       cooldownDays: body.cooldownDays ?? 3,
       requireApproval: body.requireApproval ?? true,
       platform,

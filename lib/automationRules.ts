@@ -190,7 +190,11 @@ export async function runAutomationForWorkspace(workspaceId: string, locale: Loc
           campaignId: l.externalCampaignId,
           campaignName: l.campaignName,
           action: rule.action,
-          changePct: rule.actionValue ?? undefined,
+          // 🔴 القيمة **المقيّدة** بسقف القفزة الواحدة، لا الخام. كان
+          // العنوان يعرض "زيادة 20%" (مقيّدة) بينما الحمولة تحمل
+          // `rule.actionValue` الخام (300 مثلاً) - فتتربّع الميزانية والواجهة
+          // تقول 20%. السقف كان يُطبَّق على نصّ العرض وحده.
+          changePct: result.clampedActionValue ?? undefined,
         }))
       : [undefined];
 
