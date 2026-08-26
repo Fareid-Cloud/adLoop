@@ -301,78 +301,89 @@ export async function fulfillPaymentIntent(
    */
   observed?: { amountCents: number; currency: string; userId: string }
 ): Promise<FulfillResult> {
-  const flipped = await prisma.paymentIntent.updateMany({
-    where: {
-      id: intentId,
-      status: "PENDING",
-      ...(observed
-        ? { amountCents: observed.amountCents, currency: observed.currency, userId: observed.userId }
-        : {}),
-    },
-    // القيد يُفرَغ مع الدفع - راجع `dedupeKey` في المخطّط.
-    data: { status: "PAID", paidAt: new Date(), transactionId, dedupeKey: null },
+  // 🔴 الانتقال الذرّي (`PENDING → PAID`) ومنحُ الاستحقاق في **معاملةٍ
+  // واحدة**. الشكل القديم كان يفصلهما: انهيارٌ بينهما يترك النيّة `PAID`
+  // بلا اشتراكٍ مُمنَح، ثمّ تجدها الإعادة `PAID` فتُبلّغ "تمّ سلفاً" ولا
+  // تمنح شيئاً أبداً - العميل دفع ولم يُفعَّل. الآن: rollback عند أيّ فشل
+  // يُبقيها `PENDING` فتُعاد المحاولة نظيفة. تسجيلُ الحدث (سجلٌّ ثانوي)
+  // يبقى بعد الـcommit كي لا يوسّع نطاق المعاملة بلا داعٍ.
+  const outcome = await prisma.$transaction(async (tx) => {
+    const flipped = await tx.paymentIntent.updateMany({
+      where: {
+        id: intentId,
+        status: "PENDING",
+        ...(observed
+          ? { amountCents: observed.amountCents, currency: observed.currency, userId: observed.userId }
+          : {}),
+      },
+      data: { status: "PAID", paidAt: new Date(), transactionId, dedupeKey: null },
+    });
+
+    const intent = await tx.paymentIntent.findUnique({ where: { id: intentId } });
+    if (!intent) return { result: { ok: false } as FulfillResult };
+
+    if (flipped.count === 0) {
+      // صفرٌ له سببان: نيّةٌ صارت مدفوعةً (تكرار webhook → نجاحٌ بلا تكرار
+      // أثر)، أو شرطٌ لم يتطابق (مبلغ/عملة/صاحب مختلف → رفضٌ يُسوّى يدوياً).
+      if (intent.status !== "PAID") {
+        console.error("[billing] معاملة موقّعة لا تطابق نيّتها - رُفض الإتمام", {
+          intentId, transactionId,
+          expected: { amountCents: intent.amountCents, currency: intent.currency, userId: intent.userId },
+          observed,
+        });
+        return { result: { ok: false, mismatch: true } as FulfillResult };
+      }
+      return { result: { ok: true, alreadyDone: true, kind: intent.kind, planKey: intent.planKey, credits: intent.credits } as FulfillResult };
+    }
+
+    if (intent.kind === "SUBSCRIPTION" && intent.planKey) {
+      const periodEnd = new Date();
+      if (intent.cycle === "yearly") periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+      else periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+      // الباقة السابقة تُقرأ **قبل** التحديث لتصنيف الحدث (ترقية/تخفيض/تجديد).
+      const before = await tx.user.findUnique({
+        where: { id: intent.userId },
+        select: { subscriptionPlan: true, subscriptionStatus: true, currentPeriodEnd: true },
+      });
+
+      await tx.user.update({
+        where: { id: intent.userId },
+        data: {
+          subscriptionStatus: "ACTIVE",
+          subscriptionPlan: intent.planKey,
+          currentPeriodEnd: periodEnd,
+          cancelAtPeriodEnd: false,
+        },
+      });
+
+      return {
+        result: { ok: true, kind: intent.kind, planKey: intent.planKey, credits: intent.credits } as FulfillResult,
+        event: {
+          userId: intent.userId,
+          type: classifyPaidEvent(before, intent.planKey),
+          fromPlan: before?.subscriptionPlan ?? null,
+          toPlan: intent.planKey,
+          amountCents: intent.amountCents,
+          currency: intent.currency,
+        },
+      };
+    } else if (intent.kind === "CREDITS" && intent.credits) {
+      await tx.user.update({
+        where: { id: intent.userId },
+        data: { aiCreditsPurchased: { increment: intent.credits } },
+      });
+    }
+
+    return { result: { ok: true, kind: intent.kind, planKey: intent.planKey, credits: intent.credits } as FulfillResult };
   });
 
-  const intent = await prisma.paymentIntent.findUnique({ where: { id: intentId } });
-  if (!intent) return { ok: false };
-
-  if (flipped.count === 0) {
-    // 🔴 صفرٌ له سببان مختلفان تماماً، وخلطُهما يمنح اشتراكاً بلا ثمنه.
-    //
-    // إن كانت النيّة قد صارت مدفوعةً فعلاً فهذا تكرارُ ويب هوك: نُبلغ
-    // بالنجاح ولا نكرّر الأثر. أمّا إن بقيت معلّقةً فالشرط لم يتطابق -
-    // مبلغٌ أو عملةٌ أو صاحبُ حسابٍ مختلف - وهذه **ليست نجاحاً**: تُرفض
-    // وتُسجَّل بما لا يتطابق كي تُسوّى يدوياً، لا أن تمرّ صامتة.
-    if (intent.status !== "PAID") {
-      console.error("[billing] معاملة موقّعة لا تطابق نيّتها - رُفض الإتمام", {
-        intentId,
-        transactionId,
-        expected: { amountCents: intent.amountCents, currency: intent.currency, userId: intent.userId },
-        observed,
-      });
-      return { ok: false, mismatch: true };
-    }
-    return { ok: true, alreadyDone: true, kind: intent.kind, planKey: intent.planKey, credits: intent.credits };
+  // السجلّ الثانوي بعد نجاح المعاملة: فشلُه لا يُبطل دفعاً تمّ ومُنِح.
+  if (outcome.event) {
+    await logSubscriptionEvent(outcome.event);
   }
 
-  if (intent.kind === "SUBSCRIPTION" && intent.planKey) {
-    const periodEnd = new Date();
-    if (intent.cycle === "yearly") periodEnd.setFullYear(periodEnd.getFullYear() + 1);
-    else periodEnd.setMonth(periodEnd.getMonth() + 1);
-
-    // الباقة السابقة تُقرأ **قبل** التحديث: بعده يصير الصفّ يحمل الجديدة،
-    // فيضيع الفرق الذي يُصنَّف منه الحدث (ترقية أم تخفيض أم تجديد).
-    const before = await prisma.user.findUnique({
-      where: { id: intent.userId },
-      select: { subscriptionPlan: true, subscriptionStatus: true, currentPeriodEnd: true },
-    });
-
-    await prisma.user.update({
-      where: { id: intent.userId },
-      data: {
-        subscriptionStatus: "ACTIVE",
-        subscriptionPlan: intent.planKey,
-        currentPeriodEnd: periodEnd,
-        cancelAtPeriodEnd: false,
-      },
-    });
-
-    await logSubscriptionEvent({
-      userId: intent.userId,
-      type: classifyPaidEvent(before, intent.planKey),
-      fromPlan: before?.subscriptionPlan ?? null,
-      toPlan: intent.planKey,
-      amountCents: intent.amountCents,
-      currency: intent.currency,
-    });
-  } else if (intent.kind === "CREDITS" && intent.credits) {
-    await prisma.user.update({
-      where: { id: intent.userId },
-      data: { aiCreditsPurchased: { increment: intent.credits } },
-    });
-  }
-
-  return { ok: true, kind: intent.kind, planKey: intent.planKey, credits: intent.credits };
+  return outcome.result;
 }
 
 /** حالة النيّة لصفحة العودة - تسأل حتى يصل الويب هوك */
