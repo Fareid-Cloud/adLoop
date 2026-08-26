@@ -11,6 +11,7 @@ import { getSessionUser } from "@/lib/auth";
 import { startSubscriptionCheckout, startCreditsCheckout } from "@/lib/billing";
 import { billingCurrencyFor, PLAN_BY_KEY, type BillingCycle, type PlanKey } from "@/lib/plans";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
   // بلا `dataCurrency` في أيّ مساحةٍ حقيقية → سعر القائمة بالدولار، لا
   // ما اختاره المستخدم.
   const realWorkspaceWithCurrency = await prisma.workspace.findFirst({
-    where: { userId: user.id, isDemo: false, dataCurrency: { not: null } },
+    where: { ...workspaceAccess(user.id), isDemo: false, dataCurrency: { not: null } },
     select: { dataCurrency: true },
     orderBy: { createdAt: "asc" },
   });
