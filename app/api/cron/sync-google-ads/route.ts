@@ -36,6 +36,7 @@ import { checkExpiringConnections } from "@/lib/connectionHealthCheck";
 import { purgeExpiredData } from "@/lib/dataRetention";
 import { ownerLocaleFor } from "@/lib/workspaceLocale";
 import { isSyncBlocked, refreshUsageAndNotify } from "@/lib/usageCaps";
+import { ownerNotSuspended } from "@/lib/accountActive";
 import { loadFeatureFlags, type FeatureFlagKey } from "@/lib/featureFlags";
 import { captureUsageSnapshots } from "@/lib/admin/usage";
 
@@ -128,7 +129,7 @@ export async function GET(req: NextRequest) {
   // كل مساحة عندها ربط بأي منصة إعلانية. تيك توك كانت مفقودة من القائمة
   // رغم أن المزامنة تحتها تشملها فعلاً - أي مساحة تعمل على تيك توك وحدها
   // لم تكن تُزامَن إطلاقاً.
-  const workspaceIds = await prisma.campaignLink.findMany({
+  let workspaceIds = await prisma.campaignLink.findMany({
     where: { platform: { in: ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"] } },
     select: { workspaceId: true },
     distinct: ["workspaceId"],
@@ -140,11 +141,17 @@ export async function GET(req: NextRequest) {
   // استعلام واحد مش واحد لكلّ مساحة: كان `findUnique` جوّه حلقة، يعني مية
   // رحلة لقاعدة البيانات قبل أوّل نداء نافع - وكلّها من الوقت المحدود
   // للدالّة نفسها.
+  //
+  // و`ownerNotSuspended`: مساحةُ حسابٍ معلَّق لا تدخل الدورة أصلاً - لا
+  // سحباً ولا تشخيصاً (صرف Claude) ولا أتمتةً تكتب على حساب إعلاناته.
   const ownerRows = await prisma.workspace.findMany({
-    where: { id: { in: workspaceIds.map((w) => w.workspaceId) } },
+    where: { id: { in: workspaceIds.map((w) => w.workspaceId) }, ...ownerNotSuspended },
     select: { id: true, userId: true },
   });
   const owners = new Map(ownerRows.map((w) => [w.id, w.userId]));
+  // ما سقط من `owners` هو المعلَّق: يُحذف من الطابور، لا يُترك ليُزامَن
+  // بلا فحص سقفٍ (`owners.get` ترجع undefined فيتخطّى الشرط ويكمل).
+  workspaceIds = workspaceIds.filter((w) => owners.has(w.workspaceId));
 
   // ===== الأقدم نجاحاً الأول =====
   // الترتيب كان ثابتاً (ترتيب ما ترجّعه قاعدة البيانات)، فلو التشغيل انقطع

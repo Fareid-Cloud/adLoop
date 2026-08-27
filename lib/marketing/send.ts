@@ -71,9 +71,11 @@ export async function runMarketingCampaigns(): Promise<MarketingRunResult> {
           createdAt: true, lastActiveAt: true,
           subscriptionStatus: true, currentPeriodEnd: true,
           marketingOptOut: true,
+          // حسابٌ معلَّق لا تصله حملة بريد - راجع `lib/accountActive.ts`.
+          isSuspended: true,
         },
       });
-      if (!user || user.marketingOptOut) continue;
+      if (!user || user.marketingOptOut || user.isSuspended) continue;
 
       const ent = await getEntitlements(user.id);
       const message = pickMessage(ent, user, now);

@@ -5,6 +5,7 @@
 // 2) تذكير قرب انتهاء الباقة - مرتين قبل الانتهاء، وبعد الانتهاء كل مدة معينة
 
 import { prisma } from "@/lib/prisma";
+import { userNotSuspended } from "@/lib/accountActive";
 import { sendPushToUser } from "@/lib/webPush";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
@@ -23,6 +24,8 @@ export async function checkInactivityPushNotifications() {
 
   const inactiveUsers = await prisma.user.findMany({
     where: {
+      // حسابٌ معلَّق لا تصله إشعارات - راجع `lib/accountActive.ts`.
+      ...userNotSuspended,
       lastActiveAt: { lt: thresholdDate },
       pushSubscriptions: { some: {} },
       OR: [
@@ -48,6 +51,7 @@ export async function checkSubscriptionExpiryPushNotifications() {
 
   const users = await prisma.user.findMany({
     where: {
+      ...userNotSuspended,
       currentPeriodEnd: { not: null },
       subscriptionStatus: { in: ["ACTIVE", "PAST_DUE"] },
       pushSubscriptions: { some: {} },

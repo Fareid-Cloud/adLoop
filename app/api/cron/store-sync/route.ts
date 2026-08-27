@@ -16,6 +16,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { denyUnlessCron } from "@/lib/cronAuth";
 import { prisma } from "@/lib/prisma";
+import { ownerNotSuspended } from "@/lib/accountActive";
 
 export const maxDuration = 300;
 
@@ -25,7 +26,8 @@ export async function GET(req: NextRequest) {
 
   // المساحات التي لها متجرٌ نشطٌ فعلاً - لا كلّ المساحات
   const workspaces = await prisma.workspace.findMany({
-    where: { isDemo: false, ecommerceConnections: { some: { active: true } } },
+    // حسابٌ معلَّق لا تُسحَب طلباته ولا تكاليفه - راجع `lib/accountActive.ts`.
+    where: { isDemo: false, ecommerceConnections: { some: { active: true } }, ...ownerNotSuspended },
     select: { id: true },
   });
 
