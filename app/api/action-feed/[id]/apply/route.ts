@@ -9,7 +9,7 @@ import { t } from "@/lib/i18n/dictionary";
 import { localeOf } from "@/lib/apiLocale";
 import { randomUUID } from "crypto";
 import { workspaceAccess } from "@/lib/workspaceAccess";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, getImpersonatorFromRequest } from "@/lib/auth";
 import { applyActionFeedItem } from "@/lib/actionFeed";
 import { prisma } from "@/lib/prisma";
 import { logFeatureUse } from "@/lib/productTelemetry";
@@ -23,6 +23,14 @@ export async function POST(
   const user = await getSessionUser(req);
   const locale = localeOf(user);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  // الوسيط يمنع كلَّ كتابةٍ أثناء العرض كـ، وهذه أخطرها على الإطلاق:
+  // نداءُ كتابةٍ حقيقيٌّ على حساب إعلانات العميل يصرف من ميزانيته. تحقّقٌ
+  // ثانٍ هنا بتوقيعٍ مُتحقَّقٍ منه فعلاً - لئلّا يكون منعُها معتمداً على
+  // إعداد `matcher` وحده.
+  if (getImpersonatorFromRequest(req)) {
+    return NextResponse.json({ error: "impersonation_is_read_only" }, { status: 403 });
+  }
 
   const item = await prisma.actionFeedItem.findFirst({
     where: { id: id, workspace: workspaceAccess(user.id) },

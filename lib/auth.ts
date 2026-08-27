@@ -68,8 +68,37 @@ export async function getSessionUserFromCookies() {
   return getUserFromToken(cookieStore.get("session")?.value);
 }
 
-export function createSessionToken(userId: string): string {
+// 🔴 جلسة الانتحال تُصدَر **موسومةً وقصيرة العمر**، لا كجلسة عميلٍ عادية.
+// كانت `createSessionToken(targetUser.id)` حرفيّاً - نفس توكن تسجيل الدخول
+// بثلاثين يوماً - فالأربع ساعات المذكورة كانت `Max-Age` الكوكي في المتصفّح
+// وحدها، لا حدّاً من الخادم: توكنٌ مسرَّبٌ يبقى دخولاً صالحاً كالعميل شهراً.
+// والادّعاء `impersonatedBy` هو ما يجعل المنعَ ممكناً أصلاً: بدونه لا يعرف
+// أيُّ مسارٍ أنّ من يكتب أدمنٌ لا العميل (الحارس في `middleware.ts`).
+export function createSessionToken(userId: string, impersonatedBy?: string): string {
+  if (impersonatedBy) {
+    return jwt.sign({ userId, impersonatedBy }, process.env.JWT_SECRET!, { expiresIn: "4h" });
+  }
   return jwt.sign({ userId }, process.env.JWT_SECRET!, { expiresIn: "30d" });
+}
+
+/**
+ * هويّة الأدمن المنتحِل من توكن الجلسة، أو `null` لجلسةٍ عاديّة.
+ *
+ * موجودةٌ للمسارات التي تحتاج أن تنسب فعلاً إلى الأدمن الحقيقيّ لا إلى
+ * العميل (التدقيق)، ولطبقة دفاعٍ ثانية داخل الخادم حيث التوقيع يُتحقَّق
+ * فعلاً - الحارس في الوسيط يفكّ الحمولة بلا تحقّق لأنّه قرارُ **منعٍ** فقط.
+ */
+export function getImpersonatorFromRequest(req: NextRequest): string | null {
+  const token = req.cookies.get("session")?.value;
+  if (!token) return null;
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET!, { algorithms: ["HS256"] }) as {
+      impersonatedBy?: string;
+    };
+    return payload.impersonatedBy ?? null;
+  } catch {
+    return null;
+  }
 }
 
 // توكن مؤقت جداً (5 دقايق) - بيتاح فقط بعد نجاح كلمة السر، وقبل التأكد
