@@ -391,9 +391,35 @@ export async function getWorkspaceCreativePerformances(
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const snapshots = await prisma.creativeSnapshot.findMany({
-    where: { workspaceId, date: { gte: thirtyDaysAgo }, ...(platform ? { platform: platform as any } : {}) },
-  });
+  // 🔴 **`CreativeSnapshot.verifiedConversions` عمره ما كُتب** (GAP-1): الثلاث
+  // مزامنات تكتب `cost` و`rawConversions` فقط، فكان `usingVerifiedData` أدناه
+  // **دائماً `false` في الإنتاج** - فترتيبُ الإبداعات وقرارُ Scale/Kill على
+  // مستوى الإعلان يرجعان أبداً إلى رقم المنصّة الخام. وكان `demoSeed` يكتبه،
+  // فتبدو الميزة عاملةً في العرض وميتةً عند المشترك.
+  //
+  // التحقّق الحقيقيّ يعيش في `ConversionVerification`، وما يحمل معرّف إعلانٍ
+  // منه (ماسنجر: `referral.ad_id`) يُنسَب هنا إلى إبداعه. وما لا يحمله
+  // (`adId: "ALL"` - نقرات واتساب) **لا يُوزَّع على الإعلانات تخميناً**:
+  // يبقى تحقّقاً على مستوى الحملة، ويظلّ هذا الإعلان على رقمه الخام.
+  const [snapshots, adVerifications] = await Promise.all([
+    prisma.creativeSnapshot.findMany({
+      where: { workspaceId, date: { gte: thirtyDaysAgo }, ...(platform ? { platform: platform as any } : {}) },
+    }),
+    prisma.conversionVerification.groupBy({
+      by: ["adId"],
+      where: {
+        workspaceId,
+        date: { gte: thirtyDaysAgo },
+        adId: { not: "ALL" },
+        ...(platform ? { platform: platform as any } : {}),
+      },
+      _sum: { verifiedCount: true },
+    }),
+  ]);
+
+  const verifiedByAdId = new Map<string, number>(
+    adVerifications.map((v) => [v.adId, v._sum.verifiedCount ?? 0])
+  );
 
   const byAd = new Map<string, any[]>();
   for (const s of snapshots) {
@@ -422,6 +448,9 @@ export async function getWorkspaceCreativePerformances(
       }),
       { impressions: 0, clicks: 0, cost: 0, rawConversions: 0, verifiedConversions: 0, conversionsValue: null as number | null }
     );
+    // التحقّق المنسوب لهذا الإعلان بعينه يُضاف إلى ما في اللقطة (وهو صفر
+    // للحسابات الحقيقية، ومبذورٌ في العرض) - جمعٌ لا استبدال.
+    totals.verifiedConversions += verifiedByAdId.get(adId) ?? 0;
 
     performances.push(
       computeCreativePerformance({

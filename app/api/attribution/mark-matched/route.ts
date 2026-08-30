@@ -40,17 +40,15 @@ export async function POST(req: NextRequest) {
   // `P2002` فلا تزيد شيئاً. والعلامة والزيادة في `$transaction` واحدة:
   // انهيارٌ بينهما لا يترك محادثةً معلَّمةً بلا عدّها، ولا العكس.
   //
-  // 🔴 قيدٌ معماريٌّ موثَّق (لم يُصلَح هنا عمداً): الزيادة على
-  // `MetricSnapshot` المقسَّم بالـplacement تفشل لميتا (لا صفّ `ALL`)،
-  // وللمزامنة نفس-اليوم في جوجل (لا صفّ لليوم بعد). العلاج الصحيح جدولُ
-  // تحقّقٍ مستقلٌّ يُجمَع منه القرّاء - تغييرٌ يلمس المخطَّط والقاعدة
-  // المشتركة، ومحجوزٌ خلف إرسال التراكر لـ`campaignId` (لا يُرسَل اليوم).
-  // فهذه الدالة صارت الآن **صحيحةً في الذرّية ومنع التكرار**، ويبقى مكان
-  // تخزين الرقم قراراً معلَّقاً بمراجعةٍ على بيئةٍ تجريبية.
+  // ✅ الزيادة تُكتب على جدول التحقّق المستقلّ `ConversionVerification`، لا
+  // على `MetricSnapshot`. الشكل القديم (`updateMany` على صفّ `ALL`) كان يصيب
+  // صفر صفوف لميتا (تكتب مقسَّماً) وللمزامنة نفس-اليوم في جوجل (لا صفّ بعد)،
+  // فيضيع التحقّق بالصمت. `upsert` هنا يُنشئ الصفّ إن غاب ويزيد إن وُجد، فلا
+  // يضيع أبداً، والقرّاء يجمعونه فوق أرقام المنصّة عبر `lib/metricRollup.ts`.
   const receivedDate = new Date(receivedAt);
-  // مفتاح اليوم من شريحة UTC صريحة لا من توقيت الخادم المحلّي: عمود
-  // `MetricSnapshot.date` هو `@db.Date` بمنتصف ليل UTC، وبناؤه بـ
-  // `new Date(y,m,d)` على مضيفٍ غير UTC ينتج يوماً مختلفاً فلا يطابق.
+  // مفتاح اليوم من شريحة UTC صريحة لا من توقيت الخادم المحلّي: عمود `date`
+  // هو `@db.Date` بمنتصف ليل UTC، وبناؤه بـ`new Date(y,m,d)` على مضيفٍ غير
+  // UTC ينتج يوماً مختلفاً فلا يطابق.
   const dayStart = new Date(receivedDate.toISOString().slice(0, 10));
 
   try {
@@ -66,17 +64,22 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      // بلا `campaignId` لا يُنسَب التحقّق لحملة - يُتخطّى بدل اختلاق صفّ
+      // بمفتاحٍ فارغ. (التراكر صار يبعثه عبر ماكرو الحملة في الرابط - TS-1.)
       if (campaignId) {
-        await tx.metricSnapshot.updateMany({
+        // نقرة واتساب لا تحمل معرّف إعلان، فالتحقّق على الحملة: `adId: "ALL"`.
+        await tx.conversionVerification.upsert({
           where: {
-            workspaceId,
-            platform,
-            campaignId,
-            date: dayStart,
-            placementBreakdown: "ALL",
-            placementDetail: "ALL",
+            workspaceId_platform_campaignId_date_adId: {
+              workspaceId,
+              platform,
+              campaignId,
+              date: dayStart,
+              adId: "ALL",
+            },
           },
-          data: { verifiedConversions: { increment: 1 } },
+          create: { workspaceId, platform, campaignId, date: dayStart, adId: "ALL", verifiedCount: 1 },
+          update: { verifiedCount: { increment: 1 } },
         });
       }
     });

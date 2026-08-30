@@ -569,6 +569,7 @@ model Workspace {
   savedReportViews           SavedReportView[]
   competitors                Competitor[]
   metricSnapshots            MetricSnapshot[]
+  conversionVerifications    ConversionVerification[]
   conversionValueConfig      ConversionValueConfig?
   automationRules            AutomationRule[]
   landingPageAudits          LandingPageAudit[]
@@ -656,6 +657,42 @@ model CampaignLink {
 }
 
 // ==================== البيانات المسحوبة يومياً ====================
+
+// جدول التحقّق المستقلّ (C-1/D-1): الزيادة الحقيقية للتحويلات المتحقَّقة
+// تُكتب هنا لا على MetricSnapshot. السبب: صفّ MetricSnapshot المجمَّع
+// (`ALL/ALL`) قد لا يوجد إطلاقاً (ميتا تكتب صفوفاً مقسَّمة على مكان الظهور)
+// أو لا يكون وُجد بعد (جوجل - تحقّقُ نفس-اليوم قبل مزامنته)، فكان `updateMany`
+// عليه يصيب صفر صفوف ويضيع التحقّق بالصمت - وهو جوهر وعد المنتج. جدولٌ
+// مستقلٌّ يُكتب بـ`upsert` فلا يضيع أبداً، ويُطبَّق فوق أرقام المنصّة عند
+// القراءة في `lib/metricRollup.ts` (مجموعٌ لا استبدال، فأرقام العرض تبقى).
+model ConversionVerification {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  platform      Platform
+  campaignId    String // externalCampaignId
+  date          DateTime  @db.Date
+  verifiedCount Int       @default(0)
+  updatedAt     DateTime  @updatedAt
+
+  /// الإعلان الفرديّ حين يُعرَف - وهو ما يجعل التحقّق يصل إلى مستوى
+  /// الإبداع لا الحملة وحدها (GAP-1). ويب هوك ماسنجر وحده يحمله اليوم
+  /// (`referral.ad_id`)؛ ونقرة واتساب لا تحمل معرّف إعلان فتبقى `"ALL"`،
+  /// ويُحسَب تحقّقُها على الحملة وحدها. **لا يُوزَّع تحقّقُ حملةٍ على
+  /// إعلاناتها تخميناً** - رقمٌ مخترَعٌ على مستوى الإعلان يقود قرار
+  /// إيقاف/توسيع خاطئاً، وغيابُه أصدق منه.
+  ///
+  /// **`"ALL"` لا `null` عمداً:** بوستجرس يعدّ القيم الغائبة **متمايزة**
+  /// في القيد الفريد، فصفٌّ بـ`null` لا يطابق نفسه أبداً - فيُنشئ `upsert`
+  /// صفّاً جديداً مع كلّ رسالة بدل أن يزيد القائم، **فيتضاعف العدّ**.
+  /// والقيمة الصريحة تجعل المفتاح يطابق. وهي نفس عادة `placementBreakdown`
+  /// في `MetricSnapshot`.
+  adId String @default("ALL")
+
+  @@unique([workspaceId, platform, campaignId, date, adId])
+  @@index([workspaceId, date])
+  @@index([workspaceId, adId, date])
+}
 
 model MetricSnapshot {
   id                 String    @id @default(cuid())

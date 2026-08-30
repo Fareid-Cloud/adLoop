@@ -113,6 +113,48 @@ export async function metricRollupRows(args: {
     if (seen.has(key(r))) continue; // المجمَّع موجود - المقسَّم تفصيلُه لا إضافةٌ عليه
     rows.push(shape(r));
   }
+
+  // ═══ overlay التحقّق المستقلّ (C-1/D-1) ═══
+  //
+  // `MetricSnapshot.verifiedConversions` يبقى صفراً للحسابات الحقيقية:
+  // الزيادة كانت `updateMany` على صفّ `ALL` قد لا يوجد (ميتا مقسَّمة) أو لم
+  // يُزامَن بعد (جوجل نفس-اليوم)، فتصيب صفر صفوف. الرقم الحقيقيّ يعيش الآن في
+  // `ConversionVerification` (يُكتب بـ`upsert` فلا يضيع). نجمعه لا نستبدله:
+  // `demoSeed` يكتب `verifiedConversions` على `MetricSnapshot` مباشرةً، فالجمع
+  // يُبقي أرقام العرض ويضيف الحقيقيّ حيث وُجد (لا تلاقي بينهما على مفتاحٍ واحد).
+  const verifications = await prisma.conversionVerification.groupBy({
+    by: ["platform", "campaignId", "date"],
+    where: {
+      workspaceId: args.workspaceId,
+      platform: { in: platforms as never },
+      ...(args.date ? { date: args.date } : {}),
+      ...(args.campaignIds ? { campaignId: { in: args.campaignIds } } : {}),
+    },
+    _sum: { verifiedCount: true },
+  });
+
+  if (verifications.length > 0) {
+    const byKey = new Map(rows.map((r) => [key(r), r]));
+    for (const v of verifications) {
+      const count = v._sum.verifiedCount ?? 0;
+      if (count <= 0) continue;
+      const existing = byKey.get(key(v));
+      if (existing) {
+        existing.verifiedConversions += count;
+      } else {
+        // تحقّقٌ ليومٍ لا صفّ مقاييس له بعد: يُعرَض العميل المؤكَّد ولو لم
+        // تصل تكلفته - غيابُ الصرف مزامنةٌ لم تجرِ، لا صفرٌ صادق.
+        rows.push({
+          platform: v.platform,
+          campaignId: v.campaignId,
+          date: v.date,
+          impressions: 0, clicks: 0, cost: 0, rawConversions: 0,
+          verifiedConversions: count, revenue: 0, ordersCount: 0,
+        });
+      }
+    }
+  }
+
   return rows;
 }
 
