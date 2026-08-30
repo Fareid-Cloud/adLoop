@@ -42,11 +42,11 @@ export function hashPii(value: string | null | undefined): string | null {
 }
 
 /**
- * تطبيع الهاتف إلى E.164 بلا علامة + قبل التهشيم - وهو ما تتوقّعه المنصات
- * الثلاث. رقم بصيغة محلية ("05xxxxxxxx") لن يطابق شيئاً لدى المنصة مهما
- * كان التهشيم صحيحاً، لأنها تخزّن الصيغة الدولية.
+ * أرقام الهاتف الدولية بلا علامة، أساساً للتهشيمين معاً. رقم بصيغة محلية
+ * ("05xxxxxxxx") لن يطابق شيئاً لدى المنصة مهما كان التهشيم صحيحاً، لأنها
+ * تخزّن الصيغة الدولية.
  */
-export function hashPhone(phone: string | null | undefined, defaultCountryCode = "966"): string | null {
+function normalizePhoneDigits(phone: string | null | undefined, defaultCountryCode = "966"): string | null {
   if (!phone) return null;
   let digits = phone.replace(/\D/g, "");
   if (!digits) return null;
@@ -56,7 +56,30 @@ export function hashPhone(phone: string | null | undefined, defaultCountryCode =
 
   // رقم قصير جداً ليس رقماً دولياً صالحاً - إرساله يخفض جودة المطابقة بلا فائدة
   if (digits.length < 8) return null;
+  return digits;
+}
+
+/**
+ * تهشيم هاتف **ميتا**: أرقامٌ فقط بلا علامة `+`.
+ *
+ * 🔴 **والمنصّات لا تتّفق على هذا، وكان الرقم يُهشَّم مرّةً واحدة للثلاث.**
+ * ميتا توثّق «أرقام بلا رموز ولا مسافات»، بينما **جوجل وتيك توك توثّقان
+ * E.164 صراحةً - أي بعلامة `+` قبل الرقم**. والتهشيم دالّةٌ حسّاسة لكلّ
+ * محرف: `+` واحدةٌ تُنتج بصمةً مختلفةً تماماً. فكان ما يُرسَل إلى جوجل
+ * وتيك توك **لا يطابق أحداً عندهما أبداً** - يُقبَل الحدث ولا يُربَط بعميل،
+ * وهو فشلٌ صامت لا يظهر في أيّ ردّ خطأ.
+ */
+export function hashPhone(phone: string | null | undefined, defaultCountryCode = "966"): string | null {
+  const digits = normalizePhoneDigits(phone, defaultCountryCode);
+  if (!digits) return null;
   return createHash("sha256").update(digits).digest("hex");
+}
+
+/** تهشيم هاتف **جوجل وتيك توك**: E.164 كاملةً بعلامة `+`. */
+export function hashPhoneE164(phone: string | null | undefined, defaultCountryCode = "966"): string | null {
+  const digits = normalizePhoneDigits(phone, defaultCountryCode);
+  if (!digits) return null;
+  return createHash("sha256").update(`+${digits}`).digest("hex");
 }
 
 export function hashEmail(email: string | null | undefined): string | null {
@@ -77,7 +100,10 @@ export interface SyncableConversion {
   currency: string;
   verified: boolean;
   emailHash: string | null;
+  /** تهشيم ميتا - أرقامٌ بلا `+` */
   phoneHash: string | null;
+  /** تهشيم جوجل وتيك توك - E.164 بعلامة `+` (C-4). قديمُ الصفوف بلا قيمة. */
+  phoneHashE164: string | null;
   firstNameHash: string | null;
   lastNameHash: string | null;
   cityHash: string | null;
@@ -89,6 +115,10 @@ export interface SyncableConversion {
   fbc: string | null;
   gclid: string | null;
   ttclid: string | null;
+  /** `"website"` | `"whatsapp"` | `"messenger"` - يحدّد `action_source` لميتا */
+  sourceKind?: string | null;
+  /** معرّف نقرة النقر-إلى-واتساب، الرابط بين المحادثة والإعلان */
+  ctwaClid?: string | null;
 }
 
 export interface SyncResult {
@@ -161,6 +191,18 @@ async function sendToMeta(
   if (conv.fbc) userData.fbc = conv.fbc;
   if (conv.fbp) userData.fbp = conv.fbp;
 
+  // 🔴 **محادثةُ واتساب ليست زيارةَ موقع** (C-8). كان كلّ حدثٍ يُرسَل
+  // بـ`action_source: "website"`، وميتا توثّق لإعلانات النقر-إلى-الرسائل
+  // مصدراً آخر: `business_messaging` مع `messaging_channel`، ومعه
+  // `ctwa_clid` وهو الرابط الوحيد بين المحادثة والإعلان الذي جاء بها.
+  // وبالمصدر الخاطئ يُقبَل الحدث ولا يُنسَب لإعلان - فلا تتعلّم الخوارزمية
+  // منه شيئاً، وهو جوهر ما جاء المنتج ليصلحه.
+  const messagingChannel =
+    conv.sourceKind === "whatsapp" ? "whatsapp"
+    : conv.sourceKind === "messenger" ? "messenger"
+    : null;
+  if (messagingChannel === "whatsapp" && conv.ctwaClid) userData.ctwa_clid = conv.ctwaClid;
+
   const payload = {
     data: [
       {
@@ -169,7 +211,9 @@ async function sendToMeta(
         // نفس المعرّف المستخدم لدى البكسل في المتصفح - هو ما يمنع ميتا من
         // عدّ التحويل مرتين حين يصلها من المصدرين معاً
         event_id: conv.externalId,
-        action_source: "website",
+        ...(messagingChannel
+          ? { action_source: "business_messaging", messaging_channel: messagingChannel }
+          : { action_source: "website" }),
         user_data: userData,
         custom_data: { currency: conv.currency, value: conv.value },
       },
@@ -245,7 +289,7 @@ async function sendToGoogle(
   const signals = signalsForPlatform("GOOGLE_ADS", toSignals(conv));
   const quality = scoreMatchQuality(signals);
   // جوجل بلا gclid وبلا بريد/هاتف لا تملك ما تربط به شيئاً إطلاقاً
-  if (!conv.gclid && !conv.emailHash && !conv.phoneHash) {
+  if (!conv.gclid && !conv.emailHash && !conv.phoneHashE164) {
     return {
       platform: "GOOGLE_ADS",
       status: "SKIPPED",
@@ -290,7 +334,10 @@ async function sendToGoogle(
     // معرّف واحد فقط لكل كائن - قيد صريح في توثيق جوجل
     const userIdentifiers: Array<Record<string, unknown>> = [];
     if (conv.emailHash) userIdentifiers.push({ hashed_email: conv.emailHash });
-    if (conv.phoneHash) userIdentifiers.push({ hashed_phone_number: conv.phoneHash });
+    // جوجل توثّق E.164 - أي بعلامة `+` (C-4). والصفوف التي سبقت العمود لا
+    // تحمله، فلا يُرسَل تهشيمُ ميتا مكانه: هاتفٌ لا يطابق أسوأ من غيابه،
+    // يرفع جودةَ مطابقةٍ موهومة ولا يربط أحداً.
+    if (conv.phoneHashE164) userIdentifiers.push({ hashed_phone_number: conv.phoneHashE164 });
 
     const clickConversion: Record<string, unknown> = {
       conversion_action: ResourceNames.conversionAction(
@@ -378,7 +425,8 @@ async function sendToTikTok(
 
   const user: Record<string, unknown> = {};
   if (conv.emailHash) user.email = conv.emailHash;
-  if (conv.phoneHash) user.phone = conv.phoneHash;
+  // تيك توك توثّق E.164 بعلامة `+` كجوجل، لا كميتا (C-4).
+  if (conv.phoneHashE164) user.phone = conv.phoneHashE164;
   if (conv.externalUserId) user.external_id = conv.externalUserId;
   if (conv.ttclid) user.ttclid = conv.ttclid;
   if (conv.clientIpAddress) user.ip = conv.clientIpAddress;
