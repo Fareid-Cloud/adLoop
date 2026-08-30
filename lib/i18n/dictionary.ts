@@ -2854,6 +2854,7 @@ export const dictionary = {
     },
     // ==== صفحة المنتجات ====
     productsPage: {
+      costMissingHint: "تكلفة البضاعة غير مضبوطة لهذا المنتج - الربح لا يُحسب بدونها. أدخِلها من صفحة التسعير.",
       noMatch: "لا توجد منتجات مطابقة.",
       gap: "بفارق",
       colProduct: "المنتج",
@@ -7819,6 +7820,7 @@ export const dictionary = {
     },
     // ==== Products page ====
     productsPage: {
+      costMissingHint: "Cost of goods is not set for this product - profit cannot be computed without it. Enter it from the pricing page.",
       noMatch: "No matching products.",
       gap: "ahead by",
       colProduct: "Product",
