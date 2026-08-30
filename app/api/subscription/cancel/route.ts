@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   if (!current) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   if (current.subscriptionStatus !== "ACTIVE" || !current.currentPeriodEnd) {
-    return NextResponse.json({ error: t(locale, "billingErr.noActiveSubscription") }, { status: 409 });
+    return NextResponse.json({ error: t(locale, "apiErr.noActiveSubscription") }, { status: 409 });
   }
 
   if (current.cancelAtPeriodEnd === cancel) {

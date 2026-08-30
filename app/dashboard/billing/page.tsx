@@ -47,6 +47,16 @@ export default async function BillingPage({
       creditsLeft={left}
       creditsAllowance={allowance + purchased}
       openCreditsOnLoad={sp.credits === "1"}
+      // حالةُ الاشتراك تُمرَّر كي يجد المشترك زرَّ الإلغاء حيث يتوقّعه.
+      // كان الإلغاء مستحيلاً من الواجهة رغم أنّ صفحة الشروط تَعِد به.
+      subscription={
+        user.subscriptionStatus === "ACTIVE" && user.currentPeriodEnd
+          ? {
+              periodEnd: user.currentPeriodEnd.toISOString(),
+              cancelAtPeriodEnd: user.cancelAtPeriodEnd,
+            }
+          : null
+      }
     />
   );
 }
