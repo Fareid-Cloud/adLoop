@@ -78,7 +78,7 @@ function impersonatedWrite(req: NextRequest): boolean {
   }
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   if (impersonatedWrite(req)) {
     return NextResponse.json(
       { error: "impersonation_is_read_only" },
