@@ -445,7 +445,13 @@ export async function getIntegrationsOverview(
   const lastSyncTimes = active.map((a) => a.lastSyncAt).filter((d): d is Date => !!d);
 
   return {
-    connectedCount: active.length,
+    // 🔴 **«٢ مربوطة» فوق تبويبٍ يقول «مربوطة (١)» ويعرض بطاقةً واحدة.**
+    //
+    // كان العدّاد `active.length` فيضمّ المعطوب، بينما التبويب يستثنيه
+    // ويعرضه ضمن «غير مربوطة». فالكلمة نفسها تعني شيئين على شاشةٍ واحدة.
+    // والمعطوب محسوبٌ أصلاً في «يحتاج انتباهاً»، فعدُّه مربوطاً يعدّه مرّتين
+    // بوصفين متناقضين.
+    connectedCount: active.filter((a) => a.health !== "BROKEN").length,
     healthyCount: active.filter((a) => a.health === "HEALTHY").length,
     needsAttentionCount: active.filter((a) => a.health !== "HEALTHY").length,
     lastSyncAt: lastSyncTimes.length > 0 ? new Date(Math.max(...lastSyncTimes.map((d) => d.getTime()))) : null,
