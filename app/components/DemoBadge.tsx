@@ -13,16 +13,21 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FlaskConical, Database, Lock, Sparkles, ArrowLeft } from "lucide-react";
 import { Portal } from "@/app/components/ui/Portal";
+import { SwitchWorkspaceButton } from "@/app/components/SwitchWorkspaceButton";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export function DemoBadge({
   locale,
   daysLeft,
-  hasRealWorkspace,
+  expired,
+  /** معرّف مساحةٍ حقيقية للمستخدم - لا مجرّد «هل يملك واحدة»: الرجوع
+   *  إليها تبديلُ كوكي على الخادم، والمعرّف هو ما يلزم لذلك. */
+  realWorkspaceId,
 }: {
   locale: Locale;
   daysLeft: number | null;
-  hasRealWorkspace: boolean;
+  expired: boolean;
+  realWorkspaceId: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `demo.${k}`, v);
@@ -92,9 +97,13 @@ export function DemoBadge({
             </span>
             <div>
               <div className="text-[13.5px] font-semibold text-text-primary">{tr("title")}</div>
-              {daysLeft !== null && (
+              {/* «باقٍ ٠ يوماً» ليست مدّةً بل انتهاء - وقولها بالصفر يترك
+                  القارئ يحسب بنفسه ما نعرفه نحن. */}
+              {expired ? (
+                <div className="text-[11.5px] text-text-muted">{tr("barExpired")}</div>
+              ) : daysLeft !== null ? (
                 <div className="text-[11.5px] text-text-muted">{tr("daysLeft", { n: daysLeft })}</div>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -119,13 +128,19 @@ export function DemoBadge({
             <ArrowLeft size={14} className="ltr:rotate-180" />
           </Link>
 
-          {hasRealWorkspace && (
-            <Link
-              href="/dashboard"
-              className="btn btn-secondary btn-sm mt-2 block text-center"
-            >
-              {tr("backToReal")}
-            </Link>
+          {/* 🔴 كان رابطاً إلى `/dashboard` - والمساحة النشطة كوكي على
+              الخادم لا مسار، فالضغطة تنتقل إلى الصفحة نفسها فتُقرأ المساحة
+              التجريبية من جديد ولا يتغيّر شيء. زرٌّ يقول إنّه يُخرجك ولا
+              يُخرجك. الآن يبدّل المساحة فعلاً ثمّ يُحمّل من جديد. */}
+          {realWorkspaceId && (
+            <div className="mt-2">
+              <SwitchWorkspaceButton
+                workspaceId={realWorkspaceId}
+                label={tr("backToReal")}
+                locale={locale}
+                className="btn btn-secondary btn-sm w-full justify-center"
+              />
+            </div>
           )}
         </div>
         </Portal>

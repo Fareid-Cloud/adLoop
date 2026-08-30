@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { getConnectStates } from "@/lib/connectionState";
 import { OnboardingFlow } from "./OnboardingFlow";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -22,10 +23,18 @@ export default async function OnboardingPage() {
 
   // لا يمكن ربط حملات بلا مساحة عمل - ننشئها ضمنياً بدل إظهار نموذج إضافي
   if (!workspace) {
+    // 🔴 الاسم الافتراضيّ كان إنجليزياً مثبَّتاً **ويُخزَّن**، فيظهر في
+    // ترويسة كلّ صفحة في المنتج لمشترك عربيّ وقع على الافتراضيّ. وهو نصٌّ
+    // يملكه المشترك ويعدّله، فلا يصحّ تخزينه مفتاحاً - يُكتب بلغته هو لحظة
+    // الإنشاء، ويبقى ملكاً له بعدها.
+    const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
     workspace = await prisma.workspace.create({
       data: {
         userId: user.id,
-        name: user.companyName?.trim() || user.name?.trim() || "My workspace",
+        name:
+          user.companyName?.trim() ||
+          user.name?.trim() ||
+          t(locale, "common.defaultWorkspaceName"),
         currency: "SAR",
       },
     });

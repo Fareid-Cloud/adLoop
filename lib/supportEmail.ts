@@ -5,9 +5,17 @@
 import { Resend } from "resend";
 import { getAppUrl } from "@/lib/appUrl";
 import { renderEmail } from "@/lib/emailTemplate";
+import { OWNER_EMAIL } from "@/lib/owner";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const OWNER_INBOX = process.env.SUPPORT_INBOX_EMAIL || "manfareiduwk@gmail.com";
+// 🔴 كان هنا بريدٌ شخصيٌّ مكتوبٌ في الكود كوجهةٍ افتراضية. وتذاكرُ الدعم
+// تحمل اسمَ العميل وبريدَه وهاتفَه ونصَّ مشكلته - أي أنّ متغيّرَ بيئةٍ غيرَ
+// مضبوطٍ كان يرسل بيانات عملاء إلى عنوانٍ مكتوبٍ في مستودعٍ يقرؤه غيرُ صاحبه.
+//
+// والترتيب: صندوقُ الدعم إن ضُبط، وإلّا بريدُ المالك. وبلا كليهما **لا
+// يُرسَل شيء** ويُكتب تحذير - إشعارٌ ضائعٌ مع سجلٍّ أهونُ من بيانات عميلٍ
+// تذهب إلى حيث لا يُقصَد.
+const OWNER_INBOX = (process.env.SUPPORT_INBOX_EMAIL || OWNER_EMAIL || "").trim();
 
 export async function notifyOwnerNewSupport(t: {
   name: string;
@@ -20,6 +28,13 @@ export async function notifyOwnerNewSupport(t: {
 }) {
   if (!resend) {
     console.warn("RESEND_API_KEY غير مضبوط - لم يُرسل إشعار الدعم (الرسالة محفوظة في قاعدة البيانات)");
+    return;
+  }
+  if (!OWNER_INBOX) {
+    console.warn(
+      "SUPPORT_INBOX_EMAIL وOWNER_EMAIL غير مضبوطين - لم يُرسل إشعار الدعم. " +
+        "التذكرة محفوظة في قاعدة البيانات وتُقرأ من /admin/support."
+    );
     return;
   }
   const adminUrl = `${getAppUrl()}/admin/support`;

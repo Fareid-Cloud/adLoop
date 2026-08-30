@@ -204,7 +204,16 @@ export interface LimitCheck {
 export async function checkWorkspaceLimit(userId: string): Promise<LimitCheck> {
   const [ent, count] = await Promise.all([
     getEntitlements(userId),
-    prisma.workspace.count({ where: { userId } }),
+    // 🔴 **مساحة العرض التجريبية خارج الحدّ** - وكان العدّ يشملها.
+    //
+    // فمن دخل الديمو على الباقة المجّانية (حدّها مساحةٌ واحدة) صار عنده
+    // واحدة، ومنعه ذلك من إنشاء مساحته الحقيقية أصلاً: جرّب المنتج فخسر
+    // حقّه في استعماله. وتظهر الحلقة كاملةً حين تنتهي مدّة العرض - بوابةٌ
+    // تقول «اربط حساباتك» ولا مساحةَ يُربط فيها شيء.
+    //
+    // وهي ليست مساحةَ عملٍ يُنتَج فيها: بياناتها من صنعنا، وكلّ أثرٍ خارجيّ
+    // منها محظور (`assertNotDemo`) - فلا شيء في الحدّ يخصّها.
+    prisma.workspace.count({ where: { userId, isDemo: false } }),
   ]);
   return buildCheck(count, ent.limits.workspaces, ent.planKey, "workspaces");
 }

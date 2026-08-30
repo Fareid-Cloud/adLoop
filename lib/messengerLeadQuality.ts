@@ -141,15 +141,25 @@ export async function assessAndVerifyMessengerConversationsForWorkspace(workspac
     });
 
     if (!result.isLikelyAccidental && conv.campaignId) {
-      const dayStart = new Date(
-        conv.firstMessageAt.getFullYear(), conv.firstMessageAt.getMonth(), conv.firstMessageAt.getDate()
-      );
-      await prisma.metricSnapshot.updateMany({
+      // نفس علاج الواتساب: التحقّق يُكتب على `ConversionVerification` بـ`upsert`
+      // لا على صفّ `MetricSnapshot` المجمَّع الذي قد لا يوجد. ومفتاح اليوم من
+      // شريحة UTC (عمود `@db.Date`) لا من `new Date(y,m,d)` بتوقيت الخادم.
+      const dayStart = new Date(conv.firstMessageAt.toISOString().slice(0, 10));
+      // ماسنجر وحده يحمل معرّف الإعلان (`referral.ad_id` محفوظ على المحادثة)،
+      // فيصل التحقّق إلى مستوى الإبداع لا الحملة وحدها (GAP-1). وحين لا
+      // يُعرَف يبقى `"ALL"` فيُحسَب على الحملة - لا يُخمَّن إعلانٌ بعينه.
+      const adId = conv.adId ?? "ALL";
+      await prisma.conversionVerification.upsert({
         where: {
-          workspaceId, platform: "META_ADS", campaignId: conv.campaignId,
-          date: dayStart, placementBreakdown: "ALL", placementDetail: "ALL",
+          workspaceId_platform_campaignId_date_adId: {
+            workspaceId, platform: "META_ADS", campaignId: conv.campaignId, date: dayStart, adId,
+          },
         },
-        data: { verifiedConversions: { increment: 1 } },
+        create: {
+          workspaceId, platform: "META_ADS", campaignId: conv.campaignId,
+          date: dayStart, adId, verifiedCount: 1,
+        },
+        update: { verifiedCount: { increment: 1 } },
       });
     }
   }

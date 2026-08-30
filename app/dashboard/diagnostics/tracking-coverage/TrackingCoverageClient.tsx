@@ -17,6 +17,9 @@ import {
 } from "lucide-react";
 import { InstallTagPanel } from "./InstallTagPanel";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+// من الملفّ المستقلّ لا من `trackingCoverage`: ذاك يجرّ `safeFetch` وهو
+// خادميّ، واستيراده هنا يكسر البناء.
+import { trackingErrorText } from "@/lib/trackingErrorText";
 
 export interface PageRow {
   id: string;
@@ -195,8 +198,12 @@ export function TrackingCoverageClient({
                       {tr(`st${cap(state)}Title`)}
                     </p>
                     <p className="mt-0.5 text-[12px] leading-relaxed text-text-muted">
-                      {state === "error" && p.lastError
-                        ? `${tr("stErrorBody")} (${p.lastError})`
+                      {/* السبب مترجَماً أو لا سبب: كان `lastError` يُطبع خاماً
+                          بين قوسين - نصُّ شبكةٍ إنجليزيّ تقنيّ لقارئٍ عربيّ،
+                          أو العكس. والصفوف المخزَّنة قبل التحويل تحمل نصّاً
+                          حرّاً لا رمزاً، فتُعرَض بالجملة العامّة وحدها. */}
+                      {state === "error"
+                        ? trackingErrorText(p.lastError ?? null, locale) ?? tr("stErrorBody")
                         : tr(`st${cap(state)}Body`)}
                     </p>
 

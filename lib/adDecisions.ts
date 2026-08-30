@@ -282,12 +282,49 @@ export interface ApplyResult {
  * ينفّذ القرار فعلاً على المنصة ثم يسجّله. الترتيب مقصود: لا نسجّل شيئاً
  * قبل نجاح النداء، حتى لا نمنع المستخدم ٤ أيام بسبب تنفيذ لم يحدث أصلاً.
  */
+/**
+ * شرطٌ **عندنا** لم يتحقّق - لا فشلَ نداءٍ خارجيّ. تمييزُه ضروريّ: علاجُ هذا
+ * تحديثُ الصفحة، وعلاجُ ذاك مراسلةُ الدعم بمرجعٍ - وخلطُهما يرسل المشترك
+ * إلى الدعم لأنّ صفحته قديمة، ويقول له إنّ المنصّة رفضت شيئاً لم تره.
+ */
+export class DecisionPreconditionError extends Error {
+  constructor(
+    readonly reason: "stale" | "notExecutable",
+    readonly meta: { engineDecision?: Decision } = {}
+  ) {
+    super(`decision precondition failed: ${reason}`);
+    this.name = "DecisionPreconditionError";
+  }
+}
+
 export async function applyAdDecision(
   workspaceId: string,
   adId: string,
   decision: Decision
 ): Promise<ApplyResult> {
-  const views = await buildAdDecisions({ workspaceId });
+  // 🔴 **كلُّ بوابات التوسيع كانت استشاريةً عند نقطة الكتابة.**
+  //
+  // كان هذا المسار ينفّذ ما يسمّيه الطلبُ لا ما حكم به المحرّك: يكفي
+  // `{decision:"SCALE"}` على إعلانٍ صنّفه المحرّك `PAUSE` ليُرفَع إنفاق
+  // مجموعته ٢٠٪. والعتبات كلّها - عشرون تحويلاً، أربعةُ أيّام نشاط، فحصُ
+  // التعب، تأكيدُ الترتيب النسبيّ، نقطةُ التعادل - تعيش في
+  // `classifyScaleKillWatch` وتُستعمَل **لرسم الأزرار وحدها**. فباگٌ في
+  // العميل أو صفحةٌ قديمة أو طلبٌ مُصاغٌ بيدٍ يوسّع إعلاناً خاسراً بمال
+  // العميل، والمستخدم يرى أرقام المحرّك فيفترض أنّ البوابات صامدة.
+  //
+  // ومعدّل التكرار كان **مستحيلَ الفحص هنا**: يُبنى العرضُ بلا
+  // `frequencyByPlatform` فيبقى `null` دائماً، فطبقةُ التشبّع لا تعمل عند
+  // التنفيذ أصلاً. تُمرَّر الآن فيُفحَص التشبّع حيث يُصرَف المال.
+  let frequencyByPlatform: Record<string, number> = {};
+  try {
+    const { getFrequencyByPlatform } = await import("@/lib/frequencyCheck");
+    frequencyByPlatform = await getFrequencyByPlatform(workspaceId);
+  } catch (err) {
+    // إشارةٌ حيّة: تعذّرها لا يوقف قراراً، لكن لا تُبتلَع بصمت
+    console.error("[adDecisions] تعذّر جلب معدّل التكرار قبل التنفيذ:", err);
+  }
+
+  const views = await buildAdDecisions({ workspaceId, frequencyByPlatform });
   const view = views.find((v) => v.adId === adId);
   if (!view) throw new Error("الإعلان غير موجود في بيانات آخر ٣٠ يوماً");
 
@@ -295,6 +332,22 @@ export async function applyAdDecision(
     throw new Error(
       `قرار سابق على هذا الإعلان لم تكتمل مدّة تقييمه بعد - متبقٍّ ${view.cooldownDaysRemaining} يوم.`
     );
+  }
+
+  // الحكم يُطابَق قبل أيّ كتابة. و`HOLD` وحده يُقبَل بلا شرط: لا يكتب على
+  // المنصّة شيئاً، هو تثبيتُ وضعٍ وتأجيلُ اقتراح.
+  //
+  // ويُرمى `DecisionPreconditionError` لا خطأً عاماً: مستدعي هذا المسار يترجم
+  // فشلَ المنصّة إلى «رفضت المنصّة هذا التغيير، اذكر المرجع للدعم» - وهو نصٌّ
+  // **كاذبٌ هنا**، فالمنصّة لم تُنادَ أصلاً، والعلاج تحديثُ الصفحة لا مراسلةُ
+  // الدعم. الصنف يفرّق بين «شرطٌ عندنا لم يتحقّق» و«نداءٌ خارجيّ فشل».
+  if (decision !== "HOLD") {
+    if (view.decision !== decision) {
+      throw new DecisionPreconditionError("stale", { engineDecision: view.decision });
+    }
+    if (!view.executable) {
+      throw new DecisionPreconditionError("notExecutable");
+    }
   }
 
   const reEvaluateAt = new Date();

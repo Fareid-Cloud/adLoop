@@ -40,7 +40,14 @@ export async function PATCH(
   if (typeof body.enabled === "boolean") data.enabled = body.enabled;
   if (typeof body.requireApproval === "boolean") data.requireApproval = body.requireApproval;
   if (typeof body.threshold === "number" && !Number.isNaN(body.threshold)) data.threshold = body.threshold;
-  if (typeof body.actionValue === "number") data.actionValue = body.actionValue;
+  // نفس حدود الإنشاء: زيادةٌ ≤100%، وسقفُ قفزةٍ ≤20% - وإلّا هُزِم السقف
+  // بتعديلٍ لاحق يرفع `maxSingleJumpPct`.
+  if (typeof body.actionValue === "number") {
+    data.actionValue = Math.min(Math.max(body.actionValue, 0), 100);
+  }
+  if (typeof body.maxSingleJumpPct === "number") {
+    data.maxSingleJumpPct = Math.min(Math.max(body.maxSingleJumpPct, 1), 20);
+  }
   if (typeof body.consecutiveDays === "number") {
     data.consecutiveDays = Math.min(Math.max(body.consecutiveDays, 1), 30);
   }

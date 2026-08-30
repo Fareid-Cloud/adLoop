@@ -2,6 +2,7 @@
 
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { metricRollupRows, groupRollup } from "@/lib/metricRollup";
 import { CampaignsOverview, type CampaignRow } from "./CampaignsOverview";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { CampaignsEmpty } from "@/app/components/ui/PageEmptyStates";
@@ -41,37 +42,22 @@ export default async function CampaignsPage({
   }
 
 
-  const [campaignLinks, aggregates] = await Promise.all([
+  const [campaignLinks, rollup] = await Promise.all([
     prisma.campaignLink.findMany({ where: { workspaceId: workspace.id } }),
-    prisma.metricSnapshot.groupBy({
-      by: ["platform", "campaignId"],
-      where: { workspaceId: workspace.id, date: bounds },
-      _sum: { clicks: true, cost: true, rawConversions: true, verifiedConversions: true },
-    }),
+    // مسوّىً: الجدول الرئيسيّ يقرأ كلفةً و CPL وتضخّماً لكلّ حملة - وصرف
+    // ميتا المعدود مرّتين كان ينفخها جميعاً. راجع `lib/metricRollup.ts`.
+    metricRollupRows({ workspaceId: workspace.id, date: bounds }),
   ]);
 
-  interface AggValue {
-    clicks: number;
-    cost: number;
-    rawConversions: number;
-    verifiedConversions: number;
-  }
-
-  const aggByKey = new Map<string, AggValue>(
-    aggregates.map((a: any) => [
-      `${a.platform}::${a.campaignId}`,
-      {
-        clicks: a._sum.clicks ?? 0,
-        cost: a._sum.cost ?? 0,
-        rawConversions: a._sum.rawConversions ?? 0,
-        verifiedConversions: a._sum.verifiedConversions ?? 0,
-      },
-    ])
-  );
+  const aggByKey = groupRollup(rollup, (r) => `${r.platform}::${r.campaignId}`);
 
   const rows: CampaignRow[] = campaignLinks.map((link: any) => {
-    const agg: AggValue = aggByKey.get(`${link.platform}::${link.externalCampaignId}`) ?? {
-      clicks: 0, cost: 0, rawConversions: 0, verifiedConversions: 0,
+    const m = aggByKey.get(`${link.platform}::${link.externalCampaignId}`);
+    const agg = {
+      clicks: m?.clicks ?? 0,
+      cost: m?.cost ?? 0,
+      rawConversions: m?.rawConversions ?? 0,
+      verifiedConversions: m?.verifiedConversions ?? 0,
     };
 
     const cplRaw = agg.rawConversions > 0 ? agg.cost / agg.rawConversions : 0;

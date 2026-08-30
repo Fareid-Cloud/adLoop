@@ -350,15 +350,21 @@ export async function ingestOrder(
       placementBreakdown: PLACEMENT_NONE,
       placementDetail: PLACEMENT_NONE,
       impressions: 0, clicks: 0, cost: 0,
-      rawConversions: 1, verifiedConversions: 0,
+      rawConversions: 0, verifiedConversions: 0,
       ordersCount: 1,
-      revenue: order.total,
+      // 🔴 مبيعات المتجر → `storeRevenue` لا `revenue`. المخطَّط يحجز
+      // `revenue` لما **تنسبه المنصّة الإعلانية لإعلانها** (بسط ROAS)،
+      // ويفرد `storeRevenue` لمبيعات المتجر كلّها (عضويّ ومباشر ومتكرّر).
+      // كتابةُ مبيعات المتجر في `revenue` كانت تنفخ ROAS بكلّ بيعةٍ بلا
+      // إعلان - يتحسّن الرقم حين تبيع دون أن تُعلن، عكس ما يقيسه. وكذلك
+      // `rawConversions` (عدّاد "المنصّة تدّعي") لا يخصّه طلبُ متجر: المنصّة
+      // تُبلّغ مشترياتها بنفسها، فلا نزيده هنا.
+      storeRevenue: order.total,
       returnedOrdersCount: order.isReturned ? 1 : 0,
     },
     update: {
       ordersCount: { increment: 1 },
-      revenue: { increment: order.total },
-      rawConversions: { increment: 1 },
+      storeRevenue: { increment: order.total },
       returnedOrdersCount: order.isReturned ? { increment: 1 } : undefined,
     },
   });

@@ -12,7 +12,7 @@
 
 import type { ReactNode } from "react";
 import { Search, ShieldCheck, RefreshCw } from "lucide-react";
-import type { Locale } from "@/lib/i18n/dictionary";
+import { t, type Locale } from "@/lib/i18n/dictionary";
 import { BrandMark } from "@/app/components/BrandMark";
 import { LegalLinks } from "@/app/components/LegalLinks";
 
@@ -24,20 +24,17 @@ import { LegalLinks } from "@/app/components/LegalLinks";
 // تحسيناً فعلياً في الإعلان. وهي اسم المنتج نفسه.
 //
 // اللون يقع على الكلمة المفتاح لأنّ العين تمرّ سريعاً على شاشة تسجيل.
-const COPY = {
-  en: {
-    lead: "From click to customer,",
-    accent: "the loop closes.",
-    sub: "Track every click. Verify every sale against a real conversation. Send that back to Google, Meta and TikTok — so they optimize on your actual customers.",
-    pillars: ["Track every click", "Verify every customer", "Sync back to the platforms"],
-  },
-  ar: {
-    lead: "من النقرة إلى العميل،",
-    accent: "تكتمل الحلقة.",
-    sub: "نتتبّع كل نقرة، ونتحقّق من كل تحويل بمحادثة حقيقية، ونعيد النتيجة إلى جوجل وميتا وتيك توك — فتُحسّن حملاتك على عملائك الفعليين.",
-    pillars: ["تتبّع كل نقرة", "تحقّق من كل عميل", "مزامنة إلى المنصّات"],
-  },
-};
+// النصّ من القاموس لا من ثابتٍ هنا: نسختان مكتوبتان بيدٍ في ملفٍّ واحد
+// تفترقان عند أوّل تعديلٍ على إحداهما، ولا يمسكهما فحصُ التكافؤ.
+function copyFor(locale: Locale) {
+  const tr = (k: string) => t(locale, `authShell.${k}`);
+  return {
+    lead: tr("lead"),
+    accent: tr("accent"),
+    sub: tr("sub"),
+    pillars: [tr("pillar1"), tr("pillar2"), tr("pillar3")],
+  };
+}
 
 const PILLAR_ICONS = [Search, ShieldCheck, RefreshCw];
 
@@ -52,7 +49,7 @@ export function AuthShell({
   onLocaleChange?: (l: Locale) => void;
   wide?: boolean;
 }) {
-  const copy = COPY[locale] ?? COPY.en;
+  const copy = copyFor(locale);
 
   return (
     <div

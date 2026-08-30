@@ -12,7 +12,7 @@ import { randomUUID } from "crypto";
 import { workspaceAccess } from "@/lib/workspaceAccess";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { applyAdDecision, type Decision } from "@/lib/adDecisions";
+import { applyAdDecision, DecisionPreconditionError, type Decision } from "@/lib/adDecisions";
 import { t } from "@/lib/i18n/dictionary";
 import { localeOf } from "@/lib/apiLocale";
 
@@ -48,6 +48,22 @@ export async function POST(req: NextRequest) {
     const result = await applyAdDecision(workspaceId, adId, decision as Decision);
     return NextResponse.json(result);
   } catch (err) {
+    // شرطٌ عندنا لم يتحقّق ≠ نداءٌ خارجيّ فشل. الرسالة أدناه تقول «رفضت
+    // المنصّة» وتُحيل إلى الدعم بمرجع - وهي كاذبةٌ حين لا تُنادى المنصّة
+    // أصلاً، وتُرسل المشترك إلى الدعم لأنّ صفحته قديمة. فيُفصَل الفرعان.
+    if (err instanceof DecisionPreconditionError) {
+      return NextResponse.json(
+        {
+          error: t(
+            locale,
+            err.reason === "stale" ? "apiErr.decisionStale" : "apiErr.decisionNotExecutable"
+          ),
+          reason: err.reason,
+        },
+        { status: 409 }
+      );
+    }
+
     // 🔴 **الفشل يظهر، وتفصيلُه لا يظهر.**
     //
     // كان `err.message` يُرسَل كما هو - ونصُّه من ميتا أو تيك توك أو من

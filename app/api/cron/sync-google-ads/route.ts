@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { denyUnlessCron } from "@/lib/cronAuth";
 import { prisma } from "@/lib/prisma";
+import { finishCronRun } from "@/lib/cronRun";
 import { syncGoogleAdsForWorkspace, syncCreativesForWorkspace, syncSearchTermsForWorkspace, syncBiddingStrategyForWorkspace, syncAudiencePerformanceForWorkspace, syncQualityScoreForWorkspace, syncShoppingProductsForWorkspace, syncPerformanceMaxChannelsForWorkspace, syncYoutubeMetricsForWorkspace, syncDeviceAndGeoPerformanceForWorkspace, syncMatchTypePerformanceForWorkspace, syncDisplayPlacementsForWorkspace, checkShoppingSpendAlertsForWorkspace, syncGoogleLeadFormsForWorkspace } from "@/lib/syncGoogleAds";
 import { checkBidStrategyAlertsForWorkspace, checkGoogleLearningPhaseAlertsForWorkspace } from "@/lib/bidStrategyAudit";
 import { checkBidStrategyProgressionForWorkspace } from "@/lib/bidStrategyProgression";
@@ -36,6 +37,7 @@ import { checkExpiringConnections } from "@/lib/connectionHealthCheck";
 import { purgeExpiredData } from "@/lib/dataRetention";
 import { ownerLocaleFor } from "@/lib/workspaceLocale";
 import { isSyncBlocked, refreshUsageAndNotify } from "@/lib/usageCaps";
+import { ownerNotSuspended } from "@/lib/accountActive";
 import { loadFeatureFlags, type FeatureFlagKey } from "@/lib/featureFlags";
 import { captureUsageSnapshots } from "@/lib/admin/usage";
 
@@ -128,7 +130,7 @@ export async function GET(req: NextRequest) {
   // كل مساحة عندها ربط بأي منصة إعلانية. تيك توك كانت مفقودة من القائمة
   // رغم أن المزامنة تحتها تشملها فعلاً - أي مساحة تعمل على تيك توك وحدها
   // لم تكن تُزامَن إطلاقاً.
-  const workspaceIds = await prisma.campaignLink.findMany({
+  let workspaceIds = await prisma.campaignLink.findMany({
     where: { platform: { in: ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"] } },
     select: { workspaceId: true },
     distinct: ["workspaceId"],
@@ -140,11 +142,55 @@ export async function GET(req: NextRequest) {
   // استعلام واحد مش واحد لكلّ مساحة: كان `findUnique` جوّه حلقة، يعني مية
   // رحلة لقاعدة البيانات قبل أوّل نداء نافع - وكلّها من الوقت المحدود
   // للدالّة نفسها.
+  //
+  // و`ownerNotSuspended`: مساحةُ حسابٍ معلَّق لا تدخل الدورة أصلاً - لا
+  // سحباً ولا تشخيصاً (صرف Claude) ولا أتمتةً تكتب على حساب إعلاناته.
   const ownerRows = await prisma.workspace.findMany({
-    where: { id: { in: workspaceIds.map((w) => w.workspaceId) } },
+    where: { id: { in: workspaceIds.map((w) => w.workspaceId) }, ...ownerNotSuspended },
     select: { id: true, userId: true },
   });
   const owners = new Map(ownerRows.map((w) => [w.id, w.userId]));
+  // ما سقط من `owners` هو المعلَّق: يُحذف من الطابور، لا يُترك ليُزامَن
+  // بلا فحص سقفٍ (`owners.get` ترجع undefined فيتخطّى الشرط ويكمل).
+  workspaceIds = workspaceIds.filter((w) => owners.has(w.workspaceId));
+
+  // ═══ حدّ الخطة الحالية، لا خطة يوم الإنشاء (B-5) ═══
+  //
+  // 🔴 `buildCheck` في `lib/entitlements.ts` **بوابةُ إنشاءٍ فقط**
+  // (`current < limit`)، فلا شيء يضيق حين تنتهي الخطة أو تُخفَّض. مَن دفع
+  // شهراً واحداً على خطة الوكالة وأنشأ خمس عشرة مساحةً وربط خمسةً وأربعين
+  // حساباً، كان يحتفظ بها **كلّها تُزامَن كلَّ ليلة مجّاناً وإلى الأبد** -
+  // على حساب حصّتنا من نداءات المنصّات وبنيتنا التحتية.
+  //
+  // والاختيار **بالأقدم أوّلاً لا عشوائياً**: تبقى المجموعة نفسها حيّةً كلّ
+  // ليلة، فلا يرى المشترك مساحةً تُحدَّث اليوم وتجمد غداً بلا سبب ظاهر.
+  // وما فوق الحدّ يبقى مقروءاً في اللوحة - لا يُحذف ولا يُخفى، يتوقّف
+  // تحديثه وحده.
+  const { getEntitlements } = await import("@/lib/entitlements");
+  const byOwner = new Map<string, string[]>();
+  for (const { workspaceId } of workspaceIds) {
+    const ownerId = owners.get(workspaceId)!;
+    (byOwner.get(ownerId) ?? byOwner.set(ownerId, []).get(ownerId)!).push(workspaceId);
+  }
+  const allowed = new Set<string>();
+  for (const [ownerId, ids] of byOwner) {
+    try {
+      const limit = (await getEntitlements(ownerId)).limits.workspaces;
+      // الأقدم إنشاءً أوّلاً - `cuid` ليس مرتَّباً زمنياً، فيُقرأ التاريخ.
+      const ordered = await prisma.workspace.findMany({
+        where: { id: { in: ids } },
+        orderBy: { createdAt: "asc" },
+        select: { id: true },
+      });
+      for (const w of ordered.slice(0, Math.max(0, limit))) allowed.add(w.id);
+    } catch (err) {
+      // تعذّر حسم الخطة لا يوقف مزامنة صاحبها: الحرمان الخاطئ أسوأ من
+      // مزامنةٍ زائدة ليلةً واحدة، ويُسجَّل ليُراجَع.
+      console.error(`[cron] تعذّر حسم حدود الخطة للمالك ${ownerId}:`, err);
+      for (const id of ids) allowed.add(id);
+    }
+  }
+  workspaceIds = workspaceIds.filter((w) => allowed.has(w.workspaceId));
 
   // ===== الأقدم نجاحاً الأول =====
   // الترتيب كان ثابتاً (ترتيب ما ترجّعه قاعدة البيانات)، فلو التشغيل انقطع
@@ -314,17 +360,17 @@ export async function GET(req: NextRequest) {
   const failed = results.filter((r) => r.status === "failed").length;
   const capped = results.filter((r) => r.status === "capped").length;
 
-  await prisma.cronRunLog.create({
-    data: {
-      totalWorkspaces: results.length,
+  // الصفّ باسم مهمّته، والرمز يتبع النتيجة: مساحاتٌ فشلت كانت تُرَدّ ضمن
+  // `200` فتبدو لوحةُ الكرون خضراء ويومُ الفشل مطابقاً ليوم النجاح.
+  return finishCronRun(
+    {
+      job: "sync-google-ads",
+      total: results.length,
       succeeded,
       failed,
-      durationMs: Date.now() - startTime,
-      errors: failed > 0
-        ? JSON.stringify(results.filter((r) => r.status === "failed").map((r) => ({ workspaceId: r.workspaceId, error: r.error })))
-        : null,
+      startedAt: startTime,
+      errors: results.filter((r) => r.status === "failed").map((r) => ({ workspaceId: r.workspaceId, error: r.error })),
     },
-  });
-
-  return NextResponse.json({ processed: results.length, capped, pricingChecked, results });
+    { processed: results.length, capped, pricingChecked, results }
+  );
 }

@@ -25,6 +25,16 @@ export interface ProductPerformance {
   revenue: number;
   returnRatePct: number;
 
+  /** 🔴 **هل تكلفة البضاعة معروفةٌ أصلاً لهذا المنتج؟**
+   *
+   *  `cogs` عمودٌ افتراضُه `0`، فـ«غير مضبوطة» و«صفر» قيمةٌ واحدة. وواقعُ
+   *  المنصّات أنّ ووكومرس وزد وإيزي أوردرز **لا ترسل حقل تكلفةٍ إطلاقاً**،
+   *  وسلّة وشوبيفاي لا ترسلانها قبل أن يشغّل التاجر استيراد التكلفة - أي
+   *  أنّ صفراً هو الحالُ الطبيعيّ لمنتجٍ حقيقيٍّ وُصِّل للتوّ. وعندها يُحسَب
+   *  السعرُ كلّه ربحاً، فينقلب منتجٌ خاسرٌ إلى «رابح». تُقرأ هذه الراية قبل
+   *  أيّ نصيحةٍ تُنفق مالاً. */
+  cogsKnown: boolean;
+
   /** ربح الوحدة الواحدة بعد كل التكاليف الحقيقية */
   profitPerUnit: number;
   /** الربح الإجمالي المتحقق فعلاً (بعد استبعاد المرتجعات) */
@@ -173,6 +183,9 @@ export async function getEcommerceOverview(
   const analyzed: ProductPerformance[] = products.map((p: any) => {
     const sales = byProduct.get(p.id) ?? { units: 0, returned: 0, revenue: 0 };
     const returnRatePct = sales.units > 0 ? (sales.returned / sales.units) * 100 : p.rtoRatePct;
+    // تكلفةٌ صفرٌ = «لم تُضبط» لا «مجّانيّة»: ثلاثٌ من الخمس منصّات لا ترسل
+    // حقل تكلفةٍ إطلاقاً. يُقرأ قبل أيّ حكمٍ أو نصيحةٍ مبنيّة على الربح.
+    const cogsKnown = (p.cogs ?? 0) > 0;
 
     // نستخدم نسبة المرتجعات **الفعلية** إن توفّرت بدل المُدخلة يدوياً -
     // الرقم الحقيقي أصدق من التقدير دائماً.
@@ -258,6 +271,15 @@ export async function getEcommerceOverview(
       verdict = "WATCH";
       verdictKey = "returnsEatIt";
       verdictVars = { pct: Math.round(returnRatePct) };
+    } else if (confidence === "RELIABLE" && !cogsKnown) {
+      // 🔴 **لا يُقال «ربحٌ مؤكَّد» عن ربحٍ لم تُطرَح منه تكلفةُ البضاعة.**
+      // بلا تكلفةٍ مضبوطة يُحسَب السعرُ كلّه ربحاً، فلا يهبط
+      // `profitAtCurrentPrice` تحت الصفر أبداً - أي أنّ فرع «خاسر» أعلاه
+      // **يستحيل بلوغه**، ويصعد كلُّ منتجٍ إلى «رابح مؤكَّد» بحكم الحساب لا
+      // بحكم الواقع. فيُقال ما نعرفه: العيّنة كافية، والتكلفة ناقصة.
+      verdict = "WATCH";
+      verdictKey = "costUnknown";
+      verdictVars = { units: successfulUnits };
     } else if (confidence === "RELIABLE") {
       verdict = "WINNER";
       verdictKey = "confirmedProfit";
@@ -283,6 +305,7 @@ export async function getEcommerceOverview(
       adSpend: adSpend === null ? null : Math.round(adSpend),
       returns,
       returnRatePct: Math.round(returnRatePct * 10) / 10,
+      cogsKnown,
       profitPerUnit,
       totalProfit,
       // الهامش يتبع الربح المعروض: لو حُوسب الإعلان بالإنفاق الحقيقيّ،

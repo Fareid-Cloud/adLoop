@@ -7,6 +7,7 @@
 // "لا نعرف" هو أخطر رقم في أي لوحة تحليل.
 
 import { prisma } from "@/lib/prisma";
+import { metricRollupRows } from "@/lib/metricRollup";
 import { rollingRatio } from "@/lib/rollingSeries";
 import { buildConversionPaths } from "@/lib/touchpointPaths";
 import { getAttributionSummaryForWorkspace } from "@/lib/attributionSummary";
@@ -213,24 +214,16 @@ export async function getTruthSnapshot(
   const profitMarginPct = workspaceSettings?.profitMarginPct ?? null;
 
   const [current, previous, paths, syncLogs, syncConfig, probabilisticRaw] = await Promise.all([
-    prisma.metricSnapshot.findMany({
-      // حدّان لا حدّ: `gte` وحدها تبتلع كلّ ما بعد البداية إلى اليوم،
-      // فتُحسَب فترةٌ منتهية وكأنّها ممتدّة إلى الآن.
-      where: { workspaceId, date: { gte: since, lte: to } },
-      select: {
-        date: true, platform: true, cost: true, clicks: true, impressions: true,
-        rawConversions: true, verifiedConversions: true, revenue: true,
-      },
-      orderBy: { date: "asc" },
-    }),
+    // مسوّىً: كان `findMany` الخام يعدّ صرف ميتا مرّتين (صفّ `ALL` + المقسَّم)
+    // ويخلط صفوف المتجر (`cost:0`)، وكان `verifiedConversions` يقرأ صفراً
+    // للحسابات الحقيقية. `metricRollupRows` يسوّي المكان ويقصر على منصّات
+    // الإعلان ويطبّق التحقّق الحقيقيّ من `ConversionVerification`. راجع الملف.
+    metricRollupRows({ workspaceId, date: { gte: since, lte: to }, platforms: PLATFORMS }),
     // بلا فترةِ مقارنة لا استعلامَ أصلاً: مصفوفةٌ فارغة تُسقط كلّ فرقٍ
     // إلى `null`، فلا يُرسَم شيء.
-    prevFrom && prevTo ? prisma.metricSnapshot.findMany({
-      where: { workspaceId, date: { gte: prevFrom, lte: prevTo } },
-      select: {
-        platform: true, cost: true, rawConversions: true, verifiedConversions: true, revenue: true,
-      },
-    }) : Promise.resolve([]),
+    prevFrom && prevTo
+      ? metricRollupRows({ workspaceId, date: { gte: prevFrom, lte: prevTo }, platforms: PLATFORMS })
+      : Promise.resolve([]),
     buildConversionPaths(workspaceId, since, to),
     prisma.conversionSyncLog.findMany({
       where: { workspaceId, createdAt: { gte: since, lte: to } },

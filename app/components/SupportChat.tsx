@@ -169,8 +169,8 @@ export function SupportChat({
                       locale={locale}
                       value={form.country}
                       onChange={(v) => setForm({ ...form, country: v })}
-                      placeholder={locale === "en" ? "Country" : "الدولة"}
-                      ariaLabel={locale === "en" ? "Country" : "الدولة"}
+                      placeholder={tr("country")}
+                      ariaLabel={tr("country")}
                       options={countriesForDisplay(locale).map((c) => ({
                         value: c.code,
                         label: locale === "en" ? c.en : c.ar,

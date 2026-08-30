@@ -518,6 +518,30 @@ function PreferencesTab({ user }: { user: UserData }) {
     router.refresh();
   }
 
+  /**
+   * 🔴 **اللغة تُطبَّق فور اختيارها، لا عند الحفظ.**
+   *
+   * كانت الدوسة تُعلّم الخيار مختاراً **ولا يتغيّر شيء** - ولا حتى بعد
+   * إعادة تحميلٍ كاملة - حتى يُضغط «حفظ». ولغةُ الواجهة ليست حقلاً كبقيّة
+   * الحقول: الصفحة كلّها هي معاينتها، فتحديدٌ يبدو مطبَّقاً وهو مرحَّلٌ
+   * يقول للقارئ إنّ التبديل عُطِّل. وهو نفس سلوك مبدّل صفحة الدخول.
+   *
+   * وبقيّةُ التفضيلات تبقى على زرّ الحفظ: أثرُها لا يظهر في الصفحة نفسها
+   * فلا يوهم تحديدُها بشيء.
+   */
+  async function handleLocaleChange(next: string) {
+    if (next === locale) return;
+    setLocale(next);
+    setSaving(true);
+    await fetch("/api/user/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ preferredLocale: next }),
+    });
+    setSaving(false);
+    router.refresh();
+  }
+
   return (
     <SettingsSection icon={Palette} title={tr("tabPreferences")} boxed description={tr("secPrefsDesc")}>
       {/* عمودان: ما يخصّ **اللغة** وما يخصّ **المظهر**. كانا قائمةً واحدة
@@ -532,7 +556,7 @@ function PreferencesTab({ user }: { user: UserData }) {
           <ToggleGroup
             options={[{ value: "ar", label: tr("langArabic") }, { value: "en", label: "English" }]}
             value={locale}
-            onChange={setLocale}
+            onChange={handleLocaleChange}
           />
 
           <FieldLabel>{tr("idxTimezone")}</FieldLabel>
@@ -1070,8 +1094,17 @@ function TrackerAdLink({
   // فتحتاج الماكرو صراحةً؛ وميتا وتيك توك وسناب تُلحقه بنفسها، وإضافته
   // يدوياً عندها تُنتج نسخةً مكرّرة تُضعف الإسناد. فالرابط الثاني **بلا
   // أيّ ماكرو** - وهو ليس نقصاً بل هو الصواب.
+  // 🔴 **`campaign=<ماكرو>` هو ما يجعل التحويل المتحقَّق يُنسَب لحملةٍ.**
+  //
+  // التتبّع يقرأ `?campaign=` ويمرّره حتى `mark-matched`؛ فبدونه يصل التحقّق
+  // بـ`campaignId = undefined` فيُسقَط - أي أنّ «الرقم الحقيقيّ» يبقى صفراً
+  // مهما صحّ كلُّ ما عداه. وماكرو الحملة يختلف بين المنصّات (لا يُلحَق
+  // تلقائياً كمعرّف النقرة): جوجل `{campaignid}`، ميتا `{{campaign.id}}`،
+  // تيك توك `__CAMPAIGN_ID__`. وجوجل وحدها تحتاج ماكرو النقرة صراحةً أيضاً.
   const root = base ? `${base.replace(/\/$/, "")}/api/track-click?ws=${workspaceId}` : null;
-  const googleLink = root ? `${root}&gclid={gclid}` : null;
+  const googleLink = root ? `${root}&campaign={campaignid}&gclid={gclid}` : null;
+  const metaLink = root ? `${root}&campaign={{campaign.id}}` : null;
+  const tiktokLink = root ? `${root}&campaign=__CAMPAIGN_ID__` : null;
   const link = root;
 
   // كلّ حالة تقول ما الناقص وأين يُضبط، لا "غير متاح" وتصمت.
@@ -1104,7 +1137,8 @@ function TrackerAdLink({
 
   const rows: Array<{ id: string; label: string; why: string; url: string }> = [
     { id: "google", label: tr("waLinkGoogle"), why: tr("waLinkGoogleWhy"), url: googleLink! },
-    { id: "rest", label: tr("waLinkOthers"), why: tr("waLinkOthersWhy"), url: link },
+    { id: "meta", label: tr("waLinkMeta"), why: tr("waLinkMetaWhy"), url: metaLink! },
+    { id: "tiktok", label: tr("waLinkTiktok"), why: tr("waLinkTiktokWhy"), url: tiktokLink! },
   ];
 
   return (

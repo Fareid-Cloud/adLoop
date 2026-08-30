@@ -6,6 +6,7 @@
 
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { metricRollupRows, groupRollup } from "@/lib/metricRollup";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
@@ -38,11 +39,12 @@ export default async function BudgetSimulatorPage({
   }
 
 
-  const byPlatform = await prisma.metricSnapshot.groupBy({
-    by: ["platform"],
-    where: { workspaceId: workspace.id, date: bounds },
-    _sum: { cost: true, verifiedConversions: true },
-  });
+  // مسوّىً لا خاماً: صرف ميتا المعدود مرّتين كان يقلب أرخص المنصّتين -
+  // وهذه الصفحة تقول «انقل من X إلى Y» بناءً عليه. راجع `lib/metricRollup.ts`.
+  const byPlatform = groupRollup(
+    await metricRollupRows({ workspaceId: workspace.id, date: bounds }),
+    (r) => r.platform
+  );
 
   interface PlatformCpa {
     platform: string;
@@ -51,17 +53,13 @@ export default async function BudgetSimulatorPage({
     cpa: number | null;
   }
 
-  const platforms = byPlatform
-    .map((p: any): PlatformCpa => {
-      const cost = p._sum.cost ?? 0;
-      const conv = p._sum.verifiedConversions ?? 0;
-      return {
-        platform: p.platform as string,
-        cost,
-        conversions: conv,
-        cpa: conv > 0 ? cost / conv : null,
-      };
-    })
+  const platforms = [...byPlatform.entries()]
+    .map(([platform, m]): PlatformCpa => ({
+      platform,
+      cost: m.cost,
+      conversions: m.verifiedConversions,
+      cpa: m.verifiedConversions > 0 ? m.cost / m.verifiedConversions : null,
+    }))
     // type predicate صريح - كي يتتبّع TypeScript فعلياً أن هذا الفلتر
     // يزيل القيم null، لا وقت التشغيل وحده. بدونه يبقى النوع المستنتَج
     // `number | null` حتى بعد الفلترة، وهو ما كان يسبّب خطأ البناء

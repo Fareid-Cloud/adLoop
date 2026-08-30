@@ -569,6 +569,7 @@ model Workspace {
   savedReportViews           SavedReportView[]
   competitors                Competitor[]
   metricSnapshots            MetricSnapshot[]
+  conversionVerifications    ConversionVerification[]
   conversionValueConfig      ConversionValueConfig?
   automationRules            AutomationRule[]
   landingPageAudits          LandingPageAudit[]
@@ -656,6 +657,42 @@ model CampaignLink {
 }
 
 // ==================== البيانات المسحوبة يومياً ====================
+
+// جدول التحقّق المستقلّ (C-1/D-1): الزيادة الحقيقية للتحويلات المتحقَّقة
+// تُكتب هنا لا على MetricSnapshot. السبب: صفّ MetricSnapshot المجمَّع
+// (`ALL/ALL`) قد لا يوجد إطلاقاً (ميتا تكتب صفوفاً مقسَّمة على مكان الظهور)
+// أو لا يكون وُجد بعد (جوجل - تحقّقُ نفس-اليوم قبل مزامنته)، فكان `updateMany`
+// عليه يصيب صفر صفوف ويضيع التحقّق بالصمت - وهو جوهر وعد المنتج. جدولٌ
+// مستقلٌّ يُكتب بـ`upsert` فلا يضيع أبداً، ويُطبَّق فوق أرقام المنصّة عند
+// القراءة في `lib/metricRollup.ts` (مجموعٌ لا استبدال، فأرقام العرض تبقى).
+model ConversionVerification {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  platform      Platform
+  campaignId    String // externalCampaignId
+  date          DateTime  @db.Date
+  verifiedCount Int       @default(0)
+  updatedAt     DateTime  @updatedAt
+
+  /// الإعلان الفرديّ حين يُعرَف - وهو ما يجعل التحقّق يصل إلى مستوى
+  /// الإبداع لا الحملة وحدها (GAP-1). ويب هوك ماسنجر وحده يحمله اليوم
+  /// (`referral.ad_id`)؛ ونقرة واتساب لا تحمل معرّف إعلان فتبقى `"ALL"`،
+  /// ويُحسَب تحقّقُها على الحملة وحدها. **لا يُوزَّع تحقّقُ حملةٍ على
+  /// إعلاناتها تخميناً** - رقمٌ مخترَعٌ على مستوى الإعلان يقود قرار
+  /// إيقاف/توسيع خاطئاً، وغيابُه أصدق منه.
+  ///
+  /// **`"ALL"` لا `null` عمداً:** بوستجرس يعدّ القيم الغائبة **متمايزة**
+  /// في القيد الفريد، فصفٌّ بـ`null` لا يطابق نفسه أبداً - فيُنشئ `upsert`
+  /// صفّاً جديداً مع كلّ رسالة بدل أن يزيد القائم، **فيتضاعف العدّ**.
+  /// والقيمة الصريحة تجعل المفتاح يطابق. وهي نفس عادة `placementBreakdown`
+  /// في `MetricSnapshot`.
+  adId String @default("ALL")
+
+  @@unique([workspaceId, platform, campaignId, date, adId])
+  @@index([workspaceId, date])
+  @@index([workspaceId, adId, date])
+}
 
 model MetricSnapshot {
   id                 String    @id @default(cuid())
@@ -1919,13 +1956,20 @@ model AdminAuditLog {
 // عشان نعرف "المزامنة إمبارح فشلت لكذا Workspace" بدل ما نكتشف بالصدفة
 // لما عميل يشتكي إن بياناته واقفة
 model CronRunLog {
-  id              String   @id @default(cuid())
+  id String @id @default(cuid())
+  /// 🔴 **أيُّ مهمّةٍ كتبت هذا الصفّ.** كان الجدول بلا اسمِ مهمّة، وكاتبُه
+  /// الوحيد `sync-google-ads` - فلا يُعرَف من صفٍّ ما إن كانت النسخة
+  /// الاحتياطية جرت أم لا، ولا يُفرَّق يومٌ توقّفت فيه مهمّةٌ عن يومٍ لم
+  /// تُستدعَ فيه أصلاً. القيمة الافتراضية للصفوف السابقة وحدها.
+  job             String   @default("sync-google-ads")
   runAt           DateTime @default(now())
   totalWorkspaces Int
   succeeded       Int
   failed          Int
   durationMs      Int?
   errors          String?  @db.Text // ملخص الأخطاء لو فيه، JSON مبسّط
+
+  @@index([job, runAt(sort: Desc)])
 }
 
 // ==================== أدوار لوحة المالك ====================
@@ -2483,7 +2527,16 @@ model ConversionEvent {
 
   // ==== بيانات المطابقة - مُهشَّمة SHA-256 قبل التخزين، لا نصاً صريحاً ====
   emailHash       String?
+  /// تهشيم هاتف **ميتا**: أرقامٌ بلا علامة `+`.
   phoneHash       String?
+  /// تهشيم هاتف **جوجل وتيك توك**: E.164 كاملةً بعلامة `+` (C-4).
+  ///
+  /// عمودان لرقمٍ واحد لأنّ المنصّات لا تتّفق على صيغة ما قبل التهشيم:
+  /// ميتا توثّق أرقاماً مجرّدة، وجوجل وتيك توك توثّقان E.164 صراحةً.
+  /// والتهشيم لا يغفر محرفاً - فكان الرقم المرسَل إليهما لا يطابق أحداً.
+  /// ولا يُشتَقّ أحدهما من الآخر لاحقاً: الرقم الخام **لا يُخزَّن** عمداً
+  /// (خصوصية)، فيلزم حسابهما معاً لحظة الابتلاع وهو متاح.
+  phoneHashE164   String?
   firstNameHash   String?
   lastNameHash    String?
   cityHash        String?
@@ -2495,6 +2548,20 @@ model ConversionEvent {
   fbc             String? // fbclid مُحوَّل لصيغة ميتا الرسمية
   gclid           String?
   ttclid          String?
+
+  /// من أين جاء هذا التحويل: `"website"` | `"whatsapp"` | `"messenger"`.
+  ///
+  /// 🔴 كان كلّ حدثٍ يُرفع إلى ميتا بـ`action_source: "website"` (C-8)،
+  /// ومحادثةُ واتساب ليست زيارةَ موقع. وميتا توثّق لإعلانات النقر-إلى-واتساب
+  /// مصدراً آخر (`business_messaging` مع `messaging_channel`)، فالحدث المرسَل
+  /// بالمصدر الخاطئ **يُقبَل ولا يُنسَب إلى الإعلان** - فلا تتعلّم الخوارزمية
+  /// منه، وهو بالضبط ما جاء المنتج ليصلحه.
+  sourceKind String @default("website")
+
+  /// معرّف نقرة إعلان النقر-إلى-واتساب. ترسله ميتا في `referral.ctwa_clid`
+  /// على أوّل رسالة، وهو **الرابط الوحيد** بين المحادثة والإعلان الذي جاء
+  /// بها. وحدثٌ بلا هذا المعرّف يُعالَج ولا يُربَط بإعلانٍ إطلاقاً.
+  ctwaClid String?
 
   // جودة المطابقة 0-10 - الرقم الذي يحدّد فعلياً هل ستنجح المنصة في ربط
   // الحدث بمستخدم لديها أم سيُهمَل. يُحسب من عدد وقوة المعرّفات المتاحة.

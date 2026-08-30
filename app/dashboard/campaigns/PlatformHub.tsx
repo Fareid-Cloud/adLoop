@@ -8,6 +8,7 @@ import * as Icons from "lucide-react";
 
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { metricRollupRows, sumRollup } from "@/lib/metricRollup";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { getConnectStates } from "@/lib/connectionState";
 import { ConnectSinglePlatform } from "@/app/components/ConnectPlatforms";
@@ -130,37 +131,33 @@ export async function PlatformHub({
   const fourteenDaysAgo = new Date();
   fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-  const [totalsAgg, prevAgg, daily] = await Promise.all([
-    prisma.metricSnapshot.aggregate({
-      where: { workspaceId: workspace.id, platform, date: { gte: thirtyDaysAgo } },
-      _sum: { cost: true, verifiedConversions: true, rawConversions: true, clicks: true, impressions: true, revenue: true },
-    }),
+  // مسوّىً: كروت CPA/ROAS للصفحة الرئيسية لهذه المنصّة، وعلى ميتا كان صرفها
+  // يُعَدّ مرّتين حين يجتمع صفّ `ALL` والمقسَّم. `daily` صفوفٌ يوميّة مسوّاة
+  // بنفس شكل ما كان يُقرأ (نفس الحقول)، فتجميعُها بالتاريخ أدناه بلا تغيير.
+  // راجع `lib/metricRollup.ts`.
+  const [totalRows, prevRows, daily] = await Promise.all([
+    metricRollupRows({ workspaceId: workspace.id, platforms: [platform], date: { gte: thirtyDaysAgo } }),
     // الفترة السابقة مباشرةً - بدونها كل رقم لقطة بلا اتجاه
-    prisma.metricSnapshot.aggregate({
-      where: { workspaceId: workspace.id, platform, date: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
-      _sum: { cost: true, verifiedConversions: true },
-    }),
-    prisma.metricSnapshot.findMany({
-      where: { workspaceId: workspace.id, platform, date: { gte: fourteenDaysAgo } },
-      select: { date: true, rawConversions: true, verifiedConversions: true, cost: true },
-      orderBy: { date: "asc" },
-    }),
+    metricRollupRows({ workspaceId: workspace.id, platforms: [platform], date: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } }),
+    metricRollupRows({ workspaceId: workspace.id, platforms: [platform], date: { gte: fourteenDaysAgo } }),
   ]);
+  const totalsAgg = sumRollup(totalRows);
+  const prevAgg = sumRollup(prevRows);
 
-  const cost = totalsAgg._sum.cost ?? 0;
-  const verified = totalsAgg._sum.verifiedConversions ?? 0;
-  const rawConv = totalsAgg._sum.rawConversions ?? 0;
-  const clicks = totalsAgg._sum.clicks ?? 0;
-  const impressions = totalsAgg._sum.impressions ?? 0;
+  const cost = totalsAgg.cost;
+  const verified = totalsAgg.verifiedConversions;
+  const rawConv = totalsAgg.rawConversions;
+  const clicks = totalsAgg.clicks;
+  const impressions = totalsAgg.impressions;
   const cpa = costPerVerified(cost, verified);
 
   // ROAS: الإيراد الذي تنسبه المنصّة لإعلانها ÷ الصرف. بنفس صيغة مركز
   // الحقيقة لا بحسابٍ ثانٍ - رقمان مختلفان لشيءٍ واحد يُفقدان الثقة فيهما.
-  const revenue = totalsAgg._sum.revenue ?? 0;
+  const revenue = totalsAgg.revenue;
   const roas = cost > 0 && revenue > 0 ? Math.round((revenue / cost) * 100) / 100 : null;
 
-  const prevVerified = prevAgg._sum.verifiedConversions ?? 0;
-  const prevCpa = prevVerified > 0 ? (prevAgg._sum.cost ?? 0) / prevVerified : 0;
+  const prevVerified = prevAgg.verifiedConversions;
+  const prevCpa = prevVerified > 0 ? prevAgg.cost / prevVerified : 0;
   const cpaChange = cpa !== null && prevCpa > 0 ? compareMetric(cpa, prevCpa) : null;
 
   // درجة صحة المنصّة: نفس عدّاد صحة الحساب بنفس العتبات، محسوباً على هذه

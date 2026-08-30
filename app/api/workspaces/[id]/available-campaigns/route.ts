@@ -20,6 +20,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleAdsApi } from "google-ads-api";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { workspaceAccess } from "@/lib/workspaceAccess";
 import { decryptToken } from "@/lib/encryption";
 import { recordDiscoveredAccounts } from "@/lib/oauthGrant";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -95,6 +96,17 @@ export async function GET(
   // الرسالة تُبنى بلغة القارئ لا بلغة مَن كتب الملفّ - وهي تُعرض كما هي
   // داخل نافذة اختيار الحملات.
   const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
+
+  // 🔴 ملكيّة المساحة تُثبَت قبل أيّ قراءة. كان هذا المسار يوثّق الجلسة ثمّ
+  // يستعلم بـ`id` القادم من المسار مباشرةً بلا `workspaceAccess` - فأيّ
+  // مستخدمٍ مسجَّل يقرأ متاجر مساحةٍ أخرى وخريطة معرّفات حملاتها الخارجية
+  // (وهي بعينها مدخلُ خطف الويب هوك عبر `campaign-links`). ومعرّف المساحة
+  // ليس سرّاً: مضمَّنٌ في سنيبت التتبّع على موقع العميل العام.
+  const owned = await prisma.workspace.findFirst({
+    where: { id, ...workspaceAccess(user.id) },
+    select: { id: true },
+  });
+  if (!owned) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const { searchParams } = new URL(req.url);
   const platform = searchParams.get("platform") ?? "GOOGLE_ADS";

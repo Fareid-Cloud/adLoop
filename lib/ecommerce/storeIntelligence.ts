@@ -11,6 +11,7 @@
 // البيانات نقول ذلك بدل إخراج صفر يبدو نتيجةً.
 
 import { prisma } from "@/lib/prisma";
+import { metricRollupRows, sumRollup } from "@/lib/metricRollup";
 import { computeReturn, type ReturnResult } from "@/lib/returnMetrics";
 import { rollingRatio } from "@/lib/rollingSeries";
 import type { LocalizedText } from "./opportunities";
@@ -140,7 +141,7 @@ export async function getProfitJourney(
   });
   const currency = workspace?.currency ?? "SAR";
 
-  const [orders, saleEvents, adSpend, products] = await Promise.all([
+  const [orders, saleEvents, adSpendRows, products] = await Promise.all([
     prisma.order.findMany({
       where: { workspaceId, orderedAt: { gte: since }, ...(storeId ? { connectionId: storeId } : {}) },
       select: { total: true, shippingCost: true, isReturned: true, state: true, isCod: true },
@@ -153,16 +154,14 @@ export async function getProfitJourney(
       },
       select: { quantity: true, revenue: true, returned: true, product: true },
     }),
-    prisma.metricSnapshot.aggregate({
-      where: {
-        workspaceId,
-        date: { gte: since },
-        platform: { in: AD_PLATFORMS as never },
-        // حملات هذه القناة وحدها. وقائمةٌ فارغة تعني «لا حملة منسوبة»،
-        // فالإنفاق صفرٌ صادق لا إنفاقُ المساحة كلّها منسوباً إليها ظلماً.
-        ...(scopedCampaignIds ? { campaignId: { in: scopedCampaignIds } } : {}),
-      },
-      _sum: { cost: true },
+    // مسوّىً بمكان الظهور: صرف ميتا المعدود مرّتين كان ينفخ مقام ROAS/ROI
+    // فيقلب توصية «أوقف إعلاناتك». حملات هذه القناة وحدها، وقائمةٌ فارغة
+    // تعني «لا حملة منسوبة» فالإنفاق صفرٌ صادق. راجع `lib/metricRollup.ts`.
+    metricRollupRows({
+      workspaceId,
+      date: { gte: since },
+      platforms: AD_PLATFORMS,
+      campaignIds: scopedCampaignIds ?? undefined,
     }),
     prisma.product.findMany({
       where: { workspaceId, ...(storeId ? { connectionId: storeId } : {}) },
@@ -211,7 +210,7 @@ export async function getProfitJourney(
     shippingIsEstimate = true;
   }
 
-  const advertising = adSpend._sum.cost ?? 0;
+  const advertising = sumRollup(adSpendRows).cost;
 
   // الرسوم: بوابة الدفع + الدفع عند الاستلام + التغليف والمناولة
   const fees = saleEvents.reduce((s, e) => {

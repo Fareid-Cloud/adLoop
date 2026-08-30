@@ -21,6 +21,11 @@ export interface DetectedSystem {
 }
 
 import { auditPageHtml, type PageAuditResult } from "./pageAudit";
+import { safeFetch } from "./safeFetch";
+import { t } from "./i18n/dictionary";
+import { trackingErrorText } from "./trackingErrorText";
+
+export { trackingErrorText };
 
 export interface TrackingCheckResult {
   detected: boolean;
@@ -30,6 +35,12 @@ export interface TrackingCheckResult {
   adloopDetected: boolean;
   /** مؤشر على أن الوسوم تُحمَّل ديناميكياً ولا يمكن رؤيتها في HTML الخام */
   usesTagManager: boolean;
+  /** 🔴 **رمزٌ يُترجَم عند العرض، لا نصُّ خطأٍ خام.**
+   *
+   *  كان يحمل `err.message` كما ورد من طبقة الشبكة (`getaddrinfo ENOTFOUND`،
+   *  أخطاء شهادات TLS) وفرعين عربيَّين مثبَّتين - فيُعرَض للمشترك تفصيلٌ
+   *  تشغيليّ لا يقول له ماذا يفعل، وبالعربية لقارئٍ إنجليزيّ. القيم:
+   *  `"timeout"` · `"unreachable"` · `"http:<status>"`. */
   error: string | null;
   checkedUrl: string;
   httpStatus: number | null;
@@ -102,13 +113,15 @@ export async function checkTrackingPresence(rawUrl: string): Promise<TrackingChe
   let url = rawUrl.trim();
   if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
 
+  // 🔴 عبر `safeFetch` لا `fetch` خام: هذا المسار يقبل رابطاً من المستخدم
+  // (صفحة يراد فحص تتبّعها) ثمّ يجلبه ويعكس نتيجته - أي SSRF مباشر لو تُرك
+  // خاماً (رابطٌ إلى `169.254.169.254` أو شبكةٍ داخلية). `safeFetch` يرفض
+  // النطاقات الخاصة، ويعيد التحقّق بعد كلّ توجيه، وله حدّه الزمنيّ وحدّ حجمه.
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
   try {
-    const res = await fetch(url, {
-      redirect: "follow",
-      signal: controller.signal,
+    const res = await safeFetch(url, {
       headers: {
         // ترويسة متصفح حقيقية: كثير من الاستضافات تحجب الوكلاء غير المعروفين
         // فتُرجع 403 فيبدو الموقع كأنه بلا تتبع - وهو سبب آخر للنتيجة الخاطئة.
@@ -122,7 +135,7 @@ export async function checkTrackingPresence(rawUrl: string): Promise<TrackingChe
     base.httpStatus = res.status;
 
     if (!res.ok) {
-      base.error = `تعذّر فحص الصفحة: أعادت الاستجابة ${res.status}.`;
+      base.error = `http:${res.status}`;
       return base;
     }
 
@@ -140,10 +153,12 @@ export async function checkTrackingPresence(rawUrl: string): Promise<TrackingChe
 
     return base;
   } catch (err) {
-    base.error =
-      err instanceof Error && err.name === "AbortError"
-        ? "انتهت مهلة الاتصال بالصفحة."
-        : err instanceof Error ? err.message : "تعذّر الوصول إلى الصفحة.";
+    // التفصيل يُسجَّل عندنا ولا يُعرَض: نصُّ الشبكة الخام يشخّص لنا ولا
+    // يقول للمشترك شيئاً يفعله.
+    if (!(err instanceof Error && err.name === "AbortError")) {
+      console.error("[trackingCoverage] تعذّر الوصول إلى الصفحة:", err);
+    }
+    base.error = err instanceof Error && err.name === "AbortError" ? "timeout" : "unreachable";
     return base;
   } finally {
     clearTimeout(timer);
@@ -154,7 +169,7 @@ export async function checkTrackingPresence(rawUrl: string): Promise<TrackingChe
 export function explainTrackingResult(r: TrackingCheckResult, locale: "ar" | "en"): string {
   const ar = locale === "ar";
 
-  if (r.error) return r.error;
+  if (r.error) return trackingErrorText(r.error, locale) ?? t(locale, "trackErr.unreachable");
 
   if (!r.detected) {
     return ar

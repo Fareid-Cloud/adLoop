@@ -322,22 +322,102 @@ async function loadSnapshots(
   const bounds = toDateBounds(range);
   // placementBreakdown="ALL" فقط عدا تقارير الأماكن: الصفوف التفصيلية
   // تكرّر نفس الإنفاق مقسَّماً، فجمعها مع المجمّع يضاعف كل رقم.
-  const rows = await prisma.metricSnapshot.findMany({
-    where: {
-      workspaceId,
-      date: bounds,
-      ...(filters.platforms?.length ? { platform: { in: filters.platforms as never[] } } : {}),
-      ...(filters.campaignIds?.length ? { campaignId: { in: filters.campaignIds } } : {}),
-    },
-    select: {
-      platform: true, campaignId: true, date: true, placementBreakdown: true,
-      cost: true, impressions: true, clicks: true,
-      rawConversions: true, verifiedConversions: true,
-      revenue: true, ordersCount: true, returnedOrdersCount: true,
-      cogs: true, shippingCost: true,
-    },
-  });
-  return rows as unknown as SnapshotLike[];
+  const scope = {
+    workspaceId,
+    date: bounds,
+    ...(filters.platforms?.length ? { platform: { in: filters.platforms as never[] } } : {}),
+    ...(filters.campaignIds?.length ? { campaignId: { in: filters.campaignIds } } : {}),
+  };
+
+  const [rows, verifications] = await Promise.all([
+    prisma.metricSnapshot.findMany({
+      where: scope,
+      select: {
+        platform: true, campaignId: true, date: true, placementBreakdown: true,
+        cost: true, impressions: true, clicks: true,
+        rawConversions: true, verifiedConversions: true,
+        revenue: true, ordersCount: true, returnedOrdersCount: true,
+        cogs: true, shippingCost: true,
+      },
+    }),
+    prisma.conversionVerification.groupBy({
+      by: ["platform", "campaignId", "date"],
+      where: scope,
+      _sum: { verifiedCount: true },
+    }),
+  ]);
+
+  const all = rows as unknown as SnapshotLike[];
+  const key = (r: { platform: string; campaignId: string; date: Date }) =>
+    `${r.platform}|${r.campaignId}|${r.date.toISOString().slice(0, 10)}`;
+
+  // 🔴 **ميتا كانت تختفي من كلّ تقريرٍ غير تقرير الأماكن.**
+  //
+  // المزامنة تكتب صفّ `ALL` **أو** الصفوف المقسَّمة، لا كليهما (راجع
+  // `syncMetaAds.ts:176`). والتجميع أدناه يُبقي صفوف `ALL` وحدها لكلّ بُعدٍ
+  // عدا الأماكن - فحملةُ ميتا التي نجح تقسيمُها لا صفّ `ALL` لها، فتسقط
+  // من التقرير كلّه: لا إنفاقها ولا تحويلاتها. فيُصطنَع لها صفّ `ALL`
+  // بجمع مقسَّماتها حين لا يوجد - ولا يُصطنَع حين يوجد (فيتضاعف).
+  const haveAll = new Set(all.filter((r) => r.placementBreakdown === "ALL").map(key));
+  const synthesized = new Map<string, SnapshotLike>();
+  for (const r of all) {
+    if (r.placementBreakdown === "ALL") continue;
+    const k = key(r);
+    if (haveAll.has(k)) continue;
+    const cur = synthesized.get(k);
+    if (!cur) {
+      synthesized.set(k, { ...r, placementBreakdown: "ALL" });
+      continue;
+    }
+    cur.cost += r.cost ?? 0;
+    cur.impressions += r.impressions ?? 0;
+    cur.clicks += r.clicks ?? 0;
+    cur.rawConversions += r.rawConversions ?? 0;
+    cur.verifiedConversions += r.verifiedConversions ?? 0;
+    cur.revenue = sumNullable(cur.revenue, r.revenue);
+    cur.ordersCount = sumNullable(cur.ordersCount, r.ordersCount);
+    cur.returnedOrdersCount = sumNullable(cur.returnedOrdersCount, r.returnedOrdersCount);
+    cur.cogs = sumNullable(cur.cogs, r.cogs);
+    cur.shippingCost = sumNullable(cur.shippingCost, r.shippingCost);
+  }
+  const merged = [...all, ...synthesized.values()];
+
+  // overlay التحقّق الحقيقيّ: يعيش في `ConversionVerification` لا على
+  // `MetricSnapshot` (راجع `lib/metricRollup.ts`). يُطبَّق على صفّ `ALL`
+  // **بعد** الاصطناع أعلاه، فلا يبتلع صفٌّ مصطنَعٌ بلا تكلفةٍ إنفاقَ ميتا.
+  // وتقريرُ الأماكن لا يناله: التحقّق لا يحمل مكان ظهور، ونسبتُه إلى أحدها
+  // اختلاق.
+  if (verifications.length > 0) {
+    const allByKey = new Map(
+      merged.filter((r) => r.placementBreakdown === "ALL").map((r) => [key(r), r])
+    );
+    for (const v of verifications) {
+      const count = v._sum.verifiedCount ?? 0;
+      if (count <= 0) continue;
+      const target = allByKey.get(key(v));
+      if (target) {
+        target.verifiedConversions += count;
+      } else {
+        merged.push({
+          platform: v.platform, campaignId: v.campaignId, date: v.date,
+          placementBreakdown: "ALL",
+          cost: 0, impressions: 0, clicks: 0, rawConversions: 0,
+          verifiedConversions: count,
+          revenue: null, ordersCount: null, returnedOrdersCount: null,
+          cogs: null, shippingCost: null,
+        });
+      }
+    }
+  }
+
+  return merged;
+}
+
+/** يجمع قيمتين قد تكونا غائبتين - ويبقى الغياب غياباً حين لا رقم أصلاً:
+ *  الصفر يُقرأ «قيس فكان صفراً»، والغياب «لم يُقَس». */
+function sumNullable(a: number | null, b: number | null): number | null {
+  if (a === null && b === null) return null;
+  return (a ?? 0) + (b ?? 0);
 }
 
 function aggregate(

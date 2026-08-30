@@ -13,7 +13,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyInternalServiceAuth } from "@/lib/internalServiceAuth";
-import { hashEmail, hashPhone, hashPii } from "@/lib/conversionSync";
+import { hashEmail, hashPhone, hashPhoneE164, hashPii } from "@/lib/conversionSync";
 import { scoreMatchQuality } from "@/lib/matchQuality";
 
 export async function POST(req: NextRequest) {
@@ -46,7 +46,10 @@ export async function POST(req: NextRequest) {
 
   const signals = {
     emailHash: hashEmail(str(body.email)),
+    // تهشيمان لرقمٍ واحد: ميتا تريده أرقاماً مجرّدة، وجوجل وتيك توك E.164
+    // بعلامة `+` (C-4). ويُحسبان هنا معاً لأنّ الخام لا يُخزَّن.
     phoneHash: hashPhone(str(body.phone), defaultCc),
+    phoneHashE164: hashPhoneE164(str(body.phone), defaultCc),
     firstNameHash: hashPii(str(body.firstName)),
     lastNameHash: hashPii(str(body.lastName)),
     cityHash: hashPii(str(body.city)),
@@ -59,6 +62,13 @@ export async function POST(req: NextRequest) {
     fbc: str(body.fbc) ?? buildFbc(str(body.fbclid)),
     gclid: str(body.gclid),
     ttclid: str(body.ttclid),
+    // مصدر الحدث يحدّد `action_source` عند الرفع لميتا (C-8). القيمة
+    // الافتراضية `website` تُبقي سلوك أحداث المتجر كما هو - وهي صحيحةٌ لها.
+    sourceKind:
+      str(body.sourceKind) === "whatsapp" ? "whatsapp"
+      : str(body.sourceKind) === "messenger" ? "messenger"
+      : "website",
+    ctwaClid: str(body.ctwaClid),
   };
 
   const quality = scoreMatchQuality(signals);

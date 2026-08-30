@@ -34,6 +34,7 @@ export function PlansClient({
   creditsLeft,
   creditsAllowance,
   openCreditsOnLoad = false,
+  subscription = null,
 }: {
   locale: Locale;
   currency: BillingCurrency;
@@ -41,6 +42,7 @@ export function PlansClient({
   creditsLeft: number;
   creditsAllowance: number;
   openCreditsOnLoad?: boolean;
+  subscription?: { periodEnd: string; cancelAtPeriodEnd: boolean } | null;
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `plans.${k}`, v);
   const router = useRouter();
@@ -83,6 +85,15 @@ export function PlansClient({
         title={tr("title")}
         description={tr("subtitle")}
       />
+
+      {subscription && (
+        <SubscriptionPanel
+          locale={locale}
+          periodEnd={subscription.periodEnd}
+          cancelAtPeriodEnd={subscription.cancelAtPeriodEnd}
+          tr={tr}
+        />
+      )}
       <header className="mb-7">
         <div className="inline-flex items-center gap-1 card p-1">
           {(["monthly", "yearly"] as const).map((c) => (
@@ -414,6 +425,89 @@ function CreditsModal({
 }
 
 // ==================== أجزاء ====================
+
+/**
+ * **حالةُ الاشتراك، وزرُّ إنهائه.**
+ *
+ * 🔴 لم يكن للمشترك سبيلٌ لإلغاء اشتراكه من الواجهة إطلاقاً: العمود
+ * `cancelAtPeriodEnd` كاتبُه الوحيد مسارُ الأدمن - **بينما صفحةُ الشروط
+ * تَعِده بالإلغاء**. فمن أراد الخروج كان عليه مراسلةُ الدعم، وهو أسوأُ ما
+ * يُقابَل به من قرّر ألّا يدفع: يقرؤه احتجازاً.
+ *
+ * والتاريخ يُقال صراحةً في الحالتين: من ألغى يحتاج أن يطمئنّ أنّ خدمته
+ * تعمل إلى نهاية ما دفعه، لا أن تُقطَع الآن عقاباً على الإلغاء.
+ */
+function SubscriptionPanel({
+  locale, periodEnd, cancelAtPeriodEnd, tr,
+}: {
+  locale: Locale;
+  periodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  tr: (k: string, v?: Record<string, string | number>) => string;
+}) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+
+  const dateText = new Date(periodEnd).toLocaleDateString(locale === "en" ? "en-GB" : "ar-EG", {
+    year: "numeric", month: "long", day: "numeric",
+  });
+
+  async function submit(resume: boolean) {
+    setBusy(true);
+    try {
+      const { getCsrfHeader } = await import("@/lib/csrfClient");
+      const res = await fetch("/api/subscription/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getCsrfHeader() },
+        body: JSON.stringify({ resume }),
+      });
+      if (res.ok) {
+        setConfirming(false);
+        router.refresh();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mb-6 card pad-lg">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="text-[13px] font-medium text-text-primary">
+            {cancelAtPeriodEnd ? tr("subEndingTitle") : tr("subActiveTitle")}
+          </div>
+          <p className="mt-0.5 text-[12px] leading-relaxed text-text-muted">
+            {cancelAtPeriodEnd
+              ? tr("subEndingBody", { date: dateText })
+              : tr("subActiveBody", { date: dateText })}
+          </p>
+        </div>
+
+        {cancelAtPeriodEnd ? (
+          <button onClick={() => submit(true)} disabled={busy} className="btn btn-primary shrink-0">
+            {busy ? <Loader2 size={14} className="animate-spin" /> : tr("subResume")}
+          </button>
+        ) : confirming ? (
+          // تأكيدٌ بدرجتين - نفس عادة التنفيذ الحقيقيّ في المنتج، بلا نافذة
+          <div className="flex shrink-0 items-center gap-2">
+            <button onClick={() => submit(false)} disabled={busy} className="btn btn-danger">
+              {busy ? <Loader2 size={14} className="animate-spin" /> : tr("subCancelConfirm")}
+            </button>
+            <button onClick={() => setConfirming(false)} disabled={busy} className="btn">
+              {tr("subKeep")}
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => setConfirming(true)} className="btn shrink-0">
+            {tr("subCancel")}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function LimitCell({
   value, kind, tr,

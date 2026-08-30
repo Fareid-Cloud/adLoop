@@ -61,6 +61,40 @@ export async function POST(
     list.push(c.externalAccountId);
     byPlatform.set(c.platform, list);
   }
+  // 🔴 **المعرّف الخارجي يُثبَت أنّه ضمن ما تصله منح المستخدم قبل كتابته.**
+  // كان يُكتب من جسم الطلب كما هو، ثمّ تعتمد عليه ويب هوكس المتاجر وليدز
+  // ميتا كمفتاح ملكيةٍ وحيد: يزرع مهاجمٌ معرّفَ تاجرٍ آخر في مساحته، فيُوجَّه
+  // إليه إيرادُ الضحية وتُدمَّر ليداتها. المصدر الوحيد المقبول هو
+  // `ConnectedAccount` - ما رأته المنصّة فعلاً ضمن منحة هذا المستخدم.
+  const grantedAccounts = await prisma.connectedAccount.findMany({
+    where: { connection: { userId: user.id } },
+    select: { platform: true, externalAccountId: true },
+  });
+  const grantedByPlatform = new Map<string, Set<string>>();
+  for (const a of grantedAccounts) {
+    const set = grantedByPlatform.get(a.platform) ?? new Set<string>();
+    set.add(a.externalAccountId);
+    grantedByPlatform.set(a.platform, set);
+  }
+  for (const [platform, accountIds] of byPlatform) {
+    const granted = grantedByPlatform.get(platform);
+    // قائمةٌ فارغةٌ لهذه المنصّة تعني أنّنا لم نكتشف حساباتها بعد (ربطٌ
+    // قديمٌ سابقٌ لهذا الجدول)، لا أنّ المستخدم لا يملك شيئاً - فلا نرفض
+    // بها ونمنع عميلاً شرعياً من الحفظ. والمهاجم لا يستفيد: فتحُ نافذة
+    // اختيار الحملات (المسار الوحيد الذي يصل إلى هنا) يملأ القائمة أوّلاً،
+    // فيصير الرفض سارياً عليه. تشديدُها إلى رفضٍ مطلق يحتاج تعبئةً رجعيّة
+    // للجدول أوّلاً - قرارٌ منفصل موثَّق في التقرير.
+    if (!granted || granted.size === 0) continue;
+    for (const accountId of accountIds) {
+      if (!granted.has(accountId)) {
+        return NextResponse.json(
+          { error: "account_not_granted", platform, externalAccountId: accountId },
+          { status: 403 }
+        );
+      }
+    }
+  }
+
   for (const [platform, accountIds] of byPlatform) {
     const check = await checkAdAccountLimit(user.id, platform, accountIds, id);
     if (!check.allowed) {

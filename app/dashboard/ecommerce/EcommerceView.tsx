@@ -31,6 +31,8 @@ export interface ProductRow {
   profitPerUnit: number;
   totalProfit: number;
   marginPct: number;
+  /** تكلفة البضاعة مضبوطة لهذا المنتج؟ بدونها الربح أعلاه هو السعر كلّه. */
+  cogsKnown: boolean;
   velocity: number;
   stockDaysLeft: number | null;
   stockQuantity: number | null;
@@ -362,16 +364,29 @@ export function EcommerceView({
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3.5">
-                      <span className="font-mono text-[12.5px] font-medium"
-                            style={{ color: p.profitPerUnit < 0 ? "var(--critical)" : "var(--verified)" }}>
-                        {p.profitPerUnit > 0 ? "+" : ""}{p.profitPerUnit}
-                      </span>
+                      {/* 🔴 بلا تكلفةِ بضاعةٍ مضبوطة يكون «الربح» هو السعرُ
+                          كلّه - رقمٌ يبدو دقيقاً وهو أعلى من الحقيقة دائماً.
+                          فيُقال إنّه غير معروف، بنفس عادة عمود الإنفاق
+                          الإعلانيّ المجهول إلى جانبه: شرطةٌ تشرح نفسها، لا
+                          صفرٌ مُجمَّل ولا رقمٌ مخترَع. */}
+                      {p.cogsKnown ? (
+                        <span className="font-mono text-[12.5px] font-medium"
+                              style={{ color: p.profitPerUnit < 0 ? "var(--critical)" : "var(--verified)" }}>
+                          {p.profitPerUnit > 0 ? "+" : ""}{p.profitPerUnit}
+                        </span>
+                      ) : (
+                        <span className="text-[12.5px] text-text-faint" title={tr("costMissingHint")}>—</span>
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3.5">
-                      <span className="font-mono text-[13px] font-semibold"
-                            style={{ color: p.totalProfit < 0 ? "var(--critical)" : "var(--text-primary)" }}>
-                        {num(p.totalProfit)} {currency}
-                      </span>
+                      {p.cogsKnown ? (
+                        <span className="font-mono text-[13px] font-semibold"
+                              style={{ color: p.totalProfit < 0 ? "var(--critical)" : "var(--text-primary)" }}>
+                          {num(p.totalProfit)} {currency}
+                        </span>
+                      ) : (
+                        <span className="text-[13px] text-text-faint" title={tr("costMissingHint")}>—</span>
+                      )}
                     </td>
                     {/* العائدان لهذا المنتج بعينه. الشرطة هنا ليست صفراً
                         مُجمَّلاً: المنتج الذي لا نعرف إنفاقه الإعلانيّ يُقال

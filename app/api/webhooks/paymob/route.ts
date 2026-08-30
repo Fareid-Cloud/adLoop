@@ -60,8 +60,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid signature" }, { status: 401 });
   }
 
-  const isNew = await markEventAsProcessed("paymob", String(transaction.id));
-  if (!isNew) return NextResponse.json({ received: true, duplicate: true });
+  // 🔴 **لا تُعلَّم المعاملة "معالَجة" قبل إتمامها.** الشكل القديم كان
+  // يسجّل الحدث هنا أولاً، فإن رمى أيّ شيءٍ بعده (بحث المستخدم، داخل
+  // `fulfillPaymentIntent` بين تحديث الحالة ومنح الاستحقاق) رجع 500،
+  // فتعيد Paymob الإرسال، فتسقط الإعادة على `P2002` وتُردّ "مكرّر" - ولا
+  // يُعاد الإتمام أبداً: العميل دفع ولم يُفعَّل اشتراكه، بلا مصالحة.
+  // منع التكرار الحقيقي هو انتقال النيّة الذرّي (`updateMany where PENDING`)
+  // في `fulfillPaymentIntent`؛ وسمُ الحدث يأتي **بعد** الإتمام كطبقةٍ ثانية
+  // لا كبوّابةٍ تمنع إعادة المحاولة.
 
   if (transaction.success !== true) {
     // 🔴 كان الفرع ده بيرجع صامتاً تماماً، فنيّة الدفع بتفضل `PENDING`
@@ -144,6 +150,11 @@ export async function POST(req: NextRequest) {
       linkUrl: "/dashboard/billing",
     });
   }
+
+  // الآن وقد تمّ الإتمام فعلاً: نسم الحدث معالَجاً. إعادةٌ لاحقةٌ لنفس
+  // المعاملة تجد الوسم فلا تكرّر العمل، والانتقال الذرّي في الإتمام كان قد
+  // منع التكرار على أيّ حال. `false` (وسمٌ سابق) مقبولة - لا نرمي.
+  await markEventAsProcessed("paymob", String(transaction.id));
 
   return NextResponse.json({ received: true });
 }

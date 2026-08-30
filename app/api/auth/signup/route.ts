@@ -20,6 +20,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { signupSchema, validateOrError } from "@/lib/validation/schemas";
 import { CSRF_COOKIE_NAME, generateCsrfToken } from "@/lib/csrf";
 import { isCountryCode } from "@/lib/countries";
+import { isOwnerEmail } from "@/lib/owner";
 
 /** هل هذه منطقةٌ زمنيّةٌ يعرفها المتصفّح؟ نصٌّ من العميل لا يُوثَق به،
  *  و`Intl` ترفض غير الصالح برمي استثناء. */
@@ -49,6 +50,13 @@ export async function POST(req: NextRequest) {
   }
   const { email, password, name, preferredLocale, turnstileToken } = validation.data;
   const locale: Locale = preferredLocale === "en" ? "en" : "ar";
+
+  // حساب المالك يُجهَّز، لا يُسجَّل نفسه. بدون هذا الرفض كان تسجيلٌ ببريد
+  // المالك (أو نسخةٍ مختلفة الحالة منه، وقد طُبِّعت الآن في المخطَّط) يمنح
+  // دور OWNER كاملاً عبر `isOwnerEmail` قبل أيّ فحص `isAdmin` - انتحالٌ كامل.
+  if (isOwnerEmail(email)) {
+    return NextResponse.json({ error: t(locale, "auth.emailExists") }, { status: 409 });
+  }
 
   // الموافقة تُتحقَّق على الخادم لا في المتصفّح وحده: `required` على
   // المدخَل يمنع الإرسال من النموذج، ولا يمنع طلباً مباشراً إلى المسار.

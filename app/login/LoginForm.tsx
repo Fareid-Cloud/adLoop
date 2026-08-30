@@ -94,7 +94,7 @@ export function LoginForm({ nextPath = "/dashboard", expired = false }: { nextPa
         </h1>
         {!pendingToken && (
           <p className="mt-1.5 text-[14px] text-text-muted">
-            {ar ? "أهلاً بعودتك — سجّل الدخول للمتابعة." : "Welcome back — sign in to continue."}
+            {t(locale, "auth.loginWelcome")}
           </p>
         )}
       </div>
@@ -203,7 +203,7 @@ export function LoginForm({ nextPath = "/dashboard", expired = false }: { nextPa
                 tabIndex={-1}
                 onClick={() => setShowPw((v) => !v)}
                 className="absolute inset-y-0 end-3 flex items-center text-text-faint hover:text-text-primary"
-                aria-label={showPw ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+                aria-label={t(locale, showPw ? "auth.hidePassword" : "auth.showPassword")}
               >
                 {showPw ? <EyeOff size={17} /> : <Eye size={17} />}
               </button>

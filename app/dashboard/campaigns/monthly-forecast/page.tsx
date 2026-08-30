@@ -5,7 +5,7 @@
 // بالهدف المضبوط في الإعدادات. صفر اعتماد على API خارجي.
 
 import { getSessionUserFromCookies } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { metricRollupRows, sumRollup } from "@/lib/metricRollup";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
@@ -49,12 +49,11 @@ export default async function MonthlyForecastPage() {
   const totalDaysInMonth = endOfMonth.getDate();
   const daysRemaining = totalDaysInMonth - dayOfMonth;
 
-  const rows = await prisma.metricSnapshot.aggregate({
-    where: { workspaceId: workspace.id, date: { gte: startOfMonth, lte: now } },
-    _sum: { cost: true },
-  });
-
-  const spentSoFar = rows._sum.cost ?? 0;
+  // مسوّىً: صرف ميتا المعدود مرّتين كان يقفز بالإسقاط فوق الهدف - «تجاوزت
+  // ١١٢٪» بانرٌ كاذب على صرفٍ لم يحدث. راجع `lib/metricRollup.ts`.
+  const spentSoFar = sumRollup(
+    await metricRollupRows({ workspaceId: workspace.id, date: { gte: startOfMonth, lte: now } })
+  ).cost;
   const dailyAverage = dayOfMonth > 0 ? spentSoFar / dayOfMonth : 0;
   const projectedTotal = spentSoFar + dailyAverage * daysRemaining;
   const target = workspace.monthlyBudgetTarget;

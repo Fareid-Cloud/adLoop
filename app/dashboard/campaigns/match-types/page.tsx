@@ -8,6 +8,9 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams } from "@/lib/dateRange";
+import { toDateBoundsForUser } from "@/lib/historyWindow";
 import { Crosshair } from "lucide-react";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 
@@ -18,7 +21,14 @@ const MATCH_TYPE_LABELS: Record<string, string> = {
   UNKNOWN: "mtUnknown",
 };
 
-export default async function MatchTypesPage() {
+export default async function MatchTypesPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const period = periodFromParams(await searchParams);
+  const bounds = await toDateBoundsForUser(period.range);
+
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
@@ -31,9 +41,11 @@ export default async function MatchTypesPage() {
     return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
+  // فلتر الفترة: الجدول يضيف صفّاً لكلّ يوم (`@@unique … date`)، فبلا حدٍّ
+  // زمنيّ كان يُجمَع مدى الحياة - CPA نوع المطابقة يتضخّم كلّ يوم.
   const rows = await prisma.matchTypeSnapshot.groupBy({
     by: ["matchType"],
-    where: { workspaceId: workspace.id },
+    where: { workspaceId: workspace.id, date: bounds },
     _sum: { impressions: true, clicks: true, cost: true, conversions: true },
   });
 
@@ -60,6 +72,7 @@ export default async function MatchTypesPage() {
         eyebrow={workspace.name}
         title={t(locale, "campPages.mtTitle")}
         description={t(locale, "campPages.mtIntro")}
+        actions={<PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />}
       />
 
       {results.length === 0 ? (

@@ -49,7 +49,9 @@ export async function POST(req: NextRequest) {
     details: `${admin.email} signed in as ${targetUser.email}`,
   });
 
-  const impersonatedToken = createSessionToken(targetUser.id);
+  // موسومٌ بهويّة الأدمن ومنتهٍ بعد أربع ساعاتٍ من الخادم لا من المتصفّح -
+  // والوسم هو ما يرفض به `middleware.ts` أيَّ كتابةٍ أثناء العرض كـ.
+  const impersonatedToken = createSessionToken(targetUser.id, admin.id);
 
   const response = NextResponse.json({ success: true });
 

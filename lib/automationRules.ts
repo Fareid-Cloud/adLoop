@@ -9,6 +9,7 @@
 
 import { t, Locale } from "@/lib/i18n/dictionary";
 import { prisma } from "@/lib/prisma";
+import { metricRollupRows } from "@/lib/metricRollup";
 import { pushToActionFeed, ruleResultToActionFeedItem } from "@/lib/actionFeed";
 import { computeCampaignCplChanges, detectMarketWideMove } from "@/lib/marketContext";
 
@@ -22,7 +23,13 @@ export { RULE_TEMPLATES } from "@/lib/automationRuleDefinitions";
 
 export interface DailyMetricValue {
   date: string; // YYYY-MM-DD
-  value: number;
+  /** 🔴 `null` = **لا نقطةَ قياسٍ لهذا اليوم**، لا «صفر».
+   *
+   *  كان المقام الناقص يُرجَع `0`، والصفرُ يحقّق **أيّ** شرط `LESS_THAN` -
+   *  فيومٌ بلا تحويلات كان يُقرأ «أداءٌ كارثيّ» ويُغذّي عدّاد الأيّام
+   *  المتتالية، ويكتم في الوقت نفسه تنبيهات `GREATER_THAN` في اليوم الذي
+   *  لا بيانات فيه بالضبط. الغيابُ يكسر العدّ، ولا يطابق. */
+  value: number | null;
 }
 
 export interface RuleEvaluationResult {
@@ -44,6 +51,10 @@ export function evaluateRule(
 
   let consecutiveDaysMatched = 0;
   for (const day of sorted) {
+    // يومٌ بلا قياس لا يطابق ولا يُتخطّى: يكسر التتابع. وإلّا صار الغيابُ
+    // دليلاً - وهو أخطر ما يُبنى عليه إيقافُ حملة.
+    if (day.value === null) break;
+
     const matches =
       rule.operator === "GREATER_THAN"
         ? day.value > rule.threshold
@@ -190,7 +201,11 @@ export async function runAutomationForWorkspace(workspaceId: string, locale: Loc
           campaignId: l.externalCampaignId,
           campaignName: l.campaignName,
           action: rule.action,
-          changePct: rule.actionValue ?? undefined,
+          // 🔴 القيمة **المقيّدة** بسقف القفزة الواحدة، لا الخام. كان
+          // العنوان يعرض "زيادة 20%" (مقيّدة) بينما الحمولة تحمل
+          // `rule.actionValue` الخام (300 مثلاً) - فتتربّع الميزانية والواجهة
+          // تقول 20%. السقف كان يُطبَّق على نصّ العرض وحده.
+          changePct: result.clampedActionValue ?? undefined,
         }))
       : [undefined];
 
@@ -219,26 +234,41 @@ async function getDailyMetricValues(
   since: Date
 ): Promise<DailyMetricValue[]> {
   if (metric === "CPL_VERIFIED" || metric === "TRUE_ROAS" || metric === "INFLATION_RATE") {
-    const snapshots = await prisma.metricSnapshot.findMany({
-      where: { workspaceId, date: { gte: since } },
-      select: { date: true, cost: true, verifiedConversions: true, rawConversions: true },
-    });
+    // مسوّىً بمكان الظهور ومقصورٌ على منصّات الإعلان: صرفُ ميتا المعدود
+    // مرّتين يقلب كلَّ عتبةٍ هنا، وهذه قواعدُ **تُوقف حملات**.
+    const rows = await metricRollupRows({ workspaceId, date: { gte: since } });
 
-    const byDate = new Map<string, { cost: number; verified: number; raw: number }>();
-    for (const s of snapshots) {
+    const byDate = new Map<string, { cost: number; verified: number; raw: number; revenue: number }>();
+    for (const s of rows) {
       const key = s.date.toISOString().slice(0, 10);
-      const existing = byDate.get(key) ?? { cost: 0, verified: 0, raw: 0 };
+      const existing = byDate.get(key) ?? { cost: 0, verified: 0, raw: 0, revenue: 0 };
       existing.cost += s.cost;
       existing.verified += s.verifiedConversions;
       existing.raw += s.rawConversions;
+      existing.revenue += s.revenue;
       byDate.set(key, existing);
     }
 
     return Array.from(byDate.entries()).map(([date, d]) => {
-      let value = 0;
-      if (metric === "CPL_VERIFIED") value = d.verified > 0 ? d.cost / d.verified : 0;
-      else if (metric === "TRUE_ROAS") value = d.cost > 0 ? d.verified / d.cost : 0; // تقريب مبسّط - العائد الحقيقي الكامل محتاج بيانات إيكومرس إضافية
-      else if (metric === "INFLATION_RATE") value = d.raw > 0 ? ((d.raw - d.verified) / d.raw) * 100 : 0;
+      let value: number | null = null;
+      if (metric === "CPL_VERIFIED") {
+        // بلا تحويلٍ متحقَّق لا تكلفةَ عميلٍ - لا صفر
+        value = d.verified > 0 ? d.cost / d.verified : null;
+      } else if (metric === "TRUE_ROAS") {
+        // 🔴 **كان `verified / cost` - عددٌ مقسومٌ على مال.**
+        //
+        // حملةٌ بخمسمئة ريال وعشرةِ تحويلاتٍ متحقَّقة تُعطي `0.02`، والقالب
+        // الجاهز «أوقف عند عائدٍ سالب» هو `TRUE_ROAS < 1` لثلاثة أيّام -
+        // **فيتحقّق في كلّ حسابٍ عنده ثلاثةُ أيّام بيانات، على كلّ حملةٍ
+        // بما فيها أفضلُها**، وكلٌّ منها على بُعد دوسةِ تأكيدٍ من الإيقاف.
+        //
+        // العائد نسبةُ مالٍ إلى مال: `revenue` هو ما تنسبه المنصّة لإعلانها
+        // (نفس بسط ROAS في مركز الحقيقة و`bidStrategyAudit`). وبلا إيرادٍ
+        // مقيسٍ لا عائد - `null` لا صفر، وإلّا صار «لم نقِس» دليلَ خسارة.
+        value = d.cost > 0 && d.revenue > 0 ? d.revenue / d.cost : null;
+      } else if (metric === "INFLATION_RATE") {
+        value = d.raw > 0 ? ((d.raw - d.verified) / d.raw) * 100 : null;
+      }
       return { date, value };
     });
   }

@@ -2,6 +2,7 @@
 
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { metricRollupRows, groupRollup } from "@/lib/metricRollup";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { computeOptimalAllocation } from "@/lib/portfolioAllocation";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
@@ -33,13 +34,11 @@ export default async function PortfolioPage({
   }
 
 
-  const [campaignLinks, agg] = await Promise.all([
+  const [campaignLinks, rollup] = await Promise.all([
     prisma.campaignLink.findMany({ where: { workspaceId: workspace.id } }),
-    prisma.metricSnapshot.groupBy({
-      by: ["platform", "campaignId"],
-      where: { workspaceId: workspace.id, date: bounds },
-      _sum: { cost: true, verifiedConversions: true },
-    }),
+    // مسوّىً: صرف ميتا المعدود مرّتين كان ينفخ الميزانية الحالية لكلّ حملة،
+    // فتُقترَح إعادةُ توزيعٍ مبنيّة على رقمٍ مضخَّم. راجع `lib/metricRollup.ts`.
+    metricRollupRows({ workspaceId: workspace.id, date: bounds }),
   ]);
 
   if (campaignLinks.length === 0) {
@@ -60,25 +59,21 @@ export default async function PortfolioPage({
     );
   }
 
-  interface AggValue { cost: number; verified: number; }
-
-  const aggMap = new Map<string, AggValue>(
-    agg.map((a: any) => [`${a.platform}::${a.campaignId}`, { cost: a._sum.cost ?? 0, verified: a._sum.verifiedConversions ?? 0 }])
-  );
+  const aggMap = groupRollup(rollup, (r) => `${r.platform}::${r.campaignId}`);
 
   // ملاحظة صريحة: "الميزانية الحالية" هنا بتفترض إن الإنفاق آخر 7 أيام
   // موزّع بالتساوي كتقدير للميزانية اليومية الفعلية - النظام لسه مش بيسحب
   // "الميزانية المضبوطة" الحقيقية من إعدادات الحملة في جوجل نفسها (فجوة
   // معروفة، محتاجة حقل ميزانية إضافي في المزامنة لاحقاً)
   const input = campaignLinks.map((link: any) => {
-    const key = `${link.platform}::${link.externalCampaignId}`;
-    const data: AggValue = aggMap.get(key) ?? { cost: 0, verified: 0 };
+    const data = aggMap.get(`${link.platform}::${link.externalCampaignId}`);
+    const cost = data?.cost ?? 0;
     return {
       campaignId: link.externalCampaignId,
       campaignName: link.campaignName,
-      currentBudget: round2(data.cost / 7),
-      verifiedConversions: data.verified,
-      cost: data.cost,
+      currentBudget: round2(cost / 7),
+      verifiedConversions: data?.verifiedConversions ?? 0,
+      cost,
     };
   });
 
