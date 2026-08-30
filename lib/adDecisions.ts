@@ -282,6 +282,21 @@ export interface ApplyResult {
  * ينفّذ القرار فعلاً على المنصة ثم يسجّله. الترتيب مقصود: لا نسجّل شيئاً
  * قبل نجاح النداء، حتى لا نمنع المستخدم ٤ أيام بسبب تنفيذ لم يحدث أصلاً.
  */
+/**
+ * شرطٌ **عندنا** لم يتحقّق - لا فشلَ نداءٍ خارجيّ. تمييزُه ضروريّ: علاجُ هذا
+ * تحديثُ الصفحة، وعلاجُ ذاك مراسلةُ الدعم بمرجعٍ - وخلطُهما يرسل المشترك
+ * إلى الدعم لأنّ صفحته قديمة، ويقول له إنّ المنصّة رفضت شيئاً لم تره.
+ */
+export class DecisionPreconditionError extends Error {
+  constructor(
+    readonly reason: "stale" | "notExecutable",
+    readonly meta: { engineDecision?: Decision } = {}
+  ) {
+    super(`decision precondition failed: ${reason}`);
+    this.name = "DecisionPreconditionError";
+  }
+}
+
 export async function applyAdDecision(
   workspaceId: string,
   adId: string,
@@ -321,14 +336,17 @@ export async function applyAdDecision(
 
   // الحكم يُطابَق قبل أيّ كتابة. و`HOLD` وحده يُقبَل بلا شرط: لا يكتب على
   // المنصّة شيئاً، هو تثبيتُ وضعٍ وتأجيلُ اقتراح.
+  //
+  // ويُرمى `DecisionPreconditionError` لا خطأً عاماً: مستدعي هذا المسار يترجم
+  // فشلَ المنصّة إلى «رفضت المنصّة هذا التغيير، اذكر المرجع للدعم» - وهو نصٌّ
+  // **كاذبٌ هنا**، فالمنصّة لم تُنادَ أصلاً، والعلاج تحديثُ الصفحة لا مراسلةُ
+  // الدعم. الصنف يفرّق بين «شرطٌ عندنا لم يتحقّق» و«نداءٌ خارجيّ فشل».
   if (decision !== "HOLD") {
     if (view.decision !== decision) {
-      throw new Error(
-        `المحرّك يوصي بـ«${decisionLabelAr(view.decision)}» لهذا الإعلان لا بـ«${decisionLabelAr(decision)}» - حدّث الصفحة.`
-      );
+      throw new DecisionPreconditionError("stale", { engineDecision: view.decision });
     }
     if (!view.executable) {
-      throw new Error("شروط تنفيذ هذا القرار غير مكتملة على هذا الإعلان.");
+      throw new DecisionPreconditionError("notExecutable");
     }
   }
 

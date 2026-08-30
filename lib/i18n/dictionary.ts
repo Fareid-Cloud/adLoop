@@ -3232,6 +3232,8 @@ export const dictionary = {
     // لا متصفّح): رسائلها معرّفاتٌ إنجليزية ثابتة عمداً، لأنّ ترجمة نصٍّ
     // لا يقرؤه بشرٌ تُصعّب تتبّعه في السجلّات بلا فائدة تقابلها.
     apiErr: {
+      decisionStale: "المحرّك لم يعد يوصي بهذا الإجراء لهذا الإعلان - حدّث الصفحة لترى التوصية الحالية. لم يُنفّذ شيء.",
+      decisionNotExecutable: "شروط تنفيذ هذا القرار غير مكتملة على هذا الإعلان. لم يُنفّذ شيء.",
       platformActionFailed: "رفضت المنصّة هذا التغيير، ولم يُطبَّق شيء. اذكر المرجع {ref} للدعم.",
       noActiveSubscription: "لا يوجد اشتراك ساري لإلغائه.",
       badRequest: "طلب غير صالح",
@@ -6073,6 +6075,8 @@ export const dictionary = {
       errFailed: "Could not answer right now. Try again — nothing was deducted from your balance.",
     },
     apiErr: {
+      decisionStale: "The engine no longer recommends this action for this ad - refresh the page to see the current one. Nothing was applied.",
+      decisionNotExecutable: "This decision cannot be applied to this ad yet. Nothing was applied.",
       noActiveSubscription: "There is no active subscription to cancel.",
       platformActionFailed: "The platform refused this change. Nothing was applied. Quote reference {ref} to support.",
       badRequest: "Invalid request",
