@@ -194,6 +194,22 @@ async function sendToMeta(
         matchQualityScore: quality.score,
       };
     }
+    // 🔴 **ميتا تردّ `200` وتُسقط الحدث بلا خطأ.** حين لا يجتاز الحدث
+    // التحقّق (بكسل خاطئ، توكن لا يملك الصلاحية، تشكيلٌ مرفوض) ترجع
+    // `events_received: 0` وحالةً ٢٠٠. فقراءة الحالة وحدها تقول «تمّ الرفع»
+    // للأبد بينما لم يصل شيء - وهو أسوأ فشلٍ لأداة تبيع «الرقم الحقيقي».
+    // العدد المستقبَل هو التأكيد الوحيد أنّ ميتا قبلت الحدث فعلاً.
+    if (typeof data?.events_received === "number" && data.events_received < 1) {
+      const warn = Array.isArray(data?.messages) && data.messages.length > 0
+        ? ` (${String(data.messages[0]).slice(0, 200)})`
+        : "";
+      return {
+        platform: "META_ADS",
+        status: "FAILED",
+        error: `ميتا ردّت 200 لكن لم تستقبل الحدث (events_received=0)${warn}`,
+        matchQualityScore: quality.score,
+      };
+    }
     return {
       platform: "META_ADS",
       status: "SENT",
