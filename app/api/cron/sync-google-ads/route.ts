@@ -154,6 +154,44 @@ export async function GET(req: NextRequest) {
   // بلا فحص سقفٍ (`owners.get` ترجع undefined فيتخطّى الشرط ويكمل).
   workspaceIds = workspaceIds.filter((w) => owners.has(w.workspaceId));
 
+  // ═══ حدّ الخطة الحالية، لا خطة يوم الإنشاء (B-5) ═══
+  //
+  // 🔴 `buildCheck` في `lib/entitlements.ts` **بوابةُ إنشاءٍ فقط**
+  // (`current < limit`)، فلا شيء يضيق حين تنتهي الخطة أو تُخفَّض. مَن دفع
+  // شهراً واحداً على خطة الوكالة وأنشأ خمس عشرة مساحةً وربط خمسةً وأربعين
+  // حساباً، كان يحتفظ بها **كلّها تُزامَن كلَّ ليلة مجّاناً وإلى الأبد** -
+  // على حساب حصّتنا من نداءات المنصّات وبنيتنا التحتية.
+  //
+  // والاختيار **بالأقدم أوّلاً لا عشوائياً**: تبقى المجموعة نفسها حيّةً كلّ
+  // ليلة، فلا يرى المشترك مساحةً تُحدَّث اليوم وتجمد غداً بلا سبب ظاهر.
+  // وما فوق الحدّ يبقى مقروءاً في اللوحة - لا يُحذف ولا يُخفى، يتوقّف
+  // تحديثه وحده.
+  const { getEntitlements } = await import("@/lib/entitlements");
+  const byOwner = new Map<string, string[]>();
+  for (const { workspaceId } of workspaceIds) {
+    const ownerId = owners.get(workspaceId)!;
+    (byOwner.get(ownerId) ?? byOwner.set(ownerId, []).get(ownerId)!).push(workspaceId);
+  }
+  const allowed = new Set<string>();
+  for (const [ownerId, ids] of byOwner) {
+    try {
+      const limit = (await getEntitlements(ownerId)).limits.workspaces;
+      // الأقدم إنشاءً أوّلاً - `cuid` ليس مرتَّباً زمنياً، فيُقرأ التاريخ.
+      const ordered = await prisma.workspace.findMany({
+        where: { id: { in: ids } },
+        orderBy: { createdAt: "asc" },
+        select: { id: true },
+      });
+      for (const w of ordered.slice(0, Math.max(0, limit))) allowed.add(w.id);
+    } catch (err) {
+      // تعذّر حسم الخطة لا يوقف مزامنة صاحبها: الحرمان الخاطئ أسوأ من
+      // مزامنةٍ زائدة ليلةً واحدة، ويُسجَّل ليُراجَع.
+      console.error(`[cron] تعذّر حسم حدود الخطة للمالك ${ownerId}:`, err);
+      for (const id of ids) allowed.add(id);
+    }
+  }
+  workspaceIds = workspaceIds.filter((w) => allowed.has(w.workspaceId));
+
   // ===== الأقدم نجاحاً الأول =====
   // الترتيب كان ثابتاً (ترتيب ما ترجّعه قاعدة البيانات)، فلو التشغيل انقطع
   // عند المساحة الأربعين، **نفس** الستّين اللي بعدها بيتحرموا بكرة وبعده -
