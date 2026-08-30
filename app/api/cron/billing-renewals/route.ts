@@ -54,6 +54,9 @@ export async function GET(req: NextRequest) {
       preferredLocale: true,
       currentPeriodEnd: true,
       subscriptionPlan: true,
+      // من ألغى بنفسه يعرف أنّ فترته تنتهي - تذكيرُه بالتجديد إلحاحٌ على
+      // قرارٍ اتّخذه. يُسجَّل انتهاؤه ولا يُنبَّه قبله.
+      cancelAtPeriodEnd: true,
       // الحساب المعلَّق لا يصله تنبيه - راجع `lib/accountActive.ts`.
       isSuspended: true,
       // مساحةٌ حقيقية واحدة تكفي لعرض التنبيه فيها. والعرض التجريبيّ
@@ -106,7 +109,7 @@ export async function GET(req: NextRequest) {
       }
 
       // ── تقترب الفترة من نهايتها: تذكيرٌ قبل الانقطاع ──────────────
-      if (user.currentPeriodEnd <= soon && workspaceId) {
+      if (user.currentPeriodEnd <= soon && workspaceId && !user.cancelAtPeriodEnd) {
         const already = await prisma.actionFeedItem.findFirst({
           // بالمفتاح لا بالنصّ: النصّ يتبدّل بلغة القارئ، فالبحث فيه
           // يكسر منعَ التكرار بصمت. نفس عادة `subscriptionAlerts.ts`.

@@ -14,6 +14,7 @@ import { applyActionFeedItem } from "@/lib/actionFeed";
 import { prisma } from "@/lib/prisma";
 import { logFeatureUse } from "@/lib/productTelemetry";
 import { isFeatureEnabled } from "@/lib/featureFlags";
+import { isExecutingAction } from "@/lib/executingActions";
 
 export async function POST(
   req: NextRequest,
@@ -47,11 +48,17 @@ export async function POST(
     await applyActionFeedItem(id);
     // قياس المنتج: التنفيذ الفعليّ - مش فتح الصفحة. الفرق بينهم هو الفرق
     // بين "الميزة اتشافت" و"الميزة اشتغلت".
-    logFeatureUse(
-      user.id,
-      item.actionType?.startsWith("SET_BID_STRATEGY") ? "bid_strategy_apply" : "scale_kill_apply",
-      item.workspaceId
-    );
+    // القياس للتنفيذ الحقيقيّ وحده: كان **كلُّ** موافقةٍ ليست تدرّجَ مزايدةٍ
+    // تُعَدّ «Scale / Kill applied» - بما فيها الاقتراحات الاستشارية التي لا
+    // تكتب على المنصّة شيئاً، فيُقرأ الرقم استعمالاً لميزةٍ لم تُستعمَل.
+    // القائمة المُعدَّدة لما ينفّذ فعلاً في `lib/executingActions.ts`.
+    if (isExecutingAction(item.actionType)) {
+      logFeatureUse(
+        user.id,
+        item.actionType!.startsWith("SET_BID_STRATEGY") ? "bid_strategy_apply" : "scale_kill_apply",
+        item.workspaceId
+      );
+    }
     return NextResponse.json({ success: true });
   } catch (err) {
     // 🔴 **الفشل يظهر، وتفصيلُه لا يظهر.**

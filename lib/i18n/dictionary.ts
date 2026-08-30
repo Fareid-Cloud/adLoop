@@ -3173,6 +3173,7 @@ export const dictionary = {
     // لا يقرؤه بشرٌ تُصعّب تتبّعه في السجلّات بلا فائدة تقابلها.
     apiErr: {
       platformActionFailed: "رفضت المنصّة هذا التغيير، ولم يُطبَّق شيء. اذكر المرجع {ref} للدعم.",
+      noActiveSubscription: "لا يوجد اشتراك ساري لإلغائه.",
       badRequest: "طلب غير صالح",
       missingFields: "بيانات ناقصة",
       wrongPassword: "كلمة المرور غير صحيحة",
@@ -5946,6 +5947,7 @@ export const dictionary = {
       errFailed: "Could not answer right now. Try again — nothing was deducted from your balance.",
     },
     apiErr: {
+      noActiveSubscription: "There is no active subscription to cancel.",
       platformActionFailed: "The platform refused this change. Nothing was applied. Quote reference {ref} to support.",
       badRequest: "Invalid request",
       missingFields: "Some required information is missing",
