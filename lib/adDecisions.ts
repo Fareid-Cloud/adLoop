@@ -287,7 +287,29 @@ export async function applyAdDecision(
   adId: string,
   decision: Decision
 ): Promise<ApplyResult> {
-  const views = await buildAdDecisions({ workspaceId });
+  // 🔴 **كلُّ بوابات التوسيع كانت استشاريةً عند نقطة الكتابة.**
+  //
+  // كان هذا المسار ينفّذ ما يسمّيه الطلبُ لا ما حكم به المحرّك: يكفي
+  // `{decision:"SCALE"}` على إعلانٍ صنّفه المحرّك `PAUSE` ليُرفَع إنفاق
+  // مجموعته ٢٠٪. والعتبات كلّها - عشرون تحويلاً، أربعةُ أيّام نشاط، فحصُ
+  // التعب، تأكيدُ الترتيب النسبيّ، نقطةُ التعادل - تعيش في
+  // `classifyScaleKillWatch` وتُستعمَل **لرسم الأزرار وحدها**. فباگٌ في
+  // العميل أو صفحةٌ قديمة أو طلبٌ مُصاغٌ بيدٍ يوسّع إعلاناً خاسراً بمال
+  // العميل، والمستخدم يرى أرقام المحرّك فيفترض أنّ البوابات صامدة.
+  //
+  // ومعدّل التكرار كان **مستحيلَ الفحص هنا**: يُبنى العرضُ بلا
+  // `frequencyByPlatform` فيبقى `null` دائماً، فطبقةُ التشبّع لا تعمل عند
+  // التنفيذ أصلاً. تُمرَّر الآن فيُفحَص التشبّع حيث يُصرَف المال.
+  let frequencyByPlatform: Record<string, number> = {};
+  try {
+    const { getFrequencyByPlatform } = await import("@/lib/frequencyCheck");
+    frequencyByPlatform = await getFrequencyByPlatform(workspaceId);
+  } catch (err) {
+    // إشارةٌ حيّة: تعذّرها لا يوقف قراراً، لكن لا تُبتلَع بصمت
+    console.error("[adDecisions] تعذّر جلب معدّل التكرار قبل التنفيذ:", err);
+  }
+
+  const views = await buildAdDecisions({ workspaceId, frequencyByPlatform });
   const view = views.find((v) => v.adId === adId);
   if (!view) throw new Error("الإعلان غير موجود في بيانات آخر ٣٠ يوماً");
 
@@ -295,6 +317,19 @@ export async function applyAdDecision(
     throw new Error(
       `قرار سابق على هذا الإعلان لم تكتمل مدّة تقييمه بعد - متبقٍّ ${view.cooldownDaysRemaining} يوم.`
     );
+  }
+
+  // الحكم يُطابَق قبل أيّ كتابة. و`HOLD` وحده يُقبَل بلا شرط: لا يكتب على
+  // المنصّة شيئاً، هو تثبيتُ وضعٍ وتأجيلُ اقتراح.
+  if (decision !== "HOLD") {
+    if (view.decision !== decision) {
+      throw new Error(
+        `المحرّك يوصي بـ«${decisionLabelAr(view.decision)}» لهذا الإعلان لا بـ«${decisionLabelAr(decision)}» - حدّث الصفحة.`
+      );
+    }
+    if (!view.executable) {
+      throw new Error("شروط تنفيذ هذا القرار غير مكتملة على هذا الإعلان.");
+    }
   }
 
   const reEvaluateAt = new Date();
