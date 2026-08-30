@@ -37,6 +37,13 @@ const PLATFORM_TINT: Record<string, string> = {
   TIKTOK_ADS: "#FE2C55",
 };
 
+/** وحدة العتبة بحسب المقياس: مال، أو نسبة، أو مضاعِف. */
+function thresholdUnit(metric: string, currency: string): string {
+  if (metric === "TRUE_ROAS") return "x";
+  if (metric.includes("RATE") || metric.includes("PCT")) return "%";
+  return currency;
+}
+
 const ACTION_TONE: Record<string, string> = {
   PAUSE_CAMPAIGN: "var(--critical)", PAUSE_AD: "var(--critical)",
   REDUCE_BUDGET_PCT: "var(--gap)", INCREASE_BUDGET_PCT: "var(--verified)",
@@ -45,12 +52,14 @@ const ACTION_TONE: Record<string, string> = {
 
 
 export function ActiveRulesList({
-  workspaceId, rules, campaigns, locale,
+  workspaceId, rules, campaigns, locale, currency,
 }: {
   workspaceId: string;
   rules: RuleRow[];
   campaigns: { id: string; name: string; platform: string }[];
   locale: Locale;
+  /** عملة المساحة - العتبة المالية بلا عملة رقمٌ لا معنى له */
+  currency: string;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState<string | null>(null);
@@ -133,7 +142,16 @@ export function ActiveRulesList({
                     <p className="text-[12.5px] text-text-muted">
                       {tr(`m${rule.metric}`)}{" "}
                       {rule.operator === "GREATER_THAN" ? tr("greaterThan") : tr("lessThan")}{" "}
-                      <span className="font-mono text-text-primary">{rule.threshold}</span>
+                      {/* 🔴 **العتبة كانت رقماً عارياً: «أكبر من ٣٠».**
+                          ثلاثون ماذا؟ العتبة مالية في «تكلفة العميل»، ونسبة
+                          مئوية في «نسبة التضخيم»، ومضاعِف في «العائد». ورقمٌ
+                          يوقف حملةً يجب أن يقول وحدته قبل قيمته. */}
+                      <span className="font-mono text-text-primary">
+                        {rule.threshold}
+                        <span className="ms-1 text-[11px] font-normal text-text-muted">
+                          {thresholdUnit(rule.metric, currency)}
+                        </span>
+                      </span>
                       {" · "}{tr("consecutiveDays", { n: rule.consecutiveDays })}
                     </p>
 

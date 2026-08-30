@@ -223,7 +223,7 @@ export function ReportsClient({
       />
 
       {/* ==================== الجاهزة ==================== */}
-      <Section title={tr("quickTitle")} subtitle={tr("quickSubtitle")}>
+      <Section title={tr("quickTitle")}>
         <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {QUICK.map((p) => (
             <PresetCard key={p.id} preset={p} tr={tr} onClick={() => applyPreset(p)} />
@@ -232,7 +232,7 @@ export function ReportsClient({
       </Section>
 
       {/* ==================== المقارنة ==================== */}
-      <Section title={tr("compareTitle")} subtitle={tr("compareSubtitle")}>
+      <Section title={tr("compareTitle")}>
         <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
           {COMPARE_PRESETS.map((p) => (
             <PresetCard key={p.id} preset={p} tr={tr} onClick={() => applyPreset(p)} />
@@ -912,11 +912,12 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
 
 // ==================== أجزاء صغيرة ====================
 
-function Section({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+// السطر الثاني كان يعيد صياغة العنوان بنبرةِ بيع («أسئلة متكرّرة، مضبوطة
+// مسبقاً»، «ودع الحكم علينا»)، والبطاقاتُ تحته تشرح نفسها. فبقي العنوان.
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="card-shadow mb-4 card pad-md">
-      <h2 className="section-title">{title}</h2>
-      <p className="mb-3 mt-0.5 text-[12.5px] text-text-muted">{subtitle}</p>
+      <h2 className="section-title mb-3">{title}</h2>
       {children}
     </section>
   );

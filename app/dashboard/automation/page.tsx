@@ -51,6 +51,7 @@ export default async function AutomationPage() {
 
       {/* القواعد المفعّلة: تشغيل/إيقاف، تعديل، حذف */}
       <ActiveRulesList
+        currency={workspace.currency}
         locale={locale}
         workspaceId={workspace.id}
         campaigns={campaignLinks.map((c: any) => ({
@@ -69,9 +70,6 @@ export default async function AutomationPage() {
       {/* كتالوج القرارات: منصة ← فئة ← قرار ← نطاق الحملات */}
       <section className="mt-10">
         <h2 className="mb-1 text-[18px] font-semibold text-text-primary">{t(locale, "autoPage.addNew")}</h2>
-        <p className="mb-4 text-[13px] text-text-muted">
-          {t(locale, "autoPage.addNewHint")}
-        </p>
         <RuleCatalogBrowser
           locale={locale}
           workspaceId={workspace.id}

@@ -454,7 +454,7 @@ export const dictionary = {
     // ==== التقارير ====
     reports: {
       title: "التقارير",
-      subtitle: "قارن أي فترتين، أي حملتين، أي منصّتين — واخرج بقرار لا برقمين.",
+      subtitle: "قارن أي فترتين، أي حملتين، أي منصّتين.",
       createReport: "تقرير جديد",
       export: "تصدير",
       docTitle: "تقرير الأداء",
@@ -462,7 +462,7 @@ export const dictionary = {
       emailIt: "أرسله بالبريد",
 
       quickTitle: "تقارير جاهزة",
-      quickSubtitle: "أسئلة متكرّرة، مضبوطة مسبقاً.",
+
       qPerformance: "نظرة الأداء",
       qPerformanceDesc: "الأداء الإجمالي عبر كل المنصات.",
       qCampaign: "أداء الحملات",
@@ -477,7 +477,7 @@ export const dictionary = {
       qDailyDesc: "منحنى الأداء اليومي داخل الفترة.",
 
       compareTitle: "تقارير المقارنة",
-      compareSubtitle: "اختر ما تقارنه، والفترة، ودع الحكم علينا.",
+
       cPeriod: "فترة مقابل فترة",
       cPeriodDesc: "أي تاريخين تختارهما من التقويم.",
       cCampaign: "حملة مقابل حملة",
@@ -2094,7 +2094,7 @@ export const dictionary = {
       title: "التشغيل الذكي",
       disabledNote: "الأتمتة متوقّفة من إعدادات مساحة العمل هذه — ستبقى القواعد مسجَّلة لكنها لن تُنفَّذ.",
       addNew: "أضف قراراً جديداً",
-      addNewHint: "اختر المنصة ثم الفئة، وحدّد العتبة ونطاق الحملات التي تُطبَّق عليها القاعدة.",
+
     },
     // ==== الأتمتة ====
     autoRules: {
@@ -4833,7 +4833,7 @@ export const dictionary = {
     // ==== Reports ====
     reports: {
       title: "Reports",
-      subtitle: "Compare any two periods, campaigns or platforms — and leave with a decision, not two numbers.",
+      subtitle: "Compare any two periods, campaigns or platforms.",
       createReport: "New report",
       export: "Export",
       docTitle: "Performance report",
@@ -4841,7 +4841,7 @@ export const dictionary = {
       emailIt: "Email it",
 
       quickTitle: "Ready-made reports",
-      quickSubtitle: "Recurring questions, already set up.",
+
       qPerformance: "Performance overview",
       qPerformanceDesc: "Overall performance across every platform.",
       qCampaign: "Campaign performance",
@@ -4856,7 +4856,7 @@ export const dictionary = {
       qDailyDesc: "The daily performance curve inside the period.",
 
       compareTitle: "Comparison reports",
-      compareSubtitle: "Choose what to compare and the period; the verdict is on us.",
+
       cPeriod: "Period vs period",
       cPeriodDesc: "Any two dates you pick from the calendar.",
       cCampaign: "Campaign vs campaign",
@@ -7115,7 +7115,7 @@ export const dictionary = {
       title: "Automation",
       disabledNote: "Automation is switched off for this workspace — rules stay saved but will not run.",
       addNew: "Add a new decision",
-      addNewHint: "Pick the platform then the category, and set the threshold and which campaigns the rule applies to.",
+
     },
     // ==== Automation ====
     autoRules: {
