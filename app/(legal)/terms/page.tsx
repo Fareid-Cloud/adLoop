@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "AdLoop" };
 
 export default async function LegalPage() {
   const user = await getSessionUserFromCookies().catch(() => null);
-  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "en";
   const updated = locale === "en" ? "4 August 2026" : "4 أغسطس 2026";
 
   return (

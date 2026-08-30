@@ -18,10 +18,14 @@ const PAGES = [
 ] as const;
 
 export default async function LegalLayout({ children }: { children: ReactNode }) {
-  // لغة القارئ لا لغة مثبّتة: الزائر غير المسجَّل يقع على الافتراضي، ومن
-  // بدّل لغته يجد الوثيقة بلغته هو.
+  // لغة القارئ لا لغة مثبّتة: من سجّل دخوله يجد الوثيقة بلغته هو.
+  //
+  // 🔴 والافتراضي للزائر **الإنجليزية** لا العربية: هذه الصفحات يُدخَل إليها
+  // من رابطَي «شروط الاستخدام» و«سياسة الخصوصية» أسفل نموذج التسجيل، وذلك
+  // النموذج إنجليزيٌّ افتراضاً (`useAuthLocale`). فكان الزائر يقرأ نموذجاً
+  // إنجليزياً، يضغط الرابط، فتفتح له الوثيقة القانونية بالعربية.
   const user = await getSessionUserFromCookies().catch(() => null);
-  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "en";
   const ar = locale === "ar";
 
   return (

@@ -12,6 +12,7 @@
 import { useEffect, useState } from "react";
 import { Download, X } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { LOCALE_STORAGE_KEY } from "@/app/components/useAuthLocale";
 
 /** الحدث غير قياسي بعد - Chromium وحده يطلقه، وتعريفه ليس في lib.dom */
 interface InstallPromptEvent extends Event {
@@ -21,9 +22,28 @@ interface InstallPromptEvent extends Event {
 
 const DISMISS_KEY = "adloop_install_dismissed";
 
-export function PwaSetup({ locale }: { locale: Locale }) {
+/**
+ * 🔴 **كانت الدعوة تظهر بالعربية فوق صفحةٍ إنجليزية.**
+ *
+ * لغتُها كانت تأتي من الجذر، والجذر يقع على `"ar"` لكلّ من لا جلسة له -
+ * بينما شاشاتُ الحساب افتراضُها الإنجليزية ولا تتحوّل إلّا باختيارٍ صريح.
+ * فيقرأ الزائر نموذجاً إنجليزياً وفوقه «ثبّت AdLoop على جهازك».
+ *
+ * والاختيار محفوظٌ في المتصفّح لا عند الخادم، فالعميل هو من يعرفه:
+ * `userLocale` حين تكون هناك جلسة (لغةُ صاحبها هي الحقيقة)، وإلّا نقرأ
+ * المفتاح نفسه الذي تكتبه `useAuthLocale` - فلا يفترق الطرفان أبداً.
+ */
+export function PwaSetup({ userLocale }: { userLocale: Locale | null }) {
   const [deferred, setDeferred] = useState<InstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
+  const [locale, setLocale] = useState<Locale>(userLocale ?? "en");
+
+  useEffect(() => {
+    if (userLocale) return; // جلسةٌ قائمة: لغةُ الحساب تسبق ما في المتصفّح
+    try {
+      if (localStorage.getItem(LOCALE_STORAGE_KEY) === "ar") setLocale("ar");
+    } catch { /* ignore */ }
+  }, [userLocale]);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;

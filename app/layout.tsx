@@ -12,6 +12,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Inter, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { getSessionUserFromCookies } from "@/lib/auth";
+import type { Locale } from "@/lib/i18n/dictionary";
 import { PwaSetup } from "@/app/components/PwaSetup";
 import "./dashboard/theme.css";
 
@@ -113,7 +114,23 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // فشل القراءة لا يجوز أن يُسقط كلّ صفحة في التطبيق - الزائر غير المسجَّل
   // حالة عادية لا خطأ، فنقع على الافتراضي بهدوء.
   const user = await getSessionUserFromCookies().catch(() => null);
-  const locale = user?.preferredLocale === "en" ? "en" : "ar";
+
+  // 🔴 **الزائر بلا جلسة ليس عربياً بالضرورة.**
+  //
+  // كان الافتراضي `"ar"` لكلّ من لا جلسة له، بينما شاشاتُ الحساب نفسها
+  // (`useAuthLocale`) افتراضُها **الإنجليزية** ولا تتحوّل للعربية إلّا
+  // باختيارٍ صريح. فالطرفان يتناقضان على الصفحة الواحدة: النموذج إنجليزيّ
+  // ودعوةُ تثبيت التطبيق عربية فوقه - وهو ما ظهر على `/login` بالضبط.
+  //
+  // فالمستخدم إن وُجد، وإلّا `null` تعني «لا نعرف بعد» - ومن يعرف هو
+  // العميل: `PwaSetup` يقرأ الاختيار المحفوظ نفسه الذي تقرؤه شاشاتُ الحساب.
+  const userLocale: Locale | null =
+    user?.preferredLocale === "en" ? "en" : user?.preferredLocale === "ar" ? "ar" : null;
+
+  // الخادم لا يعرف اختيار الزائر (محفوظٌ في المتصفّح)، فيقع على الإنجليزية
+  // كما تفعل شاشات الحساب، و`useAuthLocale` يصحّح الاتّجاه فور التحميل لمن
+  // اختار العربية. ومساراتُ اللوحة كلّها خلف جلسة، فلها لغةُ صاحبها.
+  const locale: Locale = userLocale ?? "en";
 
   return (
     <html
@@ -126,7 +143,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         {children}
         {/* في الجذر لا داخل الداشبورد: تسجيل الـSW شرط التثبيت، ويجب أن
             يحدث حتى لمن يفتح صفحة الدخول أوّل مرّة. */}
-        <PwaSetup locale={locale} />
+        <PwaSetup userLocale={userLocale} />
       </body>
     </html>
   );
