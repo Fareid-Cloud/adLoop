@@ -105,9 +105,11 @@ export default async function PortfolioPage({
               </span>
             </div>
             <p className="text-xs text-text-faint">{a.reasoning}</p>
+            {/* الميزانية مالٌ، وكانت تُعرض رقماً عارياً بلا عملة - ورقمٌ
+                يُقترَح نقلُه بين حملتين يجب أن يقول بأيّ عملة. */}
             <div className="mt-2 flex gap-4 font-mono text-xs text-text-muted">
-              <span>{t(locale, "campPages.pfCurrent")} {a.currentBudget}</span>
-              <span>{t(locale, "campPages.pfSuggested")} {a.suggestedBudget}</span>
+              <span>{t(locale, "campPages.pfCurrent")} {a.currentBudget} {workspace.currency}</span>
+              <span>{t(locale, "campPages.pfSuggested")} {a.suggestedBudget} {workspace.currency}</span>
             </div>
           </div>
         ))}

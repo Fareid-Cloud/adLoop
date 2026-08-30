@@ -202,9 +202,11 @@ export function PricingClient({
                   {p.actualLossAlert && (
                     <p className="mt-1 text-xs font-medium text-critical">{p.actualLossAlert}</p>
                   )}
+                  {/* السعر مالٌ: كان يُعرض «2831.26» عارياً بلا عملة، وهذه
+                      صفحةُ تسعيرٍ يُقرَّر عليها سعرُ بيع. */}
                   <div className="mt-2 flex gap-4 font-mono text-xs">
-                    <span className="text-text-muted">{tr("current")} {p.currentPrice}</span>
-                    <span className="text-verified">{tr("suggested")} {p.suggestedPrice}</span>
+                    <span className="text-text-muted">{tr("current")} {p.currentPrice} {currency}</span>
+                    <span className="text-verified">{tr("suggested")} {p.suggestedPrice} {currency}</span>
                   </div>
                 </div>
                 <button
