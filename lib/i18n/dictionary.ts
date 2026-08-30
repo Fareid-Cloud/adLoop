@@ -1466,7 +1466,6 @@ export const dictionary = {
       lastSync: "آخر مزامنة {when}",
       neverSynced: "لم تُزامَن بعد",
       afterActivation: "ماذا تحصل بعد التفعيل",
-      afterActivationHint: "هذه ليست وعوداً عامّة — كل بند منها يبدأ بالعمل فور تركيب وسم التتبّع.",
       aVerifiedLeads: "عملاء متحقَّقون",
       aVerifiedLeadsBody: "نميّز العميل الحقيقي من الضغطة الخاطئة والرقم الوهمي.",
       aRealRoas: "العائد الحقيقي",
@@ -1481,7 +1480,6 @@ export const dictionary = {
       aAutomationBody: "توسيع وإيقاف وتعديل مزايدة تُنفَّذ على حسابك فعلاً لا اقتراحات.",
 
       support: "الدعم",
-      supportHint: "نحن هنا لمساعدتك.",
       supportChat: "محادثة مع الدعم",
       supportChatBody: "تحدّث مع فريق الدعم داخل المنتج.",
       supportWhatsapp: "تواصل عبر واتساب",
@@ -6491,7 +6489,6 @@ export const dictionary = {
       lastSync: "Last sync {when}",
       neverSynced: "Never synced",
       afterActivation: "What you get after activation",
-      afterActivationHint: "These are not general promises — each one starts working the moment the tracking tag is installed.",
       aVerifiedLeads: "Verified customers",
       aVerifiedLeadsBody: "We tell a real customer apart from an accidental tap or a fake number.",
       aRealRoas: "Real return",
@@ -6506,7 +6503,6 @@ export const dictionary = {
       aAutomationBody: "Scaling, pausing and bid changes applied to your account for real, not suggestions.",
 
       support: "Support",
-      supportHint: "We are here to help.",
       supportChat: "Chat with support",
       supportChatBody: "Talk to the support team inside the product.",
       supportWhatsapp: "Message us on WhatsApp",

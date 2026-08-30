@@ -308,22 +308,26 @@ const BENEFITS = [
 export function AfterActivationPanel({ locale }: { locale: Locale }) {
   const tr = (k: string) => t(locale, `homePanels.${k}`);
   return (
+    // 🔴 **كان قسماً تسويقياً داخل المنتج بعد تسجيل الدخول.**
+    //
+    // ستّةُ بنود، كلٌّ منها عنوانٌ وجملةُ شرحٍ بالتركيب نفسه، تعلوها جملة
+    // «هذه ليست وعوداً عامّة» - ودفاعُ المنتج عن صدقه على شاشته يُقرأ عكسَ
+    // ما يقصد، والتكرارُ البنيويّ يُقرأ مولَّداً. ومن سجّل دخوله لا يُباع
+    // له من جديد.
+    //
+    // فبقيت الأسماء وحدها كقائمةِ قدرات: تُعرّف بما ينتظره بلا أن تخطبه.
     <section className="card pad-md">
-      <h2 className="section-title">{tr("afterActivation")}</h2>
-      <p className="mb-3 mt-0.5 text-[12px] leading-relaxed text-text-muted">{tr("afterActivationHint")}</p>
-      <ul className="flex flex-col gap-2.5">
+      <h2 className="section-title mb-3">{tr("afterActivation")}</h2>
+      <ul className="flex flex-col gap-2">
         {BENEFITS.map(({ key, Icon, tone }) => (
-          <li key={key} className="flex items-start gap-2.5">
+          <li key={key} className="flex items-center gap-2.5">
             <span
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
               style={{ background: `color-mix(in srgb, ${tone} 12%, transparent)`, color: tone }}
             >
-              <Icon size={15} />
+              <Icon size={14} />
             </span>
-            <span className="min-w-0">
-              <span className="block text-[12.5px] font-medium text-text-primary">{tr(`a${key}`)}</span>
-              <span className="block text-[11.5px] leading-relaxed text-text-muted">{tr(`a${key}Body`)}</span>
-            </span>
+            <span className="min-w-0 text-[12.5px] text-text-primary">{tr(`a${key}`)}</span>
           </li>
         ))}
       </ul>
@@ -348,7 +352,6 @@ export function SupportPanel({
   return (
     <section className="card pad-md">
       <h2 className="section-title">{tr("support")}</h2>
-      <p className="mb-3 mt-0.5 text-[12px] text-text-muted">{tr("supportHint")}</p>
 
       <div className="flex flex-col gap-2">
         <SupportRow
