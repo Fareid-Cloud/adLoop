@@ -23,10 +23,11 @@
 // خصمٌ مزدوجٌ أو بمبلغٍ خاطئ على مالٍ حقيقيّ. فالتجديد يبقى بضغطةٍ من
 // المشترك، وهذه المهمّة تضمن أن يعرف **قبل** أن ينقطع لا بعده.
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { denyUnlessCron } from "@/lib/cronAuth";
 import { prisma } from "@/lib/prisma";
 import { pushToActionFeed } from "@/lib/actionFeed";
+import { finishCronRun } from "@/lib/cronRun";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export const maxDuration = 300;
@@ -40,9 +41,11 @@ export async function GET(req: NextRequest) {
   const denied = denyUnlessCron(req);
   if (denied) return denied;
 
+  const startedAt = Date.now();
   const now = new Date();
   const soon = new Date(now.getTime() + REMIND_WITHIN_DAYS * 86_400_000);
   const cooldownStart = new Date(now.getTime() - COOLDOWN_DAYS * 86_400_000);
+  const failures: Array<{ userId: string; error: string }> = [];
 
   const subscribers = await prisma.user.findMany({
     where: { subscriptionStatus: "ACTIVE", currentPeriodEnd: { not: null } },
@@ -137,8 +140,19 @@ export async function GET(req: NextRequest) {
     } catch (err) {
       // فشلُ مشتركٍ واحد لا يوقف الدورة على الباقين - نفس عادة بقيّة الكرونات
       console.error(`[billing-renewals] فشلت المعالجة للمستخدم ${user.id}:`, err);
+      failures.push({ userId: user.id, error: err instanceof Error ? err.message.slice(0, 200) : "unknown" });
     }
   }
 
-  return NextResponse.json({ ok: true, considered: subscribers.length, reminded, lapsed });
+  return finishCronRun(
+    {
+      job: "billing-renewals",
+      total: subscribers.length,
+      succeeded: subscribers.length - failures.length,
+      failed: failures.length,
+      startedAt,
+      errors: failures,
+    },
+    { reminded, lapsed }
+  );
 }

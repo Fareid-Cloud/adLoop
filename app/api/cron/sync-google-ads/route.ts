@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { denyUnlessCron } from "@/lib/cronAuth";
 import { prisma } from "@/lib/prisma";
+import { finishCronRun } from "@/lib/cronRun";
 import { syncGoogleAdsForWorkspace, syncCreativesForWorkspace, syncSearchTermsForWorkspace, syncBiddingStrategyForWorkspace, syncAudiencePerformanceForWorkspace, syncQualityScoreForWorkspace, syncShoppingProductsForWorkspace, syncPerformanceMaxChannelsForWorkspace, syncYoutubeMetricsForWorkspace, syncDeviceAndGeoPerformanceForWorkspace, syncMatchTypePerformanceForWorkspace, syncDisplayPlacementsForWorkspace, checkShoppingSpendAlertsForWorkspace, syncGoogleLeadFormsForWorkspace } from "@/lib/syncGoogleAds";
 import { checkBidStrategyAlertsForWorkspace, checkGoogleLearningPhaseAlertsForWorkspace } from "@/lib/bidStrategyAudit";
 import { checkBidStrategyProgressionForWorkspace } from "@/lib/bidStrategyProgression";
@@ -321,17 +322,17 @@ export async function GET(req: NextRequest) {
   const failed = results.filter((r) => r.status === "failed").length;
   const capped = results.filter((r) => r.status === "capped").length;
 
-  await prisma.cronRunLog.create({
-    data: {
-      totalWorkspaces: results.length,
+  // الصفّ باسم مهمّته، والرمز يتبع النتيجة: مساحاتٌ فشلت كانت تُرَدّ ضمن
+  // `200` فتبدو لوحةُ الكرون خضراء ويومُ الفشل مطابقاً ليوم النجاح.
+  return finishCronRun(
+    {
+      job: "sync-google-ads",
+      total: results.length,
       succeeded,
       failed,
-      durationMs: Date.now() - startTime,
-      errors: failed > 0
-        ? JSON.stringify(results.filter((r) => r.status === "failed").map((r) => ({ workspaceId: r.workspaceId, error: r.error })))
-        : null,
+      startedAt: startTime,
+      errors: results.filter((r) => r.status === "failed").map((r) => ({ workspaceId: r.workspaceId, error: r.error })),
     },
-  });
-
-  return NextResponse.json({ processed: results.length, capped, pricingChecked, results });
+    { processed: results.length, capped, pricingChecked, results }
+  );
 }

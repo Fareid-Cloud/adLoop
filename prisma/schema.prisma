@@ -1956,13 +1956,20 @@ model AdminAuditLog {
 // عشان نعرف "المزامنة إمبارح فشلت لكذا Workspace" بدل ما نكتشف بالصدفة
 // لما عميل يشتكي إن بياناته واقفة
 model CronRunLog {
-  id              String   @id @default(cuid())
+  id String @id @default(cuid())
+  /// 🔴 **أيُّ مهمّةٍ كتبت هذا الصفّ.** كان الجدول بلا اسمِ مهمّة، وكاتبُه
+  /// الوحيد `sync-google-ads` - فلا يُعرَف من صفٍّ ما إن كانت النسخة
+  /// الاحتياطية جرت أم لا، ولا يُفرَّق يومٌ توقّفت فيه مهمّةٌ عن يومٍ لم
+  /// تُستدعَ فيه أصلاً. القيمة الافتراضية للصفوف السابقة وحدها.
+  job             String   @default("sync-google-ads")
   runAt           DateTime @default(now())
   totalWorkspaces Int
   succeeded       Int
   failed          Int
   durationMs      Int?
   errors          String?  @db.Text // ملخص الأخطاء لو فيه، JSON مبسّط
+
+  @@index([job, runAt(sort: Desc)])
 }
 
 // ==================== أدوار لوحة المالك ====================

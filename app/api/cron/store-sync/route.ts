@@ -13,16 +13,19 @@
 // **مساحات العرض تُستثنى صراحةً:** بياناتها مبذورة لا مسحوبة، وأيّ نداءٍ
 // خارجيّ منها مخالفٌ لحارس الديمو.
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { denyUnlessCron } from "@/lib/cronAuth";
 import { prisma } from "@/lib/prisma";
 import { ownerNotSuspended } from "@/lib/accountActive";
+import { finishCronRun } from "@/lib/cronRun";
 
 export const maxDuration = 300;
 
 export async function GET(req: NextRequest) {
   const denied = denyUnlessCron(req);
   if (denied) return denied;
+
+  const startedAt = Date.now();
 
   // المساحات التي لها متجرٌ نشطٌ فعلاً - لا كلّ المساحات
   const workspaces = await prisma.workspace.findMany({
@@ -69,5 +72,18 @@ export async function GET(req: NextRequest) {
     results.push(entry);
   }
 
-  return NextResponse.json({ ok: true, workspaces: results.length, results });
+  // الرمز يتبع النتيجة لا مجرّد بلوغ آخر السطر: متجرٌ فشل يجب أن يظهر في
+  // لوحة الكرون، لا أن يُخبَّأ داخل `200` مع مصفوفة أخطاء لا يقرؤها أحد.
+  const failed = results.filter((r) => r.error).length;
+  return finishCronRun(
+    {
+      job: "store-sync",
+      total: results.length,
+      succeeded: results.length - failed,
+      failed,
+      startedAt,
+      errors: results.filter((r) => r.error).map((r) => ({ workspaceId: r.workspaceId, error: r.error })),
+    },
+    { results }
+  );
 }

@@ -9,9 +9,10 @@
 // التوقيت 09:00 UTC = منتصف النهار في الخليج وصباحاً في مصر - داخل ساعات
 // العمل لا في الليل.
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { denyUnlessCron } from "@/lib/cronAuth";
 import { runMarketingCampaigns } from "@/lib/marketing/send";
+import { finishCronRun } from "@/lib/cronRun";
 
 export const maxDuration = 300;
 
@@ -21,8 +22,19 @@ export async function GET(req: NextRequest) {
   const denied = denyUnlessCron(req);
   if (denied) return denied;
 
-  const started = Date.now();
+  const startedAt = Date.now();
   const result = await runMarketingCampaigns();
 
-  return NextResponse.json({ ...result, durationMs: Date.now() - started });
+  // الحملة لا تُفشِل نفسها على مستخدمٍ واحد (تلتقط الخطأ وتكمل)، فالمقياس
+  // هنا هو ما أُرسل مقابل ما اعتُبر - ويبقى صفٌّ يشهد أنّها جرت أصلاً.
+  return finishCronRun(
+    {
+      job: "marketing-emails",
+      total: result.considered,
+      succeeded: result.sent,
+      failed: 0,
+      startedAt,
+    },
+    { ...result }
+  );
 }

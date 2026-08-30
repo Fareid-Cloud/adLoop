@@ -14,12 +14,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { denyUnlessCron } from "@/lib/cronAuth";
 import { prisma } from "@/lib/prisma";
 import { ownerNotSuspended } from "@/lib/accountActive";
+import { finishCronRun } from "@/lib/cronRun";
 
 export const maxDuration = 300;
 
 export async function GET(req: NextRequest) {
   const denied = denyUnlessCron(req);
   if (denied) return denied;
+
+  const startedAt = Date.now();
 
   // مساحة بلا أي ربط بمنصة مالهاش تحويلات ترفعها ولا قرارات تتقيّم -
   // كانت بتاخد دورة كاملة من وقت الدالّة المحدود مقابل صفر شغل.
@@ -71,7 +74,18 @@ export async function GET(req: NextRequest) {
     results.push(entry);
   }
 
-  return NextResponse.json({ ok: true, workspaces: results.length, results });
+  const failed = results.filter((r) => r.error).length;
+  return finishCronRun(
+    {
+      job: "conversion-sync",
+      total: results.length,
+      succeeded: results.length - failed,
+      failed,
+      startedAt,
+      errors: results.filter((r) => r.error).map((r) => ({ workspaceId: r.workspaceId, error: r.error })),
+    },
+    { results }
+  );
 }
 
 function msg(err: unknown): string {
