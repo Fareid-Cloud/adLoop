@@ -1521,24 +1521,6 @@ export const dictionary = {
       doneBody: "أرقامك تُسحب الآن. ستجد في اللوحة قائمة تُكمل بقيّة الإعداد — كل خطوة فيها تكتمل وحدها بمجرّد إنجازها فعلاً، لا بضغطة.",
     },
     // ==== الجولة التعريفية ====
-    tour: {
-      sidebarTitle: "القائمة الجانبية",
-      sidebarDesc: "من هنا تتنقّل بين أقسام المنتج. كل قسم فيه فرعاته — اضغط عليه ليتمدد.",
-      integrationsTitle: "ربط المنصات",
-      integrationsDesc: "هنا تربط حساباتك الإعلانية (Google, Meta, TikTok) وتختار الحملات اللي عايز تتابعها.",
-      truthTitle: "مركز الحقيقة",
-      truthDesc: "أهم صفحة في المنتج — بتقارن بين ما تقوله المنصة والحقيقة المتحققة فعلاً.",
-      campaignsTitle: "الحملات",
-      campaignsDesc: "متابعة تفصيلية لأداء كل حملة على حدة — الإنفاق، التحويلات، الفجوة.",
-      diagnosticsTitle: "التشخيص",
-      diagnosticsDesc: "فحص صحة التتبع، جودة الإعلانات، والتنبيهات اللي تحتاج انتباهك.",
-      aiTitle: "المساعد الذكي",
-      aiDesc: "اسأل أي سؤال عن بياناتك — التحليل بالذكاء الاصطناعي بيشرحلك الأرقام بأسلوب بسيط.",
-      skip: "تخطّي",
-      skipTour: "تخطّي الجولة",
-      next: "التالي",
-      finish: "ابدأ",
-    },
     // ==== الإعداد والربط ===>
     setup: {
       connected: "متصل",
@@ -6564,24 +6546,6 @@ export const dictionary = {
       doneBody: "Your numbers are being pulled now. On the dashboard you will find a checklist for the rest of the setup — each step completes on its own once actually done, not by clicking.",
     },
     // ==== Guided tour ====
-    tour: {
-      sidebarTitle: "Sidebar navigation",
-      sidebarDesc: "This is how you move between sections. Each one has sub-items — click to expand.",
-      integrationsTitle: "Platform connections",
-      integrationsDesc: "Connect your ad accounts (Google, Meta, TikTok) and pick the campaigns you want to track.",
-      truthTitle: "Truth Center",
-      truthDesc: "The most important page in the product — it compares what the platform claims with verified reality.",
-      campaignsTitle: "Campaigns",
-      campaignsDesc: "Detailed tracking for each campaign — spend, conversions, and the gap between them.",
-      diagnosticsTitle: "Diagnostics",
-      diagnosticsDesc: "Check tracking health, ad quality, and alerts that need your attention.",
-      aiTitle: "AI Assistant",
-      aiDesc: "Ask any question about your data — AI-powered analysis explained in plain language.",
-      skip: "Skip",
-      skipTour: "Skip tour",
-      next: "Next",
-      finish: "Get started",
-    },
     // ==== Setup and connecting ===>
     setup: {
       connected: "Connected",

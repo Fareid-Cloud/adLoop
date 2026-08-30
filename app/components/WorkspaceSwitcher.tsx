@@ -5,9 +5,9 @@
 // بدونها تبدو الصفحة جامدة ثم تتغيّر فجأة.
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { ChevronsUpDown, Plus, Check, ShieldCheck, X, Loader2, Sparkles , FlaskConical } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { Portal } from "@/app/components/ui/Portal";
 
 export interface WorkspaceOption {
   id: string;
@@ -29,7 +29,6 @@ export function WorkspaceSwitcher({
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) =>
     t(locale, `wsSwitch.${k}`, vars);
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
@@ -40,6 +39,16 @@ export function WorkspaceSwitcher({
   useEffect(() => {
     if (!open) { setCreating(false); setError(null); }
   }, [open]);
+
+  // التمرير يُقفَل أثناء الانتقال: الشاشة تغطّي، لكنّ الصفحة تحتها كانت
+  // تتحرّك مع العجلة - فيُحسّ المستخدم أنّه يتصفّح شيئاً لا يراه، ويصل إلى
+  // المساحة الجديدة على موضع تمريرٍ ورثه من القديمة.
+  useEffect(() => {
+    if (!switching) return;
+    const prev = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    return () => { document.documentElement.style.overflow = prev; };
+  }, [switching]);
 
   async function switchTo(id: string) {
     if (id === current.id) { setOpen(false); return; }
@@ -80,20 +89,28 @@ export function WorkspaceSwitcher({
 
   return (
     <>
-      {/* شاشة الانتقال - معتمة تماماً: خمسة بالمئة من الشفافية كانت تكفي
-          لظهور الصفحة السابقة خلفها عند التمرير، فيبدو المشهد نصفين */}
+      {/* 🔴 **شاشة الانتقال كانت تُصيَّر داخل الشريط الجانبيّ، فلا تغطّي شيئاً.**
+
+          هذا المكوّن يعيش في `<aside>`، وعليه `translateX` ليعمل درجاً على
+          الهاتف - و`transform` على سلفٍ يجعل كلّ `fixed` بداخله يُحسب منه
+          ويُقصّ بحدّه مهما بلغ `z-index`. فكان الرأس يبقى فوقها ظاهراً
+          (البحث واسم المستخدم والإشعارات)، ويبقى ما تحتها **قابلاً للتمرير**
+          أثناء التبديل. البوّابة تخرج إلى `<body>` فلا سلف يقصّها - وهي
+          الآلية نفسها التي عولج بها الدعم من قبل. */}
       {switching && (
-        <div className="fixed inset-0 z-[95] flex flex-col items-center justify-center gap-4 overflow-hidden bg-bg">
-          <div className="relative">
-            <ShieldCheck size={40} className="text-verified" />
-            <Sparkles size={16} className="absolute -end-1 -top-1 animate-pulse text-accent" />
+        <Portal>
+          <div className="fixed inset-0 z-[95] flex flex-col items-center justify-center gap-4 overflow-hidden bg-bg">
+            <div className="relative">
+              <ShieldCheck size={40} className="text-verified" />
+              <Sparkles size={16} className="absolute -end-1 -top-1 animate-pulse text-accent" />
+            </div>
+            <div className="text-center">
+              <p className="text-[15px] font-medium text-text-primary">{tr("title")}</p>
+              <p className="mt-1 text-[12.5px] text-text-muted">{tr("body")}</p>
+            </div>
+            <Loader2 size={18} className="animate-spin text-accent" />
           </div>
-          <div className="text-center">
-            <p className="text-[15px] font-medium text-text-primary">{tr("title")}</p>
-            <p className="mt-1 text-[12.5px] text-text-muted">{tr("body")}</p>
-          </div>
-          <Loader2 size={18} className="animate-spin text-accent" />
-        </div>
+        </Portal>
       )}
 
       <div className="relative">

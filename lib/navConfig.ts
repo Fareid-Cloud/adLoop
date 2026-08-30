@@ -160,6 +160,6 @@ export const NAV_GROUPS: NavGroup[] = [
  * عن `#tour-nav-/dashboard` مكتوباً بيد - فلا تجد شيئاً أبداً. والأسوأ أنّ
  * الشرطة المائلة غيرُ صالحة في محدّد CSS، فـ`querySelector` يرمي
  * `SyntaxError` بدل أن يعود فارغاً: أوّلُ خطوةٍ في الجولة تُسقط الصفحة. */
-export function tourNavId(href: string): string {
-  return `tour-nav-${href.replace(/\//g, "-")}`;
+export function navItemId(href: string): string {
+  return `nav-${href.replace(/\//g, "-")}`;
 }
