@@ -418,6 +418,7 @@ export const dictionary = {
       sessionExpired: "انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى.",
       noWorkspace: "لا توجد مساحة عمل بعد",
       noWorkspaceHint: "ارجع إلى الرئيسية لإنشاء أول مساحة عمل.",
+      defaultWorkspaceName: "مساحة عملي",
       noCampaigns: "لا توجد حملات مربوطة بعد",
       noCampaignsHint: "اربط حملاتك من صفحة ربط المنصات أولاً.",
       toHome: "إلى الرئيسية",
@@ -1166,6 +1167,13 @@ export const dictionary = {
       scaleOn: "+{pct}% على {target}",
       targetAdset: "المجموعة الإعلانية",
       targetCampaign: "ميزانية الحملة",
+    },
+    // أسباب تعذّر فحص الصفحة - رموزٌ تُترجَم هنا، فلا يصل نصُّ الشبكة الخام
+    // إلى المشترك ولا تصله عربيةٌ وهو يقرأ الإنجليزية.
+    trackErr: {
+      timeout: "انتهت مهلة الاتصال بالصفحة. قد تكون بطيئةً الآن، أو تحجب الفحص.",
+      unreachable: "تعذّر الوصول إلى الصفحة. تأكّد أنّ الرابط صحيح وأنّ الموقع يعمل.",
+      http: "أعادت الصفحة الاستجابة {status}، فلم نتمكّن من قراءة مصدرها.",
     },
     // ==== الفحوصات ====
     diag: {
@@ -2317,6 +2325,7 @@ export const dictionary = {
       mtNone: "لا توجد بيانات بعد",
       mtNoneBody: "تُسحب تلقائياً مع المزامنة اليومية بعد ربط حملات جوجل.",
       mtWasteNote: "صرف حقيقي دون أي تحويل - يستحقّ مراجعة الكلمات المفتاحية لهذا النوع.",
+      sparkAds: "Spark Ads",
       sparkOrganic: "إعلان عادي (Dark Post)",
       sparkHook: "خطّاف:",
       sparkEngaged: "متفاعل:",
@@ -4732,6 +4741,7 @@ export const dictionary = {
       sessionExpired: "Your session has ended. Please log in again.",
       noWorkspace: "No workspace yet",
       noWorkspaceHint: "Go back to Home to create your first workspace.",
+      defaultWorkspaceName: "My workspace",
       noCampaigns: "No campaigns linked yet",
       noCampaignsHint: "Connect your campaigns from the Integrations page first.",
       toHome: "Go to Home",
@@ -5473,6 +5483,11 @@ export const dictionary = {
       scaleOn: "+{pct}% on {target}",
       targetAdset: "the ad set",
       targetCampaign: "the campaign budget",
+    },
+    trackErr: {
+      timeout: "The page timed out. It may be slow right now, or blocking the check.",
+      unreachable: "We could not reach the page. Check that the URL is right and the site is up.",
+      http: "The page answered with {status}, so we could not read its source.",
     },
     // ==== Diagnostics ====
     diag: {
@@ -7261,6 +7276,8 @@ export const dictionary = {
       mtNone: "No data yet",
       mtNoneBody: "It is pulled automatically with the daily sync once your Google campaigns are linked.",
       mtWasteNote: "Real spend with no conversions - the keywords behind this match type deserve a review.",
+      // اسم منتجٍ من تيك توك - لا يُترجَم، لكنّه يمرّ من القاموس كغيره
+      sparkAds: "Spark Ads",
       sparkOrganic: "Standard ad (dark post)",
       sparkHook: "Hook:",
       sparkEngaged: "Engaged:",

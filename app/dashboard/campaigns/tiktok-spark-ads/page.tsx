@@ -71,7 +71,7 @@ export default async function TikTokSparkAdsPage() {
             <div key={type} className="card p-4">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium text-text-primary">
-                  {type === "SPARK" ? "Spark Ads" : t(locale, "campPages.sparkOrganic")}
+                  {type === "SPARK" ? t(locale, "campPages.sparkAds") : t(locale, "campPages.sparkOrganic")}
                 </span>
                 <span className="text-xs text-text-faint">{groups[type].length} {t(locale, "campPages.unitAd")}</span>
               </div>

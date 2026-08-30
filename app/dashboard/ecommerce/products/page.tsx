@@ -14,6 +14,8 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 import { resolveStoreScope } from "@/lib/ecommerce/storeScope";
 import { StorePicker } from "@/app/components/ui/StorePicker";
 import { PullProductsButton } from "@/app/components/PullProductsButton";
+import { PageHeader } from "@/app/components/ui/PageHeader";
+import { ShoppingBag } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +47,16 @@ export default async function EcommerceProductsPage({
   if (overview.products.length === 0) {
     return (
       <div className="mx-auto max-w-3xl">
+        {/* 🔴 الرأس في فرع الفراغ أيضاً: كانت هذه الصفحة **الوحيدة الشاذّة**
+            بين تسع صفحات إيكومرس، فيقع التاجر الذي ربط متجره للتوّ على
+            صفحةٍ بلا عنوانٍ ولا أيقونة فتبدو صفحةً أخرى أو عطباً. */}
+        <PageHeader
+          icon={ShoppingBag}
+          tone="accent"
+          eyebrow={workspace.name}
+          title={t(locale, "productsPage.title")}
+          description={t(locale, "productsPage.subtitle")}
+        />
         <EmptyState
           title={t(locale, "store.noProducts")}
           description={t(locale, "store.noProductsHint")}
