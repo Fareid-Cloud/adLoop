@@ -12,15 +12,11 @@ import { ArrowUpRight, ArrowDownRight, Minus, Info } from "lucide-react";
 import { ATTRIBUTION_MODELS, type AttributionModelKey, type ModelComparisonRow } from "@/lib/attributionModels";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { CHANNEL_KEYS } from "./TruthView";
-import { t, type Locale } from "@/lib/i18n/dictionary";
+import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 import { TABLE_WRAP, TH } from "@/app/components/ui/tableStyles";
 
-const PLATFORM_NAMES: Record<string, string> = {
-  GOOGLE_ADS: "Google Ads",
-  META_ADS: "Meta Ads",
-  TIKTOK_ADS: "TikTok Ads",
-  SNAPCHAT_ADS: "Snapchat Ads",
-};
+// أسماء المنصّات من `platformLabel` لا من خريطةٍ محلّية: نسخةٌ ثانية هنا
+// كانت تُبقي الجدول إنجليزياً بينما بقيّة الصفحة عربية.
 
 const num = (n: number) => Math.round(n).toLocaleString("en-US");
 const num1 = (n: number) => (Math.round(n * 10) / 10).toLocaleString("en-US");
@@ -48,7 +44,7 @@ export function AttributionModelTable({
 
   const data = dimension === "platform" ? rows : channelRows;
   const label = (key: string) =>
-    dimension === "platform" ? (PLATFORM_NAMES[key] ?? key) : ((CHANNEL_KEYS[key] ? t(locale, `campPages.${CHANNEL_KEYS[key]}`) : key));
+    dimension === "platform" ? platformLabel(locale, key) : ((CHANNEL_KEYS[key] ? t(locale, `campPages.${CHANNEL_KEYS[key]}`) : key));
 
   const underCredited = data.filter((r) => r.verdict === "UNDER_CREDITED");
   const overCredited = data.filter((r) => r.verdict === "OVER_CREDITED");

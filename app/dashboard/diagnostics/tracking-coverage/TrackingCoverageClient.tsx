@@ -239,7 +239,7 @@ export function TrackingCoverageClient({
 
                     {p.lastCheckedAt && (
                       <p className="mt-2 text-[11px] text-text-faint">
-                        {tr("covLastCheck", { date: new Date(p.lastCheckedAt).toLocaleString(locale === "en" ? "en-GB" : "ar-EG") })}
+                        {tr("covLastCheck", { date: new Date(p.lastCheckedAt).toLocaleString(locale === "en" ? "en-GB" : "ar-EG-u-nu-latn") })}
                       </p>
                     )}
                   </div>

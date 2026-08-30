@@ -70,7 +70,7 @@ export function renderReportDocument(doc: ReportDocument): string {
   const dir = ar ? "rtl" : "ltr";
   const tr = (k: string, v?: Record<string, string | number>) => t(doc.locale, `reportDoc.${k}`, v);
 
-  const dateStr = doc.generatedAt.toLocaleDateString(ar ? "ar-EG" : "en-GB", {
+  const dateStr = doc.generatedAt.toLocaleDateString(ar ? "ar-EG-u-nu-latn" : "en-GB", {
     year: "numeric",
     month: "long",
     day: "numeric",

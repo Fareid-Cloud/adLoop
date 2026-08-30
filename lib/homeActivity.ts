@@ -50,7 +50,14 @@ export async function getRecentActivity(
       where: { workspaceId, status: { in: ["APPLIED", "PENDING"] } },
       orderBy: { createdAt: "desc" },
       take: FEED_LIMIT,
-      select: { id: true, type: true, title: true, status: true, createdAt: true, severity: true },
+      // `titleKey`/`titleVars` مع النصّ المخزَّن: الصفّ يحفظ الاثنين، وقراءةُ
+      // النصّ وحده تُثبِّت لغةَ لحظة الكتابة - وهو ما جعل البند نفسه يظهر
+      // «Pricing risk - …» في هذا الفيد و«خطر تسعير - …» في بطاقةٍ أخرى من
+      // الصفحة نفسها. المفتاح يُترجَم عند العرض، والنصّ احتياطٌ لصفوفٍ قديمة.
+      select: {
+        id: true, type: true, title: true, titleKey: true, titleVars: true,
+        status: true, createdAt: true, severity: true,
+      },
     }),
   ]);
 
@@ -79,7 +86,10 @@ export async function getRecentActivity(
     rows.push({
       id: `act-${a.id}`,
       kind: a.type === "ALERT" ? "ALERT" : "ACTION",
-      title: a.title.slice(0, 80),
+      title: (a.titleKey
+        ? t(locale, a.titleKey, (a.titleVars ?? undefined) as Record<string, string | number> | undefined)
+        : a.title
+      ).slice(0, 80),
       detail: applied
         ? ar ? "نُفِّذ" : "Applied"
         : ar ? "بانتظار قرارك" : "Awaiting your decision",

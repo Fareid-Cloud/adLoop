@@ -62,7 +62,7 @@ function dots(
 export function StoreFunnel({ data, locale }: { data: FunnelData; locale: Locale }) {
   const tr = (k: string, v?: Record<string, string | number>) =>
     t(locale, `shopFunnel.${k}`, v);
-  const loc = locale === "ar" ? "ar-EG" : "en-US";
+  const loc = locale === "ar" ? "ar-EG-u-nu-latn" : "en-US";
 
   const compact = new Intl.NumberFormat(loc, { notation: "compact", maximumFractionDigits: 1 });
 

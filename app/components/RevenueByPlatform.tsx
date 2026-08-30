@@ -11,7 +11,7 @@
 
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { TrendingUp, TrendingDown, ShoppingBag } from "lucide-react";
-import { t, type Locale } from "@/lib/i18n/dictionary";
+import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 
 export interface RevenuePlatformRow {
   platform: string;
@@ -22,12 +22,9 @@ export interface RevenuePlatformRow {
   revenueChangePct: number | null;
 }
 
-const PLATFORM_NAMES: Record<string, string> = {
-  GOOGLE_ADS: "Google Ads",
-  META_ADS: "Meta Ads",
-  TIKTOK_ADS: "TikTok Ads",
-  SNAPCHAT_ADS: "Snapchat Ads",
-};
+// 🔴 كانت هنا خريطةُ أسماءٍ إنجليزية مكتوبة بيد، فتقرأ الصفحةُ الواحدة
+// «جوجل» في البطاقات و«Google Ads» في هذا الجدول - عُرفان في شاشةٍ واحدة.
+// `platformLabel` هو المصدر الواحد، ويترجم مع اللغة.
 
 const num = (n: number) => Math.round(n).toLocaleString("en-US");
 
@@ -101,7 +98,7 @@ export function RevenueByPlatform({
               <div className="mb-1 flex items-center justify-between gap-2">
                 <span className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-text-primary">
                   <PlatformLogo platform={row.platform} size={14} />
-                  <span className="truncate">{PLATFORM_NAMES[row.platform] ?? row.platform}</span>
+                  <span className="truncate">{platformLabel(locale, row.platform)}</span>
                 </span>
                 <span className="flex shrink-0 items-center gap-2 text-[12px] tabular-nums">
                   {row.revenueChangePct !== null && (

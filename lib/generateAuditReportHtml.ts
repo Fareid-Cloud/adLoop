@@ -22,7 +22,7 @@ export function generateAuditReportHtml(
 ): string {
   const isRTL = locale === "ar";
   const dir = isRTL ? "rtl" : "ltr";
-  const dateStr = new Date().toLocaleDateString(isRTL ? "ar-EG" : "en-US");
+  const dateStr = new Date().toLocaleDateString(isRTL ? "ar-EG-u-nu-latn" : "en-US");
 
   const scoreColor = (score: number) =>
     score >= 75 ? "#2FD48A" : score >= 50 ? "#FFB020" : "#FF5C5C";

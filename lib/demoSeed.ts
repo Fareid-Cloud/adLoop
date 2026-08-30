@@ -193,7 +193,7 @@ export async function seedDemoData(
   /** الرقم مكتوباً بعملته - لنصوص البذرة التي تذكر مبلغاً داخل جملة.
    *  `Intl` يعطي اسم العملة الصحيح للّغة، فلا يُكتب «ريال» في نصٍّ بالجنيه. */
   const fmt = (v: number) =>
-    new Intl.NumberFormat(ar ? "ar-EG" : "en-US", {
+    new Intl.NumberFormat(ar ? "ar-EG-u-nu-latn" : "en-US", {
       style: "currency",
       currency,
       maximumFractionDigits: 0,

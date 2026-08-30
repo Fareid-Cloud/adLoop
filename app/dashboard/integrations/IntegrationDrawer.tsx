@@ -155,7 +155,7 @@ export function IntegrationDrawer({
             {integration.connectedAt && (
               <Row icon={CalendarDays} label={tr("dConnectedAt")}>
                 <span className="tabular-nums text-text-primary">
-                  {new Date(integration.connectedAt).toLocaleDateString(locale === "en" ? "en-GB" : "ar-EG")}
+                  {new Date(integration.connectedAt).toLocaleDateString(locale === "en" ? "en-GB" : "ar-EG-u-nu-latn")}
                 </span>
               </Row>
             )}
@@ -163,7 +163,7 @@ export function IntegrationDrawer({
             {integration.expiresAt && (
               <Row icon={KeyRound} label={tr("dExpiresAt")}>
                 <span className="tabular-nums text-text-primary">
-                  {new Date(integration.expiresAt).toLocaleDateString(locale === "en" ? "en-GB" : "ar-EG")}
+                  {new Date(integration.expiresAt).toLocaleDateString(locale === "en" ? "en-GB" : "ar-EG-u-nu-latn")}
                 </span>
               </Row>
             )}

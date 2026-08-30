@@ -383,10 +383,10 @@ export function McpClient({
                     </span>
                     {" · "}
                     {k.lastUsedAt
-                      ? `${tr("keyLastUsed")}: ${new Date(k.lastUsedAt).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US")}`
+                      ? `${tr("keyLastUsed")}: ${new Date(k.lastUsedAt).toLocaleDateString(locale === "ar" ? "ar-EG-u-nu-latn" : "en-US")}`
                       : tr("keyNever")}
                     {k.expiresAt &&
-                      ` · ${tr("keyExpires")}: ${new Date(k.expiresAt).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US")}`}
+                      ` · ${tr("keyExpires")}: ${new Date(k.expiresAt).toLocaleDateString(locale === "ar" ? "ar-EG-u-nu-latn" : "en-US")}`}
                   </div>
                 </div>
                 <button

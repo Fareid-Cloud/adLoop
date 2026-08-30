@@ -100,7 +100,9 @@ export function comparePlatforms(
   if (ranked.length >= 2) {
     const best = ranked[0];
     const worst = ranked[ranked.length - 1];
-    const savingsPct = round2(
+    // نسبةٌ مقارِنة تُقرأ لا تُحاسَب عليها: «٥٩٫٢٢٪» تَعِد بدقّةٍ ليست في
+    // الرقم أصلاً (مبنيّ على عيّنة الفترة)، والمنزلتان تقولان «حسبها آلة».
+    const savingsPct = Math.round(
       ((worst.cplVerified - best.cplVerified) / worst.cplVerified) * 100
     );
     insight = t(locale, "insights.platformComparison", {

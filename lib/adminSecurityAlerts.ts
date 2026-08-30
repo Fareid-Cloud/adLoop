@@ -26,7 +26,7 @@ export async function sendNewAdminDeviceAlert(params: {
   const locale = params.locale ?? "ar";
   const ar = locale === "ar";
   const device = describeDevice(params.userAgent) ?? (ar ? "جهاز غير معروف" : "Unknown device");
-  const when = new Date().toLocaleString(ar ? "ar-EG" : "en-US");
+  const when = new Date().toLocaleString(ar ? "ar-EG-u-nu-latn" : "en-US");
 
   try {
     await resend.emails.send({

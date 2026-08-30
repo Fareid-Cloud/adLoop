@@ -449,7 +449,7 @@ function SubscriptionPanel({
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
-  const dateText = new Date(periodEnd).toLocaleDateString(locale === "en" ? "en-GB" : "ar-EG", {
+  const dateText = new Date(periodEnd).toLocaleDateString(locale === "en" ? "en-GB" : "ar-EG-u-nu-latn", {
     year: "numeric", month: "long", day: "numeric",
   });
 

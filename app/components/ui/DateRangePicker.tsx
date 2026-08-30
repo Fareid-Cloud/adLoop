@@ -91,7 +91,7 @@ export function DateRangePicker({
   }, [open]);
 
   const fmt = (d: string) =>
-    fromISODate(d).toLocaleDateString(locale === "en" ? "en-GB" : "ar-EG", {
+    fromISODate(d).toLocaleDateString(locale === "en" ? "en-GB" : "ar-EG-u-nu-latn", {
       day: "numeric", month: "short", year: "numeric",
     });
 
@@ -354,7 +354,7 @@ function SegBtn({ active, onClick, label }: { active: boolean; onClick: () => vo
 }
 
 function monthLabel(d: Date, locale: Locale): string {
-  return d.toLocaleDateString(locale === "en" ? "en-GB" : "ar-EG", { month: "long", year: "numeric" });
+  return d.toLocaleDateString(locale === "en" ? "en-GB" : "ar-EG-u-nu-latn", { month: "long", year: "numeric" });
 }
 
 function Month({
@@ -382,7 +382,7 @@ function Month({
   const weekdays = useMemo(() => {
     const base = new Date(2024, 8, 1); // أحد
     return Array.from({ length: 7 }, (_, i) =>
-      addDays(base, i).toLocaleDateString(locale === "en" ? "en-GB" : "ar-EG", { weekday: "narrow" })
+      addDays(base, i).toLocaleDateString(locale === "en" ? "en-GB" : "ar-EG-u-nu-latn", { weekday: "narrow" })
     );
   }, [locale]);
 
