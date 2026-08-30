@@ -159,7 +159,11 @@ Next Steps
 ## دروس وقرارات دائمة (Gotchas & Decisions)
 
 **Next.js / بناء المشروع:**
-- Next.js 15 يتطلّب `params: Promise<{...}>` في أي route أو `page.tsx` فيه `[id]` — الصيغة القديمة (Next.js 14) بتفشل بس وقت `next build` الحقيقي؛ `tsc --noEmit` العادي ما يمسكهاش. الخطأ بيظهر في `.next/types/validator.ts` (بيتولّد بس وقت build فعلي).
+- **المشروع على Next.js 16 دلوقتي (`16.3.3`).** تلات حاجات لازم تعرفها:
+  - **الوسيط اسمه `proxy.ts` مش `middleware.ts`**، والدالة المصدَّرة `proxy` مش `middleware` — اصطلاح ١٦. الملف ده فيه حارسين مهمين (منع الكتابة أثناء «العرض كـ»، وحارس الأصل للكتابات) فمتنقلوش من غير ما تنقلهم.
+  - **Turbopack هو المُجمِّع الافتراضي.** لازم `turbopack: {}` في `next.config.js` — وجود إعداد `webpack` بلا إعداد `turbopack` **بيفشّل البناء** أصلاً مش بيحذّر بس.
+  - الحد الأدنى: Node ‏20.9 وTypeScript ‏5.1.
+- Next.js 15 وما بعده يتطلّب `params: Promise<{...}>` في أي route أو `page.tsx` فيه `[id]` — الصيغة القديمة (Next.js 14) بتفشل بس وقت `next build` الحقيقي؛ `tsc --noEmit` العادي ما يمسكهاش. الخطأ بيظهر في `.next/types/validator.ts` (بيتولّد بس وقت build فعلي).
 - `<html>`/`<body>` المفروض يكونوا في `app/layout.tsx` و`app/global-error.tsx` بس — أي صفحة تانية فيها نسخة خاصة بتعمل تعشيش HTML غلط.
 - `app/layout.tsx` الجذري إجباري — من غيره التطبيق مبيتبنيش خالص.
 - Client components ("use client") لازم ماتستوردش (حتى غير مباشر) من ملفات بتسحب مكتبات server-only (زي `google-ads-api` المحتاجة `fs`/`tls`/`net`) — استخرج أي ثابتات/types محتاجة في كلاينت كومبوننت لملف مستقل صفر استيراد.
