@@ -237,7 +237,9 @@ export function ActionsClient({
             onChange={(v) => setGroupBy(v as GroupBy)}
             ariaLabel={tr("groupBySource")}
             size="sm"
-            className="w-40"
+            // `w-40` كانت تقصّ «تجميع حسب المصدر» إلى «تجميع حسب الم…»،
+            // فيُخفى **أيّ تجميعٍ مفعَّل** - وهو كلّ ما يقوله هذا الزرّ.
+            className="w-52"
             options={[
               { value: "source", label: tr("groupBySource") },
               { value: "severity", label: tr("groupBySeverity") },
