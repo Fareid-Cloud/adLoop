@@ -2566,6 +2566,7 @@ export const dictionary = {
       smallSample: "{units} وحدة فقط - عيّنة صغيرة، والنتيجة غير حاسمة بعد.",
       returnsEatIt: "يربح ظاهرياً، لكنّ {pct}٪ مرتجعات تلتهم العائد.",
       confirmedProfit: "ربحٌ مؤكَّد {amount} {currency} من {units} وحدة ناجحة.",
+      costUnknown: "{units} وحدة ناجحة، لكنّ تكلفة البضاعة غير مضبوطة - فالربح غير معروف بعد. أدخِل التكلفة ليصحّ الحكم.",
       earlySignal: "مؤشّر مبكّر جيّد - {amount} {currency} ربحاً من {units} وحدة.",
     },
     campNav: {
@@ -7526,6 +7527,7 @@ export const dictionary = {
       smallSample: "Only {units} units - a small sample, not conclusive yet.",
       returnsEatIt: "Profitable on paper, but {pct}% returns eat the margin.",
       confirmedProfit: "Confirmed profit of {amount} {currency} from {units} successful units.",
+      costUnknown: "{units} successful units, but the cost of goods is not set - so the profit is not known yet. Enter the cost to get a real verdict.",
       earlySignal: "Good early signal - {amount} {currency} profit from {units} units.",
     },
     campNav: {
