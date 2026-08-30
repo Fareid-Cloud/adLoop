@@ -108,7 +108,6 @@ export function SignupForm() {
     window.location.assign("/dashboard");
   }
 
-  const L = (arTxt: string, enTxt: string) => (ar ? arTxt : enTxt);
 
   return (
     <AuthShell
@@ -135,18 +134,18 @@ export function SignupForm() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input className={FIELD} placeholder={L("الاسم الكامل *", "Full name *")} value={f.name} onChange={(e) => set("name", e.target.value)} required />
-            <input className={FIELD} placeholder={L("اسم المستخدم *", "Username *")} value={f.username} onChange={(e) => set("username", e.target.value)} required />
+            <input className={FIELD} placeholder={t(locale, "signupForm.fullName")} value={f.name} onChange={(e) => set("name", e.target.value)} required />
+            <input className={FIELD} placeholder={t(locale, "signupForm.username")} value={f.username} onChange={(e) => set("username", e.target.value)} required />
           </div>
-          <input className={FIELD} type="email" placeholder={L("البريد الإلكتروني *", "Email *")} value={f.email} onChange={(e) => set("email", e.target.value)} required />
+          <input className={FIELD} type="email" placeholder={t(locale, "signupForm.email")} value={f.email} onChange={(e) => set("email", e.target.value)} required />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="relative">
-              <input className={`${FIELD} field-icon-end`} type={showPw ? "text" : "password"} placeholder={L("كلمة المرور *", "Password *")} value={f.password} onChange={(e) => set("password", e.target.value)} required minLength={8} />
+              <input className={`${FIELD} field-icon-end`} type={showPw ? "text" : "password"} placeholder={t(locale, "signupForm.password")} value={f.password} onChange={(e) => set("password", e.target.value)} required minLength={8} />
               <button type="button" tabIndex={-1} onClick={() => setShowPw((v) => !v)} className="absolute inset-y-0 end-2.5 flex items-center text-text-faint hover:text-text-primary">{showPw ? <EyeOff size={16} /> : <Eye size={16} />}</button>
             </div>
             <div className="relative">
-              <input className={`${FIELD} field-icon-end`} type={showPw2 ? "text" : "password"} placeholder={L("تأكيد كلمة المرور *", "Confirm password *")} value={f.confirm} onChange={(e) => set("confirm", e.target.value)} required minLength={8} />
+              <input className={`${FIELD} field-icon-end`} type={showPw2 ? "text" : "password"} placeholder={t(locale, "signupForm.confirmPassword")} value={f.confirm} onChange={(e) => set("confirm", e.target.value)} required minLength={8} />
               <button type="button" tabIndex={-1} onClick={() => setShowPw2((v) => !v)} className="absolute inset-y-0 end-2.5 flex items-center text-text-faint hover:text-text-primary">{showPw2 ? <EyeOff size={16} /> : <Eye size={16} />}</button>
             </div>
           </div>
@@ -154,7 +153,7 @@ export function SignupForm() {
           <PasswordMatch password={f.password} confirm={f.confirm} locale={locale} />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input className={FIELD} placeholder={L("اسم الشركة (اختياري)", "Company (optional)")} value={f.companyName} onChange={(e) => set("companyName", e.target.value)} />
+            <input className={FIELD} placeholder={t(locale, "signupForm.company")} value={f.companyName} onChange={(e) => set("companyName", e.target.value)} />
             {/* تاريخ الميلاد: `type="date"` يعطي منتقي المتصفّح الأصلي -
                 لا مكتبة ولا ثلاث قوائم منسدلة. `max` اليوم يمنع تاريخاً
                 مستقبلياً قبل أن يُرسل. */}
@@ -164,16 +163,16 @@ export function SignupForm() {
               max={new Date().toISOString().slice(0, 10)}
               value={f.birthDate}
               onChange={(e) => set("birthDate", e.target.value)}
-              aria-label={L("تاريخ الميلاد", "Date of birth")}
-              title={L("تاريخ الميلاد", "Date of birth")}
+              aria-label={t(locale, "signupForm.dob")}
+              title={t(locale, "signupForm.dob")}
             />
 
             <Select
               locale={locale}
               value={f.gender}
               onChange={(v) => set("gender", v)}
-              placeholder={L("النوع", "Gender")}
-              ariaLabel={L("النوع", "Gender")}
+              placeholder={t(locale, "signupForm.gender")}
+              ariaLabel={t(locale, "signupForm.gender")}
               options={GENDERS.map((g) => ({ value: g.v, label: ar ? g.ar : g.en }))}
             />
           </div>
@@ -185,23 +184,23 @@ export function SignupForm() {
               locale={locale}
               value={f.country}
               onChange={(v) => set("country", v)}
-              placeholder={L("الدولة *", "Country *")}
-              ariaLabel={L("الدولة *", "Country *")}
+              placeholder={t(locale, "signupForm.country")}
+              ariaLabel={t(locale, "signupForm.country")}
               options={countriesForDisplay(locale).map((c, i) => ({
                 value: c.code,
                 label: ar ? c.ar : c.en,
                 group:
                   i < PRIORITY_COUNTRY_CODES.length
-                    ? L("الأكثر شيوعاً", "Most common")
-                    : L("كل الدول", "All countries"),
+                    ? t(locale, "signupForm.mostCommon")
+                    : t(locale, "signupForm.allCountries"),
               }))}
             />
             <Select
               locale={locale}
               value={f.adSpendMonthly}
               onChange={(v) => set("adSpendMonthly", v)}
-              placeholder={L("الإنفاق الإعلاني الشهري *", "Ad spend / month *")}
-              ariaLabel={L("الإنفاق الإعلاني الشهري *", "Ad spend / month *")}
+              placeholder={t(locale, "signupForm.adSpend")}
+              ariaLabel={t(locale, "signupForm.adSpend")}
               options={AD_SPEND.map((a) => ({ value: a.v, label: ar ? a.ar : a.en }))}
             />
           </div>
@@ -211,21 +210,21 @@ export function SignupForm() {
               locale={locale}
               value={f.businessScale}
               onChange={(v) => set("businessScale", v)}
-              placeholder={L("عدد العملاء الحاليين", "Current clients")}
-              ariaLabel={L("عدد العملاء الحاليين", "Current clients")}
+              placeholder={t(locale, "signupForm.currentClients")}
+              ariaLabel={t(locale, "signupForm.currentClients")}
               options={CLIENTS.map((c) => ({ value: c.v, label: ar ? c.ar : c.en }))}
             />
             <Select
               locale={locale}
               value={f.howHeard}
               onChange={(v) => set("howHeard", v)}
-              placeholder={L("سمعت عن AdLoop من؟", "How did you hear about us?")}
-              ariaLabel={L("سمعت عن AdLoop من؟", "How did you hear about us?")}
+              placeholder={t(locale, "signupForm.howHeard")}
+              ariaLabel={t(locale, "signupForm.howHeard")}
               options={HEARD.map((h) => ({ value: h.v, label: ar ? h.ar : h.en }))}
             />
           </div>
 
-          <input className={FIELD} placeholder={L("كود إحالة (اختياري)", "Referral code (optional)")} value={f.referralSource} onChange={(e) => set("referralSource", e.target.value)} />
+          <input className={FIELD} placeholder={t(locale, "signupForm.referral")} value={f.referralSource} onChange={(e) => set("referralSource", e.target.value)} />
 
           {/* الموافقة قبل الزرّ مباشرةً: وضعها أعلى النموذج يجعلها تُمرَّر
               بلا قراءة، ووضعها بعد الزرّ يجعلها تُكتشف بعد المحاولة. */}
@@ -238,15 +237,15 @@ export function SignupForm() {
               className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[var(--accent)]"
             />
             <span>
-              {L("أوافق على ", "I agree to the ")}
+              {t(locale, "signupForm.agreePre")}
               <a href="/terms" target="_blank" rel="noreferrer" className="text-accent underline underline-offset-2">
-                {L("شروط الاستخدام", "Terms of Use")}
+                {t(locale, "signupForm.termsLink")}
               </a>
-              {L(" و", " and ")}
+              {t(locale, "signupForm.agreeMid")}
               <a href="/privacy" target="_blank" rel="noreferrer" className="text-accent underline underline-offset-2">
-                {L("سياسة الخصوصية", "Privacy Policy")}
+                {t(locale, "signupForm.privacyLink")}
               </a>
-              {L("، وعلى استخدام ملفّات تعريف الارتباط الضرورية لتشغيل الحساب.", ", and to the cookies required to run the account.")}
+              {t(locale, "signupForm.agreePost")}
             </span>
           </label>
 

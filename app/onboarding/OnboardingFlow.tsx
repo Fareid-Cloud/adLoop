@@ -10,6 +10,7 @@ import { Check, ArrowLeft, Loader2 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { CampaignPickerModal } from "@/app/components/CampaignPickerModal";
 import { SyncNowButton } from "@/app/components/SyncNowButton";
+import { t } from "@/lib/i18n/dictionary";
 
 type Platform = "GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS";
 
@@ -19,40 +20,6 @@ const PLATFORMS: { id: Platform; label: string; start: string; color: string }[]
   { id: "TIKTOK_ADS", label: "TikTok Ads", start: "/api/oauth/tiktok/start", color: "#FE2C55" },
 ];
 
-const COPY = {
-  ar: {
-    brand: "AdLoop",
-    stepOf: (a: number, b: number) => `الخطوة ${a} من ${b}`,
-    t1: "اربط حسابك الإعلاني",
-    d1: "نسحب بياناتك تلقائياً من المنصة مباشرة. يمكنك ربط أكثر من منصة، وتغيير ذلك لاحقاً في أي وقت.",
-    t2: "اختر الحملات التي تتابعها",
-    d2: "نتابع ما تختاره فقط — لوحة أوضح وتنبيهات أدق.",
-    connected: "مرتبط",
-    connect: "ربط",
-    pick: "اختيار الحملات",
-    skip: "تخطٍّ الآن",
-    skipping: "جارٍ التخطي...",
-    linked: (n: number) => `${n} حملة مرتبطة`,
-    finish: "الدخول إلى اللوحة",
-    note: "يمكنك التخطي والعودة لاحقاً، لكن اللوحة ستبقى فارغة حتى تربط حساباً.",
-  },
-  en: {
-    brand: "AdLoop",
-    stepOf: (a: number, b: number) => `Step ${a} of ${b}`,
-    t1: "Connect your ad account",
-    d1: "We pull your data straight from the platform. Connect more than one, and change it anytime later.",
-    t2: "Choose campaigns to track",
-    d2: "We track only what you pick — a cleaner dashboard and sharper alerts.",
-    connected: "Connected",
-    connect: "Connect",
-    pick: "Choose campaigns",
-    skip: "Skip for now",
-    skipping: "Skipping...",
-    linked: (n: number) => `${n} campaigns linked`,
-    finish: "Go to dashboard",
-    note: "You can skip and come back later, but the dashboard stays empty until an account is connected.",
-  },
-};
 
 export function OnboardingFlow({
   workspaceId,
@@ -66,7 +33,24 @@ export function OnboardingFlow({
   locale: "ar" | "en";
 }) {
   const router = useRouter();
-  const c = COPY[locale];
+  // النصّ من القاموس: نسختان مكتوبتان بيدٍ في هذا الملفّ كانتا تفترقان عند
+  // أوّل تعديلٍ على إحداهما، ولا يمسكهما فحصُ التكافؤ.
+  const c = {
+    brand: "AdLoop",
+    stepOf: (a: number, b: number) => t(locale, "onboardingFlow.stepOf", { a, b }),
+    linked: (n: number) => t(locale, "onboardingFlow.linked", { n }),
+    t1: t(locale, "onboardingFlow.t1"),
+    d1: t(locale, "onboardingFlow.d1"),
+    t2: t(locale, "onboardingFlow.t2"),
+    d2: t(locale, "onboardingFlow.d2"),
+    connected: t(locale, "onboardingFlow.connected"),
+    connect: t(locale, "onboardingFlow.connect"),
+    pick: t(locale, "onboardingFlow.pick"),
+    skip: t(locale, "onboardingFlow.skip"),
+    skipping: t(locale, "onboardingFlow.skipping"),
+    finish: t(locale, "onboardingFlow.finish"),
+    note: t(locale, "onboardingFlow.note"),
+  };
   const ar = locale === "ar";
   const [picking, setPicking] = useState<Platform | null>(null);
   const [skipping, setSkipping] = useState(false);
@@ -170,16 +154,14 @@ export function OnboardingFlow({
         {step1Done && step2Done && (
           <div className="card-shadow mb-3 card pad-md">
             <div className="mb-2 text-[13.5px] text-text-primary">
-              {ar ? "اسحب بياناتك الآن" : "Pull your data now"}
+              {t(locale, "onboardingFlow.pullTitle")}
             </div>
             <p className="mb-3 text-[12.5px] leading-relaxed text-text-muted">
-              {ar
-                ? "المزامنة تعمل تلقائياً كل يوم. يمكنك تشغيلها الآن لترى أرقامك مباشرةً."
-                : "Sync runs automatically every day. Run it now to see your numbers right away."}
+              {t(locale, "onboardingFlow.pullBody")}
             </p>
             <SyncNowButton locale={locale}
               workspaceId={workspaceId}
-              label={ar ? "مزامنة الآن" : "Sync now"}
+              label={t(locale, "onboardingFlow.syncNow")}
               className="flex w-full items-center justify-center gap-1.5 card-inset px-4 py-2.5 text-[13px] font-medium text-text-primary disabled:opacity-60"
             />
           </div>
