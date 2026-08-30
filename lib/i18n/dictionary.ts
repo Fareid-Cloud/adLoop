@@ -318,7 +318,7 @@ export const dictionary = {
     // ==== فرص التسعير ====
     pricingIntel: {
       title: "فرص التسعير",
-      subtitle: "أين السعر خاطئ أصلاً، وبكم. مبنيّ على تكلفتك الحقيقية الكاملة لا على تخمين السوق.",
+      subtitle: "أين السعر خاطئ، وبكم — محسوباً على تكلفتك الكاملة.",
       subtitleShort: "أين السعر خاطئ أصلاً، وبكم.",
       noneTitle: "لم تُضف أي منتج بعد",
       noneReason: "فرص التسعير تحتاج تكلفة كل منتج (بضاعة، شحن، رسوم) لتعرف نقطة التعادل الحقيقية. أضف منتجاتك من صفحة التسعير.",
@@ -2440,7 +2440,7 @@ export const dictionary = {
       qsNoneBody: "كلّ الكلمات المفتاحية النشطة بدرجة جودة معقولة، أو لم تُسحب البيانات بعد.",
       qsMainReason: "السبب الأساسي:",
       scanTitle: "فحص الموقع",
-      scanIntro: "فحص عميق مترابط: تقنيّ، وبصريّ بالذكاء الاصطناعي، وأداء حقيقي، ومقارنة منافسين - مبنيّ على تحليل مركّب لا على نتائج منعزلة.",
+      scanIntro: "فحص الصفحة تقنياً وبصرياً وأدائياً، ومقارنتها بمنافسيك.",
       hubSubtitle: "كل ما يخصّ {platform} في مكان واحد - المؤشّرات، أقوى إعلان، ومسار العميل حتى التحقّق.",
       hubHealth: "صحّة {platform}",
       hubDecisions: "القرار لكل إعلان داخل {platform}",
@@ -4697,7 +4697,7 @@ export const dictionary = {
     // ==== Pricing opportunities ====
     pricingIntel: {
       title: "Pricing",
-      subtitle: "Where the price is simply wrong, and by how much. Built on your full real cost, not a guess about the market.",
+      subtitle: "Where the price is wrong, and by how much — against your full cost.",
       subtitleShort: "Where the price is simply wrong, and by how much.",
       noneTitle: "No products added yet",
       noneReason: "Pricing opportunities need each product's cost (goods, shipping, fees) to find the real break-even. Add your products from the pricing page.",
@@ -7462,7 +7462,7 @@ export const dictionary = {
       qsNoneBody: "Every active keyword has a reasonable quality score, or the data has not been pulled yet.",
       qsMainReason: "Main reason:",
       scanTitle: "Site scan",
-      scanIntro: "One connected deep scan: technical, visual through AI, real performance, and a competitor comparison - built as a combined analysis, not isolated results.",
+      scanIntro: "Checks the page technically, visually and on real performance, and compares it with your competitors.",
       hubSubtitle: "Everything about {platform} in one place - metrics, strongest ad, and the path to a verified customer.",
       hubHealth: "{platform} health",
       hubDecisions: "Decision per ad inside {platform}",
