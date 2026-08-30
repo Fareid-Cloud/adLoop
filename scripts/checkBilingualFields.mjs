@@ -14,7 +14,10 @@
 import { readFileSync, existsSync } from "node:fs";
 import { execSync } from "node:child_process";
 
-const files = execSync('git ls-files "app/**/*.tsx"', { encoding: "utf8" })
+// `app/**/*.tsx` يطابق المتداخل وحده، فكانت ثلاثة ملفّاتٍ في الجذر خارج
+// الفحص - ومنها `app/layout.tsx` و`app/page.tsx`، أيْ صفحةُ الهبوط والقشرة
+// التي تلفّ المنتج كلَّه. النمطان معاً يغطّيان الجذر والمتداخل.
+const files = execSync('git ls-files "app/*.tsx" "app/**/*.tsx"', { encoding: "utf8" })
   .trim().split("\n").filter(Boolean);
 
 const offenders = [];

@@ -38,9 +38,17 @@ function dictionaryPaths() {
 }
 
 const available = dictionaryPaths();
-const files = execSync('git ls-files "app/**/*.ts" "app/**/*.tsx" "lib/**/*.ts"', {
-  encoding: "utf8",
-}).trim().split("\n").filter(Boolean);
+// 🔴 **`lib/**/*.ts` لا يطابق `lib/x.ts` - يطابق المتداخل وحده.**
+//
+// فكان **مئةٌ وسبعةٌ وثمانون ملفّاً في جذر `lib/`** خارج الفحص تماماً، ومنها
+// `homeActivity.ts` و`conversionSync.ts` و`truthKpis.ts`. وثمنُ ذلك ظهر على
+// الإنتاج: `home.syncErrAuth` مطبوعاً حرفياً في الصفحة الرئيسية، ومرّ من
+// هذا الفحص وهو أخضر - وفحصٌ يمرّ على ما لا يراه أسوأ من غيابه، لأنّه
+// يُطمئن. والنمطان معاً يغطّيان الجذر والمتداخل.
+const files = execSync(
+  'git ls-files "app/**/*.ts" "app/**/*.tsx" "lib/*.ts" "lib/**/*.ts"',
+  { encoding: "utf8" }
+).trim().split("\n").filter(Boolean);
 
 const missing = [];
 
