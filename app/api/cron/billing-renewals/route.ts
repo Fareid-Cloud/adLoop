@@ -116,15 +116,21 @@ export async function GET(req: NextRequest) {
     try {
       // ── انتهت الفترة: تُسجَّل الحالة ويُخطَر صاحبها ──────────────
       if (user.currentPeriodEnd <= now) {
+        // **مَن ألغى ليس مَن تعثّر دفعُه.** `PAST_DUE` تعني «فشل الدفع»،
+        // و`getEntitlements` تشتقّ منها `EXPIRED` التي تُشغّل حملةَ الاسترجاع
+        // و`subscriptionAlerts` («فشل الدفع - حدّث بيانات بطاقتك»). فوسمُ من
+        // ألغى بإرادته بها يلاحقه برسائل عن عطبٍ لم يقع، ويطالبه بإصلاح
+        // بطاقةٍ لم تُرفَض. الإلغاء `CANCELED` - نهايةٌ مقصودة لا تعثّر.
+        const endedByChoice = user.cancelAtPeriodEnd;
         await prisma.$transaction([
           prisma.user.update({
             where: { id: user.id },
-            data: { subscriptionStatus: "PAST_DUE" },
+            data: { subscriptionStatus: endedByChoice ? "CANCELED" : "PAST_DUE" },
           }),
           prisma.subscriptionEvent.create({
             data: {
               userId: user.id,
-              type: "EXPIRED",
+              type: endedByChoice ? "CANCELLED" : "EXPIRED",
               fromPlan: user.subscriptionPlan ?? null,
               toPlan: "free",
             },
