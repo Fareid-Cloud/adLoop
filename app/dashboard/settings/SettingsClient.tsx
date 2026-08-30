@@ -1070,8 +1070,17 @@ function TrackerAdLink({
   // فتحتاج الماكرو صراحةً؛ وميتا وتيك توك وسناب تُلحقه بنفسها، وإضافته
   // يدوياً عندها تُنتج نسخةً مكرّرة تُضعف الإسناد. فالرابط الثاني **بلا
   // أيّ ماكرو** - وهو ليس نقصاً بل هو الصواب.
+  // 🔴 **`campaign=<ماكرو>` هو ما يجعل التحويل المتحقَّق يُنسَب لحملةٍ.**
+  //
+  // التتبّع يقرأ `?campaign=` ويمرّره حتى `mark-matched`؛ فبدونه يصل التحقّق
+  // بـ`campaignId = undefined` فيُسقَط - أي أنّ «الرقم الحقيقيّ» يبقى صفراً
+  // مهما صحّ كلُّ ما عداه. وماكرو الحملة يختلف بين المنصّات (لا يُلحَق
+  // تلقائياً كمعرّف النقرة): جوجل `{campaignid}`، ميتا `{{campaign.id}}`،
+  // تيك توك `__CAMPAIGN_ID__`. وجوجل وحدها تحتاج ماكرو النقرة صراحةً أيضاً.
   const root = base ? `${base.replace(/\/$/, "")}/api/track-click?ws=${workspaceId}` : null;
-  const googleLink = root ? `${root}&gclid={gclid}` : null;
+  const googleLink = root ? `${root}&campaign={campaignid}&gclid={gclid}` : null;
+  const metaLink = root ? `${root}&campaign={{campaign.id}}` : null;
+  const tiktokLink = root ? `${root}&campaign=__CAMPAIGN_ID__` : null;
   const link = root;
 
   // كلّ حالة تقول ما الناقص وأين يُضبط، لا "غير متاح" وتصمت.
@@ -1104,7 +1113,8 @@ function TrackerAdLink({
 
   const rows: Array<{ id: string; label: string; why: string; url: string }> = [
     { id: "google", label: tr("waLinkGoogle"), why: tr("waLinkGoogleWhy"), url: googleLink! },
-    { id: "rest", label: tr("waLinkOthers"), why: tr("waLinkOthersWhy"), url: link },
+    { id: "meta", label: tr("waLinkMeta"), why: tr("waLinkMetaWhy"), url: metaLink! },
+    { id: "tiktok", label: tr("waLinkTiktok"), why: tr("waLinkTiktokWhy"), url: tiktokLink! },
   ];
 
   return (
