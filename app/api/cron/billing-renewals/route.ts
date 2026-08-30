@@ -37,6 +37,45 @@ const REMIND_WITHIN_DAYS = 3;
 /** لا يتكرّر التنبيه نفسه داخل هذه المدّة. */
 const COOLDOWN_DAYS = 2;
 
+/**
+ * تذكيرٌ بالبريد. فشلُه لا يُفشِل الدورة: البند في الفيد وُضع أو سيوضع،
+ * والتذكير قناةٌ ثانية لا شرطٌ لصحّة الحساب.
+ */
+async function sendRenewalReminderEmail(email: string, locale: Locale, days: number) {
+  if (!process.env.RESEND_API_KEY) return;
+  try {
+    const { Resend } = await import("resend");
+    const { renderEmail } = await import("@/lib/emailTemplate");
+    const { getAppUrl } = await import("@/lib/appUrl");
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
+    await resend.emails.send({
+      from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
+      to: email,
+      subject: t(locale, "alerts.renewalEmailSubject", { days }),
+      html: renderEmail({
+        locale,
+        art: "loop",
+        title: t(locale, "alerts.renewalEmailTitle"),
+        subtitle: t(locale, "alerts.renewalEmailSubtitle"),
+        blocks: [
+          {
+            stat: {
+              label: t(locale, "alerts.renewalEmailDaysLabel"),
+              value: t(locale, "alerts.renewalEmailDaysValue", { days }),
+            },
+          },
+          { text: t(locale, "alerts.renewalEmailBody") },
+        ],
+        cta: { label: t(locale, "alerts.renewalEmailCta"), url: `${getAppUrl()}/dashboard/billing` },
+        preferencesUrl: `${getAppUrl()}/dashboard/settings?tab=preferences`,
+      }),
+    });
+  } catch (err) {
+    console.error("[billing-renewals] تعذّر إرسال تذكير التجديد:", err);
+  }
+}
+
 export async function GET(req: NextRequest) {
   const denied = denyUnlessCron(req);
   if (denied) return denied;
@@ -51,6 +90,7 @@ export async function GET(req: NextRequest) {
     where: { subscriptionStatus: "ACTIVE", currentPeriodEnd: { not: null } },
     select: {
       id: true,
+      email: true,
       preferredLocale: true,
       currentPeriodEnd: true,
       subscriptionPlan: true,
@@ -126,6 +166,13 @@ export async function GET(req: NextRequest) {
           1,
           Math.ceil((user.currentPeriodEnd.getTime() - now.getTime()) / 86_400_000)
         );
+
+        // بريدٌ إلى جانب البند في الفيد: إشعارُ الدفع لا يصل إلّا لمن فعّله
+        // (`pushSubscriptions: { some: {} }`)، والبندُ في الفيد لا يُرى إلّا
+        // لمن يفتح اللوحة - ومَن فترتُه على وشك الانتهاء قد يكون تركها.
+        // فالبريد هو القناة التي عند الجميع.
+        await sendRenewalReminderEmail(user.email, locale, days);
+
         await pushToActionFeed({
           workspaceId,
           source: "ACCOUNT",
