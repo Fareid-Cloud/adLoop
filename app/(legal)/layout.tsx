@@ -33,6 +33,7 @@ export default async function LegalLayout({ children }: { children: ReactNode })
       dir={ar ? "rtl" : "ltr"}
       data-accent="blue"
       data-mode="light"
+      data-mode-fixed=""
       className="min-h-screen bg-bg font-display"
     >
       <header className="border-b border-border">

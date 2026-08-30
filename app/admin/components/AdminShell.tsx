@@ -39,7 +39,7 @@ export function AdminShell({
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div dir="ltr" data-accent="red" data-mode="dark" className="flex min-h-screen bg-bg text-text-primary">
+    <div dir="ltr" data-accent="red" data-mode="dark" data-mode-fixed="" className="flex min-h-screen bg-bg text-text-primary">
       <aside
         className={`sticky top-0 flex h-screen shrink-0 flex-col border-e border-border bg-surface transition-[width] duration-200 ${
           collapsed ? "w-16" : "w-60"

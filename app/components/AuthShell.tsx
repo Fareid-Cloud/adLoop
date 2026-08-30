@@ -56,6 +56,7 @@ export function AuthShell({
       dir={locale === "ar" ? "rtl" : "ltr"}
       data-accent="blue"
       data-mode="light"
+      data-mode-fixed=""
       className="flex h-screen overflow-hidden bg-bg font-display"
     >
       {/* ==================== النصف البصري - ثابت لا يتمرّر ==================== */}

@@ -24,9 +24,19 @@ export function ThemeModeToggle({
 
   // العنصر الجذري هو ما تقرأه متغيّرات CSS، والغلاف الداخلي يحمل نسخته
   // أيضاً - يجب أن يتغيّرا معاً وإلا بقي نصف الصفحة على السمة القديمة.
+  // 🔴 **والمسح الشامل كان يطمس ما وُضع ليبقى ثابتاً.**
+  //
+  // `[data-mode]` يلتقط كلَّ عنصرٍ يحمل الوصف - ومنه **معاينتا الوضع في
+  // الإعدادات**، وهما موجودتان أصلاً لتُريا الفاتح والداكن جنباً إلى جنب.
+  // فكانت المعاينة «الفاتحة» تُختَم `dark` فور تبديل الوضع، فتظهر مربّعاً
+  // داكناً يُفترض أن يكون عيّنة الوضع الفاتح - أي أنّ الاختيار يعود يُجرَّب
+  // لا يُقرأ، وهو بالضبط ما بُنيت البطاقة لإلغائه.
+  //
+  // فمن ثبّت وضعه صراحةً (`data-mode-fixed`) يُستثنى: المعاينتان، وقشرتا
+  // الحساب والوثائق القانونية، ولوحة المالك.
   useEffect(() => {
     document.documentElement.setAttribute("data-mode", mode);
-    document.querySelectorAll("[data-mode]").forEach((el) => {
+    document.querySelectorAll("[data-mode]:not([data-mode-fixed])").forEach((el) => {
       if (el !== document.documentElement) el.setAttribute("data-mode", mode);
     });
   }, [mode]);

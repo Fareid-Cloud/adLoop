@@ -22,6 +22,10 @@ function MiniUi({ mode }: { mode: "light" | "dark" }) {
   return (
     <div
       data-mode={mode}
+      // وضعُ هذه المعاينة ثابتٌ بحكم وظيفتها: هي عيّنةُ الوضع لا انعكاسٌ
+      // للوضع الحاليّ. و`ThemeModeToggle` يختم كلّ `[data-mode]` عند التبديل،
+      // فبدون هذا الوسم تصير المعاينتان نسختين من الوضع المفعَّل.
+      data-mode-fixed=""
       dir="ltr"
       aria-hidden
       className="pointer-events-none flex h-[74px] w-full overflow-hidden rounded-lg border border-border bg-bg"
