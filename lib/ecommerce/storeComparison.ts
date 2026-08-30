@@ -18,6 +18,7 @@
 // المعلوم أصدق من الرقم الكامل المخمَّن.
 
 import { prisma } from "@/lib/prisma";
+import { metricRollupRows } from "@/lib/metricRollup";
 
 export interface StoreLine {
   connectionId: string;
@@ -125,16 +126,19 @@ export async function getStoreComparison(
     links.map((l) => [`${l.platform}:${l.externalCampaignId}`, l.connectionId as string])
   );
 
-  const spendRows = await prisma.metricSnapshot.groupBy({
-    by: ["platform", "campaignId"],
-    where: { workspaceId, date: { gte: since }, platform: { in: AD_PLATFORMS as never } },
-    _sum: { cost: true },
+  // مسوّىً بمكان الظهور: صرف ميتا المعدود مرّتين كان ينسب لمتجرٍ إنفاقاً
+  // مضخَّماً فيقلب أيُّ متاجره «يكسب». صفوفٌ يوميّة، والحلقة تجمعها لكلّ
+  // متجرٍ فيصحّ المجموع. راجع `lib/metricRollup.ts`.
+  const spendRows = await metricRollupRows({
+    workspaceId,
+    date: { gte: since },
+    platforms: AD_PLATFORMS,
   });
 
   const spendByStore = new Map<string, number>();
   let unassignedAdSpend = 0;
   for (const row of spendRows) {
-    const cost = row._sum.cost ?? 0;
+    const cost = row.cost;
     if (cost <= 0) continue;
     const storeId = storeOfCampaign.get(`${row.platform}:${row.campaignId}`);
     if (!storeId) {

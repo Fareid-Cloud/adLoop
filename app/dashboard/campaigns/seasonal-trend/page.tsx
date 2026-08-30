@@ -6,7 +6,7 @@
 // مش تنبؤ ذكي، لكن مبنية على بيانات فعلية بدل تخمين.
 
 import { getSessionUserFromCookies } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { metricRollupRows, sumRollup } from "@/lib/metricRollup";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { PeriodBar } from "@/app/components/ui/PeriodBar";
 import { periodFromParams, daysBetween } from "@/lib/dateRange";
@@ -43,26 +43,22 @@ export default async function SeasonalTrendPage({
   const comparableEndLastMonth = new Date(startOfLastMonth);
   comparableEndLastMonth.setDate(now.getDate());
 
-  const [thisMonth, lastMonthComparable] = await Promise.all([
-    prisma.metricSnapshot.aggregate({
-      where: { workspaceId: workspace.id, date: { gte: startOfThisMonth, lte: now } },
-      _sum: { cost: true, rawConversions: true },
-    }),
-    prisma.metricSnapshot.aggregate({
-      where: {
-        workspaceId: workspace.id,
-        date: { gte: startOfLastMonth, lte: comparableEndLastMonth < endOfLastMonth ? comparableEndLastMonth : endOfLastMonth },
-      },
-      _sum: { cost: true, rawConversions: true },
+  // 🔴 **أخبث التسعة:** بلا فلتر منصّة كان كلُّ طلبِ متجرٍ (`cost:0`,
+  // `rawConversions:1`) يُعَدّ تحويلاً فيخفض CPA بالصمت، وبلا فلتر مكانٍ
+  // كان صرف ميتا يُعَدّ مرّتين. الاثنان يقلبان اتجاه التكلفة نفسه.
+  // `metricRollupRows` يقصر على منصّات الإعلان ويسوّي المكان. راجع الملف.
+  const [thisMonthRows, lastMonthRows] = await Promise.all([
+    metricRollupRows({ workspaceId: workspace.id, date: { gte: startOfThisMonth, lte: now } }),
+    metricRollupRows({
+      workspaceId: workspace.id,
+      date: { gte: startOfLastMonth, lte: comparableEndLastMonth < endOfLastMonth ? comparableEndLastMonth : endOfLastMonth },
     }),
   ]);
+  const thisMonth = sumRollup(thisMonthRows);
+  const lastMonthComparable = sumRollup(lastMonthRows);
 
-  const thisCpa = (thisMonth._sum.rawConversions ?? 0) > 0
-    ? (thisMonth._sum.cost ?? 0) / (thisMonth._sum.rawConversions ?? 1)
-    : null;
-  const lastCpa = (lastMonthComparable._sum.rawConversions ?? 0) > 0
-    ? (lastMonthComparable._sum.cost ?? 0) / (lastMonthComparable._sum.rawConversions ?? 1)
-    : null;
+  const thisCpa = thisMonth.rawConversions > 0 ? thisMonth.cost / thisMonth.rawConversions : null;
+  const lastCpa = lastMonthComparable.rawConversions > 0 ? lastMonthComparable.cost / lastMonthComparable.rawConversions : null;
 
   const hasComparison = thisCpa !== null && lastCpa !== null;
   const changePct = hasComparison ? Math.round(((thisCpa! - lastCpa!) / lastCpa!) * 100) : null;

@@ -8,6 +8,9 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { PeriodBar } from "@/app/components/ui/PeriodBar";
+import { periodFromParams } from "@/lib/dateRange";
+import { toDateBoundsForUser } from "@/lib/historyWindow";
 import { MapPin } from "lucide-react";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 
@@ -19,7 +22,14 @@ const DEVICE_KEYS: Record<string, string> = {
   OTHER: "devOther",
 };
 
-export default async function DeviceGeoPage() {
+export default async function DeviceGeoPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const period = periodFromParams(await searchParams);
+  const bounds = await toDateBoundsForUser(period.range);
+
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
@@ -32,15 +42,17 @@ export default async function DeviceGeoPage() {
     return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
+  // فلتر الفترة: كلا الجدولين يضيف صفّاً لكلّ يوم (`@@unique … date`)، فبلا
+  // حدٍّ زمنيّ كان يُجمَع مدى الحياة - CPA الجهاز/الموقع يتضخّم كلّ يوم.
   const [deviceRows, geoRows] = await Promise.all([
     prisma.devicePerformanceSnapshot.groupBy({
       by: ["device"],
-      where: { workspaceId: workspace.id },
+      where: { workspaceId: workspace.id, date: bounds },
       _sum: { clicks: true, cost: true, conversions: true },
     }),
     prisma.geoPerformanceSnapshot.groupBy({
       by: ["geoTarget"],
-      where: { workspaceId: workspace.id },
+      where: { workspaceId: workspace.id, date: bounds },
       _sum: { clicks: true, cost: true, conversions: true },
       orderBy: { _sum: { cost: "desc" } },
       take: 10,
@@ -66,6 +78,7 @@ export default async function DeviceGeoPage() {
         eyebrow={workspace.name}
         title={t(locale, "campPages.geoTitle")}
         description={t(locale, "campPages.geoIntro")}
+        actions={<PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />}
       />
 
       <div className="mb-6">
