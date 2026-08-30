@@ -25,6 +25,16 @@ export interface ProductPerformance {
   revenue: number;
   returnRatePct: number;
 
+  /** 🔴 **هل تكلفة البضاعة معروفةٌ أصلاً لهذا المنتج؟**
+   *
+   *  `cogs` عمودٌ افتراضُه `0`، فـ«غير مضبوطة» و«صفر» قيمةٌ واحدة. وواقعُ
+   *  المنصّات أنّ ووكومرس وزد وإيزي أوردرز **لا ترسل حقل تكلفةٍ إطلاقاً**،
+   *  وسلّة وشوبيفاي لا ترسلانها قبل أن يشغّل التاجر استيراد التكلفة - أي
+   *  أنّ صفراً هو الحالُ الطبيعيّ لمنتجٍ حقيقيٍّ وُصِّل للتوّ. وعندها يُحسَب
+   *  السعرُ كلّه ربحاً، فينقلب منتجٌ خاسرٌ إلى «رابح». تُقرأ هذه الراية قبل
+   *  أيّ نصيحةٍ تُنفق مالاً. */
+  cogsKnown: boolean;
+
   /** ربح الوحدة الواحدة بعد كل التكاليف الحقيقية */
   profitPerUnit: number;
   /** الربح الإجمالي المتحقق فعلاً (بعد استبعاد المرتجعات) */
@@ -283,6 +293,7 @@ export async function getEcommerceOverview(
       adSpend: adSpend === null ? null : Math.round(adSpend),
       returns,
       returnRatePct: Math.round(returnRatePct * 10) / 10,
+      cogsKnown: (p.cogs ?? 0) > 0,
       profitPerUnit,
       totalProfit,
       // الهامش يتبع الربح المعروض: لو حُوسب الإعلان بالإنفاق الحقيقيّ،

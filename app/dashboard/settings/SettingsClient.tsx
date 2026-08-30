@@ -518,6 +518,30 @@ function PreferencesTab({ user }: { user: UserData }) {
     router.refresh();
   }
 
+  /**
+   * 🔴 **اللغة تُطبَّق فور اختيارها، لا عند الحفظ.**
+   *
+   * كانت الدوسة تُعلّم الخيار مختاراً **ولا يتغيّر شيء** - ولا حتى بعد
+   * إعادة تحميلٍ كاملة - حتى يُضغط «حفظ». ولغةُ الواجهة ليست حقلاً كبقيّة
+   * الحقول: الصفحة كلّها هي معاينتها، فتحديدٌ يبدو مطبَّقاً وهو مرحَّلٌ
+   * يقول للقارئ إنّ التبديل عُطِّل. وهو نفس سلوك مبدّل صفحة الدخول.
+   *
+   * وبقيّةُ التفضيلات تبقى على زرّ الحفظ: أثرُها لا يظهر في الصفحة نفسها
+   * فلا يوهم تحديدُها بشيء.
+   */
+  async function handleLocaleChange(next: string) {
+    if (next === locale) return;
+    setLocale(next);
+    setSaving(true);
+    await fetch("/api/user/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ preferredLocale: next }),
+    });
+    setSaving(false);
+    router.refresh();
+  }
+
   return (
     <SettingsSection icon={Palette} title={tr("tabPreferences")} boxed description={tr("secPrefsDesc")}>
       {/* عمودان: ما يخصّ **اللغة** وما يخصّ **المظهر**. كانا قائمةً واحدة
@@ -532,7 +556,7 @@ function PreferencesTab({ user }: { user: UserData }) {
           <ToggleGroup
             options={[{ value: "ar", label: tr("langArabic") }, { value: "en", label: "English" }]}
             value={locale}
-            onChange={setLocale}
+            onChange={handleLocaleChange}
           />
 
           <FieldLabel>{tr("idxTimezone")}</FieldLabel>
