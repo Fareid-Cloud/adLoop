@@ -163,10 +163,14 @@ export function RecentActivityPanel({
           الرابط ينضغط «View all» حتى يصير حرفاً واحداً. */}
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
+          {/* 🔴 كان العنوان «يحتاج قرارك» وتحته «بنود تنتظر موافقتك أو رفضك»،
+              والبطاقة تعرض **سجلّ نشاط**: مزامنات وقرارات وتحقّقات معاً. فيقرأ
+              المشترك «مزامنة الحملات - بلا بيانات جديدة» تحت عنوانٍ يقول إنّها
+              تنتظر موافقته. والقرارات لها بطاقتها أسفل الصفحة أصلاً.
+              والسطر الثاني كان يعيد العنوان بكلماتٍ أخرى - فحُذف. */}
           <h2 className="section-title">
             {tr("recentActivity")}
           </h2>
-          <p className="mt-0.5 text-[12px] text-text-muted">{tr("recentActivityHint")}</p>
         </div>
         <Link
           href="/dashboard/actions"

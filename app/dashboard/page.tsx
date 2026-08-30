@@ -6,6 +6,7 @@
 
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { metricRollupRows, sumRollup, groupRollup } from "@/lib/metricRollup";
 import { redirect } from "next/navigation";
 import type { DailyTask } from "@prisma/client";
 import { MetricCard } from "@/app/components/ui/MetricCard";
@@ -143,27 +144,32 @@ export default async function GlancePage({
     ? { gte: comparisonBounds.gte, lte: comparisonBounds.lte }
     : { gte: new Date(0), lt: bounds.gte };
 
-  const [totalsAgg, byPlatform, byPlatformPrev, dailySnapshots, todaysTasks, urgentActionItems, valueConfig, previousPeriodAgg] =
+  // 🔴 **الصفحة الأولى التي يفتحها كلّ مشترك كانت تجمع `MetricSnapshot` خاماً.**
+  //
+  // أربعةُ استعلاماتٍ بلا فلتر مكان ظهورٍ ولا فلتر منصّة: فصرفُ ميتا يُعَدّ
+  // مرّتين حين يجتمع الصفّ المجمَّع والمقسَّم، وصفوفُ ويب هوك المتجر
+  // (`cost: 0`) تُخلَط بأداء الإعلان فتخفض تكلفة العميل بالصمت، والتحويلُ
+  // المتحقَّق يُقرأ من العمود القديم لا من `ConversionVerification`.
+  // نفس عطب الصفحات التسع (PG-1→9) - وهذه أظهرُها جميعاً ولم تكن في قائمتها.
+  const [rollupNow, rollupPrev, rollupDaily] = await Promise.all([
+    metricRollupRows({ workspaceId: workspace.id, date: bounds }),
+    metricRollupRows({ workspaceId: workspace.id, date: prevWhere }),
+    metricRollupRows({ workspaceId: workspace.id, date: { gte: fourteenDaysAgo } }),
+  ]);
+
+  // شكل `_sum` محفوظ عمداً: القرّاء أدناه مكتوبون عليه، وتغييرُ الأرقام
+  // وحدها أقلّ خطراً من إعادة كتابة الصفحة معها.
+  const totalsAgg = { _sum: sumRollup(rollupNow) };
+  const byPlatform = [...groupRollup(rollupNow, (r) => r.platform).entries()].map(
+    ([platform, m]) => ({ platform, _sum: m })
+  );
+  const byPlatformPrev = [...groupRollup(rollupPrev, (r) => r.platform).entries()].map(
+    ([platform, m]) => ({ platform, _sum: m })
+  );
+  const dailySnapshots = [...rollupDaily].sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  const [todaysTasks, urgentActionItems, valueConfig, previousPeriodAgg] =
     await Promise.all([
-      prisma.metricSnapshot.aggregate({
-        where: { workspaceId: workspace.id, date: bounds },
-        _sum: { clicks: true, cost: true, rawConversions: true, verifiedConversions: true },
-      }),
-      prisma.metricSnapshot.groupBy({
-        by: ["platform"],
-        where: { workspaceId: workspace.id, date: bounds },
-        _sum: { clicks: true, verifiedConversions: true, cost: true, rawConversions: true, impressions: true, revenue: true },
-      }),
-      prisma.metricSnapshot.groupBy({
-        by: ["platform"],
-        where: { workspaceId: workspace.id, date: prevWhere },
-        _sum: { verifiedConversions: true, cost: true, revenue: true },
-      }),
-      prisma.metricSnapshot.findMany({
-        where: { workspaceId: workspace.id, date: { gte: fourteenDaysAgo } },
-        select: { date: true, rawConversions: true, verifiedConversions: true },
-        orderBy: { date: "asc" },
-      }),
       prisma.dailyTask.findMany({
         where: {
           workspaceId: workspace.id,
@@ -537,7 +543,7 @@ export default async function GlancePage({
           {sourceRows.length > 0 && (
             <div className="mb-4">
               <SourcePerformanceTable rows={sourceRows} locale={locale} />
-              {platformInsight && <p className="mt-2 px-1 text-[13px] text-text-muted">💡 {platformInsight}</p>}
+              {platformInsight && <p className="mt-2 px-1 text-[13px] text-text-muted">{platformInsight}</p>}
             </div>
           )}
 

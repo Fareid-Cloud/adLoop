@@ -99,7 +99,7 @@ export default async function PricingPage({
 
       {roasGapInsight && (
         <div className="mb-4 card pad-md text-[13px] text-text-muted">
-          💡 {roasGapInsight}
+          {roasGapInsight}
         </div>
       )}
       <ProductCostsPanel workspaceId={workspace.id} missingCount={missingCogsCount} locale={locale} />

@@ -7,6 +7,25 @@
 // أسوأ من غيابه لأنه يوحي بحياة ليست موجودة، ويُفقد الثقة بأول تدقيق.
 
 import { prisma } from "@/lib/prisma";
+import { t } from "@/lib/i18n/dictionary";
+
+/**
+ * 🔴 **رمزُ خطأٍ من المنصّة لا يُعرَض للمشترك.**
+ *
+ * كان `errorMessage` يُطبع كما ورد، فظهر **`invalid_grant`** حرفياً في
+ * الصفحة الرئيسية - رمزُ OAuth لا يعني للمعلن شيئاً ولا يقول له ماذا يفعل،
+ * ويقرأ كعطبٍ في المنتج لا كربطٍ انتهت صلاحيته. والتفصيل يبقى في السجلّ
+ * عندنا حيث يُشخَّص، ويصل للمشترك ما يفعله فقط.
+ */
+function syncErrorText(raw: string | null | undefined, ar: boolean): string {
+  const locale = ar ? "ar" : "en";
+  const code = (raw ?? "").toLowerCase();
+  if (/invalid_grant|invalid_client|unauthor|token|expired|permission/.test(code)) {
+    return t(locale, "home.syncErrAuth");
+  }
+  if (/rate|quota|too many|429/.test(code)) return t(locale, "home.syncErrRate");
+  return t(locale, "home.syncErrGeneric");
+}
 import type { ActivityRow, PlatformCard } from "@/app/dashboard/HomePanels";
 
 const FEED_LIMIT = 6;
@@ -45,7 +64,7 @@ export async function getRecentActivity(
       title: ar ? "تمّت مزامنة الحملات" : "Campaigns synced",
       // "نجحت ولم تجد جديداً" حالة مختلفة عن "نجحت وجلبت" - تُقال كما هي
       detail: !ok
-        ? (r.errorMessage ?? (ar ? "فشلت المزامنة" : "Sync failed")).slice(0, 90)
+        ? syncErrorText(r.errorMessage, ar)
         : r.recordsWritten && r.recordsWritten > 0
           ? ar ? `${r.recordsWritten} صفّاً محدَّثاً` : `${r.recordsWritten} rows updated`
           : ar ? "بلا بيانات جديدة" : "No new data",

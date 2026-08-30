@@ -92,7 +92,7 @@ export default async function VideoPerformancePage({
       />
 
       {ranked.length >= 2 && (
-        <div className="card mb-4 p-4 text-[13px] text-text-muted">💡 {insight}</div>
+        <div className="card mb-4 p-4 text-[13px] text-text-muted">{insight}</div>
       )}
 
       <div className="flex flex-col gap-2">

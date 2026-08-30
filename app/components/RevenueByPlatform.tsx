@@ -76,19 +76,19 @@ export function RevenueByPlatform({
           {tr("total", { value: num(totalRevenue), currency })}
         </span>
       </div>
-      <p className="mb-2 text-[11.5px] text-text-faint">
-        {tr("sortedBy")}
-        {breakEvenRoas !== null
-          ? tr("vsBreakEven", { n: breakEvenRoas })
-          : tr("setMargin")}
-        .
-      </p>
-
-      {/* مفتاح العلامة الرأسية: بدونه تُقرأ كخدش في الشريط لا كمعلومة،
-          وهي في الحقيقة أهمّ عنصر في الصفّ - ما بعدها هو الربح. */}
-      <p className="mb-3 flex items-center gap-1.5 text-[11.5px] text-text-faint">
-        <span className="inline-block h-3 w-[3px] shrink-0 rounded-full bg-text-primary" />
-        {tr("legendSpendMark")}
+      {/* 🔴 كان هنا سطران يشرحان **كيف رسمنا** لا ما تعنيه الأرقام:
+          «مرتَّبة بالإيراد، ملوَّنة بالعائد…» و«العلامة الرأسية = إنفاقك، وما
+          بعدها ربح». ومنتجٌ يشرح منهجيّته على الشاشة يُقرأ مولَّداً - الترتيب
+          يُرى، واللون يُرى. فبقي ما هو معلومةٌ فعلاً: رقمُ نقطة التعادل،
+          ومفتاحُ العلامة **كتسمية** لا كجملة. */}
+      <p className="mb-3 flex items-center gap-3 text-[11.5px] text-text-faint">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-[3px] shrink-0 rounded-full bg-text-primary" />
+          {tr("legendSpendMark")}
+        </span>
+        <span>
+          {breakEvenRoas !== null ? tr("vsBreakEven", { n: breakEvenRoas }) : tr("setMargin")}
+        </span>
       </p>
 
       <div className="flex flex-col gap-3">

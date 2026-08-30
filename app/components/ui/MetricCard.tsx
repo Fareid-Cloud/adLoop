@@ -126,7 +126,11 @@ export function MetricCard(props: MetricCardProps) {
             </span>
           )}
           <span className="flex min-w-0 items-center gap-1 text-[13px] font-medium text-text-muted">
-            <span className="truncate">{label}</span>
+            {/* 🔴 كان `truncate` يقصّ الاسم في شبكة الأربعة أعمدة، فيقرأ
+                المشترك «Cost per Ver…» و«AI calls (peri…» - اسمُ المؤشّر
+                مقطوعٌ فوق الرقم الذي يفسّره. والسطران أهون من نصف اسم:
+                البطاقة تتّسع قليلاً ولا تُخفي معناها. */}
+            <span className="line-clamp-2 leading-tight">{label}</span>
             {explainKey ? (
               <MetricInfo
                 explain={{
