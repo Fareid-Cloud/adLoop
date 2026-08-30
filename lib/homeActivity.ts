@@ -21,10 +21,10 @@ function syncErrorText(raw: string | null | undefined, ar: boolean): string {
   const locale = ar ? "ar" : "en";
   const code = (raw ?? "").toLowerCase();
   if (/invalid_grant|invalid_client|unauthor|token|expired|permission/.test(code)) {
-    return t(locale, "home.syncErrAuth");
+    return t(locale, "homePanels.syncErrAuth");
   }
-  if (/rate|quota|too many|429/.test(code)) return t(locale, "home.syncErrRate");
-  return t(locale, "home.syncErrGeneric");
+  if (/rate|quota|too many|429/.test(code)) return t(locale, "homePanels.syncErrRate");
+  return t(locale, "homePanels.syncErrGeneric");
 }
 import type { ActivityRow, PlatformCard } from "@/app/dashboard/HomePanels";
 
