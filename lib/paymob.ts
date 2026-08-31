@@ -4,11 +4,23 @@
 // اتأكدنا من بنيتها من مصدرين مستقلين: مواصفة OpenAPI ومكتبة Python
 // الرسمية). القاعدة المصرية: https://accept.paymob.com
 
+import type { BillingCurrency } from "@/lib/plans";
+
 const PAYMOB_BASE_URL = "https://accept.paymob.com";
 
 export interface CreateIntentionParams {
   amountCents: number;
-  currency: "EGP" | "SAR" | "AED";
+  /** 🔴 **كانت `"EGP" | "SAR" | "AED"` - ومجموعةٌ لا تطابق ما يُنتَج.**
+   *
+   *  `billingCurrencyFor` تُرجع `EGP | SAR | USD`: فالدولار **يُرسَل ولا
+   *  يُقبَل هنا**، والدرهم **مقبولٌ ولا يُرسَل أبداً**. ولم يمسكها المترجم
+   *  لأنّ `lib/billing.ts` كان يُمرّرها بـ`as` - وهو تأكيدٌ يُسكِت الخطأ
+   *  الوحيد الذي كان سيكشفها.
+   *
+   *  والأثر ليس نظرياً: الدولار هو الافتراضيّ لكلّ مساحةٍ ليست بالجنيه أو
+   *  الريال، فكلّ عميلٍ منهم يصطدم بـ`417` من Paymob. النوع الآن هو
+   *  `BillingCurrency` نفسه، فأيّ افتراقٍ لاحق يسقط عند البناء. */
+  currency: BillingCurrency;
   userId: string;
   userEmail: string;
   planLabel: string;

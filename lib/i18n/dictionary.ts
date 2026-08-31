@@ -1429,6 +1429,7 @@ export const dictionary = {
       errAlreadyOnPlan: "أنت مشترك في هذه الباقة بالفعل وسارية حتى نهاية المدة.",
       errCreditRange: "العدد يجب أن يكون بين {min} و{max} كريدت.",
       errGateway: "تعذر فتح صفحة الدفع. حاول مرة أخرى، وإن تكرر الأمر تواصل معنا.",
+      errCurrencyUnsupported: "بوابة الدفع لا تقبل عملة حسابك حالياً. تواصل معنا ونضبطها لك.",
       errCheckoutInProgress: "هناك عملية دفعٍ لهذا تفتح الآن. انتظر لحظةً ثم أعد المحاولة.",
     },
     // ==== نتيجة الدفع ====
@@ -5803,6 +5804,7 @@ export const dictionary = {
       errAlreadyOnPlan: "You are already on this plan and it is active until the end of the period.",
       errCreditRange: "The amount must be between {min} and {max} credits.",
       errGateway: "Could not open the checkout page. Try again, and contact us if it persists.",
+      errCurrencyUnsupported: "The payment gateway does not accept your account currency yet. Contact us and we will set it up.",
       errCheckoutInProgress: "A checkout for this is already opening. Wait a moment and try again.",
     },
     // ==== Payment result ====

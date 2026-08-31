@@ -237,7 +237,7 @@ async function startOrReuse(input: {
   try {
     const intention = await createPaymentIntention({
       amountCents,
-      currency: input.currency as "EGP" | "SAR" | "AED",
+      currency: input.currency,
       userId: input.userId,
       userEmail: input.userEmail,
       planLabel: input.label,
@@ -263,6 +263,14 @@ async function startOrReuse(input: {
         failureReason: err instanceof Error ? err.message.slice(0, 300) : "unknown",
       },
     });
+    // 🔴 **رسالةٌ عامّة أخفت سبباً دقيقاً قاله المزوّد بلفظه.**
+    // Paymob تُعيد `417` مع «تركيبة خاطئة بين رقم الانتجريشن والعملة» حين
+    // لا تدعم الانتجريشن المضبوطة عملةَ المساحة - وهو خطأ إعدادٍ يُصلَح
+    // في دقيقة، بينما «تعذّر فتح صفحة الدفع» يُرسل صاحبه يفتّش في كلّ شيء.
+    const message = err instanceof Error ? err.message : "";
+    if (message.includes("Integration ID + Currency")) {
+      return { ok: false, errorKey: "errCurrencyUnsupported" };
+    }
     return { ok: false, errorKey: "errGateway" };
   }
 }
