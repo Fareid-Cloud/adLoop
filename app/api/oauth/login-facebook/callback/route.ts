@@ -3,6 +3,7 @@ import { getAppUrl } from "@/lib/appUrl";
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { verifyLoginOAuthState } from "@/lib/loginOAuthState";
 import { createSessionToken } from "@/lib/auth";
 import { generateCsrfToken, CSRF_COOKIE_NAME } from "@/lib/csrf";
@@ -10,6 +11,15 @@ import { generateCsrfToken, CSRF_COOKIE_NAME } from "@/lib/csrf";
 const META_API_VERSION = "v25.0";
 
 export async function GET(req: NextRequest) {
+  // 🔴 **المسار الأضعف كان هو غير المحروس.** الدخول بالبريد وكلمة المرور
+  // عليه حدُّ معدّل، وردُّ المزوّد الخارجيّ عليه صفر - وهو نداءٌ يفتح جلسةً
+  // كاملة ويُنشئ حسابات. الحدُّ هنا بنفس أداة الدخول العاديّ.
+  const ip = getClientIp(req);
+  const { allowed } = await checkRateLimit(ip, "oauth-callback", 20, 15);
+  if (!allowed) {
+    return NextResponse.redirect(`${getAppUrl()}/login?oauth=error`);
+  }
+
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state");
@@ -60,14 +70,16 @@ export async function GET(req: NextRequest) {
     if (!user) {
       const existingByEmail = await prisma.user.findUnique({ where: { email: profile.email } });
       if (existingByEmail) {
-        user = await prisma.user.update({
-          where: { id: existingByEmail.id },
-          data: {
-            facebookLoginId: profile.id,
-            avatarUrl: existingByEmail.avatarUrl ?? avatarUrl,
-            name: existingByEmail.name ?? profile.name ?? null,
-          },
-        });
+        // 🔴 **حسابٌ قائم كان يُربَط بفيسبوك لمجرّد تطابق البريد.**
+        //
+        // وفيسبوك - بخلاف جوجل - **لا يُعيد أيّ إشارةٍ إلى التحقّق من
+        // البريد** في `/me?fields=email`؛ فلا سبيل إلى معرفة أنّ صاحب هذا
+        // الحساب يملك ذلك العنوان أصلاً. فمن يضع بريد الضحية على حساب
+        // فيسبوك ثمّ يدخل به، كان يُربَط بحسابها هنا ويملكه كاملاً.
+        //
+        // ولا يُغلَق الباب على صاحبه: يدخل بكلمة مروره ثمّ يربط فيسبوك من
+        // حسابه - وهي الموافقة الصريحة التي كان الربط التلقائيّ يتخطّاها.
+        return NextResponse.redirect(`${loginUrl}?oauth=link_signin_first`);
       } else {
         user = await prisma.user.create({
           data: {
@@ -75,7 +87,8 @@ export async function GET(req: NextRequest) {
             name: profile.name ?? null,
             avatarUrl,
             facebookLoginId: profile.id,
-            emailVerified: true,
+            // فيسبوك لا يشهد بملكية البريد، فلا نُسجّلها تحقّقاً منّا.
+            emailVerified: false,
           },
         });
       }

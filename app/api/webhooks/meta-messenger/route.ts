@@ -10,6 +10,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { decryptToken } from "@/lib/encryption";
 import { connectionsForPlatform } from "@/lib/platformConnections";
+import { markEventAsProcessed } from "@/lib/webhookSecurity";
 
 const META_API_VERSION = "v21.0";
 
@@ -60,6 +61,27 @@ export async function POST(req: NextRequest) {
         if (event.message?.is_echo) continue;
         const psid = event.sender?.id;
         if (!psid) continue;
+
+        // 🔴 **العدّ المزدوج هنا يفسد الرقم الذي يقوم عليه المنتج كلّه.**
+        //
+        // ميتا تُعيد إرسال الحدث ما لم يصلها تأكيدٌ سريع، وهذا المسار كان
+        // بلا إخمادِ تكرار: كلّ إعادةٍ تزيد `messageCount`. والعدّاد ليس
+        // زينةً - يمرّ إلى `humanRepliesCount` في `messengerLeadQuality`،
+        // فيرتفع تقديرُ جودة المحادثة، **فتُعلَّم نقرةٌ عابرة «متحقَّقة»**.
+        // أي أنّ خللاً في التسليم كان يرفع «التحويلات المتحقَّقة» - وهو
+        // بالضبط التضخيمُ الذي وُجد AdLoop ليكشفه.
+        //
+        // ونفس أداة سلّة وفورم الليدز (`markEventAsProcessed`): `mid` معرّفٌ
+        // عالميّ للرسالة، وحدثُ الإحالة الخالي منها يُفتاح بالمُرسِل ووقته.
+        const eventKey = event.message?.mid
+          ? String(event.message.mid)
+          : `${psid}:${event.timestamp ?? ""}`;
+        const isFirstDelivery = await markEventAsProcessed(
+          "meta-messenger",
+          eventKey,
+          workspace.id
+        );
+        if (!isFirstDelivery) continue;
 
         const adId = event.message?.referral?.ad_id ?? event.referral?.ad_id ?? null;
         const now = new Date(event.timestamp ?? Date.now());

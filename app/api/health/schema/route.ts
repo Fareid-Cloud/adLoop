@@ -42,12 +42,17 @@ export async function GET(req: NextRequest) {
   let dbError: string | null = null;
 
   try {
-    // أسماء الأعمدة الفعلية من الكتالوج - المصدر الوحيد الموثوق
-    const rows = await prisma.$queryRawUnsafe<Array<{ table_name: string; column_name: string }>>(
-      `SELECT table_name, column_name
-       FROM information_schema.columns
-       WHERE table_schema = current_schema()`
-    );
+    // أسماء الأعمدة الفعلية من الكتالوج - المصدر الوحيد الموثوق.
+    //
+    // بقالبٍ موسوم (`$queryRaw`) لا `$queryRawUnsafe`: الاستعلام اليوم بلا
+    // متغيّرات فلا فرق أمنيّ بينهما الآن، لكنّ الاسم `Unsafe` دعوةٌ لأوّل
+    // من يضيف متغيّراً بالدمج النصّي. والقالب الموسوم يمنعه بالبناء لا
+    // بالانتباه.
+    const rows = await prisma.$queryRaw<Array<{ table_name: string; column_name: string }>>`
+      SELECT table_name, column_name
+      FROM information_schema.columns
+      WHERE table_schema = current_schema()
+    `;
 
     const actual = new Map<string, Set<string>>();
     for (const r of rows) {

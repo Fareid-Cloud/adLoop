@@ -9,7 +9,17 @@ import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { AuthShell } from "@/app/components/AuthShell";
 import { SocialButton, FIELD, PRIMARY_BTN } from "@/app/components/AuthControls";
 
-export function LoginForm({ nextPath = "/dashboard", expired = false }: { nextPath?: string; expired?: boolean }) {
+/** أسبابُ فشل الدخول بمزوّدٍ خارجي، كما تُرسلها مساراتُ الردّ. */
+const OAUTH_NOTICE: Record<string, string> = {
+  cancelled: "auth.oauthCancelled",
+  error: "auth.oauthError",
+  suspended: "auth.oauthSuspended",
+  no_email: "auth.oauthNoEmail",
+  unverified: "auth.oauthUnverified",
+  link_signin_first: "auth.oauthLinkSignInFirst",
+};
+
+export function LoginForm({ nextPath = "/dashboard", expired = false, oauth = null }: { nextPath?: string; expired?: boolean; oauth?: string | null }) {
   const router = useRouter();
   const [locale, setLocale] = useAuthLocale();
   const [email, setEmail] = useState("");
@@ -104,6 +114,12 @@ export function LoginForm({ nextPath = "/dashboard", expired = false }: { nextPa
       {expired && !pendingToken && (
         <div className="mb-5 rounded-xl border border-gap/30 bg-gap/[0.07] p-3 text-[12.5px] leading-relaxed text-text-primary">
           {t(locale, "auth.sessionExpiredNotice")}
+        </div>
+      )}
+
+      {oauth && OAUTH_NOTICE[oauth] && !pendingToken && (
+        <div className="mb-5 rounded-xl border border-critical/30 bg-critical/[0.07] p-3 text-[12.5px] leading-relaxed text-text-primary">
+          {t(locale, OAUTH_NOTICE[oauth])}
         </div>
       )}
 

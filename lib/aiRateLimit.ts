@@ -404,7 +404,12 @@ export async function checkAndConsumeImageQualityQuota(userId: string): Promise<
   // `checkCredits` هي مصدر الحقيقة لحساب «مخصّص الباقة + المشترى». كتابة
   // الحساب هنا مرّة ثانية تعني رقمين يفترقان عند أوّل تعديل في الباقات.
   const credits = await checkCredits(userId, 0);
-  const effectiveMonthly = Math.min(MONTHLY_LIMIT, credits.left);
+  // 🔴 **نفس العلّة المُصلَحة أعلاه، بقيت في هذا المسار وحده.**
+  // `Math.min(MONTHLY_LIMIT, ...)` سقفٌ مسطَّحٌ عند ٨٠ فوق كلّ باقة، فمشترك
+  // Pro برصيد ١٥٠ يُمنَع عند ٨٠ في فحص جودة الصور - أي أنّ ما دفع فيه رقمٌ
+  // لا يبلغه. الرصيد المُعلَن هو الرصيد الفعليّ هنا كما هناك، وحدُّ المعدّل
+  // بالساعة هو ما يحمي من الاستنزاف لا سقفٌ يخالف ما بيع.
+  const effectiveMonthly = credits.left;
 
   const now = new Date();
   const isNewMonth =

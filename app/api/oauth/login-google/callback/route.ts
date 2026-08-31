@@ -3,11 +3,21 @@ import { getAppUrl } from "@/lib/appUrl";
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { verifyLoginOAuthState } from "@/lib/loginOAuthState";
 import { createSessionToken } from "@/lib/auth";
 import { generateCsrfToken, CSRF_COOKIE_NAME } from "@/lib/csrf";
 
 export async function GET(req: NextRequest) {
+  // 🔴 **المسار الأضعف كان هو غير المحروس.** الدخول بالبريد وكلمة المرور
+  // عليه حدُّ معدّل، وردُّ المزوّد الخارجيّ عليه صفر - وهو نداءٌ يفتح جلسةً
+  // كاملة ويُنشئ حسابات. الحدُّ هنا بنفس أداة الدخول العاديّ.
+  const ip = getClientIp(req);
+  const { allowed } = await checkRateLimit(ip, "oauth-callback", 20, 15);
+  if (!allowed) {
+    return NextResponse.redirect(`${getAppUrl()}/login?oauth=error`);
+  }
+
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state");
@@ -49,11 +59,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${loginUrl}?oauth=error`);
     }
 
+    // 🔴 **الربط بالبريد بلا التحقّق من ملكيته عند المزوّد.**
+    //
+    // حين لا يطابق `googleLoginId` أحداً، كان الحساب القائم يُربَط بهذا
+    // المزوّد لمجرّد تطابق البريد. وجوجل تعيد `email_verified` لسببٍ
+    // وجيه: البريد في ملفٍّ عند مزوّدٍ ليس دليلاً على ملكيته. فمن يضع
+    // بريد الضحية على حسابٍ غير متحقَّق ثمّ يدخل، يُربَط بحسابها ويملكه.
+    //
+    // ولا يُفتَح الباب إلّا لبريدٍ أثبت المزوّدُ نفسه ملكيّته.
+    const emailVerifiedAtProvider = profile.email_verified === true;
+
     let user = await prisma.user.findUnique({ where: { googleLoginId: profile.sub } });
 
     if (!user) {
       const existingByEmail = await prisma.user.findUnique({ where: { email: profile.email } });
       if (existingByEmail) {
+        if (!emailVerifiedAtProvider) {
+          return NextResponse.redirect(`${loginUrl}?oauth=unverified`);
+        }
         user = await prisma.user.update({
           where: { id: existingByEmail.id },
           data: {
@@ -62,6 +85,9 @@ export async function GET(req: NextRequest) {
             name: existingByEmail.name ?? profile.name ?? null,
           },
         });
+      } else if (!emailVerifiedAtProvider) {
+        // حسابٌ جديدٌ ببريدٍ غير متحقَّق يحجز عنواناً ليس لصاحبه.
+        return NextResponse.redirect(`${loginUrl}?oauth=unverified`);
       } else {
         user = await prisma.user.create({
           data: {
