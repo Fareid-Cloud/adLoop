@@ -12,6 +12,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma, type Platform, type TouchpointChannel } from "@prisma/client";
 import { demoCurrencyScale, roundForCurrency } from "@/lib/demoCurrency";
+import { SHOPPING_SNAPSHOT_WINDOW_DAYS } from "@/lib/ecommerce/productPerformance";
 // النصّ الاحتياطيّ وحده يُبنى هنا؛ المفاتيح تُترجَم عند القراءة.
 import { t } from "@/lib/i18n/dictionary";
 
@@ -157,7 +158,7 @@ export const DEMO_PRODUCTS = [
  *     فارغة، فلا يلتقط فحصُ العملة اختلافاً ويبقى أصحابها على أرقامٍ
  *     بعملةٍ واحدة إلى الأبد.
  */
-export const DEMO_SEED_VERSION = 5;
+export const DEMO_SEED_VERSION = 7;
 
 const DAYS = 90;
 
@@ -806,9 +807,25 @@ export async function seedDemoData(
   //   واقي شمس          ٢٫٦× مقابل ٢٫٨×             → تحت التعادل بقليل
   const TARGET_ROAS = [4.6, 3.6, 1.9, 4.1, 2.6];
 
+  // 🔴 **العائد المستهدَف أعلاه لم يكن يصل إلى الشاشة.** الكلفة كانت
+  // تُعايَر على مبيعات **كلّ** المدّة (ستّين يوماً من الطلبات)، بينما
+  // `getEcommerceOverview` يقسم عليها إيراد **ثلاثين** يوماً - لأنّ لقطة
+  // التسوّق نافذتها ثلاثون يوماً ثابتة (`SHOPPING_SNAPSHOT_WINDOW_DAYS`).
+  // فينزل كلّ منتجٍ إلى نصف عائده المقصود تقريباً:
+  //
+  //   سيروم فيتامين سي  المقصود ٤٫٦×  والظاهر ١٫١٩×
+  //   غسول لطيف         المقصود ٤٫١×  والظاهر ١٫٠٠×
+  //   المجموعة الكاملة  المقصود ١٫٩×  والظاهر ٠٫٤٨×
+  //
+  // أي أنّ كلّ منتجٍ في مساحة العرض يقرأ خاسراً عبر التسوّق - وهي القصّة
+  // المعكوسة تماماً لما تحكيه البذرة. البسط والمقام يقيسان المدّة نفسها الآن.
+  const shoppingWindowStart = day(SHOPPING_SNAPSHOT_WINDOW_DAYS);
   const saleAgg = await prisma.productSaleEvent.groupBy({
     by: ["productId"],
-    where: { productId: { in: products.map((p) => p.id) } },
+    where: {
+      productId: { in: products.map((p) => p.id) },
+      occurredAt: { gte: shoppingWindowStart },
+    },
     _sum: { revenue: true },
   });
   const revenueByProductId = new Map(saleAgg.map((r) => [r.productId, r._sum.revenue ?? 0]));
@@ -1058,4 +1075,57 @@ export async function seedDemoData(
   }
 
   await prisma.attributionResult.createMany({ data: attributions, skipDuplicates: true });
+
+  // ---------- مجموعات ميتا الإعلانية وفترة التعلّم ----------
+  //
+  // صفحةٌ أخرى كانت تُفتَح فارغة في مساحةٍ مليئة: «فترة التعلّم» تقرأ
+  // `adSetDailyConversions` و`metaAdSetSnapshot` ولم يكن أيّهما مبذوراً.
+  //
+  // والحالات الثلاث موجودة عمداً - مستقرّة، وتتعلّم، وتعلّمٌ محدود - لأنّ
+  // الصفحة بحالةٍ واحدة لا تُظهر ما تفعله: قاعدة ميتا (~٥٠ حدثاً خلال
+  // سبعة أيام) لا تُفهم إلّا بمجموعةٍ تحتها وأخرى فوقها.
+  const DEMO_ADSETS = [
+    { adSetId: "demo-as-retarget-lal", campaignId: "demo-m-retarget", nameAr: "إعادة استهداف — جمهور مشابه ١٪", nameEn: "Retargeting — 1% lookalike", targeting: "LOOKALIKE", perDay: 9.2 },
+    { adSetId: "demo-as-retarget-cart", campaignId: "demo-m-retarget", nameAr: "إعادة استهداف — سلة متروكة", nameEn: "Retargeting — abandoned cart", targeting: "CUSTOM_AUDIENCE", perDay: 4.8 },
+    { adSetId: "demo-as-aware-core", campaignId: "demo-m-awareness", nameAr: "وعي — اهتمامات عامة", nameEn: "Awareness — broad interests", targeting: "CORE", perDay: 2.1 },
+  ];
+
+  const adSetDaily: { workspaceId: string; adSetId: string; date: Date; conversions: number }[] = [];
+  const adSetTotals = new Map<string, { conv: number; cost: number; clicks: number; impr: number }>();
+
+  for (const a of DEMO_ADSETS) {
+    let conv = 0, cost = 0, clicks = 0, impr = 0;
+    for (let d = 0; d < 30; d++) {
+      const date = day(d);
+      const n = Math.max(0, Math.round(a.perDay * wave(d, 3) * weekend(date)));
+      adSetDaily.push({ workspaceId, adSetId: a.adSetId, date, conversions: n });
+      conv += n;
+      cost += m(a.perDay * 21) * wave(d, 3);
+      clicks += Math.round(a.perDay * 13 * wave(d, 3));
+      impr += Math.round(a.perDay * 340 * wave(d, 3));
+    }
+    adSetTotals.set(a.adSetId, { conv, cost: roundForCurrency(cost, currency), clicks, impr });
+  }
+
+  await Promise.all([
+    prisma.metaAdSetSnapshot.createMany({
+      data: DEMO_ADSETS.map((a) => {
+        const tot = adSetTotals.get(a.adSetId)!;
+        return {
+          workspaceId,
+          campaignId: a.campaignId,
+          adSetId: a.adSetId,
+          adSetName: name(a),
+          targetingType: a.targeting,
+          bidStrategyType: "LOWEST_COST_WITHOUT_CAP",
+          impressions: tot.impr,
+          clicks: tot.clicks,
+          cost: tot.cost,
+          conversions: tot.conv,
+        };
+      }),
+      skipDuplicates: true,
+    }),
+    prisma.adSetDailyConversions.createMany({ data: adSetDaily, skipDuplicates: true }),
+  ]);
 }

@@ -359,12 +359,12 @@ export const dictionary = {
     // ==== رؤى وتوصيات ====
     insightsPage: {
       title: "رؤى وتوصيات",
-      subtitle: "أسئلة محدَّدة بإجابات محسوبة من أرقامك أنت — لا تلخيص عام ولا رأي يناقض بقية الصفحات.",
+      subtitle: "أسئلة محدَّدة بإجابات محسوبة من أرقامك أنت.",
       subtitleShort: "أسئلة محدَّدة بإجابات محسوبة من أرقامك.",
       noneTitle: "لا توجد بيانات كافية للإجابة بعد",
       noneReason: "الإجابات هنا محسوبة من مبيعاتك وتكاليفك الحقيقية. اربط متجرك وأضف منتجاتك ليبدأ التحليل.",
       fourQuestions: "الأسئلة الأربعة",
-      fourQuestionsHint: "كل إجابة تعرض الأرقام التي بُنيت عليها. الإجابة بلا دليل رأي لا تحليل.",
+      fourQuestionsHint: "كل إجابة تعرض الأرقام التي بُنيت عليها.",
       evidence: "الأرقام التي بُنيت عليها",
       footnote: "هذه الإجابات محسوبة من قاعدة بياناتك مباشرة، لا مولَّدة بنموذج لغوي — فلا تستهلك رصيد الذكاء الاصطناعي، ولا تختلف نتيجتها بين تحديث وآخر ما لم تتغيّر أرقامك.",
       qProfitDrop: "لماذا انخفض الربح؟",
@@ -1347,7 +1347,7 @@ export const dictionary = {
       perMonth: "/ شهرياً",
       perYear: "/ سنوياً",
       youSave: "توفّر {amount}",
-      mostPopular: "الأنسب لأغلب العملاء",
+      mostPopular: "الباقة المقترحة",
       choosePlan: "اختر هذه الباقة",
       priceOnRequest: "بالاتّفاق",
       contactSales: "تواصل معنا",
@@ -1497,7 +1497,7 @@ export const dictionary = {
       note: "يمكنك التخطّي والعودة لاحقاً — لكن اللوحة تبقى فارغة حتى تربط حساباً وتختار حملاتك.",
 
       welcomeTitle: "أهلاً بك في AdLoop",
-      welcomeBody: "طبقة الحقيقة لإعلاناتك. خطوتان فعليتان تفصلانك عن أوّل رقم حقيقي — لن نطلب منك أكثر.",
+      welcomeBody: "طبقة الحقيقة لإعلاناتك. خطوتان تفصلانك عن أوّل رقم متحقَّق.",
 
       gapTitle: "الرقم الحقيقي، لا رقم المنصة",
       gapBody: "المنصات تحتسب أحياناً تحويلات لم تحدث. نقارن ما تقوله المنصة بما تحقّق فعلاً من محادثة واتساب أو طلب مؤكَّد — والفارق بينهما هو ما يقود كل قرار هنا.",
@@ -1509,14 +1509,14 @@ export const dictionary = {
       blockConnect: "لن تتقدّم هذه الخطوة حتى يُربط حساب واحد فعلاً. اضغط «اربط» أعلاه — تعود إلى هنا تلقائياً بعد الموافقة.",
 
       campaignsTitle: "اختر الحملات التي تتابعها",
-      campaignsBody: "نتابع ما تختاره فقط — لوحة أوضح وتنبيهات أدقّ. يمكنك تغيير الاختيار لاحقاً من صفحة ربط المنصات.",
+      campaignsBody: "نتابع ما تختاره فقط. يمكنك تغيير الاختيار لاحقاً من صفحة ربط المنصات.",
       pick: "اختيار",
       pickFrom: "اختر حملات من {platform}",
       nLinked: "{n} حملة مرتبطة",
       blockCampaigns: "لن تتقدّم هذه الخطوة حتى تختار حملة واحدة على الأقلّ. بلا حملات لا يوجد ما يُزامَن.",
 
       doneTitle: "كل شيء جاهز",
-      doneBody: "أرقامك تُسحب الآن. ستجد في اللوحة قائمة تُكمل بقيّة الإعداد — كل خطوة فيها تكتمل وحدها بمجرّد إنجازها فعلاً، لا بضغطة.",
+      doneBody: "أرقامك تُسحب الآن. ستجد في اللوحة قائمة تُكمل بقيّة الإعداد، كل خطوة فيها تكتمل بمجرّد إنجازها فعلاً.",
     },
     // ==== الجولة التعريفية ====
     // ==== الإعداد والربط ===>
@@ -1644,11 +1644,11 @@ export const dictionary = {
       adCta: "زرّ الإجراء",
       adCtaPlaceholder: "مثال: تسوّق الآن",
       firstSeen: "أوّل مرّة رأيته",
-      firstSeenHint: "اتركه فارغاً ليُحسب من اليوم. إن كنت تعرف أنه يعمل منذ فترة، حدّد التاريخ — هذه هي الإشارة الأهمّ في الصفحة.",
+      firstSeenHint: "اتركه فارغاً ليُحسب من اليوم. إن كنت تعرف أنه يعمل منذ فترة، حدّد التاريخ.",
       sourceUrl: "رابط الإعلان (اختياري)",
 
       emptyTitle: "لم تُضف منافساً بعد",
-      emptyBody: "أضف منافساً، ثم احفظ إعلاناته التي تراها. مع الوقت تعرف أي إعلان أبقاه طويلاً — وهذا وحده يكشف ما يشتغل في سوقك.",
+      emptyBody: "أضف منافساً، ثم احفظ إعلاناته التي تراها. مع الوقت تعرف أي إعلان أبقاه طويلاً.",
 
       apiNote: "لماذا لا يُسحب هذا تلقائياً: الواجهة البرمجية لمكتبة إعلانات ميتا تُرجع الإعلانات التجارية لدول الاتحاد الأوروبي وبريطانيا فقط — قيدٌ من ميتا نفسها بسبب قانون الخدمات الرقمية، لا نقص صلاحيات لدينا. خارج تلك الدول تُرجع الإعلانات السياسية وحدها. لذلك الرصد هنا يدوي، لكن ما نضيفه فوقه — مدّة بقاء كل إعلان — لا تعرضه المكتبة أصلاً.",
 
@@ -2238,7 +2238,7 @@ export const dictionary = {
       noneBody: "اربط حملاتك من الرئيسية — نافذة اختيار الحملات تفتح في مكانها.",
 
       attrTitle: "محرّك الإسناد الذكي",
-      attrIntro: "حين تصل رسالة واتساب بلا رمز تتبّع واضح، يحاول النظام إسنادها إلى أقرب منصّة بناءً على التوقيت وتطابق رقم الهاتف — لا تخمين عشوائي، بل توزيع احتمالي مبنيّ على إشارات حقيقية.",
+      attrIntro: "حين تصل رسالة واتساب بلا رمز تتبّع واضح، يحاول النظام إسنادها إلى أقرب منصّة بناءً على التوقيت وتطابق رقم الهاتف. النتيجة توزيع احتمالي لا مطابقة مؤكَّدة.",
       attrNoneTitle: "لا توجد بيانات إسناد بعد",
       attrNoneBody: "تُبنى تلقائياً مع كل محادثة واتساب جديدة بعد ربط الحملات.",
       attrVerified: "مؤكّدة برمز مباشر",
@@ -2274,7 +2274,7 @@ export const dictionary = {
       pathTitle: "مسار العميل عبر المنصات",
       pathNoneTitle: "لا توجد تحويلات بعد",
       pathNoneBody: "تُبنى الصورة تلقائياً مع كل تحويل حقيقي يحدث.",
-      pathIntro: "مبنيّ على تتبّعنا الفعلي للنقرات لا على تخمين. جوجل وميتا لا تتبادلان بيانات العملاء، فهذه الصورة محدودة بالتفاعلات التي مرّت عبر أداة التتبّع الخاصة بنا وحدها.",
+      pathIntro: "مبنيّ على تتبّعنا الفعلي للنقرات. جوجل وميتا لا تتبادلان بيانات العملاء، فهذه الصورة محدودة بالتفاعلات التي مرّت عبر أداة التتبّع الخاصة بنا وحدها.",
       pathSingle: "منصّة واحدة قبل التحويل",
       pathMulti: "أكثر من منصّة قبل التحويل",
       pathMultiCaption: "لا يمكن لأي لوحة منصّة منفردة أن ترى هذه الرحلات كاملة",
@@ -2318,7 +2318,7 @@ export const dictionary = {
       // اتجاه التكلفة الشهري
       seasonTitle: "اتجاه التكلفة الشهري",
       seasonNote: "ملاحظة صريحة: التنبّؤ الموسمي الحقيقي يحتاج بيانات تاريخية لعدّة سنوات، وهي غير متوفّرة لدينا بعد.",
-      seasonIntro: "مقارنة فعلية بين الشهر الحالي والشهر الماضي بعدد الأيام نفسه - إشارة واقعية على الاتجاه لا تنبّؤ.",
+      seasonIntro: "مقارنة بين الشهر الحالي والشهر الماضي بعدد الأيام نفسه — إشارة اتجاه لا تنبّؤ.",
       seasonNone: "لا توجد بيانات كافية للمقارنة بعد",
       seasonNoneBody: "تحتاج شهراً واحداً على الأقلّ من البيانات التاريخية.",
       seasonHigher: "أعلى",
@@ -2338,7 +2338,6 @@ export const dictionary = {
       learnLimited: "على الأرجح Learning Limited",
       learnTitle: "فترة التعلّم",
       learnRule: "قاعدة ميتا الموثّقة علناً: تحتاج {n} تحويلاً خلال {days} أيام لتخرج من فترة التعلّم بثبات.",
-      learnFromData: "محسوبة من بياناتك الفعلية لا من تخمين.",
       learnNone: "لا توجد بيانات كافية بعد",
       learnNoneBody: "تحتاج يوماً أو يومين من المزامنة اليومية بعد ربط حملات ميتا.",
       // الأماكن التفصيلية
@@ -2375,13 +2374,13 @@ export const dictionary = {
       unitConversions: "تحويل",
       unitAd: "إعلان",
       mfTitle: "التوقّع الشهري",
-      mfIntro: "بناءً على معدّل صرفك الفعلي حتى الآن هذا الشهر - ليس تنبّؤاً ذكياً بل حساباً مباشراً لاستمرار الوتيرة نفسها.",
+      mfIntro: "بناءً على معدّل صرفك الفعلي حتى الآن هذا الشهر — حساب مباشر لاستمرار الوتيرة نفسها.",
       mfSpent: "مصروف حتى الآن",
       mfProjected: "متوقّع نهاية الشهر",
       mfTarget: "الهدف الشهري",
       mfDaysLeft: "أيام متبقّية",
       pmaxTitle: "قنوات Performance Max",
-      pmaxIntro: "الصندوق الأسود صار شفافاً - إنفاقك موزّع فعلياً على هذه القنوات. البيانات متاحة اعتباراً من يونيو {year} فقط.",
+      pmaxIntro: "توزيع إنفاق Performance Max الفعلي على القنوات. البيانات متاحة اعتباراً من يونيو {year} فقط.",
       pmaxNone: "لا توجد بيانات قنوات بعد",
       pmaxNoneBody: "إمّا لا توجد حملات Performance Max نشطة، أو لم تُسحب البيانات بعد.",
       shopTitle: "منتجات التسوّق (Merchant Center)",
@@ -2475,7 +2474,7 @@ export const dictionary = {
 
       // الجهاز والموقع
       geoTitle: "الجهاز والموقع الجغرافي",
-      geoIntro: "أي جهاز أو موقع يجلب عملاء أرخص فعلاً — استعلامان منفصلان عمداً لتجنّب فقدان بيانات حقيقية.",
+      geoIntro: "أي جهاز أو موقع يجلب عملاء أرخص فعلاً.",
       geoByDevice: "حسب الجهاز",
       geoByLocation: "حسب الموقع",
       geoNoData: "لا توجد بيانات بعد",
@@ -3718,7 +3717,7 @@ export const dictionary = {
     // ==== الإعدادات ====
     mcp: {
       heroTitle: "بيانات AdLoop، داخل أيّ وكيل ذكاء اصطناعيّ",
-      heroBody: "اربط AdLoop بـClaude وGemini وKimi وCursor ووكلائك المخصّصين عبر Model Context Protocol - فتعمل سلاسلُك على بيانات إسنادٍ حقيقية، لا على تخمين.",
+      heroBody: "اربط AdLoop بـClaude وGemini وKimi وCursor ووكلائك المخصّصين عبر Model Context Protocol، فتقرأ بيانات إسنادك مباشرة.",
       clientsTitle: "العملاء المدعومون",
       clientsAny: "وأيّ عميلٍ يتكلّم MCP - البروتوكول مفتوح، والمفتاح واحد.",
       clientCustom: "وكيل مخصّص",
@@ -4736,12 +4735,12 @@ export const dictionary = {
     // ==== Insights ====
     insightsPage: {
       title: "Insights",
-      subtitle: "Specific questions with answers calculated from your own numbers — no generic summary, and nothing that contradicts the other pages.",
+      subtitle: "Specific questions with answers calculated from your own numbers.",
       subtitleShort: "Specific questions with answers calculated from your numbers.",
       noneTitle: "Not enough data to answer yet",
       noneReason: "The answers here are calculated from your real sales and costs. Connect your store and add your products to begin.",
       fourQuestions: "The four questions",
-      fourQuestionsHint: "Each answer shows the numbers it was built on. An answer without evidence is an opinion, not analysis.",
+      fourQuestionsHint: "Each answer shows the numbers it was built on.",
       evidence: "The numbers behind this",
       footnote: "These answers are calculated straight from your database, not generated by a language model — they consume no AI credit, and they do not change between refreshes unless your numbers do.",
       qProfitDrop: "Why did profit drop?",
@@ -5715,7 +5714,7 @@ export const dictionary = {
       perMonth: "/ month",
       perYear: "/ year",
       youSave: "You save {amount}",
-      mostPopular: "Best for most customers",
+      mostPopular: "Recommended",
       choosePlan: "Choose this plan",
       priceOnRequest: "Let’s talk",
       contactSales: "Contact us",
@@ -6518,7 +6517,7 @@ export const dictionary = {
       note: "You can skip and come back later — but the dashboard stays empty until you connect an account and pick your campaigns.",
 
       welcomeTitle: "Welcome to AdLoop",
-      welcomeBody: "The truth layer for your ads. Two real steps stand between you and your first true number — we will not ask for more.",
+      welcomeBody: "The truth layer for your ads. Two steps stand between you and your first verified number.",
 
       gapTitle: "The real number, not the platform's",
       gapBody: "Platforms sometimes count conversions that never happened. We compare what the platform claims against what was actually verified by a WhatsApp message or a confirmed order — and that gap drives every decision here.",
@@ -6530,14 +6529,14 @@ export const dictionary = {
       blockConnect: "This step will not advance until one account is genuinely connected. Press Connect above — you return here automatically after approving.",
 
       campaignsTitle: "Choose the campaigns you track",
-      campaignsBody: "We track only what you pick — a cleaner dashboard and sharper alerts. You can change this later from Integrations.",
+      campaignsBody: "We track only what you pick. You can change this later from Integrations.",
       pick: "Choose",
       pickFrom: "Pick campaigns from {platform}",
       nLinked: "{n} campaigns linked",
       blockCampaigns: "This step will not advance until you pick at least one campaign. With no campaigns there is nothing to sync.",
 
       doneTitle: "Everything is ready",
-      doneBody: "Your numbers are being pulled now. On the dashboard you will find a checklist for the rest of the setup — each step completes on its own once actually done, not by clicking.",
+      doneBody: "Your numbers are being pulled now. The dashboard carries a checklist for the rest of the setup; each step completes once it is actually done.",
     },
     // ==== Guided tour ====
     // ==== Setup and connecting ===>
@@ -6665,11 +6664,11 @@ export const dictionary = {
       adCta: "Call to action",
       adCtaPlaceholder: "e.g. Shop now",
       firstSeen: "First time you saw it",
-      firstSeenHint: "Leave empty to count from today. If you know it has been running a while, set the date — this is the single most important signal on this page.",
+      firstSeenHint: "Leave empty to count from today. If you know it has been running a while, set the date.",
       sourceUrl: "Ad URL (optional)",
 
       emptyTitle: "No competitors added yet",
-      emptyBody: "Add a competitor, then save the ads you see from them. Over time you learn which ad they kept longest — and that alone reveals what works in your market.",
+      emptyBody: "Add a competitor, then save the ads you see from them. Over time you learn which ad they kept longest.",
 
       apiNote: "Why this is not pulled automatically: Meta's Ad Library API returns commercial ads for EU countries and the UK only — a restriction Meta applies under the Digital Services Act, not a permissions gap on our side. Everywhere else it returns political ads exclusively. So capture here is manual, but what we add on top — how long each ad has run — the Library does not show at all.",
 
@@ -7257,7 +7256,7 @@ export const dictionary = {
       noneBody: "Connect your campaigns from the home page — the campaign picker opens right there.",
 
       attrTitle: "Attribution engine",
-      attrIntro: "When a WhatsApp message arrives without a clear tracking code, the system tries to attribute it to the most likely platform using timing and phone-number matching — not a random guess, but a probabilistic split built on real signals.",
+      attrIntro: "When a WhatsApp message arrives without a clear tracking code, the system attributes it to the most likely platform using timing and phone-number matching. The result is a probabilistic split, not a confirmed match.",
       attrNoneTitle: "No attribution data yet",
       attrNoneBody: "This builds automatically with every new WhatsApp conversation once campaigns are connected.",
       attrVerified: "Confirmed by direct code",
@@ -7293,7 +7292,7 @@ export const dictionary = {
       pathTitle: "Cross-platform customer journey",
       pathNoneTitle: "No conversions yet",
       pathNoneBody: "The picture builds automatically with every real conversion.",
-      pathIntro: "Based on our own click tracking, not guesswork. Google and Meta do not share customer data with each other, so this picture is limited to interactions that passed through our tracking alone.",
+      pathIntro: "Based on our own click tracking. Google and Meta do not share customer data with each other, so this picture is limited to interactions that passed through our tracking alone.",
       pathSingle: "One platform before converting",
       pathMulti: "More than one platform before converting",
       pathMultiCaption: "No single platform dashboard can see these journeys in full",
@@ -7337,7 +7336,7 @@ export const dictionary = {
       // Monthly cost trend
       seasonTitle: "Monthly cost trend",
       seasonNote: "Plainly: real seasonal forecasting needs several years of history, which we do not have yet.",
-      seasonIntro: "A real comparison between this month and last, over the same number of days - a grounded signal of direction, not a forecast.",
+      seasonIntro: "This month against last, over the same number of days — a signal of direction, not a forecast.",
       seasonNone: "Not enough data to compare yet",
       seasonNoneBody: "You need at least one month of history.",
       seasonHigher: "higher",
@@ -7357,7 +7356,6 @@ export const dictionary = {
       learnLimited: "likely Learning Limited",
       learnTitle: "Learning phase",
       learnRule: "Meta's publicly documented rule: {n} conversions within {days} days to exit the learning phase for good.",
-      learnFromData: "Calculated from your own data, not a guess.",
       learnNone: "Not enough data yet",
       learnNoneBody: "You need a day or two of daily syncing after linking your Meta campaigns.",
       // Detailed placements
@@ -7394,12 +7392,12 @@ export const dictionary = {
       sparkSpam: "spam:",
       unitConversions: "conversions",
       unitAd: "ad",
-      mfIntro: "Based on your actual spend rate this month so far - not a clever forecast, just a straight calculation of the same pace continuing.",
+      mfIntro: "Based on your actual spend rate this month so far — a straight projection of the same pace continuing.",
       mfSpent: "Spent so far",
       mfProjected: "Projected month end",
       mfTarget: "Monthly target",
       mfDaysLeft: "Days left",
-      pmaxIntro: "The black box is now transparent - this is where your spend actually goes. Data is available from June {year} onwards only.",
+      pmaxIntro: "Where your Performance Max spend actually goes, by channel. Data is available from June {year} onwards only.",
       pmaxNone: "No channel data yet",
       pmaxNoneBody: "Either no Performance Max campaigns are active, or the data has not been pulled yet.",
       shopIntro: "Products silently rejected or restricted, and products taking spend without a single real conversion.",
@@ -7495,7 +7493,7 @@ export const dictionary = {
 
       // Device and location
       geoTitle: "Device and location",
-      geoIntro: "Which device or location actually brings cheaper customers — two separate queries on purpose, to avoid dropping real rows.",
+      geoIntro: "Which device or location actually brings cheaper customers.",
       geoByDevice: "By device",
       geoByLocation: "By location",
       geoNoData: "No data yet",
@@ -8048,7 +8046,7 @@ export const dictionary = {
     // ==== Settings ====
     mcp: {
       heroTitle: "AdLoop data, in any AI agent",
-      heroBody: "Connect AdLoop to Claude, Gemini, Kimi, Cursor and your own custom agents over the Model Context Protocol - so your AI workflows run on real attribution data, not guesses.",
+      heroBody: "Connect AdLoop to Claude, Gemini, Kimi, Cursor and your own custom agents over the Model Context Protocol, so they read your attribution data directly.",
       clientsTitle: "Supported clients",
       clientsAny: "And anything else that speaks MCP - the protocol is open and the key is the same.",
       clientCustom: "Custom agent",

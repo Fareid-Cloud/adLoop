@@ -106,7 +106,7 @@ const PRELIMINARY_UNITS = 8;
 /** نافذة لقطة التسوّق في `syncShoppingProductsForWorkspace` - مثبَّتة هناك،
  *  ومكرَّرة هنا لأنّ الرقمين يجب أن يتطابقا وإلّا صار العائد مقسوماً على
  *  مدّةٍ غير مدّة بسطه. */
-const SHOPPING_SNAPSHOT_WINDOW_DAYS = 30;
+export const SHOPPING_SNAPSHOT_WINDOW_DAYS = 30;
 
 export async function getEcommerceOverview(
   workspaceId: string,

@@ -76,9 +76,9 @@ export default async function BudgetSimulatorPage({
         tone="accent"
         eyebrow={workspace.name}
         title={t(locale, "campPages.simTitle")}
+        description={t(locale, "campPages.simIntro")}
         actions={<PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />}
       />
-      <p className="mb-6 text-xs text-text-faint">{t(locale, "campPages.simIntro")}</p>
 
       {platforms.length < 2 ? (
         <EmptyState
@@ -108,7 +108,12 @@ export default async function BudgetSimulatorPage({
             {!same && (
               <div className={`card pad-lg ${worth ? "border-verified/35" : "border-border"}`}>
                 <div className="mb-1 text-[12.5px] text-text-muted">
-                  {t(locale, "campPages.simIfMoved", { amount: SIMULATION_AMOUNT.toLocaleString() })}
+                  {/* المبلغ كان عارياً بلا عملة («لو نقلت 1,000») بينما
+                      كلّ رقمٍ تحته يحمل عملته - وهذه صفحةٌ يُقرَّر عليها
+                      نقلُ مالٍ بين منصّتين. */}
+                  {t(locale, "campPages.simIfMoved", {
+                    amount: `${SIMULATION_AMOUNT.toLocaleString()} ${workspace.currency}`,
+                  })}
                 </div>
                 <div className="flex flex-wrap items-baseline gap-2">
                   <span className={`font-mono text-[38px] font-bold leading-none ${worth ? "text-verified" : "text-critical"}`}>

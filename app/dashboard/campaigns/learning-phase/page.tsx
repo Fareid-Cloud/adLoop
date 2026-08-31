@@ -8,9 +8,6 @@ import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { estimateLearningPhase } from "@/lib/syncMetaAds";
 import { EmptyState } from "@/app/components/ui/EmptyState";
-import { PeriodBar } from "@/app/components/ui/PeriodBar";
-import { periodFromParams, daysBetween } from "@/lib/dateRange";
-import { toDateBoundsForUser } from "@/lib/historyWindow";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { GraduationCap } from "lucide-react";
@@ -29,9 +26,6 @@ export default async function LearningPhasePage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const period = periodFromParams(await searchParams);
-  const bounds = await toDateBoundsForUser(period.range);
-
   const user = await getSessionUserFromCookies();
   const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
   if (!user) {
@@ -45,9 +39,17 @@ export default async function LearningPhasePage({
   }
 
 
+  // 🔴 **النافذة سبعة أيام، لا الفترة المختارة.** قاعدة ميتا نفسها
+  // (~٥٠ حدثاً خلال ٧ أيام) معرَّفة على سبعة أيام بالضبط، و`estimateLearningPhase`
+  // تستقبل `conversionsLast7Days` بهذا الاسم. جمعُ ثلاثين يوماً وتمريرُه
+  // مكانَها يجعل كلّ مجموعةٍ «مستقرّة على الأرجح» - حكمٌ مقلوب على الصفحة
+  // كلّها. ومسار التنبيه المقابل (`checkMetaLearningPhaseAlertsForWorkspace`)
+  // كان يحسبها على سبعةٍ أصلاً، فكانت الصفحة تخالف تنبيهها.
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   const dailyRows = await prisma.adSetDailyConversions.groupBy({
     by: ["adSetId"],
-    where: { workspaceId: workspace.id, date: bounds },
+    where: { workspaceId: workspace.id, date: { gte: sevenDaysAgo } },
     _sum: { conversions: true },
   });
 
@@ -70,12 +72,8 @@ export default async function LearningPhasePage({
         tone="gap"
         eyebrow={workspace.name}
         title={t(locale, "campPages.learnTitle")}
-        actions={<PeriodBar locale={locale} preset={period.preset} range={period.range} compare={period.compare} />}
+        description={t(locale, "campPages.learnIntro")}
       />
-      <p className="mb-6 text-xs text-text-faint">
-        {t(locale, "campPages.learnIntro")}{" "}
-        {t(locale, "campPages.learnFromData")}
-      </p>
 
       {estimates.length === 0 ? (
         <EmptyState
@@ -92,7 +90,13 @@ export default async function LearningPhasePage({
                   {t(locale, `campPages.${STATUS_CONFIG[e.status as keyof typeof STATUS_CONFIG].labelKey}`)}
                 </span>
               </div>
-              <p className="text-xs text-text-faint">{e.message}</p>
+              {/* 🔴 **عربيّة مثبَّتة في واجهةٍ إنجليزية.** `e.message` نصٌّ
+                  مُصاغٌ سلفاً بـ`t("ar", ...)` داخل المُقدِّر، فيقرأ
+                  الإنجليزيّ سطراً عربياً تحت اسم مجموعته. والمُقدِّر يُعيد
+                  `messageKey` و`messageVars` لهذا الغرض بالضبط. */}
+              <p className="text-xs text-text-faint">
+                {t(locale, e.messageKey, e.messageVars)}
+              </p>
             </div>
           ))}
         </div>

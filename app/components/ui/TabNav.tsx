@@ -77,7 +77,14 @@ export function TabNav({
     setRtl(getComputedStyle(el).direction === "rtl");
     measure();
     el.addEventListener("scroll", measure, { passive: true });
-    const ro = new ResizeObserver(measure);
+    // 🔴 **التبويب النشط يبقى مقطوعاً عند الحافّة.** الجلبُ إلى العين يجري
+    // مرّةً عند التركيب، وعرضُ التبويبات يتغيّر بعده حين يصل خطّ الويب -
+    // فيُحسَب الموضع على عرضٍ لم يعد قائماً. المراقب يعيد الجلب مع كلّ
+    // تغيّر مقاس، فيُصحَّح الموضع متى استقرّ القياس.
+    const ro = new ResizeObserver(() => {
+      measure();
+      activeRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    });
     ro.observe(el);
     return () => {
       el.removeEventListener("scroll", measure);

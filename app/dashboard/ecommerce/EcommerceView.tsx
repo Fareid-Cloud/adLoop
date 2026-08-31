@@ -68,6 +68,13 @@ const STORE_LABEL: Record<string, string> = {
 
 const num = (n: number) => Math.round(n).toLocaleString("en-US");
 
+/** المحرّك يخزّن مفتاحاً ومتغيّراته خاماً (وهي القاعدة الصحيحة: التنسيق
+ *  يجري حيث تُعرَف لغة القارئ). لكنّ `amount` كان يُطبَع كما هو، فيُقرأ
+ *  «11052 SAR» داخل الجملة بينما البطاقة فوقها تقول «11,052 SAR» - رقمان
+ *  لنفس المبلغ بشكلين على شاشةٍ واحدة. */
+const formatVerdictVars = (vars: Record<string, string | number>) =>
+  typeof vars.amount === "number" ? { ...vars, amount: num(vars.amount) } : vars;
+
 export function EcommerceView({
   workspaceName, products, winner, runnerUp, losing, totals,
   windowDays, hasStoreConnection, storePlatform, currency, locale, storePicker,
@@ -206,7 +213,7 @@ export function EcommerceView({
                     {tr(CONFIDENCE_KEY[winner.confidence])}
                   </span>
                 </div>
-                <p className="text-[13px] leading-relaxed text-text-muted">{t(locale, `productVerdict.${winner.verdictKey}`, winner.verdictVars)}</p>
+                <p className="text-[13px] leading-relaxed text-text-muted">{t(locale, `productVerdict.${winner.verdictKey}`, formatVerdictVars(winner.verdictVars))}</p>
 
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Stat label={tr("unitProfit")} value={`${winner.profitPerUnit} ${currency}`} tone="var(--verified)" />
@@ -266,7 +273,7 @@ export function EcommerceView({
               <li key={p.id} data-search-id={p.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
                 <div className="min-w-0">
                   <div className="text-[13.5px] font-medium text-text-primary">{p.name}</div>
-                  <p className="text-[12.5px] text-text-muted">{t(locale, `productVerdict.${p.verdictKey}`, p.verdictVars)}</p>
+                  <p className="text-[12.5px] text-text-muted">{t(locale, `productVerdict.${p.verdictKey}`, formatVerdictVars(p.verdictVars))}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="font-mono text-[14px] font-bold text-critical">
