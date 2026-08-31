@@ -78,11 +78,11 @@ export default async function AuditPage({
       <form method="GET" className="mb-4 flex flex-wrap items-end gap-2">
         <label className="flex flex-col gap-1">
           <span className="text-[11px] uppercase tracking-wide text-text-faint">Search details</span>
-          <input name="q" defaultValue={sp.q ?? ""} placeholder="email, plan, reason" className="field h-8 w-56 px-2 text-[12.5px]" />
+          <input name="q" defaultValue={sp.q ?? ""} placeholder="email, plan, reason" className="field field-sm h-8 w-56" />
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-[11px] uppercase tracking-wide text-text-faint">Action</span>
-          <select name="action" defaultValue={sp.action ?? ""} className="field h-8 px-2 text-[12.5px]">
+          <select name="action" defaultValue={sp.action ?? ""} className="field field-sm h-8">
             <option value="">Any</option>
             {actionGroups.map((g) => (
               <option key={g.action} value={g.action}>{g.action} ({g._count})</option>

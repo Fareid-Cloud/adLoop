@@ -71,6 +71,20 @@ export default async function AdminOverview() {
             icon={DollarSign}
             tone="verified"
             subLabel={`${business.mrr.payingCustomers} paying`}
+            // `toUsd` تُخرج من المجموع أيّ عملةٍ بلا سعر صرف مسجَّل - وهو
+            // القرار الصحيح ("الغياب الصريح أصدق من رقم مطمئن غلط"، وهو نصّ
+            // التعليق في `lib/admin/shared.ts`). لكنّ تبويب الأعمال وحده كان
+            // يقول ذلك، والرقم هنا - وهو أوّل ما يُقرأ - يبدو كاملاً وليس كذلك.
+            caption={
+              Object.keys(business.mrr.usd.unconverted).length > 0
+                ? {
+                    text: `Excludes ${Object.entries(business.mrr.usd.unconverted)
+                      .map(([c, v]) => `${(v / 100).toLocaleString("en-US")} ${c}`)
+                      .join(", ")} — no exchange rate recorded`,
+                    tone: "warning" as const,
+                  }
+                : undefined
+            }
             trend={revenueSeries.length >= 4 ? <Sparkline values={revenueSeries} tone="verified" /> : undefined}
             delta={
               business.revenueDeltaPct !== null

@@ -149,7 +149,7 @@ export function AdminAction(props: AdminActionProps) {
           onChange={(e) => setReauthValue(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submitReauth()}
           placeholder="Password or MFA code"
-          className="field h-7 w-40 px-2 text-xs"
+          className="field field-sm h-7 w-40"
         />
         <button
           onClick={submitReauth}

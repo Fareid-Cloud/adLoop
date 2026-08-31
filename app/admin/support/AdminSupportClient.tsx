@@ -142,7 +142,7 @@ export function AdminSupportClient({
                 value={selected.category ?? ""}
                 onChange={(e) => pickCategory(e.target.value)}
                 title="What was this about? Powers the 'most common problems' report."
-                className="field h-7 px-2 text-[11.5px]"
+                className="field field-sm h-7"
               >
                 <option value="">Uncategorised</option>
                 {SUPPORT_CATEGORIES.map((c) => (

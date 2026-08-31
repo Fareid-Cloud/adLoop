@@ -79,12 +79,12 @@ export default async function CustomersPage({
             name="q"
             defaultValue={filters.q ?? ""}
             placeholder="Email, name, company"
-            className="field h-8 w-56 px-2 text-[12.5px]"
+            className="field field-sm h-8 w-56"
           />
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-[11px] uppercase tracking-wide text-text-faint">Plan</span>
-          <select name="plan" defaultValue={filters.plan ?? ""} className="field h-8 px-2 text-[12.5px]">
+          <select name="plan" defaultValue={filters.plan ?? ""} className="field field-sm h-8">
             <option value="">Any</option>
             {PLANS.map((p) => (
               <option key={p.key} value={p.key}>{p.key}</option>
@@ -93,7 +93,7 @@ export default async function CustomersPage({
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-[11px] uppercase tracking-wide text-text-faint">Status</span>
-          <select name="status" defaultValue={filters.status ?? ""} className="field h-8 px-2 text-[12.5px]">
+          <select name="status" defaultValue={filters.status ?? ""} className="field field-sm h-8">
             <option value="">Any</option>
             {["NONE", "TRIALING", "ACTIVE", "PAST_DUE", "CANCELED"].map((s) => (
               <option key={s} value={s}>{s}</option>

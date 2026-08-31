@@ -90,7 +90,7 @@ function useAdminSubmit(url: string) {
           onChange={(e) => setReauth(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && verify()}
           placeholder="Password or MFA code"
-          className="field h-7 w-40 px-2 text-xs"
+          className="field field-sm h-7 w-40"
         />
         <button type="button" onClick={verify} disabled={busy || !reauth} className="btn btn-primary btn-sm h-7 px-2 text-xs">
           Verify
@@ -200,7 +200,7 @@ export function OverrideEditor({
               value={values[l.key] ?? ""}
               onChange={(e) => setValues((v) => ({ ...v, [l.key]: e.target.value }))}
               placeholder="plan default"
-              className="field h-8 px-2 text-[12.5px]"
+              className="field field-sm h-8"
             />
           </Field>
         ))}
@@ -211,7 +211,7 @@ export function OverrideEditor({
           <select
             value={feat.scheduledReports === null ? "" : String(feat.scheduledReports)}
             onChange={(e) => setFeat((f) => ({ ...f, scheduledReports: e.target.value === "" ? null : e.target.value === "true" }))}
-            className="field h-8 px-2 text-[12.5px]"
+            className="field field-sm h-8"
           >
             <option value="">plan default</option>
             <option value="true">on</option>
@@ -222,7 +222,7 @@ export function OverrideEditor({
           <select
             value={feat.mcp === null ? "" : String(feat.mcp)}
             onChange={(e) => setFeat((f) => ({ ...f, mcp: e.target.value === "" ? null : e.target.value === "true" }))}
-            className="field h-8 px-2 text-[12.5px]"
+            className="field field-sm h-8"
           >
             <option value="">plan default</option>
             <option value="true">on</option>
@@ -230,14 +230,14 @@ export function OverrideEditor({
           </select>
         </Field>
         <Field label="Scale / Kill">
-          <select value={feat.scaleKill} onChange={(e) => setFeat((f) => ({ ...f, scaleKill: e.target.value }))} className="field h-8 px-2 text-[12.5px]">
+          <select value={feat.scaleKill} onChange={(e) => setFeat((f) => ({ ...f, scaleKill: e.target.value }))} className="field field-sm h-8">
             <option value="">plan default</option>
             <option value="view">view only</option>
             <option value="apply">can apply</option>
           </select>
         </Field>
         <Field label="Conversion sync">
-          <select value={feat.conversionSync} onChange={(e) => setFeat((f) => ({ ...f, conversionSync: e.target.value }))} className="field h-8 px-2 text-[12.5px]">
+          <select value={feat.conversionSync} onChange={(e) => setFeat((f) => ({ ...f, conversionSync: e.target.value }))} className="field field-sm h-8">
             <option value="">plan default</option>
             <option value="none">none</option>
             <option value="one">one platform</option>
@@ -254,18 +254,18 @@ export function OverrideEditor({
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             placeholder="catalogue price"
-            className="field h-8 px-2 text-[12.5px]"
+            className="field field-sm h-8"
           />
         </Field>
         <Field label="Currency" hint="Checkout ignores the custom price if the account bills in another currency.">
-          <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="field h-8 px-2 text-[12.5px]">
+          <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="field field-sm h-8">
             <option value="EGP">EGP</option>
             <option value="SAR">SAR</option>
             <option value="USD">USD</option>
           </select>
         </Field>
         <Field label="Reason (audit log)">
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Agency deal, Q3" className="field h-8 px-2 text-[12.5px]" />
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Agency deal, Q3" className="field field-sm h-8" />
         </Field>
       </div>
 
@@ -313,23 +313,23 @@ export function SubscriptionEditor({
       </p>
       <div className="flex flex-wrap items-end gap-2.5">
         <Field label="Action">
-          <select value={mode} onChange={(e) => setMode(e.target.value as "extend" | "gift")} className="field h-8 px-2 text-[12.5px]">
+          <select value={mode} onChange={(e) => setMode(e.target.value as "extend" | "gift")} className="field field-sm h-8">
             <option value="extend" disabled={!currentPlan}>Extend current plan</option>
             <option value="gift">Gift a plan</option>
           </select>
         </Field>
         {mode === "gift" && (
           <Field label="Plan">
-            <select value={planKey} onChange={(e) => setPlanKey(e.target.value)} className="field h-8 px-2 text-[12.5px]">
+            <select value={planKey} onChange={(e) => setPlanKey(e.target.value)} className="field field-sm h-8">
               {plans.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </Field>
         )}
         <Field label="Days">
-          <input type="number" min={1} max={730} value={days} onChange={(e) => setDays(e.target.value)} className="field h-8 w-24 px-2 text-[12.5px]" />
+          <input type="number" min={1} max={730} value={days} onChange={(e) => setDays(e.target.value)} className="field field-sm h-8 w-24" />
         </Field>
         <Field label="Reason (required)">
-          <input value={reason} onChange={(e) => setReason(e.target.value)} required minLength={3} placeholder="Goodwill after outage" className="field h-8 w-64 px-2 text-[12.5px]" />
+          <input value={reason} onChange={(e) => setReason(e.target.value)} required minLength={3} placeholder="Goodwill after outage" className="field field-sm h-8 w-64" />
         </Field>
         <button type="submit" disabled={busy || reason.trim().length < 3} className="btn btn-primary h-8 gap-1.5 px-3 text-[12.5px]">
           {mode === "gift" ? <Gift size={13} /> : <CalendarPlus size={13} />}
@@ -362,7 +362,7 @@ export function EmailComposer({ userId, email }: { userId: string; email: string
       </p>
       <div className="flex flex-col gap-2.5">
         <Field label="Subject">
-          <input value={subject} onChange={(e) => setSubject(e.target.value)} required minLength={3} maxLength={150} className="field h-8 px-2 text-[12.5px]" />
+          <input value={subject} onChange={(e) => setSubject(e.target.value)} required minLength={3} maxLength={150} className="field field-sm h-8" />
         </Field>
         <Field label="Message" hint="A blank line starts a new paragraph.">
           <textarea value={body} onChange={(e) => setBody(e.target.value)} required minLength={10} maxLength={5000} rows={7} className="field px-2 py-1.5 text-[12.5px]" />
@@ -399,7 +399,7 @@ export function NotesEditor({ userId, notes, tags }: { userId: string; notes: st
           <textarea value={value} onChange={(e) => setValue(e.target.value)} rows={4} maxLength={5000} className="field px-2 py-1.5 text-[12.5px]" />
         </Field>
         <Field label="Tags" hint="Comma separated, up to 8.">
-          <input value={tagText} onChange={(e) => setTagText(e.target.value)} className="field h-8 px-2 text-[12.5px]" />
+          <input value={tagText} onChange={(e) => setTagText(e.target.value)} className="field field-sm h-8" />
         </Field>
       </div>
       <button type="submit" disabled={busy} className="btn btn-primary mt-3 h-8 gap-1.5 px-3 text-[12.5px]">

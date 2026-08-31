@@ -253,6 +253,9 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
           </div>
         )}
 
+        {/* «اسأل سؤالاً آخر» كان يظهر على محادثةٍ لم يُسأل فيها شيء بعد -
+            والصفحة نفسها تقول فوقها «اسأل سؤالك الأوّل». وسؤالٌ حقيقيّ من
+            أمثلة المنتج أنفع من دعوةٍ عامّة: يُري القادمَ ما يُسأل. */}
         <div className="flex items-end gap-2 border-t border-border p-3">
           <textarea
             value={question}
@@ -265,7 +268,7 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
               }
             }}
             rows={2}
-            placeholder={t(locale, "aiAsk.followUp")}
+            placeholder={t(locale, messages.length === 0 ? "aiAsk.ph_home_1" : "aiAsk.followUp")}
             className="field flex-1 resize-none"
           />
           <button
