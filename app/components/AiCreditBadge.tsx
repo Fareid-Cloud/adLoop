@@ -17,7 +17,6 @@ export function AiCreditBadge({
   total: number;
   locale: "ar" | "en";
 }) {
-  const ar = locale === "ar";
   const pct = total > 0 ? (remaining / total) * 100 : 0;
 
   // لون دلالي: أخضر مريح، برتقالي عند الربع الأخير، أحمر عند النفاد
@@ -27,20 +26,27 @@ export function AiCreditBadge({
     <div className="flex items-center gap-1">
       <Link
         href="/dashboard/billing"
-        title={ar ? t(locale, "aiCredit.label") : "This month's AI analysis credit"}
+        title={t(locale, "aiCredit.label")}
         className="btn btn-secondary btn-sm"
       >
         <Sparkles size={14} style={{ color: tone }} />
-        <span className="font-mono text-[12.5px] font-medium" style={{ color: tone }}>
-          {remaining}
-        </span>
-        <span className="text-[11px] text-text-faint">/ {total}</span>
+        {/* 🔴 **النسبة تنقلب في العربية.** الرقمان صندوقان سطريّان منفصلان،
+            فيصفّهما `dir="rtl"` من اليمين: يقرأ صاحبُ الحساب «٢٠٠٠ / ١٩٩١»
+            أي أنّه استهلك ألفين من ألفٍ وتسعمئة وواحدٍ وتسعين - رقمٌ مقلوب
+            عن حصّةٍ يدفع ثمنها. النسبة وحدة واحدة تُقرأ من اليسار دائماً،
+            كالمعادلة والتاريخ - فتُلَفّ في `bdi` باتّجاهٍ صريح. */}
+        <bdi dir="ltr" className="flex items-center gap-1">
+          <span className="font-mono text-[12.5px] font-medium" style={{ color: tone }}>
+            {remaining}
+          </span>
+          <span className="text-[11px] text-text-faint">/ {total}</span>
+        </bdi>
       </Link>
 
       <Link
         href="/dashboard/billing?credits=1"
-        title={ar ? t(locale, "aiCredit.buyOrUpgrade") : "Buy credit or upgrade plan"}
-        aria-label={ar ? t(locale, "aiCredit.buy") : "Buy credit"}
+        title={t(locale, "aiCredit.buyOrUpgrade")}
+        aria-label={t(locale, "aiCredit.buy")}
         className="flex items-center justify-center card p-1.5 text-text-muted no-underline hover:text-accent"
       >
         <Plus size={14} />
