@@ -887,6 +887,13 @@ model PaymentIntent {
   fxRateUsed        Float?
   /// معرّف النيّة لدى Paymob - للمطابقة عند وصول الويب هوك
   paymobIntentionId String?
+  /// 🔴 **الرابط الوحيد المضمون بين العملية ونيّتها.**
+  ///
+  /// كان `intention_order_id` يعود من Paymob **ولا يُخزَّن**، فيبقى مطابقةُ
+  /// الويب هوك معتمدةً على `extras` وحدها - وهي حقلٌ يضعه Paymob حيث يشاء
+  /// من الحمولة، فإن لم يكن حيث نبحث سقط الإتمام صامتاً بردّ `200`.
+  /// و`obj.order.id` في الويب هوك هو هذا الرقم نفسه.
+  paymobOrderId     String?
   checkoutUrl       String? @db.Text
 
   status        PaymentIntentStatus @default(PENDING)
@@ -916,6 +923,7 @@ model PaymentIntent {
 
   @@index([userId, status])
   @@index([paymobIntentionId])
+  @@index([paymobOrderId])
 }
 
 // بيانات مرفوعة يدوي (Excel) - بتتخزن بنفس شكل MetricSnapshot تقريباً

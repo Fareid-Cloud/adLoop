@@ -2,14 +2,11 @@
 //
 // الويب هوك = مصدر الحقيقة الوحيد لنجاح الدفع (نفس مبدأ Stripe بالظبط).
 //
-// ⚠️ ملاحظة أمانة حرجة: اتأكدنا إن Paymob بتستخدم SHA-512 على "نص
-// مُركّب" (concatenated string) من حقول الرد - لكن **مقدرناش نوصل
-// لترتيب الحقول بالضبط** (صفحة التوثيق بتتحمّل بجافاسكريبت، أداة الجلب
-// عندنا مقدرش تشغّلها). الترتيب المكتوب تحت **تخمين مبني على نمط شائع
-// في توثيق Paymob القديم** - **لازم تتأكد منه فعلياً من لوحة تحكم
-// Paymob (Settings → Payment Integrations → HMAC) قبل أي استخدام حقيقي
-// بفلوس فعلية.** لحد ما يتأكد، النظام هيرفض أي حاجة توقيعها مش متطابق -
-// آمن افتراضياً (فشل مغلق)، مش خطر.
+// التوقيع: SHA-512 على نصٍّ مركَّب من حقول الردّ بترتيبٍ معيَّن. وكان هذا
+// الترتيب تخميناً حتى ٣١ أغسطس ٢٠٢٦، فرُفضت كلُّ دفعةٍ ناجحة بـ401 -
+// راجع `HMAC_FIELD_ORDER` أدناه. صار الآن من توثيق Paymob مباشرة.
+//
+// والفشل يبقى مغلقاً: ما لا يُطابَق توقيعُه يُرفَض.
 
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
@@ -62,6 +59,44 @@ function verifyPaymobHmac(transaction: any, receivedHmac: string | null): boolea
   }
 }
 
+
+/**
+ * ربطُ معاملةِ Paymob بنيّتنا.
+ *
+ * 🔴 **الاعتماد على `extras` وحدها أسقط الإتمام صامتاً.** نُرسل
+ * `extras` مع النيّة، لكنّ Paymob تضعها في الحمولة حيث تشاء - وقد لا
+ * تكون حيث نبحث. وحين لا نجدها كان المسار يردّ `200` ولا يفعل شيئاً:
+ * الكارت مخصوم، والنيّة `PENDING`، ولا خطأ في أيّ مكان. وهو بالضبط ما
+ * حدث بعد إصلاح التوقيع - انتقل الفشل من `401` صريح إلى `200` صامت.
+ *
+ * فتُجرَّب المواضع المعروفة، ثمّ يبقى **رقم الطلب** وهو الرابط المضمون:
+ * نخزّنه عند إنشاء النيّة (`paymobOrderId`)، و`obj.order.id` هو نفسه.
+ */
+async function resolveIntent(transaction: any): Promise<{ intentId: string; userId: string } | null> {
+  const candidates = [
+    transaction?.order?.extras,
+    transaction?.extras,
+    transaction?.payment_key_claims?.extra,
+    transaction?.payment_key_claims?.extras,
+  ];
+  for (const extras of candidates) {
+    if (extras?.intentId && extras?.userId) {
+      return { intentId: String(extras.intentId), userId: String(extras.userId) };
+    }
+  }
+
+  const orderId = transaction?.order?.id;
+  if (orderId) {
+    const byOrder = await prisma.paymentIntent.findFirst({
+      where: { paymobOrderId: String(orderId) },
+      select: { id: true, userId: true },
+    });
+    if (byOrder) return { intentId: byOrder.id, userId: byOrder.userId };
+  }
+
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { searchParams } = new URL(req.url);
@@ -105,8 +140,8 @@ export async function POST(req: NextRequest) {
     // 🔴 كان الفرع ده بيرجع صامتاً تماماً، فنيّة الدفع بتفضل `PENDING`
     // للأبد بعد رفض حقيقي من البنك - يعني "مدفوعات فاشلة" في أي تقرير
     // رقم صفر دايماً، والعميل اللي كارته اترفض مايظهرش في أي قائمة.
-    const failedExtras = transaction.order?.extras ?? transaction.extras ?? {};
-    const failedIntentId = failedExtras.intentId;
+    const failedResolved = await resolveIntent(transaction);
+    const failedIntentId = failedResolved?.intentId;
     if (failedIntentId) {
       const failed = await prisma.paymentIntent.updateMany({
         where: { id: String(failedIntentId), status: "PENDING" },
@@ -118,13 +153,13 @@ export async function POST(req: NextRequest) {
           failureReason: String(transaction.data?.message ?? "declined").slice(0, 300),
         },
       });
-      if (failed.count > 0 && failedExtras.userId) {
+      if (failed.count > 0 && failedResolved?.userId) {
         const intent = await prisma.paymentIntent.findUnique({
           where: { id: String(failedIntentId) },
           select: { planKey: true, amountCents: true, currency: true },
         });
         await logSubscriptionEvent({
-          userId: String(failedExtras.userId),
+          userId: String(failedResolved.userId),
           type: "PAYMENT_FAILED",
           toPlan: intent?.planKey ?? null,
           amountCents: intent?.amountCents ?? null,
@@ -135,10 +170,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
-  const extras = transaction.order?.extras ?? transaction.extras ?? {};
-  const userId = extras.userId;
-  const intentId = extras.intentId;
-  if (!userId) return NextResponse.json({ received: true });
+  const resolved = await resolveIntent(transaction);
+  if (!resolved) {
+    // لا يُبتلع الأمر بردٍّ صامت: يُطبَع شكلُ الحمولة كي يُعرَف أين وضعت
+    // Paymob المعرّفات هذه المرّة، بدل تخمينٍ ثانٍ.
+    console.error("[paymob-webhook] تعذّر ربط المعاملة بنيّة دفع", {
+      transactionId: transaction?.id ?? null,
+      orderId: transaction?.order?.id ?? null,
+      topLevelKeys: Object.keys(transaction ?? {}),
+      orderKeys: Object.keys(transaction?.order ?? {}),
+    });
+    return NextResponse.json({ received: true });
+  }
+  const { intentId, userId } = resolved;
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return NextResponse.json({ received: true });

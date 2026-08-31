@@ -262,7 +262,12 @@ async function startOrReuse(input: {
     const url = getUnifiedCheckoutUrl(intention.clientSecret);
     await prisma.paymentIntent.update({
       where: { id: intent.id },
-      data: { paymobIntentionId: String(intention.id), checkoutUrl: url },
+      data: {
+        paymobIntentionId: String(intention.id),
+        // رقم الطلب هو ما يصل في الويب هوك (`obj.order.id`)
+        paymobOrderId: String(intention.intentionOrderId),
+        checkoutUrl: url,
+      },
     });
 
     return { ok: true, url, intentId: intent.id };
