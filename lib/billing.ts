@@ -412,9 +412,25 @@ export async function fulfillPaymentIntent(
 export async function getIntentStatus(userId: string, intentId: string) {
   const intent = await prisma.paymentIntent.findFirst({
     where: { id: intentId, userId },
-    select: { status: true, kind: true, planKey: true, credits: true, failureReason: true },
+    select: {
+      status: true, kind: true, planKey: true, credits: true, failureReason: true,
+      // صفحةُ العودة إيصالٌ لا إشارةُ نجاح: تعرض ما دُفع فعلاً وبأيّ عملة،
+      // والسعر المعروض إن كان غير عملة التحصيل، ومتى يبدأ التجديد.
+      amountCents: true, currency: true,
+      listAmountCents: true, listCurrency: true,
+      cycle: true, paidAt: true,
+    },
   });
-  return intent;
+  if (!intent) return null;
+
+  // تاريخُ التجديد من الحساب نفسه بعد أن يكتبه الويب هوك - لا يُحسَب هنا
+  // مرّةً ثانية، فحسابان لتاريخٍ واحد يفترقان.
+  const account = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { currentPeriodEnd: true },
+  });
+
+  return { ...intent, currentPeriodEnd: account?.currentPeriodEnd ?? null };
 }
 
 

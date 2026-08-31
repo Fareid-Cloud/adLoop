@@ -5,6 +5,7 @@
 // الرسمية). القاعدة المصرية: https://accept.paymob.com
 
 import type { BillingCurrency } from "@/lib/plans";
+import { getAppUrl } from "@/lib/appUrl";
 
 const PAYMOB_BASE_URL = "https://accept.paymob.com";
 
@@ -55,6 +56,12 @@ export async function createPaymentIntention(params: CreateIntentionParams): Pro
         city: "Cairo", state: "NA", country: "EG",
       },
       extras: { userId: params.userId, planLabel: params.planLabel, intentId: params.intentId },
+      // 🔴 **رابطُ العودة في لوحة Paymob ثابتٌ بلا معرّف عملية.**
+      //
+      // وصفحةُ النتيجة تسأل عن نيّةٍ بعينها (`?intent=`)، فبلا المعرّف
+      // يعود **كلّ من نجح دفعُه** إلى رسالة فشل. يُرسَل هنا مع كلّ نيّة
+      // فيحمل معرّفها، ولا يعتمد على ما ضُبط في اللوحة.
+      redirection_url: `${getAppUrl()}/dashboard/billing/result?intent=${params.intentId}`,
     }),
   });
 
