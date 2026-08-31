@@ -157,7 +157,7 @@ export const DEMO_PRODUCTS = [
  *     فارغة، فلا يلتقط فحصُ العملة اختلافاً ويبقى أصحابها على أرقامٍ
  *     بعملةٍ واحدة إلى الأبد.
  */
-export const DEMO_SEED_VERSION = 4;
+export const DEMO_SEED_VERSION = 5;
 
 const DAYS = 90;
 
@@ -990,4 +990,72 @@ export async function seedDemoData(
     ],
     skipDuplicates: true,
   });
+
+  // ---------- محرّك الإسناد ----------
+  //
+  // 🔴 **صفحةٌ فارغة في مساحةٍ يُقال عنها إنّها مليئة.** شاشةُ إنشاء الديمو
+  // تَعِد بـ«مسارات إسناد» ضمن ما تبنيه، وصفحةُ محرّك الإسناد كانت تُفتَح
+  // على «لا توجد بيانات إسناد بعد» - أي وعدٌ في الشاشة يكذّبه أوّل نقر.
+  // والصفحة تحديداً هي ادّعاء المنتج الأساسيّ: كم محادثةً أثبتناها برمزٍ
+  // مباشر، وكم احتاجت توزيعاً احتمالياً.
+  //
+  // والأرقام **مشتقّة من التحويلات المتحقَّقة نفسها** لا مختارة: نصيب كل
+  // منصّة من المحادثات هو نصيبها من `baseRaw × verifyRate`، فلا يقرأ
+  // الزائر هنا توزيعاً يناقض ما رآه في صفحة الحملات.
+  const verifiedShare = DEMO_CAMPAIGNS.map((c) => ({
+    platform: c.platform,
+    weight: c.baseRaw * c.verifyRate,
+  })).filter((x) => x.weight > 0);
+  const totalVerified = verifiedShare.reduce((s, x) => s + x.weight, 0);
+
+  /** حصّة المحادثات من التحويلات: البقيّة تصل عبر النموذج أو الاتصال. */
+  const WA_SHARE = 0.35;
+  /** نافذة الإسناد أوسع من نافذة العرض ليصحّ عمود «الفترة السابقة». */
+  const ATTR_DAYS = 60;
+
+  const attributions: {
+    workspaceId: string;
+    conversationId: string;
+    receivedAt: Date;
+    attributionType: "VERIFIED" | "MODELED";
+    probabilityDistribution: Record<string, number>;
+    primarySignal: string;
+  }[] = [];
+
+  for (let d = 0; d < ATTR_DAYS; d++) {
+    const date = day(d);
+    const count = Math.max(1, Math.round(totalVerified * WA_SHARE * wave(d, 5) * weekend(date)));
+    for (let i = 0; i < count; i++) {
+      // اختيار المنصّة بالترجيح نفسه، بمولّد حتميّ حتى تثبت البذرة
+      const roll = ((d * 31 + i * 17) % 1000) / 1000;
+      let acc = 0;
+      let platform = verifiedShare[0].platform;
+      for (const p of verifiedShare) {
+        acc += p.weight / totalVerified;
+        if (roll <= acc) { platform = p.platform; break; }
+      }
+
+      // ٢٢٪ منها بلا رمزٍ مباشر - وهي بالضبط ما يوجد محرّك الإسناد لأجله.
+      // منصّةٌ ثانية مختلفة شرطُ التوزيع الاحتمالي: لو ساوت الأولى انطبق
+      // المفتاحان على واحد فصار «٠٫٢٦ لمنصّةٍ واحدة» - محادثةٌ ربعُها فقط
+      // منسوب ولا شيء يحمل الباقي.
+      const second = verifiedShare.find((p) => p.platform !== platform)?.platform;
+      const modeled = !!second && ((d * 7 + i * 13) % 100) < 22;
+      const at = new Date(date);
+      at.setHours(10 + (i % 9), (i * 7) % 60, 0, 0);
+
+      attributions.push({
+        workspaceId,
+        conversationId: `demo-${workspaceId}-${d}-${i}`,
+        receivedAt: at,
+        attributionType: modeled ? "MODELED" : "VERIFIED",
+        probabilityDistribution: modeled && second
+          ? { [platform]: 0.74, [second]: 0.26 }
+          : { [platform]: 1 },
+        primarySignal: modeled ? (i % 2 === 0 ? "time_proximity" : "hourly_pattern") : "phone_match",
+      });
+    }
+  }
+
+  await prisma.attributionResult.createMany({ data: attributions, skipDuplicates: true });
 }

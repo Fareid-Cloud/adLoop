@@ -165,17 +165,21 @@ export function TabNav({
         })}
       </div>
 
-      {/* التلاشي `pointer-events-none` كي لا يبتلع ضغطةً على تبويبٍ تحته */}
+      {/* التلاشي `pointer-events-none` كي لا يبتلع ضغطةً على تبويبٍ تحته.
+          ولونه لون **ما تحته فعلاً** (`--bg`) لا لون البطاقة: الشريط في
+          موضعَيه يقف على خلفيّة الصفحة مباشرة، وتدرّجٌ من `--surface`
+          (#161A21 فوق #0E1116) لا يتلاشى بل يضع لطخةً أفتح على الحافّة -
+          فيُقرأ التبويبُ المقطوع تحت شريطٍ رماديّ، وهو أسوأ من قطعه. */}
       {edges.start && (
         <div
-          className={`pointer-events-none absolute bottom-px top-0 start-0 w-10 from-surface to-transparent ${
+          className={`pointer-events-none absolute bottom-px top-0 start-0 w-10 from-bg to-transparent ${
             rtl ? "bg-gradient-to-l" : "bg-gradient-to-r"
           }`}
         />
       )}
       {edges.end && (
         <div
-          className={`pointer-events-none absolute bottom-px top-0 end-0 w-10 from-surface to-transparent ${
+          className={`pointer-events-none absolute bottom-px top-0 end-0 w-10 from-bg to-transparent ${
             rtl ? "bg-gradient-to-r" : "bg-gradient-to-l"
           }`}
         />

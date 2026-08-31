@@ -99,6 +99,9 @@ export async function seedDemoWorkspace(
       // بلا إعادة بذرٍ يترك الأرقام كما هي ويبدّل لافتتها وحدها.
       (existing.demoCurrency ?? "SAR") !== currency
     ) {
+      // `AttributionResult` تحمل `workspaceId` بلا علاقةٍ في المخطّط، فلا
+      // يجرّها حذفُ المساحة بالتتالي - نفس ما يفعله مسار حذف الحساب.
+      await prisma.attributionResult.deleteMany({ where: { workspaceId: existing.id } });
       await prisma.workspace.delete({ where: { id: existing.id } });
     } else {
       // البذر يتخطّى المكرّر، فإعادته على مساحة مكتملة لا تُضاعف شيئاً،
