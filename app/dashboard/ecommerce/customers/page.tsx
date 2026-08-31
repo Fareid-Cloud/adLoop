@@ -162,7 +162,7 @@ export default async function CustomersPage({
         />
       </div>
 
-      <SectionHeading hint={tr("segmentsHint")}>{tr("segments")}</SectionHeading>
+      <SectionHeading>{tr("segments")}</SectionHeading>
 
       <div className="mb-8 flex flex-col gap-2.5">
         {analytics.segments.map((s) => (

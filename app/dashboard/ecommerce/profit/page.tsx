@@ -15,7 +15,7 @@ import {
 } from "../_components/EcomPrimitives";
 import { getProfitJourney } from "@/lib/ecommerce/storeIntelligence";
 import { MetricCard } from "@/app/components/ui/MetricCard";
-import { Wallet, TrendingUp, Percent, AlertTriangle } from "lucide-react";
+import { Wallet, TrendingUp, Percent } from "lucide-react";
 import { t, tText, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { resolveStoreScope } from "@/lib/ecommerce/storeScope";
@@ -243,21 +243,8 @@ export default async function ProfitPage({
         </div>
       </div>
 
-      {journey.biggestLeak && (
-        <div className="mb-2 flex items-start gap-2 card pad-md">
-          <AlertTriangle size={15} className="mt-0.5 shrink-0 text-gap" />
-          {/* كانت جملة عربية مثبّتة، وفيها «ريال» ثابتة رغم أن عملة
-              المساحة متغيّرة - فتقرأ خطأً صريحاً لمتجر مصري أو إماراتي. */}
-          <p className="text-[12.5px] leading-relaxed text-text-muted">
-            {t(locale, "store.biggestLeakLine", {
-              item: tx(journey.biggestLeak.label),
-              pct: journey.biggestLeak.pctOfRevenue,
-              amount: `${fmtNum(journey.biggestLeak.amount * 0.1)} ${c}`,
-            })}
-          </p>
-        </div>
-      )}
-
+      {/* كان هنا بنر يكرّر أول «إجراء مقترح» حرفاً بحرف - نفس البند ونفس
+          النسبة ونفس مكسب الـ١٠٪ - فحُذف وبقي الإجراء لأنه يحمل الرابط. */}
       <RecommendedActions locale={locale} actions={actions} empty={tr("healthy")} />
     </div>
   );
