@@ -395,11 +395,20 @@ export default async function GlancePage({
                   : "bg-surface-raised text-text-muted"
             }`}
           >
+            {/* 🔴 **الشارة كانت تسمّي السبب الخطأ.** الدرجة صفرٌ حين لا
+                مكوّن لها بعد - وذلك يقع أيضاً لحسابٍ **مربوطٍ فعلاً** لم
+                تصل أرقامه (`hasAnyData` كاذبة فتُمرَّر `tracking: null`).
+                فقرأ صاحب «iDigital» «بانتظار ربط الحسابات» فوق قائمةٍ
+                خطواتُها الثلاث الأولى «مكتملة» وسجلٍّ يقول «تمّت مزامنة
+                الحملات» ستّ مرّات. الشارة تفرّق الآن: غيابُ الربط شيء،
+                وغيابُ البيانات بعد الربط شيء آخر. */}
             {health.isComplete
               ? tr("healthComplete")
               : health.overallScore > 0
                 ? tr("healthPartial")
-                : tr("healthPending")}
+                : setup.steps[0]?.done
+                  ? tr("healthNoData")
+                  : tr("healthPending")}
           </span>
         </Link>
         </>}
