@@ -113,3 +113,32 @@ export function countryFromRequest(headers: Headers): string | null {
   const code = raw.trim().toUpperCase();
   return /^[A-Z]{2}$/.test(code) ? code : null;
 }
+
+/**
+ * بلدُ الفوترة لحسابٍ بعينه، ويُثبَّت عند أوّل قراءة إن كان غائباً.
+ *
+ * 🔴 **الالتقاط عند التسجيل وحده يترك كلّ حسابٍ قائمٍ على الدولار أبداً.**
+ * الحقل أُضيف اليوم، فكلّ من سجّل قبله - وهم كلّ المستخدمين - `null`.
+ * ومطالبتُهم بمراسلة الدعم ليأخذوا سعر بلدهم ليست تصميماً.
+ *
+ * فيُقرأ من الترويسة عند أوّل حاجةٍ إليه **ويُكتَب**: مرّةً واحدة، ثمّ
+ * يصير مخزَّناً كحال المسجَّل حديثاً. والكتابةُ هي ما يُبقي الأمر
+ * التقاطاً لا استنتاجاً متكرّراً - ولو ظلّ يُقرأ من الشبكة في كلّ طلب
+ * لصار تبديلُ الـVPN لحظةَ الدفع كافياً لتبديل السعر.
+ */
+export async function resolveBillingCountry(
+  userId: string,
+  stored: string | null | undefined,
+  headers: Headers
+): Promise<string | null> {
+  if (stored) return stored;
+
+  const detected = countryFromRequest(headers);
+  if (!detected) return null;
+
+  // سباقُ طلبين لا يضرّ: كلاهما يكتب القيمة نفسها.
+  await prisma.user
+    .update({ where: { id: userId }, data: { billingCountry: detected } })
+    .catch(() => {});
+  return detected;
+}

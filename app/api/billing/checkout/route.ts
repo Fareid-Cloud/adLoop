@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { startSubscriptionCheckout, startCreditsCheckout } from "@/lib/billing";
 import { PLAN_BY_KEY, type BillingCycle, type PlanKey } from "@/lib/plans";
-import { priceListFor } from "@/lib/billingRegion";
+import { priceListFor, resolveBillingCountry } from "@/lib/billingRegion";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { workspaceAccess } from "@/lib/workspaceAccess";
 
@@ -39,7 +39,9 @@ export async function POST(req: NextRequest) {
     where: { id: user.id },
     select: { billingCountry: true },
   });
-  const currency = priceListFor(account?.billingCountry);
+  const currency = priceListFor(
+    await resolveBillingCountry(user.id, account?.billingCountry, req.headers)
+  );
 
   if (body?.mode === "credits") {
     const result = await startCreditsCheckout({

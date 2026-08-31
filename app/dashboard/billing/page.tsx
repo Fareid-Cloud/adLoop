@@ -10,7 +10,8 @@ import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PlansClient } from "./PlansClient";
 import { PLAN_BY_KEY, type PlanKey } from "@/lib/plans";
-import { priceListFor } from "@/lib/billingRegion";
+import { priceListFor, resolveBillingCountry } from "@/lib/billingRegion";
+import { headers } from "next/headers";
 import { getMonthlyAiUsage } from "@/lib/aiRateLimit";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
@@ -30,6 +31,10 @@ export default async function BillingPage({
     return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
+  // يُلتقَط من الترويسة عند أوّل قراءة إن لم يكن مخزَّناً - وإلّا بقي كلّ
+  // حسابٍ أُنشئ قبل إضافة الحقل على الدولار مهما كان بلدُ صاحبه.
+  const billingCountry = await resolveBillingCountry(user.id, user.billingCountry, await headers());
+
   const workspace = await getActiveWorkspace(user.id);
 
   const planKey = (user.subscriptionStatus === "ACTIVE" ? user.subscriptionPlan : null) as PlanKey | null;
@@ -45,7 +50,7 @@ export default async function BillingPage({
       locale={locale}
       // نفس دالّة مسار الدفع حرفياً: العرض والخصم من مصدرٍ واحد،
       // فيستحيل أن يختلفا كما كان يحدث (٢٬٤٩٩ جنيهاً معروضة، ١٤٩ دولاراً مخصومة).
-      currency={priceListFor(user?.billingCountry)}
+      currency={priceListFor(billingCountry)}
       currentPlan={planKey ?? "free"}
       creditsLeft={left}
       creditsAllowance={allowance + purchased}

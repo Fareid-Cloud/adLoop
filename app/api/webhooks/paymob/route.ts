@@ -56,7 +56,24 @@ export async function POST(req: NextRequest) {
   if (!transaction) return NextResponse.json({ received: true });
 
   if (!verifyPaymobHmac(transaction, receivedHmac)) {
-    console.error("توقيع HMAC غير صحيح من Paymob webhook - الطلب مرفوض");
+    // 🔴 **الرفض الصامت يخفي الفرق بين مهاجمٍ وإعدادٍ خاطئ.**
+    //
+    // ترتيبُ حقول الـHMAC عندنا **تخمينٌ** لم يُؤكَّد من لوحة Paymob بعد
+    // (بند A1 في `docs/open-audit-findings.md`). فلو كان خطأً، تُرفَض
+    // **كلّ** دفعةٍ صحيحة بهذا السطر بالضبط: الكارت مخصوم والاشتراك لا
+    // يُفعَّل. والسطر الواحد في السجلّ لا يكفي - يُطبَع ما يُميّز الحالتين:
+    // معرّفُ العملية ومبلغُها، فيُقارَن بلوحة Paymob مباشرة.
+    console.error(
+      "[paymob-webhook] رُفض التوقيع. لو تكرّر هذا مع كلّ دفعةٍ ناجحة فالسبب " +
+        "ترتيبُ حقول HMAC أو أنّ PAYMOB_HMAC_SECRET يخصّ تكاملاً آخر - لا مهاجم.",
+      {
+        transactionId: transaction?.id ?? null,
+        orderId: transaction?.order?.id ?? null,
+        amountCents: transaction?.amount_cents ?? null,
+        success: transaction?.success ?? null,
+        hmacReceived: Boolean(receivedHmac),
+      }
+    );
     return NextResponse.json({ error: "invalid signature" }, { status: 401 });
   }
 

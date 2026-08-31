@@ -180,11 +180,20 @@ export interface PaymentHealth {
   failedThisPeriod: number;
   pendingOlderThanDay: number;
   pastDueAccounts: number;
+  /** 🔴 نيّةٌ عالقةٌ بعد نصف ساعة = **دفعةٌ بلا خدمة على الأرجح**. */
+  stuckAwaitingWebhook: number;
+  /** هل وصل ويب هوك واحد من Paymob أصلاً؟ غيابُه التامّ عطبُ إعداد. */
+  paymobWebhooksEverReceived: number;
 }
 
 export async function getPaymentHealth(range: DateRange): Promise<PaymentHealth> {
   const dayAgo = new Date(Date.now() - 86_400_000);
-  const [failedThisPeriod, pendingOlderThanDay, pastDueAccounts] = await Promise.all([
+  // نصف ساعة تكفي وتزيد: ويب هوك Paymob السليم يصل في ثوانٍ.
+  const halfHourAgo = new Date(Date.now() - 30 * 60_000);
+  const [
+    failedThisPeriod, pendingOlderThanDay, pastDueAccounts,
+    stuckAwaitingWebhook, paymobWebhooksEverReceived,
+  ] = await Promise.all([
     prisma.paymentIntent.count({
       where: { status: "FAILED", updatedAt: { gte: range.from, lte: range.to } },
     }),
@@ -192,8 +201,22 @@ export async function getPaymentHealth(range: DateRange): Promise<PaymentHealth>
     // بالضرورة، لكنها أقرب فرصة إيراد ضايعة يقدر المالك يلحقها.
     prisma.paymentIntent.count({ where: { status: "PENDING", createdAt: { lt: dayAgo } } }),
     prisma.user.count({ where: { subscriptionStatus: "PAST_DUE" } }),
+    // 🔴 **المال يصل والخدمة لا تُفعَّل، بلا أثرٍ يقول ذلك.**
+    //
+    // التفعيل كلّه معلَّقٌ على ويب هوك Paymob. فإن لم يُضبَط رابطُه، أو
+    // رُفض توقيعُه (وترتيبُ حقول الـHMAC عندنا **تخمينٌ** لم يُؤكَّد بعد -
+    // راجع `docs/open-audit-findings.md` بند A1)، تُخصَم البطاقة وتبقى
+    // النيّة `PENDING` إلى الأبد: العميل دفع ولم يحصل على شيء، ولا شيء
+    // في المنتج كلّه يقول ذلك. هذا العدّاد هو ما يقوله.
+    prisma.paymentIntent.count({
+      where: { status: "PENDING", createdAt: { lt: halfHourAgo } },
+    }),
+    prisma.processedWebhookEvent.count({ where: { source: "paymob" } }),
   ]);
-  return { failedThisPeriod, pendingOlderThanDay, pastDueAccounts };
+  return {
+    failedThisPeriod, pendingOlderThanDay, pastDueAccounts,
+    stuckAwaitingWebhook, paymobWebhooksEverReceived,
+  };
 }
 
 export interface BusinessSummary {

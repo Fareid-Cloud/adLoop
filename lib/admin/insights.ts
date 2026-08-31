@@ -89,6 +89,19 @@ export function buildInsights(input: {
       });
     }
 
+    if (business.payments.stuckAwaitingWebhook > 0) {
+      out.push({
+        id: "stuck-awaiting-webhook",
+        tone: "critical",
+        text:
+          `${business.payments.stuckAwaitingWebhook} payment${business.payments.stuckAwaitingWebhook === 1 ? " has" : "s have"} been pending for over 30 minutes. ` +
+          (business.payments.paymobWebhooksEverReceived === 0
+            ? "No Paymob webhook has ever reached us — check that the Integration Processed Callback URL is set, and that PAYMOB_HMAC_SECRET matches that integration."
+            : "The card may have been charged without the subscription being activated."),
+        href: "/admin/analytics?tab=business",
+      });
+    }
+
     if (business.payments.pendingOlderThanDay > 0) {
       out.push({
         id: "abandoned-checkout",
