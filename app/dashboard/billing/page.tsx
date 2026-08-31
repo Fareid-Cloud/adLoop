@@ -9,7 +9,8 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PlansClient } from "./PlansClient";
-import { billingCurrencyFor, PLAN_BY_KEY, type PlanKey } from "@/lib/plans";
+import { PLAN_BY_KEY, type PlanKey } from "@/lib/plans";
+import { priceListFor } from "@/lib/billingRegion";
 import { getMonthlyAiUsage } from "@/lib/aiRateLimit";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
@@ -42,7 +43,9 @@ export default async function BillingPage({
   return (
     <PlansClient
       locale={locale}
-      currency={billingCurrencyFor(workspace?.currency ?? "USD")}
+      // نفس دالّة مسار الدفع حرفياً: العرض والخصم من مصدرٍ واحد،
+      // فيستحيل أن يختلفا كما كان يحدث (٢٬٤٩٩ جنيهاً معروضة، ١٤٩ دولاراً مخصومة).
+      currency={priceListFor(user?.billingCountry)}
       currentPlan={planKey ?? "free"}
       creditsLeft={left}
       creditsAllowance={allowance + purchased}

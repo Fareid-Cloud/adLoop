@@ -48,7 +48,7 @@ export default async function CustomerDetail({ params }: { params: Promise<{ id:
       preferredLocale: true, adminNotes: true, adminTags: true,
       subscriptionPlan: true, subscriptionStatus: true, currentPeriodEnd: true, cancelAtPeriodEnd: true,
       planLimitOverrides: true, featureOverrides: true,
-      customPriceOverrideCents: true, customPriceCurrency: true,
+      customPriceOverrideCents: true, customPriceCurrency: true, billingCountry: true,
       workspaces: {
         select: {
           id: true, name: true, currency: true, industryVertical: true, createdAt: true,
@@ -238,6 +238,7 @@ export default async function CustomerDetail({ params }: { params: Promise<{ id:
                   ? { amount: user.customPriceOverrideCents / 100, currency: user.customPriceCurrency ?? "EGP" }
                   : null
               }
+              billingCountry={user.billingCountry}
             />
           </Card>
         </>

@@ -141,11 +141,13 @@ export function OverrideEditor({
   limits,
   features,
   customPrice,
+  billingCountry,
 }: {
   userId: string;
   limits: Record<string, number> | null;
   features: Record<string, unknown> | null;
   customPrice: { amount: number; currency: string } | null;
+  billingCountry: string | null;
 }) {
   const { post, busy, reauthNode, statusNode } = useAdminSubmit(`/api/admin/customers/${userId}/override`);
   const [values, setValues] = useState<Record<string, string>>(
@@ -159,6 +161,7 @@ export function OverrideEditor({
   });
   const [price, setPrice] = useState(customPrice ? String(customPrice.amount) : "");
   const [currency, setCurrency] = useState(customPrice?.currency ?? "EGP");
+  const [country, setCountry] = useState(billingCountry ?? "");
   const [note, setNote] = useState("");
 
   function submit(e: FormEvent) {
@@ -181,6 +184,7 @@ export function OverrideEditor({
       limits: Object.keys(numeric).length > 0 ? numeric : null,
       features: Object.keys(featureBody).length > 0 ? featureBody : null,
       customPrice: price.trim() === "" ? null : { amount: Number(price), currency },
+      billingCountry: country.trim() === "" ? null : country.trim().toUpperCase(),
       note: note || undefined,
     });
   }
@@ -266,6 +270,21 @@ export function OverrideEditor({
         </Field>
         <Field label="Reason (audit log)">
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Agency deal, Q3" className="field field-sm h-8" />
+        </Field>
+      </div>
+
+      <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
+        <Field
+          label="Billing country"
+          hint="ISO-2. EG gets the regional price list; everyone else pays the USD list. Set from IP at signup — the customer cannot change it."
+        >
+          <input
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            placeholder="EG"
+            maxLength={2}
+            className="field field-sm h-8 uppercase"
+          />
         </Field>
       </div>
 

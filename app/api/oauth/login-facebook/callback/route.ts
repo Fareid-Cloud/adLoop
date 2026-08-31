@@ -3,6 +3,7 @@ import { getAppUrl } from "@/lib/appUrl";
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { countryFromRequest } from "@/lib/billingRegion";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { verifyLoginOAuthState } from "@/lib/loginOAuthState";
 import { createSessionToken } from "@/lib/auth";
@@ -87,6 +88,7 @@ export async function GET(req: NextRequest) {
             name: profile.name ?? null,
             avatarUrl,
             facebookLoginId: profile.id,
+            billingCountry: countryFromRequest(req.headers),
             // فيسبوك لا يشهد بملكية البريد، فلا نُسجّلها تحقّقاً منّا.
             emailVerified: false,
           },

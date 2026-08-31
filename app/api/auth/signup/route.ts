@@ -10,6 +10,7 @@
 // بوضوح في الواجهة).
 
 import { NextRequest, NextResponse } from "next/server";
+import { countryFromRequest } from "@/lib/billingRegion";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { createSessionToken } from "@/lib/auth";
@@ -119,6 +120,8 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.create({
     data: {
       email, passwordHash, name, preferredLocale: locale,
+      // قائمةُ السعر تُثبَّت هنا مرّةً واحدة، ولا يعدّلها صاحبُها بعدها.
+      billingCountry: countryFromRequest(req.headers),
       // لحظة الموافقة لا مجرّد أنّها حدثت - راجع التعليق في المخطَّط
       acceptedTermsAt: new Date(),
       verificationToken, verificationTokenExpiresAt,

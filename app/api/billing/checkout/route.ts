@@ -9,7 +9,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { startSubscriptionCheckout, startCreditsCheckout } from "@/lib/billing";
-import { billingCurrencyFor, PLAN_BY_KEY, type BillingCycle, type PlanKey } from "@/lib/plans";
+import { PLAN_BY_KEY, type BillingCycle, type PlanKey } from "@/lib/plans";
+import { priceListFor } from "@/lib/billingRegion";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { workspaceAccess } from "@/lib/workspaceAccess";
 
@@ -24,19 +25,21 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => null);
 
-  // 🔴 عملة الفوترة من `dataCurrency` (عملة حساب الإعلانات، غير قابلة
-  // للتعديل - قاعدة "العملة تتبع المال")، لا من `workspace.currency`
-  // الذي يحرّره المستخدم من الإعدادات. الشكل القديم كان يقرأ العملة
-  // المحرَّرة، فمن لم يربط حساباً (أو أبقى كوكي الديمو نشطاً) كان يختار
-  // الجنيه ويدفع سعر مصر لباقة الدولار - خصمُ ~65% خدمةً ذاتية.
-  // بلا `dataCurrency` في أيّ مساحةٍ حقيقية → سعر القائمة بالدولار، لا
-  // ما اختاره المستخدم.
-  const realWorkspaceWithCurrency = await prisma.workspace.findFirst({
-    where: { ...workspaceAccess(user.id), isDemo: false, dataCurrency: { not: null } },
-    select: { dataCurrency: true },
-    orderBy: { createdAt: "asc" },
+  // 🔴 **الفوترة لا تقرأ مساحة عمل - الاشتراك على الحساب لا على المساحة.**
+  //
+  // كان هذا المسار يشتقّ العملة من `dataCurrency` لأقدم مساحةٍ حقيقية، وهي
+  // عملةُ الحساب الإعلانيّ: غيرُ قابلةٍ للتعديل، ولا علاقة لها بمن يدفع.
+  // فصاحبُ حسابٍ بالدولار كان **يُرفَض دفعُه كلّياً** لأنّ البوّابة تقبل
+  // الجنيه وحده - وصفحةُ الباقات كانت تقرأ حقلاً ثالثاً (`workspace.currency`)
+  // فتعرض ٢٬٤٩٩ جنيهاً بينما يطلب هذا المسار ١٤٩ دولاراً.
+  //
+  // قائمةُ السعر الآن من `billingCountry` على الحساب: تُضبَط عند التسجيل
+  // ولا يعدّلها صاحبُها (فتبقى ثغرة B-1 مغلقة)، والتحصيل بالجنيه دائماً.
+  const account = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { billingCountry: true },
   });
-  const currency = billingCurrencyFor(realWorkspaceWithCurrency?.dataCurrency ?? "USD");
+  const currency = priceListFor(account?.billingCountry);
 
   if (body?.mode === "credits") {
     const result = await startCreditsCheckout({

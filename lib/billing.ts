@@ -19,6 +19,7 @@ import { createPaymentIntention, getUnifiedCheckoutUrl } from "@/lib/paymob";
 import { logSubscriptionEvent } from "@/lib/subscriptionEvents";
 import type { SubscriptionEventType } from "@prisma/client";
 import { isFeatureEnabled } from "@/lib/featureFlags";
+import { CHARGE_CURRENCY, toChargeAmount } from "@/lib/billingRegion";
 import {
   PLAN_BY_KEY, planPrice, priceForCredits, YEARLY_MONTHS_CHARGED,
   MIN_CUSTOM_CREDITS, MAX_CUSTOM_CREDITS,
@@ -156,7 +157,17 @@ async function startOrReuse(input: {
   amount: number;
   label: string;
 }): Promise<StartResult> {
-  const amountCents = Math.round(input.amount * 100);
+  // 🔴 **السعر المعروض شيء، والعملة المُحصَّل بها شيء آخر.**
+  //
+  // تكامل MIGS عند Paymob يقبل الجنيه وحده. وربطُ ذلك بعملة العميل كان
+  // **يرفض دفعه كلّياً** - وهو خلطٌ لا لزوم له: أيّ بطاقةٍ في العالم
+  // تُخصَم بالجنيه ومصرفُ صاحبها يُجري التحويل. فالأمريكيّ والهنديّ
+  // والبرازيليّ يدفعون ببطاقاتهم كما هي، ويصلنا جنيهٌ مصريّ.
+  //
+  // فيبقى المعروضُ مرجعاً (`listAmountCents`) ويُحسَب المُحصَّل منه.
+  const listCents = Math.round(input.amount * 100);
+  const { chargeCents, rateUsed } = await toChargeAmount(input.currency, listCents);
+  const amountCents = chargeCents;
   const since = new Date(Date.now() - REUSE_WINDOW_MINUTES * 60 * 1000);
 
   // الطبقة الأولى: نيّة معلّقة مطابقة وحديثة تُعاد بدل إنشاء غيرها
@@ -168,7 +179,7 @@ async function startOrReuse(input: {
       planKey: input.planKey,
       credits: input.credits,
       amountCents,
-      currency: input.currency,
+      currency: CHARGE_CURRENCY,
       createdAt: { gte: since },
       checkoutUrl: { not: null },
     },
@@ -189,7 +200,7 @@ async function startOrReuse(input: {
   // الطلب الآخر قائمة، فتُعاد.
   const dedupeKey = [
     input.userId, input.kind, input.planKey ?? "-", input.credits ?? "-",
-    amountCents, input.currency,
+    amountCents, CHARGE_CURRENCY,
   ].join(":");
 
   // 🔴 **قفلٌ على مستوى المعاملة، لا قيدُ تفرّدٍ في المخطّط.**
@@ -220,7 +231,10 @@ async function startOrReuse(input: {
         cycle: input.cycle,
         credits: input.credits,
         amountCents,
-        currency: input.currency,
+        currency: CHARGE_CURRENCY,
+        listAmountCents: listCents,
+        listCurrency: input.currency,
+        fxRateUsed: rateUsed,
         status: "PENDING",
         dedupeKey,
       },
@@ -237,7 +251,7 @@ async function startOrReuse(input: {
   try {
     const intention = await createPaymentIntention({
       amountCents,
-      currency: input.currency,
+      currency: CHARGE_CURRENCY,
       userId: input.userId,
       userEmail: input.userEmail,
       planLabel: input.label,

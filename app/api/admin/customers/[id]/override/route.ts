@@ -49,6 +49,9 @@ const schema = z.object({
     })
     .nullable()
     .optional(),
+  // بلد الفوترة يحدّد قائمة السعر وحدها. لا يعدّله صاحبُ الحساب - وهذا
+  // ما يمنع أن يختار الناس أسعارهم بأنفسهم (ثغرة B-1). سلسلة فارغة = مسح.
+  billingCountry: z.string().regex(/^[A-Za-z]{2}$/).or(z.literal("")).nullable().optional(),
   note: z.string().max(500).optional(),
 });
 
@@ -67,7 +70,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const target = await prisma.user.findUnique({
     where: { id },
-    select: { email: true, planLimitOverrides: true, featureOverrides: true, customPriceOverrideCents: true },
+    select: { email: true, planLimitOverrides: true, featureOverrides: true, customPriceOverrideCents: true, billingCountry: true },
   });
   if (!target) return NextResponse.json({ error: "not found" }, { status: 404 });
 
@@ -81,6 +84,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (body.features !== undefined) {
     data.featureOverrides = body.features && Object.keys(body.features).length > 0 ? body.features : null;
     changed.push(`features=${JSON.stringify(data.featureOverrides)}`);
+  }
+  if (body.billingCountry !== undefined) {
+    data.billingCountry = body.billingCountry ? body.billingCountry.toUpperCase() : null;
+    changed.push(`billingCountry=${data.billingCountry ?? "null"}`);
   }
   if (body.customPrice !== undefined) {
     if (body.customPrice === null) {
