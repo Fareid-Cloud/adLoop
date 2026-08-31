@@ -2042,10 +2042,10 @@ export const dictionary = {
 
       // الزمن النسبي
       tNow: "الآن",
-      tMinutes: "{n} دقيقة",
-      tHours: "{n} ساعة",
-      tDays: "{n} يوماً",
-      tMonths: "{n} شهراً",
+      tMinuteForms: "دقيقة|دقيقتين|دقائق|دقيقة",
+      tHourForms: "ساعة|ساعتين|ساعات|ساعة",
+      tDayForms: "يوم|يومين|أيام|يوماً",
+      tMonthForms: "شهر|شهرين|أشهر|شهراً",
       ago: "منذ {value}",
     },
     // ==== مستكشف المؤشّرات ====
@@ -7061,10 +7061,10 @@ export const dictionary = {
 
       // Relative time
       tNow: "just now",
-      tMinutes: "{n}m",
-      tHours: "{n}h",
-      tDays: "{n}d",
-      tMonths: "{n}mo",
+      tMinuteForms: "m|m|m|m",
+      tHourForms: "h|h|h|h",
+      tDayForms: "d|d|d|d",
+      tMonthForms: "mo|mo|mo|mo",
       ago: "{value} ago",
     },
     // ==== Metrics explorer ====
@@ -8798,25 +8798,40 @@ export function platformLabel(locale: Locale, platform: string): string {
  * داخل الخادم، فتُقفل اللغة عند لحظة الحساب. هنا يُمرَّر عدد الساعات فقط
  * ويُصاغ النصّ عند العرض.
  */
+/**
+ * صيغة المعدود العربية. العربية تصرّفه على أربع صور - مفردٌ، ومثنّى، وجمعُ
+ * قلّةٍ من ثلاثةٍ إلى عشرة، وتمييزٌ مفردٌ منصوب من أحد عشر فصاعداً - والقالب
+ * الواحد «{n} يوماً» يصحّ في الأخيرة وحدها، فيُقرأ «منذ 1 يوماً» و«منذ 2
+ * يوماً». والإنجليزية لا تحتاجه (صيغتها مختصرة: `1d`)، فصورها الأربع واحدة.
+ */
+function countedForm(locale: Locale, formsKey: string, n: number): string {
+  const forms = t(locale, formsKey).split("|");
+  if (locale !== "ar") return `${n}${forms[3] ?? ""}`;
+  if (n === 1) return forms[0];
+  if (n === 2) return forms[1];
+  if (n >= 3 && n <= 10) return `${n} ${forms[2]}`;
+  return `${n} ${forms[3]}`;
+}
+
+/** المدّة بالوحدة المناسبة، مصرَّفةً بحسب اللغة. */
+function unitValue(locale: Locale, minutes: number): string {
+  if (minutes < 60) return countedForm(locale, "integrations.tMinuteForms", minutes);
+  if (minutes < 60 * 24) return countedForm(locale, "integrations.tHourForms", Math.floor(minutes / 60));
+  if (minutes < 60 * 24 * 30) return countedForm(locale, "integrations.tDayForms", Math.floor(minutes / (60 * 24)));
+  return countedForm(locale, "integrations.tMonthForms", Math.floor(minutes / (60 * 24 * 30)));
+}
+
 export function relativeFromHours(locale: Locale, hours: number): string {
   const minutes = Math.max(0, Math.round(hours * 60));
   if (minutes < 1) return t(locale, "integrations.tNow");
-  let value: string;
-  if (minutes < 60) value = t(locale, "integrations.tMinutes", { n: minutes });
-  else if (minutes < 60 * 24) value = t(locale, "integrations.tHours", { n: Math.floor(minutes / 60) });
-  else if (minutes < 60 * 24 * 30) value = t(locale, "integrations.tDays", { n: Math.floor(minutes / (60 * 24)) });
-  else value = t(locale, "integrations.tMonths", { n: Math.floor(minutes / (60 * 24 * 30)) });
-  return t(locale, "integrations.ago", { value });
+  return t(locale, "integrations.ago", { value: unitValue(locale, minutes) });
 }
 
 /** المدّة وحدها بلا صيغة "منذ" - تُركَّب داخل جُمل أخرى. */
 export function durationFromHours(locale: Locale, hours: number): string {
   const minutes = Math.max(0, Math.round(hours * 60));
   if (minutes < 1) return t(locale, "integrations.tNow");
-  if (minutes < 60) return t(locale, "integrations.tMinutes", { n: minutes });
-  if (minutes < 60 * 24) return t(locale, "integrations.tHours", { n: Math.floor(minutes / 60) });
-  if (minutes < 60 * 24 * 30) return t(locale, "integrations.tDays", { n: Math.floor(minutes / (60 * 24)) });
-  return t(locale, "integrations.tMonths", { n: Math.floor(minutes / (60 * 24 * 30)) });
+  return unitValue(locale, minutes);
 }
 
 /** نفس الشيء انطلاقاً من تاريخ - يُحسب في العميل حتى يبقى دقيقاً بعد التحميل. */
