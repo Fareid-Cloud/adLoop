@@ -49,7 +49,7 @@ export async function POST(
   // جاهزة - القاعدة الحاكمة: نقطةٌ تمنع المستخدم تحمل معها الحلّ.
   const usage = await getUsageState(user.id);
   if (usage.blocked) {
-    const locale = (user.preferredLocale as "ar" | "en") ?? "ar";
+    const locale = (user.preferredLocale as "ar" | "en") ?? "en";
     return NextResponse.json(
       {
         error: t(

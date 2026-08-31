@@ -111,7 +111,7 @@ export async function GET(req: NextRequest) {
   for (const user of subscribers) {
     if (user.isSuspended || !user.currentPeriodEnd) continue;
     const workspaceId = user.workspaces[0]?.id;
-    const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
+    const locale: Locale = (user.preferredLocale as Locale) ?? "en";
 
     try {
       // ── انتهت الفترة: تُسجَّل الحالة ويُخطَر صاحبها ──────────────

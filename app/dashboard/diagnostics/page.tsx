@@ -32,7 +32,7 @@ function timeAgo(locale: Locale, d: Date): string {
 
 export default async function DiagnosticsPage() {
   const user = await getSessionUserFromCookies();
-  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "en";
   if (!user) {
     return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
@@ -96,7 +96,7 @@ export default async function DiagnosticsPage() {
       totalMonthlyImpact={report.totalMonthlyImpact}
       currency={report.currency}
       lastScanAt={report.lastScanAt ? timeAgo(locale, report.lastScanAt) : null}
-      locale={(user.preferredLocale as "ar" | "en") ?? "ar"}
+      locale={(user.preferredLocale as "ar" | "en") ?? "en"}
     />
   );
 }

@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
 
   const workspace = await prisma.workspace.findFirst({ where: { userId } });
   if (workspace) {
-    const ar = (user.preferredLocale ?? "ar") === "ar";
+    const ar = (user.preferredLocale ?? "en") === "ar";
     await pushToActionFeed({
       workspaceId: workspace.id,
       type: "ACCOUNT",

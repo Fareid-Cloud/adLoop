@@ -24,7 +24,7 @@ export default async function McpPage() {
   const user = await getSessionUserFromCookies();
   if (!user) redirect("/login");
 
-  const locale = (user.preferredLocale ?? "ar") as Locale;
+  const locale = (user.preferredLocale ?? "en") as Locale;
   const tr = (k: string) => t(locale, `mcp.${k}`);
 
   const workspaces = await prisma.workspace.findMany({

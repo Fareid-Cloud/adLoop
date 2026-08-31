@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   // نداء ذكاء اصطناعي حقيقيّ يُصرَف من مساحة عرض: يشتري رأياً في صورة مثال.
-  const demoBlock = await blockAiInDemo(workspace.id, (user.preferredLocale as "ar" | "en") ?? "ar");
+  const demoBlock = await blockAiInDemo(workspace.id, (user.preferredLocale as "ar" | "en") ?? "en");
   if (demoBlock) return demoBlock;
 
   // 🔴 **الخصم آخر خطوة، لا أوّلها.**
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
   // في الحالتين لم يصل المستخدم شيء، فلا يصحّ أن يدفع.
   let result;
   try {
-    result = await auditAdImageQuality(imageUrl, platform, (user.preferredLocale as "ar" | "en") ?? "ar");
+    result = await auditAdImageQuality(imageUrl, platform, (user.preferredLocale as "ar" | "en") ?? "en");
   } catch (err) {
     console.error("[quality-check] فشل النداء - يُردّ الرصيد:", err);
     await refundImageQualityQuota(user.id);

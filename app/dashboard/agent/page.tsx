@@ -19,7 +19,7 @@ export default async function AgentPage() {
   const user = await getSessionUserFromCookies();
   if (!user) redirect("/login");
 
-  const locale = ((user.preferredLocale as Locale) ?? "ar") as Locale;
+  const locale = ((user.preferredLocale as Locale) ?? "en") as Locale;
   const workspace = await getActiveWorkspace(user.id);
 
   const chats = workspace

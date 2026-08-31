@@ -21,5 +21,5 @@ export async function ownerLocaleFor(workspaceId: string): Promise<Locale> {
     where: { id: workspaceId },
     select: { user: { select: { preferredLocale: true } } },
   });
-  return (ws?.user?.preferredLocale as Locale) ?? "ar";
+  return (ws?.user?.preferredLocale as Locale) ?? "en";
 }

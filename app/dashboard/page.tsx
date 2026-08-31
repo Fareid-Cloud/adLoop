@@ -92,13 +92,13 @@ export default async function GlancePage({
   const bounds = await toDateBoundsForUser(period.range);
   const days = daysBetween(period.range.from, period.range.to);
   const user = await getSessionUserFromCookies();
-  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "en";
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `home.${k}`, v);
 
   if (!user) {
     return (
       <div className="py-20 text-center text-text-muted">
-        {t("ar", "common.sessionExpired")}
+        {t(locale, "common.sessionExpired")}
       </div>
     );
   }

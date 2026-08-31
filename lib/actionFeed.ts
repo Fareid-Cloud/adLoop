@@ -88,7 +88,7 @@ export async function pushToActionFeed(item: ActionFeedInput) {
     if (owner) {
       // النصّ يُترجَم بلغة المالك كما في الجرس تماماً. تمرير `item.title`
       // كان يرسل النصّ المخزَّن (عربي دائماً) مع وسم لغة إنجليزي.
-      const ownerLocale = (owner.preferredLocale as "ar" | "en") ?? "ar";
+      const ownerLocale = (owner.preferredLocale as "ar" | "en") ?? "en";
       const localizable = {
         title: item.title,
         titleKey: item.titleKey,

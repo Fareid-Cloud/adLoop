@@ -5,7 +5,7 @@ import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
 
 export default async function TikTokHubPage() {
   const user = await getSessionUserFromCookies();
-  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "en";
   return (
     <PlatformHub
       platform="TIKTOK_ADS"

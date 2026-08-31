@@ -47,7 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   sp.forEach((v, k) => { asRecord[k] = v; });
 
   const period = periodFromParams(asRecord);
-  const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user.preferredLocale as Locale) ?? "en";
   const source = (["REPORTED", "VERIFIED", "BOTH"].includes(asRecord.src) ? asRecord.src : "VERIFIED") as DataSource;
   const dimension = (asRecord.dim ?? "platform") as Dimension;
   const metrics = (asRecord.m?.split(",").filter((m) => VALID_METRICS.has(m as MetricKey)) as MetricKey[]) ?? [

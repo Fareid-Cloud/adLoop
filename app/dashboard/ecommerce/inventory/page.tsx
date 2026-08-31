@@ -27,13 +27,13 @@ export default async function InventoryPage({
 }) {
   const sp = await searchParams;
   const user = await getSessionUserFromCookies();
-  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "en";
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `inventory.${k}`, v);
   const tc = (k: string, v?: Record<string, string | number>) => t(locale, `common.${k}`, v);
   const tx = (i: { key: string; vars?: Record<string, string | number> }) => tText(locale, "invText", i);
 
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await getActiveWorkspace(user.id);

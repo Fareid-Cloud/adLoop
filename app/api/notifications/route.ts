@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user.preferredLocale as Locale) ?? "en";
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) return NextResponse.json({ notifications: [], unreadCount: 0 });
 

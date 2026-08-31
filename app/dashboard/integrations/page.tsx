@@ -39,7 +39,7 @@ export default async function IntegrationsPage({
     : raw === "account_limit" ? "connAccountLimit"
     : null;
   const user = await getSessionUserFromCookies();
-  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "en";
 
   if (!user) {
     return (

@@ -28,11 +28,12 @@ export default async function EcommerceProductsPage({
   const windowDays = [7, 30, 90].includes(Number(sp.days)) ? Number(sp.days) : 30;
 
   const user = await getSessionUserFromCookies();
+  // لا مستخدم فلا تفضيل محفوظ - فالافتراضي، وهو الإنجليزية.
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
+    return <div className="py-20 text-center text-text-muted">{t("en", "common.sessionExpired")}</div>;
   }
 
-  const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user.preferredLocale as Locale) ?? "en";
 
   const workspace = await getActiveWorkspace(user.id);
   if (!workspace) {
@@ -85,7 +86,7 @@ export default async function EcommerceProductsPage({
       storePlatform={overview.storePlatform}
       currency={overview.currency}
       adSpendAvailability={overview.adSpendAvailability}
-      locale={(user.preferredLocale as "ar" | "en") ?? "ar"}
+      locale={(user.preferredLocale as "ar" | "en") ?? "en"}
       storePicker={
         <>
           <StorePicker options={scope.options} selectedId={scope.selectedId} locale={locale} />

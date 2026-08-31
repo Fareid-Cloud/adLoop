@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ActionsPage() {
   const user = await getSessionUserFromCookies();
-  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "en";
 
   if (!user) {
     return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;

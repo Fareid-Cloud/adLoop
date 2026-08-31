@@ -36,7 +36,7 @@ export async function checkInactivityPushNotifications() {
   });
 
   for (const user of inactiveUsers) {
-    const loc: Locale = (user.preferredLocale as Locale) ?? "ar";
+    const loc: Locale = (user.preferredLocale as Locale) ?? "en";
     await sendPushToUser(user.id, {
       title: t(loc, "alerts.inactiveTitle"),
       body: t(loc, "alerts.inactiveBody"),
@@ -60,7 +60,7 @@ export async function checkSubscriptionExpiryPushNotifications() {
 
   for (const user of users) {
     if (!user.currentPeriodEnd) continue;
-    const loc: Locale = (user.preferredLocale as Locale) ?? "ar";
+    const loc: Locale = (user.preferredLocale as Locale) ?? "en";
     const daysUntilExpiry = Math.ceil((user.currentPeriodEnd.getTime() - now.getTime()) / 86400000);
 
     if (daysUntilExpiry > 0 && BEFORE_EXPIRY_REMINDER_DAYS.includes(daysUntilExpiry)) {

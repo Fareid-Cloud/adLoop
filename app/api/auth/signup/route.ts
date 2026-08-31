@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: validation.error }, { status: 400 });
   }
   const { email, password, name, preferredLocale, turnstileToken } = validation.data;
-  const locale: Locale = preferredLocale === "en" ? "en" : "ar";
+  // الإنجليزية افتراضٌ، والعربية اختيارٌ صريح يرسله العميل.
+  const locale: Locale = preferredLocale === "ar" ? "ar" : "en";
 
   // حساب المالك يُجهَّز، لا يُسجَّل نفسه. بدون هذا الرفض كان تسجيلٌ ببريد
   // المالك (أو نسخةٍ مختلفة الحالة منه، وقد طُبِّعت الآن في المخطَّط) يمنح

@@ -27,7 +27,7 @@ export default async function LearningPhasePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const user = await getSessionUserFromCookies();
-  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "en";
   if (!user) {
     return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }

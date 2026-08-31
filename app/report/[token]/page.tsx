@@ -24,7 +24,7 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
   if (link.expiresAt && link.expiresAt < new Date()) notFound();
 
   const workspace = link.workspace;
-  const locale: Locale = (workspace.user?.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (workspace.user?.preferredLocale as Locale) ?? "en";
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 

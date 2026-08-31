@@ -27,7 +27,7 @@ export default async function OnboardingPage() {
     // ترويسة كلّ صفحة في المنتج لمشترك عربيّ وقع على الافتراضيّ. وهو نصٌّ
     // يملكه المشترك ويعدّله، فلا يصحّ تخزينه مفتاحاً - يُكتب بلغته هو لحظة
     // الإنشاء، ويبقى ملكاً له بعدها.
-    const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
+    const locale: Locale = (user.preferredLocale as Locale) ?? "en";
     workspace = await prisma.workspace.create({
       data: {
         userId: user.id,

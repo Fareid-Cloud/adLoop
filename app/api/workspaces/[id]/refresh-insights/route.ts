@@ -31,10 +31,10 @@ export async function POST(
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const demoBlock = await blockAiInDemo(workspace.id, (user.preferredLocale as Locale) ?? "ar");
+  const demoBlock = await blockAiInDemo(workspace.id, (user.preferredLocale as Locale) ?? "en");
   if (demoBlock) return demoBlock;
 
-  const locale = (user.preferredLocale as Locale) ?? "ar";
+  const locale = (user.preferredLocale as Locale) ?? "en";
 
   // الحد بيتحسب على مستوى الحساب (User) ككل، مش على الـ Workspace -
   // عشان محدش يقدر يعمل عشرات الـ Workspaces الفاضية ويضاعف رصيده

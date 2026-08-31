@@ -93,7 +93,7 @@ export async function seedDemoWorkspace(
     // حذف المساحة كاملةً وإنشاؤها من جديد - وهو آمن هنا وحده لأنّ بياناتها
     // أمثلة مولَّدة لا شيء فيها للمستخدم. الحذف يجرّ كلّ صفوفها بالتتالي.
     if (
-      (existing.demoLocale ?? "ar") !== locale ||
+      (existing.demoLocale ?? "en") !== locale ||
       (existing.demoSeedVersion ?? 1) !== DEMO_SEED_VERSION ||
       // العملة كاللغة تماماً: الأرقام مخزَّنة لا محسوبة عند العرض، فتبديلُها
       // بلا إعادة بذرٍ يترك الأرقام كما هي ويبدّل لافتتها وحدها.

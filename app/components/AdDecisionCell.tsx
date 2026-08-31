@@ -61,7 +61,7 @@ const STYLES: Record<string, { labelKey: string; icon: LucideIcon; className: st
 };
 
 export function AdDecisionCell(props: AdDecisionCellProps) {
-  const locale: Locale = props.locale ?? "ar";
+  const locale: Locale = props.locale ?? "en";
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `adCell.${k}`, vars);
   const {
     workspaceId, adId, decision, reason, executable,

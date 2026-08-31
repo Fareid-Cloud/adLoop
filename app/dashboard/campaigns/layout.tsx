@@ -22,7 +22,7 @@ import { CampaignsNav } from "./CampaignsNav";
 
 export default async function CampaignsLayout({ children }: { children: React.ReactNode }) {
   const user = await getSessionUserFromCookies();
-  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "en";
 
   return (
     <div className="mx-auto max-w-6xl pb-10">

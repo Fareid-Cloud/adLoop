@@ -23,7 +23,7 @@ export async function sendNewAdminDeviceAlert(params: {
     return;
   }
 
-  const locale = params.locale ?? "ar";
+  const locale = params.locale ?? "en";
   const ar = locale === "ar";
   const device = describeDevice(params.userAgent) ?? (ar ? "جهاز غير معروف" : "Unknown device");
   const when = new Date().toLocaleString(ar ? "ar-EG-u-nu-latn" : "en-US");

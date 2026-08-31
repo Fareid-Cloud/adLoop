@@ -35,13 +35,13 @@ export default async function EcommerceOverviewPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const user = await getSessionUserFromCookies();
-  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "en";
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `store.${k}`, vars);
   const tc = (k: string, vars?: Record<string, string | number>) => t(locale, `common.${k}`, vars);
   const tx = (item: { key: string; vars?: Record<string, string | number> }) => tText(locale, "oppText", item);
 
   if (!user) {
-    return <div className="py-20 text-center text-text-muted">{t("ar", "common.sessionExpired")}</div>;
+    return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }
 
   const workspace = await getActiveWorkspace(user.id);

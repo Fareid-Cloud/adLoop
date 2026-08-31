@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   // نداء ذكاء اصطناعي حقيقيّ يُصرَف من مساحة عرض: يشتري رأياً في
   // بيانات مخترعة ويخصم من رصيد المشترك.
-  const demoBlock = await blockAiInDemo(workspace.id, (user.preferredLocale as "ar" | "en") ?? "ar");
+  const demoBlock = await blockAiInDemo(workspace.id, (user.preferredLocale as "ar" | "en") ?? "en");
   if (demoBlock) return demoBlock;
 
   // 🔴 **الخصم آخر خطوة، لا أوّلها.**

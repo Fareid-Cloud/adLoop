@@ -91,7 +91,7 @@ export async function PATCH(
       // إلى القيمة القديمة بعد التحديث، ولا شيء يقول لماذا - فيقرأها
       // المستخدم عطلاً في المنتج لا قاعدةً فيه: «بختار الجنيه وبتثبت
       // على الريال». الرفض يُقال الآن ومعه سببُه ومصدرُ الرقم.
-      const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
+      const locale: Locale = (user.preferredLocale as Locale) ?? "en";
       return NextResponse.json(
         {
           error: t(locale, "apiErr.currencyLockedToAccount", {

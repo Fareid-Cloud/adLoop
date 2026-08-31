@@ -21,7 +21,7 @@ function classify(identityType: string | null): "SPARK" | "DARK_POST" | "UNKNOWN
 
 export default async function TikTokSparkAdsPage() {
   const user = await getSessionUserFromCookies();
-  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "en";
   if (!user) {
     return <div className="py-20 text-center text-text-muted">{t(locale, "common.sessionExpired")}</div>;
   }

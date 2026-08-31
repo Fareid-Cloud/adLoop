@@ -26,7 +26,7 @@ export async function sendVerificationEmail(params: {
     return;
   }
 
-  const locale = params.locale ?? "ar";
+  const locale = params.locale ?? "en";
   const verifyUrl = `${getAppUrl()}/verify-email?token=${params.token}`;
 
   const isAr = locale === "ar";

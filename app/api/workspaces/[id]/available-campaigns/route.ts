@@ -95,7 +95,7 @@ export async function GET(
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   // الرسالة تُبنى بلغة القارئ لا بلغة مَن كتب الملفّ - وهي تُعرض كما هي
   // داخل نافذة اختيار الحملات.
-  const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user.preferredLocale as Locale) ?? "en";
 
   // 🔴 ملكيّة المساحة تُثبَت قبل أيّ قراءة. كان هذا المسار يوثّق الجلسة ثمّ
   // يستعلم بـ`id` القادم من المسار مباشرةً بلا `workspaceAccess` - فأيّ

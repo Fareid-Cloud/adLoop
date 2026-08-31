@@ -190,7 +190,7 @@ model User {
   // ==== تفضيلات الواجهة (عامة على كل الحساب) ====
   themeColor      String @default("blue") // blue | purple | orange | sky | red ...
   themeMode       String @default("light") // light | dark - الوضع الفاتح هو الأساسي
-  preferredLocale String @default("ar") // ar | en - يتحدد أول مرة من متصفح المستخدم، قابل للتغيير لاحقاً
+  preferredLocale String @default("en") // ar | en - الإنجليزية افتراضٌ لكل بلد، والعربية اختيارٌ صريح من الإعدادات
   timezone        String @default("Asia/Riyadh") // لعرض الأوقات والتواريخ بتوقيت المستخدم نفسه
 
   // ==== الملف الشخصي ====

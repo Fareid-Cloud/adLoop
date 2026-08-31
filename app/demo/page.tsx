@@ -17,6 +17,6 @@ export default async function DemoEntryPage() {
   const user = await getSessionUserFromCookies();
   if (!user) redirect("/signup?next=/demo");
 
-  const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user.preferredLocale as Locale) ?? "en";
   return <DemoLoader locale={locale} />;
 }

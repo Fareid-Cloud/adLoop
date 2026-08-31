@@ -29,7 +29,7 @@ export default async function TruthPage({
   const days = daysBetween(period.range.from, period.range.to);
 
   const user = await getSessionUserFromCookies();
-  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "en";
   if (!user) {
     return (
       <div className="py-20 text-center text-text-muted">{t(locale, "ui.sessionExpired")}</div>
@@ -61,10 +61,10 @@ export default async function TruthPage({
       workspaceName={workspace.name}
       currency={workspace.currency}
       snapshot={snapshot}
-      locale={(user.preferredLocale as "ar" | "en") ?? "ar"}
+      locale={(user.preferredLocale as "ar" | "en") ?? "en"}
       periodSlot={
         <PeriodBar
-          locale={(user.preferredLocale as "ar" | "en") ?? "ar"}
+          locale={(user.preferredLocale as "ar" | "en") ?? "en"}
           preset={period.preset}
           range={period.range}
           compare={period.compare}

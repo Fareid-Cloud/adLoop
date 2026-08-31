@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const locale = (user.preferredLocale as "ar" | "en") ?? "ar";
+  const locale = (user.preferredLocale as "ar" | "en") ?? "en";
   const body = await req.json().catch(() => null);
   const question = String(body?.question ?? "").trim();
   const scope: ChatScope = SCOPES.includes(body?.scope) ? body.scope : "home";

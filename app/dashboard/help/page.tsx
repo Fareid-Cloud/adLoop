@@ -9,7 +9,7 @@ export const metadata = { title: "Help centre — AdLoop" };
 
 export default async function HelpPage() {
   const user = await getSessionUserFromCookies();
-  const locale: Locale = (user?.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user?.preferredLocale as Locale) ?? "en";
   const tr = (k: string) => t(locale, `helpPage.${k}`);
 
   return (

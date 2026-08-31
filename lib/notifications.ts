@@ -50,7 +50,7 @@ export async function sendUrgentNotificationEmail(params: {
     return;
   }
 
-  const locale = params.locale ?? "ar";
+  const locale = params.locale ?? "en";
 
   try {
     await resend.emails.send({

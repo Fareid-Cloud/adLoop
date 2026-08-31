@@ -15,7 +15,7 @@ const MAX_BYTES = 5 * 1024 * 1024;
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user.preferredLocale as Locale) ?? "en";
 
   // الرفع معطَّل لا مكسور: الرسالة تقول ما الناقص وما الخطوة، لا "خطأ" مبهم.
   if (!process.env.BLOB_READ_WRITE_TOKEN) {

@@ -59,7 +59,7 @@ async function finishLogin(
   if (isAdminUser(user)) {
     await sendNewAdminDeviceAlert({
       toEmail: user.email,
-      locale: (user.preferredLocale as Locale) ?? "ar",
+      locale: (user.preferredLocale as Locale) ?? "en",
       userAgent,
     });
   }

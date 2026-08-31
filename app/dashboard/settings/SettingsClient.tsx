@@ -177,7 +177,7 @@ export function SettingsClient({
   const [activeWorkspaceId, setActiveWorkspaceId] = useState(workspaces[0]?.id ?? "");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const locale: Locale = (user.preferredLocale as Locale) ?? "ar";
+  const locale: Locale = (user.preferredLocale as Locale) ?? "en";
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `settings.${k}`, vars);
 
   // البحث يطابق النص المعروض بلغة الواجهة لا المفتاح - المستخدم يكتب ما يرى

@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     })
   );
 
-  const report = await runDiagnostics(workspace.id, (user.preferredLocale as "ar"|"en") ?? "ar");
+  const report = await runDiagnostics(workspace.id, (user.preferredLocale as "ar"|"en") ?? "en");
 
   return NextResponse.json({
     ok: true,

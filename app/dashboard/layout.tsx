@@ -103,7 +103,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     redirect("/login?expired=1");
   }
 
-  const locale: "ar" | "en" = (user?.preferredLocale as "ar" | "en") ?? "ar";
+  const locale: "ar" | "en" = (user?.preferredLocale as "ar" | "en") ?? "en";
   const accent = user?.themeColor ?? "blue";
   const mode = user?.themeMode ?? "light";
 
