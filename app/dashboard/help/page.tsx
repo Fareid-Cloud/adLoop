@@ -2,8 +2,10 @@
 import { HELP_SECTIONS, helpText } from "@/lib/helpContent";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { PageHeader } from "@/app/components/ui/PageHeader";
+import { LifeBuoy } from "lucide-react";
 
-export const metadata = { title: "Help Center — AdLoop" };
+export const metadata = { title: "Help centre — AdLoop" };
 
 export default async function HelpPage() {
   const user = await getSessionUserFromCookies();
@@ -12,8 +14,14 @@ export default async function HelpPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="mb-1 text-[26px] font-semibold tracking-tight text-text-primary">{tr("title")}</h1>
-      <p className="mb-6 text-sm text-text-muted">{tr("subtitle")}</p>
+      {/* كانت الصفحة الوحيدة برأسٍ يدويّ بلا أيقونة ولا نبرة، بينما يحمل
+          `PageHeader` هويّة كلّ صفحةٍ أخرى - ففُقدت هويّتها عند فتحها. */}
+      <PageHeader
+        icon={LifeBuoy}
+        tone="accent"
+        title={tr("title")}
+        description={tr("subtitle")}
+      />
 
       <div className="flex flex-col gap-6">
         {HELP_SECTIONS.map((s) => (

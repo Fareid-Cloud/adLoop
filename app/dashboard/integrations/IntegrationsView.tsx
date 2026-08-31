@@ -497,7 +497,10 @@ function Kpi({
       <div className="min-w-0">
         <div className="truncate text-[19px] font-semibold leading-tight text-text-primary">{value}</div>
         <div className="mt-0.5 text-[12.5px] font-medium text-text-primary">{label}</div>
-        <div className="mt-0.5 truncate text-[11.5px] text-text-faint">{caption}</div>
+        {/* `truncate` كان يقصّ «Most recent successful sync» على تسعة بكسلات
+            (١٥٦ في ١٤٧) فتُقرأ «…successful s». وهي جملةٌ قصيرة تامّة،
+            فالقصّ لا يوفّر شيئاً ويُفقد معناها - واللفّ أولى: البطاقة تتّسع. */}
+        <div className="mt-0.5 text-[11.5px] leading-snug text-text-faint">{caption}</div>
       </div>
     </div>
   );

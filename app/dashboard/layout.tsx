@@ -362,11 +362,18 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           <ThemeModeToggle initialMode={mode} locale={locale} />
           <HelpButton locale={locale} />
           <div id="tour-notification-bell"><NotificationBell locale={locale} /></div>
+          {/* 🔴 **منتقي الصورة في الإعدادات لا يغيّر شيئاً لمن دخل بجوجل.**
+              `avatarUrl` هي صورة حساب جوجل/فيسبوك (تُكتب في مسار الدخول)،
+              و`AccountMenu` يقدّم الصورة على الأيقونة دائماً - فتغلب صورةُ
+              المزوّد أيّ أيقونةٍ يختارها صاحبها، ولا تعرف الإعداداتُ بها
+              أصلاً فتُظهر «الروبوت» محدَّداً وخانةَ الرفع فارغة.
+              الترتيب الآن: رفعُه هو، ثمّ اختيارُه الصريح، ثمّ صورةُ المزوّد
+              لمن لم يختر شيئاً بعد. */}
           {user && (
             <AccountMenu
               name={user.name}
               email={user.email}
-              avatarUrl={user.avatarImageUrl ?? user.avatarUrl ?? null}
+              avatarUrl={user.avatarImageUrl ?? (user.avatarIcon ? null : user.avatarUrl) ?? null}
               avatarIcon={user.avatarIcon ?? null}
               locale={locale}
               isOwner={user.isAdmin || isOwnerEmail(user.email)}
