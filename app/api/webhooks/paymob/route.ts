@@ -19,10 +19,25 @@ import { pushToActionFeed } from "@/lib/actionFeed";
 import { fulfillPaymentIntent } from "@/lib/billing";
 import { logSubscriptionEvent } from "@/lib/subscriptionEvents";
 
+/**
+ * ترتيب حقول HMAC كما توثّقه Paymob - **لم يعد تخميناً.**
+ *
+ * 🔴 كان الحقل التاسع مكتوباً `is_auction`، والحقل الحقيقيّ `is_auth`.
+ * وحرفان زائدان يكفيان: `getNestedValue` تُعيد سلسلةً فارغة لحقلٍ لا
+ * وجود له، فيُبنى نصٌّ مختلفٌ عن نصّ Paymob، ويختلف التوقيع، **فتُرفض
+ * كلّ دفعةٍ ناجحة بـ401**. الكارت يُخصَم والاشتراك لا يُفعَّل أبداً.
+ *
+ * وهذا ما حدث فعلاً: سجلّ Vercel أظهر نداءين من Paymob على هذا المسار
+ * ردُّهما `401`، بينما بقيت النيّات `PENDING` وحساب المالك `NONE`.
+ *
+ * المصدر: توثيق Paymob لحساب HMAC - القائمة أدناه بترتيبها حرفياً.
+ * و`id` هنا تكافئ `obj.id` في التوثيق: ما يُمرَّر إلى الدالّة هو `body.obj`
+ * نفسه، فالمسار النسبيّ منه `id`.
+ */
 const HMAC_FIELD_ORDER = [
   "amount_cents", "created_at", "currency", "error_occured",
   "has_parent_transaction", "id", "integration_id", "is_3d_secure",
-  "is_auction", "is_capture", "is_refunded", "is_standalone_payment",
+  "is_auth", "is_capture", "is_refunded", "is_standalone_payment",
   "is_voided", "order.id", "owner", "pending",
   "source_data.pan", "source_data.sub_type", "source_data.type", "success",
 ];
