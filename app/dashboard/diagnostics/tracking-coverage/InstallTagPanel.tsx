@@ -132,7 +132,7 @@ function CodeBlock({
       {/* dir=ltr إجباري: الكود يُقرأ من اليسار دائماً مهما كانت لغة الواجهة */}
       <pre
         dir="ltr"
-        className="max-h-[280px] overflow-auto card-inset pad-sm pt-9 text-start font-mono text-[11px] leading-relaxed text-text-primary"
+        className="code-block max-h-[280px] overflow-auto card-inset pad-sm pt-9 text-start text-[11px] leading-relaxed text-text-primary"
       >
         {code}
       </pre>

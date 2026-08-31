@@ -324,7 +324,7 @@ export function McpClient({
           </div>
           <pre
             dir="ltr"
-            className="overflow-x-auto p-3 font-mono text-[12px] leading-relaxed text-text-primary"
+            className="code-block overflow-x-auto p-3 text-[12px] leading-relaxed text-text-primary"
           >
             {snippet}
           </pre>

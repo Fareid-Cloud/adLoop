@@ -1194,6 +1194,7 @@ export const SEARCH_INDEX: SearchEntry[] = [
   { k: "tagInstall.covChecking", h: "/dashboard/diagnostics/tracking-coverage" },
   { k: "tagInstall.covCheckingAll", h: "/dashboard/diagnostics/tracking-coverage" },
   { k: "tagInstall.covDelete", h: "/dashboard/diagnostics/tracking-coverage" },
+  { k: "tagInstall.covIntro", h: "/dashboard/diagnostics/tracking-coverage" },
   { k: "tagInstall.covLabelPlaceholder", h: "/dashboard/diagnostics/tracking-coverage" },
   { k: "tagInstall.covNoneTitle", h: "/dashboard/diagnostics/tracking-coverage" },
   { k: "tagInstall.covOtherTags", h: "/dashboard/diagnostics/tracking-coverage" },

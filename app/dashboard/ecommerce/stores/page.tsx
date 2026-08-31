@@ -64,12 +64,22 @@ export default async function StoreComparisonPage({
   // لا متجر أصلاً: الطريق إلى الربط لا رسالةٌ تصف الفراغ.
   if (cmp.stores.length === 0) {
     return (
-      <DataGate
-        title={tr("noStoresTitle")}
-        reason={tr("noStoresReason")}
-        hrefLabel={tr("connectStore")}
-        locale={locale}
-      />
+      <div className="mx-auto max-w-[1200px] pb-12">
+        {/* 🔴 الرأس في فرع الفراغ أيضاً - وهي القاعدة نفسها التي طُبِّقت على
+            «المحفظة» و«المنتجات». بدونه يهبط من لم يربط متجراً على بطاقةٍ
+            وحيدةٍ بلا عنوانٍ ولا أيقونة، فلا يعرف أيّ صفحةٍ فتح. */}
+        <EcomHeader
+          title={tr("title")}
+          subtitle={tr("subtitle")}
+          storeName={workspace.name}
+        />
+        <DataGate
+          title={tr("noStoresTitle")}
+          reason={tr("noStoresReason")}
+          hrefLabel={tr("connectStore")}
+          locale={locale}
+        />
+      </div>
     );
   }
 
