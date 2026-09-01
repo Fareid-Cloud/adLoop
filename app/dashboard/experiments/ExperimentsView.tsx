@@ -11,6 +11,7 @@ import { Beaker, Plus, TrendingUp, TrendingDown, Minus, X, Check, Pencil, Trash2
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { OptionGroup } from "@/app/components/ui/OptionGroup";
 import { EXPERIMENT_METRICS } from "@/lib/experimentMetrics";
+import { judgeExperiment, type VerdictResult } from "@/lib/experimentVerdict";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { Select } from "@/app/components/ui/Select";
 
@@ -82,33 +83,23 @@ export function ExperimentsView({
 // وهو الترتيب الذي يعمل به من يدير تجاربَ فعلاً: يمسح القائمة، ثمّ يفتح
 // ما نضج منها.
 
-interface Verdict {
-  key: "verdictBetter" | "verdictWorse" | "verdictFlat" | "verdictPending";
-  tone: string;
-}
 
-/**
- * حكمُ التجربة من مقياسها الأوّل.
- *
- * **الأوّلُ لا المتوسّط**: `trackedMetrics` مرتّبةٌ بما اختاره صاحبها، وأوّلُها
- * هو الذي أُجريت التجربة لأجله. ومتوسّطُ مقاييسَ مختلفةِ الاتّجاه (تكلفةٌ
- * يُراد خفضُها، وتحويلاتٌ يُراد رفعُها) لا معنى له.
- */
-function verdictOf(exp: ExperimentRow): Verdict {
-  if (exp.status === "RUNNING") return { key: "verdictPending", tone: "var(--text-muted)" };
-  const key = exp.trackedMetrics[0];
-  const r = key ? exp.metricResults?.[key] : null;
-  if (!r || r.changePct === null) return { key: "verdictPending", tone: "var(--text-muted)" };
+/** لونُ الحكم - مشتقٌّ من نوعه لا مخزَّنٌ معه، فمصدرُ الحكم منطقٌ لا عرض. */
+const VERDICT_TONE: Record<string, string> = {
+  verdictBetter: "var(--verified)",
+  verdictWorse: "var(--critical)",
+  verdictFlat: "var(--text-muted)",
+  verdictMixed: "var(--gap)",
+  verdictPending: "var(--text-muted)",
+};
 
+/** اسمُ المؤشّر بلغة القارئ - يُستعمل في تفسير الحكم. */
+function metricLabel(key: string, locale: string): string {
   const def = EXPERIMENT_METRICS.find((m) => m.key === key);
-  const pct = r.changePct;
-  // عتبةُ ٢٪: ما دونها ضجيجُ قياسٍ لا أثرُ تغيير.
-  if (Math.abs(pct) < 2) return { key: "verdictFlat", tone: "var(--text-muted)" };
-  const good = def?.lowerIsBetter ? pct < 0 : pct > 0;
-  return good
-    ? { key: "verdictBetter", tone: "var(--verified)" }
-    : { key: "verdictWorse", tone: "var(--critical)" };
+  return (locale === "en" ? def?.labelEn : def?.labelAr) ?? key;
 }
+
+const signed = (pct: number) => `${pct > 0 ? "+" : ""}${pct}%`;
 
 function ExperimentsBody({
   workspaceId, experiments, campaigns,
@@ -121,21 +112,8 @@ function ExperimentsBody({
   const locale = useLocale();
   const [adding, setAdding] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
-  const [q, setQ] = useState("");
-  const [statusF, setStatusF] = useState("");
-  const [typeF, setTypeF] = useState("");
-
-  const filtered = experiments.filter((e) => {
-    if (statusF && e.status !== statusF) return false;
-    if (typeF && e.changeType !== typeF) return false;
-    if (q.trim() && !`${e.description} ${e.campaignName ?? ""}`.toLowerCase().includes(q.trim().toLowerCase())) {
-      return false;
-    }
-    return true;
-  });
 
   const open = experiments.find((e) => e.id === openId) ?? null;
-  const filtersOn = Boolean(q || statusF || typeF);
 
   const STATUS_LABEL: Record<string, string> = {
     RUNNING: tr("stRunning"), MEASURED: tr("stMeasured"), INCONCLUSIVE: tr("stInconclusive"),
@@ -163,6 +141,25 @@ function ExperimentsBody({
         </button>
       </div>
 
+      {/* شريطُ حصيلة: ثلاثةُ أرقامٍ تُجيب عن «أين نحن» قبل قراءة الصفوف.
+          وهي محسوبةٌ من الأحكام نفسها لا مخزَّنة، فلا تفترق عن الجدول. */}
+      {experiments.length > 0 && (
+        <div className="mb-3 grid grid-cols-3 gap-2">
+          {[
+            { label: tr("sumMeasuring"), n: experiments.filter((e) => e.status === "RUNNING").length, tone: "var(--accent)" },
+            { label: tr("sumDecided"), n: experiments.filter((e) => e.status !== "RUNNING").length, tone: "var(--text-muted)" },
+            { label: tr("sumWins"), n: experiments.filter((e) => judgeExperiment(e).key === "verdictBetter").length, tone: "var(--verified)" },
+          ].map((c) => (
+            <div key={c.label} className="card pad-sm">
+              <div className="font-mono text-[19px] font-semibold tabular-nums" style={{ color: c.tone }}>
+                {c.n}
+              </div>
+              <div className="mt-0.5 truncate text-[11.5px] text-text-muted">{c.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {experiments.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-10 text-center">
           <Beaker size={26} className="mx-auto mb-3 text-text-faint" />
@@ -171,53 +168,7 @@ function ExperimentsBody({
         </div>
       ) : (
         <>
-          {/* مرشّحاتٌ تظهر حين يكون ثمّة ما يُرشَّح - صفٌّ من ثلاثة ضوابط
-              فوق ثلاث تجارب عبءٌ لا عون. */}
-          {experiments.length > 3 && (
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder={tr("searchPh")}
-                className="field field-sm min-w-[12rem] flex-1"
-              />
-              <select
-                value={statusF}
-                onChange={(e) => setStatusF(e.target.value)}
-                className="field field-sm w-auto"
-              >
-                <option value="">{tr("anyStatus")}</option>
-                {["RUNNING", "MEASURED", "INCONCLUSIVE"].map((k) => (
-                  <option key={k} value={k}>{STATUS_LABEL[k]}</option>
-                ))}
-              </select>
-              <select
-                value={typeF}
-                onChange={(e) => setTypeF(e.target.value)}
-                className="field field-sm w-auto"
-              >
-                <option value="">{tr("anyType")}</option>
-                {Object.keys(CHANGE_TYPE_KEYS).map((k) => (
-                  <option key={k} value={k}>{tr(CHANGE_TYPE_KEYS[k])}</option>
-                ))}
-              </select>
-              {filtersOn && (
-                <button
-                  onClick={() => { setQ(""); setStatusF(""); setTypeF(""); }}
-                  className="btn btn-ghost btn-sm"
-                >
-                  <X size={13} /> {tr("clearFilters")}
-                </button>
-              )}
-            </div>
-          )}
-
-          {filtered.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-border p-8 text-center text-[12.5px] text-text-muted">
-              {tr("noMatch")}
-            </p>
-          ) : (
-            <div className="card-shadow overflow-hidden card">
+          <div className="card-shadow overflow-hidden card">
               {/* رؤوسُ الأعمدة تختفي تحت `sm`: خمسةُ أعمدةٍ في ٣٧٥ بكسلاً
                   تُنتج نصّاً مقطوعاً، فيصير الصفُّ كتلةً مكدّسة. */}
               <div className="hidden items-center gap-3 border-b border-border px-4 py-2 text-[11px] font-medium uppercase tracking-wide text-text-faint sm:flex">
@@ -225,12 +176,12 @@ function ExperimentsBody({
                 <span className="w-[92px] shrink-0">{tr("colStarted")}</span>
                 <span className="w-[104px] shrink-0">{tr("colProgress")}</span>
                 <span className="w-[92px] shrink-0">{tr("colStatus")}</span>
-                <span className="w-[150px] shrink-0">{tr("colResult")}</span>
+                <span className="w-[168px] shrink-0">{tr("colResult")}</span>
               </div>
 
               <div className="divide-y divide-border">
-                {filtered.map((e) => {
-                  const v = verdictOf(e);
+                {experiments.map((e) => {
+                  const v = judgeExperiment(e);
                   const daysLeft = Math.max(
                     0,
                     e.windowDays - Math.floor((Date.now() - new Date(e.changedAt).getTime()) / 86400000)
@@ -278,18 +229,24 @@ function ExperimentsBody({
                         <span className="truncate text-text-muted">{STATUS_LABEL[e.status]}</span>
                       </span>
 
-                      <span
-                        className="w-[150px] shrink-0 truncate text-[11.5px] font-medium"
-                        style={{ color: v.tone }}
-                      >
-                        {tr(v.key)}
+                      <span className="w-[168px] shrink-0">
+                        <span
+                          className="block truncate text-[11.5px] font-medium"
+                          style={{ color: VERDICT_TONE[v.key] }}
+                        >
+                          {tr(v.key)}
+                        </span>
+                        {v.basisMetric && v.basisPct !== null && (
+                          <span className="block truncate text-[10.5px] text-text-faint">
+                            {metricLabel(v.basisMetric, locale)} {signed(v.basisPct)}
+                          </span>
+                        )}
                       </span>
                     </div>
                   );
                 })}
               </div>
-            </div>
-          )}
+          </div>
         </>
       )}
 
@@ -333,7 +290,7 @@ function ExperimentDetail({
   const [win, setWin] = useState(exp.windowDays);
 
   const conf = CONFIDENCE_TONE[exp.confidenceLevel] ?? CONFIDENCE_TONE.INSUFFICIENT_DATA;
-  const v = verdictOf(exp);
+  const v = judgeExperiment(exp);
   const daysLeft = Math.max(
     0,
     exp.windowDays - Math.floor((Date.now() - new Date(exp.changedAt).getTime()) / 86400000)
@@ -403,12 +360,40 @@ function ExperimentDetail({
           <div
             className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3.5"
             style={{
-              borderColor: `color-mix(in srgb, ${v.tone} 38%, transparent)`,
-              background: `color-mix(in srgb, ${v.tone} 8%, transparent)`,
+              borderColor: `color-mix(in srgb, ${VERDICT_TONE[v.key]} 38%, transparent)`,
+              background: `color-mix(in srgb, ${VERDICT_TONE[v.key]} 8%, transparent)`,
             }}
           >
-            <span className="text-[14px] font-semibold" style={{ color: v.tone }}>
-              {tr(v.key)}
+            <span className="min-w-0">
+              <span className="block text-[14px] font-semibold" style={{ color: VERDICT_TONE[v.key] }}>
+                {tr(v.key)}
+              </span>
+              {/* 🔴 **حكمٌ بلا سببٍ لا يُصدَّق.** يُسمّى المؤشّر الذي قرّر،
+                  ويُسمّى ما شدّ عكسَه - فالقارئ يرى المقايضة لا النتيجة
+                  وحدها، ويستطيع أن يخالف إن رأى غير ما رأينا. */}
+              {v.basisMetric && v.basisPct !== null && (
+                <span className="mt-0.5 block text-[11.5px] text-text-muted">
+                  {tr("basedOn", {
+                    metric: metricLabel(v.basisMetric, locale),
+                    pct: signed(v.basisPct),
+                  })}
+                  {v.conflictMetric && v.conflictPct !== undefined && (
+                    <>
+                      {" · "}
+                      {tr("against", {
+                        metric: metricLabel(v.conflictMetric, locale),
+                        pct: signed(v.conflictPct),
+                      })}
+                    </>
+                  )}
+                </span>
+              )}
+              {v.derived && (
+                <span className="mt-0.5 block text-[11px] text-text-faint">{tr("derivedNote")}</span>
+              )}
+              {v.key === "verdictMixed" && (
+                <span className="mt-0.5 block text-[11px] text-text-faint">{tr("mixedNote")}</span>
+              )}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium"
                   style={{ background: `color-mix(in srgb, ${conf.tone} 14%, transparent)`, color: conf.tone }}>
