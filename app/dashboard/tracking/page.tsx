@@ -37,7 +37,10 @@ export default async function TrackingCoveragePage() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl">
+    // بلا `max-w`: القسم يأخذ عرض الشاشة كمركز الحقيقة وغيره.
+    // كان محبوساً في ٤٨rem فيترك فراغين واسعين على الجانبين
+    // بينما جدولُ الصفحات وكتلُ الشيفرة أحوجُ ما تكون للعرض.
+    <div>
       <PageHeader
         icon={Radar}
         tone="verified"

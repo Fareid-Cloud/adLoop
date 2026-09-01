@@ -13,9 +13,10 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus, CheckCircle2, XCircle, RefreshCw, Trash2, Info,
-  AlertTriangle, Loader2, ShieldCheck, ArrowLeft, Clock,
+  AlertTriangle, Loader2, ShieldCheck, ArrowLeft, Clock, ChevronDown,
 } from "lucide-react";
-import { InstallTagPanel } from "./InstallTagPanel";
+import { CodeWindow } from "@/app/components/CodeWindow";
+import { buildSnippet } from "./tagSnippet";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 // من الملفّ المستقلّ لا من `trackingCoverage`: ذاك يجرّ `safeFetch` وهو
 // خادميّ، واستيراده هنا يكسر البناء.
@@ -77,7 +78,8 @@ export function TrackingCoverageClient({
   const [error, setError] = useState<string | null>(null);
   // لوحةُ الوسم تُفتح من الخطوة لا تفرض نفسها: بعد اكتمال التثبيت
   // تصير كتلةً طويلةً تُزاح في كلّ زيارة.
-  const [tagOpen, setTagOpen] = useState(false);
+  /** أيُّ بندٍ مفتوحٌ الآن - واحدٌ في كلّ مرّة، فلا تتراكم الكتل. */
+  const [openStep, setOpenStep] = useState<string | null>(null);
   const addRef = useRef<HTMLElement | null>(null);
 
   // اللوحة تُفتح تلقائياً لمن لا وسم لديه على أي صفحة - هو بالضبط من
@@ -136,22 +138,17 @@ export function TrackingCoverageClient({
   //   ٢ الأزرارُ مربوطة ← وصلت نقرةٌ حقيقيّة. وهذا لا يلزم من (١): وسمٌ
   //     مثبَّتٌ وزرٌّ بلا `trackCtaClick` يعطي صفحةً «سليمة» وصفر نقرات.
   //   ٣ المراقبةُ قائمة ← ثمّة صفحةٌ يفحصها AdLoop دورياً.
+  const snippet = buildSnippet(workspaceId, appUrl);
+  const ctaExamples = `<a href="https://wa.me/9665XXXXXXXX" onclick="trackCtaClick('WHATSAPP')">${tr("egWhatsapp")}</a>
+
+<a href="tel:+9665XXXXXXXX" onclick="trackCtaClick('CALL')">${tr("egCall")}</a>
+
+<form onsubmit="trackCtaClick('FORM')"> … </form>`;
+
   const steps = [
-    {
-      key: "st1",
-      done: anyInstalled || tagLive,
-      action: () => setTagOpen(true),
-    },
-    {
-      key: "st2",
-      done: tagLive,
-      action: () => setTagOpen(true),
-    },
-    {
-      key: "st3",
-      done: pages.length > 0,
-      action: () => addRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
-    },
+    { key: "st1", done: anyInstalled || tagLive },
+    { key: "st2", done: tagLive },
+    { key: "st3", done: pages.length > 0 },
   ];
   const doneCount = steps.filter((s) => s.done).length;
   const allDone = doneCount === steps.length;
@@ -214,24 +211,70 @@ export function TrackingCoverageClient({
                 >
                   {tr(st.done ? `${st.key}Done` : `${st.key}Todo`)}
                 </span>
-                <button onClick={st.action} className="btn btn-secondary btn-sm shrink-0">
+                <button
+                  onClick={() => setOpenStep((o) => (o === st.key ? null : st.key))}
+                  className="btn btn-secondary btn-sm shrink-0"
+                >
                   {tr(`${st.key}Action`)}
+                  <ChevronDown
+                    size={13}
+                    className={`transition-transform ${openStep === st.key ? "rotate-180" : ""}`}
+                  />
                 </button>
+
+                {/* 🔴 **ما يخصّ البندَ يُفتح تحته، لا في كتلةٍ أخرى.**
+                    كانت الأزرارُ الثلاثة تفتح لوحةً واحدةً في أسفل الصفحة
+                    تحوي الشيفرتين معاً - فمن ضغط «اربطه بالأزرار» ينزل
+                    إلى كتلةٍ تبدأ بشيفرةٍ أخرى ويبحث فيها عن بندِه.
+                    وليست خطواتٍ مرتّبة أصلاً: وضعُ الكود وربطُ الأزرار
+                    وفحصُ الصفحة أفعالٌ مستقلّة، ولا يلزم واحدٌ من الآخر. */}
+                {openStep === st.key && (
+                  <div className="w-full pt-1">
+                    {st.key === "st1" && (
+                      <CodeWindow
+                        code={snippet}
+                        lang="markup"
+                        title="adloop-tag.html"
+                        copyLabel={tr("copy")}
+                        copiedLabel={tr("copied")}
+                      />
+                    )}
+                    {st.key === "st2" && (
+                      <CodeWindow
+                        code={ctaExamples}
+                        lang="markup"
+                        title="buttons.html"
+                        copyLabel={tr("copy")}
+                        copiedLabel={tr("copied")}
+                      />
+                    )}
+                    {st.key === "st3" && (
+                      <form onSubmit={handleAdd} className="flex flex-wrap items-center gap-2 rounded-xl border border-border-visible p-2.5">
+                        <input
+                          dir="ltr"
+                          value={url}
+                          onChange={(e) => setUrl(e.target.value)}
+                          placeholder="https://example.com/landing"
+                          className="field field-sm min-w-[14rem] flex-1"
+                        />
+                        <input
+                          value={label}
+                          onChange={(e) => setLabel(e.target.value)}
+                          placeholder={tr("covLabelPlaceholder")}
+                          className="field field-sm w-[10rem]"
+                        />
+                        <button type="submit" disabled={adding || !url.trim()} className="btn btn-primary btn-sm shrink-0">
+                          {adding ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+                          {tr("qaAddPage")}
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </section>
-
-        {/* ── الوسم نفسه: يُفتح من الخطوات، ولا يفرض نفسه بعد إتمامها ── */}
-        {tagOpen && (
-          <InstallTagPanel
-            workspaceId={workspaceId}
-            appUrl={appUrl}
-            locale={locale}
-            defaultOpen
-            tagLive={tagLive}
-          />
-        )}
 
         {/* ── الصفحات المراقَبة ──────────────────────────────────────── */}
         <section className="card-shadow overflow-hidden card" ref={addRef}>
@@ -342,28 +385,6 @@ export function TrackingCoverageClient({
               </div>
             </>
           )}
-
-          {/* إضافةُ صفحة: نموذجٌ في ذيل الجدول لا نافذة - الفعلُ صغير
-              وتكرارُه وارد، ونافذةٌ لكلّ رابطٍ تُثقله بلا سبب. */}
-          <form onSubmit={handleAdd} className="flex flex-wrap items-center gap-2 border-t border-border p-3">
-            <input
-              dir="ltr"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://example.com/landing"
-              className="field field-sm min-w-[14rem] flex-1"
-            />
-            <input
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder={tr("covLabelPlaceholder")}
-              className="field field-sm w-[10rem]"
-            />
-            <button type="submit" disabled={adding || !url.trim()} className="btn btn-primary btn-sm shrink-0">
-              {adding ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-              {tr("qaAddPage")}
-            </button>
-          </form>
 
           {error && <p className="border-t border-border px-3 py-2 text-[12px] text-critical">{error}</p>}
         </section>
