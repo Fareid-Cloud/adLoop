@@ -13,7 +13,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { MessageSquare, Plus, Trash2, Send, Loader2, Sparkles, AlertTriangle } from "lucide-react";
+import { MessageSquare, Plus, Trash2, Send, Loader2, AlertTriangle } from "lucide-react";
+import { AgentIcon } from "@/app/components/AgentIcon";
 import { MarkdownAnswer } from "@/app/components/MarkdownAnswer";
 import { getCsrfHeader } from "@/lib/csrfClient";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -46,6 +47,7 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
   const [upgradeUrl, setUpgradeUrl] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const params = useSearchParams();
+
 
   // 🔴 `?chat=` قادمٌ من مربّع السؤال في صفحةٍ أخرى: رابطٌ يَعِد بفتح
   // محادثةٍ بعينها، فلو أنزل على قائمةٍ مغلقة لكان وعداً لم يُوفَ.
@@ -86,8 +88,8 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
     setUpgradeUrl(null);
   }
 
-  async function send() {
-    const q = question.trim();
+  async function send(override?: string) {
+    const q = (override ?? question).trim();
     if (q.length < 3 || busy) return;
 
     setBusy(true);
@@ -150,7 +152,7 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
       {/* ── السجلّ ───────────────────────────────────────────────── */}
-      <aside className="card-shadow flex max-h-[70vh] flex-col overflow-hidden card">
+      <aside className="card-shadow flex max-h-[78vh] min-h-[26rem] flex-col overflow-hidden card">
         <button onClick={startNew} className="btn btn-primary m-3 justify-center">
           <Plus size={15} /> {tr("newChat")}
         </button>
@@ -159,7 +161,7 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
           {tr("history")}
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="hover-scrollbar flex-1 overflow-y-auto">
           {chats.length === 0 ? (
             <p className="p-3 text-[12px] leading-relaxed text-text-muted">{tr("empty")}</p>
           ) : (
@@ -203,14 +205,42 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
       </aside>
 
       {/* ── المحادثة ─────────────────────────────────────────────── */}
-      <section className="card-shadow flex max-h-[70vh] flex-col overflow-hidden card">
-        <div className="flex-1 overflow-y-auto p-4">
+      <section className="card-shadow flex max-h-[78vh] min-h-[26rem] flex-col overflow-hidden card">
+        <div className="hover-scrollbar flex-1 overflow-y-auto p-4">
           {messages.length === 0 && !busy ? (
-            <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-              <Sparkles size={22} className="text-accent" />
-              <p className="max-w-sm text-[13px] leading-relaxed text-text-muted">
+            /* 🔴 **شاشةُ البداية كانت سطراً رمادياً في فراغ.** ومن يفتح
+               مساعداً لأوّل مرّة لا ينقصه تشجيع بل **مثال**: لا يعرف ما
+               يُسأل ولا بأيّ صيغة. فالأسئلة الثلاثة هنا ليست زينة - هي
+               أسئلة المنتج نفسها (`aiAsk.ph_*`)، تُضغَط فتُرسَل. */
+            <div className="flex h-full flex-col items-center justify-center gap-3 px-2 text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/10">
+                <AgentIcon size={28} className="text-accent" />
+              </span>
+              <h3 className="text-[17px] font-semibold text-text-primary">{tr("welcome")}</h3>
+              <p className="max-w-sm text-[12.5px] leading-relaxed text-text-muted">
                 {chats.length === 0 ? tr("emptyBody") : tr("pickOne")}
               </p>
+
+              <div className="mt-2 w-full max-w-lg">
+                <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-text-faint">
+                  {tr("suggestLabel")}
+                </div>
+                <div className="grid gap-1.5 sm:grid-cols-3">
+                  {["ph_home_1", "ph_home_2", "ph_home_3"].map((k) => {
+                    const text = t(locale, `aiAsk.${k}`);
+                    return (
+                      <button
+                        key={k}
+                        onClick={() => void send(text)}
+                        disabled={busy}
+                        className="rounded-xl border border-border-visible p-2.5 text-start text-[12px] leading-relaxed text-text-muted transition-colors hover:border-accent/40 hover:text-text-primary"
+                      >
+                        {text}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col gap-4">
@@ -224,7 +254,10 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
                   </div>
                 ) : (
                   <div key={m.id} className="flex flex-col gap-1">
-                    <span className="text-[11px] text-text-faint">{tr("agent")}</span>
+                    <span className="flex items-center gap-1.5 text-[11px] text-text-faint">
+                      <AgentIcon size={13} className="text-accent" />
+                      {tr("agent")}
+                    </span>
                     <MarkdownAnswer text={m.content} />
                   </div>
                 )
@@ -256,7 +289,7 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
         {/* «اسأل سؤالاً آخر» كان يظهر على محادثةٍ لم يُسأل فيها شيء بعد -
             والصفحة نفسها تقول فوقها «اسأل سؤالك الأوّل». وسؤالٌ حقيقيّ من
             أمثلة المنتج أنفع من دعوةٍ عامّة: يُري القادمَ ما يُسأل. */}
-        <div className="flex items-end gap-2 border-t border-border p-3">
+        <div className="flex items-end gap-2 border-t border-border p-3 focus-within:border-accent/30">
           <textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value.slice(0, MAX_QUESTION))}
