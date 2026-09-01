@@ -13,7 +13,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { MessageSquare, Plus, Trash2, Send, Loader2, AlertTriangle, Paperclip, X } from "lucide-react";
+import { MessageSquare, Plus, Trash2, Send, Loader2, AlertTriangle, Paperclip, X, Copy, Check } from "lucide-react";
 import { AgentIcon } from "@/app/components/AgentIcon";
 import { MarkdownAnswer } from "@/app/components/MarkdownAnswer";
 import { getCsrfHeader } from "@/lib/csrfClient";
@@ -31,6 +31,18 @@ interface Message {
   id: string;
   role: string;
   content: string;
+}
+
+/**
+ * مجموعةُ المحادثة بالزمن. الحدودُ بالأيّام لا بالتقويم: «هذا الأسبوع»
+ * تعني آخر سبعة أيّام لا الأسبوع الذي يبدأ الأحد - فمحادثةُ أمسٍ لا تقع
+ * في «أقدم» لأنّ الأسبوع تغيّر بينهما.
+ */
+function groupOf(iso: string): "grpToday" | "grpWeek" | "grpOlder" {
+  const days = (Date.now() - new Date(iso).getTime()) / 86_400_000;
+  if (days < 1) return "grpToday";
+  if (days < 7) return "grpWeek";
+  return "grpOlder";
 }
 
 /** سؤالٌ أطول من هذا ليس سؤالاً - نفس حدّ المسار الخلفيّ */
@@ -57,6 +69,7 @@ export function AgentClient({
   const endRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [attachment, setAttachment] = useState<{ name: string; text: string } | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   /** كم حرفاً ظهر من آخر جواب - الكشفُ التدريجيّ نفسه الذي في مربّع السؤال */
   const [revealed, setRevealed] = useState<number | undefined>(undefined);
   const params = useSearchParams();
@@ -319,7 +332,17 @@ ${attachment.text}`
           {chats.length === 0 ? (
             <p className="p-3 text-[12px] leading-relaxed text-text-muted">{tr("empty")}</p>
           ) : (
-            chats.map((c) => (
+            // 🔴 **قائمةٌ مسطّحةٌ بلا زمن**: خمسون محادثةً متساويةً في الشكل
+            // لا يُعرف منها ما دار اليوم ممّا دار الشهر الماضي - والزمنُ هو
+            // أوّلُ ما يُستدعى به حديثٌ سابق («اللي كنت بسأل فيه إمبارح»).
+            // العناوينُ تظهر عند تبدّل المجموعة فقط، فلا تتكرّر بلا داع.
+            chats.map((c, i) => (
+              <div key={`g-${c.id}`}>
+              {groupOf(c.updatedAt) !== (i > 0 ? groupOf(chats[i - 1].updatedAt) : null) && (
+                <div className="border-b border-border/50 bg-surface-raised/40 px-3 py-1 text-[10.5px] font-medium uppercase tracking-wide text-text-faint">
+                  {tr(groupOf(c.updatedAt))}
+                </div>
+              )}
               <div
                 key={c.id}
                 className={`row-toggle flex items-center gap-2 border-b border-border/50 px-3 py-2.5 ${
@@ -352,6 +375,7 @@ ${attachment.text}`
                 >
                   <Trash2 size={13} />
                 </button>
+              </div>
               </div>
             ))
           )}
@@ -462,10 +486,25 @@ ${attachment.text}`
                     </p>
                   </div>
                 ) : (
-                  <div key={m.id} className="flex flex-col gap-1">
+                  <div key={m.id} className="group/msg flex flex-col gap-1">
                     <span className="flex items-center gap-1.5 text-[11px] text-text-faint">
                       <AgentIcon size={13} className="text-accent" />
                       {tr("agent")}
+                      {/* 🔴 الجوابُ يُنقَل إلى تقريرٍ أو رسالةٍ باستمرار، وبلا
+                          زرٍّ يُحدَّد بالفأرة سطراً سطراً. يظهر عند المرور
+                          فلا يزاحم النصّ أثناء القراءة. */}
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(m.content);
+                          setCopiedId(m.id);
+                          setTimeout(() => setCopiedId((c) => (c === m.id ? null : c)), 2000);
+                        }}
+                        aria-label={tr("copyAnswer")}
+                        className="ms-1 flex items-center gap-1 rounded p-0.5 text-text-faint opacity-0 transition-opacity hover:text-text-primary focus-visible:opacity-100 group-hover/msg:opacity-100"
+                      >
+                        {copiedId === m.id ? <Check size={11} /> : <Copy size={11} />}
+                        {copiedId === m.id && tr("copiedAnswer")}
+                      </button>
                     </span>
                     <MarkdownAnswer text={m.content} />
                   </div>

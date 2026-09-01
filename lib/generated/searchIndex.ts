@@ -31,6 +31,8 @@ export const SEARCH_INDEX: SearchEntry[] = [
   { k: "actions.title", h: "/dashboard/actions" },
   { k: "agentPage.agent", h: "/dashboard/agent" },
   { k: "agentPage.attach", h: "/dashboard/agent" },
+  { k: "agentPage.copiedAnswer", h: "/dashboard/agent" },
+  { k: "agentPage.copyAnswer", h: "/dashboard/agent" },
   { k: "agentPage.delete", h: "/dashboard/agent" },
   { k: "agentPage.deleteConfirm", h: "/dashboard/agent" },
   { k: "agentPage.empty", h: "/dashboard/agent" },
