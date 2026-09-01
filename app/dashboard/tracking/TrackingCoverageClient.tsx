@@ -9,7 +9,7 @@
 // لا تعرض الوسم، ولا تقول من أين يأتي، ولا ما الخطوة التالية. أي حالة
 // تمنع المستخدم يجب أن تحمل معها الحلّ لا التشخيص وحده.
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus, CheckCircle2, XCircle, RefreshCw, Trash2, Info,
@@ -75,6 +75,10 @@ export function TrackingCoverageClient({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // لوحةُ الوسم تُفتح من الخطوة لا تفرض نفسها: بعد اكتمال التثبيت
+  // تصير كتلةً طويلةً تُزاح في كلّ زيارة.
+  const [tagOpen, setTagOpen] = useState(false);
+  const addRef = useRef<HTMLElement | null>(null);
 
   // اللوحة تُفتح تلقائياً لمن لا وسم لديه على أي صفحة - هو بالضبط من
   // يحتاجها، ولا معنى لأن يبحث عنها بنفسه.
@@ -123,170 +127,301 @@ export function TrackingCoverageClient({
     router.refresh();
   }
 
+  // ── الخطوات الثلاث ────────────────────────────────────────────────
+  //
+  // **كلُّ خطوةٍ حالتُها من دليلٍ مختلف، لا من ادّعاء.** الثلاثةُ منفصلةٌ
+  // فعلاً ولا تُثبت إحداها الأخرى:
+  //
+  //   ١ الوسمُ موجود   ← كُشف في صفحةٍ مراقَبة.
+  //   ٢ الأزرارُ مربوطة ← وصلت نقرةٌ حقيقيّة. وهذا لا يلزم من (١): وسمٌ
+  //     مثبَّتٌ وزرٌّ بلا `trackCtaClick` يعطي صفحةً «سليمة» وصفر نقرات.
+  //   ٣ المراقبةُ قائمة ← ثمّة صفحةٌ يفحصها AdLoop دورياً.
+  const steps = [
+    {
+      key: "st1",
+      done: anyInstalled || tagLive,
+      action: () => setTagOpen(true),
+    },
+    {
+      key: "st2",
+      done: tagLive,
+      action: () => setTagOpen(true),
+    },
+    {
+      key: "st3",
+      done: pages.length > 0,
+      action: () => addRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
+    },
+  ];
+  const doneCount = steps.filter((s) => s.done).length;
+  const allDone = doneCount === steps.length;
+
+  function pageState(p: PageRow): { key: string; tone: string } {
+    if (p.lastCheckedAt === null) return { key: "stUnchecked", tone: "var(--text-muted)" };
+    if (p.lastError || p.adloopDetected !== true) return { key: "stAttention", tone: "var(--gap)" };
+    return { key: "stHealthy", tone: "var(--verified)" };
+  }
+
   return (
-    <div>
-      <InstallTagPanel
-        workspaceId={workspaceId}
-        appUrl={appUrl}
-        locale={locale}
-        // يبقى مفتوحاً ما لم تصل نقرةٌ بعد: الخطوةُ الوحيدة التي لم
-        // تكتمل لا تُطوى خلف ضغطة.
-        defaultOpen={needsTag || pages.length === 0 || !tagLive}
-        tagLive={tagLive}
-      />
+    <div className="grid items-start gap-4 lg:grid-cols-[1fr_300px]">
+      <div className="min-w-0">
+        {/* ── شريطُ الإعداد ──────────────────────────────────────────
+            يختفي تماماً عند الاكتمال: لافتةُ «تمّ» دائمةٌ تصير أثاثاً،
+            ومكانُها الحقيقيّ أن تُخلي الشاشة لما بعدها. */}
+        {!allDone && (
+          <div className="mb-4 flex items-start gap-2.5 rounded-2xl border border-gap/40 bg-gap/[0.07] p-3.5">
+            <AlertTriangle size={16} className="mt-0.5 shrink-0 text-gap" />
+            <div className="min-w-0">
+              <div className="text-[13px] font-semibold text-text-primary">{tr("setupIncomplete")}</div>
+              <p className="mt-0.5 text-[12px] leading-relaxed text-text-muted">
+                {tr("setupProgress", { done: doneCount, total: steps.length })} {tr("setupRemaining")}
+              </p>
+            </div>
+          </div>
+        )}
 
-      <div className="card-shadow mb-4 flex items-start gap-2.5 card pad-md">
-        <Info size={16} className="mt-0.5 shrink-0 text-accent" />
-        <p className="text-[12.5px] leading-relaxed text-text-muted">{tr("covScopeNote")}</p>
-      </div>
+        {/* ── الخطوات ─────────────────────────────────────────────── */}
+        <section className="card-shadow mb-4 overflow-hidden card">
+          <h2 className="border-b border-border px-4 py-2.5 text-[13px] font-semibold text-text-primary">
+            {tr("stepsTitle")}
+          </h2>
+          <div className="divide-y divide-border">
+            {steps.map((st, i) => (
+              <div key={st.key} className="flex flex-wrap items-center gap-3 px-4 py-3">
+                <span className="w-5 shrink-0 text-center font-mono text-[12px] tabular-nums text-text-faint">
+                  {i + 1}
+                </span>
+                {/* دائرةٌ ممتلئةٌ للمنجَز وفارغةٌ لغيره - الحالةُ تُقرأ من
+                    الشكل قبل النصّ، ومن اللون قبل القراءة. */}
+                <span className="shrink-0">
+                  {st.done ? (
+                    <CheckCircle2 size={20} className="text-verified" />
+                  ) : (
+                    <span className="block h-5 w-5 rounded-full border-2 border-gap/60" />
+                  )}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-medium text-text-primary">
+                    {tr(`${st.key}Title`)}
+                  </span>
+                  <span className="block text-[11.5px] leading-relaxed text-text-muted">
+                    {tr(`${st.key}Body`)}
+                  </span>
+                </span>
+                <span
+                  className="shrink-0 text-[12px] font-medium"
+                  style={{ color: st.done ? "var(--verified)" : "var(--gap)" }}
+                >
+                  {tr(st.done ? `${st.key}Done` : `${st.key}Todo`)}
+                </span>
+                <button onClick={st.action} className="btn btn-secondary btn-sm shrink-0">
+                  {tr(`${st.key}Action`)}
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
 
-      <form onSubmit={handleAdd} className="card-shadow mb-4 card pad-md">
-        <div className="mb-3 grid gap-2.5 sm:grid-cols-[2fr_1fr]">
-          <input
-            value={url} onChange={(e) => setUrl(e.target.value)}
-            placeholder={tr("covUrlPlaceholder")}
-            className="field"
+        {/* ── الوسم نفسه: يُفتح من الخطوات، ولا يفرض نفسه بعد إتمامها ── */}
+        {tagOpen && (
+          <InstallTagPanel
+            workspaceId={workspaceId}
+            appUrl={appUrl}
+            locale={locale}
+            defaultOpen
+            tagLive={tagLive}
           />
-          <input
-            value={label} onChange={(e) => setLabel(e.target.value)}
-            placeholder={tr("covLabelPlaceholder")}
-            className="field"
-          />
-        </div>
-        {error && <p className="mb-2 text-[12.5px] text-critical">{error}</p>}
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <button type="submit" disabled={adding || !url.trim()}
-                  className="btn btn-primary">
-            <Plus size={14} /> {adding ? tr("covAdding") : tr("covAdd")}
-          </button>
+        )}
+
+        {/* ── الصفحات المراقَبة ──────────────────────────────────────── */}
+        <section className="card-shadow overflow-hidden card" ref={addRef}>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2.5">
+            <div className="min-w-0">
+              <h2 className="text-[13px] font-semibold text-text-primary">{tr("pagesTitle")}</h2>
+              <p className="text-[11.5px] text-text-muted">{tr("pagesBody")}</p>
+            </div>
+            {pages.length > 0 && (
+              <button
+                onClick={recheckAll}
+                disabled={busyId === "all"}
+                className="btn btn-ghost btn-sm shrink-0"
+              >
+                {busyId === "all" ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+                {tr("qaCheckAll")}
+              </button>
+            )}
+          </div>
 
           {pages.length > 0 && (
-            <button type="button" onClick={recheckAll} disabled={busyId === "all"}
-                    className="btn btn-secondary">
-              {busyId === "all" ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-              {busyId === "all" ? tr("covCheckingAll") : tr("covCheckAll")}
-            </button>
-          )}
-        </div>
-      </form>
-
-      {pages.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border p-10 text-center">
-          <ShieldCheck size={26} className="mx-auto mb-3 text-text-faint" />
-          <p className="text-[13.5px] text-text-primary">{tr("covNoneTitle")}</p>
-          <p className="mt-1 text-[12.5px] text-text-muted">{tr("covNoneBody")}</p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2.5">
-          {pages.map((p) => {
-            const state = stateOf(p);
-            const tone = STATE_TONE[state];
-            const Icon =
-              state === "ok" ? CheckCircle2
-              : state === "error" ? AlertTriangle
-              : state === "pending" ? Clock
-              : XCircle;
-
-            return (
-              <div key={p.id} className="card pad-md">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-center gap-2">
-                      <Icon size={15} style={{ color: tone }} />
-                      <span className="text-[13.5px] font-medium text-text-primary">{p.label || p.url}</span>
-                    </div>
-                    {p.label && <p className="mb-1.5 truncate text-[11.5px] text-text-faint">{p.url}</p>}
-
-                    {/* الحالة: عنوان + ماذا يعني + الخطوة التالية - لا سطر
-                        تشخيص مغلق يترك المستخدم يبحث عن الحلّ بنفسه */}
-                    <p className="text-[12.5px] font-medium" style={{ color: tone }}>
-                      {tr(`st${cap(state)}Title`)}
-                    </p>
-                    <p className="mt-0.5 text-[12px] leading-relaxed text-text-muted">
-                      {/* السبب مترجَماً أو لا سبب: كان `lastError` يُطبع خاماً
-                          بين قوسين - نصُّ شبكةٍ إنجليزيّ تقنيّ لقارئٍ عربيّ،
-                          أو العكس. والصفوف المخزَّنة قبل التحويل تحمل نصّاً
-                          حرّاً لا رمزاً، فتُعرَض بالجملة العامّة وحدها. */}
-                      {state === "error"
-                        ? trackingErrorText(p.lastError ?? null, locale) ?? tr("stErrorBody")
-                        : tr(`st${cap(state)}Body`)}
-                    </p>
-
-                    {(state === "missing" || state === "partial") && (
-                      <a
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          window.scrollTo({ top: 0, behavior: "smooth" });
-                        }}
-                        className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-accent no-underline"
-                      >
-                        {tr("fixNow")}
-                        <ArrowLeft size={12} className="rtl:rotate-0 ltr:rotate-180" />
-                      </a>
-                    )}
-
-                    {p.detectedSystems?.length > 0 && (
-                      <div className="mt-2">
-                        <span className="text-[11px] text-text-faint">{tr("covOtherTags")}</span>
-                        <div className="mt-1 flex flex-wrap gap-1.5">
-                          {p.detectedSystems.map((sys) => (
-                            <span key={sys}
-                                  className={`rounded-full px-2 py-0.5 text-[10.5px] ${
-                                    sys === "adloop" ? "bg-verified/12 text-verified" : "bg-surface-raised text-text-muted"
-                                  }`}>
-                              {SYSTEM_LABEL[sys] ?? sys}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {p.lastCheckedAt && (
-                      <p className="mt-2 text-[11px] text-text-faint">
-                        {tr("covLastCheck", { date: new Date(p.lastCheckedAt).toLocaleString(locale === "en" ? "en-GB" : "ar-EG-u-nu-latn") })}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex shrink-0 gap-1.5">
-                    <button onClick={() => recheck(p.id)} disabled={busyId === p.id}
-                            className="flex items-center gap-1.5 card-inset px-3 py-2 text-[12px] text-text-primary disabled:opacity-50">
-                      {busyId === p.id ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-                      {busyId === p.id ? tr("covChecking") : tr("covCheck")}
-                    </button>
-                    <button onClick={() => setConfirmDelete(p.id)}
-                            className="card-inset p-2 text-text-muted hover:text-critical"
-                            aria-label={tr("covDelete")}>
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-
-                {confirmDelete === p.id && (
-                  <div className="note mt-3 flex-wrap justify-between border-critical/35 bg-critical/[0.06] p-3">
-                    <span className="text-[12.5px] text-text-primary">{tr("covConfirmDelete")}</span>
-                    <div className="flex gap-2">
-                      <button onClick={() => setConfirmDelete(null)}
-                              className="card px-3 py-1.5 text-[12px] text-text-muted">
-                        {tr("covCancel")}
-                      </button>
-                      <button onClick={() => remove(p.id)} disabled={busyId === p.id}
-                              className="btn btn-danger btn-sm">
-                        {tr("covRemove")}
-                      </button>
-                    </div>
-                  </div>
-                )}
+            <>
+              <div className="hidden items-center gap-3 border-b border-border px-4 py-2 text-[11px] font-medium uppercase tracking-wide text-text-faint sm:flex">
+                <span className="min-w-0 flex-1">{tr("colPage")}</span>
+                <span className="w-[150px] shrink-0">{tr("colStatusP")}</span>
+                <span className="w-[100px] shrink-0">{tr("colChecked")}</span>
+                <span className="w-[72px] shrink-0" />
               </div>
-            );
-          })}
+              <div className="divide-y divide-border">
+                {pages.map((p) => {
+                  const st = pageState(p);
+                  return (
+                    <div key={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[12.5px] text-text-primary">
+                          {p.label || new URL(p.url).pathname || p.url}
+                        </span>
+                        {/* الرابط لاتينيّ دائماً مهما كانت لغة الواجهة */}
+                        <span dir="ltr" className="block truncate text-[11px] text-text-faint">
+                          {p.url}
+                        </span>
+                      </span>
+
+                      <span className="w-[150px] shrink-0">
+                        <span className="flex items-center gap-1.5 text-[12px]">
+                          <span
+                            className="h-1.5 w-1.5 shrink-0 rounded-full"
+                            style={{ background: st.tone }}
+                          />
+                          <span className="truncate text-text-muted">{tr(st.key)}</span>
+                        </span>
+                        {/* سببُ العطل تحت اسمه - «تحتاج انتباهاً» وحدها
+                            تُرسل صاحبَها ليخمّن. */}
+                        {st.key === "stAttention" && (
+                          <span className="block truncate text-[10.5px] text-text-faint">
+                            {p.lastError
+                              ? trackingErrorText(p.lastError, locale)
+                              : tr("st1Todo")}
+                          </span>
+                        )}
+                      </span>
+
+                      <span className="w-[100px] shrink-0 text-[11.5px] text-text-muted">
+                        {p.lastCheckedAt
+                          ? new Date(p.lastCheckedAt).toLocaleDateString(
+                              locale === "ar" ? "ar-EG-u-nu-latn" : "en-GB",
+                              { day: "numeric", month: "short" }
+                            )
+                          : tr("neverChecked")}
+                      </span>
+
+                      <span className="flex w-[72px] shrink-0 items-center justify-end gap-1">
+                        <button
+                          onClick={() => recheck(p.id)}
+                          disabled={busyId === p.id}
+                          aria-label={tr("qaCheckAll")}
+                          className="card-inset p-1.5 text-text-muted hover:text-text-primary"
+                        >
+                          {busyId === p.id
+                            ? <Loader2 size={12} className="animate-spin" />
+                            : <RefreshCw size={12} />}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(p.id)}
+                          aria-label={tr("covRemove")}
+                          className="card-inset p-1.5 text-text-muted hover:text-critical"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </span>
+
+                      {confirmDelete === p.id && (
+                        <div className="mt-1 flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border border-critical/35 bg-critical/[0.06] p-2.5">
+                          <span className="text-[12px] text-text-primary">{tr("covConfirmDelete")}</span>
+                          <div className="flex gap-2">
+                            <button onClick={() => setConfirmDelete(null)} className="card px-3 py-1 text-[12px] text-text-muted">
+                              {tr("covCancel")}
+                            </button>
+                            <button onClick={() => remove(p.id)} disabled={busyId === p.id} className="btn btn-danger btn-sm">
+                              {tr("covRemove")}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {/* إضافةُ صفحة: نموذجٌ في ذيل الجدول لا نافذة - الفعلُ صغير
+              وتكرارُه وارد، ونافذةٌ لكلّ رابطٍ تُثقله بلا سبب. */}
+          <form onSubmit={handleAdd} className="flex flex-wrap items-center gap-2 border-t border-border p-3">
+            <input
+              dir="ltr"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://example.com/landing"
+              className="field field-sm min-w-[14rem] flex-1"
+            />
+            <input
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder={tr("covLabelPlaceholder")}
+              className="field field-sm w-[10rem]"
+            />
+            <button type="submit" disabled={adding || !url.trim()} className="btn btn-primary btn-sm shrink-0">
+              {adding ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+              {tr("qaAddPage")}
+            </button>
+          </form>
+
+          {error && <p className="border-t border-border px-3 py-2 text-[12px] text-critical">{error}</p>}
+        </section>
+      </div>
+
+      {/* ── العمود الجانبيّ ─────────────────────────────────────────── */}
+      <aside className="flex flex-col gap-3">
+        <section className="card-shadow card pad-md">
+          <h2 className="mb-2.5 text-[13px] font-semibold text-text-primary">{tr("quickActions")}</h2>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => addRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+              className="btn btn-secondary justify-start"
+            >
+              <Plus size={14} /> {tr("qaAddPage")}
+            </button>
+            <button
+              onClick={recheckAll}
+              disabled={busyId === "all" || pages.length === 0}
+              className="btn btn-secondary justify-start"
+            >
+              {busyId === "all" ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+              {tr("qaCheckAll")}
+            </button>
+          </div>
+          <p className="mt-2.5 text-[11.5px] leading-relaxed text-text-muted">{tr("qaHint")}</p>
+        </section>
+
+        <section className="card-shadow card pad-md">
+          <h2 className="mb-2.5 text-[13px] font-semibold text-text-primary">{tr("needHelp")}</h2>
+          <div className="flex flex-col gap-2.5">
+            {/* الدعمُ يُفتح بالحدث نفسه المستعمل في كلّ المنتج - لا رابطٌ
+                إلى صفحةٍ لا وجود لها. */}
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent("adloop:open-support"))}
+              className="flex items-start gap-2 text-start"
+            >
+              <ShieldCheck size={15} className="mt-0.5 shrink-0 text-accent" />
+              <span className="min-w-0">
+                <span className="block text-[12.5px] font-medium text-text-primary">{tr("helpTrouble")}</span>
+                <span className="block text-[11.5px] text-text-muted">{tr("helpTroubleBody")}</span>
+              </span>
+            </button>
+            <a href="/dashboard/help" className="flex items-start gap-2 no-underline">
+              <Info size={15} className="mt-0.5 shrink-0 text-accent" />
+              <span className="min-w-0">
+                <span className="block text-[12.5px] font-medium text-text-primary">{tr("helpGuide")}</span>
+                <span className="block text-[11.5px] text-text-muted">{tr("helpGuideBody")}</span>
+              </span>
+            </a>
+          </div>
+        </section>
+
+        <div className="card-shadow flex items-start gap-2.5 card pad-md">
+          <Info size={15} className="mt-0.5 shrink-0 text-accent" />
+          <p className="text-[11.5px] leading-relaxed text-text-muted">{tr("covScopeNote")}</p>
         </div>
-      )}
+      </aside>
     </div>
   );
-}
-
-function cap(s: string): string {
-  return s[0].toUpperCase() + s.slice(1);
 }
