@@ -198,7 +198,7 @@ export function DiagnosticsView({
           {/* الوصول إلى صفحة الصفحات المراقَبة - كان الرابط الوحيد إليها قد
               أُزيل عند إعادة بناء هذه الصفحة، فأصبحت غير قابلة للوصول تماماً */}
           <a
-            href="/dashboard/diagnostics/tracking-coverage"
+            href="/dashboard/tracking"
             className="btn btn-secondary"
           >
             <Radar size={15} className="text-text-muted" />

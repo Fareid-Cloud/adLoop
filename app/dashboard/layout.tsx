@@ -8,6 +8,7 @@
 // لكل صفحة في المنتج (تسجيل الدخول، التسجيل، إلخ)، مش الداشبورد بس
 import type { ReactNode } from "react";
 import { cookies, headers } from "next/headers";
+import { InstallTagCta } from "@/app/components/InstallTagCta";
 import { redirect } from "next/navigation";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -178,6 +179,21 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   }
   const activeId = cookieStore.get("adloop_workspace")?.value;
   const activeWorkspace = allWorkspaces.find((w) => w.id === activeId) ?? allWorkspaces[0] ?? null;
+
+  // 🔴 **هل وصل الوسمُ شيئاً بعد؟** عليها يتوقّف ظهورُ دعوة التثبيت في
+  // الرأس: تظهر ما لم تصل نقرةٌ واحدة، وتختفي وحدَها أوّلَ ما تصل.
+  //
+  // `findFirst` لا `count`: السؤال «هل من واحدة» لا «كم واحدة»، والفرق
+  // بينهما مسحُ جدولٍ كامل في كلّ رسمٍ للوحة.
+  //
+  // والعرضُ التجريبيّ مستثنى: بياناته مزروعة، فدعوةُ تثبيتٍ فيه تطلب
+  // خطوةً لا معنى لها في مساحةٍ لا موقع لها أصلاً.
+  const tagLive = activeWorkspace
+    ? await prisma.ctaClickEvent.findFirst({
+        where: { workspaceId: activeWorkspace.id },
+        select: { id: true },
+      })
+    : null;
 
   // حالة الديمو من المساحة النشطة - الديمو مساحة عادية بعلامة، لا مسار
   // موازٍ يحتاج فحصاً منفصلاً في كل صفحة.
@@ -350,6 +366,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               في الديمو لأن الذكاء الاصطناعي معطَّل هناك.
               وتُخفى على الهاتف: رقمٌ إعلاميّ لا يُتخذ عنده قرار، ومكانه
               الطبيعيّ صفحة الاشتراك - بينما عرضه هنا يزاحم عناصر تُستعمل. */}
+          {!tagLive && !demoWs && <InstallTagCta locale={locale} />}
           {entitlements && !demoWs && (
             <span className="hidden sm:inline-flex">
               <AiCreditBadge

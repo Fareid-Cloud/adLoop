@@ -111,6 +111,11 @@ export const NAV_GROUPS: NavGroup[] = [
       },
       // بلا `usesAi`: مركز الحقيقة يقارن المُعلَن بالمتحقَّق بحسابٍ ثابت لا
       // بنموذج لغويّ. شارةٌ هنا كانت تَعِد بذكاءٍ لا يعمل في الصفحة.
+      // 🔴 **الوسمُ أوّلُ الطريق لا آخرَه.** كان ثالثَ مستوىً داخل قسم
+      // التشخيص - وهو القسم الذي يُفتَح عند الشكّ في عطل، لا عند البدء.
+      // وبدون الوسم لا يملك المنتج نقرةً واحدةً يقارن بها ما تدّعيه
+      // المنصّة، أي أنّ دعواه كلَّها تسقط. فصار قسماً قائماً بذاته.
+      { href: "/dashboard/tracking", labelAr: "التتبّع", labelEn: "Tracking", iconName: "Radar" },
       { href: "/dashboard/truth", labelAr: "مركز الحقيقة", labelEn: "Truth Center", iconName: "ShieldCheck" },
       { href: "/dashboard/pricing", labelAr: "التسعير", labelEn: "Pricing", iconName: "Tag" },
       { href: "/dashboard/site-scan", labelAr: "فحص الموقع", labelEn: "Site Scan", iconName: "ScanSearch" },
@@ -118,7 +123,6 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/dashboard/diagnostics", labelAr: "صحة الحساب", labelEn: "Account Health", iconName: "Stethoscope",
         children: [
           { href: "/dashboard/diagnostics", labelAr: "ملخّص الأداء", labelEn: "Overview" },
-          { href: "/dashboard/diagnostics/tracking-coverage", labelAr: "تغطية التتبّع", labelEn: "Tracking Coverage" },
         ],
       },
     ],

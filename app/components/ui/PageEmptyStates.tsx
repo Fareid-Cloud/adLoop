@@ -95,7 +95,7 @@ export function TrackingEmpty({ locale }: PageEmptyProps) {
       }
       locale={locale}
       action={
-        <Link href="/dashboard/diagnostics/tracking-coverage" className="btn btn-primary">
+        <Link href="/dashboard/tracking" className="btn btn-primary">
           <Zap size={15} />
           {t(locale, "emptyStates.setUpTracking")}
           <ArrowLeft size={13} className="rtl:rotate-0 ltr:rotate-180" />

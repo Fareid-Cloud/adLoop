@@ -1,6 +1,6 @@
 "use client";
 
-// app/dashboard/diagnostics/tracking-coverage/InstallTagPanel.tsx
+// app/dashboard/tracking/InstallTagPanel.tsx
 //
 // كان النظام يقول "وسم AdLoop غير موجود" ولا يقول ما هو الوسم ولا من أين
 // يأتي. الكود كان في ملف توثيق فيه REPLACE_WITH_ACTUAL_WORKSPACE_ID -

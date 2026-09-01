@@ -193,7 +193,7 @@ export async function runDiagnostics(
       L("اربط رقم واتساب الأعمال أو صفحة ماسنجر لتصل المحادثات إلينا.", "Connect your WhatsApp Business number or Messenger page so conversations reach us."),
     ],
     lastScanAt: now,
-    actionHref: "/dashboard/diagnostics/tracking-coverage",
+    actionHref: "/dashboard/tracking",
   });
 
   // وسم الموقع
@@ -215,7 +215,7 @@ export async function runDiagnostics(
       : `${pagesWithAdloop} of ${pages.length} pages carry the AdLoop tag (${pagesChecked} checked).`,
     trend: [],
     lastScanAt: pages[0]?.lastCheckedAt ?? now,
-    actionHref: "/dashboard/diagnostics/tracking-coverage",
+    actionHref: "/dashboard/tracking",
   });
 
   // إشارة تتبع واردة فعلياً
@@ -238,7 +238,7 @@ export async function runDiagnostics(
       : `${totalSignals} incoming signals against ${totals.clicks} reported clicks.`,
     trend: seriesFrom(snapshots, (r) => r.clicks),
     lastScanAt: now,
-    actionHref: "/dashboard/diagnostics/tracking-coverage",
+    actionHref: "/dashboard/tracking",
   });
 
   // ============ التسعير ============
@@ -422,7 +422,7 @@ export async function runDiagnostics(
     // تُغيّر فيها شيئاً. زرّ اسمه «حلّ» يفتح عرضاً آخر للمشكلة هو أسوأ من
     // غياب الزرّ - المستخدم يضغط ثمّ يعود بلا شيء. ما يُقلّص التضخيم فعلاً
     // هو تغطية التتبّع: كلّما زاد ما نتحقّق منه ضاقت الفجوة.
-    actionHref: "/dashboard/diagnostics/tracking-coverage",
+    actionHref: "/dashboard/tracking",
   });
 
   // ============ الميزانية ============
@@ -486,7 +486,7 @@ export async function runDiagnostics(
         : "Tracking is present, but the AdLoop tag was not detected."),
       trend: [],
       lastScanAt: p.lastCheckedAt ?? now,
-      actionHref: "/dashboard/diagnostics/tracking-coverage",
+      actionHref: "/dashboard/tracking",
     });
   }
 
@@ -514,7 +514,7 @@ export async function runDiagnostics(
       findingEn: badTitle === 0
         ? `Titles on all ${seos.length} pages are within a useful length.`
         : `${badTitle} of ${seos.length} pages have a missing title or one outside the useful range (20-65 characters).`,
-      trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
+      trend: [], lastScanAt: now, actionHref: "/dashboard/tracking",
     });
 
     const badDesc = seos.filter((s: any) => !s.metaDescription || s.metaDescriptionLength < 70).length;
@@ -532,7 +532,7 @@ export async function runDiagnostics(
       findingEn: badDesc === 0
         ? "Every page has an adequate description."
         : `${badDesc} of ${seos.length} pages have no adequate description.`,
-      trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
+      trend: [], lastScanAt: now, actionHref: "/dashboard/tracking",
     });
 
     // --- منع الأرشفة: خطأ صامت يُلغي ظهورك تماماً ---
@@ -547,7 +547,7 @@ export async function runDiagnostics(
         status: "FAILED", severity: "HIGH",
         findingAr: `${noIndexed} صفحة تحمل وسم noindex ولن تظهر في نتائج البحث.`,
         findingEn: `${noIndexed} pages carry a noindex tag and will not appear in search results.`,
-        trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
+        trend: [], lastScanAt: now, actionHref: "/dashboard/tracking",
       });
     }
 
@@ -568,7 +568,7 @@ export async function runDiagnostics(
       findingEn: badH1 === 0 && noAlt === 0
         ? "Heading and image structure is sound."
         : `${badH1} pages have a non-unique main heading, and ${noAlt} images have no alt text.`,
-      trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
+      trend: [], lastScanAt: now, actionHref: "/dashboard/tracking",
     });
 
     // --- الجوال ---
@@ -583,7 +583,7 @@ export async function runDiagnostics(
       severity: noViewport === 0 ? "NONE" : "HIGH",
       findingAr: noViewport === 0 ? "كل الصفحات مهيّأة للجوال." : `${noViewport} صفحة بلا وسم viewport.`,
       findingEn: noViewport === 0 ? "Every page is mobile-ready." : `${noViewport} pages have no viewport tag.`,
-      trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
+      trend: [], lastScanAt: now, actionHref: "/dashboard/tracking",
     });
 
     // --- شهادة الأمان ---
@@ -607,7 +607,7 @@ export async function runDiagnostics(
         : mixed > 0
         ? `The connection is encrypted, but ${mixed} resources load over HTTP and browsers will block them.`
         : "Every page runs over a healthy encrypted connection.",
-      trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
+      trend: [], lastScanAt: now, actionHref: "/dashboard/tracking",
     });
 
     // --- روابط المحادثة: نقطة التحويل الفعلية في هذا المنتج ---
@@ -627,7 +627,7 @@ export async function runDiagnostics(
       findingEn: convTotal === 0
         ? "No chat links were found on the pages we checked."
         : `${convTracked} of ${convTotal} chat links carry a tracking id.`,
-      trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
+      trend: [], lastScanAt: now, actionHref: "/dashboard/tracking",
     });
 
     // --- وسوم UTM ---
@@ -646,7 +646,7 @@ export async function runDiagnostics(
       findingEn: utmLinks > 0
         ? `${utmLinks} links carry UTM tags.`
         : "No UTM tags were found in your page links - they may be set at campaign level instead.",
-      trend: [], lastScanAt: now, actionHref: "/dashboard/diagnostics/tracking-coverage",
+      trend: [], lastScanAt: now, actionHref: "/dashboard/tracking",
     });
   }
 

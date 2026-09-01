@@ -134,7 +134,7 @@ export async function getSetupProgress(workspaceId: string, userId: string): Pro
       descAr: "أضف وسم التتبع واربط واتساب/ماسنجر لتظهر التحويلات المحقّقة.",
       descEn: "Add the tracking tag and link WhatsApp/Messenger to see verified conversions.",
       done: (verifiedAgg._sum.verifiedConversions ?? 0) > 0,
-      ctaHref: "/dashboard/diagnostics/tracking-coverage",
+      ctaHref: "/dashboard/tracking",
       ctaAr: "إعداد التتبع",
       ctaEn: "Set up tracking",
     },

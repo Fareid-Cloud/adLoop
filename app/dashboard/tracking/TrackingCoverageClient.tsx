@@ -1,6 +1,6 @@
 "use client";
 
-// app/dashboard/diagnostics/tracking-coverage/TrackingCoverageClient.tsx
+// app/dashboard/tracking/TrackingCoverageClient.tsx
 //
 // تغطية التتبّع. الصفحات المُضافة هنا تُفحص تلقائياً وتؤثّر على درجة
 // التشخيص، لذلك يُذكر ذلك صراحةً وتتوفّر إمكانية الحذف.
