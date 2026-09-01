@@ -4,9 +4,10 @@
 // اكتمال النافذة. الإضافة اليدوية ميزة إضافية لتسجيل تغيير أجريته خارج
 // المنتج (نص إعلان، صفحة هبوط، استهداف).
 
-import { createContext, useContext, useState } from "react";
+import {
+  createContext, useContext, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Beaker, Plus, TrendingUp, TrendingDown, Minus, X, Check, Clock, Pencil, Trash2, AlertTriangle } from "lucide-react";
+import { Beaker, Plus, TrendingUp, TrendingDown, Minus, X, Check, Clock, Pencil, Trash2, AlertTriangle, ChevronDown } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { OptionGroup } from "@/app/components/ui/OptionGroup";
 import { EXPERIMENT_METRICS } from "@/lib/experimentMetrics";
@@ -82,21 +83,27 @@ function ExperimentsBody({
 
   return (
     <div>
-      {/* 🔴 كان العنوان والنصّ والزرّ في صفٍّ واحد: الزرّ لا يتقلّص
-          (`shrink-0`) فيأكل من عرض عمود النصّ حتى يبقى له نحو مئة بكسل،
-          فينزل الشرح **كلمةً في كلّ سطر** ويصير الكارت أطول من الصفحة
-          التي يشرحها. الرأس صفٌّ يلتفّ، والشرح تحته بعرض السطر كاملاً. */}
-      <div className="card-shadow mb-5 card pad-md">
-        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-          <h2 className="flex items-center gap-2 section-title">
-            <Beaker size={17} className="shrink-0 text-accent" />
+      {/* 🔴 **الإجراءُ الأساسيّ كان مدفوناً داخل بطاقة شرح.**
+          «تجربة يدوية» هو الفعلُ الوحيد الذي يبدأ به المستخدم شيئاً في هذه
+          الصفحة، وكان زرّاً ثانوياً في ركن كتلةٍ تعريفيّة تُقرأ مرّةً
+          واحدة. صعد إلى صفٍّ خاصٍّ به فوق القائمة.
+
+          والشرحُ نفسُه انطوى: نصٌّ ثابتٌ يشرح ما تفعله الصفحة يُقرأ مرّةً
+          ثمّ يصير سقفاً يُزاح كلَّ زيارة. يبقى متاحاً لمن يريده. */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <details className="min-w-0 flex-1 group">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-[12.5px] text-text-muted transition-colors hover:text-text-primary">
+            <Beaker size={14} className="shrink-0 text-accent" />
             {tr("howItWorks")}
-          </h2>
-          <button onClick={() => setAdding(true)} className="btn btn-secondary btn-sm shrink-0">
-            <Plus size={14} /> {tr("manualBtn")}
-          </button>
-        </div>
-        <p className="max-w-3xl text-[12.5px] leading-relaxed text-text-muted">{tr("howItWorksBody")}</p>
+            <ChevronDown size={13} className="transition-transform group-open:rotate-180" />
+          </summary>
+          <p className="mt-2 max-w-3xl text-[12.5px] leading-relaxed text-text-muted">
+            {tr("howItWorksBody")}
+          </p>
+        </details>
+        <button onClick={() => setAdding(true)} className="btn btn-primary btn-sm shrink-0">
+          <Plus size={14} /> {tr("manualBtn")}
+        </button>
       </div>
 
       {experiments.length === 0 && (
@@ -113,7 +120,7 @@ function ExperimentsBody({
             <Clock size={13} /> {tr("measuring", { n: running.length })}
           </h3>
           <div className="flex flex-col gap-2">
-            {running.map((e) => <ExperimentCard key={e.id} exp={e} workspaceId={workspaceId} />)}
+            {running.map((e) => <ExperimentCard key={e.id} exp={e} workspaceId={workspaceId} live />)}
           </div>
         </section>
       )}
@@ -134,7 +141,14 @@ function ExperimentsBody({
   );
 }
 
-function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId: string }) {
+function ExperimentCard({
+  exp, workspaceId, live,
+}: {
+  exp: ExperimentRow;
+  workspaceId: string;
+  /** ما زالت تُقاس - يُفرَّق بصرياً عمّا صدر حكمُه */
+  live?: boolean;
+}) {
   const tr = useT();
   const locale = useLocale();
   const router = useRouter();
@@ -168,7 +182,13 @@ function ExperimentCard({ exp, workspaceId }: { exp: ExperimentRow; workspaceId:
   );
 
   return (
-    <div className="card pad-md">
+    // 🔴 **كلُّ التجارب كانت بطاقةً واحدةً مكرّرة**، فلا يُعرف من نظرةٍ
+    // ما يُقاس الآن ممّا صدر حكمُه. حدٌّ جانبيٌّ بلون الحالة يفصلهما:
+    // لونُ العلامة لما يجري، ولونُ الحكم لما انتهى.
+    <div
+      className="card pad-md border-s-2"
+      style={{ borderInlineStartColor: live ? "var(--accent)" : conf.tone }}
+    >
       <div className="mb-3 flex items-start gap-3">
         {/* الشعار كتلة مربّعة تُثبّت بداية الصفّ - كان أيقونة ١٥ بكسل
             سابحة بين النصوص لا تُميَّز بلمحة */}

@@ -771,7 +771,6 @@ export const SEARCH_INDEX: SearchEntry[] = [
   { k: "plans.subEndingTitle", h: "/dashboard/billing" },
   { k: "plans.subKeep", h: "/dashboard/billing" },
   { k: "plans.subResume", h: "/dashboard/billing" },
-  { k: "plans.title", h: "/dashboard/billing" },
   { k: "plans.trustCancel", h: "/dashboard/billing" },
   { k: "plans.trustNoSetup", h: "/dashboard/billing" },
   { k: "plans.trustSecure", h: "/dashboard/billing" },

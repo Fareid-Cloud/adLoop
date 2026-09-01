@@ -15,7 +15,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CreditCard,
+import {
   Check, Minus, Star, ChevronDown, Loader2, Zap, X, ArrowLeft, ShieldCheck,
 } from "lucide-react";
 import {
@@ -25,7 +25,6 @@ import {
 } from "@/lib/plans";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { TH } from "@/app/components/ui/tableStyles";
-import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export function PlansClient({
   locale,
@@ -85,13 +84,6 @@ export function PlansClient({
 
   return (
     <div className="mx-auto max-w-[1200px] pb-16">
-      <PageHeader
-        icon={CreditCard}
-        tone="accent"
-        title={tr("title")}
-        description={tr("subtitle")}
-      />
-
       {subscription && (
         <SubscriptionPanel
           locale={locale}
@@ -265,7 +257,7 @@ function PlanCard({
     <div
       className={`relative flex flex-col rounded-2xl border bg-surface p-5 transition-all ${
         plan.highlighted
-          ? "border-accent bg-accent/[0.045] shadow-[0_0_0_1px_var(--accent)] lg:-translate-y-2"
+          ? "border-accent bg-accent/[0.08] shadow-[0_0_0_1px_var(--accent)] lg:-translate-y-2"
           : "card-shadow border-border"
       }`}
     >
@@ -307,20 +299,10 @@ function PlanCard({
         )}
       </div>
 
-      {/* ما يفتحه فعلاً - قبل القائمة الطويلة، لأنه سبب الشراء */}
-      <p className="card mb-3 bg-surface-raised/70 p-2.5 text-[12px] leading-relaxed text-text-primary">
-        {tr(`unlock_${plan.key}`)}
-      </p>
-
-      <ul className="mb-5 flex flex-1 flex-col gap-1.5">
-        {(tr(`feats_${plan.key}`) || "").split("|").map((feat, i) => (
-          <li key={i} className="flex items-start gap-1.5 text-[12.5px] leading-relaxed text-text-muted">
-            <Check size={13} className="mt-0.5 shrink-0 text-verified" />
-            {feat}
-          </li>
-        ))}
-      </ul>
-
+      {/* 🔴 **زرُّ الشراء كان آخرَ ما في البطاقة**، تحت قائمةٍ قد تطول -
+          فيختلف موضعُه من بطاقةٍ إلى أخرى فلا تصطفّ الأزرار، ويُطلَب من
+          القارئ أن ينزل ليقرّر. صعد تحت السعر مباشرةً: القرارُ عند
+          الرقم، والقائمةُ تفصيلٌ يُقرأ بعده لمن أراد. */}
       {plan.contactOnly ? (
         // الحلّ يسافر مع الحدّ: من بلغ سقف أكبر باقة يجد هنا طريقاً يمشي
         // فيه الآن - لا رقم هاتف يكتبه ولا بريداً يبحث عنه. الحدث نفسه
@@ -345,6 +327,21 @@ function PlanCard({
           {!busy && !current && <ArrowLeft size={14} className="rtl:rotate-0 ltr:rotate-180" />}
         </button>
       )}
+
+      {/* ما يفتحه فعلاً - قبل القائمة الطويلة، لأنه سبب الشراء */}
+      <p className="card mb-3 bg-surface-raised/70 p-2.5 text-[12px] leading-relaxed text-text-primary">
+        {tr(`unlock_${plan.key}`)}
+      </p>
+
+      <ul className="flex flex-1 flex-col gap-1.5">
+        {(tr(`feats_${plan.key}`) || "").split("|").map((feat, i) => (
+          <li key={i} className="flex items-start gap-1.5 text-[12.5px] leading-relaxed text-text-muted">
+            <Check size={13} className="mt-0.5 shrink-0 text-verified" />
+            {feat}
+          </li>
+        ))}
+      </ul>
+
       <span className="hidden">{locale}</span>
     </div>
   );
