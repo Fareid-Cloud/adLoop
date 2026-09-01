@@ -23,6 +23,14 @@ export default async function TrackingCoveragePage() {
     return <EmptyState title={t(locale, "common.noWorkspace")} description={t(locale, "common.noWorkspaceHint")} />;
   }
 
+  // 🔴 **«مثبَّت» و«يعمل» ليسا الشيء نفسه.** صفحةٌ يُكشَف فيها الوسم قد
+  // لا ترسل شيئاً (زرٌّ بلا `trackCtaClick`، أو حاجبُ إعلانات). الدليلُ
+  // الوحيد أنّ الحلقة تعمل هو وصولُ نقرةٍ حقيقيّة - فهو ما يُسأل عنه.
+  const firstClick = await prisma.ctaClickEvent.findFirst({
+    where: { workspaceId: workspace.id },
+    select: { id: true },
+  });
+
   const pages = await prisma.monitoredPage.findMany({
     where: { workspaceId: workspace.id },
     orderBy: { createdAt: "desc" },
@@ -42,6 +50,7 @@ export default async function TrackingCoveragePage() {
         workspaceId={workspace.id}
         appUrl={getAppUrl()}
         locale={locale}
+        tagLive={Boolean(firstClick)}
         pages={pages.map((p: any) => ({
           id: p.id,
           url: p.url,

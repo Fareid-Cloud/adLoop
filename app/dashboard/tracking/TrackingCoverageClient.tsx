@@ -58,12 +58,14 @@ const STATE_TONE: Record<PageState, string> = {
 };
 
 export function TrackingCoverageClient({
-  workspaceId, appUrl, pages, locale,
+  workspaceId, appUrl, pages, locale, tagLive,
 }: {
   workspaceId: string;
   appUrl: string;
   pages: PageRow[];
   locale: Locale;
+  /** وصلت نقرةٌ حقيقيّة - الدليلُ الوحيد أنّ الحلقة تعمل. */
+  tagLive: boolean;
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `tagInstall.${k}`, v);
   const router = useRouter();
@@ -127,7 +129,10 @@ export function TrackingCoverageClient({
         workspaceId={workspaceId}
         appUrl={appUrl}
         locale={locale}
-        defaultOpen={needsTag || pages.length === 0}
+        // يبقى مفتوحاً ما لم تصل نقرةٌ بعد: الخطوةُ الوحيدة التي لم
+        // تكتمل لا تُطوى خلف ضغطة.
+        defaultOpen={needsTag || pages.length === 0 || !tagLive}
+        tagLive={tagLive}
       />
 
       <div className="card-shadow mb-4 flex items-start gap-2.5 card pad-md">

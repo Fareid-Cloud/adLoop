@@ -11,17 +11,20 @@
 // جاهزة للتنفيذ - لا رسالة تشخيص تتركه يبحث.
 
 import { useState } from "react";
-import { Copy, Check, ChevronDown, ExternalLink } from "lucide-react";
+import { Copy, Check, ChevronDown, ExternalLink, Radar } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { CodeWindow } from "@/app/components/CodeWindow";
 
 export function InstallTagPanel({
   workspaceId, appUrl, locale, defaultOpen = false,
+  tagLive,
 }: {
   workspaceId: string;
   appUrl: string;
   locale: Locale;
   defaultOpen?: boolean;
+  /** وصلت نقرةٌ واحدة على الأقلّ من هذا الوسم. */
+  tagLive: boolean;
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `tagInstall.${k}`, v);
   const [open, setOpen] = useState(defaultOpen);
@@ -56,6 +59,21 @@ export function InstallTagPanel({
 
       {open && (
         <div className="border-t border-accent/25 p-4">
+          {/* 🔴 **من يلصق وسماً لا يعرف إن نجح.** وهذا أكثر ما يُقلق في
+              الخطوة كلِّها: نسخ، ولصق، ثمّ صمت. الشريطُ يقول أيّ الحالتين
+              أنت فيها قبل أيّ شرح - والحالةُ تُقرأ من وصول نقرةٍ حقيقيّة
+              لا من ادّعاءِ تثبيت. */}
+          <div
+            className={`mb-4 flex items-center gap-2 rounded-xl border px-3 py-2.5 text-[12.5px] ${
+              tagLive
+                ? "border-verified/40 bg-verified/10 text-verified"
+                : "border-gap/40 bg-gap/10 text-gap"
+            }`}
+          >
+            {tagLive ? <Check size={14} className="shrink-0" /> : <Radar size={14} className="shrink-0" />}
+            {tr(tagLive ? "statusLive" : "statusWaiting")}
+          </div>
+
           {/* لماذا يهمّ - قبل الكود لا بعده */}
           <p className="card mb-4 bg-surface/70 p-3 text-[12.5px] leading-relaxed text-text-muted">
             {tr("why")}
