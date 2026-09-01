@@ -23,6 +23,7 @@ import { logSubscriptionEvent } from "@/lib/subscriptionEvents";
 import type { SubscriptionEventType } from "@prisma/client";
 import { isFeatureEnabled } from "@/lib/featureFlags";
 import { CHARGE_CURRENCY, toChargeAmount, priceListFor } from "@/lib/billingRegion";
+import { addBillingPeriod } from "@/lib/billingPeriod";
 import {
   PLAN_BY_KEY, planPrice, priceForCredits, YEARLY_MONTHS_CHARGED,
   MIN_CUSTOM_CREDITS, MAX_CUSTOM_CREDITS,
@@ -367,9 +368,9 @@ export async function fulfillPaymentIntent(
     }
 
     if (intent.kind === "SUBSCRIPTION" && intent.planKey) {
-      const periodEnd = new Date();
-      if (intent.cycle === "yearly") periodEnd.setFullYear(periodEnd.getFullYear() + 1);
-      else periodEnd.setMonth(periodEnd.getMonth() + 1);
+      // 🔴 كان `setMonth(+1)` هنا يتخطّى شهراً لمن يشتري في ٣١ - راجع
+      // `lib/billingPeriod.ts`. حسابٌ واحدٌ للشراء وللتجديد معاً.
+      const periodEnd = addBillingPeriod(new Date(), intent.cycle === "yearly" ? "yearly" : "monthly");
 
       // الباقة السابقة تُقرأ **قبل** التحديث لتصنيف الحدث (ترقية/تخفيض/تجديد).
       const before = await tx.user.findUnique({
@@ -612,9 +613,7 @@ export async function renewViaSavedCard(userId: string): Promise<RenewalOutcome>
   // التمديدُ من `periodAtRead` يمنع ضياع الأيّام حين تتأخّر الدورة، ومن
   // «الآن» حين تكون النهاية قد مضت بأكثر من فترة.
   const base = periodAtRead > new Date() ? periodAtRead : new Date();
-  const nextEnd = new Date(base);
-  if (cycle === "yearly") nextEnd.setFullYear(nextEnd.getFullYear() + 1);
-  else nextEnd.setMonth(nextEnd.getMonth() + 1);
+  const nextEnd = addBillingPeriod(base, cycle === "yearly" ? "yearly" : "monthly");
 
   await prisma.$transaction([
     prisma.paymentIntent.update({
