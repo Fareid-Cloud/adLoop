@@ -21,8 +21,13 @@ import type { SVGProps } from "react";
 
 export function McpIcon({
   size = 24,
-  /** يبقى صفراً: أيّ سماكةٍ تُغلق فجوات الحلقات عند الأحجام الصغيرة. */
-  strokeWidth = 0,
+  // 🔴 **`strokeWidth` يُستقبَل ويُهمَل عمداً.**
+  //
+  // القائمة الجانبية ترسم كلّ أيقوناتها `<Icon size={16} strokeWidth={1.9} />`
+  // لأنّ جيرانها خطّية. وهذه ممتلئة: حدٌّ بعرض ١٫٩ عليها يُغلق فجوات
+  // الحلقات فتعود لطخةً - وهو ما ظهر في القائمة بينما بدت سليمةً في
+  // رأس الصفحة، حيث لا يُمرَّر شيء. فلا يصل الرقمُ إلى الرسم أصلاً.
+  strokeWidth: _ignored,
   ...rest
 }: SVGProps<SVGSVGElement> & { size?: number | string; strokeWidth?: number | string }) {
   return (
@@ -33,7 +38,7 @@ export function McpIcon({
       viewBox="0 0 24 24"
       fill="currentColor"
       stroke="currentColor"
-      strokeWidth={strokeWidth}
+      strokeWidth={0}
       strokeLinejoin="round"
       aria-hidden="true"
       {...rest}

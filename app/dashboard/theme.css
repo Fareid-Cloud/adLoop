@@ -943,6 +943,41 @@ html, body { overflow-x: clip; }
 .tok-cmd { color: var(--code-cmd); }
 .tok-comment { color: var(--code-comment); font-style: italic; }
 
+/* ── حركةُ قسم الوكيل ──────────────────────────────────────────────────
+ * شاشةُ بدايةٍ ساكنةٌ تماماً تبدو صورةً لا أداةً تنتظر. الحركةُ هنا
+ * **تعريفيّةٌ لا زخرفيّة**: العناصر تصعد بالترتيب الذي يُقرأ به (العلامة،
+ * فالعنوان، فالمؤلِّف، فالأمثلة) فتقود العينَ إلى موضع الكتابة.
+ *
+ * ولا تتكرّر: تعمل مرّةً عند الفتح. حركةٌ تُعاد مع كلّ رسمٍ تصير إزعاجاً.
+ */
+@keyframes agent-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+.agent-rise {
+  animation: agent-rise .45s cubic-bezier(.22,.61,.36,1) both;
+}
+
+/* نبضةٌ هادئة تحت العلامة: تقول «حيّ» بلا أن تسحب النظر */
+@keyframes agent-halo {
+  0%, 100% { transform: scale(1);    opacity: .55; }
+  50%      { transform: scale(1.12); opacity: .25; }
+}
+.agent-halo { animation: agent-halo 3.2s ease-in-out infinite; }
+
+/* نقاطُ التفكير - ثلاثُ نقاطٍ تتعاقب، وهي أوضح من دوّارةٍ عامّة */
+@keyframes agent-dot {
+  0%, 80%, 100% { opacity: .25; transform: translateY(0); }
+  40%           { opacity: 1;   transform: translateY(-3px); }
+}
+.agent-dot { animation: agent-dot 1.1s ease-in-out infinite; }
+
+/* الاحترامُ واجب: من طلب تقليل الحركة يرى الشاشة ساكنةً كاملة */
+@media (prefers-reduced-motion: reduce) {
+  .agent-rise, .agent-halo, .agent-dot { animation: none; }
+  .agent-rise { opacity: 1; transform: none; }
+}
+
 .field-sm {
   padding: 0.25rem 0.5rem;
   font-size: 12.5px;

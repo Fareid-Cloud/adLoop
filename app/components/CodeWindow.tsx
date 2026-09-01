@@ -141,7 +141,13 @@ export function CodeWindow({
       </div>
 
       {/* الاتجاه لاتينيّ دائماً: الشيفرة لا تنعكس مع لغة الواجهة */}
-      <pre dir="ltr" className="code-block overflow-x-auto p-3 text-[12px] leading-[1.7]">
+      <pre
+        dir="ltr"
+        // نفس شريط القائمة الجانبية: رفيعٌ بلون الهوية، يظهر عند
+        // الاقتراب. الشريطُ الرماديّ العريض كان أوّل ما يُرى في نافذةٍ
+        // كلُّ غرضها أن تبدو طرفيّة.
+        className="hover-scrollbar scrollbar-zone code-block overflow-x-auto p-3 text-[12px] leading-[1.7]"
+      >
         <code>
           {lines.map((line, i) => (
             <div key={i} className="flex">

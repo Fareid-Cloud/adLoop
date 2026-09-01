@@ -8,7 +8,7 @@ import { RuleCatalogBrowser } from "./RuleCatalogBrowser";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { PageHeader } from "@/app/components/ui/PageHeader";
-import { Bot } from "lucide-react";
+import { Workflow } from "lucide-react";
 
 export default async function AutomationPage() {
   const user = await getSessionUserFromCookies();
@@ -37,7 +37,7 @@ export default async function AutomationPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
-        icon={Bot}
+        icon={Workflow}
         tone="accent"
         eyebrow={workspace.name}
         title={t(locale, "autoPage.title")}

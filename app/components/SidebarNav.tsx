@@ -233,7 +233,7 @@ export function SidebarNav({
         //
         // والحشوة ثابتةٌ لا مشروطةٌ بظهوره: لو تغيّرت بظهوره لغيّرت ارتفاع
         // المحتوى، فأعادت قياسه، فأظهرته أو أخفته - حلقةٌ تهتزّ عند الحدّ.
-        className="hover-scrollbar flex flex-1 flex-col gap-5 overflow-y-auto px-3 pt-4 pb-11"
+        className="hover-scrollbar flex flex-1 flex-col gap-5 overflow-y-auto overflow-x-hidden px-3 pt-4 pb-11"
       >
         {NAV_GROUPS.map((group, i) => (
             <div key={i}>

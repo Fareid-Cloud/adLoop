@@ -195,7 +195,7 @@ export function ProductFocusView({
           </div>
         )}
 
-        <div className="grid max-h-[calc(92vh-90px)] gap-5 overflow-y-auto p-5 lg:grid-cols-[1.7fr_1fr]">
+        <div className="grid max-h-[calc(92vh-84px)] gap-4 overflow-y-auto p-4 lg:grid-cols-[1.6fr_1fr]">
         <div>
           {/* انهيار التكلفة */}
           <h3 className="mb-3 text-[13px] font-medium text-text-muted">{tr("breakdownTitle")}</h3>
@@ -222,25 +222,6 @@ export function ProductFocusView({
                 )}
               </div>
             ))}
-          </div>
-
-          {/* التكلفة الحقيقية وسعر التعادل */}
-          <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="card-inset pad-sm">
-              <div className="text-[11.5px] text-text-muted">{tr("trueCost")}</div>
-              <div className="mt-1 font-mono text-[18px] font-semibold text-text-primary">
-                {money(result.trueCostPerOrder, currency)}
-              </div>
-            </div>
-            <div className="card-inset pad-sm">
-              <div className="flex items-center gap-1 text-[11.5px] text-text-muted">
-                {tr("breakEvenPrice")} <Info size={11} />
-              </div>
-              <div className="mt-1 font-mono text-[18px] font-semibold text-text-primary">
-                {money(result.breakEvenPrice, currency)}
-              </div>
-              <div className="mt-0.5 text-[10.5px] text-text-faint">{tr("breakEvenHint")}</div>
-            </div>
           </div>
 
           {/* الحصيلة: خسارة حمراء عريضة أو ربح */}
@@ -357,6 +338,26 @@ export function ProductFocusView({
               </div>
             </div>
           )}
+
+          {/* التكلفة الحقيقية وسعر التعادل - نُقلا إلى هنا كي يتوازن
+              العمودان فتُقرأ النافذة بلا تمرير */}
+          <div className="mb-4 grid grid-cols-2 gap-2.5">
+            <div className="card-inset pad-sm">
+              <div className="text-[11.5px] text-text-muted">{tr("trueCost")}</div>
+              <div className="mt-1 font-mono text-[16px] font-semibold text-text-primary">
+                {money(result.trueCostPerOrder, currency)}
+              </div>
+            </div>
+            <div className="card-inset pad-sm">
+              <div className="flex items-center gap-1 text-[11.5px] text-text-muted">
+                {tr("breakEvenPrice")} <Info size={11} />
+              </div>
+              <div className="mt-1 font-mono text-[16px] font-semibold text-text-primary">
+                {money(result.breakEvenPrice, currency)}
+              </div>
+              <div className="mt-0.5 text-[10.5px] text-text-faint">{tr("breakEvenHint")}</div>
+            </div>
+          </div>
 
           {/* حساسية المرتجعات */}
           {result.rtoBreakEvenPct !== null && (

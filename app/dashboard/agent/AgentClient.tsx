@@ -384,27 +384,46 @@ ${attachment.text}`
             <div className="w-full max-w-xl">
               <div className="mb-5 flex flex-col items-center gap-2.5 text-center">
                 {/* هالةٌ متدرّجة بلون الهوية - العلامةُ نفسها، أكبر */}
-                <span
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl"
-                  style={{
-                    background:
-                      "radial-gradient(120% 120% at 30% 20%, var(--accent-dim), transparent 70%), var(--accent-dim)",
-                  }}
-                >
-                  <AgentIcon size={30} className="text-accent" />
+                <span className="agent-rise relative flex h-16 w-16 items-center justify-center">
+                  {/* الهالةُ خلف العلامة لا تحتها: تنبض فتقول «حيّ» بلا
+                      أن تزيح شيئاً أو تسحب النظر عن العنوان. */}
+                  <span
+                    aria-hidden
+                    className="agent-halo absolute inset-0 rounded-2xl"
+                    style={{ background: "var(--accent-dim)" }}
+                  />
+                  <span
+                    className="relative flex h-16 w-16 items-center justify-center rounded-2xl"
+                    style={{
+                      background:
+                        "radial-gradient(120% 120% at 30% 20%, var(--accent-dim), transparent 70%), var(--accent-dim)",
+                    }}
+                  >
+                    <AgentIcon size={30} className="text-accent" />
+                  </span>
                 </span>
-                <h3 className="text-[20px] font-semibold text-text-primary">{tr("welcome")}</h3>
+                <h3
+                  className="agent-rise text-[20px] font-semibold text-text-primary"
+                  style={{ animationDelay: "60ms" }}
+                >
+                  {tr("welcome")}
+                </h3>
                 <p className="max-w-md text-[12.5px] leading-relaxed text-text-muted">
                   {chats.length === 0 ? tr("emptyBody") : tr("pickOne")}
                 </p>
               </div>
 
               {errorBar}
-              {composer(true)}
+              <div className="agent-rise" style={{ animationDelay: "170ms" }}>
+                {composer(true)}
+              </div>
 
               {/* الأمثلة تحت المؤلِّف مباشرةً: تُقرأ إجابةً عن «أكتب ماذا؟».
                   وهي أسئلة المنتج نفسها (`aiAsk.ph_*`)، تُضغَط فتُرسَل. */}
-              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              <div
+                className="agent-rise mt-3 grid gap-2 sm:grid-cols-3"
+                style={{ animationDelay: "230ms" }}
+              >
                 {[
                   { k: "ph_home_1", label: tr("sugg1") },
                   { k: "ph_home_2", label: tr("sugg2") },
@@ -454,7 +473,19 @@ ${attachment.text}`
               )}
               {busy && (
                 <div className="flex items-center gap-2 text-[12.5px] text-text-muted">
-                  <Loader2 size={14} className="animate-spin" /> {t(locale, "aiAsk.demoWorking")}
+                  <AgentIcon size={13} className="text-accent" />
+                  {/* ثلاثُ نقاطٍ تتعاقب بدل دوّارةٍ عامّة: الدوّارة تقول
+                      «تحميل»، وهذه تقول «يكتب» - وهو ما يحدث فعلاً. */}
+                  <span className="flex items-center gap-1">
+                    {[0, 1, 2].map((i) => (
+                      <span
+                        key={i}
+                        className="agent-dot inline-block h-1.5 w-1.5 rounded-full bg-accent"
+                        style={{ animationDelay: `${i * 140}ms` }}
+                      />
+                    ))}
+                  </span>
+                  {t(locale, "aiAsk.demoWorking")}
                 </div>
               )}
               <div ref={endRef} />

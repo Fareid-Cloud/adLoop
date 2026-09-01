@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ProductFocusView, type ProductRecord, type SalesStats } from "./ProductFocusView";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export interface ProductHealthRow {
@@ -105,19 +105,8 @@ export function PricingClient({
     router.refresh();
   }
 
-  return (
-    <div>
-      <div className="mb-4 flex justify-end">
-        <button
-          onClick={() => setShowForm((s) => !s)}
-          className="btn btn-primary btn-sm rounded-full"
-        >
-          <Plus size={14} />
-          {editingId ? tr("edit") : tr("new")}
-        </button>
-      </div>
-
-      {showForm && (
+  function FormBody() {
+    return (
         <form onSubmit={handleAdd} className="card mb-4 p-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input
@@ -178,7 +167,50 @@ export function PricingClient({
             {saving ? tr("adding") : tr("add")}
           </button>
         </form>
+    );
+  }
+
+  return (
+    <div>
+      <div className="mb-4 flex justify-end">
+        <button
+          onClick={() => setShowForm((s) => !s)}
+          className="btn btn-primary btn-sm rounded-full"
+        >
+          <Plus size={14} />
+          {editingId ? tr("edit") : tr("new")}
+        </button>
+      </div>
+
+      {showForm && editingId && (
+        // طبقةٌ فوق الصفحة: التعديل يحلّ محلّ نافذة المنتج فيُقرأ استجابةً
+        // لضغطة «تعديل»، لا عودةً إلى ما قبلها.
+        <div
+          onClick={() => { setShowForm(false); setEditingId(null); }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        >
+          <div onClick={(e) => e.stopPropagation()} className="pop-shadow max-h-[92vh] w-full max-w-2xl overflow-y-auto card p-5">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <span className="text-[14px] font-semibold text-text-primary">{tr("edit")}</span>
+              <button
+                onClick={() => { setShowForm(false); setEditingId(null); }}
+                aria-label={t(locale, "ui.close")}
+                className="btn btn-ghost btn-icon btn-sm"
+              >
+                <X size={15} />
+              </button>
+            </div>
+            <FormBody />
+          </div>
+        </div>
       )}
+
+      {showForm && !editingId && (
+        <div className="mb-4">
+          <FormBody />
+        </div>
+      )}
+
 
       {products.length === 0 ? (
         <div className="rounded-card border border-dashed border-border bg-surface px-8 py-12 text-center text-text-muted">
