@@ -7,7 +7,7 @@
 import {
   createContext, useContext, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Beaker, Plus, TrendingUp, TrendingDown, Minus, X, Check, Clock, Pencil, Trash2, AlertTriangle, ChevronDown } from "lucide-react";
+import { Beaker, Plus, TrendingUp, TrendingDown, Minus, X, Check, Pencil, Trash2, AlertTriangle, ChevronDown } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { OptionGroup } from "@/app/components/ui/OptionGroup";
 import { EXPERIMENT_METRICS } from "@/lib/experimentMetrics";
@@ -69,6 +69,47 @@ export function ExperimentsView({
   );
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// **جدولٌ ثمّ تفصيل، لا رصفُ بطاقاتٍ متطابقة.**
+//
+// 🔴 كانت كلُّ تجربةٍ بطاقةً كاملةً تحمل كلَّ شيء: الوصفَ والمقاييسَ
+// وأزرارَ التحرير والحذف. فعشرُ تجاربَ = عشرُ بطاقاتٍ متطابقةِ الشكل
+// والطول، لا يُعرف من نظرةٍ أيُّها يُقاس الآن وأيُّها صدر حكمُه، ولا
+// تُقارَن واحدةٌ بأخرى لأنّ الأرقام في مواضعَ مختلفةٍ من كلّ بطاقة.
+//
+// الصفُّ الواحد يعرض ما **يُقارَن**: الاسم، ومتى بدأت، وكم بقي، والحالة،
+// والحكم. والتفصيلُ - قبل/بعد لكلّ مقياس - يُفتح عند الطلب لتجربةٍ بعينها.
+// وهو الترتيب الذي يعمل به من يدير تجاربَ فعلاً: يمسح القائمة، ثمّ يفتح
+// ما نضج منها.
+
+interface Verdict {
+  key: "verdictBetter" | "verdictWorse" | "verdictFlat" | "verdictPending";
+  tone: string;
+}
+
+/**
+ * حكمُ التجربة من مقياسها الأوّل.
+ *
+ * **الأوّلُ لا المتوسّط**: `trackedMetrics` مرتّبةٌ بما اختاره صاحبها، وأوّلُها
+ * هو الذي أُجريت التجربة لأجله. ومتوسّطُ مقاييسَ مختلفةِ الاتّجاه (تكلفةٌ
+ * يُراد خفضُها، وتحويلاتٌ يُراد رفعُها) لا معنى له.
+ */
+function verdictOf(exp: ExperimentRow): Verdict {
+  if (exp.status === "RUNNING") return { key: "verdictPending", tone: "var(--text-muted)" };
+  const key = exp.trackedMetrics[0];
+  const r = key ? exp.metricResults?.[key] : null;
+  if (!r || r.changePct === null) return { key: "verdictPending", tone: "var(--text-muted)" };
+
+  const def = EXPERIMENT_METRICS.find((m) => m.key === key);
+  const pct = r.changePct;
+  // عتبةُ ٢٪: ما دونها ضجيجُ قياسٍ لا أثرُ تغيير.
+  if (Math.abs(pct) < 2) return { key: "verdictFlat", tone: "var(--text-muted)" };
+  const good = def?.lowerIsBetter ? pct < 0 : pct > 0;
+  return good
+    ? { key: "verdictBetter", tone: "var(--verified)" }
+    : { key: "verdictWorse", tone: "var(--critical)" };
+}
+
 function ExperimentsBody({
   workspaceId, experiments, campaigns,
 }: {
@@ -77,21 +118,37 @@ function ExperimentsBody({
   campaigns: { id: string; name: string; platform: string }[];
 }) {
   const tr = useT();
+  const locale = useLocale();
   const [adding, setAdding] = useState(false);
-  const running = experiments.filter((e) => e.status === "RUNNING");
-  const done = experiments.filter((e) => e.status !== "RUNNING");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const [statusF, setStatusF] = useState("");
+  const [typeF, setTypeF] = useState("");
+
+  const filtered = experiments.filter((e) => {
+    if (statusF && e.status !== statusF) return false;
+    if (typeF && e.changeType !== typeF) return false;
+    if (q.trim() && !`${e.description} ${e.campaignName ?? ""}`.toLowerCase().includes(q.trim().toLowerCase())) {
+      return false;
+    }
+    return true;
+  });
+
+  const open = experiments.find((e) => e.id === openId) ?? null;
+  const filtersOn = Boolean(q || statusF || typeF);
+
+  const STATUS_LABEL: Record<string, string> = {
+    RUNNING: tr("stRunning"), MEASURED: tr("stMeasured"), INCONCLUSIVE: tr("stInconclusive"),
+  };
+  const STATUS_TONE: Record<string, string> = {
+    RUNNING: "var(--accent)", MEASURED: "var(--verified)", INCONCLUSIVE: "var(--text-muted)",
+  };
 
   return (
     <div>
-      {/* 🔴 **الإجراءُ الأساسيّ كان مدفوناً داخل بطاقة شرح.**
-          «تجربة يدوية» هو الفعلُ الوحيد الذي يبدأ به المستخدم شيئاً في هذه
-          الصفحة، وكان زرّاً ثانوياً في ركن كتلةٍ تعريفيّة تُقرأ مرّةً
-          واحدة. صعد إلى صفٍّ خاصٍّ به فوق القائمة.
-
-          والشرحُ نفسُه انطوى: نصٌّ ثابتٌ يشرح ما تفعله الصفحة يُقرأ مرّةً
-          ثمّ يصير سقفاً يُزاح كلَّ زيارة. يبقى متاحاً لمن يريده. */}
+      {/* الإجراءُ الأساسيّ في صفّه، والشرحُ مطويّ */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <details className="min-w-0 flex-1 group">
+        <details className="group min-w-0 flex-1">
           <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-[12.5px] text-text-muted transition-colors hover:text-text-primary">
             <Beaker size={14} className="shrink-0 text-accent" />
             {tr("howItWorks")}
@@ -106,32 +163,142 @@ function ExperimentsBody({
         </button>
       </div>
 
-      {experiments.length === 0 && (
+      {experiments.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-10 text-center">
           <Beaker size={26} className="mx-auto mb-3 text-text-faint" />
           <p className="text-[13.5px] text-text-primary">{tr("noneTitle")}</p>
           <p className="mt-1 text-[12.5px] text-text-muted">{tr("noneBody")}</p>
         </div>
+      ) : (
+        <>
+          {/* مرشّحاتٌ تظهر حين يكون ثمّة ما يُرشَّح - صفٌّ من ثلاثة ضوابط
+              فوق ثلاث تجارب عبءٌ لا عون. */}
+          {experiments.length > 3 && (
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={tr("searchPh")}
+                className="field field-sm min-w-[12rem] flex-1"
+              />
+              <select
+                value={statusF}
+                onChange={(e) => setStatusF(e.target.value)}
+                className="field field-sm w-auto"
+              >
+                <option value="">{tr("anyStatus")}</option>
+                {["RUNNING", "MEASURED", "INCONCLUSIVE"].map((k) => (
+                  <option key={k} value={k}>{STATUS_LABEL[k]}</option>
+                ))}
+              </select>
+              <select
+                value={typeF}
+                onChange={(e) => setTypeF(e.target.value)}
+                className="field field-sm w-auto"
+              >
+                <option value="">{tr("anyType")}</option>
+                {Object.keys(CHANGE_TYPE_KEYS).map((k) => (
+                  <option key={k} value={k}>{tr(CHANGE_TYPE_KEYS[k])}</option>
+                ))}
+              </select>
+              {filtersOn && (
+                <button
+                  onClick={() => { setQ(""); setStatusF(""); setTypeF(""); }}
+                  className="btn btn-ghost btn-sm"
+                >
+                  <X size={13} /> {tr("clearFilters")}
+                </button>
+              )}
+            </div>
+          )}
+
+          {filtered.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-border p-8 text-center text-[12.5px] text-text-muted">
+              {tr("noMatch")}
+            </p>
+          ) : (
+            <div className="card-shadow overflow-hidden card">
+              {/* رؤوسُ الأعمدة تختفي تحت `sm`: خمسةُ أعمدةٍ في ٣٧٥ بكسلاً
+                  تُنتج نصّاً مقطوعاً، فيصير الصفُّ كتلةً مكدّسة. */}
+              <div className="hidden items-center gap-3 border-b border-border px-4 py-2 text-[11px] font-medium uppercase tracking-wide text-text-faint sm:flex">
+                <span className="min-w-0 flex-1">{tr("colExperiment")}</span>
+                <span className="w-[92px] shrink-0">{tr("colStarted")}</span>
+                <span className="w-[104px] shrink-0">{tr("colProgress")}</span>
+                <span className="w-[92px] shrink-0">{tr("colStatus")}</span>
+                <span className="w-[150px] shrink-0">{tr("colResult")}</span>
+              </div>
+
+              <div className="divide-y divide-border">
+                {filtered.map((e) => {
+                  const v = verdictOf(e);
+                  const daysLeft = Math.max(
+                    0,
+                    e.windowDays - Math.floor((Date.now() - new Date(e.changedAt).getTime()) / 86400000)
+                  );
+                  return (
+                    <div
+                      key={e.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setOpenId(e.id)}
+                      onKeyDown={(ev) => {
+                        if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setOpenId(e.id); }
+                      }}
+                      className="row-toggle flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 sm:flex-nowrap"
+                    >
+                      <span className="flex min-w-0 flex-1 items-center gap-2">
+                        {e.platform && <PlatformLogo platform={e.platform} size={15} />}
+                        <span className="min-w-0">
+                          <span className="block truncate text-[13px] text-text-primary">{e.description}</span>
+                          <span className="block truncate text-[11px] text-text-faint">
+                            {CHANGE_TYPE_KEYS[e.changeType] ? tr(CHANGE_TYPE_KEYS[e.changeType]) : e.changeType}
+                            {e.campaignName ? ` · ${e.campaignName}` : ""}
+                          </span>
+                        </span>
+                      </span>
+
+                      <span className="w-[92px] shrink-0 text-[11.5px] tabular-nums text-text-muted">
+                        {new Date(e.changedAt).toLocaleDateString(
+                          locale === "ar" ? "ar-EG-u-nu-latn" : "en-GB",
+                          { day: "numeric", month: "short" }
+                        )}
+                      </span>
+
+                      <span className="w-[104px] shrink-0 text-[11.5px] text-text-muted">
+                        {e.status === "RUNNING"
+                          ? daysLeft > 0 ? tr("dLeft", { n: daysLeft }) : tr("readyNow")
+                          : tr("windowN", { n: e.windowDays })}
+                      </span>
+
+                      <span className="flex w-[92px] shrink-0 items-center gap-1.5 text-[11.5px]">
+                        <span
+                          className="h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{ background: STATUS_TONE[e.status] }}
+                        />
+                        <span className="truncate text-text-muted">{STATUS_LABEL[e.status]}</span>
+                      </span>
+
+                      <span
+                        className="w-[150px] shrink-0 truncate text-[11.5px] font-medium"
+                        style={{ color: v.tone }}
+                      >
+                        {tr(v.key)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {running.length > 0 && (
-        <section className="mb-6">
-          <h3 className="mb-2 flex items-center gap-1.5 text-[13px] font-medium text-text-muted">
-            <Clock size={13} /> {tr("measuring", { n: running.length })}
-          </h3>
-          <div className="flex flex-col gap-2">
-            {running.map((e) => <ExperimentCard key={e.id} exp={e} workspaceId={workspaceId} live />)}
-          </div>
-        </section>
-      )}
-
-      {done.length > 0 && (
-        <section>
-          <h3 className="mb-2 text-[13px] font-medium text-text-muted">{tr("results", { n: done.length })}</h3>
-          <div className="flex flex-col gap-2">
-            {done.map((e) => <ExperimentCard key={e.id} exp={e} workspaceId={workspaceId} />)}
-          </div>
-        </section>
+      {open && (
+        <ExperimentDetail
+          exp={open}
+          workspaceId={workspaceId}
+          onClose={() => setOpenId(null)}
+        />
       )}
 
       {adding && (
@@ -141,13 +308,19 @@ function ExperimentsBody({
   );
 }
 
-function ExperimentCard({
-  exp, workspaceId, live,
+/**
+ * تفصيلُ تجربةٍ واحدة: الحكمُ أوّلاً، ثمّ قبل/بعد لكلّ مقياس.
+ *
+ * **الحكمُ في الأعلى لا في الأسفل.** من يفتح تجربةً انتهت يسأل سؤالاً
+ * واحداً: هل نجح التغيير؟ ووضعُ الجواب بعد جدولِ أرقامٍ يجعله يقرأ ليصل
+ * إلى ما جاء لأجله. الأرقامُ تحته تشرح **لماذا** كان الحكم كذلك.
+ */
+function ExperimentDetail({
+  exp, workspaceId, onClose,
 }: {
   exp: ExperimentRow;
   workspaceId: string;
-  /** ما زالت تُقاس - يُفرَّق بصرياً عمّا صدر حكمُه */
-  live?: boolean;
+  onClose: () => void;
 }) {
   const tr = useT();
   const locale = useLocale();
@@ -158,6 +331,13 @@ function ExperimentCard({
   const [desc, setDesc] = useState(exp.description);
   const [note, setNote] = useState(exp.note ?? "");
   const [win, setWin] = useState(exp.windowDays);
+
+  const conf = CONFIDENCE_TONE[exp.confidenceLevel] ?? CONFIDENCE_TONE.INSUFFICIENT_DATA;
+  const v = verdictOf(exp);
+  const daysLeft = Math.max(
+    0,
+    exp.windowDays - Math.floor((Date.now() - new Date(exp.changedAt).getTime()) / 86400000)
+  );
 
   async function save() {
     setBusy(true);
@@ -172,152 +352,159 @@ function ExperimentCard({
   async function remove() {
     setBusy(true);
     await fetch(`/api/workspaces/${workspaceId}/experiments/${exp.id}`, { method: "DELETE" }).catch(() => {});
-    setBusy(false); setConfirmDelete(false); router.refresh();
+    setBusy(false); setConfirmDelete(false); onClose(); router.refresh();
   }
 
-  const conf = CONFIDENCE_TONE[exp.confidenceLevel] ?? CONFIDENCE_TONE.INSUFFICIENT_DATA;
-  const daysLeft = Math.max(
-    0,
-    exp.windowDays - Math.floor((Date.now() - new Date(exp.changedAt).getTime()) / 86400000)
-  );
-
   return (
-    // 🔴 **كلُّ التجارب كانت بطاقةً واحدةً مكرّرة**، فلا يُعرف من نظرةٍ
-    // ما يُقاس الآن ممّا صدر حكمُه. حدٌّ جانبيٌّ بلون الحالة يفصلهما:
-    // لونُ العلامة لما يجري، ولونُ الحكم لما انتهى.
     <div
-      className="card pad-md border-s-2"
-      style={{ borderInlineStartColor: live ? "var(--accent)" : conf.tone }}
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
     >
-      <div className="mb-3 flex items-start gap-3">
-        {/* الشعار كتلة مربّعة تُثبّت بداية الصفّ - كان أيقونة ١٥ بكسل
-            سابحة بين النصوص لا تُميَّز بلمحة */}
-        {exp.platform && (
-          <span className="card flex h-10 w-10 shrink-0 items-center justify-center bg-surface-raised">
-            <PlatformLogo platform={exp.platform} size={20} />
-          </span>
-        )}
-
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[14px] font-semibold tracking-tight text-text-primary">
-              {exp.description}
-            </span>
-            <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10.5px] text-text-muted">
-              {CHANGE_TYPE_KEYS[exp.changeType] ? tr(CHANGE_TYPE_KEYS[exp.changeType]) : exp.changeType}
-            </span>
-            {exp.source === "MANUAL" && (
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="pop-shadow hover-scrollbar scrollbar-zone max-h-[90vh] w-full max-w-3xl overflow-y-auto card"
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-border p-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              {exp.platform && <PlatformLogo platform={exp.platform} size={16} />}
+              <h2 className="text-[15px] font-semibold text-text-primary">{exp.description}</h2>
               <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10.5px] text-text-muted">
-                {tr("manualTag")}
+                {CHANGE_TYPE_KEYS[exp.changeType] ? tr(CHANGE_TYPE_KEYS[exp.changeType]) : exp.changeType}
               </span>
-            )}
+            </div>
+            <p className="mt-1 text-[11.5px] text-text-faint">
+              {new Date(exp.changedAt).toLocaleDateString(
+                locale === "ar" ? "ar-EG-u-nu-latn" : "en-GB",
+                { day: "numeric", month: "long", year: "numeric" }
+              )}
+              {" · "}
+              {tr("windowN", { n: exp.windowDays })}
+              {exp.campaignName ? ` · ${exp.campaignName}` : ""}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button onClick={() => setEditing((x) => !x)} aria-label={tr("editAria")}
+                    className="card-inset p-1.5 text-text-muted hover:text-text-primary">
+              <Pencil size={13} />
+            </button>
+            <button onClick={() => setConfirmDelete(true)} aria-label={tr("deleteAria")}
+                    className="card-inset p-1.5 text-text-muted hover:text-critical">
+              <Trash2 size={13} />
+            </button>
+            <button onClick={onClose} aria-label={tr("cancel")} className="btn btn-ghost btn-icon btn-sm">
+              <X size={15} />
+            </button>
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1.5">
-          <button onClick={() => setEditing((v) => !v)}
-                  className="card-inset p-1.5 text-text-muted hover:text-text-primary"
-                  aria-label={tr("editAria")}>
-            <Pencil size={13} />
-          </button>
-          <button onClick={() => setConfirmDelete(true)}
-                  className="card-inset p-1.5 text-text-muted hover:text-critical"
-                  aria-label={tr("deleteAria")}>
-            <Trash2 size={13} />
-          </button>
+        <div className="p-4">
+          {/* ── الحكم ─────────────────────────────────────────────── */}
+          <div
+            className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3.5"
+            style={{
+              borderColor: `color-mix(in srgb, ${v.tone} 38%, transparent)`,
+              background: `color-mix(in srgb, ${v.tone} 8%, transparent)`,
+            }}
+          >
+            <span className="text-[14px] font-semibold" style={{ color: v.tone }}>
+              {tr(v.key)}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium"
+                  style={{ background: `color-mix(in srgb, ${conf.tone} 14%, transparent)`, color: conf.tone }}>
+              {tr(conf.key)}
+            </span>
+          </div>
+
+          {editing && (
+            <div className="mb-4 flex flex-col gap-2.5 card-inset pad-sm">
+              <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={tr("descPlaceholder")} className="field" />
+              <input value={note} onChange={(e) => setNote(e.target.value)} placeholder={tr("notePlaceholder")} className="field" />
+              <OptionGroup
+                label={tr("window")}
+                size="sm"
+                value={win}
+                onChange={setWin}
+                options={[3, 7, 14, 30].map((d) => ({ value: d, label: tr("daysN", { n: d }) }))}
+              />
+              {win !== exp.windowDays && exp.status !== "RUNNING" && (
+                <p className="text-[11.5px] text-gap">{tr("windowWarn")}</p>
+              )}
+              <div className="flex justify-end gap-2">
+                <button onClick={() => setEditing(false)} className="card px-3 py-1.5 text-[12px] text-text-muted">{tr("cancel")}</button>
+                <button onClick={save} disabled={busy} className="btn btn-primary btn-sm">
+                  {busy ? tr("saving") : tr("save")}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {confirmDelete && (
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-critical/35 bg-critical/[0.06] p-3">
+              <span className="flex items-center gap-2 text-[12.5px] text-text-primary">
+                <AlertTriangle size={14} className="text-critical" /> {tr("confirmDelete")}
+              </span>
+              <div className="flex gap-2">
+                <button onClick={() => setConfirmDelete(false)} className="card px-3 py-1.5 text-[12px] text-text-muted">{tr("cancel")}</button>
+                <button onClick={remove} disabled={busy} className="btn btn-danger btn-sm">
+                  {busy ? tr("deleting") : tr("del")}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {exp.note && <p className="mb-4 text-[12px] italic text-text-muted">{exp.note}</p>}
+
+          {/* ── قبل / بعد لكلّ مقياس ──────────────────────────────── */}
+          {exp.status === "RUNNING" ? (
+            <p className="text-[12.5px] text-text-muted">
+              {daysLeft > 0 ? tr("resultAfter", { n: daysLeft }) : tr("resultComputing")}
+            </p>
+          ) : !exp.metricResults ? (
+            <p className="text-[12.5px] text-text-muted">{tr("notEnough")}</p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {exp.trackedMetrics.map((k) => {
+                const r = exp.metricResults![k];
+                if (!r) return null;
+                const def = EXPERIMENT_METRICS.find((m) => m.key === k);
+                const pct = r.changePct;
+                const good = pct === null ? null : def?.lowerIsBetter ? pct < 0 : pct > 0;
+                const tone = good === null ? "var(--text-muted)" : good ? "var(--verified)" : "var(--critical)";
+                return (
+                  <div key={k} className="card-inset pad-sm">
+                    <div className="mb-2 text-[11.5px] font-medium text-text-primary">
+                      {(locale === "en" ? def?.labelEn : def?.labelAr) ?? k}
+                    </div>
+                    {/* الرقمان جنباً إلى جنب لا سهماً بينهما: المقارنةُ هي
+                        الغرض، والعمودان يجعلانها تُقرأ بلا حساب. */}
+                    <div className="flex items-end gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10.5px] uppercase tracking-wide text-text-faint">{tr("before")}</div>
+                        <div className="font-mono text-[16px] tabular-nums text-text-muted">{r.before}</div>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10.5px] uppercase tracking-wide text-text-faint">{tr("after")}</div>
+                        <div className="font-mono text-[16px] font-semibold tabular-nums text-text-primary">{r.after}</div>
+                      </div>
+                      {pct !== null && (
+                        <span className="flex shrink-0 items-center gap-0.5 pb-0.5 text-[12px] font-medium" style={{ color: tone }}>
+                          {pct > 0 ? <TrendingUp size={12} /> : pct < 0 ? <TrendingDown size={12} /> : <Minus size={12} />}
+                          {Math.abs(pct)}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
-
-      {editing && (
-        <div className="mb-3 flex flex-col gap-2.5 card-inset pad-sm">
-          <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={tr("descPlaceholder")}
-                 className="field" />
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder={tr("notePlaceholder")}
-                 className="field" />
-          {/* كان العنوان في صفّ الخيارات نفسه وأعرضتها تتبع أطوال نصوصها،
-              فيبدو العنوان خياراً خامساً و«٣ أيام» أصغر شأناً من «٣٠ يوماً».
-              القاعدة العامّة الآن في `OptionGroup`. */}
-          <OptionGroup
-            label={tr("window")}
-            size="sm"
-            value={win}
-            onChange={setWin}
-            options={[3, 7, 14, 30].map((d) => ({ value: d, label: tr("daysN", { n: d }) }))}
-          />
-          {win !== exp.windowDays && exp.status !== "RUNNING" && (
-            <p className="text-[11.5px] text-gap">{tr("windowWarn")}</p>
-          )}
-          <div className="flex justify-end gap-2">
-            <button onClick={() => setEditing(false)} className="card px-3 py-1.5 text-[12px] text-text-muted">{tr("cancel")}</button>
-            <button onClick={save} disabled={busy} className="btn btn-primary btn-sm">
-              {busy ? tr("saving") : tr("save")}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 🔴 نفس فخّ «`.btn` على `div`» المتكرّر: `.btn-danger` تفرض خلفيةً
-          حمراء صريحة تهزم `bg-critical/[0.06]`، و`.btn` تفرض `nowrap` -
-          فيصير صفّ التأكيد شريطاً أحمر ممتلئاً يبدو زرّاً واحداً ضخماً
-          بينما فيه زرّان حقيقيّان بداخله. */}
-      {confirmDelete && (
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-critical/35 bg-critical/[0.06] p-3">
-          <span className="flex items-center gap-2 text-[12.5px] text-text-primary">
-            <AlertTriangle size={14} className="text-critical" /> {tr("confirmDelete")}
-          </span>
-          <div className="flex gap-2">
-            <button onClick={() => setConfirmDelete(false)} className="card px-3 py-1.5 text-[12px] text-text-muted">{tr("cancel")}</button>
-            <button onClick={remove} disabled={busy} className="btn btn-danger btn-sm">
-              {busy ? tr("deleting") : tr("del")}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {exp.campaignName && <p className="mb-2 text-[12px] text-text-muted">{tr("campaign", { name: exp.campaignName })}</p>}
-      {exp.note && <p className="mb-2 text-[12px] italic text-text-muted">{exp.note}</p>}
-
-      {exp.status === "RUNNING" ? (
-        <p className="text-[12.5px] text-text-muted">
-          {daysLeft > 0 ? tr("resultAfter", { n: daysLeft }) : tr("resultComputing")} — {tr("windowN", { n: exp.windowDays })}
-        </p>
-      ) : exp.status === "INCONCLUSIVE" || !exp.metricResults ? (
-        <p className="text-[12.5px] text-text-muted">{tr("notEnough")}</p>
-      ) : (
-        <>
-          <div className="mb-2 flex flex-wrap gap-2">
-            {exp.trackedMetrics.map((k) => {
-              const r = exp.metricResults![k];
-              if (!r) return null;
-              const def = EXPERIMENT_METRICS.find((m) => m.key === k);
-              const pct = r.changePct;
-              const good = pct === null ? null : def?.lowerIsBetter ? pct < 0 : pct > 0;
-              const tone = good === null ? "var(--text-muted)" : good ? "var(--verified)" : "var(--critical)";
-              return (
-                <div key={k} className="card-inset px-3 py-2">
-                  <div className="text-[11px] text-text-muted">{(locale === "en" ? def?.labelEn : def?.labelAr) ?? k}</div>
-                  <div className="mt-0.5 flex items-center gap-1.5">
-                    <span className="font-mono text-[13px] text-text-primary">{r.before} → {r.after}</span>
-                    {pct !== null && (
-                      <span className="flex items-center gap-0.5 text-[11.5px] font-medium" style={{ color: tone }}>
-                        {pct > 0 ? <TrendingUp size={11} /> : pct < 0 ? <TrendingDown size={11} /> : <Minus size={11} />}
-                        {Math.abs(pct)}%
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium"
-                style={{ background: `color-mix(in srgb, ${conf.tone} 14%, transparent)`, color: conf.tone }}>
-            {tr(conf.key)}
-          </span>
-        </>
-      )}
     </div>
   );
 }
+
 
 function ManualExperimentModal({
   workspaceId, campaigns, onClose,
