@@ -762,6 +762,8 @@ export const SEARCH_INDEX: SearchEntry[] = [
   { k: "plans.perYear", h: "/dashboard/billing" },
   { k: "plans.price", h: "/dashboard/billing" },
   { k: "plans.priceOnRequest", h: "/dashboard/billing" },
+  { k: "plans.pricingEyebrow", h: "/dashboard/billing" },
+  { k: "plans.pricingHeadline", h: "/dashboard/billing" },
   { k: "plans.subActiveTitle", h: "/dashboard/billing" },
   { k: "plans.subAutoRenewTitle", h: "/dashboard/billing" },
   { k: "plans.subCancel", h: "/dashboard/billing" },

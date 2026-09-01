@@ -103,8 +103,14 @@ export function PlansClient({
           tr={tr}
         />
       )}
-      <header className="mb-7">
-        <div className="inline-flex items-center gap-1 card p-1">
+      <header className="mb-7 text-center">
+        <span className="inline-block rounded-full bg-accent-dim px-2.5 py-1 text-[11.5px] font-medium text-accent">
+          {tr("pricingEyebrow")}
+        </span>
+        <h2 className="mx-auto mt-2.5 max-w-xl text-[24px] font-semibold leading-snug text-text-primary sm:text-[28px]">
+          {tr("pricingHeadline")}
+        </h2>
+        <div className="mt-4 inline-flex items-center gap-1 card p-1">
           {(["monthly", "yearly"] as const).map((c) => (
             <button
               key={c}
@@ -259,7 +265,7 @@ function PlanCard({
     <div
       className={`relative flex flex-col rounded-2xl border bg-surface p-5 transition-all ${
         plan.highlighted
-          ? "border-accent shadow-[0_0_0_1px_var(--accent)] lg:-translate-y-2"
+          ? "border-accent bg-accent/[0.045] shadow-[0_0_0_1px_var(--accent)] lg:-translate-y-2"
           : "card-shadow border-border"
       }`}
     >
