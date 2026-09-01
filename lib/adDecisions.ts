@@ -16,8 +16,18 @@
 //
 // ٣) البوابة الزمنية: بعد أي تنفيذ لا يُقترح شيء جديد على الإعلان نفسه
 //    قبل ٤ أيام. السبب ليس تجميلاً: التغيير يُدخل الإعلان في إعادة تعلّم،
-//    وقياسه قبل استقراره يقيس الاضطراب لا الأثر. ثم يُعاد التقييم من الصفر
-//    بمقارنة ما قبل بما بعد - وهذا ما يجعلها "حلقة" لا سلسلة تغييرات عمياء.
+//    وقياسه قبل استقراره يقيس الاضطراب لا الأثر.
+//
+// ٤) **قياسُ أثر القرار السابق - وهنا تُقفَل الحلقة فعلاً.**
+//
+//    🔴 كان هذا السطر يقول إنّ التقييم «يُقارن ما قبل بما بعد»، والمقارنةُ
+//    مستحيلة: لم يكن يُحفَظ رقمٌ واحد من لحظة القرار. فالنظام يقترح زيادةً،
+//    وينتظر أربعة أيّام، ثمّ يقترح زيادةً أخرى - **بلا أن يعرف أنّ الأولى
+//    أضرّت**. سلسلةُ تغييراتٍ عمياء بالضبط، وهو ما كان النصّ ينفيه.
+//
+//    تُحفَظ الآن تكلفةُ العميل لحظةَ التنفيذ (`cpaAtDecision`)، فإن ارتفعت
+//    بعدها بمقدار `SCALE_REGRESSION_PCT` أو أكثر، يُمنع البناء على تلك
+//    الزيادة ويُقال للمستخدم ما حدث بالأرقام.
 
 import { prisma } from "@/lib/prisma";
 import {
@@ -33,6 +43,22 @@ export const SAFE_SCALE_INCREASE_PCT = 20;
 
 /** أيام التهدئة بعد أي تنفيذ، قبل إعادة التقييم من جديد */
 export const DECISION_COOLDOWN_DAYS = 4;
+
+/**
+ * ارتفاعُ تكلفة العميل الذي يُعدّ **ارتداداً** بعد زيادةِ ميزانية.
+ *
+ * 🔴 **الحلقةُ كانت مفتوحة.** كان النظام يقترح زيادةً، وينتظر أربعة
+ * أيّام، ثمّ يقترح زيادةً أخرى - **بلا أن يعرف أنّ الأولى أضرّت**. ولم
+ * تكن المقارنة ممكنةً أصلاً: لا رقمَ يُحفَظ من لحظة القرار.
+ *
+ * والرقمُ من ممارسةٍ منشورة متّفقٍ عليها: ارتفاعُ تكلفة العميل فوق ٢٥٪
+ * بعد زيادةٍ إشارةُ توقّفٍ لا استمرار. وما دونه قد يكون تذبذباً عادياً.
+ *
+ * وحين يقع الارتداد لا يُقترح تراجعٌ تلقائيّ: الزيادةُ نُفّذت على الكيان
+ * الأب فتمسّ إخوةً آخرين، وردُّها قرارٌ بشريّ. يُقال ما حدث ويُمنع البناء
+ * عليه.
+ */
+export const SCALE_REGRESSION_PCT = 25;
 
 /**
  * سقف التكرار الأسبوعي. فوقه يُمنع Scale ويتقوّى Pause: التكرار المرتفع
@@ -184,10 +210,40 @@ export async function buildAdDecisions(opts: BuildOptions): Promise<AdDecisionVi
         remaining: cooldownDaysRemaining,
       };
     } else if (decision === "SCALE") {
-      const missing = missingScaleTarget(perf.platform, parent);
-      if (missing) {
-        executable = false;
-        blockedReasonKey = missing;
+      // ==== ارتدادُ الزيادة السابقة: هنا تُقفَل الحلقة ====
+      //
+      // 🔴 كان النظام يقترح زيادةً بعد زيادةٍ بلا أن يعرف أثر الأولى -
+      // فيبني على قرارٍ أضرّ. الآن تُقارَن تكلفةُ العميل بما كانت عليه
+      // لحظةَ آخر زيادةٍ نُفِّذت فعلاً، ويُمنع البناء على ارتداد.
+      //
+      // ولا يُقترَح تراجعٌ تلقائيّ: الزيادةُ وقعت على الكيان الأب فتمسّ
+      // إخوةً آخرين، وردُّها قرارُ صاحبِ الحساب لا قرارُ المحرّك.
+      if (
+        lastRecord?.decision === "SCALE" &&
+        lastRecord.cpaAtDecision != null &&
+        lastRecord.cpaAtDecision > 0 &&
+        perf.cpa > 0
+      ) {
+        const changePct = Math.round(
+          ((perf.cpa - lastRecord.cpaAtDecision) / lastRecord.cpaAtDecision) * 100
+        );
+        if (changePct >= SCALE_REGRESSION_PCT) {
+          executable = false;
+          blockedReasonKey = "adCell.blockedScaleRegressed";
+          blockedReasonVars = {
+            pct: changePct,
+            before: Math.round(lastRecord.cpaAtDecision * 100) / 100,
+            after: Math.round(perf.cpa * 100) / 100,
+          };
+        }
+      }
+
+      if (executable) {
+        const missing = missingScaleTarget(perf.platform, parent);
+        if (missing) {
+          executable = false;
+          blockedReasonKey = missing;
+        }
       }
     } else if (decision === "PAUSE") {
       if (perf.platform === "GOOGLE_ADS" && (!parent?.adGroupId || !parent?.campaignId)) {
@@ -391,6 +447,9 @@ export async function applyAdDecision(
       // والإنجليزية تُبنى وقت العرض من المحرّك نفسه.
       reason: view.reason,
       reEvaluateAt,
+      // لقطةُ الحال لحظةَ القرار - بها وحدها يُقاس أثرُه بعد التهدئة.
+      cpaAtDecision: view.signals.cpa,
+      conversionsAtDecision: view.signals.conversions,
       previousValue: previousValue ?? null,
       newValue: newValue ?? null,
       // لقطة ما قبل التنفيذ - أساس المقارنة بعد اكتمال النافذة
