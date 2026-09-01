@@ -5,13 +5,11 @@
 
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { Sparkles } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
-import { PageHeader } from "@/app/components/ui/PageHeader";
 import { AgentClient } from "./AgentClient";
-import { t, type Locale } from "@/lib/i18n/dictionary";
+import { type Locale } from "@/lib/i18n/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -31,28 +29,31 @@ export default async function AgentPage() {
       })
     : [];
 
+  // 🔴 **قسمُ المحادثة يملأ الإطار، ولا يجلس في عمودٍ وسط صفحة.**
+  //
+  // كان هنا `max-w-6xl` وترويسةُ صفحةٍ فوقه، فتُقتطع من الارتفاع مساحةٌ
+  // ثابتة ويبقى الحوار في شريطٍ ضيّق - بينما كلّ تطبيق محادثةٍ يعرفه
+  // الناس (Claude، ChatGPT) يعطي المحادثة الشاشةَ كلَّها. والترويسةُ
+  // نفسها كانت تكرّر ما تقوله القائمة الجانبية: الاسم والوصف.
+  //
+  // الارتفاع محسوبٌ من ارتفاع رأس اللوحة (٦٨ بكسلاً) لا مُخمَّن، فلا
+  // يظهر شريطُ تمريرٍ ثانٍ للصفحة كلّها تحت شريط المحادثة.
   return (
-    <div className="mx-auto max-w-6xl pb-10">
-      <PageHeader
-        icon={Sparkles}
-        tone="accent"
-        eyebrow={workspace?.name}
-        title={t(locale, "agentPage.title")}
-        description={t(locale, "agentPage.subtitle")}
-      />
+    <div className="h-[calc(100dvh-68px)] p-3 sm:p-4">
       {/* `useSearchParams` داخل `AgentClient` (لقراءة `?chat=`) يُلزم
           Next.js بحدّ Suspense - وبدونه يفشل البناء لا التشغيل، فلا
           يظهر الخطأ إلّا عند النشر. */}
       <Suspense fallback={null}>
-      <AgentClient
-        locale={locale}
-        initialChats={chats.map((c) => ({
-          id: c.id,
-          title: c.title,
-          updatedAt: c.updatedAt.toISOString(),
-          messageCount: c._count.messages,
-        }))}
-      />
+        <AgentClient
+          locale={locale}
+          workspaceName={workspace?.name ?? null}
+          initialChats={chats.map((c) => ({
+            id: c.id,
+            title: c.title,
+            updatedAt: c.updatedAt.toISOString(),
+            messageCount: c._count.messages,
+          }))}
+        />
       </Suspense>
     </div>
   );

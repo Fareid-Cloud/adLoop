@@ -12,7 +12,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { FileBarChart,
   BarChart3, Target, ShieldCheck, Image as ImageIcon, ShoppingCart, CalendarRange,
-  ArrowLeftRight, Layers, Users, Sparkles, Save, Mail, Download, Play,
+  ArrowLeftRight, Layers, Users, Lightbulb, Save, Mail, Download, Play,
   TrendingUp, TrendingDown, Minus, Trash2, Star,
 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
@@ -595,7 +595,7 @@ function ResultBlock({
           القاعدة الحاكمة: نقطةٌ تمنع المستخدم تحمل معها الحلّ. */}
       {result.rows.length > 2 && (
         <div className="note border-border bg-surface-raised text-text-muted">
-          <Sparkles size={14} className="shrink-0 text-accent" />
+          <Lightbulb size={14} className="shrink-0 text-accent" />
           <span className="min-w-0 flex-1">{tr("verdictNeedsTwo", { n: result.rows.length })}</span>
         </div>
       )}

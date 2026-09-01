@@ -13,10 +13,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { MessageSquare, Plus, Trash2, Send, Loader2, AlertTriangle } from "lucide-react";
+import { MessageSquare, Plus, Trash2, Send, Loader2, AlertTriangle, Paperclip, X } from "lucide-react";
 import { AgentIcon } from "@/app/components/AgentIcon";
 import { MarkdownAnswer } from "@/app/components/MarkdownAnswer";
 import { getCsrfHeader } from "@/lib/csrfClient";
+import { REVEAL_TICK_MS, charsPerTick, prefersReducedMotion } from "@/lib/revealTiming";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 interface ChatRow {
@@ -35,7 +36,15 @@ interface Message {
 /** سؤالٌ أطول من هذا ليس سؤالاً - نفس حدّ المسار الخلفيّ */
 const MAX_QUESTION = 400;
 
-export function AgentClient({ locale, initialChats }: { locale: Locale; initialChats: ChatRow[] }) {
+export function AgentClient({
+  locale,
+  workspaceName,
+  initialChats,
+}: {
+  locale: Locale;
+  workspaceName: string | null;
+  initialChats: ChatRow[];
+}) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `agentPage.${k}`, v);
 
   const [chats, setChats] = useState<ChatRow[]>(initialChats);
@@ -46,6 +55,10 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
   const [error, setError] = useState<string | null>(null);
   const [upgradeUrl, setUpgradeUrl] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [attachment, setAttachment] = useState<{ name: string; text: string } | null>(null);
+  /** كم حرفاً ظهر من آخر جواب - الكشفُ التدريجيّ نفسه الذي في مربّع السؤال */
+  const [revealed, setRevealed] = useState<number | undefined>(undefined);
   const params = useSearchParams();
 
 
@@ -67,6 +80,30 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, busy]);
+
+  // 🔴 **قسمُ الوكيل كان يعرض الجواب دفعةً واحدة** بينما مربّعُ السؤال في
+  // بقيّة الصفحات يكتبه تدريجياً - فالمكانان اللذان يجيب فيهما العقل نفسُه
+  // يبدوان منتجين مختلفين. التوقيت من `lib/revealTiming.ts` كي لا تفترق
+  // السرعتان عند أوّل تعديل.
+  const last = messages[messages.length - 1];
+  const lastIsFresh = last?.role === "assistant" && last.id.startsWith("a-");
+  useEffect(() => {
+    if (!lastIsFresh || !last) { setRevealed(undefined); return; }
+    if (prefersReducedMotion()) { setRevealed(undefined); return; }
+
+    const total = last.content.length;
+    const perTick = charsPerTick(total);
+    let shown = 0;
+    setRevealed(0);
+    const id = setInterval(() => {
+      shown = Math.min(total, shown + perTick);
+      setRevealed(shown);
+      endRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+      // عند الاكتمال تُرفَع القصّة تماماً، فلا يبقى النصّ محكوماً برقم
+      if (shown >= total) { clearInterval(id); setRevealed(undefined); }
+    }, REVEAL_TICK_MS);
+    return () => clearInterval(id);
+  }, [last?.id, lastIsFresh]);
 
   async function openChat(id: string) {
     setActiveId(id);
@@ -100,10 +137,20 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
     setMessages((prev) => [...prev, { id: `local-${Date.now()}`, role: "user", content: q }]);
     setQuestion("");
 
+    // نصُّ المرفق يُضمّ إلى السؤال المُرسَل، ولا يظهر في الفقاعة: الفقاعة
+    // تعرض ما كتبه صاحبها، والملفّ مذكورٌ باسمه فوقها.
+    const sent = attachment
+      ? `${q}
+
+--- ${attachment.name} ---
+${attachment.text}`
+      : q;
+    setAttachment(null);
+
     const res = await fetch("/api/ai/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: q, scope: "home", chatId: activeId }),
+      body: JSON.stringify({ question: sent, scope: "home", chatId: activeId }),
     }).catch(() => null);
 
     setBusy(false);
@@ -149,39 +196,96 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
     if (activeId === id) startNew();
   }
 
+  /**
+   * مرفقٌ نصّيّ يُقرأ في المتصفّح ويُضمّ إلى السؤال.
+   *
+   * **يعمل فعلاً، ولا يَعِد بأكثر ممّا يفعل.** لا رفعَ ولا تخزين: الملفّ
+   * يُقرأ هنا ويُرسَل نصُّه ضمن السؤال إلى المسار نفسه. فالمقبولُ ما
+   * يُقرأ نصّاً (CSV، JSON، نصّ) - والصورةُ تحتاج قراءةً بصريّةً في
+   * الخادم غير مبنيّةٍ بعد، فلا تُعرَض خياراً يخيب.
+   */
+  const MAX_ATTACH_CHARS = 4000;
+  async function pickFile(file: File | null) {
+    if (!file) return;
+    const text = (await file.text().catch(() => "")).slice(0, MAX_ATTACH_CHARS);
+    if (!text.trim()) return;
+    setAttachment({ name: file.name, text });
+  }
+
   // المؤلِّف يظهر في موضعين لا يجتمعان: وسطَ شاشة البداية، وأسفلَ
   // المحادثة الجارية. فيُكتب مرّةً - نسختان تفترقان عند أوّل تعديل.
   const composer = (big: boolean) => (
     <div
-      className={`flex items-end gap-2 rounded-2xl border border-border-visible bg-surface transition-colors focus-within:border-accent/50 ${
+      className={`rounded-2xl border border-border-visible bg-surface transition-colors focus-within:border-accent/50 ${
         big ? "p-2.5 shadow-sm" : "p-2"
       }`}
     >
-      <AgentIcon size={16} className="mb-2 ms-1 shrink-0 text-text-faint" />
-      <textarea
-        value={question}
-        onChange={(e) => setQuestion(e.target.value.slice(0, MAX_QUESTION))}
-        onKeyDown={(e) => {
-          // سطرٌ جديد بـShift، وإرسالٌ بـEnter وحدها
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            void send();
-          }
-        }}
-        rows={big ? 3 : 2}
-        placeholder={t(locale, messages.length === 0 ? "aiAsk.ph_home_1" : "aiAsk.followUp")}
-        // بلا `field`: الصندوقُ الخارجيّ هو الإطار، فحدٌّ داخل حدٍّ يُنتج
-        // خطّين متوازيين.
-        className="flex-1 resize-none bg-transparent px-1 py-1.5 text-[13px] leading-relaxed text-text-primary outline-none placeholder:text-text-faint"
-      />
-      <button
-        onClick={() => void send()}
-        disabled={busy || question.trim().length < 3}
-        aria-label={t(locale, "aiAsk.send")}
-        className="btn btn-primary h-9 w-9 shrink-0 justify-center p-0"
-      >
-        {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-      </button>
+      {attachment && (
+        <div className="mb-1.5 flex items-center gap-1.5 rounded-lg bg-surface-raised px-2 py-1 text-[11.5px] text-text-muted">
+          <Paperclip size={11} className="shrink-0" />
+          <span className="min-w-0 flex-1 truncate">{attachment.name}</span>
+          <button
+            onClick={() => setAttachment(null)}
+            aria-label={t(locale, "ui.close")}
+            className="shrink-0 rounded p-0.5 text-text-faint hover:text-text-primary"
+          >
+            <X size={11} />
+          </button>
+        </div>
+      )}
+
+      <div className="flex items-end gap-2">
+        <textarea
+          value={question}
+          onChange={(e) => setQuestion(e.target.value.slice(0, MAX_QUESTION))}
+          onKeyDown={(e) => {
+            // سطرٌ جديد بـShift، وإرسالٌ بـEnter وحدها
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              void send();
+            }
+          }}
+          rows={big ? 3 : 2}
+          placeholder={t(locale, messages.length === 0 ? "aiAsk.ph_home_1" : "aiAsk.followUp")}
+          // 🔴 `focus-ring-none` إجباريّ: `theme.css` يرسم حلقةَ تركيزٍ على
+          // كلّ `textarea`، وهذا الحقل داخل صندوقٍ له حدُّه - فتُرسَم حلقةٌ
+          // **داخل** الإطار حول النصّ وحده. وهو المستطيل الأزرق الذي رآه
+          // المالك. الصنفُ موجودٌ في الملفّ لهذه الحالة بالذات.
+          className="focus-ring-none flex-1 resize-none bg-transparent px-1 py-1.5 text-[13px] leading-relaxed text-text-primary outline-none placeholder:text-text-faint"
+        />
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".txt,.csv,.json,.md,.log,text/*"
+          hidden
+          onChange={(e) => {
+            void pickFile(e.target.files?.[0] ?? null);
+            e.target.value = "";
+          }}
+        />
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={busy}
+          aria-label={tr("attach")}
+          title={tr("attach")}
+          className="btn btn-ghost btn-icon"
+        >
+          <Paperclip size={15} />
+        </button>
+        {/* 🔴 `btn-icon` لا `h-9 w-9 p-0`: `.btn` في `theme.css` يفرض حشوةً
+            أفقيّةً (١٫١٢٥rem) وهو **خارج طبقات Tailwind**، فيغلب `p-0`
+            ويسحق الأيقونة إلى عرضٍ صفريّ - زرٌّ أزرقُ فارغ. الصنف موجودٌ
+            للحالة نفسها، وهذا ثالثُ موضعٍ يقع فيه الملفّ في فخّه. */}
+        <button
+          onClick={() => void send()}
+          disabled={busy || question.trim().length < 3}
+          aria-label={t(locale, "aiAsk.send")}
+          className="btn btn-primary btn-icon"
+        >
+          {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+        </button>
+      </div>
     </div>
   );
 
@@ -200,9 +304,9 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
   ) : null;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[272px_1fr]">
+    <div className="grid h-full min-h-0 gap-3 lg:grid-cols-[272px_1fr]">
       {/* ── السجلّ ───────────────────────────────────────────────── */}
-      <aside className="scrollbar-zone card-shadow flex max-h-[78vh] min-h-[30rem] flex-col overflow-hidden card">
+      <aside className="scrollbar-zone card-shadow hidden min-h-0 flex-col overflow-hidden card lg:flex">
         <button onClick={startNew} className="btn btn-primary m-3 justify-center">
           <Plus size={15} /> {tr("newChat")}
         </button>
@@ -255,7 +359,22 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
       </aside>
 
       {/* ── المحادثة ─────────────────────────────────────────────── */}
-      <section className="card-shadow flex max-h-[78vh] min-h-[30rem] flex-col overflow-hidden card">
+      <section className="card-shadow flex min-h-0 flex-col overflow-hidden card">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2">
+          <span className="flex min-w-0 items-center gap-2">
+            <AgentIcon size={15} className="shrink-0 text-accent" />
+            <span className="truncate text-[12.5px] font-medium text-text-primary">
+              {tr("title")}
+            </span>
+            {workspaceName && (
+              <span className="truncate text-[11.5px] text-text-faint">· {workspaceName}</span>
+            )}
+          </span>
+          <button onClick={startNew} className="btn btn-ghost btn-sm lg:hidden">
+            <Plus size={14} /> {tr("newChat")}
+          </button>
+        </div>
+
         {messages.length === 0 && !busy ? (
           /* 🔴 **المؤلِّف في وسط شاشة البداية لا في قاعها.**
              مربّعُ كتابةٍ ملتصقٌ بالأسفل تحت فراغٍ واسع يجعل الشاشة تبدو

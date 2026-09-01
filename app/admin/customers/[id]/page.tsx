@@ -11,7 +11,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft, Ban, CheckCircle2, Eye, RefreshCw, Star, Building2, Plug, CreditCard,
-  Gauge, LifeBuoy, ScrollText, Sparkles,
+  Gauge, LifeBuoy, ScrollText,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserFromCookies } from "@/lib/auth";
@@ -418,7 +418,7 @@ export default async function CustomerDetail({ params }: { params: Promise<{ id:
                   url={`/api/admin/system/reset-limits/${id}`}
                   label="Reset AI counters"
                   confirmLabel="Give back the quota?"
-                  icon="Sparkles"
+                  icon="RotateCcw"
                   size="sm"
                   needsElevation
                 />

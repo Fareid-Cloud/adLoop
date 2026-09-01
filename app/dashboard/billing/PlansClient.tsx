@@ -16,7 +16,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CreditCard,
-  Check, Minus, Sparkles, ChevronDown, Loader2, Zap, X, ArrowLeft, ShieldCheck,
+  Check, Minus, Star, ChevronDown, Loader2, Zap, X, ArrowLeft, ShieldCheck,
 } from "lucide-react";
 import {
   PLANS, COMPARISON_ROWS, CREDIT_PACKS, MIN_CUSTOM_CREDITS, MAX_CUSTOM_CREDITS,
@@ -265,7 +265,7 @@ function PlanCard({
     >
       {plan.highlighted && (
         <span className="absolute -top-3 flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-[11px] font-semibold text-white" style={{ insetInlineStart: 20 }}>
-          <Sparkles size={11} /> {tr("mostPopular")}
+          <Star size={11} /> {tr("mostPopular")}
         </span>
       )}
 

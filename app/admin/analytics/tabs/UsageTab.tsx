@@ -4,7 +4,7 @@
 // ذكاء اصطناعي فلوس حقيقية، والحساب الشاذّ الواحد بيقدر ياكل هامش شهر.
 
 import Link from "next/link";
-import { Sparkles, AlertTriangle, TrendingUp, Gauge } from "lucide-react";
+import { Cpu, AlertTriangle, TrendingUp, Gauge } from "lucide-react";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import type { UsageOverview } from "@/lib/admin/usage";
 import { TABLE, TABLE_WRAP, THEAD_ROW, TH, TH_NUM, TR, TD, TD_NUM, TD_MUTED } from "@/app/components/ui/tableStyles";
@@ -22,7 +22,7 @@ export function UsageTab({ data }: { data: UsageOverview }) {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           locale="en" label="AI calls this period" value={data.totalAiCalls.toLocaleString("en-US")}
-          icon={Sparkles} tone="accent"
+          icon={Cpu} tone="accent"
         />
         <MetricCard
           locale="en" label="Estimated tokens"

@@ -1159,6 +1159,7 @@ export const dictionary = {
       sugg2: "الإنفاق الضائع",
       sugg3: "المنصة الفائزة",
       shareChat: "مشاركة",
+      attach: "إرفاق ملف",
       suggestLabel: "جرّب سؤالاً",
     },
     adCell: {
@@ -5557,6 +5558,7 @@ export const dictionary = {
       sugg2: "Wasted spend",
       sugg3: "The real winner",
       shareChat: "Share",
+      attach: "Attach a file",
       suggestLabel: "Try a question",
     },
     adCell: {

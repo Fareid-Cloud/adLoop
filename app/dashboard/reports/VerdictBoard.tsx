@@ -16,7 +16,7 @@
 
 import Link from "next/link";
 import {
-  Sparkles, TrendingUp, Target, ShieldCheck, Lightbulb, ArrowUpRight, ArrowDownRight, FileText,
+  TrendingUp, Target, ShieldCheck, Lightbulb, ArrowUpRight, ArrowDownRight, FileText,
 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { t, platformLabel, type Locale } from "@/lib/i18n/dictionary";
@@ -83,7 +83,7 @@ export function VerdictBoard({
         {ctx.shiftPct && (
           <section className="card pad-md">
             <h3 className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-text-primary">
-              <Sparkles size={14} className="text-accent" /> {tr("vRecommendation")}
+              <Lightbulb size={14} className="text-accent" /> {tr("vRecommendation")}
             </h3>
             <p className="text-[15px] font-semibold leading-snug text-text-primary">
               {tr("vShiftLead", { min: ctx.shiftPct.min, max: ctx.shiftPct.max, loser: loserName, winner: winnerName })}
@@ -164,7 +164,7 @@ function HeroVerdict({
       <div className="flex flex-wrap items-start justify-between gap-5 p-5">
         <div className="min-w-0 flex-1">
           <div className="mb-2 flex items-center gap-2 text-[11.5px] font-semibold uppercase tracking-wide text-text-faint">
-            <Sparkles size={13} className="text-accent" /> {tr("verdictTitle")}
+            <Lightbulb size={13} className="text-accent" /> {tr("verdictTitle")}
           </div>
           {/* الاسم فسطر الفارق فسطر المقابل: ثلاثة أسطر بأوزان مختلفة، فيُقرأ
               الحكم في نظرة واحدة بدل جملةٍ واحدة متساوية الثقل. */}

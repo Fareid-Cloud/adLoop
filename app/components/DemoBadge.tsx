@@ -11,7 +11,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { FlaskConical, Database, Lock, Sparkles, ArrowLeft } from "lucide-react";
+import { FlaskConical, Database, Lock, ArrowLeft } from "lucide-react";
 import { Portal } from "@/app/components/ui/Portal";
 import { SwitchWorkspaceButton } from "@/app/components/SwitchWorkspaceButton";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -111,7 +111,7 @@ export function DemoBadge({
             {[
               { Icon: Database, text: tr("pointData") },
               { Icon: Lock, text: tr("pointNoWrite") },
-              { Icon: Sparkles, text: tr("pointFull") },
+              { Icon: FlaskConical, text: tr("pointFull") },
             ].map(({ Icon, text }, i) => (
               <li key={i} className="flex items-start gap-2 text-[12px] leading-relaxed text-text-muted">
                 <Icon size={13} className="mt-0.5 shrink-0 text-text-faint" />

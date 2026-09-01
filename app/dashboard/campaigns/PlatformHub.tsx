@@ -50,7 +50,7 @@ function iconForLink(href: string) {
   if (href.includes("quality")) return Icons.Star;
   if (href.includes("competitor")) return Icons.Radar;
   if (href.includes("attribution")) return Icons.GitBranch;
-  if (href.includes("content")) return Icons.Sparkles;
+  if (href.includes("content")) return Icons.Palette;
   if (href.includes("learning")) return Icons.GraduationCap;
   if (href.includes("spark")) return Icons.Flame;
   if (href.includes("device") || href.includes("geo")) return Icons.MapPin;

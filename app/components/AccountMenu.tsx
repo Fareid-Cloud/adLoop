@@ -2,11 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Settings, LogOut, CreditCard, Shield, Bot, Cpu, Sparkles, Terminal, Brain, Zap } from "lucide-react";
+import { ChevronDown, Settings, LogOut, CreditCard, Shield, Bot, Cpu, Star, Terminal, Brain, Zap } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 // نفس مفاتيح avatarIcon المحفوظة في قاعدة البيانات
-const AVATAR_ICONS: Record<string, typeof Bot> = { bot: Bot, cpu: Cpu, sparkles: Sparkles, terminal: Terminal, brain: Brain, zap: Zap };
+const AVATAR_ICONS: Record<string, typeof Bot> = { bot: Bot, cpu: Cpu, sparkles: Star, terminal: Terminal, brain: Brain, zap: Zap };
 
 export function AccountMenu({
   name,

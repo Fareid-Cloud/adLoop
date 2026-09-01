@@ -5,7 +5,7 @@
 // بدونها تبدو الصفحة جامدة ثم تتغيّر فجأة.
 
 import { useState, useEffect } from "react";
-import { ChevronsUpDown, Plus, Check, ShieldCheck, X, Loader2, Sparkles , FlaskConical } from "lucide-react";
+import { ChevronsUpDown, Plus, Check, ShieldCheck, X, Loader2, FlaskConical } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { Portal } from "@/app/components/ui/Portal";
 
@@ -102,7 +102,7 @@ export function WorkspaceSwitcher({
           <div className="fixed inset-0 z-[95] flex flex-col items-center justify-center gap-4 overflow-hidden bg-bg">
             <div className="relative">
               <ShieldCheck size={40} className="text-verified" />
-              <Sparkles size={16} className="absolute -end-1 -top-1 animate-pulse text-accent" />
+              <FlaskConical size={16} className="absolute -end-1 -top-1 animate-pulse text-accent" />
             </div>
             <div className="text-center">
               <p className="text-[15px] font-medium text-text-primary">{tr("title")}</p>

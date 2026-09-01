@@ -12,11 +12,11 @@ import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getEntitlements } from "@/lib/entitlements";
 import { PageHeader } from "@/app/components/ui/PageHeader";
-import { Sparkles } from "lucide-react";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { McpClient } from "./McpClient";
+import { McpIcon } from "@/app/components/McpIcon";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +40,7 @@ export default async function McpPage() {
 
   return (
     <div className="mx-auto max-w-6xl pb-10">
-      <PageHeader icon={Sparkles} title={tr("title")} description={tr("subtitle")} />
+      <PageHeader iconNode={<McpIcon size={20} />} title={tr("title")} description={tr("subtitle")} />
 
       {!ent.limits.mcp ? (
         // الحدّ يحمل حلّه: أيّ باقةٍ تفتحه، وأين تُرقّى - لا «غير متاح» وصمت.

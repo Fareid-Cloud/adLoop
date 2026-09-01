@@ -13,7 +13,7 @@ import { resolveAdminRole, adminCapabilities } from "@/lib/adminRole";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { Sparkline } from "@/app/components/ui/Sparkline";
 import {
-  LayoutDashboard, Users, DollarSign, Activity, AlertTriangle, Sparkles, Star, LifeBuoy,
+  LayoutDashboard, Users, DollarSign, Activity, AlertTriangle, Cpu, Star, LifeBuoy,
 } from "lucide-react";
 import { lastNDays } from "@/lib/admin/shared";
 import { getBusinessSummary } from "@/lib/admin/business";
@@ -138,7 +138,7 @@ export default async function AdminOverview() {
           locale="en"
           label="AI calls (period)"
           value={usage.totalAiCalls.toLocaleString("en-US")}
-          icon={Sparkles}
+          icon={Cpu}
           tone={usage.anomalies.length > 0 ? "gap" : "accent"}
           subLabel={
             usage.totalEstimatedCostUsd !== null

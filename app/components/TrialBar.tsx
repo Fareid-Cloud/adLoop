@@ -13,7 +13,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Sparkles, X, Clock, AlertTriangle, Zap } from "lucide-react";
+import { Gift, X, Clock, AlertTriangle, Zap } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import type { SubscriptionState } from "@/lib/entitlements";
 
@@ -40,7 +40,7 @@ export function TrialBar({
     : days <= 3 ? "gap"
     : "accent";
 
-  const Icon = tone === "critical" ? AlertTriangle : tone === "gap" ? Clock : Sparkles;
+  const Icon = tone === "critical" ? AlertTriangle : tone === "gap" ? Clock : Gift;
 
   const title =
     state === "TRIAL"

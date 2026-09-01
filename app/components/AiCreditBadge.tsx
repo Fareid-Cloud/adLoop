@@ -5,7 +5,7 @@
 // رفضٌ عند الضغط على زر التحليل دون أن يعرف السبب مسبقاً.
 
 import Link from "next/link";
-import { Sparkles, Plus } from "lucide-react";
+import { Coins, Plus } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export function AiCreditBadge({
@@ -29,7 +29,7 @@ export function AiCreditBadge({
         title={t(locale, "aiCredit.label")}
         className="btn btn-secondary btn-sm"
       >
-        <Sparkles size={14} style={{ color: tone }} />
+        <Coins size={14} style={{ color: tone }} />
         {/* 🔴 **النسبة تنقلب في العربية.** الرقمان صندوقان سطريّان منفصلان،
             فيصفّهما `dir="rtl"` من اليمين: يقرأ صاحبُ الحساب «٢٠٠٠ / ١٩٩١»
             أي أنّه استهلك ألفين من ألفٍ وتسعمئة وواحدٍ وتسعين - رقمٌ مقلوب

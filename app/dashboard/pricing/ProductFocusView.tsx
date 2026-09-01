@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import {
   X, Pencil, AlertTriangle, ArrowLeft, Check, TrendingUp,
   Package, Megaphone, Truck, RotateCcw, CreditCard, Boxes,
-  ShoppingBag, Wallet, CheckCircle2, Clock, Sparkles, Info,
+  ShoppingBag, Wallet, CheckCircle2, Clock, Info,
 } from "lucide-react";
 import { calculateFullPricing, type FullPricingInputs } from "@/lib/pricingCalculator";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -336,7 +336,7 @@ export function ProductFocusView({
           {result.priceGap > 0 && (
             <div className="rounded-2xl border border-verified/30 bg-verified/[0.05] p-4">
               <div className="mb-1 flex items-center gap-1.5 text-[13px] font-medium text-text-primary">
-                <Sparkles size={14} className="text-verified" /> {tr("impactTitle")}
+                <TrendingUp size={14} className="text-verified" /> {tr("impactTitle")}
               </div>
               <p className="mb-3 text-[11.5px] text-text-muted">{tr("impactHint")}</p>
               <div className="flex flex-col gap-2">

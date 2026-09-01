@@ -11,7 +11,7 @@ import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { useState, useMemo, useEffect, createContext, useContext, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Settings as SettingsIcon, Bot, Cpu, Sparkles, Terminal, Brain, Zap, Upload, Search, User, Palette, Plug, Building2, RefreshCw, TriangleAlert, ShieldCheck, Check, ChevronDown } from "lucide-react";
+import { Settings as SettingsIcon, Bot, Cpu, Star, Terminal, Brain, Zap, Upload, Search, User, Palette, Plug, Building2, RefreshCw, TriangleAlert, ShieldCheck, Check, ChevronDown } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
 import { PushNotificationToggle } from "@/app/components/PushNotificationToggle";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -43,7 +43,7 @@ function useT() {
 const AVATAR_ICONS = [
   { key: "bot", Icon: Bot },
   { key: "cpu", Icon: Cpu },
-  { key: "sparkles", Icon: Sparkles },
+  { key: "sparkles", Icon: Star },
   { key: "terminal", Icon: Terminal },
   { key: "brain", Icon: Brain },
   { key: "zap", Icon: Zap },

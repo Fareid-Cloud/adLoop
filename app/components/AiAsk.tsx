@@ -37,14 +37,16 @@
 // (`docs/ai-agent-plan.md`) هو ما يحمل السجلّ حين يُبنى.
 
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, ArrowUp, ArrowUpRight, Loader2, X } from "lucide-react";
+import { ArrowUp, ArrowUpRight, Loader2, X } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { REVEAL_TICK_MS, charsPerTick, prefersReducedMotion } from "@/lib/revealTiming";
 import { MarkdownAnswer } from "@/app/components/MarkdownAnswer";
 import { showcaseFor, fillShowcaseMoney, followUpsFor, splitShowcaseKey } from "@/lib/demoAgentShowcase";
+import { AgentIcon } from "@/app/components/AgentIcon";
 
 export type AiAskScope = "home" | "campaigns" | "store";
 
-const TYPE_MS = 45;
+const TYPE_MS = 28;
 const ERASE_MS = 22;
 const HOLD_MS = 1900;
 /** مهلة بين خطوة عملٍ وأختها - تُقرأ ولا تُنتظر */
@@ -58,8 +60,6 @@ const STEP_MS = 780;
  * وراها». والكشف هنا ليس انتظاراً بلا مقابل - هو ما يُري أنّ خلف الجواب
  * عملاً جرى، فالإسراع فيه يُلغي غرضه.
  */
-const REVEAL_MS = 4600;
-const REVEAL_TICK_MS = 28;
 
 export function AiAsk({
   scope,
@@ -131,12 +131,9 @@ export function AiAsk({
 
     // مَن يطلب تقليل الحركة يرى الجواب كاملاً فوراً - لا يُحرم منه ولا يُجبَر
     // على انتظار حركةٍ طلب إيقافها.
-    const reduce =
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) { setRevealed(answer.length); return; }
+    if (prefersReducedMotion()) { setRevealed(answer.length); return; }
 
-    const perTick = Math.max(1, Math.ceil(answer.length / (REVEAL_MS / REVEAL_TICK_MS)));
+    const perTick = charsPerTick(answer.length);
     let shown = 0;
     setRevealed(0);
     const id = setInterval(() => {
@@ -471,7 +468,7 @@ export function AiAsk({
                     </div>
                     <div className="flex min-w-0 items-start gap-2.5">
                       <span className="icon-badge mt-0.5 h-7 w-7 shrink-0 bg-accent/12 text-accent">
-                        <Sparkles size={13} />
+                        <AgentIcon size={13} />
                       </span>
                       <div className="min-w-0 flex-1">
                         <MarkdownAnswer text={turn.a} reveal={turn.a.length} />
@@ -501,7 +498,7 @@ export function AiAsk({
                 {(steps.length > 0 || answer) && (
                   <div className="flex min-w-0 items-start gap-2.5">
                     <span className="icon-badge mt-0.5 h-7 w-7 shrink-0 bg-accent/12 text-accent">
-                      <Sparkles size={13} />
+                      <AgentIcon size={13} />
                     </span>
                     <div className="min-w-0 flex-1 space-y-3">
                       {/* الخطوات تبقى بعد وصول الجواب: هي التي تُري **كيف**
@@ -626,7 +623,7 @@ export function AiAsk({
           }}
         >
           <span className="icon-badge ms-1 h-7 w-7 bg-accent/12 text-accent">
-            <Sparkles size={14} />
+            <AgentIcon size={14} />
           </span>
           <input
             ref={inputRef}

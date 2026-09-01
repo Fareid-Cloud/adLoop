@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
-import { Sparkles } from "lucide-react";
+import { Flame } from "lucide-react";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 
 function classify(identityType: string | null): "SPARK" | "DARK_POST" | "UNKNOWN" {
@@ -53,7 +53,7 @@ export default async function TikTokSparkAdsPage() {
   return (
     <div>
       <PageHeader
-        icon={Sparkles}
+        icon={Flame}
         tone="accent"
         eyebrow={workspace.name}
         title={t(locale, "campPages.spTitle")}
