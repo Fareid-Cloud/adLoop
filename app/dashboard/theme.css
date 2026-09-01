@@ -565,6 +565,29 @@ button:disabled, [aria-disabled="true"] {
   background-color: var(--accent-dim, var(--accent));
 }
 
+/* ── شريطُ تمرير الصفحة ────────────────────────────────────────────────
+ * شريطُ النظام الرماديّ العريض هو آخر ما بقي من مظهرٍ غير مصمَّم في
+ * الشاشة. فيأخذ هويّة المنتج: رفيعٌ بلون العلامة.
+ *
+ * **وهو دائمُ الظهور بخلاف شريط القائمة الجانبية** - وذلك مقصود: شريطُ
+ * الصفحة يقول «هنا موضعُك من الطول»، وهي معلومةٌ تُقرأ باستمرار. أمّا
+ * القائمةُ فقصيرةٌ ومعروفةُ الحدود، فشريطُها ضجيجٌ إلّا عند الاقتراب. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) transparent;
+}
+
+html::-webkit-scrollbar { width: 10px; height: 10px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+html::-webkit-scrollbar-thumb {
+  background-color: var(--accent);
+  border-radius: 999px;
+  /* حدٌّ شفّاف يُنحِّف الإبهام بصرياً داخل مسارٍ أعرض، فلا يلتصق بالحافّة */
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
 /* من يطلب تقليل الحركة يُعطى الشريط بلا تلاشٍ - الظهور المفاجئ أهون من
    حركةٍ لم تُطلَب. */
 @media (prefers-reduced-motion: reduce) {

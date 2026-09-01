@@ -8,7 +8,7 @@
 //
 // أربعةُ أسئلةٍ يجيب عنها هذا الفحص:
 //
-//   ١) هل يعدّ الشهر صحيحاً؟ (لا يتخطّى فبراير، ولا يهب أياماً)
+//   ١) هل الفترةُ ثلاثون يوماً بالضبط، أيّاً كان الشهر؟
 //   ٢) هل يمكن أن يُخصَم مرّتان؟ (الحجزُ الذرّيّ حقيقيٌّ أم شكليّ)
 //   ٣) هل يمكن أن يُفعَّل اشتراكٌ بلا خصمٍ ناجح؟
 //   ٤) هل يُخصَم ممّن ألغى؟
@@ -27,56 +27,49 @@ const fail = (msg: string) => {
 
 // ═══ ١) حسابُ الفترة ═══════════════════════════════════════════════════
 //
-// تُفحَص نهاياتُ الشهور والسنةُ الكبيسة تحديداً - وهي المواضع التي كان
-// `setMonth(+1)` يفيض فيها فيتخطّى شهراً كاملاً.
+// الفترة ثلاثون يوماً ثابتة، فالمفحوصُ هو **الثبات** لا التقويم: أن تتساوى
+// كلُّ الفترات مهما اختلف الشهرُ الذي تبدأ فيه.
 
 console.log("\n[renewal] حساب الفترة:");
 
-interface PeriodCase {
-  from: string;
-  cycle: "monthly" | "yearly";
-  expect: string;
-  why: string;
-}
+// الفترةُ ثلاثون يوماً بالضبط أيّاً كان الشهر - وهذا ما يُفحَص: **الثبات**
+// لا التقويم. تُجرَّب كلُّ بدايةٍ ممكنة عبر سنتين، بما فيها نهاياتُ الشهور
+// وفبراير الكبيسة، ويُتأكَّد أنّ الطول لا يتغيّر بينها.
+const DAY_MS = 86_400_000;
+let checked = 0;
 
-const periodCases: PeriodCase[] = [
-  // الحالة التي كانت مكسورة: ٣١ يناير كانت تصير ٣ مارس
-  { from: "2026-01-31", cycle: "monthly", expect: "2026-02-28", why: "٣١ يناير لا تتخطّى فبراير" },
-  { from: "2024-01-31", cycle: "monthly", expect: "2024-02-29", why: "فبراير الكبيسة ٢٩" },
-  { from: "2026-03-31", cycle: "monthly", expect: "2026-04-30", why: "٣١ في شهرٍ من ٣٠" },
-  { from: "2026-05-31", cycle: "monthly", expect: "2026-06-30", why: "٣١ مايو ← ٣٠ يونيو" },
-  { from: "2026-08-31", cycle: "monthly", expect: "2026-09-30", why: "٣١ أغسطس ← ٣٠ سبتمبر" },
-  { from: "2026-12-31", cycle: "monthly", expect: "2027-01-31", why: "عبور السنة" },
-  { from: "2026-01-15", cycle: "monthly", expect: "2026-02-15", why: "يومٌ عاديّ لا يتغيّر" },
-  { from: "2026-02-28", cycle: "monthly", expect: "2026-03-28", why: "٢٨ فبراير تبقى ٢٨" },
-  { from: "2024-02-29", cycle: "yearly", expect: "2025-02-28", why: "٢٩ فبراير سنوياً ← ٢٨" },
-  { from: "2026-06-10", cycle: "yearly", expect: "2027-06-10", why: "سنويّ عاديّ" },
-];
+for (const year of [2026, 2024]) {
+  for (let m = 0; m < 12; m++) {
+    const lastDay = new Date(year, m + 1, 0).getDate();
+    for (const day of [1, 15, 28, lastDay]) {
+      const from = new Date(year, m, day, 15, 30, 0);
 
-for (const c of periodCases) {
-  // منتصفُ اليوم بالتوقيت المحلّي: يُبعد الحساب عن حدود المناطق الزمنية
-  const from = new Date(`${c.from}T12:00:00`);
-  const got = addBillingPeriod(from, c.cycle);
-  const gotStr = `${got.getFullYear()}-${String(got.getMonth() + 1).padStart(2, "0")}-${String(got.getDate()).padStart(2, "0")}`;
-  if (gotStr !== c.expect) {
-    fail(`${c.from} (${c.cycle}) ← توقّعنا ${c.expect} وجاء ${gotStr} — ${c.why}`);
-  }
-}
+      const month = addBillingPeriod(from, "monthly");
+      const monthDays = (+month - +from) / DAY_MS;
+      if (monthDays !== 30) {
+        fail(`${from.toDateString()} → فترةٌ شهريّةٌ طولُها ${monthDays} يوماً لا ٣٠`);
+      }
 
-// **ولا فترةً تهب شهراً**: أطولُ فترةٍ شهريّةٍ مشروعة ٣١ يوماً.
-for (let m = 0; m < 12; m++) {
-  for (const day of [28, 29, 30, 31]) {
-    const from = new Date(2026, m, 1, 12);
-    const last = new Date(2026, m + 1, 0).getDate();
-    from.setDate(Math.min(day, last));
-    const to = addBillingPeriod(from, "monthly");
-    const days = Math.round((+to - +from) / 86_400_000);
-    if (days < 28 || days > 31) {
-      fail(`فترةٌ شهريّةٌ طولُها ${days} يوماً من ${from.toDateString()} — خارج [28،31]`);
+      const yearly = addBillingPeriod(from, "yearly");
+      const yearDays = (+yearly - +from) / DAY_MS;
+      if (yearDays !== 365) {
+        fail(`${from.toDateString()} → فترةٌ سنويّةٌ طولُها ${yearDays} يوماً لا ٣٦٥`);
+      }
+
+      // ⚠️ **ولا تُفحَص ساعةُ الحائط عمداً.**
+      //
+      // «ثلاثون يوماً بالثانية» زمنٌ مطلق: ٣٠×٢٤ ساعة. وعبورُ التوقيت
+      // الصيفيّ يزيح ساعةَ الحائط ساعةً (٣:٣٠ تصير ٢:٣٠) - وهذا **نتيجةٌ
+      // صحيحة** لا خلل: الفترةُ بقيت ٧٢٠ ساعةً بالضبط، والذي تحرّك هو
+      // التقويم لا الاشتراك. اشتراطُ بقاء الساعة كان سيناقض الطلب نفسه.
+      checked++;
     }
   }
 }
-if (failures === 0) console.log("  ✓ لا شهرَ يُتخطّى، ولا فترةَ خارج [28،31] يوماً.");
+
+if (failures === 0) {
+  console.log(`  ✓ ${checked} بدايةً مختلفة، وكلُّ فترةٍ ٣٠ يوماً (٣٦٥ للسنويّ) بالثانية.`);
+}
 
 // ═══ ٢-٤) الحرّاسُ في مواضعهم ══════════════════════════════════════════
 //

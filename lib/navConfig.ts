@@ -64,9 +64,6 @@ export const NAV_GROUPS: NavGroup[] = [
         labelAr: "الحملات",
         labelEn: "Campaigns",
         iconName: "Megaphone",
-        // مربّع السؤال يعيش هنا، وهو نداء Claude حقيقيّ يُخصم من الرصيد -
-        // فالشارة تقول أين يُصرَف الرصيد قبل أن يُصرَف، لا بعده.
-        usesAi: true,
         // صفحات كل منصة تظهر مباشرةً في القائمة الجانبية عند الدخول إليها،
         // بدل الاضطرار إلى العودة لصفحة الحملات لاختيار تحليل آخر.
         children: [
@@ -93,14 +90,11 @@ export const NAV_GROUPS: NavGroup[] = [
           { href: "/dashboard/campaigns/tiktok-spark-ads", labelAr: "Spark Ads", labelEn: "Spark Ads", platform: "TIKTOK_ADS", nested: true },
         ],
       },
-      // بلا `usesAi`: مركز الحقيقة يقارن المُعلَن بالمتحقَّق بحسابٍ ثابت لا
-      // بنموذج لغويّ. شارةٌ هنا كانت تَعِد بذكاءٍ لا يعمل في الصفحة.
-      { href: "/dashboard/truth", labelAr: "مركز الحقيقة", labelEn: "Truth Center", iconName: "ShieldCheck" },
       {
         // الترتيب يتبع طريقة تفكير صاحب المتجر لا نوع البيانات: يبدأ بالوضع
         // العام، ثم أين يذهب المال، ثم ما يبيعه، ثم كيف يسعّره، ثم ما لديه،
         // ثم من يشتري، ثم كيف تصل الطلبات، ثم ما يفعله بعد ذلك.
-        href: "/dashboard/ecommerce", labelAr: "متجري الإلكتروني", labelEn: "My Store", iconName: "ShoppingBag", usesAi: true,
+        href: "/dashboard/ecommerce", labelAr: "متجري الإلكتروني", labelEn: "My Store", iconName: "ShoppingBag",
         children: [
           { href: "/dashboard/ecommerce", labelAr: "ملخّص المتجر", labelEn: "Overview" },
           { href: "/dashboard/ecommerce/stores", labelAr: "نزال المتاجر", labelEn: "Store Showdown", needsTwoStores: true },
@@ -111,12 +105,15 @@ export const NAV_GROUPS: NavGroup[] = [
           { href: "/dashboard/ecommerce/customers", labelAr: "العملاء", labelEn: "Customers" },
           { href: "/dashboard/ecommerce/orders", labelAr: "الطلبات", labelEn: "Orders" },
           { href: "/dashboard/ecommerce/opportunities", labelAr: "فرص النمو", labelEn: "Opportunities" },
-          { href: "/dashboard/ecommerce/ai-insights", labelAr: "رؤى وتوصيات", labelEn: "Insights", usesAi: true },
+          { href: "/dashboard/ecommerce/ai-insights", labelAr: "رؤى وتوصيات", labelEn: "Insights" },
           { href: "/dashboard/ecommerce/reports", labelAr: "التقارير", labelEn: "Reports" },
         ],
       },
+      // بلا `usesAi`: مركز الحقيقة يقارن المُعلَن بالمتحقَّق بحسابٍ ثابت لا
+      // بنموذج لغويّ. شارةٌ هنا كانت تَعِد بذكاءٍ لا يعمل في الصفحة.
+      { href: "/dashboard/truth", labelAr: "مركز الحقيقة", labelEn: "Truth Center", iconName: "ShieldCheck" },
       { href: "/dashboard/pricing", labelAr: "التسعير", labelEn: "Pricing", iconName: "Tag" },
-      { href: "/dashboard/site-scan", labelAr: "فحص الموقع", labelEn: "Site Scan", iconName: "ScanSearch", usesAi: true },
+      { href: "/dashboard/site-scan", labelAr: "فحص الموقع", labelEn: "Site Scan", iconName: "ScanSearch" },
       {
         href: "/dashboard/diagnostics", labelAr: "صحة الحساب", labelEn: "Account Health", iconName: "Stethoscope",
         children: [
