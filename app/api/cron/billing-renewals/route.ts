@@ -13,21 +13,27 @@
 // `currentPeriodEnd > now`، فالوصول يسقط إلى المجّانية **في لحظةٍ صامتة**
 // - تتوقّف المزامنة ويتوقّف التحقّق ولا رسالة قبلها ولا بعدها.
 //
-// ═══ ما لا تفعله هذه المهمّة عمداً: لا تسحب من بطاقة ═══
+// ═══ التجديد التلقائيّ: يتجدّد ما لم يُلغِ صاحبُه ═══
 //
-// الخطّة الأصلية اقترحت خصماً تلقائياً من `savedCardToken`. والحقل موجود
-// في المخطَّط **ولا يكتبه أحد**، ولا توجد في المستودع دالّةُ سحبٍ بتوكن
-// أصلاً (`lib/paymob.ts` يُنشئ نيّة دفعٍ تفاعلية وحدها). وبناءُ مسارِ
-// سحبٍ حقيقيٍّ من بطاقات العملاء على تكاملٍ **ترتيبُ توقيعه غير مؤكَّد
-// بعد** (راجع `docs/activation-checklist.md`) وبلا أيّ بيئةٍ لتجريبه =
-// خصمٌ مزدوجٌ أو بمبلغٍ خاطئ على مالٍ حقيقيّ. فالتجديد يبقى بضغطةٍ من
-// المشترك، وهذه المهمّة تضمن أن يعرف **قبل** أن ينقطع لا بعده.
+// **القاعدة:** من لم يُلغِ يُجدَّد له تلقائياً من كارته المحفوظ قبل أن
+// يُقال إنّ فترته انقضت. ومن ألغى تُحترَم إرادتُه بلا محاولةِ خصم.
+//
+// 🔴 **وهذا مغلقٌ ببنيته حتى يُفعَّل MOTO في لوحة Paymob.**
+// `renewViaSavedCard` تخرج بـ`not_configured` بلا أيّ نداءٍ خارجيّ ما لم
+// يوجد `PAYMOB_MOTO_INTEGRATION_ID` - وهو متغيّرٌ لا يُوجَد إلّا بعد
+// موافقة Paymob على خدمة التجديد. فحتى ذلك الحين سلوكُ هذه المهمّة هو
+// سلوكُها السابق حرفياً: تذكيرٌ قبل الانقطاع، ثمّ `PAST_DUE`.
+//
+// وترتيبُ حقول MOTO لم تُثبِته دفعةٌ حقيقيّة بعد - كما كان توقيعُ الويب
+// هوك تخميناً حتى أثبتَته دفعةٌ واحدة. فأوّلُ تجديدٍ تلقائيٍّ يُراقَب.
 
 import { NextRequest } from "next/server";
 import { denyUnlessCron } from "@/lib/cronAuth";
 import { prisma } from "@/lib/prisma";
 import { pushToActionFeed } from "@/lib/actionFeed";
 import { finishCronRun } from "@/lib/cronRun";
+import { renewViaSavedCard } from "@/lib/billing";
+import { isAutoChargeConfigured } from "@/lib/paymob";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export const maxDuration = 300;
@@ -41,7 +47,13 @@ const COOLDOWN_DAYS = 2;
  * تذكيرٌ بالبريد. فشلُه لا يُفشِل الدورة: البند في الفيد وُضع أو سيوضع،
  * والتذكير قناةٌ ثانية لا شرطٌ لصحّة الحساب.
  */
-async function sendRenewalReminderEmail(email: string, locale: Locale, days: number) {
+async function sendRenewalReminderEmail(
+  email: string,
+  locale: Locale,
+  days: number,
+  /** هل سيُحصَّل تلقائياً فعلاً؟ الرسالتان مختلفتان تماماً. */
+  autoRenew: boolean
+) {
   if (!process.env.RESEND_API_KEY) return;
   try {
     const { Resend } = await import("resend");
@@ -57,7 +69,7 @@ async function sendRenewalReminderEmail(email: string, locale: Locale, days: num
         locale,
         art: "loop",
         title: t(locale, "alerts.renewalEmailTitle"),
-        subtitle: t(locale, "alerts.renewalEmailSubtitle"),
+        subtitle: t(locale, autoRenew ? "alerts.renewalEmailSubtitleAuto" : "alerts.renewalEmailSubtitle"),
         blocks: [
           {
             stat: {
@@ -97,6 +109,8 @@ export async function GET(req: NextRequest) {
       // من ألغى بنفسه يعرف أنّ فترته تنتهي - تذكيرُه بالتجديد إلحاحٌ على
       // قرارٍ اتّخذه. يُسجَّل انتهاؤه ولا يُنبَّه قبله.
       cancelAtPeriodEnd: true,
+      // يحدّد نصّ التذكير: «سيُجدَّد تلقائياً» أم «التجديد بيدك».
+      savedCardToken: true,
       // الحساب المعلَّق لا يصله تنبيه - راجع `lib/accountActive.ts`.
       isSuspended: true,
       // مساحةٌ حقيقية واحدة تكفي لعرض التنبيه فيها. والعرض التجريبيّ
@@ -107,6 +121,7 @@ export async function GET(req: NextRequest) {
 
   let reminded = 0;
   let lapsed = 0;
+  let renewed = 0;
 
   for (const user of subscribers) {
     if (user.isSuspended || !user.currentPeriodEnd) continue;
@@ -114,8 +129,22 @@ export async function GET(req: NextRequest) {
     const locale: Locale = (user.preferredLocale as Locale) ?? "en";
 
     try {
-      // ── انتهت الفترة: تُسجَّل الحالة ويُخطَر صاحبها ──────────────
+      // ── انتهت الفترة: تُحاوَل التجديد أوّلاً، ثمّ تُسجَّل النهاية ──
       if (user.currentPeriodEnd <= now) {
+        // **الاشتراك يتجدّد تلقائياً ما لم يُلغِه صاحبُه.** فمن لم يُلغِ
+        // تُحاوَل له دفعةٌ من كارته المحفوظ قبل أيّ حديثٍ عن انقضاء.
+        //
+        // ولا يتغيّر شيءٌ ما لم يُفعَّل MOTO: `renewViaSavedCard` تخرج
+        // بـ`not_configured` بلا نداءٍ واحد، فيهبط التنفيذ إلى المسار
+        // الآمن نفسه الذي كان يعمل قبل اليوم.
+        if (!user.cancelAtPeriodEnd) {
+          const renewal = await renewViaSavedCard(user.id);
+          if (renewal.ok) {
+            renewed++;
+            continue; // الفترة امتدّت - لا انقضاء ولا إخطار
+          }
+        }
+
         // **مَن ألغى ليس مَن تعثّر دفعُه.** `PAST_DUE` تعني «فشل الدفع»،
         // و`getEntitlements` تشتقّ منها `EXPIRED` التي تُشغّل حملةَ الاسترجاع
         // و`subscriptionAlerts` («فشل الدفع - حدّث بيانات بطاقتك»). فوسمُ من
@@ -177,7 +206,12 @@ export async function GET(req: NextRequest) {
         // (`pushSubscriptions: { some: {} }`)، والبندُ في الفيد لا يُرى إلّا
         // لمن يفتح اللوحة - ومَن فترتُه على وشك الانتهاء قد يكون تركها.
         // فالبريد هو القناة التي عند الجميع.
-        await sendRenewalReminderEmail(user.email, locale, days);
+        await sendRenewalReminderEmail(
+          user.email,
+          locale,
+          days,
+          Boolean(user.savedCardToken) && isAutoChargeConfigured()
+        );
 
         await pushToActionFeed({
           workspaceId,
@@ -209,6 +243,6 @@ export async function GET(req: NextRequest) {
       startedAt,
       errors: failures,
     },
-    { reminded, lapsed }
+    { reminded, lapsed, renewed }
   );
 }

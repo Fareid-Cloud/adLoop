@@ -68,20 +68,31 @@
 - [ ] حساب Paymob مصري (accept.paymob.com) - محتاج توثيق أعمال (بياخد لحد 3 أيام حسب توثيقهم)
 - [ ] `PAYMOB_SECRET_KEY` و`PAYMOB_PUBLIC_KEY` من Settings في لوحة التحكم
 - [ ] `PAYMOB_INTEGRATION_ID` - معرف طريقة الدفع (كارت) من Developers → Payment Integrations
-- [ ] **حرج - لازم تتأكد منه بنفسك:** `PAYMOB_HMAC_SECRET` من Settings →
-      Payment Integrations → HMAC، **وترتيب الحقول المستخدم في حساب
-      التوقيع** (`lib` الكود عندنا فيه تخمين مبني على نمط توثيق قديم،
-      مش مؤكد 100% - راجع `app/api/webhooks/paymob/route.ts` وعدّل
-      `HMAC_FIELD_ORDER` لو لقيت الترتيب الرسمي مختلف)
-- [ ] **يحتاج تفعيل خاص:** الاشتراكات المتكررة عند Paymob محتاجة
-      "Moto Integration ID" منفصل عن التكامل العادي - كلّم دعم Paymob
-      لتفعيله، مش إعداد ذاتي من لوحة التحكم
+- [x] `PAYMOB_HMAC_SECRET` من Settings → Payment Integrations → HMAC.
+      **وترتيب الحقول اتأكد فعلياً بدفعة حقيقية في 31 أغسطس 2026** - كان
+      فيه `is_auction` مكان `is_auth` فكل دفعة ناجحة كانت بتترفض بـ401.
+      اتصلح، والويب هوك بيعدّي ويفعّل الاشتراك (`ACTIVATED` مسجّل).
+- [ ] **التجديد التلقائي - مبني ومقفول لحد ما تفعّله:** الاشتراك بيتجدّد
+      تلقائياً إلا لو العميل لغى، والكود كله متكتب (`renewViaSavedCard`
+      في `lib/billing.ts` + `chargeSavedCard` في `lib/paymob.ts`)، **بس
+      مش بيشتغل من غير `PAYMOB_MOTO_INTEGRATION_ID`**. عشان تفعّله:
+  - [ ] كلّم دعم Paymob يفعّلوا MOTO/الاشتراكات المتكررة على حسابك -
+        **مش إعداد ذاتي من اللوحة**، محتاج موافقة منهم
+  - [ ] خد الـ Moto Integration ID (منفصل عن `PAYMOB_INTEGRATION_ID`)
+        وحطه في `PAYMOB_MOTO_INTEGRATION_ID`
+  - [ ] فعّل حفظ الكارت (tokenization) على التكامل - من غيره مفيش توكن
+        يتحفظ، و`savedCardToken` هيفضل فاضي والتجديد هيرجع للمسار اليدوي
+  - [ ] ⚠️ **راقب أول تجديد تلقائي حقيقي بنفسك** قبل ما تعتمد عليه -
+        ترتيب حقول MOTO متكتب من التوثيق ومااتأكدش بدفعة فعلية، بالظبط
+        زي ما ترتيب الـHMAC كان تخمين لحد ما دفعة واحدة أثبتته
+  - **لحد ما تعمل ده كله:** السلوك هو نفسه الأول بالحرف - تذكير قبل
+    الانتهاء، وبعدين `PAST_DUE`. مفيش أي خصم تلقائي بيحصل.
 - [ ] `PLAN_PRICE_STARTER_CENTS` و`PLAN_PRICE_PRO_CENTS` بالقرش (500 جنيه = 50000)
 - [ ] رابط الويب هوك في Paymob → Developers → Payment Integrations →
       Transaction Processed Callback: `https://yourdomain.com/api/webhooks/paymob`
-- [ ] **غير مؤكد - يحتاج بحث إضافي:** هل Paymob عندها بوابة عميل ذاتية
-      الخدمة (إلغاء اشتراك بنفسه) زي Stripe؟ لو موجودة، `BillingClient.tsx`
-      محتاج تحديث لاستخدامها بدل رسالة "تواصل معنا" الحالية
+- [x] الإلغاء الذاتي **مبني عندنا** (`/api/subscription/cancel` + زرار في
+      صفحة الاشتراك بتأكيد بدرجتين) - مش محتاجين بوابة Paymob لده.
+      الإلغاء بيوقف التجديد الجاي وبيسيب الخدمة شغالة لآخر المدة المدفوعة.
 
 ## 4و) تيك توك - أثقل بوابة موافقة من كل المنصات (موثّق ومؤكد)
 - [ ] إنشاء تطبيق في TikTok for Business (مش TikTok for Developers العادي
@@ -447,6 +458,7 @@ Neon**، فالبناء وقف قبل ما يبدأ يبني الكود أصلا
 | `TURNSTILE_SECRET_KEY` / `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | كابتشا التسجيل |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_CONTACT_EMAIL` | إشعارات الموبايل |
 | `PAYMOB_SECRET_KEY` / `PAYMOB_PUBLIC_KEY` / `PAYMOB_INTEGRATION_ID` / `PAYMOB_HMAC_SECRET` | الاشتراكات والدفع |
+| `PAYMOB_MOTO_INTEGRATION_ID` | التجديد التلقائي (اختياري - من غيره التجديد يدوي) |
 | `PLAN_PRICE_STARTER_CENTS` / `PLAN_PRICE_PRO_CENTS` | أسعار الخطط |
 | `SALLA_WEBHOOK_SECRET` | ويب هوك سلة |
 | `META_WEBHOOK_VERIFY_TOKEN` / `META_MESSENGER_VERIFY_TOKEN` | ويب هوك ليدز/ماسنجر ميتا |

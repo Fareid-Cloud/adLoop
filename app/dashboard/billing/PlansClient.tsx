@@ -42,7 +42,13 @@ export function PlansClient({
   creditsLeft: number;
   creditsAllowance: number;
   openCreditsOnLoad?: boolean;
-  subscription?: { periodEnd: string; cancelAtPeriodEnd: boolean } | null;
+  subscription?: {
+    periodEnd: string;
+    cancelAtPeriodEnd: boolean;
+    autoRenew: boolean;
+    cardBrand: string | null;
+    cardLast4: string | null;
+  } | null;
 }) {
   const tr = (k: string, v?: Record<string, string | number>) => t(locale, `plans.${k}`, v);
   const router = useRouter();
@@ -91,6 +97,9 @@ export function PlansClient({
           locale={locale}
           periodEnd={subscription.periodEnd}
           cancelAtPeriodEnd={subscription.cancelAtPeriodEnd}
+          autoRenew={subscription.autoRenew}
+          cardBrand={subscription.cardBrand}
+          cardLast4={subscription.cardLast4}
           tr={tr}
         />
       )}
@@ -438,11 +447,15 @@ function CreditsModal({
  * تعمل إلى نهاية ما دفعه، لا أن تُقطَع الآن عقاباً على الإلغاء.
  */
 function SubscriptionPanel({
-  locale, periodEnd, cancelAtPeriodEnd, tr,
+  locale, periodEnd, cancelAtPeriodEnd, autoRenew, cardBrand, cardLast4, tr,
 }: {
   locale: Locale;
   periodEnd: string;
   cancelAtPeriodEnd: boolean;
+  /** هل سيُحصَّل التجديد فعلاً من كارتٍ محفوظ؟ */
+  autoRenew: boolean;
+  cardBrand: string | null;
+  cardLast4: string | null;
   tr: (k: string, v?: Record<string, string | number>) => string;
 }) {
   const router = useRouter();
@@ -476,12 +489,28 @@ function SubscriptionPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="text-[13px] font-medium text-text-primary">
-            {cancelAtPeriodEnd ? tr("subEndingTitle") : tr("subActiveTitle")}
+            {cancelAtPeriodEnd
+              ? tr("subEndingTitle")
+              : autoRenew
+                ? tr("subAutoRenewTitle")
+                : tr("subActiveTitle")}
           </div>
           <p className="mt-0.5 text-[12px] leading-relaxed text-text-muted">
+            {/* 🔴 **لا يُقال «يتجدّد تلقائياً» إلّا حين يكون ذلك صحيحاً.**
+                القاعدة أنّ الاشتراك يتجدّد ما لم يُلغَ، لكنّ التحصيل يحتاج
+                كارتاً محفوظاً - فبلا كارتٍ يُقال الصدق: سنذكّرك. وعدٌ
+                بخصمٍ لا يقع يُنتج انقطاعاً يظنّه صاحبُه مستحيلاً. */}
             {cancelAtPeriodEnd
               ? tr("subEndingBody", { date: dateText })
-              : tr("subActiveBody", { date: dateText })}
+              : autoRenew
+                ? tr("subAutoRenewBody", {
+                    date: dateText,
+                    card: tr("subCardLabel", {
+                      brand: cardBrand ?? "card",
+                      last4: cardLast4 ?? "••••",
+                    }),
+                  })
+                : tr("subActiveBody", { date: dateText })}
           </p>
         </div>
 

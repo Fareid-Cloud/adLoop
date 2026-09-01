@@ -210,6 +210,32 @@ export async function POST(req: NextRequest) {
   }
   if (!result.ok || result.alreadyDone) return NextResponse.json({ received: true });
 
+  // ── الكارت المحفوظ: ما يجعل التجديد التلقائيّ ممكناً ─────────────
+  //
+  // الاشتراك يتجدّد تلقائياً ما لم يُلغِ صاحبُه، والتجديد يحتاج توكناً.
+  // يُلتقَط هنا **إن أرسلته Paymob** مع المعاملة، ولا يُفترَض وجودُه:
+  // حفظُ الكارت يتطلّب تفعيل التوكنة على التكامل، وقد لا تصل - فيبقى
+  // الحقل فارغاً ويهبط التجديد إلى المسار اليدويّ الآمن.
+  //
+  // ولا يُخزَّن رقمُ بطاقةٍ ولا CVV: التوكن مرجعٌ عند Paymob، والأربعةُ
+  // الأخيرةُ والنوعُ للعرض وحدهما ("Visa ····1111").
+  const cardToken = transaction.source_data?.token ?? transaction.card_token ?? null;
+  if (cardToken) {
+    await prisma.user
+      .update({
+        where: { id: userId },
+        data: {
+          savedCardToken: String(cardToken),
+          savedCardLast4: transaction.source_data?.pan ? String(transaction.source_data.pan).slice(-4) : null,
+          savedCardBrand: transaction.source_data?.sub_type ? String(transaction.source_data.sub_type) : null,
+        },
+      })
+      .catch((err) => {
+        // فشلُ الحفظ لا يُبطل دفعةً تمّت - أسوأ أثرِه تجديدٌ يدويّ.
+        console.error("[paymob-webhook] تعذّر حفظ توكن الكارت", err);
+      });
+  }
+
   const workspace = await prisma.workspace.findFirst({ where: { userId } });
   if (workspace) {
     const ar = (user.preferredLocale ?? "en") === "ar";

@@ -26,7 +26,7 @@ export default async function LegalPage() {
       <DocSection locale={locale} doc="terms" id="ip" />
       <DocSection locale={locale} doc="terms" id="dataOwn" />
       <DocSection locale={locale} doc="terms" id="trial" />
-      <DocSection locale={locale} doc="terms" id="billing" listCount={5} />
+      <DocSection locale={locale} doc="terms" id="billing" listCount={7} />
       <DocSection locale={locale} doc="terms" id="availability" />
       <DocSection locale={locale} doc="terms" id="thirdParty" />
       <DocSection locale={locale} doc="terms" id="liability" listCount={7} />

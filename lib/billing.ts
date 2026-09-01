@@ -15,11 +15,14 @@
 // ٤) **منع الشراء المكرّر للباقة نفسها** وهي فعّالة بالفعل.
 
 import { prisma } from "@/lib/prisma";
-import { createPaymentIntention, getUnifiedCheckoutUrl } from "@/lib/paymob";
+import {
+  createPaymentIntention, getUnifiedCheckoutUrl,
+  chargeSavedCard, isAutoChargeConfigured,
+} from "@/lib/paymob";
 import { logSubscriptionEvent } from "@/lib/subscriptionEvents";
 import type { SubscriptionEventType } from "@prisma/client";
 import { isFeatureEnabled } from "@/lib/featureFlags";
-import { CHARGE_CURRENCY, toChargeAmount } from "@/lib/billingRegion";
+import { CHARGE_CURRENCY, toChargeAmount, priceListFor } from "@/lib/billingRegion";
 import {
   PLAN_BY_KEY, planPrice, priceForCredits, YEARLY_MONTHS_CHARGED,
   MIN_CUSTOM_CREDITS, MAX_CUSTOM_CREDITS,
@@ -381,6 +384,11 @@ export async function fulfillPaymentIntent(
           subscriptionPlan: intent.planKey,
           currentPeriodEnd: periodEnd,
           cancelAtPeriodEnd: false,
+          // الدورة تُخزَّن على الحساب كي تعرفها مهمّةُ التجديد لاحقاً - كانت
+          // على النيّة وحدها، فالتجديد لا يعرف كم يُحصّل ولا كم يمدّد.
+          subscriptionCycle: intent.cycle ?? "monthly",
+          // نجاحُ دفعةٍ يدويّ يصفّر عدّاد فشل التجديد: الكارت يعمل الآن.
+          renewalAttemptCount: 0,
         },
       });
 
@@ -458,4 +466,179 @@ function classifyPaidEvent(
   // وهي تفعيل في حساب النموّ لا تجديداً - الفرق يظهر في معدّل العودة.
   const stillActive = !!before.currentPeriodEnd && before.currentPeriodEnd > new Date();
   return stillActive ? "RENEWED" : "ACTIVATED";
+}
+
+
+// ==================== التجديد التلقائيّ ====================
+//
+// **الاشتراك يتجدّد تلقائياً ما لم يُلغِه صاحبُه.** وهذه هي الدالّة التي
+// تُنفّذ ذلك فعلاً: تُحصّل من الكارت المحفوظ وتمدّ الفترة.
+//
+// 🔴 **وهي مغلقةٌ ببنيتها حتى يُفعَّل MOTO:** `isAutoChargeConfigured`
+// تُرجع `false` ما لم يوجد `PAYMOB_MOTO_INTEGRATION_ID`، فلا يُطلَق نداءٌ
+// واحد ولا يتغيّر سلوكُ اليوم. راجع `lib/paymob.ts`.
+
+/** أقصى عددِ محاولاتٍ فاشلةٍ قبل أن يُترَك الاشتراك ينقضي. */
+export const MAX_RENEWAL_ATTEMPTS = 3;
+
+/**
+ * نافذةُ حجز المحاولة. ما دامت المحاولةُ الأخيرة داخلها، لا تبدأ أخرى -
+ * فهي القفلُ الذي يمنع الخصم المزدوج. وطولُها يوازن بين خطرين: أقصرُ منها
+ * يسمح لدورتين متقاربتين أن تخصما معاً، وأطولُ منها يحبس حساباً ماتت
+ * محاولتُه في منتصفها بلا إعادةِ نظر.
+ */
+const RENEWAL_CLAIM_WINDOW_MINUTES = 60;
+
+export interface RenewalOutcome {
+  ok: boolean;
+  reason?: "not_configured" | "no_token" | "not_eligible" | "claimed_elsewhere" | "declined" | "error";
+  detail?: string;
+}
+
+/**
+ * محاولةُ تجديدٍ تلقائيّ لحسابٍ انتهت فترتُه.
+ *
+ * 🔴 **الخصمُ المزدوج هو الخطر الأوّل هنا، لا الفشل.** دورتا كرون
+ * متزامنتان - أو إعادةُ تشغيلٍ بعد مهلة - كانتا ستقرآن الحساب نفسه
+ * وتخصمان مرّتين. فتُحجَز المحاولة أوّلاً بتحديثٍ شرطيٍّ ذرّيّ
+ * (`updateMany` مشروطٌ بقيمة `currentPeriodEnd` التي قرأناها): من يفوز
+ * بالحجز وحده يُحصّل، والخاسر يخرج بلا نداء.
+ *
+ * وسجلُّ الدفع يُنشأ **قبل** النداء الخارجيّ - نفس مبدأ المسار التفاعليّ:
+ * خصمٌ نجح وضاع ردُّه يبقى له صفٌّ يُطابَق به، لا مالٌ بلا أثر.
+ */
+export async function renewViaSavedCard(userId: string): Promise<RenewalOutcome> {
+  if (!isAutoChargeConfigured()) return { ok: false, reason: "not_configured" };
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true, email: true, subscriptionPlan: true, subscriptionCycle: true,
+      subscriptionStatus: true, currentPeriodEnd: true, cancelAtPeriodEnd: true,
+      savedCardToken: true, billingCountry: true, renewalAttemptCount: true,
+      customPriceOverrideCents: true, customPriceCurrency: true,
+    },
+  });
+
+  if (!user || !user.savedCardToken) return { ok: false, reason: "no_token" };
+  if (
+    user.subscriptionStatus !== "ACTIVE" ||
+    user.cancelAtPeriodEnd ||
+    !user.currentPeriodEnd ||
+    !user.subscriptionPlan ||
+    user.renewalAttemptCount >= MAX_RENEWAL_ATTEMPTS
+  ) {
+    return { ok: false, reason: "not_eligible" };
+  }
+
+  const plan = PLAN_BY_KEY.get(user.subscriptionPlan as PlanKey);
+  if (!plan || plan.key === "free") return { ok: false, reason: "not_eligible" };
+
+  const cycle = (user.subscriptionCycle === "yearly" ? "yearly" : "monthly") as BillingCycle;
+  const listCurrency = priceListFor(user.billingCountry);
+  const listAmount = resolveMonthlyChargeable(plan, listCurrency, cycle, user);
+  if (listAmount <= 0) return { ok: false, reason: "not_eligible" };
+
+  const listCents = Math.round(listAmount * 100);
+  const { chargeCents, rateUsed } = await toChargeAmount(listCurrency, listCents);
+
+  // ── حجزُ المحاولة ──────────────────────────────────────────────────
+  //
+  // 🔴 **الشرط لا يكفي أن يكون على `currentPeriodEnd` وحده.** الحجز لا
+  // يغيّر الفترة، فدورتان متزامنتان تقرآن القيمة نفسها وتُطابقها كلتاهما،
+  // فتمرّان معاً وتخصمان مرّتين - وهو بالضبط ما جاء الحجز ليمنعه.
+  //
+  // فيدخل في الشرط ما **يغيّره الحجزُ نفسه**: `lastRenewalAttempt`. الأولى
+  // تجده فارغاً أو قديماً فتفوز وتكتب الآن، والثانية تجده حديثاً فلا
+  // تُطابق وتخرج بلا نداء. وهذا يجعل التحديثَ الشرطيّ قفلاً حقيقياً.
+  //
+  // والنافذة تُبقي التعثّر قابلاً للإصلاح: محاولةٌ ماتت في منتصفها لا
+  // تحجز الحساب إلى الأبد، بل يُعاد النظر فيها بعد ساعة.
+  const periodAtRead = user.currentPeriodEnd;
+  const claimCutoff = new Date(Date.now() - RENEWAL_CLAIM_WINDOW_MINUTES * 60_000);
+  const claimed = await prisma.user.updateMany({
+    where: {
+      id: user.id,
+      currentPeriodEnd: periodAtRead,
+      cancelAtPeriodEnd: false,
+      OR: [{ lastRenewalAttempt: null }, { lastRenewalAttempt: { lt: claimCutoff } }],
+    },
+    data: { lastRenewalAttempt: new Date(), renewalAttemptCount: { increment: 1 } },
+  });
+  if (claimed.count === 0) return { ok: false, reason: "claimed_elsewhere" };
+
+  const intent = await prisma.paymentIntent.create({
+    data: {
+      userId: user.id,
+      kind: "SUBSCRIPTION",
+      planKey: user.subscriptionPlan,
+      cycle,
+      credits: null,
+      amountCents: chargeCents,
+      currency: CHARGE_CURRENCY,
+      listAmountCents: listCents,
+      listCurrency,
+      fxRateUsed: rateUsed,
+      status: "PENDING",
+    },
+  });
+
+  const charge = await chargeSavedCard({
+    cardToken: user.savedCardToken,
+    amountCents: chargeCents,
+    email: user.email,
+    merchantOrderId: intent.id,
+  });
+
+  if (!charge.ok) {
+    await prisma.paymentIntent.update({
+      where: { id: intent.id },
+      data: {
+        status: "FAILED",
+        failureReason: `auto-renew: ${charge.reason}${charge.detail ? ` - ${charge.detail}` : ""}`.slice(0, 300),
+      },
+    });
+    await logSubscriptionEvent({
+      userId: user.id,
+      type: "PAYMENT_FAILED",
+      toPlan: user.subscriptionPlan,
+      amountCents: chargeCents,
+      currency: CHARGE_CURRENCY,
+    });
+    return { ok: false, reason: charge.reason === "declined" ? "declined" : "error", detail: charge.detail };
+  }
+
+  // ── نجح الخصم: تُمدّ الفترة من نهايتها لا من اليوم ────────────────
+  // التمديدُ من `periodAtRead` يمنع ضياع الأيّام حين تتأخّر الدورة، ومن
+  // «الآن» حين تكون النهاية قد مضت بأكثر من فترة.
+  const base = periodAtRead > new Date() ? periodAtRead : new Date();
+  const nextEnd = new Date(base);
+  if (cycle === "yearly") nextEnd.setFullYear(nextEnd.getFullYear() + 1);
+  else nextEnd.setMonth(nextEnd.getMonth() + 1);
+
+  await prisma.$transaction([
+    prisma.paymentIntent.update({
+      where: { id: intent.id },
+      data: { status: "PAID", paidAt: new Date(), transactionId: charge.transactionId ?? null },
+    }),
+    prisma.user.update({
+      where: { id: user.id },
+      data: {
+        subscriptionStatus: "ACTIVE",
+        currentPeriodEnd: nextEnd,
+        renewalAttemptCount: 0,
+      },
+    }),
+  ]);
+
+  await logSubscriptionEvent({
+    userId: user.id,
+    type: "RENEWED",
+    fromPlan: user.subscriptionPlan,
+    toPlan: user.subscriptionPlan,
+    amountCents: chargeCents,
+    currency: CHARGE_CURRENCY,
+  });
+
+  return { ok: true };
 }

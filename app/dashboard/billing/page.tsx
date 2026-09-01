@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { PlansClient } from "./PlansClient";
 import { PLAN_BY_KEY, type PlanKey } from "@/lib/plans";
 import { priceListFor, resolveBillingCountry } from "@/lib/billingRegion";
+import { isAutoChargeConfigured } from "@/lib/paymob";
 import { headers } from "next/headers";
 import { getMonthlyAiUsage } from "@/lib/aiRateLimit";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -62,6 +63,11 @@ export default async function BillingPage({
           ? {
               periodEnd: user.currentPeriodEnd.toISOString(),
               cancelAtPeriodEnd: user.cancelAtPeriodEnd,
+              // التجديد التلقائيّ حقيقةٌ عن هذا الحساب لا شعارٌ عامّ: كارتٌ
+              // محفوظ **و**تحصيلٌ مُفعَّل. بأحدهما ناقصاً يُقال إنّنا سنذكّر.
+              autoRenew: Boolean(user.savedCardToken) && isAutoChargeConfigured(),
+              cardBrand: user.savedCardBrand ?? null,
+              cardLast4: user.savedCardLast4 ?? null,
             }
           : null
       }
