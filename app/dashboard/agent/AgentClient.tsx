@@ -149,10 +149,60 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
     if (activeId === id) startNew();
   }
 
+  // المؤلِّف يظهر في موضعين لا يجتمعان: وسطَ شاشة البداية، وأسفلَ
+  // المحادثة الجارية. فيُكتب مرّةً - نسختان تفترقان عند أوّل تعديل.
+  const composer = (big: boolean) => (
+    <div
+      className={`flex items-end gap-2 rounded-2xl border border-border-visible bg-surface transition-colors focus-within:border-accent/50 ${
+        big ? "p-2.5 shadow-sm" : "p-2"
+      }`}
+    >
+      <AgentIcon size={16} className="mb-2 ms-1 shrink-0 text-text-faint" />
+      <textarea
+        value={question}
+        onChange={(e) => setQuestion(e.target.value.slice(0, MAX_QUESTION))}
+        onKeyDown={(e) => {
+          // سطرٌ جديد بـShift، وإرسالٌ بـEnter وحدها
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            void send();
+          }
+        }}
+        rows={big ? 3 : 2}
+        placeholder={t(locale, messages.length === 0 ? "aiAsk.ph_home_1" : "aiAsk.followUp")}
+        // بلا `field`: الصندوقُ الخارجيّ هو الإطار، فحدٌّ داخل حدٍّ يُنتج
+        // خطّين متوازيين.
+        className="flex-1 resize-none bg-transparent px-1 py-1.5 text-[13px] leading-relaxed text-text-primary outline-none placeholder:text-text-faint"
+      />
+      <button
+        onClick={() => void send()}
+        disabled={busy || question.trim().length < 3}
+        aria-label={t(locale, "aiAsk.send")}
+        className="btn btn-primary h-9 w-9 shrink-0 justify-center p-0"
+      >
+        {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+      </button>
+    </div>
+  );
+
+  // المنع يحمل مخرجه: باقةٌ نفد رصيدها تُرقَّى، لا تُشرَح فحسب
+  const errorBar = error ? (
+    <div className="note mb-3 flex flex-wrap items-center justify-between gap-3 border-critical/35 bg-critical/10 p-3 text-[12.5px] text-critical">
+      <span className="flex items-center gap-1.5">
+        <AlertTriangle size={14} /> {error}
+      </span>
+      {upgradeUrl && (
+        <a href={upgradeUrl} className="btn btn-primary no-underline">
+          {t(locale, "aiAsk.upgrade")}
+        </a>
+      )}
+    </div>
+  ) : null;
+
   return (
-    <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
+    <div className="grid gap-4 lg:grid-cols-[272px_1fr]">
       {/* ── السجلّ ───────────────────────────────────────────────── */}
-      <aside className="card-shadow flex max-h-[78vh] min-h-[26rem] flex-col overflow-hidden card">
+      <aside className="scrollbar-zone card-shadow flex max-h-[78vh] min-h-[30rem] flex-col overflow-hidden card">
         <button onClick={startNew} className="btn btn-primary m-3 justify-center">
           <Plus size={15} /> {tr("newChat")}
         </button>
@@ -205,45 +255,66 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
       </aside>
 
       {/* ── المحادثة ─────────────────────────────────────────────── */}
-      <section className="card-shadow flex max-h-[78vh] min-h-[26rem] flex-col overflow-hidden card">
-        <div className="hover-scrollbar flex-1 overflow-y-auto p-4">
-          {messages.length === 0 && !busy ? (
-            /* 🔴 **شاشةُ البداية كانت سطراً رمادياً في فراغ.** ومن يفتح
-               مساعداً لأوّل مرّة لا ينقصه تشجيع بل **مثال**: لا يعرف ما
-               يُسأل ولا بأيّ صيغة. فالأسئلة الثلاثة هنا ليست زينة - هي
-               أسئلة المنتج نفسها (`aiAsk.ph_*`)، تُضغَط فتُرسَل. */
-            <div className="flex h-full flex-col items-center justify-center gap-3 px-2 text-center">
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/10">
-                <AgentIcon size={28} className="text-accent" />
-              </span>
-              <h3 className="text-[17px] font-semibold text-text-primary">{tr("welcome")}</h3>
-              <p className="max-w-sm text-[12.5px] leading-relaxed text-text-muted">
-                {chats.length === 0 ? tr("emptyBody") : tr("pickOne")}
-              </p>
+      <section className="card-shadow flex max-h-[78vh] min-h-[30rem] flex-col overflow-hidden card">
+        {messages.length === 0 && !busy ? (
+          /* 🔴 **المؤلِّف في وسط شاشة البداية لا في قاعها.**
+             مربّعُ كتابةٍ ملتصقٌ بالأسفل تحت فراغٍ واسع يجعل الشاشة تبدو
+             منتظِرةً بلا دعوة. وضعُه في المنتصف والأمثلةُ تحته يجعل أوّل
+             نظرةٍ تقول شيئين معاً: هنا تكتب، وهذا ما يُكتَب. */
+          <div className="hover-scrollbar flex flex-1 flex-col items-center justify-center overflow-y-auto p-5">
+            <div className="w-full max-w-xl">
+              <div className="mb-5 flex flex-col items-center gap-2.5 text-center">
+                {/* هالةٌ متدرّجة بلون الهوية - العلامةُ نفسها، أكبر */}
+                <span
+                  className="flex h-16 w-16 items-center justify-center rounded-2xl"
+                  style={{
+                    background:
+                      "radial-gradient(120% 120% at 30% 20%, var(--accent-dim), transparent 70%), var(--accent-dim)",
+                  }}
+                >
+                  <AgentIcon size={30} className="text-accent" />
+                </span>
+                <h3 className="text-[20px] font-semibold text-text-primary">{tr("welcome")}</h3>
+                <p className="max-w-md text-[12.5px] leading-relaxed text-text-muted">
+                  {chats.length === 0 ? tr("emptyBody") : tr("pickOne")}
+                </p>
+              </div>
 
-              <div className="mt-2 w-full max-w-lg">
-                <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-text-faint">
-                  {tr("suggestLabel")}
-                </div>
-                <div className="grid gap-1.5 sm:grid-cols-3">
-                  {["ph_home_1", "ph_home_2", "ph_home_3"].map((k) => {
-                    const text = t(locale, `aiAsk.${k}`);
-                    return (
-                      <button
-                        key={k}
-                        onClick={() => void send(text)}
-                        disabled={busy}
-                        className="rounded-xl border border-border-visible p-2.5 text-start text-[12px] leading-relaxed text-text-muted transition-colors hover:border-accent/40 hover:text-text-primary"
-                      >
+              {errorBar}
+              {composer(true)}
+
+              {/* الأمثلة تحت المؤلِّف مباشرةً: تُقرأ إجابةً عن «أكتب ماذا؟».
+                  وهي أسئلة المنتج نفسها (`aiAsk.ph_*`)، تُضغَط فتُرسَل. */}
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                {[
+                  { k: "ph_home_1", label: tr("sugg1") },
+                  { k: "ph_home_2", label: tr("sugg2") },
+                  { k: "ph_home_3", label: tr("sugg3") },
+                ].map(({ k, label }) => {
+                  const text = t(locale, `aiAsk.${k}`);
+                  return (
+                    <button
+                      key={k}
+                      onClick={() => void send(text)}
+                      disabled={busy}
+                      className="rounded-xl border border-border-visible p-3 text-start transition-colors hover:border-accent/40 hover:bg-accent/[0.04]"
+                    >
+                      <span className="mb-0.5 block text-[12.5px] font-medium text-text-primary">
+                        {label}
+                      </span>
+                      <span className="block text-[11.5px] leading-relaxed text-text-muted">
                         {text}
-                      </button>
-                    );
-                  })}
-                </div>
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          ) : (
-            <div className="flex flex-col gap-4">
+          </div>
+        ) : (
+          <>
+            <div className="hover-scrollbar flex-1 overflow-y-auto p-4">
+              <div className="mx-auto flex max-w-2xl flex-col gap-4">
               {messages.map((m) =>
                 m.role === "user" ? (
                   <div key={m.id} className="flex flex-col items-end gap-1">
@@ -268,51 +339,17 @@ export function AgentClient({ locale, initialChats }: { locale: Locale; initialC
                 </div>
               )}
               <div ref={endRef} />
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* المنع يحمل مخرجه: باقةٌ نفد رصيدها تُرقَّى، لا تُشرَح فحسب */}
-        {error && (
-          <div className="note m-3 flex flex-wrap items-center justify-between gap-3 border-critical/35 bg-critical/10 p-3 text-[12.5px] text-critical">
-            <span className="flex items-center gap-1.5">
-              <AlertTriangle size={14} /> {error}
-            </span>
-            {upgradeUrl && (
-              <a href={upgradeUrl} className="btn btn-primary no-underline">
-                {t(locale, "aiAsk.upgrade")}
-              </a>
-            )}
-          </div>
+            <div className="border-t border-border p-3">
+              <div className="mx-auto max-w-2xl">
+                {errorBar}
+                {composer(false)}
+              </div>
+            </div>
+          </>
         )}
-
-        {/* «اسأل سؤالاً آخر» كان يظهر على محادثةٍ لم يُسأل فيها شيء بعد -
-            والصفحة نفسها تقول فوقها «اسأل سؤالك الأوّل». وسؤالٌ حقيقيّ من
-            أمثلة المنتج أنفع من دعوةٍ عامّة: يُري القادمَ ما يُسأل. */}
-        <div className="flex items-end gap-2 border-t border-border p-3 focus-within:border-accent/30">
-          <textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value.slice(0, MAX_QUESTION))}
-            onKeyDown={(e) => {
-              // سطرٌ جديد بـShift، وإرسالٌ بـEnter وحدها
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                void send();
-              }
-            }}
-            rows={2}
-            placeholder={t(locale, messages.length === 0 ? "aiAsk.ph_home_1" : "aiAsk.followUp")}
-            className="field flex-1 resize-none"
-          />
-          <button
-            onClick={() => void send()}
-            disabled={busy || question.trim().length < 3}
-            aria-label={t(locale, "aiAsk.send")}
-            className="btn btn-primary h-10 w-10 justify-center p-0"
-          >
-            {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-          </button>
-        </div>
       </section>
     </div>
   );

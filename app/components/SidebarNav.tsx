@@ -191,7 +191,10 @@ export function SidebarNav({
       // أصلاً**، لأن `theme.css` خارج طبقات Tailwind فتغلب قواعدُه أدواتِها.
       // صنفٌ لا أثر له في سطرٍ يقرؤه الناس ليفهموا سلوك العنصر أسوأ من
       // غيابه: كلّفنا هذا الالتباسُ نفسه بحثاً في عطلين مختلفين.
-      className={`nav-drawer flex h-[100dvh] shrink-0 flex-col overflow-hidden border-e border-border bg-surface ${
+      // `scrollbar-zone`: تمريرُ المؤشّر على **القائمة كلّها** يُظهر شريط
+      // التمرير داخلها - لا على قائمة الروابط وحدها. مَن يمرّ على صفّ
+      // الشعار أو أسفل القائمة هو داخلها، فلا معنى لأن يبقى الشريط مخفياً.
+      className={`scrollbar-zone nav-drawer flex h-[100dvh] shrink-0 flex-col overflow-hidden border-e border-border bg-surface ${
         mobileOpen ? "is-open" : ""
       } ${collapsed ? "is-collapsed" : ""}`}
     >

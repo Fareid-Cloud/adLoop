@@ -1155,6 +1155,10 @@ export const dictionary = {
       openInAgent: "فتحها في قسم الوكيل",
       savedHere: "محفوظة في قسم الوكيل",
       welcome: "بمَ أساعدك؟",
+      sugg1: "تكلفة العميل",
+      sugg2: "الإنفاق الضائع",
+      sugg3: "المنصة الفائزة",
+      shareChat: "مشاركة",
       suggestLabel: "جرّب سؤالاً",
     },
     adCell: {
@@ -5549,6 +5553,10 @@ export const dictionary = {
       openInAgent: "Open in the Agent section",
       savedHere: "Saved to the Agent section",
       welcome: "What can I help with?",
+      sugg1: "Cost per customer",
+      sugg2: "Wasted spend",
+      sugg3: "The real winner",
+      shareChat: "Share",
       suggestLabel: "Try a question",
     },
     adCell: {

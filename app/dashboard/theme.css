@@ -527,7 +527,8 @@ button:disabled, [aria-disabled="true"] {
   transition: scrollbar-color 0.2s ease;
 }
 .hover-scrollbar:hover,
-.hover-scrollbar:focus-within {
+.hover-scrollbar:focus-within,
+.scrollbar-zone:hover .hover-scrollbar {
   scrollbar-color: var(--accent) transparent;
 }
 
@@ -542,7 +543,8 @@ button:disabled, [aria-disabled="true"] {
   transition: background-color 0.2s ease;
 }
 .hover-scrollbar:hover::-webkit-scrollbar-thumb,
-.hover-scrollbar:focus-within::-webkit-scrollbar-thumb {
+.hover-scrollbar:focus-within::-webkit-scrollbar-thumb,
+.scrollbar-zone:hover .hover-scrollbar::-webkit-scrollbar-thumb {
   background-color: var(--accent);
 }
 .hover-scrollbar:hover::-webkit-scrollbar-thumb:hover {
@@ -870,6 +872,62 @@ html, body { overflow-x: clip; }
   font-variant-ligatures: none;
   font-feature-settings: "liga" 0, "calt" 0;
 }
+
+/* ── ألوان الشيفرة ─────────────────────────────────────────────────────
+ * نصٌّ أسودُ كلُّه على أبيض هو ما يجعل كتلة الشيفرة تبدو لصقةً في صفحة،
+ * لا شيئاً يُنسَخ ويُلصَق في طرفيّة. التلوين هنا **دلاليّ لا زخرفيّ**:
+ * القارئ يميّز المفتاح من قيمته، والرايةَ من الأمر، قبل أن يقرأ.
+ *
+ * ولها تعريفان - فاتح وداكن - لأنّ لوحةً واحدةً لا تصلح للاثنين: ما
+ * يُقرأ على أبيض يختفي على أسود. */
+:root {
+  --code-bg: #0f172a;
+  --code-fg: #e2e8f0;
+  --code-gutter: #64748b;
+  --code-key: #7dd3fc;
+  --code-str: #86efac;
+  --code-num: #fca5a5;
+  --code-punct: #94a3b8;
+  --code-flag: #c4b5fd;
+  --code-cmd: #fcd34d;
+  --code-comment: #64748b;
+}
+
+/* نافذةُ الطرفيّة: خلفيةٌ داكنةٌ في الوضعين معاً عمداً - الطرفيّة داكنة
+   عند الناس، فإبقاؤها كذلك يجعلها تُقرأ طرفيّةً لا بطاقةً ملوّنة. */
+.code-window {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.code-window .code-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid #ffffff14;
+}
+.code-window .code-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex: none;
+}
+.code-window .code-gutter {
+  color: var(--code-gutter);
+  user-select: none;
+  text-align: end;
+  padding-inline-end: 0.75rem;
+  border-inline-end: 1px solid #ffffff14;
+}
+.tok-key { color: var(--code-key); }
+.tok-str { color: var(--code-str); }
+.tok-num { color: var(--code-num); }
+.tok-punct { color: var(--code-punct); }
+.tok-flag { color: var(--code-flag); }
+.tok-cmd { color: var(--code-cmd); }
+.tok-comment { color: var(--code-comment); font-style: italic; }
 
 .field-sm {
   padding: 0.25rem 0.5rem;

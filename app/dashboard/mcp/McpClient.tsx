@@ -22,6 +22,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Check, Copy, KeyRound, Loader2, ShieldCheck, Trash2, X } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { Select } from "@/app/components/ui/Select";
+import { CodeWindow } from "@/app/components/CodeWindow";
 
 interface TokenRow {
   id: string;
@@ -289,25 +290,22 @@ export function McpClient({
             </div>
           )}
 
-          {/* زرّ النسخ في شريطٍ فوق الكود لا معلَّقاً عليه: السطر يتمرّر
-              أفقياً، وزرٌّ مطلقُ الموضع يقف على آخره - وهو موضع المفتاح. */}
-          <div className="overflow-hidden rounded-xl bg-surface-raised">
-            <div className="flex items-center justify-end border-b border-border px-2 py-1">
-              <button
-                onClick={() => copy(snippet, "snippet")}
-                className="btn btn-ghost !px-2 !py-1 text-[11.5px]"
-              >
-                {copied === "snippet" ? <Check size={12} /> : <Copy size={12} />}
-                {copied === "snippet" ? tr("copied") : tr("copy")}
-              </button>
-            </div>
-            <pre
-              dir="ltr"
-              className="code-block overflow-x-auto p-3 text-[12px] leading-relaxed text-text-primary"
-            >
-              {snippet}
-            </pre>
-          </div>
+          {/* نافذةُ طرفيّة مُلوَّنة: هذه الكتلةُ هي غرضُ الصفحة كلّها -
+              تُنسَخ وتُلصَق - فتمييزُ المفتاح من الأمر يوفّر على القارئ
+              قراءةَ السطر حرفاً حرفاً ليعرف أين يبدّل. */}
+          <CodeWindow
+            code={snippet}
+            lang={client === "claudeCode" || client === "custom" ? "bash" : "json"}
+            title={
+              client === "claudeCode" || client === "custom"
+                ? "terminal"
+                : client === "desktop"
+                  ? "claude_desktop_config.json"
+                  : "mcp.json"
+            }
+            copyLabel={tr("copy")}
+            copiedLabel={tr("copied")}
+          />
 
           {client === "web" && (
             <p className="mt-2 text-[11.5px] leading-relaxed text-gap">{tr("installWebNote")}</p>

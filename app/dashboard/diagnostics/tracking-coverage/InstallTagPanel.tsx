@@ -13,6 +13,7 @@
 import { useState } from "react";
 import { Copy, Check, ChevronDown, ExternalLink } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
+import { CodeWindow } from "@/app/components/CodeWindow";
 
 export function InstallTagPanel({
   workspaceId, appUrl, locale, defaultOpen = false,
@@ -61,11 +62,11 @@ export function InstallTagPanel({
           </p>
 
           <Step n={1} title={tr("s1Title")} body={tr("s1Body")}>
-            <CodeBlock code={snippet} onCopy={() => copy(snippet, "snippet")} copied={copied === "snippet"} copyLabel={tr("copy")} copiedLabel={tr("copied")} />
+            <CodeBlock code={snippet} copyLabel={tr("copy")} copiedLabel={tr("copied")} />
           </Step>
 
           <Step n={2} title={tr("s2Title")} body={tr("s2Body")}>
-            <CodeBlock code={ctaExamples} onCopy={() => copy(ctaExamples, "cta")} copied={copied === "cta"} copyLabel={tr("copy")} copiedLabel={tr("copied")} />
+            <CodeBlock code={ctaExamples} copyLabel={tr("copy")} copiedLabel={tr("copied")} />
           </Step>
 
           <Step n={3} title={tr("s3Title")} body={tr("s3Body")} last />
@@ -111,32 +112,24 @@ function Step({
 }
 
 function CodeBlock({
-  code, onCopy, copied, copyLabel, copiedLabel,
+  code, copyLabel, copiedLabel,
 }: {
   code: string;
-  onCopy: () => void;
-  copied: boolean;
   copyLabel: string;
   copiedLabel: string;
 }) {
+  // الوسمُ هو الشيء الوحيد الذي جاء التاجرُ لينسخه، وكان يُعرَض نصّاً
+  // أسودَ متجانساً - فالوسمُ والسمةُ والقيمةُ سواء. النافذةُ الملوّنة
+  // تُري أينَ معرّفُه قبل أن يقرأ السطر. (`CodeWindow` يملك زرّ النسخ
+  // بنفسه، فزرُّ الأب المطلقُ الموضع - الذي كان يقف فوق النصّ - سقط معه.)
   return (
-    <div className="relative">
-      <button
-        onClick={onCopy}
-        className="absolute top-2 z-10 flex items-center gap-1 card px-2 py-1 text-[11px] text-text-primary"
-        style={{ insetInlineEnd: 8 }}
-      >
-        {copied ? <Check size={11} className="text-verified" /> : <Copy size={11} />}
-        {copied ? copiedLabel : copyLabel}
-      </button>
-      {/* dir=ltr إجباري: الكود يُقرأ من اليسار دائماً مهما كانت لغة الواجهة */}
-      <pre
-        dir="ltr"
-        className="code-block max-h-[280px] overflow-auto card-inset pad-sm pt-9 text-start text-[11px] leading-relaxed text-text-primary"
-      >
-        {code}
-      </pre>
-    </div>
+    <CodeWindow
+      code={code}
+      lang="markup"
+      title="tag"
+      copyLabel={copyLabel}
+      copiedLabel={copiedLabel}
+    />
   );
 }
 
