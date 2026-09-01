@@ -13,6 +13,8 @@ import * as Icons from "lucide-react";
 import { NAV_GROUPS, navItemId, type NavItem } from "@/lib/navConfig";
 import { BrandMark } from "@/app/components/BrandMark";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
+import { McpIcon } from "@/app/components/McpIcon";
+import { AgentIcon } from "@/app/components/AgentIcon";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 // 🔴 سبب عطل إنتاج حقيقي: كانت هذه خريطة يدوية بأحد عشر اسماً فقط. أي
@@ -23,6 +25,10 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 // الحل من شقين: القراءة من مكتبة الأيقونات كاملةً، **وبديل مضمون** عند
 // أي اسم غير معروف - فلا يمكن لخطأ إملائي في اسم أيقونة أن يُسقط التطبيق.
 function resolveIcon(name: string): typeof LayoutDashboard {
+  // علامةٌ خاصّة ليست في مكتبة الأيقونات: شعار MCP مرسومٌ بوزن الجيران
+  // نفسه (راجع `McpIcon.tsx`)، فيبقى الصفّ متسقاً.
+  if (name === "Mcp") return McpIcon as unknown as typeof LayoutDashboard;
+  if (name === "Agent") return AgentIcon as unknown as typeof LayoutDashboard;
   const found = (Icons as unknown as Record<string, typeof LayoutDashboard>)[name];
   return found ?? Icons.Circle;
 }
@@ -224,7 +230,7 @@ export function SidebarNav({
         //
         // والحشوة ثابتةٌ لا مشروطةٌ بظهوره: لو تغيّرت بظهوره لغيّرت ارتفاع
         // المحتوى، فأعادت قياسه، فأظهرته أو أخفته - حلقةٌ تهتزّ عند الحدّ.
-        className="no-scrollbar flex flex-1 flex-col gap-5 overflow-y-auto px-3 pt-4 pb-11"
+        className="hover-scrollbar flex flex-1 flex-col gap-5 overflow-y-auto px-3 pt-4 pb-11"
       >
         {NAV_GROUPS.map((group, i) => (
             <div key={i}>

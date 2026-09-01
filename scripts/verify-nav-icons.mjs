@@ -15,7 +15,15 @@ import * as Icons from "lucide-react";
 const src = readFileSync("lib/navConfig.ts", "utf8");
 const names = [...src.matchAll(/iconName:\s*"([^"]+)"/g)].map((m) => m[1]);
 
-const missing = [...new Set(names)].filter((n) => !(n in Icons));
+// أيقوناتٌ مرسومةٌ عندنا لا في lucide (شعار MCP مثلاً). تُقرأ من
+// `resolveIcon` نفسها لا تُكتب هنا ثانيةً: قائمتان تفترقان عند أوّل
+// إضافة، فيعود الفحص يرفض اسماً صحيحاً أو يُمرّر اسماً يُسقط اللوحة.
+const nav = readFileSync("app/components/SidebarNav.tsx", "utf8");
+const local = new Set(
+  [...nav.matchAll(/name\s*===\s*"([^"]+)"/g)].map((m) => m[1])
+);
+
+const missing = [...new Set(names)].filter((n) => !(n in Icons) && !local.has(n));
 
 if (missing.length > 0) {
   console.error(
@@ -32,4 +40,7 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-console.log(`[nav-icons] ${names.length} اسم أيقونة، كلها صالحة.`);
+console.log(
+  `[nav-icons] ${names.length} اسم أيقونة، كلها صالحة` +
+    (local.size ? ` (منها ${local.size} مرسومة عندنا).` : ".")
+);

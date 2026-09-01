@@ -130,7 +130,7 @@ export const NAV_GROUPS: NavGroup[] = [
     labelAr: "التنفيذ",
     labelEn: "Act",
     items: [
-      { href: "/dashboard/agent", labelAr: "وكيل AdLoop", labelEn: "AdLoop Agent", iconName: "Sparkles", usesAi: true },
+      { href: "/dashboard/agent", labelAr: "وكيل AdLoop", labelEn: "AdLoop Agent", iconName: "Agent", usesAi: true },
       { href: "/dashboard/actions", labelAr: "القرارات", labelEn: "Actions", iconName: "ListChecks" },
       { href: "/dashboard/experiments", labelAr: "الاختبارات", labelEn: "Experiments", iconName: "FlaskConical" },
       { href: "/dashboard/automation", labelAr: "الأتمتة", labelEn: "Automation", iconName: "Bot" },
@@ -146,7 +146,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/dashboard/integrations", labelAr: "ربط المنصات", labelEn: "Integrations", iconName: "Plug" },
       // قسمٌ بذاته لا صفحةٌ داخل ربط المنصّات: تلك شبكةُ مصادرٍ نسحب منها،
       // وهذا قناةٌ يقرأ منها ذكاءُ المشترك - جيرانٌ في الفكرة لا في الشجرة.
-      { href: "/dashboard/mcp", labelAr: "MCP", labelEn: "MCP", iconName: "Sparkles" },
+      { href: "/dashboard/mcp", labelAr: "MCP", labelEn: "MCP", iconName: "Mcp" },
       { href: "/dashboard/billing", labelAr: "الاشتراك والباقة", labelEn: "Billing & Plan", iconName: "CreditCard" },
       { href: "/dashboard/settings", labelAr: "الإعدادات", labelEn: "Settings", iconName: "SettingsIcon" },
     ],
