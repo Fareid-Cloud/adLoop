@@ -104,12 +104,15 @@ const DONUT_COLORS = [TONE.accent, TONE.verified, TONE.gap, TONE.critical, "#8B9
 export function Donut({
   data,
   height = 200,
+  emptyMessage = "Nothing to split yet — this fills in once there is something to divide.",
 }: {
   data: Array<{ name: string; value: number }>;
   height?: number;
+  /** ليه الدونات فاضية - بيختلف باختلاف اللي بتقسّمه. */
+  emptyMessage?: string;
 }) {
   const total = data.reduce((s, d) => s + d.value, 0);
-  if (total === 0) return <EmptyChart height={height} />;
+  if (total === 0) return <EmptyChart height={height} message={emptyMessage} />;
   return (
     <div style={{ height }} className="w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -135,13 +138,22 @@ export function Donut({
  * محاور بلا خطّ بتتقري "الرقم صفر"، والحقيقة غالباً "مافيش بيانات كفاية
  * بعد" - وهما قراءتان مختلفتان تماماً لمالك بيقيّم منتجه.
  */
-function EmptyChart({ height }: { height: number }) {
+/**
+ * الحالة الفاضية للرسوم.
+ *
+ * **الرسالة بتتقال لا بتتفترض:** كانت واحدة لكلّ الرسوم - "Not enough
+ * history yet to draw a trend" - وهي صحيحة للاتجاه الزمنيّ وغلط تماماً
+ * تحت دونات "MRR بالباقة": مفيش تاريخ ولا اتجاه في السؤال ده أصلاً، فيه
+ * "مافيش عملاء دافعين لسه". والقارئ بيدوّر على تاريخ ناقص وهو عنده مشكلة
+ * تانية خالص.
+ */
+function EmptyChart({ height, message }: { height: number; message?: string }) {
   return (
     <div
       style={{ height }}
-      className="flex w-full items-center justify-center rounded-xl border border-dashed border-border text-[12px] text-text-faint"
+      className="flex w-full items-center justify-center rounded-xl border border-dashed border-border px-4 text-center text-[12px] text-text-faint"
     >
-      Not enough history yet to draw a trend.
+      {message ?? "Not enough history yet to draw a trend."}
     </div>
   );
 }

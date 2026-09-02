@@ -45,7 +45,7 @@ export function CustomersTab({ data }: { data: CustomerAnalytics }) {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card>
           <SectionTitle>Plan mix</SectionTitle>
-          <Donut data={planDonut} />
+          <Donut data={planDonut} emptyMessage="No accounts on any plan yet." />
         </Card>
 
         <Card className="lg:col-span-2">

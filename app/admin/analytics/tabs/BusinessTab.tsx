@@ -126,7 +126,17 @@ export function BusinessTab({
         </Card>
         <Card>
           <SectionTitle hint="monthly recurring">MRR by plan</SectionTitle>
-          <Donut data={planDonut} />
+          <Donut
+            data={planDonut}
+            emptyMessage="No paying accounts yet, so there is no MRR to split by plan."
+          />
+          {/* بدون الفحص ده القائمة بتختفي وبيفضل العنوان واقف على فراغ -
+              وده بيتقري "العرض باظ" لا "مافيش بيانات". */}
+          {Object.keys(data.mrr.byPlan).length === 0 && (
+            <p className="m-0 mt-2 text-[12px] text-text-faint">
+              Nothing on a paid plan yet.
+            </p>
+          )}
           <ul className="m-0 mt-2 list-none space-y-1 p-0">
             {Object.entries(data.mrr.byPlan).map(([plan, v]) => (
               <li key={plan} className="flex justify-between text-[12px]">

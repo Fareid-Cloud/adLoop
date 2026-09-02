@@ -34,7 +34,11 @@ const TABS = [
   { key: "customers", label: "Customers", financial: false },
   { key: "acquisition", label: "Acquisition", financial: false },
   { key: "product", label: "Product", financial: false },
-  { key: "plans", label: "Plans", financial: true },
+  // "Plan performance" لا "Plans": فيه صفحة اسمها Plans في القائمة، وهي
+  // **الكتالوج** (بنبيع إيه) لا الأداء (الباقات ماشية إزاي). الاسمان
+  // المتطابقان كانا بيخلّوا الواحدة تبان نسخة من التانية، فيتفتح الاتنين
+  // بحثاً عن نفس الشيء.
+  { key: "plans", label: "Plan performance", financial: true },
   { key: "operational", label: "Operational", financial: false },
   { key: "usage", label: "Usage & Costs", financial: true },
 ] as const;

@@ -79,7 +79,7 @@ export function PlansTab({
 
         <Card>
           <SectionTitle>MRR share</SectionTitle>
-          <Donut data={donut} />
+          <Donut data={donut} emptyMessage="No paying accounts yet, so no plan holds a share of MRR." />
         </Card>
       </div>
 

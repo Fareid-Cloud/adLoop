@@ -40,9 +40,17 @@ export default async function PlansPage() {
   return (
     <div>
       <AdminPageHeader
-        title="Plans"
-        subtitle="The live catalogue exactly as customers see it"
+        title="Plan catalogue"
+        subtitle="What we sell, exactly as customers see it — how the plans are performing lives in Analytics"
         icon={CreditCard}
+        actions={
+          <Link
+            href="/admin/analytics?tab=plans"
+            className="rounded-lg border border-border px-2.5 py-1 text-[12px] font-medium text-text-muted no-underline transition-colors hover:text-text-primary"
+          >
+            How they&apos;re performing →
+          </Link>
+        }
       />
 
       <div className="mb-4 flex items-start gap-2 rounded-2xl border border-border bg-surface p-3">

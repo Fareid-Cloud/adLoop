@@ -45,7 +45,8 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     label: "Insight",
     items: [
       { href: "/admin/analytics", label: "Analytics", iconName: "TrendingUp", capability: "analytics.product" },
-      { href: "/admin/plans", label: "Plans", iconName: "CreditCard" },
+      // الكتالوج - وأداؤها تبويب جوّه Analytics. الاسمان مختلفان عن قصد.
+      { href: "/admin/plans", label: "Plan catalogue", iconName: "CreditCard" },
     ],
   },
   {
