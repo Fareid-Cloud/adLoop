@@ -112,7 +112,7 @@ export function InboxClient({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search chat"
-            className="field field-sm h-9 w-full ps-8"
+            className="field field-sm field-icon-start h-9 w-full"
           />
         </div>
 
@@ -206,7 +206,7 @@ export function InboxClient({
         <div className="mb-2 lg:hidden">
           <div className="relative">
             <Search size={14} className="pointer-events-none absolute inset-inline-start-0 top-1/2 ms-2.5 -translate-y-1/2 text-text-faint" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search chat" className="field field-sm h-8 w-full ps-8" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search chat" className="field field-sm field-icon-start h-8 w-full" />
           </div>
         </div>
 

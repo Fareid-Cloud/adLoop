@@ -115,7 +115,7 @@ export function SupportWidget({ locale }: { locale: Locale }) {
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder={tr("searchPlaceholder")}
-                  className="field field-sm h-9 w-full ps-8"
+                  className="field field-sm field-icon-start h-9 w-full"
                 />
               </div>
             </div>
