@@ -98,8 +98,20 @@ export function PageHeader({
           <h1 className="page-title min-w-0">{title}</h1>
         </div>
         {/* `items-center` لا `items-start`: منتقي الفترة زرٌّ بارتفاعٍ قريب
-            من ارتفاع العنوان، فمحاذاته بالأعلى تتركه معلّقاً فوق خطّ العنوان. */}
-        {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+            من ارتفاع العنوان، فمحاذاته بالأعلى تتركه معلّقاً فوق خطّ العنوان.
+
+            🔴 **و`shrink-0` وحدها كانت تقطع الأزرار على الهاتف.** العنوان
+            يتقلّص (`min-w-0`) حتى يبلغ حدَّه، ثمّ لا يبقى في الصفّ ما
+            يتقلّص - فيخرج آخرُ زرٍّ عن حافّة الشاشة ويُقصّ نصفُه. رآه
+            المالك في «شغّل الفحص» بصفحة التشخيص.
+
+            `basis-full` تحت `sm` تُنزل صفَّ الأزرار سطراً مستقلّاً بدل أن
+            يُقصّ، ويعود إلى محاذاة العنوان من `sm` فصاعداً كما كان. */}
+        {actions && (
+          <div className="flex min-w-0 basis-full flex-wrap items-center gap-2 sm:basis-auto sm:shrink-0">
+            {actions}
+          </div>
+        )}
       </div>
 
       {description && (

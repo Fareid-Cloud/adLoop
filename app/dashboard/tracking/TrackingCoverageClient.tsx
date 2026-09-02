@@ -186,28 +186,35 @@ export function TrackingCoverageClient({
           <div className="divide-y divide-border">
             {steps.map((st, i) => (
               <div key={st.key} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                <span className="w-5 shrink-0 text-center font-mono text-[12px] tabular-nums text-text-faint">
-                  {i + 1}
-                </span>
-                {/* دائرةٌ ممتلئةٌ للمنجَز وفارغةٌ لغيره - الحالةُ تُقرأ من
-                    الشكل قبل النصّ، ومن اللون قبل القراءة. */}
-                <span className="shrink-0">
-                  {st.done ? (
-                    <CheckCircle2 size={20} className="text-verified" />
-                  ) : (
-                    <span className="block h-5 w-5 rounded-full border-2 border-gap/60" />
-                  )}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-medium text-text-primary">
-                    {tr(`${st.key}Title`)}
+                {/* 🔴 **الصفُّ كان يسحق عمودَ النصّ على الهاتف.** الرقمُ
+                    والدائرةُ والحالةُ والزرُّ كلُّها `shrink-0`، فلا يبقى
+                    ما يتقلّص إلّا النصّ - فينزل **كلمةً في كلّ سطر** ويصير
+                    البند أطول من الشاشة. المجموعةُ اليسرى تأخذ سطراً
+                    كاملاً تحت `sm` (`basis-full`)، وتعود إلى الصفّ فوقه. */}
+                <span className="flex min-w-0 flex-1 basis-full items-center gap-3 sm:basis-0">
+                  <span className="w-5 shrink-0 text-center font-mono text-[12px] tabular-nums text-text-faint">
+                    {i + 1}
                   </span>
-                  <span className="block text-[11.5px] leading-relaxed text-text-muted">
-                    {tr(`${st.key}Body`)}
+                  {/* دائرةٌ ممتلئةٌ للمنجَز وفارغةٌ لغيره - الحالةُ تُقرأ من
+                      الشكل قبل النصّ، ومن اللون قبل القراءة. */}
+                  <span className="shrink-0">
+                    {st.done ? (
+                      <CheckCircle2 size={20} className="text-verified" />
+                    ) : (
+                      <span className="block h-5 w-5 rounded-full border-2 border-gap/60" />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[13px] font-medium text-text-primary">
+                      {tr(`${st.key}Title`)}
+                    </span>
+                    <span className="block text-[11.5px] leading-relaxed text-text-muted">
+                      {tr(`${st.key}Body`)}
+                    </span>
                   </span>
                 </span>
                 <span
-                  className="shrink-0 text-[12px] font-medium"
+                  className="ms-8 shrink-0 text-[12px] font-medium sm:ms-0"
                   style={{ color: st.done ? "var(--verified)" : "var(--gap)" }}
                 >
                   {tr(st.done ? `${st.key}Done` : `${st.key}Todo`)}
