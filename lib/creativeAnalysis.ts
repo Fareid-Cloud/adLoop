@@ -214,11 +214,11 @@ export function selectTopTwoCreatives(
 // مصدر: "مش أكتر من 20%")، وعدد التحويلات المطلوب لـScale أعلى بكتير
 // من Kill - المصادر بتقول 20-50 تحويل قبل الـScale، مقابل عتبة أخف
 // لـKill (إيقاف صرف واضح مينفعش يستنى نفس المدة اللي الـScale محتاجها)
-const DECISION_THRESHOLD_PCT = 20; // نفس المعيار المستخدم في كل مكان تاني بالمنتج
-const MIN_CONVERSIONS_FOR_KILL = 5;
-const MIN_CONVERSIONS_FOR_SCALE = 20; // أعلى بكتير من Kill - نفس نطاق الـ20-50 اللي المصادر متفقة عليه
-const MIN_DAYS_ACTIVE_FOR_SCALE = 4; // لازم يثبت نفسه عبر أيام مختلفة، مش يوم حظ واحد
-const MIN_DAYS_ACTIVE_FOR_KILL = 3; // أقل تشدداً من Scale - إيقاف مبكر لصرف واضح أضمن من التسرّع بزيادة ميزانية
+export const DECISION_THRESHOLD_PCT = 20; // نفس المعيار المستخدم في كل مكان تاني بالمنتج
+export const MIN_CONVERSIONS_FOR_KILL = 5;
+export const MIN_CONVERSIONS_FOR_SCALE = 20; // أعلى بكتير من Kill - نفس نطاق الـ20-50 اللي المصادر متفقة عليه
+export const MIN_DAYS_ACTIVE_FOR_SCALE = 4; // لازم يثبت نفسه عبر أيام مختلفة، مش يوم حظ واحد
+export const MIN_DAYS_ACTIVE_FOR_KILL = 3; // أقل تشدداً من Scale - إيقاف مبكر لصرف واضح أضمن من التسرّع بزيادة ميزانية
 const SAFE_SCALE_INCREASE_PCT = 20; // كان 25% - مصادر متعددة متفقة على 20% كحد أقصى آمن
 
 export interface ScaleKillDecision {

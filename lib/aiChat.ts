@@ -24,6 +24,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import type { AgentContext } from "@/lib/agentContext";
+import { agentSkills } from "@/lib/agentSkills";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -73,11 +74,12 @@ export async function answerWorkspaceQuestion({
   const system = ar
     ? `أنت محلّل أداء إعلانيّ داخل منصّة AdLoop. تُجيب عن سؤال صاحب الحساب اعتماداً على أرقام حسابه المرفقة **وحدها**.
 
+${agentSkills(true)}
+
 ## قواعد الصدق
 - لا تذكر رقماً غير موجود في البيانات المرفقة، ولا تُقدّر رقماً ناقصاً.
 - إن كان السؤال يحتاج بياناتٍ غير مرفقة، قل بوضوح ما الذي ينقص لتُجيب، ولا تُكمل بتخمين.
 - «المُعلَن» ما تقوله المنصّة، و«المتحقَّق» ما تأكّد بمصدر مستقلّ. حين يفترقان، ابنِ حكمك على المتحقَّق وسمِّ الفارق صراحةً.
-- العملة ${context.currency}. لا تحوّل إلى عملة أخرى ولا تكتب رمزاً غيرها.
 
 ## شكل الجواب - بهذا الترتيب
 1. **الحكم**: سطر واحد يجيب عن السؤال مباشرة بالاسم أو بالرقم. بلا مقدّمة.
@@ -90,15 +92,15 @@ export async function answerWorkspaceQuestion({
 - اربط كلّ جملة برقم. الجملة بلا رقم لا تُكتب.
 - لا مقدّمات ولا خاتمة ولا اعتذار. ابدأ بالحكم مباشرة.
 - استخدم Markdown: **الغامق** للأرقام الحاسمة، وجداول بصيغة الأنابيب، وقوائم بشرطة.
-
-${hint}`
+`
     : `You are an ad performance analyst inside AdLoop. You answer the account owner's question using **only** the account figures attached.
+
+${agentSkills(false)}
 
 ## Honesty rules
 - Never state a number that is not in the attached data, and never estimate a missing one.
 - If the question needs data that is not attached, say plainly what is missing, and do not fill the gap with a guess.
 - "Reported" is what the platform claims; "verified" is what an independent source confirmed. When they differ, build your judgement on the verified figure and name the gap explicitly.
-- Currency is ${context.currency}. Do not convert and do not write any other symbol.
 
 ## Answer shape - in this order
 1. **Verdict**: one line answering the question directly, by name or by number. No preamble.
@@ -110,6 +112,22 @@ ${hint}`
 - Tie every sentence to a number. A sentence without one is not written.
 - No preamble, no sign-off, no apology. Open with the verdict.
 - Use Markdown: **bold** for the decisive numbers, pipe tables, dashed lists.
+`;
+
+  // 🔴 **نصُّ النظام تضاعف بالإجراء والمهارات، ويُرسَل مع كلّ سؤال.**
+  //
+  // وهو ثابتٌ لا يتغيّر بين سؤالٍ وآخر، فيُخزَّن مؤقّتاً: الطلبُ التالي
+  // يقرؤه من الذاكرة بعُشر الكلفة تقريباً بدل أن يُعاد إرساله كاملاً.
+  // وبلا ذلك كان تقويةُ التفكير تُترجَم زيادةً في فاتورةِ كلّ سؤال -
+  // والرصيدُ هنا مسقوفٌ لكلّ مستخدم.
+  //
+  // **والعملةُ والتلميحُ خارج الكتلة المخزَّنة عمداً**: التخزين مطابقةُ
+  // بادئة، وأيُّ بايتٍ متغيّرٍ داخلها يُبطلها لكلّ مساحةِ عملٍ على حدة.
+  const volatile = ar
+    ? `العملة ${context.currency}. لا تحوّل إلى عملة أخرى ولا تكتب رمزاً غيرها.
+
+${hint}`
+    : `Currency is ${context.currency}. Do not convert and do not write any other symbol.
 
 ${hint}`;
 
@@ -122,7 +140,10 @@ ${hint}`;
     max_tokens: 2400,
     thinking: { type: "adaptive" },
     output_config: { effort: "medium" },
-    system,
+    system: [
+      { type: "text", text: system, cache_control: { type: "ephemeral" } },
+      { type: "text", text: volatile },
+    ],
     messages: [
       {
         role: "user",
