@@ -256,7 +256,7 @@ export function InboxClient({
         </div>
 
         {threads.length === 0 ? (
-          <p className="card pad-lg m-0 text-center text-[12.5px] text-text-muted">Nothing matches this view.</p>
+          <p className="m-0 px-2 py-8 text-center text-[12.5px] text-text-faint">Nothing matches this view.</p>
         ) : (
           <div className="flex max-h-[calc(100dvh-14rem)] flex-col gap-1 overflow-y-auto pe-0.5">
             {threads.map((t) => (
@@ -271,8 +271,8 @@ export function InboxClient({
         {active ? (
           <Conversation thread={active} agents={agents} avatarUrl={activeAvatar} onChanged={() => router.refresh()} onClose={() => go({ thread: null })} />
         ) : (
-          <div className="card pad-lg grid h-[calc(100dvh-11rem)] place-items-center text-center">
-            <p className="m-0 text-[12.5px] text-text-muted">Pick a conversation to read it.</p>
+          <div className="grid h-[calc(100dvh-11rem)] place-items-center rounded-2xl border border-dashed border-border text-center">
+            <p className="m-0 text-[12.5px] text-text-faint">Pick a conversation to read it.</p>
           </div>
         )}
       </div>
@@ -387,9 +387,15 @@ function ThreadRowItem({
   }
 
   return (
+    // 🔴 **حدٌّ على كلّ صفّ + ظلُّ البطاقة = خطّان حوالين كلّ شيء.**
+    // القائمةُ فيها ستّون صفّاً، وحدٌّ دائم على كلٍّ منها بيحوّلها لشبكةٍ
+    // من المربّعات بدل قائمةٍ تُقرأ. الفصلُ بالمسافة والخلفية يكفي،
+    // والحدُّ بيتحجز للصفّ المفتوح وحده - فيبقى له معنى لمّا يظهر.
     <div
-      className={`group/row relative rounded-xl border transition-colors ${
-        row.id === activeId ? "border-accent bg-surface-raised" : "border-border bg-surface hover:bg-surface-raised"
+      className={`group/row relative rounded-xl transition-colors ${
+        row.id === activeId
+          ? "bg-accent/8 ring-1 ring-accent/40"
+          : "bg-surface hover:bg-surface-raised"
       }`}
     >
       <button onClick={onOpen} className="flex w-full items-start gap-2.5 p-2.5 text-start">
@@ -690,7 +696,7 @@ function Details({
 
   return (
     <div className="space-y-3">
-      <div className="card pad-sm">
+      <div className="rounded-xl bg-surface p-3">
         <div className="mb-2 flex items-center gap-2">
           <Avatar name={thread.name} size={36} src={avatarUrl} />
           <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-text-primary">{thread.name}</span>
@@ -703,7 +709,7 @@ function Details({
         <Field icon={Plus} label="First seen" value={new Date(thread.createdAt).toLocaleDateString("en-GB")} />
       </div>
 
-      <div className="card pad-sm">
+      <div className="rounded-xl bg-surface p-3">
         <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-faint">
           <Pencil size={10} /> Tags
         </div>
@@ -735,7 +741,7 @@ function Details({
       </div>
 
       {/* ═══ الملاحظات - يقرؤها الفريق والعميل لا ═══ */}
-      <div className="card pad-sm">
+      <div className="rounded-xl bg-surface p-3">
         <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-faint">
           <StickyNote size={10} /> Notes
         </div>
@@ -783,7 +789,7 @@ function Details({
       </div>
 
       {history.length > 0 && (
-        <div className="card pad-sm">
+        <div className="rounded-xl bg-surface p-3">
           <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-faint">
             Earlier conversations
           </div>
