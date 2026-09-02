@@ -10,7 +10,7 @@
 import { LifeBuoy } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import {
-  listThreads, channelCounts, isChannel, type InboxFilters,
+  listThreads, channelCounts, isChannel, inboxWhere, type InboxFilters,
 } from "@/lib/inbox";
 import { AdminPageHeader } from "../components/AdminUI";
 import { InboxClient } from "./InboxClient";
@@ -43,7 +43,7 @@ export default async function AdminSupportPage({
     // من كلّ فلتر بيتفرّج عليه الفريق فتضيع بصمت.
     prisma.user.findMany({
       where: { isAdmin: true },
-      select: { id: true, name: true, email: true },
+      select: { id: true, name: true, email: true, lastActiveAt: true },
       orderBy: { createdAt: "asc" },
     }),
     prisma.supportThread.findMany({
@@ -67,6 +67,14 @@ export default async function AdminSupportPage({
             orderBy: { createdAt: "asc" },
             select: {
               id: true, fromSupport: true, body: true, imageUrls: true, createdAt: true,
+            },
+          },
+          // الملاحظات الداخلية - عمودُ التفاصيل بيعرضها تحت بيانات المرسل.
+          notes: {
+            orderBy: { createdAt: "desc" },
+            select: {
+              id: true, body: true, createdAt: true,
+              author: { select: { name: true, email: true } },
             },
           },
         },
@@ -95,6 +103,25 @@ export default async function AdminSupportPage({
   const tags = [...new Set(allTags.flatMap((t) => t.tags))].sort();
   const unreadCount = threads.filter((t) => t.unread).length;
 
+  // عدّادُ كلّ حالة - بيتعرض جنب اسمها في العمود الأوّل فيُعرَف أين الشغل
+  // قبل الفتح. بيتحسب على الفلاتر الحالية عدا الحالة نفسها، وإلّا كلُّ
+  // عدّادٍ بيبقى صفراً إلا المختار.
+  const statusRows = await prisma.supportThread.groupBy({
+    by: ["status"],
+    where: inboxWhere({ ...filters, status: "ALL" }),
+    _count: true,
+  });
+  const statusCounts: Record<string, number> = {};
+  for (const r of statusRows) statusCounts[r.status] = r._count;
+
+  const ONLINE_MS = 5 * 60_000;
+  const agentRows = agents.map((a) => ({
+    id: a.id,
+    name: a.name,
+    email: a.email,
+    online: !!a.lastActiveAt && Date.now() - a.lastActiveAt.getTime() < ONLINE_MS,
+  }));
+
   return (
     <div>
       <AdminPageHeader
@@ -111,7 +138,8 @@ export default async function AdminSupportPage({
         active={active ? JSON.parse(JSON.stringify(active)) : null}
         history={JSON.parse(JSON.stringify(history))}
         counts={counts}
-        agents={agents}
+        statusCounts={statusCounts}
+        agents={agentRows}
         tags={tags}
         filters={{
           channel: filters.channel ?? "ALL",

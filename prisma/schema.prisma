@@ -273,6 +273,8 @@ model User {
   assignedThreads          SupportThread[]     @relation("SupportAssignee")
   /// المساحات اللي هو عضوٌ فيها (مش مالكها) - المقاعد.
   memberships              WorkspaceMember[]   @relation("WorkspaceMembership")
+  /// الملاحظات الداخلية اللي كتبها في صندوق الدعم.
+  supportNotes             SupportNote[]       @relation("SupportNoteAuthor")
 
   // ==================== لوحة المالك (Admin Panel) ====================
   //
@@ -2431,7 +2433,10 @@ model SupportThread {
 
   /// حذفٌ ناعم: المحادثة بتختفي من الصندوق ويفضل نصُّها للتدقيق. الحذفُ
   /// الصلب بيمسح تاريخَ شكوى عميلٍ ممكن يرجع يسأل عنها.
-  deletedAt DateTime?
+  deletedAt   DateTime?
+
+  /// ملاحظاتٌ داخلية - يقرؤها الفريق ولا تُبعَت للعميل أبداً.
+  notes       SupportNote[]
 
   /// وصولُ الرسالة الواردة لمحادثتها بدل فتحِ واحدةٍ جديدة كلّ مرّة.
   @@unique([channel, externalId])
@@ -2495,6 +2500,24 @@ model WorkspaceInvite {
 
   @@unique([workspaceId, email])
   @@index([email])
+}
+
+/// ملاحظةٌ داخلية على محادثة - **الفريق يقرؤها والعميل لا.**
+///
+/// غيرُ `SupportMessage` تماماً: الرسالة بتتبعت، والملاحظة بتفضل عندنا.
+/// وخلطُهما في جدولٍ واحد بعلامة `internal` كان أخطر تبسيطٍ ممكن هنا -
+/// أوّل استعلامٍ يُنسى فيه الشرط بيبعت ملاحظةً داخلية للعميل، والفعلُ ده
+/// مالوش تراجع.
+model SupportNote {
+  id        String        @id @default(cuid())
+  threadId  String
+  thread    SupportThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User          @relation("SupportNoteAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  body      String        @db.Text
+  createdAt DateTime      @default(now())
+
+  @@index([threadId, createdAt])
 }
 
 model ChannelConnection {
