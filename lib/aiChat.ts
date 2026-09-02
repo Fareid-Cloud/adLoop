@@ -53,7 +53,25 @@ const SCOPE_HINT: Record<ChatScope, { ar: string; en: string }> = {
 export interface ChatAnswer {
   /** Markdown - عناوين وجداول وقوائم. يعرضه `MarkdownAnswer` لا `dangerouslySetInnerHTML` */
   answer: string;
+  /** قياسُ الإجابة - يُخزَّن مع الرسالة ليمكن الحكمُ عليها لاحقاً. */
+  telemetry: AnswerTelemetry;
 }
+
+export interface AnswerTelemetry {
+  latencyMs: number;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  promptVersion: string;
+}
+
+/**
+ * نسخةُ التعليمات.
+ *
+ * **تُرفَع يدوياً مع أيّ تعديلٍ جوهريّ في `agentSkills.ts` أو في نصّ
+ * النظام هنا.** بدونها لا يوجد «قبل وبعد»: إجاباتُ نسختين مختلفتين
+ * تختلطان في جدولٍ واحد، فيصير كلُّ تحسينٍ إحساساً لا قياساً.
+ */
+export const PROMPT_VERSION = "2026-09-02.1";
 
 export async function answerWorkspaceQuestion({
   question,
@@ -131,6 +149,7 @@ ${hint}`
 
 ${hint}`;
 
+  const startedAt = Date.now();
   const message = await anthropic.messages.create({
     model,
     // رُفع من ١٤٠٠ حين صار الجواب يحمل جدولاً: السقف يشمل التفكير والردّ
@@ -160,5 +179,15 @@ ${hint}`;
     .join("\n")
     .trim();
 
-  return { answer: text };
+  return {
+    answer: text,
+    telemetry: {
+      latencyMs: Date.now() - startedAt,
+      // الحقلان اختياريّان في نوع الـSDK، فالغياب `null` لا صفر: صفرٌ يعني
+      // «ما استهلكش توكنز» وهو مستحيل، وبيلوّث أيّ متوسّطٍ يتحسب عليه.
+      inputTokens: message.usage?.input_tokens ?? null,
+      outputTokens: message.usage?.output_tokens ?? null,
+      promptVersion: PROMPT_VERSION,
+    },
+  };
 }

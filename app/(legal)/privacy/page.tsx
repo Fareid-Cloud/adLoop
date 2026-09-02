@@ -21,7 +21,7 @@ export default async function LegalPage() {
       <DocSection locale={locale} doc="privacy" id="collect" listCount={5} />
       <DocSection locale={locale} doc="privacy" id="basis" listCount={4} />
       <DocSection locale={locale} doc="privacy" id="use" listCount={5} />
-      <DocSection locale={locale} doc="privacy" id="share" listCount={4} />
+      <DocSection locale={locale} doc="privacy" id="share" listCount={5} />
       <DocSection locale={locale} doc="privacy" id="processors" listCount={5} />
       <DocSection locale={locale} doc="privacy" id="transfer" />
       <DocSection locale={locale} doc="privacy" id="security" listCount={4} />

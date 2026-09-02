@@ -967,6 +967,7 @@ export const dictionary = {
         shareL2: "مزودو البنية التحتية: الاستضافة وقاعدة البيانات والبريد الإلكتروني وبوابة الدفع — بموجب اتفاقيات معالجة بيانات.",
         shareL3: "الجهات القضائية أو التنظيمية: عند وجود التزام قانوني صريح، وبالقدر المطلوب فقط.",
         shareL4: "لا يشارك محتوى محادثاتك مع أي طرف لأغراض تسويقية أو إعلانية إطلاقاً.",
+        shareL5: "وصول داخلي محدود: قد يطلع عدد محدود من العاملين المخولين على محادثاتك مع المساعد الذكي، لغرض واحد هو تقييم جودة إجاباته وتحسينها. وكل اطلاع من هذا النوع مقيد في سجل تدقيق باسم المطلع ووقته، ولا يستخدم لأي غرض تسويقي أو إعلاني.",
 
         securityTitle: "حماية البيانات والاحتفاظ بها",
         securityBody: "نطبق تدابير تقنية وتنظيمية متناسبة مع حساسية البيانات:",
@@ -5442,6 +5443,7 @@ export const dictionary = {
         shareL2: "Infrastructure providers: hosting, database, email and the payment gateway — under data processing agreements.",
         shareL3: "Judicial or regulatory authorities: where there is a clear legal obligation, and only to the extent required.",
         shareL4: "Your conversation content is never shared with any party for marketing or advertising purposes.",
+        shareL5: "Limited internal access: a small number of authorised staff may read your conversations with the AI assistant, for one purpose only — assessing and improving the quality of its answers. Every such view is written to an audit log with who read it and when, and is never used for marketing or advertising.",
 
         securityTitle: "Data protection and retention",
         securityBody: "We apply technical and organisational measures proportionate to the sensitivity of the data:",
