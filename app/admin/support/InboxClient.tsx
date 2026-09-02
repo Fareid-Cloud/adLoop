@@ -504,8 +504,13 @@ function Conversation({
 
   return (
     <div className="card flex max-h-[calc(100dvh-14rem)] flex-col overflow-hidden">
-      {/* رأسٌ زيّ المرجع: أفتار + اسم + حالة، والأفعال يمين. */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
+      {/* رأسٌ زيّ المرجع: أفتار + اسم + حالة، والأفعال يمين.
+          🔴 **الأفعال بتنزل سطراً تحت قبل ما الاسم يتقصّ.** كانت في نفس
+          الصفّ بـ`flex-wrap`، فالاسم (وهو الوحيد اللي بيقدر ينكمش) كان
+          بياخد الباقي - وعلى عمودٍ متوسّط بقى «Ab…» و«We…». الاسمُ هو
+          هويّة الشاشة كلّها، فهو آخر شيء يُقصّ لا أوّله. */}
+      <div className="border-b border-border p-3">
+      <div className="flex items-center gap-2">
         <button onClick={onClose} className="btn-icon lg:hidden" aria-label="Back">
           <ChevronLeft size={16} />
         </button>
@@ -523,22 +528,26 @@ function Conversation({
           </div>
         </div>
 
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
         <select
           value={thread.assignedToId ?? ""}
           onChange={(e) => patch({ assignedToId: e.target.value || null })}
-          className="field field-sm h-7 max-w-[9rem]"
+          className="field field-sm h-7 min-w-0 flex-1 sm:max-w-[11rem] sm:flex-none"
           aria-label="Assign"
         >
           <option value="">Unassigned</option>
           {agents.map((a) => <option key={a.id} value={a.id}>{a.name ?? a.email}</option>)}
         </select>
 
-        <button onClick={() => patch({ pinned: !thread.pinned })} className="btn-icon" aria-label={thread.pinned ? "Unpin" : "Pin"}>
+        <button onClick={() => patch({ pinned: !thread.pinned })} className="btn-icon shrink-0" aria-label={thread.pinned ? "Unpin" : "Pin"}>
           <Pin size={15} className={thread.pinned ? "text-accent" : ""} />
         </button>
-        <button onClick={() => patch({ status: thread.status === "CLOSED" ? "OPEN" : "CLOSED" })} className="btn btn-sm h-7 px-2.5">
+        <button onClick={() => patch({ status: thread.status === "CLOSED" ? "OPEN" : "CLOSED" })} className="btn btn-sm h-7 shrink-0 px-2.5">
           {thread.status === "CLOSED" ? "Reopen" : <><Check size={13} className="me-1" />Close</>}
         </button>
+      </div>
       </div>
 
       <div className="flex-1 space-y-2.5 overflow-y-auto p-3">
