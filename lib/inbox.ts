@@ -13,6 +13,7 @@
 
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
+import { sendPushToUser } from "@/lib/webPush";
 
 export const CHANNELS = ["WEB", "WHATSAPP", "MESSENGER"] as const;
 export type Channel = (typeof CHANNELS)[number];
@@ -122,6 +123,43 @@ export async function ingestInboundMessage(
     if ((err as { code?: string }).code === "P2002") return null;
     throw err;
   }
+}
+
+/**
+ * إشعارُ الفريق برسالةٍ واردة - **زيّ ماسنجر وواتساب بالظبط.**
+ *
+ * صندوقٌ لازم حدّ يفتحه عشان يعرف إنّ فيه رسالة مش صندوق، هو صفحةٌ بيتفقّدها.
+ * وأغلى شيء في الدعم هو وقتُ الردّ الأوّل، وهو بالظبط اللي بيضيع بين وصولِ
+ * الرسالة واكتشافِها.
+ *
+ * **بيتبعت للمعيَّن وحده لو فيه معيَّن**، ولكلّ الأدمنز لو مافيش: تنبيهُ
+ * الجميع على محادثةٍ لها صاحب بيخلّي الإشعارات ضجيجاً، وأوّل ما تبقى
+ * ضجيجاً بتتقفل - وساعتها بتضيع المهمّة كمان.
+ */
+export async function notifyTeamOfInbound(threadId: string) {
+  const thread = await prisma.supportThread.findUnique({
+    where: { id: threadId },
+    select: {
+      name: true, channel: true, assignedToId: true,
+      messages: { orderBy: { createdAt: "desc" }, take: 1, select: { body: true } },
+    },
+  });
+  if (!thread) return;
+
+  const recipients = thread.assignedToId
+    ? [thread.assignedToId]
+    : (
+        await prisma.user.findMany({ where: { isAdmin: true }, select: { id: true } })
+      ).map((u) => u.id);
+
+  const payload = {
+    title: `${thread.name} · ${CHANNEL_LABEL[thread.channel as Channel] ?? thread.channel}`,
+    body: thread.messages[0]?.body.slice(0, 140) ?? "New message",
+    url: `/admin/support?thread=${threadId}`,
+  };
+
+  // بالتوازي وبابتلاعٍ فرديّ: اشتراكٌ منتهي لواحد مايمنعش الباقي.
+  await Promise.all(recipients.map((id) => sendPushToUser(id, payload).catch(() => {})));
 }
 
 // ══════════════════════════════════════════════════════════════════════

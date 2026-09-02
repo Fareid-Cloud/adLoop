@@ -14,7 +14,8 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { decryptToken } from "@/lib/encryption";
-import { ingestInboundMessage, type Channel } from "@/lib/inbox";
+import { after } from "next/server";
+import { ingestInboundMessage, notifyTeamOfInbound } from "@/lib/inbox";
 
 export const dynamic = "force-dynamic";
 
@@ -80,7 +81,10 @@ export async function POST(req: NextRequest) {
             phone: m.from,
             receivedAt: m.timestamp ? new Date(Number(m.timestamp) * 1000) : undefined,
           });
-          if (saved) processed++;
+          if (saved) {
+            processed++;
+            notifyLater(saved.threadId);
+          }
         } catch (err) {
           // رسالةٌ واحدة بايظة مابتاخدش باقي الدفعة معاها.
           console.error("[messaging] فشلت رسالة واتساب:", m?.id, err);
@@ -101,7 +105,10 @@ export async function POST(req: NextRequest) {
           body: ev.message?.text ?? "",
           receivedAt: ev.timestamp ? new Date(ev.timestamp) : undefined,
         });
-        if (saved) processed++;
+        if (saved) {
+          processed++;
+          notifyLater(saved.threadId);
+        }
       } catch (err) {
         console.error("[messaging] فشلت رسالة ماسنجر:", ev.message?.mid, err);
       }
@@ -114,6 +121,21 @@ export async function POST(req: NextRequest) {
     .catch(() => {});
 
   return NextResponse.json({ ok: true, processed });
+}
+
+/**
+ * الإشعار بعد ما الردّ يمشي.
+ *
+ * ميتا بتعيد إرسال الويب هوك لو ماردّيناش بسرعة، فحطُّ نداءِ الدفع في
+ * طريق الردّ بيخلّي بطءَ خدمةِ الدفع سبباً في **تكرار الرسالة**. و`after()`
+ * بيضمن إنّه بيتنفّذ فعلاً بدل `void` اللي بتموت لمّا الرد يمشي.
+ */
+function notifyLater(threadId: string) {
+  try {
+    after(() => notifyTeamOfInbound(threadId).catch(() => {}));
+  } catch {
+    void notifyTeamOfInbound(threadId).catch(() => {});
+  }
 }
 
 function verifySignature(raw: string, header: string | null, secret: string): boolean {
