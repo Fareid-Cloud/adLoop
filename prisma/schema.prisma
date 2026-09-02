@@ -269,6 +269,8 @@ model User {
   /// على المحدَّثة.
   acceptedTermsAt          DateTime?
   agentChats               AgentChat[]
+  /// المحادثات المعيَّنة لهذا الحساب في صندوق الدعم.
+  assignedThreads          SupportThread[]     @relation("SupportAssignee")
 
   // ==================== لوحة المالك (Admin Panel) ====================
   //
@@ -2389,7 +2391,86 @@ model SupportThread {
   /// الحل المحسوب منه بيبقى غلط لأي محادثة اتردّ عليها بعد الإغلاق.
   closedAt  DateTime?
 
+  // ═══ صندوقٌ واحد لكلّ القنوات ═══
+  //
+  // الجدول ده كان لشات الموقع وحده. وضمُّ واتساب وماسنجر جنبه مش توسيعاً
+  // تجميلياً: **الرسالة هي الرسالة**، والفصلُ في صناديق منفصلة معناه إنّ
+  // نفس العميل بيبقى تلات محادثات مالهاش تاريخ مشترك، وإنّ كلّ ميزة
+  // (تعيين، وسم، بحث، إغلاق) تتبني تلات مرّات.
+
+  /// WEB | WHATSAPP | MESSENGER - نصٌّ لا enum: قناةٌ جديدة (إنستجرام
+  /// مثلاً) تتضاف بصفٍّ لا بترحيلٍ يقفل الجدول.
+  channel    String  @default("WEB")
+  /// معرّفُ المحادثة عند المنصّة: رقمُ الواتساب، أو PSID ماسنجر. هو
+  /// المفتاح اللي بيربط رسالةً واردة بمحادثةٍ قائمة بدل ما يفتح واحدة
+  /// جديدة مع كلّ رسالة.
+  externalId String?
+
+  /// مثبَّتة فوق القائمة - قرارُ صاحب الصندوق، مستقلّ عن الحداثة.
+  pinned        Boolean   @default(false)
+  /// آخرُ لحظةٍ فتح فيها الدعمُ المحادثة. مقارنتها بـ`lastMessageAt` هي
+  /// **كلُّ** منطق المقروء/غير المقروء - بلا عدّادٍ يتحرّك في مكانين
+  /// فيفترقان.
+  readByAdminAt DateTime?
+  /// لحظةُ آخر رسالة. `updatedAt` مش بديل: بيتحرّك مع أيّ تعديل (وسم،
+  /// تعيين، تثبيت)، فترتيبُ "الأحدث فوق" كان بيقفز بأفعالٍ مش رسائل.
+  lastMessageAt DateTime  @default(now())
+
+  /// المسؤول عن المحادثة. `null` = غير معيَّنة.
+  assignedToId String?
+  assignedTo   User?   @relation("SupportAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  /// وسومٌ حرّة - غير `category` المغلقة: دي للتقارير، ودي لتنظيم
+  /// الصندوق («يستنّى العميل»، «باگ»، «فاتورة»).
+  tags String[]
+
+  /// حذفٌ ناعم: المحادثة بتختفي من الصندوق ويفضل نصُّها للتدقيق. الحذفُ
+  /// الصلب بيمسح تاريخَ شكوى عميلٍ ممكن يرجع يسأل عنها.
+  deletedAt DateTime?
+
+  /// وصولُ الرسالة الواردة لمحادثتها بدل فتحِ واحدةٍ جديدة كلّ مرّة.
+  @@unique([channel, externalId])
   @@index([userId])
+  /// ترتيبُ الصندوق: المثبَّت أوّلاً ثمّ الأحدث - وبلا المحذوف.
+  @@index([deletedAt, pinned, lastMessageAt])
+  @@index([assignedToId])
+}
+
+/// ربطُ قناةِ مراسلة (واتساب بيزنس / ماسنجر) بصندوق الدعم.
+///
+/// **الجدول ده هو الفرق بين «الكود جاهز» و«الميزة شغّالة».** الربط كان
+/// هيبقى متغيّراتِ بيئة، ومعناه إنّ تغييرَ رقمٍ أو تجديدَ توكن يتطلّب
+/// نشرة - ونشرةٌ عشان رقم تليفون مش إعداداً، ده احتجاز.
+///
+/// والسرُّ مشفَّرٌ بنفس آلية توكنات المنصّات الإعلانية (`lib/encryption.ts`):
+/// توكنُ واتساب بيقدر يبعت باسم البيزنس لأيّ حدّ كلّمه، فتخزينُه خاماً
+/// أخطر من توكن قراءة.
+model ChannelConnection {
+  id          String  @id @default(cuid())
+  /// WHATSAPP | MESSENGER - نفس قائمة `lib/inbox.ts`
+  channel     String
+  /// `phone_number_id` عند واتساب، أو معرّفُ الصفحة عند ماسنجر
+  externalId  String
+  /// اسمٌ يقرؤه صاحبه: الرقم نفسه أو اسمُ الصفحة
+  label       String
+  /// مشفَّر AES-256-GCM - لا يُقرأ إلّا في `lib/channels/outbound.ts`
+  accessToken String  @db.Text
+  /// سرُّ التحقّق من توقيع الويب هوك، مشفَّرٌ كذلك
+  appSecret   String? @db.Text
+  /// رمزُ التحقّق وقت ربط الويب هوك عند ميتا
+  verifyToken String?
+
+  /// إيقافٌ بلا حذف: الحذفُ بيخلّي الرسائل الواردة تفتح محادثاتٍ بلا
+  /// طريقِ ردّ، والإيقافُ بيوقف الاتنين معاً.
+  active      Boolean   @default(true)
+  /// آخرُ ويب هوك وصل فعلاً - الدليلُ الوحيد إنّ الربط شغّال، لا إنّه
+  /// «متحفوظ». غيابُه بعد الربط عطبُ إعداد يتقال صراحةً في الواجهة.
+  lastEventAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([channel, externalId])
+  @@index([channel, active])
 }
 
 model SupportMessage {
@@ -2402,7 +2483,16 @@ model SupportMessage {
   readByUser  Boolean       @default(true) // رسائل الدعم تبدأ false لحد ما العميل يشوفها
   createdAt   DateTime      @default(now())
 
+  /// معرّفُ الرسالة عند المنصّة - **حارسُ التكرار**. ميتا بتعيد إرسال
+  /// الويب هوك لو ماردّيناش بسرعة، فبلا المفتاح ده الرسالة الواحدة
+  /// بتتكتب مرّتين وتلاتة في المحادثة.
+  externalId String? @unique
+
+  /// مين ردّ من الفريق - `null` للرسالة الواردة أو لردٍّ قديم قبل الحقل.
+  authorAdminId String?
+
   @@index([threadId])
+  @@index([threadId, createdAt])
 }
 
 enum ExperimentSource {
