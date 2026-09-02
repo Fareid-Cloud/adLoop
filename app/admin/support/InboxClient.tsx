@@ -22,7 +22,8 @@ interface ThreadRow {
   id: string; channel: string; name: string; email: string; phone: string | null;
   subject: string; status: string; pinned: boolean; unread: boolean; tags: string[];
   assignedToId: string | null; assignedToName: string | null;
-  lastMessageAt: string; messageCount: number; preview: string;
+  lastMessageAt: string; messageCount: number; unreadCount: number; preview: string;
+  avatarUrl: string | null;
 }
 
 interface Note {
@@ -44,10 +45,12 @@ interface ActiveThread {
 interface Agent { id: string; name: string | null; email: string; online: boolean }
 
 export function InboxClient({
-  threads, active, history, counts, statusCounts, agents, tags, filters,
+  threads, active, history, counts, statusCounts, agents, tags, filters, activeAvatar,
 }: {
   threads: ThreadRow[];
   active: ActiveThread | null;
+  /** صورةُ صاحب المحادثة المفتوحة - `null` لقناةٍ بلا حساب (واتساب). */
+  activeAvatar: string | null;
   history: Array<{ id: string; subject: string; status: string; channel: string; lastMessageAt: string }>;
   counts: Record<string, number>;
   statusCounts: Record<string, number>;
@@ -74,6 +77,28 @@ export function InboxClient({
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
+
+  // 🔴 **الصندوق كان ساكناً حتى تُعاد الصفحة.**
+  //
+  // رسالةٌ جديدة بتوصل القاعدة وبتظهر في الترتيب - لكن على شاشةٍ مفتوحة
+  // مافيش حاجة بتقول لها. فالدعم قاعد قدّام صندوقٍ فيه جديد وهو مش شايفه،
+  // وهو بالظبط الوقت اللي بيتقاس عليه.
+  //
+  // تحديثٌ كلّ عشر ثوانٍ، **ويقف لمّا التبويب يبقى في الخلفية**: تبويبٌ
+  // متروكٌ مفتوح يومين مايستهلكش استعلاماً كلّ عشر ثوانٍ بلا أحد يقرؤه.
+  // (ده استطلاعٌ لا بثّ - الحلّ الصحيح SSE، لكنّه بنيةٌ أكبر بكتير من
+  // المكسب هنا وعدد المستخدمين اللي بيفتحوا الصندوق قليل.)
+  useEffect(() => {
+    const tick = () => {
+      if (document.visibilityState === "visible") router.refresh();
+    };
+    const id = setInterval(tick, 10_000);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [router]);
 
   const total = Object.values(counts).reduce((a, z) => a + z, 0);
   const statusAll = Object.values(statusCounts).reduce((a, z) => a + z, 0);
@@ -233,7 +258,7 @@ export function InboxClient({
         {threads.length === 0 ? (
           <p className="card pad-lg m-0 text-center text-[12.5px] text-text-muted">Nothing matches this view.</p>
         ) : (
-          <div className="flex max-h-[calc(100dvh-17rem)] flex-col gap-1 overflow-y-auto pe-0.5">
+          <div className="flex max-h-[calc(100dvh-14rem)] flex-col gap-1 overflow-y-auto pe-0.5">
             {threads.map((t) => (
               <ThreadRowItem key={t.id} row={t} activeId={active?.id ?? null} onOpen={() => go({ thread: t.id })} onChanged={() => router.refresh()} />
             ))}
@@ -244,9 +269,9 @@ export function InboxClient({
       {/* ═══ ٣) المحادثة ═══ */}
       <div className="min-w-0">
         {active ? (
-          <Conversation thread={active} agents={agents} onChanged={() => router.refresh()} onClose={() => go({ thread: null })} />
+          <Conversation thread={active} agents={agents} avatarUrl={activeAvatar} onChanged={() => router.refresh()} onClose={() => go({ thread: null })} />
         ) : (
-          <div className="card pad-lg grid min-h-[16rem] place-items-center text-center">
+          <div className="card pad-lg grid h-[calc(100dvh-11rem)] place-items-center text-center">
             <p className="m-0 text-[12.5px] text-text-muted">Pick a conversation to read it.</p>
           </div>
         )}
@@ -255,7 +280,7 @@ export function InboxClient({
       {/* ═══ ٤) التفاصيل والملاحظات ═══ */}
       {active && (
         <aside className="min-w-0">
-          <Details thread={active} history={history} tags={tags} onChanged={() => router.refresh()} />
+          <Details thread={active} history={history} tags={tags} avatarUrl={activeAvatar} onChanged={() => router.refresh()} />
         </aside>
       )}
     </div>
@@ -268,9 +293,13 @@ function title(s: string) {
   return s.charAt(0) + s.slice(1).toLowerCase();
 }
 
-/** حروفُ الاسم بدل صورة: مفيش أفتار للعملاء الجايين من واتساب، وحرفٌ
- *  ملوّن بيفرّق الصفوف أسرع من قراءة الاسم. */
-function Avatar({ name, online, size = 28 }: { name: string; online?: boolean; size?: number }) {
+/** صورةُ الحساب لو رفعها صاحبُها، وإلّا حروفُ الاسم.
+ *
+ *  الحروفُ مش بديلٌ أدنى: عميلٌ جايّ من واتساب مالوش صورة عندنا أصلاً،
+ *  ولونٌ ثابت مشتقٌّ من الاسم بيفرّق الصفوف أسرع من قراءتها. */
+function Avatar({
+  name, online, size = 28, src,
+}: { name: string; online?: boolean; size?: number; src?: string | null }) {
   const initials =
     name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?";
   // لونٌ ثابت لكلّ اسم: عشوائيٌّ لكن **مستقرّ**، فالصفّ بيفضل بلونه بين
@@ -278,12 +307,17 @@ function Avatar({ name, online, size = 28 }: { name: string; online?: boolean; s
   const hue = [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
   return (
     <span className="relative shrink-0" style={{ width: size, height: size }}>
-      <span
-        className="grid h-full w-full place-items-center rounded-full text-[11px] font-semibold text-white"
-        style={{ backgroundColor: `hsl(${hue} 55% 45%)` }}
-      >
-        {initials}
-      </span>
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt="" className="h-full w-full rounded-full object-cover" />
+      ) : (
+        <span
+          className="grid h-full w-full place-items-center rounded-full font-semibold text-white"
+          style={{ backgroundColor: `hsl(${hue} 55% 45%)`, fontSize: Math.round(size * 0.36) }}
+        >
+          {initials}
+        </span>
+      )}
       {online !== undefined && (
         <span
           className={`absolute -bottom-0.5 -end-0.5 size-2.5 rounded-full border-2 border-surface ${
@@ -359,7 +393,7 @@ function ThreadRowItem({
       }`}
     >
       <button onClick={onOpen} className="flex w-full items-start gap-2.5 p-2.5 text-start">
-        <Avatar name={row.name} size={32} />
+        <Avatar name={row.name} size={36} src={row.avatarUrl} />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5">
             <Icon size={11} className="shrink-0 text-text-faint" />
@@ -383,10 +417,10 @@ function ThreadRowItem({
         </span>
       </button>
 
-      {/* عدّادٌ أحمر لا نقطة، زيّ المرجع - الرقمُ عددُ رسائل المحادثة. */}
-      {row.unread && (
-        <span className="pointer-events-none absolute bottom-2.5 end-2.5 grid min-w-[18px] place-items-center rounded bg-critical px-1 py-0.5 text-[10px] font-semibold text-white">
-          {row.messageCount > 99 ? "99+" : row.messageCount}
+      {/* عدّادٌ أحمر زيّ المرجع - والرقمُ **غيرُ المقروء** لا كلّ الرسائل. */}
+      {row.unreadCount > 0 && (
+        <span className="pointer-events-none absolute bottom-2.5 end-2.5 grid min-w-[18px] place-items-center rounded-md bg-critical px-1.5 py-0.5 text-[10px] font-semibold text-white">
+          {row.unreadCount > 99 ? "99+" : row.unreadCount}
         </span>
       )}
 
@@ -438,9 +472,10 @@ function MenuItem({
 // ══════════════════════════════════════════════════════════════════════
 
 function Conversation({
-  thread, agents, onChanged, onClose,
+  thread, agents, avatarUrl, onChanged, onClose,
 }: {
-  thread: ActiveThread; agents: Agent[]; onChanged: () => void; onClose: () => void;
+  thread: ActiveThread; agents: Agent[]; avatarUrl: string | null;
+  onChanged: () => void; onClose: () => void;
 }) {
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState(false);
@@ -503,7 +538,7 @@ function Conversation({
     (!!lastInbound && Date.now() - new Date(lastInbound.createdAt).getTime() < 24 * 3600_000);
 
   return (
-    <div className="card flex max-h-[calc(100dvh-14rem)] flex-col overflow-hidden">
+    <div className="card flex h-[calc(100dvh-11rem)] flex-col overflow-hidden">
       {/* رأسٌ زيّ المرجع: أفتار + اسم + حالة، والأفعال يمين.
           🔴 **الأفعال بتنزل سطراً تحت قبل ما الاسم يتقصّ.** كانت في نفس
           الصفّ بـ`flex-wrap`، فالاسم (وهو الوحيد اللي بيقدر ينكمش) كان
@@ -514,7 +549,7 @@ function Conversation({
         <button onClick={onClose} className="btn-icon lg:hidden" aria-label="Back">
           <ChevronLeft size={16} />
         </button>
-        <Avatar name={thread.name} size={32} />
+        <Avatar name={thread.name} size={36} src={avatarUrl} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-[13.5px] font-semibold text-text-primary">{thread.name}</div>
           <div className="truncate text-[11px] text-text-faint">
@@ -612,9 +647,10 @@ function Conversation({
 // ══════════════════════════════════════════════════════════════════════
 
 function Details({
-  thread, history, tags, onChanged,
+  thread, history, tags, avatarUrl, onChanged,
 }: {
   thread: ActiveThread;
+  avatarUrl: string | null;
   history: Array<{ id: string; subject: string; status: string; channel: string; lastMessageAt: string }>;
   tags: string[];
   onChanged: () => void;
@@ -654,9 +690,9 @@ function Details({
 
   return (
     <div className="space-y-3">
-      <div className="card pad">
+      <div className="card pad-sm">
         <div className="mb-2 flex items-center gap-2">
-          <Avatar name={thread.name} size={32} />
+          <Avatar name={thread.name} size={36} src={avatarUrl} />
           <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-text-primary">{thread.name}</span>
         </div>
         <Field icon={Globe} label="Channel" value={CHANNEL_LABEL[thread.channel as Channel] ?? thread.channel} />
@@ -667,7 +703,7 @@ function Details({
         <Field icon={Plus} label="First seen" value={new Date(thread.createdAt).toLocaleDateString("en-GB")} />
       </div>
 
-      <div className="card pad">
+      <div className="card pad-sm">
         <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-faint">
           <Pencil size={10} /> Tags
         </div>
@@ -699,7 +735,7 @@ function Details({
       </div>
 
       {/* ═══ الملاحظات - يقرؤها الفريق والعميل لا ═══ */}
-      <div className="card pad">
+      <div className="card pad-sm">
         <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-faint">
           <StickyNote size={10} /> Notes
         </div>
@@ -747,7 +783,7 @@ function Details({
       </div>
 
       {history.length > 0 && (
-        <div className="card pad">
+        <div className="card pad-sm">
           <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-faint">
             Earlier conversations
           </div>

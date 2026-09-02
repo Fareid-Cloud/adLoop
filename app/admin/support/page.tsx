@@ -100,6 +100,12 @@ export default async function AdminSupportPage({
         })
       : [];
 
+  // صورةُ صاحب المحادثة المفتوحة - نفس سبب الاستعلام المنفصل في القائمة:
+  // `SupportThread` مالهاش علاقةٌ بـ`User`.
+  const activeAvatar = active?.userId
+    ? (await prisma.user.findUnique({ where: { id: active.userId }, select: { avatarUrl: true } }))?.avatarUrl ?? null
+    : null;
+
   const tags = [...new Set(allTags.flatMap((t) => t.tags))].sort();
   const unreadCount = threads.filter((t) => t.unread).length;
 
@@ -137,6 +143,7 @@ export default async function AdminSupportPage({
         threads={JSON.parse(JSON.stringify(threads))}
         active={active ? JSON.parse(JSON.stringify(active)) : null}
         history={JSON.parse(JSON.stringify(history))}
+        activeAvatar={activeAvatar}
         counts={counts}
         statusCounts={statusCounts}
         agents={agentRows}

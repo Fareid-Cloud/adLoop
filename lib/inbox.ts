@@ -231,7 +231,11 @@ export interface ThreadRow {
   assignedToName: string | null;
   lastMessageAt: Date;
   messageCount: number;
+  /** رسائلُ العميل اللي وصلت بعد آخر فتحة - **العدّاد اللي بيتعرض**. */
+  unreadCount: number;
   preview: string;
+  /** صورةُ الحساب الحقيقيّة لو المرسل مشترك مسجَّل. */
+  avatarUrl: string | null;
 }
 
 export async function listThreads(filters: InboxFilters, take = 60): Promise<ThreadRow[]> {
@@ -240,7 +244,7 @@ export async function listThreads(filters: InboxFilters, take = 60): Promise<Thr
     orderBy: INBOX_ORDER,
     take,
     select: {
-      id: true, channel: true, name: true, email: true, phone: true, subject: true,
+      id: true, userId: true, channel: true, name: true, email: true, phone: true, subject: true,
       status: true, pinned: true, tags: true, assignedToId: true,
       lastMessageAt: true, readByAdminAt: true,
       assignedTo: { select: { name: true, email: true } },
@@ -254,6 +258,43 @@ export async function listThreads(filters: InboxFilters, take = 60): Promise<Thr
       },
     },
   });
+
+  // 🔴 **عدّادُ غير المقروء = رسائلُ العميل بعد آخر فتحة.**
+  //
+  // كان بيتعرض `_count.messages` (كلُّ الرسائل)، فمحادثةٌ فيها رسالةٌ
+  // جديدة واحدة بتقول «١٢» - رقمٌ بيتقري كضغطٍ مش موجود فيبطّل يتقري.
+  //
+  // ومابيتحسبش في نفس الاستعلام لأنّ الشرط مقارنةٌ بعمودٍ في **صفّ
+  // المحادثة نفسه** (`readByAdminAt`)، وPrisma مابيعبّرش عنها في `_count`.
+  // فاستعلامٌ واحد إضافي لكلّ الصفحة (محدودةٌ بستّين محادثة)، والعدُّ في
+  // الذاكرة - أرخص من استعلامٍ لكلّ صفّ بكتير.
+  // صورُ الحسابات: `SupportThread` مالهاش علاقةٌ بـ`User` (بس `userId`
+  // كعمود، لأنّ المحادثة ممكن تيجي من واتساب بلا حساب أصلاً)، فبتتجاب
+  // على حدة. واستعلامٌ واحد لكلّ الصفحة لا لكلّ صفّ.
+  const avatarByUser = new Map<string, string | null>();
+  const userIds = [...new Set(rows.map((r) => r.userId).filter((v): v is string => !!v))];
+  if (userIds.length > 0) {
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, avatarUrl: true },
+    });
+    for (const u of users) avatarByUser.set(u.id, u.avatarUrl);
+  }
+
+  const unreadByThread = new Map<string, number>();
+  if (rows.length > 0) {
+    const inbound = await prisma.supportMessage.findMany({
+      where: { threadId: { in: rows.map((r) => r.id) }, fromSupport: false },
+      select: { threadId: true, createdAt: true },
+    });
+    const seenAt = new Map(rows.map((r) => [r.id, r.readByAdminAt]));
+    for (const m of inbound) {
+      const readAt = seenAt.get(m.threadId);
+      if (!readAt || m.createdAt > readAt) {
+        unreadByThread.set(m.threadId, (unreadByThread.get(m.threadId) ?? 0) + 1);
+      }
+    }
+  }
 
   return rows.map((r) => ({
     id: r.id,
@@ -270,6 +311,8 @@ export async function listThreads(filters: InboxFilters, take = 60): Promise<Thr
     assignedToName: r.assignedTo?.name ?? r.assignedTo?.email ?? null,
     lastMessageAt: r.lastMessageAt,
     messageCount: r._count.messages,
+    unreadCount: unreadByThread.get(r.id) ?? 0,
+    avatarUrl: (r.userId && avatarByUser.get(r.userId)) || null,
     preview: r.messages[0]?.body.replace(/\s+/g, " ").slice(0, 120) ?? "",
   }));
 }
