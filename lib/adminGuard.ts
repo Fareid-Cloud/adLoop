@@ -8,15 +8,17 @@
 // في كل مسار معناها إن أول مسار جديد يُنسى فيه سطر واحد يبقى هو الثغرة -
 // وده بالظبط اللي حصل قبل كده في `stop-impersonating`.
 //
-// الترتيب هنا مقصود: الهوية → التعليق → الدور → CSRF → الرفعة. الأغلى
-// (نداء قاعدة بيانات للرفعة مثلاً) بيجي بعد الأرخص، والرسالة اللي
-// بترجع مابتفرّقش بين "مش أدمن" و"مش موجود" - الاتنين 401/403 بلا تفصيل.
+// الترتيب هنا مقصود: الهوية → التعليق → الدور → CSRF → القفل → الرفعة.
+// الأغلى بيجي بعد الأرخص، والرسالة اللي بترجع مابتفرّقش بين "مش أدمن"
+// و"مش موجود" - الاتنين 401/403 بلا تفصيل.
 
 import { NextRequest, NextResponse } from "next/server";
 import type { User } from "@prisma/client";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { verifyCsrfToken } from "@/lib/csrf";
-import { hasValidElevation } from "@/lib/adminElevation";
+import {
+  ADMIN_UNLOCK_COOKIE, hasValidElevation, hasValidUnlockToken,
+} from "@/lib/adminElevation";
 import {
   resolveAdminRole,
   adminCapabilities,
@@ -68,6 +70,22 @@ export async function guardAdmin(
     return {
       ok: false,
       response: NextResponse.json({ error: "csrf validation failed" }, { status: 403 }),
+    };
+  }
+
+  // 🔴 **قفل اللوحة مفروض على الـAPI كمان، لا على الصفحات وحدها.**
+  //
+  // `app/admin/layout.tsx` بيقفل الصفحات - لكن الصفحات مش الطريق الوحيد
+  // للبيانات. جلسة أدمن مسروقة بتقدر تنده المسارات دي مباشرةً وتقرا كل
+  // عميل وكل رقم من غير ما تفتح صفحة واحدة، فقفلٌ في الواجهة وحدها
+  // بيحمي المنظر لا البيانات.
+  //
+  // و`/api/admin/reauth` **مستثنى بطبيعته** لأنّه مابيعدّيش من هنا أصلاً:
+  // هو الباب اللي بيتفتح بيه القفل، فاشتراط القفل عليه كان هيقفله للأبد.
+  if (!hasValidUnlockToken(req.cookies.get(ADMIN_UNLOCK_COOKIE)?.value, admin.id)) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "unlock_required" }, { status: 403 }),
     };
   }
 

@@ -9,14 +9,15 @@
 // الإطار الفعلي يضيق، فالمحتوى بيفضل مزنوق جنب مساحة فاضية.
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import {
   LayoutDashboard, Users, LifeBuoy, TrendingUp, CreditCard, Flag,
   Activity, ScrollText, ShieldCheck, PanelLeftClose, PanelLeftOpen,
-  ArrowLeft, ShieldAlert,
+  ArrowLeft, ShieldAlert, Lock,
 } from "lucide-react";
 import type { AdminNavGroup } from "@/lib/adminNavConfig";
+import { getCsrfHeader } from "@/lib/csrfClient";
 
 const ICONS: Record<string, typeof Users> = {
   LayoutDashboard, Users, LifeBuoy, TrendingUp, CreditCard, Flag, Activity, ScrollText, ShieldCheck,
@@ -37,6 +38,17 @@ export function AdminShell({
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+
+  const router = useRouter();
+
+  async function lockConsole() {
+    // الخادم هو اللي بيمسح الكوكي: هي `httpOnly` فالجافاسكربت مايشوفهاش
+    // أصلاً - وده مقصود، ومحاولة مسحها من هنا كانت هتفشل بصمت وتدّي
+    // إحساس قفل من غير قفل.
+    await fetch("/api/admin/lock", { method: "POST", headers: getCsrfHeader() }).catch(() => {});
+    router.replace("/admin-unlock");
+    router.refresh();
+  }
 
   return (
     <div dir="ltr" data-accent="red" data-mode="dark" data-mode-fixed="" className="flex min-h-screen bg-bg text-text-primary">
@@ -106,6 +118,18 @@ export function AdminShell({
           >
             {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
             {!collapsed && <span>Collapse</span>}
+          </button>
+          {/* قفل يدويّ: القفل بينتهي لوحده بعد ساعة، لكن "أنا ماشي من على
+              المكتب دلوقتي" لحظة بيعرفها صاحبها هو - وانتظار انتهاء المهلة
+              وقتها هو بالظبط الفجوة اللي القفل موجود عشانها. */}
+          <button
+            type="button"
+            onClick={lockConsole}
+            title="Lock the console"
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-text-faint transition-colors hover:bg-critical/10 hover:text-critical"
+          >
+            <Lock size={16} />
+            {!collapsed && <span>Lock console</span>}
           </button>
           {!collapsed && (
             <div className="mt-1 rounded-lg bg-surface-raised px-3 py-2">

@@ -12,7 +12,10 @@ import { isAdminUser } from "@/lib/adminRole";
 import { prisma } from "@/lib/prisma";
 import { verifyCsrfToken } from "@/lib/csrf";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
-import { createElevationToken, ELEVATION_MINUTES } from "@/lib/adminElevation";
+import {
+  ADMIN_UNLOCK_COOKIE, createElevationToken, createUnlockToken,
+  ELEVATION_MINUTES, UNLOCK_MINUTES,
+} from "@/lib/adminElevation";
 import { decryptMfaSecret, verifyMfaCode, matchBackupCode } from "@/lib/mfa";
 import { validateOrError } from "@/lib/validation/schemas";
 import { logAdminAction } from "@/lib/adminAudit";
@@ -82,12 +85,27 @@ export async function POST(req: NextRequest) {
   }
 
   const response = NextResponse.json({ success: true, expiresInMinutes: ELEVATION_MINUTES });
-  response.cookies.set("adloop_admin_elevated", createElevationToken(admin.id), {
+
+  const cookieBase = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * ELEVATION_MINUTES,
+    sameSite: "lax" as const,
     path: "/",
+  };
+
+  response.cookies.set("adloop_admin_elevated", createElevationToken(admin.id), {
+    ...cookieBase,
+    maxAge: 60 * ELEVATION_MINUTES,
   });
+
+  // إثباتٌ واحد يفتح القفلين: اللي دخل كلمة سرّه عشان ينفّذ فعلاً خطيراً
+  // أثبت هويته فعلاً، فمطالبته بيها تاني عشان يفتح اللوحة نفسها إزعاجٌ بلا
+  // مقابل أمنيّ. والعكس مش صحيح - قفل الدخول وحده **مابيرفعش** لفعل خطير،
+  // لأنّ سؤال الفعل مختلف: "انت متأكّد دلوقتي؟" لا "انت مين؟".
+  response.cookies.set(ADMIN_UNLOCK_COOKIE, createUnlockToken(admin.id), {
+    ...cookieBase,
+    maxAge: 60 * UNLOCK_MINUTES,
+  });
+
   return response;
 }

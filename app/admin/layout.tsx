@@ -9,7 +9,9 @@
 // الحساب: دي سطح تشغيل داخلي، مش واجهة عميل.
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { getSessionUserFromCookies } from "@/lib/auth";
+import { ADMIN_UNLOCK_COOKIE, hasValidUnlockToken } from "@/lib/adminElevation";
 import type { ReactNode } from "react";
 import { resolveAdminRole, adminCapabilities } from "@/lib/adminRole";
 import { adminNavFor } from "@/lib/adminNavConfig";
@@ -38,6 +40,20 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // الأول، مش بيدخل صامتاً.
   if (!user.mfaEnabled) {
     redirect("/dashboard/settings?tab=security&mfaRequired=1");
+  }
+
+  // 🔴 **البوابة الرابعة: إثباتٌ طازج قبل أيّ صفحة.**
+  //
+  // الثلاثة اللي فوق بيسألوا "مين انت؟" من الجلسة - والجلسة ممكن تكون
+  // مفتوحة من امبارح على جهاز مشترك، أو مسروقة. فكان الوصول للوحة اللي
+  // بتوقف حسابات وتغيّر أسعار **دوسة واحدة** من حساب المشترك العادي.
+  //
+  // القفل هنا لا في كلّ صفحة على حدة: صفحة جديدة تتضاف تحت `/admin`
+  // بتبقى محميّة تلقائياً، ونسيان الفحص فيها مستحيل - وهو نوع النسيان
+  // اللي بيفتح ثغرة صلاحيات بالصدفة بعد شهور.
+  const unlockToken = (await cookies()).get(ADMIN_UNLOCK_COOKIE)?.value;
+  if (!hasValidUnlockToken(unlockToken, user.id)) {
+    redirect("/admin-unlock");
   }
 
   return (
