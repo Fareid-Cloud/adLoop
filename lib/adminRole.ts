@@ -87,13 +87,24 @@ export type AdminCapability =
   /** سجلّ التدقيق الكامل (كل الأدمنز) */
   | "audit.viewAll"
   /** صندوق الدعم */
-  | "support.handle";
+  | "support.handle"
+  /**
+   * قراءةُ محادثات العملاء مع المساعد الذكيّ لتقييم جودتها.
+   *
+   * **صلاحيةٌ مستقلّة عن `analytics.product` عن قصد.** التحليلات أرقامٌ
+   * مجمَّعة، وهنا **نصُّ محادثةِ عميلٍ بعينه**: أرقامُ صرفه، وأسماءُ
+   * حملاته، وأسئلتُه عن شغله. الفرق بينهما هو الفرق بين إحصاءٍ وقراءةِ
+   * بريد - ودمجُهما في صلاحيةٍ واحدة كان بيفتح التانية لكلّ من له الأولى.
+   *
+   * ولذلك هي للمالك وحده، والدعمُ لا يملكها.
+   */
+  | "agent.review";
 
 const OWNER_CAPS: readonly AdminCapability[] = [
   "customers.view", "customers.suspend", "customers.impersonate", "customers.override",
   "customers.subscription", "customers.email", "customers.export", "customers.annotate",
   "analytics.financial", "analytics.product", "system.view", "system.resync",
-  "flags.manage", "staff.manage", "audit.viewAll", "support.handle",
+  "flags.manage", "staff.manage", "audit.viewAll", "support.handle", "agent.review",
 ];
 
 // الدعم: يشوف ويساعد ويصلّح، ومايمسّش فلوس ولا صلاحيات ولا مفاتيح عامة.

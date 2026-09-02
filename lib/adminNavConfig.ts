@@ -39,6 +39,8 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     items: [
       { href: "/admin/customers", label: "Customers", iconName: "Users", capability: "customers.view" },
       { href: "/admin/support", label: "Support", iconName: "LifeBuoy", capability: "support.handle" },
+      // تحت "العملاء" لا "الرؤى": ده نصُّ محادثاتِ عملاء، لا إحصاء.
+      { href: "/admin/agent", label: "Agent review", iconName: "Bot", capability: "agent.review" },
     ],
   },
   {
