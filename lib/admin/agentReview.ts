@@ -215,12 +215,7 @@ function summarise(rows: ReviewRow[]): AgentReviewSummary {
   };
 }
 
-/** الأحكام المتاحة - نصٌّ لا enum عمداً (راجع تعليق المخطّط). */
-export const VERDICTS = [
-  { key: "GOOD", label: "Good" },
-  { key: "WRONG_NUMBER", label: "Wrong number" },
-  { key: "HALLUCINATED", label: "Made something up" },
-  { key: "SHALLOW", label: "Shallow" },
-  { key: "IGNORED_DATA", label: "Ignored the data it had" },
-  { key: "TOO_LONG", label: "Too long" },
-] as const;
+/** الأحكام المتاحة - نصٌّ لا enum عمداً (راجع تعليق المخطّط).
+ *  تعريفُها في ملفٍّ بلا استيراد عشان الشاشة تقدر تاخدها بلا ما تجرّ
+ *  Prisma للمتصفّح، وتُعاد التصدير من هنا فيفضل مصدرها واحداً. */
+export { VERDICTS } from "@/lib/admin/agentVerdicts";

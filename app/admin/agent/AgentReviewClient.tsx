@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
 import type { AgentReviewSummary, ReviewFilter, ReviewRow } from "@/lib/admin/agentReview";
-import { VERDICTS } from "@/lib/admin/agentReview";
+// من `agentVerdicts` لا من `agentReview`: التاني بيستورد Prisma.
+import { VERDICTS } from "@/lib/admin/agentVerdicts";
 import { Card, SectionTitle, Badge } from "../components/AdminUI";
 
 export function AgentReviewClient({
