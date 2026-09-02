@@ -14,6 +14,7 @@ import { isOwnerEmail, OWNER_EMAIL } from "@/lib/owner";
 import { TABLE, TABLE_WRAP, THEAD_ROW, TH, TR, TD, TD_MUTED } from "@/app/components/ui/tableStyles";
 import { AdminAction } from "../components/AdminAction";
 import { AdminPageHeader, Badge, Card, SectionTitle, shortDate } from "../components/AdminUI";
+import { GrantAccessForm } from "./GrantAccessForm";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,8 @@ export default async function StaffPage() {
           </div>
         </Card>
       </div>
+
+      <GrantAccessForm />
 
       <div className={TABLE_WRAP}>
         <table className={TABLE}>
