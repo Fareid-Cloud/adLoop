@@ -96,68 +96,15 @@ export function workspaceWriteFilter(userId: string): Prisma.WorkspaceWhereInput
   };
 }
 
-/** دورُ المستخدم في مساحةٍ بعينها - أو `null` لو مالوش وصولٌ أصلاً. */
-export type WorkspaceRole = "OWNER" | MemberRole;
-
-export async function roleInWorkspace(
-  db: {
-    workspace: { findFirst: (args: unknown) => Promise<{ id: string } | null> };
-    workspaceMember: { findUnique: (args: unknown) => Promise<{ role: string } | null> };
-  },
-  workspaceId: string,
-  userId: string
-): Promise<WorkspaceRole | null> {
-  const owned = await db.workspace.findFirst({
-    where: { id: workspaceId, userId },
-    select: { id: true },
-  });
-  if (owned) return "OWNER";
-
-  const member = await db.workspaceMember.findUnique({
-    where: { workspaceId_userId: { workspaceId, userId } },
-    select: { role: true },
-  });
-  if (!member) return null;
-  return member.role === "OPERATOR" ? "OPERATOR" : "VIEWER";
-}
-
-
-// ══════════════════════════════════════════════════════════════════════
-// فرضُ الاطّلاع-فقط
-// ══════════════════════════════════════════════════════════════════════
+// ── ملاحظةٌ على ما لم يُكتب هنا ──────────────────────────────────────
 //
-// **مش في الوسيط، والسبب تقنيّ لا اختياريّ:** `proxy.ts` بيشتغل على Edge
-// حيث لا وصولَ لقاعدة البيانات، والدورُ صفٌّ فيها. فحارسُ «العرض كـ»
-// اللي هناك بيقرا الجلسة وحدها، وده مش كافٍ هنا.
+// كان هنا `assertNotViewer` و`roleInWorkspace` - حارسٌ يرمي عند الكتابة،
+// ودالّةُ استعلامٍ عن الدور. **واتشالوا لأنّ محدّش بيناديهم.**
 //
-// فالفرضُ عند نقطة الكتابة - وبنفس منطق حارس الديمو: بيتحطّ عند **تعريف**
-// دالّة الكتابة لا عند مستدعيها، فأيّ نداءٍ جديد بيرثه تلقائياً. (راجع
-// `lib/demo.ts` - نفس الدرس اتعلّم هناك بعد ما اتكشفت دالّتان مكشوفتان.)
-
-export class ViewerWriteBlocked extends Error {
-  readonly isViewerBlock = true;
-  constructor() {
-    super("This account has view-only access to this workspace.");
-    this.name = "ViewerWriteBlocked";
-  }
-}
-
-/**
- * يرمي لو المستخدم **مقعدُ اطّلاع** في المساحة دي.
- *
- * بيمرّ صامتاً للمالك وللـ`OPERATOR`، وبيمرّ كمان لمن لا علاقة له
- * بالمساحة أصلاً - **عن قصد**: الوصولُ مسؤوليةُ `workspaceAccessFilter`،
- * وتكرارُه هنا بيخلّي نفس السؤال له جوابان يفترقان. ده حارسُ **دور** لا
- * حارسُ وصول.
- */
-export async function assertNotViewer(
-  db: { workspaceMember: { findUnique: (args: unknown) => Promise<{ role: string } | null> } },
-  workspaceId: string,
-  userId: string
-): Promise<void> {
-  const member = await db.workspaceMember.findUnique({
-    where: { workspaceId_userId: { workspaceId, userId } },
-    select: { role: true },
-  });
-  if (member && member.role !== "OPERATOR") throw new ViewerWriteBlocked();
-}
+// الفرضُ الفعليّ بيحصل بـ`workspaceWriteFilter` عند نقطة الاستعلام: صفٌّ
+// مابيرجعش، فالمسار بيردّ «مش موجود» - نفس نمط الملكية القائم في المنتج
+// كلّه. وحارسٌ ثانٍ لنفس السؤال معناه جوابان يفترقان مع الوقت.
+//
+// 🔴 **وحارسٌ معرَّفٌ ولا يُنادى أخطر من غيابه**: قارئُ الملفّ يفترض أنّ
+// المنع قائم، فلا يضيفه حيث يلزم. لو احتاجت حالةٌ رميةً بدل صفٍّ فارغ،
+// تُكتب وقتها وتُوصَّل في نفس الالتزام - لا قبله.
