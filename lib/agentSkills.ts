@@ -68,16 +68,21 @@ function reasoningProcedure(ar: boolean): string {
 ٣) **قارن المُعلَن بالمتحقَّق.** إن وُجد الاثنان واختلفا، فالحكم على
    المتحقَّق، والفارقُ نفسُه جزءٌ من الجواب لا حاشية.
 
-٤) **ابحث عن إشارةٍ تناقض ما وصلتَ إليه** - ثمّ تعامل معها صراحةً:
+٤) **افحص صحّةَ القياس قبل أن تلوم الأداء.** إن كان \`tracking.tagLive\`
+   خطأً، أو صفحاتٌ تحتاج انتباهاً، فالأرقام المتحقَّقة ناقصةٌ **بنيوياً**
+   لا لأنّ الأداء ساء. قل ذلك أوّلاً: توصيةٌ مبنيّةٌ على قياسٍ مكسور تُصلح
+   ما ليس معطوباً وتترك المعطوب. وإن كان القياس سليماً فلا تذكره أصلاً.
+
+٥) **ابحث عن إشارةٍ تناقض ما وصلتَ إليه** - ثمّ تعامل معها صراحةً:
    تكلفةٌ رخيصةٌ مع عائدٍ ضعيف، أداءٌ جيّدٌ مع تكرارٍ مشبع، تحسّنٌ في
    المُعلَن مع تراجعٍ في المتحقَّق، نتيجةٌ ممتازةٌ في يومٍ واحدٍ من سبعة.
    إن لم تجد نقيضاً فقل ذلك؛ وإن وجدتَه ولم يُسقط حكمك فقل لماذا.
 
-٥) **افصل الارتباط عن السبب.** «ارتفع الإنفاق فارتفعت المبيعات» ليست
+٦) **افصل الارتباط عن السبب.** «ارتفع الإنفاق فارتفعت المبيعات» ليست
    علاقةً سببية إلّا إن أيّدتها الكفاءة. ولا تنسب أثراً إلى تغييرٍ لا
    تراه في البيانات المرفقة.
 
-٦) **راجع الاتّساق** قبل الإرسال: هل كلُّ رقمٍ كتبتَه موجودٌ حرفياً في
+٧) **راجع الاتّساق** قبل الإرسال: هل كلُّ رقمٍ كتبتَه موجودٌ حرفياً في
    السياق؟ هل يناقض حكمُك قراراً معلَّقاً يعرضه المنتج نفسه؟ إن ناقضه،
    فسّر الفارق - لا تتجاهله.`
     : `## Before you write a word - work through this internally
@@ -96,18 +101,25 @@ function reasoningProcedure(ar: boolean): string {
    judge on the verified figure, and treat the gap itself as part of
    the answer rather than a footnote.
 
-4) **Look for a signal that contradicts your conclusion**, then deal
+4) **Check measurement health before blaming performance.** If
+   \`tracking.tagLive\` is false, or pages need attention, the verified
+   figures are **structurally** incomplete - not evidence that
+   performance fell. Say that first: a recommendation built on broken
+   measurement fixes what is not broken and leaves what is. If
+   measurement is sound, do not mention it at all.
+
+5) **Look for a signal that contradicts your conclusion**, then deal
    with it out loud: cheap cost with weak return, good performance at a
    saturated frequency, reported improving while verified declines, an
    excellent result driven by one day out of seven. If you find no
    contradiction, say so. If you find one and it does not overturn your
    verdict, say why.
 
-5) **Separate correlation from cause.** "Spend rose and sales rose" is
+6) **Separate correlation from cause.** "Spend rose and sales rose" is
    not causal unless efficiency supports it. Never attribute an effect
    to a change you cannot see in the attached data.
 
-6) **Check consistency before sending**: is every number you wrote
+7) **Check consistency before sending**: is every number you wrote
    literally present in the context? Does your verdict contradict a
    pending decision the product itself is showing? If it does, explain
    the difference rather than ignoring it.`;

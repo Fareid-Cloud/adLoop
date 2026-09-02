@@ -21,6 +21,7 @@ const MAX_CAMPAIGNS = 15;
 const MAX_CREATIVES_PER_SIDE = 5;
 const MAX_TRENDS = 8;
 const MAX_DECISIONS = 5;
+const MAX_EXPERIMENTS = 6;
 
 /** صفٌّ واحد في جدول الإعلانات المرسَل */
 export interface AgentCreativeRow {
@@ -62,6 +63,28 @@ export interface AgentContext {
   store: AgentStoreFacts | null;
   /** ما اقترحه النظام فعلاً - فلا يناقض الوكيل منتجَه في الصفحة نفسها */
   pendingDecisions: Array<{ severity: string; title: string }>;
+
+  /**
+   * 🔴 **صحّةُ القياس - وبدونها لا يستطيع الوكيل إتمام إجرائه.**
+   *
+   * قواعدُه تأمره أن يقارن المُعلَن بالمتحقَّق، وأن يسأل قبل الحكم بارتفاع
+   * التكلفة: أهو تراجعُ أداءٍ أم تراجعُ قياس؟ ولم يكن يملك ما يجيب به -
+   * فيحكم على أرقامٍ ناقصةٍ وهو يظنّها كاملة، وهذا أسوأ من ألّا يجيب.
+   */
+  tracking: {
+    /** وصلت نقرةٌ حقيقيّة من الوسم - الدليلُ الوحيد أنّ الحلقة تعمل */
+    tagLive: boolean;
+    monitoredPages: number;
+    pagesNeedingAttention: number;
+  };
+
+  /** ما جُرِّب فعلاً وما حكمُه - كي لا يقترح الوكيل تجربةً أُجريت */
+  experiments: Array<{
+    description: string;
+    status: string;
+    confidence: string;
+    changedAt: string;
+  }>;
 }
 
 /** هل في السياق ما يكفي لجوابٍ مبنيّ على أرقام؟ */
@@ -77,7 +100,7 @@ export async function gatherAgentContext(
   const since = new Date();
   since.setDate(since.getDate() - periodDays);
 
-  const [campaigns, creativeData, trends, store, decisions] = await Promise.all([
+  const [campaigns, creativeData, trends, store, decisions, firstClick, pages, experiments] = await Promise.all([
     buildCampaignSummaries(workspaceId, since, MAX_CAMPAIGNS),
     gatherCreatives(workspaceId),
     gatherTrends(workspaceId),
@@ -87,6 +110,18 @@ export async function gatherAgentContext(
       select: { severity: true, title: true },
       orderBy: { createdAt: "desc" },
       take: MAX_DECISIONS,
+    }),
+    // `findFirst` لا `count`: السؤال «هل وصلت نقرةٌ قطّ» لا «كم نقرة»
+    prisma.ctaClickEvent.findFirst({ where: { workspaceId }, select: { id: true } }),
+    prisma.monitoredPage.findMany({
+      where: { workspaceId },
+      select: { adloopDetected: true, lastError: true, lastCheckedAt: true },
+    }),
+    prisma.experimentLog.findMany({
+      where: { workspaceId },
+      select: { description: true, status: true, confidenceLevel: true, changedAt: true },
+      orderBy: { changedAt: "desc" },
+      take: MAX_EXPERIMENTS,
     }),
   ]);
 
@@ -99,6 +134,21 @@ export async function gatherAgentContext(
     worstCreatives: creativeData.worst,
     store,
     pendingDecisions: decisions.map((d) => ({ severity: d.severity, title: d.title })),
+    tracking: {
+      tagLive: Boolean(firstClick),
+      monitoredPages: pages.length,
+      // «تحتاج انتباهاً» = فُحصت ولم يُكشَف الوسم، أو فُحصت فأخطأت.
+      // وغيرُ المفحوصة ليست معطوبة - لا تُعدّ فيها.
+      pagesNeedingAttention: pages.filter(
+        (p) => p.lastCheckedAt !== null && (p.lastError !== null || p.adloopDetected !== true)
+      ).length,
+    },
+    experiments: experiments.map((e) => ({
+      description: e.description,
+      status: e.status,
+      confidence: e.confidenceLevel,
+      changedAt: e.changedAt.toISOString().slice(0, 10),
+    })),
   };
 }
 
