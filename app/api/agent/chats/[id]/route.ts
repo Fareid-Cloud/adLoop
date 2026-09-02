@@ -54,3 +54,38 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   await prisma.agentChat.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }
+
+/**
+ * إعادةُ تسمية المحادثة.
+ *
+ * الاسمُ التلقائيّ أوّلُ سؤالٍ مقتطع، وهو جيّدٌ لأنّه يصف المحتوى - لكنّه
+ * يصف **أوّل** سؤالٍ فقط، والمحادثة تتشعّب. فمن يعود إليها بعد أسبوع
+ * يبحث عن موضوعها لا عن جملتها الأولى.
+ *
+ * نفس حراسة الحذف: ملكيّةٌ عبر `workspaceAccess` ثمّ CSRF - الكتابةُ
+ * كتابة، وإن كانت حرفاً واحداً في عنوان.
+ */
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getSessionUser(req);
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  if (!verifyCsrfToken(req)) {
+    return NextResponse.json({ error: "csrf validation failed" }, { status: 403 });
+  }
+
+  const body = await req.json().catch(() => ({}));
+  // يُقلَّم ويُسقَف: عنوانٌ فارغ يترك صفّاً بلا اسم، وعنوانٌ بلا حدّ
+  // يكسر عمود السجلّ الضيّق.
+  const title = String(body?.title ?? "").trim().slice(0, 80);
+  if (!title) return NextResponse.json({ error: "title required" }, { status: 400 });
+
+  const { id } = await params;
+  const owned = await prisma.agentChat.findFirst({
+    where: { id, ...workspaceAccess(user.id) },
+    select: { id: true },
+  });
+  if (!owned) return NextResponse.json({ error: "not found" }, { status: 404 });
+
+  await prisma.agentChat.update({ where: { id }, data: { title } });
+  return NextResponse.json({ ok: true, title });
+}

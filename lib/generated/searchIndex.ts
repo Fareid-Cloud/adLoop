@@ -40,6 +40,8 @@ export const SEARCH_INDEX: SearchEntry[] = [
   { k: "agentPage.loadFailed", h: "/dashboard/agent" },
   { k: "agentPage.newChat", h: "/dashboard/agent" },
   { k: "agentPage.pickOne", h: "/dashboard/agent" },
+  { k: "agentPage.renameChat", h: "/dashboard/agent" },
+  { k: "agentPage.replyQuote", h: "/dashboard/agent" },
   { k: "agentPage.sugg1", h: "/dashboard/agent" },
   { k: "agentPage.sugg2", h: "/dashboard/agent" },
   { k: "agentPage.sugg3", h: "/dashboard/agent" },

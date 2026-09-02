@@ -382,12 +382,14 @@ export default async function GlancePage({
             شارةً بجانبه، فيستوي الارتفاعان بلا ضبطٍ يدويّ لأيّهما. */}
         <Link
           href="/dashboard/diagnostics"
-          className="inline-flex h-11 items-center gap-2.5 overflow-hidden rounded-full card-shadow border border-border bg-surface pe-3.5 ps-1.5 no-underline transition-colors hover:border-accent"
+          className="inline-flex h-11 min-w-0 max-w-full items-center gap-2.5 overflow-hidden rounded-full card-shadow border border-border bg-surface pe-3.5 ps-1.5 no-underline transition-colors hover:border-accent"
         >
           <HealthGauge score={health.overallScore} size="sm" showDenominator={false} />
-          <span className="text-[12.5px] font-medium text-text-primary">{tr("healthScoreShort")}</span>
+          <span className="shrink-0 text-[12.5px] font-medium text-text-primary">{tr("healthScoreShort")}</span>
           <span
-            className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+            // نصُّ الحالة هو ما يُقصَّر عند الضيق: الدرجةُ والاسمُ أهمّ
+            // منه، وهو وحده الذي يحتمل القصّ بلا أن تفقد الشارة معناها.
+            className={`min-w-0 truncate rounded-full px-2 py-0.5 text-[11px] font-medium ${
               health.isComplete
                 ? "bg-verified/12 text-verified"
                 : health.overallScore > 0

@@ -13,7 +13,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { MessageSquare, Plus, Trash2, Send, Loader2, AlertTriangle, Paperclip, X, Copy, Check } from "lucide-react";
+import { MessageSquare, Plus, Trash2, Send, Loader2, AlertTriangle, Paperclip, X, Copy, Check, Pencil, CornerUpLeft } from "lucide-react";
 import { AgentIcon } from "@/app/components/AgentIcon";
 import { MarkdownAnswer } from "@/app/components/MarkdownAnswer";
 import { getCsrfHeader } from "@/lib/csrfClient";
@@ -70,6 +70,9 @@ export function AgentClient({
   const fileRef = useRef<HTMLInputElement>(null);
   const [attachment, setAttachment] = useState<{ name: string; text: string } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  /** المحادثةُ قيد إعادة التسمية، ونصُّ الاسم الجاري تحريره. */
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [draftTitle, setDraftTitle] = useState("");
   /** كم حرفاً ظهر من آخر جواب - الكشفُ التدريجيّ نفسه الذي في مربّع السؤال */
   const [revealed, setRevealed] = useState<number | undefined>(undefined);
   const params = useSearchParams();
@@ -196,6 +199,20 @@ ${attachment.text}`
         prev.map((c) => (c.id === data.chatId ? { ...c, messageCount: c.messageCount + 2 } : c))
       );
     }
+  }
+
+  async function rename(id: string) {
+    const title = draftTitle.trim();
+    setRenamingId(null);
+    if (!title) return;
+    // متفائل: الاسمُ يتغيّر في القائمة فوراً ثمّ يُثبَّت على الخادم.
+    // إعادةُ تسميةٍ تُنتظر ثانيةً قبل أن تظهر تُقرأ كأنّها لم تُحفظ.
+    setChats((prev) => prev.map((c) => (c.id === id ? { ...c, title } : c)));
+    await fetch(`/api/agent/chats/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...getCsrfHeader() },
+      body: JSON.stringify({ title }),
+    }).catch(() => {});
   }
 
   async function remove(id: string) {
@@ -360,11 +377,45 @@ ${attachment.text}`
               >
                 <MessageSquare size={14} className="shrink-0 text-text-faint" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[12.5px] text-text-primary">{c.title}</span>
-                  <span className="block text-[11px] text-text-faint">
-                    {tr("messages", { n: c.messageCount })}
-                  </span>
+                  {renamingId === c.id ? (
+                    <input
+                      autoFocus
+                      value={draftTitle}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => setDraftTitle(e.target.value.slice(0, 80))}
+                      onBlur={() => void rename(c.id)}
+                      onKeyDown={(e) => {
+                        e.stopPropagation();
+                        if (e.key === "Enter") void rename(c.id);
+                        if (e.key === "Escape") setRenamingId(null);
+                      }}
+                      className="field field-sm w-full"
+                    />
+                  ) : (
+                    <>
+                      <span className="block truncate text-[12.5px] text-text-primary">{c.title}</span>
+                      <span className="block text-[11px] text-text-faint">
+                        {tr("messages", { n: c.messageCount })}
+                      </span>
+                    </>
+                  )}
                 </span>
+                {/* الاسمُ التلقائيّ أوّلُ سؤال، وهو يصف بدايةَ المحادثة لا
+                    موضوعَها بعد أن تتشعّب - فمن يعود إليها بعد أسبوع يحتاج
+                    أن يسمّيها بما صارت إليه. */}
+                {renamingId !== c.id && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDraftTitle(c.title);
+                      setRenamingId(c.id);
+                    }}
+                    aria-label={tr("renameChat")}
+                    className="shrink-0 rounded-lg p-1 text-text-faint hover:text-text-primary"
+                  >
+                    <Pencil size={12} />
+                  </button>
+                )}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -504,6 +555,21 @@ ${attachment.text}`
                       >
                         {copiedId === m.id ? <Check size={11} /> : <Copy size={11} />}
                         {copiedId === m.id && tr("copiedAnswer")}
+                      </button>
+                      {/* الردُّ على جزءٍ بعينه: يُقتبَس سطرٌ من الجواب في
+                          المربّع فيعرف الوكيل على أيّ شيءٍ يُسأل. بلا ذلك
+                          يكتب صاحبُ الحساب «واللي فوق ده؟» ولا مرجع لها. */}
+                      <button
+                        onClick={() => {
+                          const quote = m.content.replace(/\s+/g, " ").trim().slice(0, 160);
+                          setQuestion(`> ${quote}…
+
+`);
+                        }}
+                        aria-label={tr("replyQuote")}
+                        className="flex items-center gap-1 rounded p-0.5 text-text-faint opacity-0 transition-opacity hover:text-text-primary focus-visible:opacity-100 group-hover/msg:opacity-100"
+                      >
+                        <CornerUpLeft size={11} />
                       </button>
                     </span>
                     <MarkdownAnswer text={m.content} />
