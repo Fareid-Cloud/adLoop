@@ -23,7 +23,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       title: true,
       messages: {
         orderBy: { createdAt: "asc" },
-        select: { id: true, role: true, content: true, createdAt: true },
+        // `rating` جزءٌ من الحمولة: من غيره التقييم بيختفي أوّل ما
+        // المحادثة تتقفل وتتفتح تاني، فيبان كإنّه ما اتحفظش - وصاحبُه
+        // بيبطّل يقيّم.
+        select: { id: true, role: true, content: true, createdAt: true, rating: true },
       },
     },
   });

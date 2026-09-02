@@ -13,7 +13,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { MessageSquare, Plus, Trash2, Send, Loader2, AlertTriangle, Paperclip, X, Copy, Check, Pencil, CornerUpLeft } from "lucide-react";
+import { MessageSquare, Plus, Trash2, Send, Loader2, AlertTriangle, Paperclip, X, Copy, Check, Pencil, CornerUpLeft, ThumbsUp, ThumbsDown } from "lucide-react";
 import { AgentIcon } from "@/app/components/AgentIcon";
 import { MarkdownAnswer } from "@/app/components/MarkdownAnswer";
 import { getCsrfHeader } from "@/lib/csrfClient";
@@ -31,6 +31,8 @@ interface Message {
   id: string;
   role: string;
   content: string;
+  /** ‎1‎ أو ‎-1‎ أو `null` - تقييم صاحب الحساب لهذه الإجابة. */
+  rating?: number | null;
 }
 
 /**
@@ -70,6 +72,32 @@ export function AgentClient({
   const fileRef = useRef<HTMLInputElement>(null);
   const [attachment, setAttachment] = useState<{ name: string; text: string } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  /**
+   * التقييم بيتحدّث في الواجهة فوراً وبيتبعت بعدها.
+   *
+   * الانتظارُ هنا غلط: الفعلُ رأيٌ في ثانية، وتعليقُ الزرار لحد ما الشبكة
+   * ترجع بيخلّي حاجةً مجانية تحسّ بتكلفة فيبطّل صاحبها يعملها - وساعتها
+   * نخسر الإشارة كلها. ولو الحفظ فشل، بنرجّع القيمة القديمة: تقييمٌ
+   * ظاهرٌ وغيرُ محفوظ أسوأ من تقييمٍ ما اتعملش.
+   */
+  async function rateMessage(id: string, value: 1 | -1) {
+    const previous = messages.find((m) => m.id === id)?.rating ?? null;
+    // نفس القيمة تاني = سحب التقييم.
+    const next = previous === value ? null : value;
+
+    setMessages((list) => list.map((m) => (m.id === id ? { ...m, rating: next } : m)));
+
+    const res = await fetch(`/api/ai/messages/${id}/rate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getCsrfHeader() },
+      body: JSON.stringify({ rating: next }),
+    }).catch(() => null);
+
+    if (!res?.ok) {
+      setMessages((list) => list.map((m) => (m.id === id ? { ...m, rating: previous } : m)));
+    }
+  }
   /** المحادثةُ قيد إعادة التسمية، ونصُّ الاسم الجاري تحريره. */
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
@@ -571,6 +599,43 @@ ${attachment.text}`
                       >
                         <CornerUpLeft size={11} />
                       </button>
+
+                      {/* 🔴 **أرخصُ إشارةِ جودةٍ عندنا وأصدقُها.**
+                          مراجعةُ المالك لخمسمئة محادثة بيده مستحيلة عملياً،
+                          وحكمُ مستخدمٍ حقيقيّ على إجابةٍ حقيقية في ثانية
+                          واحدة. الفائدةُ الكبرى مش الرقم نفسه - إنّه بيدلّ
+                          على **العيّنة اللي فيها مشكلة**، فالمراجعة تبدأ
+                          منها بدل ما تبدأ من الأول.
+
+                          والدوسة تانيةً بتشيل التقييم: حبسُ رأيٍ اتغيّر
+                          بيخلّي الرقم أسوأ من غيابه.
+
+                          ومفيش رسالة نجاح: التقييم بيبان في لون الزرار
+                          نفسه، وأيّ إشعار فوقه بيحوّل فعلاً في ثانية
+                          لمقاطعةٍ تستاهل غلقاً. */}
+                      {!m.id.startsWith("a-") && (
+                        <span className="ms-1 flex items-center gap-0.5">
+                          {([1, -1] as const).map((value) => {
+                            const Icon = value === 1 ? ThumbsUp : ThumbsDown;
+                            const active = m.rating === value;
+                            return (
+                              <button
+                                key={value}
+                                onClick={() => rateMessage(m.id, value)}
+                                aria-label={tr(value === 1 ? "rateGood" : "rateBad")}
+                                aria-pressed={active}
+                                className={`flex items-center rounded p-0.5 transition-opacity hover:text-text-primary focus-visible:opacity-100 ${
+                                  active
+                                    ? `opacity-100 ${value === 1 ? "text-verified" : "text-critical"}`
+                                    : "text-text-faint opacity-0 group-hover/msg:opacity-100"
+                                }`}
+                              >
+                                <Icon size={11} />
+                              </button>
+                            );
+                          })}
+                        </span>
+                      )}
                     </span>
                     <MarkdownAnswer text={m.content} />
                   </div>
