@@ -14,13 +14,13 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   LayoutDashboard, Users, LifeBuoy, TrendingUp, CreditCard, Flag,
   Activity, ScrollText, ShieldCheck, PanelLeftClose, PanelLeftOpen,
-  ArrowLeft, ShieldAlert, Lock, Bot, Menu, X,
+  ArrowLeft, ShieldAlert, Lock, Bot, Menu, X, Radio,
 } from "lucide-react";
 import type { AdminNavGroup } from "@/lib/adminNavConfig";
 import { getCsrfHeader } from "@/lib/csrfClient";
 
 const ICONS: Record<string, typeof Users> = {
-  LayoutDashboard, Users, LifeBuoy, TrendingUp, CreditCard, Flag, Activity, ScrollText, ShieldCheck, Bot,
+  LayoutDashboard, Users, LifeBuoy, TrendingUp, CreditCard, Flag, Activity, ScrollText, ShieldCheck, Bot, Radio,
 };
 
 export function AdminShell({

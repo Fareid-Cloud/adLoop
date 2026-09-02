@@ -54,6 +54,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   {
     label: "Control",
     items: [
+      { href: "/admin/channels", label: "Channels", iconName: "Radio", capability: "flags.manage" },
       { href: "/admin/flags", label: "Feature Flags", iconName: "Flag", capability: "flags.manage" },
       { href: "/admin/system", label: "System Health", iconName: "Activity", capability: "system.view" },
     ],
