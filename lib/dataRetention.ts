@@ -30,6 +30,25 @@ const UNMATCHED_CLICK_RETENTION_DAYS = 90;
 // تحمل عنواناً ولا بصمة - معرّفَ محادثةٍ وتوزيعاً احتمالياً فقط.
 const ATTRIBUTION_RETENTION_DAYS = 400;
 
+// 🔴 **`WaClick` كان خارج السياسة كلّها - وهو أثقلها بياناتٍ شخصية.**
+//
+// الجدول يحمل رقم هاتف، وعنوان IP، وبصمة متصفّح - أي أنّه أكثر جداولنا
+// حساسيةً على الإطلاق. وهو يعيش في **قاعدة البيانات نفسها** (متتبّع واتساب
+// يُضبط على `DATABASE_URL` عينه)، لكنّ الكاتب فيه هو المشروع الآخر - فسقط
+// من مهمّة التنظيف بصمت: كلُّ جدولٍ آخر يُطهَّر وهذا يتراكم بلا حدٍّ منذ
+// اليوم الأوّل.
+//
+// **ويُطمَس ولا يُحذَف** - وهذا فرقٌ مقصود. الصفُّ نفسه سجلُّ إسنادٍ
+// تقرأ منه تقاريرُ المتتبّع التاريخية (أيُّ حملةٍ، طُوبقت أم لا)، وحذفُه
+// يمحو تاريخاً لا يحمل ضرراً. الضررُ في ثلاثة أعمدة بعينها: الهاتف
+// والعنوان والبصمة. فتُفرَّغ وحدها، ويبقى السجلّ.
+//
+// والنافذةُ تسعون يوماً لأنّها نافذةُ المطابقة نفسها - وهي أيضاً أقصى
+// نافذةِ رفعِ تحويلٍ تقبلها جوجل، فبعدها لا يبقى للهاتف استعمالٌ أصلاً.
+// والاحتفاظُ بلا حدٍّ مخالفةٌ صريحة لما يوجبه قانون حماية البيانات
+// الشخصية المصريّ (راجع `docs/security-audit-2026-07-18.md`).
+const WA_CLICK_RETENTION_DAYS = 90;
+
 export async function purgeExpiredData() {
   const ctaClickCutoff = new Date();
   ctaClickCutoff.setDate(ctaClickCutoff.getDate() - CTA_CLICK_RETENTION_DAYS);
@@ -42,6 +61,9 @@ export async function purgeExpiredData() {
 
   const attributionCutoff = new Date();
   attributionCutoff.setDate(attributionCutoff.getDate() - ATTRIBUTION_RETENTION_DAYS);
+
+  const waClickCutoff = new Date();
+  waClickCutoff.setDate(waClickCutoff.getDate() - WA_CLICK_RETENTION_DAYS);
 
   const [deletedClicks, deletedRateLimits, deletedUnmatched, deletedAttribution] =
     await Promise.all([
@@ -59,10 +81,25 @@ export async function purgeExpiredData() {
       }),
     ]);
 
+  // شرطُ «أحدُها ليس فارغاً» ليس تجميلاً: من دونه تُعاد كتابةُ كلِّ صفٍّ
+  // قديم في كلّ تشغيل، فينتفخ الجدول بنسخٍ ميّتة بلا داعٍ.
+  const redactedWaClicks = await prisma.waClick.updateMany({
+    where: {
+      createdAt: { lt: waClickCutoff },
+      OR: [
+        { phoneNumber: { not: null } },
+        { ipAddress: { not: null } },
+        { userAgent: { not: null } },
+      ],
+    },
+    data: { phoneNumber: null, ipAddress: null, userAgent: null },
+  });
+
   return {
     deletedClicks: deletedClicks.count,
     deletedRateLimits: deletedRateLimits.count,
     deletedUnmatched: deletedUnmatched.count,
     deletedAttribution: deletedAttribution.count,
+    redactedWaClicks: redactedWaClicks.count,
   };
 }
