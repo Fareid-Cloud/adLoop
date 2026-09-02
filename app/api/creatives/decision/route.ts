@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceWriteFilter } from "@/lib/workspaceAccess";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { applyAdDecision, DecisionPreconditionError, type Decision } from "@/lib/adDecisions";
@@ -39,7 +39,8 @@ export async function POST(req: NextRequest) {
   }
 
   const workspace = await prisma.workspace.findFirst({
-    where: { id: workspaceId, ...workspaceAccess(user.id) },
+    // فلترُ الكتابة: القرار ده بيرفع ميزانية أو يوقف إعلان فعلاً.
+    where: { id: workspaceId, ...workspaceWriteFilter(user.id) },
     select: { id: true },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });

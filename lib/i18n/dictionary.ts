@@ -3598,6 +3598,10 @@ export const dictionary = {
       decHold: "إبقاء",
     },
     // ==== رفع صور الدعم ====
+    seats: {
+      notOnPlan: "باقتك الحالية لا تتضمن مقاعد من هذا النوع. رقّ الباقة لإضافة أعضاء.",
+      limitReached: "استهلكت كل المقاعد المتاحة في باقتك. أزل عضواً أو رقّ الباقة.",
+    },
     supportWidget: {
       open: "المساعدة",
       close: "إغلاق",
@@ -6566,6 +6570,10 @@ export const dictionary = {
       decHold: "Hold",
     },
     // ==== Support image upload ====
+    seats: {
+      notOnPlan: "Your plan does not include seats of this kind. Upgrade to add members.",
+      limitReached: "You have used every seat on your plan. Remove a member or upgrade.",
+    },
     supportWidget: {
       open: "Help",
       close: "Close",

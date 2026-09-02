@@ -81,7 +81,7 @@ function check(file) {
   let m;
   while ((m = re.exec(src))) {
     const window = src.slice(m.index, m.index + 260);
-    if (/userId\s*:\s*["'`\w]/.test(window) && !/workspaceAccess\(/.test(window)) {
+    if (/userId\s*:\s*["'`\w]/.test(window) && !/workspace(Access|WriteFilter|OwnerFilter|AccessFilter)\(/.test(window)) {
       const lineNo = src.slice(0, m.index).split("\n").length;
       problems.push(`${rel}:${lineNo}  استعلامُ مساحةٍ بشرطٍ مكتوبٍ بيد`);
     }

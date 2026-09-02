@@ -1,7 +1,7 @@
 // app/api/workspaces/[id]/automation-rules/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceAccess, workspaceWriteFilter } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { checkAutomationRuleLimit } from "@/lib/entitlements";
@@ -40,7 +40,7 @@ export async function POST(
   const locale = localeOf(user);
 
   const workspace = await prisma.workspace.findFirst({
-    where: { id: id, ...workspaceAccess(user.id) },
+    where: { id: id, ...workspaceWriteFilter(user.id) },  // قاعدةٌ جديدة بتغيّر ميزانية - كتابة
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 

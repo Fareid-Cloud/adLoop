@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { t } from "@/lib/i18n/dictionary";
 import { localeOf } from "@/lib/apiLocale";
 import { randomUUID } from "crypto";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceWriteFilter } from "@/lib/workspaceAccess";
 import { getSessionUser, getImpersonatorFromRequest } from "@/lib/auth";
 import { applyActionFeedItem } from "@/lib/actionFeed";
 import { prisma } from "@/lib/prisma";
@@ -34,7 +34,8 @@ export async function POST(
   }
 
   const item = await prisma.actionFeedItem.findFirst({
-    where: { id: id, workspace: workspaceAccess(user.id) },
+    // 🔴 فلترُ **الكتابة** لا الوصول: مقعدُ الاطّلاع بيشوف ولا ينفّذ.
+    where: { id: id, workspace: workspaceWriteFilter(user.id) },
   });
   if (!item) return NextResponse.json({ error: "not found" }, { status: 404 });
 

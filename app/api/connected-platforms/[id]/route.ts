@@ -8,7 +8,7 @@
 // منحة آخر، ولا يكتشف ذلك حتى تتوقّف مزامنةٌ لا يتوقّع توقّفها.
 
 import { NextRequest, NextResponse } from "next/server";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { ownRowFilter } from "@/lib/workspaceAccess";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { t } from "@/lib/i18n/dictionary";
@@ -35,7 +35,11 @@ export async function PATCH(
   // الملكية شرطٌ في `where` لا فحصٌ سابق: بينهما نافذةٌ يمكن أن يتغيّر فيها
   // الصفّ، وشرطُ التحديث نفسه لا نافذة فيه.
   const updated = await prisma.connectedPlatform.updateMany({
-    where: { id, ...workspaceAccess(user.id) },
+    // 🔴 `ConnectedPlatform` مربوط بالمستخدم مباشرةً لا بالمساحة، فمفيش
+    // طريقٌ منه للعضوية. وده **مقصود دلوقتي**: التوكن ده وصولٌ مباشر
+    // لحساب إعلاناتٍ حقيقيّ، وفتحُه لعضوٍ يتطلّب قراراً صريحاً لا اشتقاقاً
+    // من تغييرٍ في فلتر. المالك وحده يعدّله لحد ما يتقرّر غير كده.
+    where: { id, ...ownRowFilter(user.id) },
     // النصّ الفارغ يعني «أزل الاسم» لا اسماً فارغاً يُعرض كفراغ محيّر.
     data: { label: raw ? raw : null },
   });

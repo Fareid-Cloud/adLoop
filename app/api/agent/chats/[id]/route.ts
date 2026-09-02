@@ -3,7 +3,7 @@
 // محادثة واحدة: رسائلها، أو حذفها.
 
 import { NextRequest, NextResponse } from "next/server";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { ownRowFilter } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { verifyCsrfToken } from "@/lib/csrf";
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   // 🔴 الملكيّة في `where` لا بعد الجلب: شرطٌ يُفحص بعد القراءة يعني أنّ
   // الصفّ قد قُرئ فعلاً، وأيّ سهوٍ لاحق يسرّبه.
   const chat = await prisma.agentChat.findFirst({
-    where: { id, ...workspaceAccess(user.id) },
+    where: { id, ...ownRowFilter(user.id) },
     select: {
       id: true,
       title: true,
@@ -47,7 +47,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   const { id } = await params;
   const owned = await prisma.agentChat.findFirst({
-    where: { id, ...workspaceAccess(user.id) },
+    where: { id, ...ownRowFilter(user.id) },
     select: { id: true },
   });
   if (!owned) return NextResponse.json({ error: "not found" }, { status: 404 });
@@ -84,7 +84,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const owned = await prisma.agentChat.findFirst({
-    where: { id, ...workspaceAccess(user.id) },
+    where: { id, ...ownRowFilter(user.id) },
     select: { id: true },
   });
   if (!owned) return NextResponse.json({ error: "not found" }, { status: 404 });

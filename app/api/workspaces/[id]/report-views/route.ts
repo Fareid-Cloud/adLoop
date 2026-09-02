@@ -4,7 +4,7 @@
 // فتح من بيانات اليوم، وإلا صار العرض صورة قديمة تُتّخذ عليها قرارات جديدة.
 
 import { NextRequest, NextResponse } from "next/server";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceAccess, ownRowFilter } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { METRICS } from "@/lib/reports/reportEngine";
@@ -24,7 +24,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const views = await prisma.savedReportView.findMany({
-    where: { workspaceId: id, ...workspaceAccess(user.id) },
+    // المساحة اتفحصت فوق؛ وده فلترُ صاحبِ الرأي نفسه - الآراء
+    // المحفوظة شخصيّة، فعضوٌ في المساحة مايشوفش ترتيبَ أعمدةِ غيره.
+    where: { workspaceId: id, ...ownRowFilter(user.id) },
     orderBy: [{ isFavorite: "desc" }, { updatedAt: "desc" }],
     take: MAX_VIEWS,
   });
@@ -59,11 +61,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     platforms: Array.isArray(raw.platforms) ? raw.platforms.filter((p: unknown) => typeof p === "string").slice(0, 10) : [],
   };
 
-  const count = await prisma.savedReportView.count({ where: { workspaceId: id, ...workspaceAccess(user.id) } });
+  // الحدُّ لكلّ صاحبِ رأي لا لكلّ مساحة: الآراء شخصيّة، وعدُّها
+  // مساحيّاً كان هيخلّي عضواً يستهلك حدَّ غيره.
+  const count = await prisma.savedReportView.count({ where: { workspaceId: id, ...ownRowFilter(user.id) } });
   if (count >= MAX_VIEWS) return NextResponse.json({ error: "limit reached" }, { status: 400 });
 
   const view = await prisma.savedReportView.create({
-    data: { workspaceId: id, ...workspaceAccess(user.id), name, config },
+    data: { workspaceId: id, ...ownRowFilter(user.id), name, config },
   });
   logFeatureUse(user.id, "saved_view_created", id);
   return NextResponse.json({ view });

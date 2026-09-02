@@ -271,6 +271,8 @@ model User {
   agentChats               AgentChat[]
   /// المحادثات المعيَّنة لهذا الحساب في صندوق الدعم.
   assignedThreads          SupportThread[]     @relation("SupportAssignee")
+  /// المساحات اللي هو عضوٌ فيها (مش مالكها) - المقاعد.
+  memberships              WorkspaceMember[]   @relation("WorkspaceMembership")
 
   // ==================== لوحة المالك (Admin Panel) ====================
   //
@@ -441,13 +443,16 @@ model TrustedDevice {
 // ==================== Workspaces (الفايلات) ====================
 
 model Workspace {
-  id                      String    @id @default(cuid())
+  id                      String            @id @default(cuid())
   userId                  String
-  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   name                    String // اسم مساحة العمل كما يكتبه المشترك
+  /// أعضاءُ المساحة ودعواتُها المعلَّقة - المقاعد.
+  members                 WorkspaceMember[]
+  invites                 WorkspaceInvite[]
   /// مساحة عرض ببيانات ثابتة. **كل أثر خارجي محظور منها** عبر
   /// `assertNotDemo` - ضغطة هنا يجب أن تستحيل أن توقف إعلاناً حقيقياً.
-  isDemo                  Boolean   @default(false)
+  isDemo                  Boolean           @default(false)
   demoExpiresAt           DateTime?
   /// اللغة التي بُذرت بها بيانات العرض. أسماء الحملات والمنتجات نصوص
   /// مخزَّنة لا مفاتيح، فلا تتبدّل بتبديل لغة الواجهة - ومن بذر ديموه
@@ -470,7 +475,7 @@ model Workspace {
   ///
   /// في المساحة الحقيقية **تساوي `dataCurrency` دائماً** ولا تُحرَّر يدوياً:
   /// راجع الحقل أدناه.
-  currency                String    @default("SAR")
+  currency                String            @default("SAR")
   /// العملة التي وصلت بها الأرقام فعلاً من الحساب الإعلانيّ.
   ///
   /// **ليست تفضيلاً بل خاصّية في البيانات.** جوجل وميتا تُثبتان عملة الحساب
@@ -490,12 +495,12 @@ model Workspace {
   targetLocation          String? // السوق المستهدف "SA" | "EG" | "AE" ... - سياق مش قيد تقني
   // معرف صفحة فيسبوك (Page ID) - مطلوب لربط ويب هوك ماسنجر بمساحة العمل
   // الصحيحة (ميتا بتبعت page id بس، مش workspace id طبعاً)
-  facebookPageId          String?   @unique
+  facebookPageId          String?           @unique
   /// معرّف رقم واتساب الأعمال (`phone_number_id` من Meta) - هو الهويّة
   /// الوحيدة التي يرسلها ويب هوك واتساب، فهو مفتاح ربط الرسالة الواردة
   /// بمساحة عملها. كان المتتبّع يعتمد خريطة عملاء مكتوبة في الكود
   /// بأسماء عملاء بعينهم، فكان يستحيل أن يستخدمه أيّ مشترك آخر.
-  whatsappPhoneNumberId   String?   @unique
+  whatsappPhoneNumberId   String?           @unique
   /// رقم واتساب المعروض للزوّار (بالصيغة الدولية بلا +) - إليه يُحوَّل
   /// الزائر بعد النقر على الإعلان. منفصل عن المعرّف أعلاه: ذاك داخليّ
   /// من Meta، وهذا رقم يقرؤه البشر.
@@ -512,17 +517,17 @@ model Workspace {
   // ==== تفضيلات التنبيهات - أنهي قناة توصل بيها التنبيهات العاجلة ====
   // داخل النظام دايماً موجود بغض النظر عن الإعدادات دي (Action Feed نفسه)
   // - دول بس بيتحكموا في هل يوصل كمان إيميل، ومتى
-  notifyUrgentByEmail     Boolean   @default(true)
-  notifyHighByEmail       Boolean   @default(false)
+  notifyUrgentByEmail     Boolean           @default(true)
+  notifyHighByEmail       Boolean           @default(false)
   notificationEmail       String? // لو فاضي، بيستخدم إيميل الحساب الأساسي
   // قواعد منفصلة تماماً عن الإيميل - المستخدم طلب صراحة قواعد مختلفة
   // لكل قناة، مش نفس التوجّل بيتحكم في القنوات كلها مع بعض
-  notifyUrgentByPush      Boolean   @default(true)
-  notifyHighByPush        Boolean   @default(true)
+  notifyUrgentByPush      Boolean           @default(true)
+  notifyHighByPush        Boolean           @default(true)
   // سقف أقصى لمجموع نسب تغيير المزايدة/الميزانية المُنفَّذة فعلياً في
   // نفس الشهر لكل إعلان/مجموعة - حاجز أمان يمنع تراكم تغييرات آلية
   // كتير فوق بعض في وقت قصير. افتراضي 50% (معقول ومحافظ، قابل للتعديل)
-  monthlyChangeCeilingPct Float     @default(50)
+  monthlyChangeCeilingPct Float             @default(50)
 
   // ==== إعادة رفع التحويلات للمنصات (Server-Side Conversion Sync) ====
   // الحلقة المغلقة: نحن نعرف من العميل الدافع فعلاً، والمنصة لا تعرف.
@@ -2445,6 +2450,53 @@ model SupportThread {
 /// والسرُّ مشفَّرٌ بنفس آلية توكنات المنصّات الإعلانية (`lib/encryption.ts`):
 /// توكنُ واتساب بيقدر يبعت باسم البيزنس لأيّ حدّ كلّمه، فتخزينُه خاماً
 /// أخطر من توكن قراءة.
+/// عضويةُ مساحةِ عمل - **المقاعد اللي الباقات بتبيعها**.
+///
+/// 🔴 كانت `seatsViewer` و`seatsOperator` معرَّفتين في `lib/plans.ts`
+/// ومعروضتين في جدول المقارنة على صفحة الدفع - **وورا الرقمين لا شيء**:
+/// لا جدول، ولا دعوة، ولا فحصُ صلاحية. يعني وعدٌ في صفحة دفع بلا منتج
+/// وراه.
+///
+/// **دورَان لا مصفوفةُ صلاحيات:** VIEWER بيقرا، وOPERATOR بيقرا وينفّذ.
+/// مصفوفةٌ كاملة لفريقٍ من تلاتة تكلفتُها إنّ حدّ بيغلط في خانة فياخد
+/// صلاحيةً ماكانتش مقصودة - والدورَان بيتقروا في ثانية.
+model WorkspaceMember {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation("WorkspaceMembership", fields: [userId], references: [id], onDelete: Cascade)
+
+  /// VIEWER | OPERATOR
+  role String @default("VIEWER")
+
+  /// مين دعاه - للتدقيق: «مين إداله الوصول ده؟» سؤالٌ بيتسأل بعد الحادثة.
+  invitedById String?
+  createdAt   DateTime @default(now())
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
+
+/// دعوةٌ معلَّقة. **منفصلةٌ عن العضوية عن قصد**: المدعوّ ممكن مايكونش عنده
+/// حساب أصلاً، والعضويةُ محتاجة `userId`. وبنخزّن هاش الرمز لا الرمز -
+/// تسريبُ قاعدة البيانات مايدّيش حدّ مفتاحَ دخولٍ صالحاً.
+model WorkspaceInvite {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  email       String
+  role        String    @default("VIEWER")
+  tokenHash   String    @unique
+  invitedById String
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([workspaceId, email])
+  @@index([email])
+}
+
 model ChannelConnection {
   id          String  @id @default(cuid())
   /// WHATSAPP | MESSENGER - نفس قائمة `lib/inbox.ts`
