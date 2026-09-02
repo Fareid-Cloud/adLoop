@@ -11,6 +11,7 @@
 // اللي المستخدم عملها هي المهمّة - خسارة صفّ تحليلات أهون ألف مرّة من
 // طلب بيقع عشان سطر تسجيل.
 
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { InstrumentedFeatureKey } from "@/lib/admin/product";
 
@@ -47,8 +48,29 @@ export function logFeatureUse(
   key: InstrumentedFeatureKey,
   workspaceId?: string | null
 ): void {
-  // بلا `await` عن قصد: القياس مالوش الحقّ يبطّئ ردّ الطلب.
-  void prisma.featureEvent
-    .create({ data: { userId, key, workspaceId: workspaceId ?? null } })
-    .catch(() => {});
+  // 🔴 **النيّة كانت صح والوسيلة غلط، والنتيجة إنّ القياس ماكانش بيتكتب.**
+  //
+  // كان `void prisma.featureEvent.create(...)` - وعد متسايب، والتعليق
+  // بيقول "بلا await عن قصد: القياس مالوش الحقّ يبطّئ الرد". النيّة سليمة،
+  // لكن `void` على منصّة serverless مش "بينفّذ في الخلفية": اللحظة اللي
+  // الرد بيمشي فيها الـruntime بيتجمّد، والكتابة اللي في الطريق بتموت.
+  //
+  // فالنتيجة إنّ **تبويب Product في لوحة المالك كان بيوري أصفاراً** -
+  // ومحدش يقدر يفرّق بين "الميزة محدش بيستخدمها" و"القياس مش بيوصل".
+  // وده أخطر من غياب القياس أصلاً: رقم غلط بيتاخد عليه قرار.
+  //
+  // `after()` بتنفّذ نفس النيّة بالظبط - الرد مابيتأخّرش لأنّ الشغل بيجري
+  // **بعده**، والمنصّة بتفضل مستنيّة خلوصه.
+  const write = () =>
+    prisma.featureEvent
+      .create({ data: { userId, key, workspaceId: workspaceId ?? null } })
+      .catch(() => {});
+
+  try {
+    after(write);
+  } catch {
+    // بره سياق طلب (سكربت أو اختبار): العملية بتفضل عايشة لحد ما الشغل
+    // يخلص، فالسبب اللي خلّى `void` غلط في المسار مش موجود هنا.
+    void write();
+  }
 }

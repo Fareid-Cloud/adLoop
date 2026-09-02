@@ -65,7 +65,12 @@ export async function POST(
     trackedMetrics: ["revenue", "orders", "aov", "returned_orders", "profit_estimate"],
     windowDays: 14,
     source: "AUTO",
-  }).catch(() => {});
+  }).catch((err) => {
+    // يُسجَّل ولا يُبتلع: السعر اتغيّر فعلاً في المتجر وفي قاعدتنا، والتجربة
+    // هي اللي فشلت. ابتلاعها صامتة معناه قرار سعر منفَّذ بلا أي قياس لأثره -
+    // وده بالظبط النوع اللي بيفضل شهور من غير ما حد ياخد باله.
+    console.error("[apply-price] تعذّر فتح تجربة لقياس تغيير السعر:", err);
+  });
 
   return NextResponse.json({
     ok: true,

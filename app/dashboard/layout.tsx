@@ -6,6 +6,7 @@
 
 // theme.css بقى بيتحمّل من app/layout.tsx (الجذري) مش هنا - عشان يوصل
 // لكل صفحة في المنتج (تسجيل الدخول، التسجيل، إلخ)، مش الداشبورد بس
+import { after } from "next/server";
 import type { ReactNode } from "react";
 import { cookies, headers } from "next/headers";
 import { InstallTagCta } from "@/app/components/InstallTagCta";
@@ -115,18 +116,25 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     const isNewDay = !user.lastActiveAt || user.lastActiveAt.toDateString() !== new Date().toDateString();
 
     if (!user.lastActiveAt || user.lastActiveAt < halfHourAgo) {
+      // 🔴 كان `void` - والوعد المتسايب بيموت لمّا الصفحة تترسم وينتهي
+      // الطلب على serverless. يعني `lastActiveAt` ماكانش بيتحدّث، فتنبيه
+      // "معملتش فتح من فترة" بيشتغل على حساب فاتح دلوقتي، وعدّاد أيام
+      // الترحيب مابيزيدش فالجولة مابتختفيش أبداً.
+      const touch = () =>
+        prisma.user.update({
+          where: { id: user.id },
+          data: {
+            lastActiveAt: new Date(),
+            // "أيام استخدام فعلية" - مش أيام تقويمية عادية. أساس اختفاء
+            // الجولة التعريفية تلقائياً بعد 7-10 أيام استخدام حقيقي
+            ...(isNewDay && !user.onboardingCompleted && !user.onboardingDismissed
+              ? { onboardingActiveDaysSeen: { increment: 1 } }
+              : {}),
+          },
+        }).catch(() => {});
+
       try {
-      void prisma.user.update({
-        where: { id: user.id },
-        data: {
-          lastActiveAt: new Date(),
-          // "أيام استخدام فعلية" - مش أيام تقويمية عادية. أساس اختفاء
-          // الجولة التعريفية تلقائياً بعد 7-10 أيام استخدام حقيقي
-          ...(isNewDay && !user.onboardingCompleted && !user.onboardingDismissed
-            ? { onboardingActiveDaysSeen: { increment: 1 } }
-            : {}),
-        },
-      }).catch(() => {});
+        after(touch);
       } catch (err) {
         console.error("[layout] تعذّر تسجيل النشاط:", err);
       }
