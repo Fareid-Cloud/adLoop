@@ -13,7 +13,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus, CheckCircle2, XCircle, RefreshCw, Trash2, Info,
-  AlertTriangle, Loader2, ShieldCheck, ArrowLeft, Clock, ChevronDown,
+  AlertTriangle, Loader2, ShieldCheck, ArrowLeft, Clock, ChevronDown, Copy, Check,
 } from "lucide-react";
 import { CodeWindow } from "@/app/components/CodeWindow";
 import { buildSnippet } from "./tagSnippet";
@@ -80,6 +80,7 @@ export function TrackingCoverageClient({
   // تصير كتلةً طويلةً تُزاح في كلّ زيارة.
   /** أيُّ بندٍ مفتوحٌ الآن - واحدٌ في كلّ مرّة، فلا تتراكم الكتل. */
   const [openStep, setOpenStep] = useState<string | null>(null);
+  const [copiedWs, setCopiedWs] = useState(false);
   const addRef = useRef<HTMLElement | null>(null);
 
   // اللوحة تُفتح تلقائياً لمن لا وسم لديه على أي صفحة - هو بالضبط من
@@ -231,13 +232,46 @@ export function TrackingCoverageClient({
                 {openStep === st.key && (
                   <div className="w-full pt-1">
                     {st.key === "st1" && (
-                      <CodeWindow
-                        code={snippet}
-                        lang="markup"
-                        title="adloop-tag.html"
-                        copyLabel={tr("copy")}
-                        copiedLabel={tr("copied")}
-                      />
+                      <>
+                        <CodeWindow
+                          code={snippet}
+                          lang="markup"
+                          title="adloop-tag.html"
+                          copyLabel={tr("copy")}
+                          copiedLabel={tr("copied")}
+                        />
+
+                        {/* 🔴 **معرّفُ المساحة سقط سهواً عند إعادة البناء.**
+                            الوسمُ الجاهز يحمله مدموجاً، لكنّ من يركّب عبر
+                            Google Tag Manager أو قالبٍ لا يقبل لصقَ سكربت
+                            يحتاج الرقم وحدَه - وبدونه لا سبيل له إلى إتمام
+                            التركيب. ومعه ملاحظةُ GTM لأنّها طريقتُه. */}
+                        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border border-border-visible px-3 py-2">
+                          <span className="text-[12px] text-text-muted">{tr("wsIdLabel")}</span>
+                          <code
+                            dir="ltr"
+                            className="code-block min-w-0 flex-1 truncate rounded-lg bg-surface-raised px-2 py-1 text-[11.5px] text-text-primary"
+                          >
+                            {workspaceId}
+                          </code>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(workspaceId);
+                              setCopiedWs(true);
+                              setTimeout(() => setCopiedWs(false), 2000);
+                            }}
+                            className="flex shrink-0 items-center gap-1 text-[11.5px] text-accent"
+                          >
+                            {copiedWs ? <Check size={12} /> : <Copy size={12} />}
+                            {copiedWs ? tr("copied") : tr("copy")}
+                          </button>
+                        </div>
+
+                        <p className="mt-2 flex items-start gap-1.5 text-[11.5px] leading-relaxed text-text-faint">
+                          <Info size={12} className="mt-0.5 shrink-0" />
+                          {tr("gtmNote")}
+                        </p>
+                      </>
                     )}
                     {st.key === "st2" && (
                       <CodeWindow

@@ -1234,6 +1234,7 @@ export const SEARCH_INDEX: SearchEntry[] = [
   { k: "tagInstall.setupRemaining", h: "/dashboard/tracking" },
   { k: "tagInstall.st1Todo", h: "/dashboard/tracking" },
   { k: "tagInstall.stepsTitle", h: "/dashboard/tracking" },
+  { k: "tagInstall.wsIdLabel", h: "/dashboard/tracking" },
   { k: "truthPage.colRealCpa", h: "/dashboard/truth" },
   { k: "truthPage.colRoas", h: "/dashboard/truth" },
   { k: "truthPage.colSpend", h: "/dashboard/truth" },
