@@ -33,6 +33,12 @@ export interface Insight {
 export const THRESHOLDS = {
   revenueMovePct: 10,
   churnedShareOfNewPct: 50,
+  /** فوقها الفقد الشهريّ بيبقى المشكلة الأولى مهما كان النموّ. */
+  monthlyChurnPct: 5,
+  /** تحتها القاعدة بتتآكل: التوسّع مش بيغطّي الفقد. */
+  nrrFloorPct: 100,
+  /** فوقها عميل واحد بيحمل مخاطرة تستاهل تُقال. */
+  topCustomerSharePct: 25,
   atRiskSharePct: 25,
   lowAdoptionPct: 20,
   minEntitledForAdoption: 5,
@@ -78,6 +84,44 @@ export function buildInsights(input: {
           href: "/admin/analytics?tab=business",
         });
       }
+    }
+
+    // الفقد الشهريّ - أهمّ من مقارنته بالجديد: شركة بتفقد ٨٪ شهرياً
+    // وبتعوّضهم ببيع أسرع مش سليمة، هي بتجري في مكانها بتكلفة أعلى.
+    if (business.churn && business.churn.monthlyPct >= THRESHOLDS.monthlyChurnPct) {
+      out.push({
+        id: "monthly-churn-high",
+        tone: "critical",
+        text:
+          `${business.churn.monthlyPct.toFixed(1)}% of customers cancelled this month ` +
+          `(${business.churn.churnedCount} of ${business.churn.startingCustomers}). ` +
+          `At that rate the average account lasts about ${Math.round(100 / business.churn.monthlyPct)} months.`,
+        href: "/admin/analytics?tab=business",
+      });
+    }
+
+    // صافي الاحتفاظ تحت ١٠٠٪ معناه إنّ القاعدة القائمة بتتآكل - والنموّ
+    // كلّه شغل مبيعات جديد، وهو أغلى شيء في المنتج.
+    if (business.nrr && business.nrr.pct < THRESHOLDS.nrrFloorPct) {
+      out.push({
+        id: "nrr-below-100",
+        tone: "warning",
+        text:
+          `Net revenue retention is ${business.nrr.pct.toFixed(0)}%. The existing base shrinks on its own, ` +
+          `so every month starts by selling back what was lost.`,
+        href: "/admin/analytics?tab=business",
+      });
+    }
+
+    // التركّز: مخاطرة صامتة تماماً لحد اليوم اللي بتتحقّق فيه.
+    const top = business.concentration.topCustomerPct;
+    if (top !== null && top >= THRESHOLDS.topCustomerSharePct) {
+      out.push({
+        id: "revenue-concentrated",
+        tone: "warning",
+        text: `One account is ${top.toFixed(0)}% of MRR. Losing it alone would cut revenue by that much in a single month.`,
+        href: "/admin/analytics?tab=business",
+      });
     }
 
     if (business.payments.failedThisPeriod >= THRESHOLDS.failedPaymentsCount) {

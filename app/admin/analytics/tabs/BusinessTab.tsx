@@ -1,6 +1,8 @@
 // app/admin/analytics/tabs/BusinessTab.tsx
 
-import { DollarSign, TrendingUp, Users, CreditCard, AlertTriangle } from "lucide-react";
+import {
+  DollarSign, TrendingUp, Users, CreditCard, AlertTriangle, UserMinus, Repeat, PieChart,
+} from "lucide-react";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import type { BusinessSummary, KNOWN_GAPS } from "@/lib/admin/business";
 import { Card, SectionTitle, NotMeasured, money } from "../../components/AdminUI";
@@ -40,7 +42,71 @@ export function BusinessTab({
           value={data.ltv ? money(data.ltv.usdCents) : "—"}
           icon={CreditCard}
           tone="neutral"
-          caption={{ text: data.ltv ? "firms up as cancellation history builds" : "no cancellations recorded yet", tone: "muted" }}
+          caption={{
+            text: data.ltv ? "ARPU ÷ monthly churn" : "needs a churn rate first",
+            tone: "muted",
+          }}
+        />
+      </div>
+
+      {/* الصفّ التاني: أرقام الاحتفاظ. مفصولة عن الصفّ الأوّل عن قصد -
+          فوق بيقول "بتكسب قدّ إيه"، وهنا بيقول "هتفضل كسبان ولا لأ".
+          والتلاتة بيرجعوا `null` لمّا المقام مايكفيش، فبيتعرض شرح السبب
+          بدل صفر يتقري إنجازاً أو كارثة. */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <MetricCard
+          locale="en"
+          label="Monthly churn"
+          value={data.churn ? `${data.churn.monthlyPct.toFixed(1)}%` : "—"}
+          icon={UserMinus}
+          tone={data.churn && data.churn.monthlyPct > 5 ? "critical" : "neutral"}
+          subLabel={
+            data.churn
+              ? `${data.churn.churnedCount} of ${data.churn.startingCustomers} at period start`
+              : undefined
+          }
+          caption={{
+            text: data.churn ? "normalised to 30 days" : "fewer than 10 accounts at period start",
+            tone: "muted",
+          }}
+        />
+        <MetricCard
+          locale="en"
+          label="Net revenue retention"
+          value={data.nrr ? `${data.nrr.pct.toFixed(0)}%` : "—"}
+          icon={Repeat}
+          tone={data.nrr ? (data.nrr.pct >= 100 ? "verified" : "gap") : "neutral"}
+          caption={{
+            text: data.nrr ? "expansion vs contraction and churn, new excluded" : "no subscription events yet",
+            tone: "muted",
+          }}
+        />
+        <MetricCard
+          locale="en"
+          label="Largest account"
+          value={
+            data.concentration.topCustomerPct !== null
+              ? `${data.concentration.topCustomerPct.toFixed(0)}% of MRR`
+              : "—"
+          }
+          icon={PieChart}
+          tone={
+            data.concentration.topCustomerPct !== null && data.concentration.topCustomerPct > 25
+              ? "gap"
+              : "neutral"
+          }
+          subLabel={
+            data.concentration.topThreePct !== null
+              ? `top three: ${data.concentration.topThreePct.toFixed(0)}%`
+              : undefined
+          }
+          caption={{
+            text:
+              data.concentration.topCustomerPct !== null
+                ? "how much walks out with one customer"
+                : "shown from five paying accounts",
+            tone: "muted",
+          }}
         />
       </div>
 
