@@ -912,11 +912,15 @@ html, body { overflow-x: clip; }
 
 /* ── ألوان الشيفرة ─────────────────────────────────────────────────────
  * نصٌّ أسودُ كلُّه على أبيض هو ما يجعل كتلة الشيفرة تبدو لصقةً في صفحة،
- * لا شيئاً يُنسَخ ويُلصَق في طرفيّة. التلوين هنا **دلاليّ لا زخرفيّ**:
- * القارئ يميّز المفتاح من قيمته، والرايةَ من الأمر، قبل أن يقرأ.
+ * لا شيئاً يُنسَخ ويُلصَق. التلوين هنا **دلاليّ لا زخرفيّ**: القارئ يميّز
+ * المفتاح من قيمته، والرايةَ من الأمر، قبل أن يقرأ.
  *
- * ولها تعريفان - فاتح وداكن - لأنّ لوحةً واحدةً لا تصلح للاثنين: ما
- * يُقرأ على أبيض يختفي على أسود. */
+ * 🔴 **وكانت اللوحة داكنةً في الوضعين معاً.** ظننتُ أنّ الطرفيّة داكنةٌ
+ * عند الناس فتبقى كذلك - وهو صحيحٌ لطرفيّة، وخطأٌ هنا: هذه كتلةُ شيفرةٍ
+ * في صفحةِ منتج، وبقاؤها سوداءَ وسط صفحةٍ بيضاء يجعلها ثقباً في الشاشة
+ * لا جزءاً منها. فصارت تتبع الوضع كبقيّة الأسطح.
+ *
+ * والقيمُ الافتراضية للوضع الداكن، ويُعاد تعريفها للفاتح تحت. */
 :root {
   --code-bg: #0f172a;
   --code-fg: #e2e8f0;
@@ -928,14 +932,44 @@ html, body { overflow-x: clip; }
   --code-flag: #c4b5fd;
   --code-cmd: #fcd34d;
   --code-comment: #64748b;
+  --code-border: #ffffff14;
 }
 
-/* نافذةُ الطرفيّة: خلفيةٌ داكنةٌ في الوضعين معاً عمداً - الطرفيّة داكنة
-   عند الناس، فإبقاؤها كذلك يجعلها تُقرأ طرفيّةً لا بطاقةً ملوّنة. */
+/* الوضعُ الفاتح: خلفيةٌ شبه بيضاء وألوانٌ داكنة مشبعة - نفس منطق
+   الوضع الداكن مقلوباً، لا تفتيحُ الألوان نفسها (فتبهت وتفقد التمييز). */
+[data-mode="light"] {
+  --code-bg: #fbfbfd;
+  --code-fg: #1e293b;
+  --code-gutter: #a0aab8;
+  --code-key: #0369a1;
+  --code-str: #15803d;
+  --code-num: #b91c1c;
+  --code-punct: #64748b;
+  --code-flag: #7c3aed;
+  --code-cmd: #b45309;
+  --code-comment: #94a3b8;
+  --code-border: #0000000f;
+}
+
+[data-mode="dark"] {
+  --code-bg: #0f172a;
+  --code-fg: #e2e8f0;
+  --code-gutter: #64748b;
+  --code-key: #7dd3fc;
+  --code-str: #86efac;
+  --code-num: #fca5a5;
+  --code-punct: #94a3b8;
+  --code-flag: #c4b5fd;
+  --code-cmd: #fcd34d;
+  --code-comment: #64748b;
+  --code-border: #ffffff14;
+}
+
 .code-window {
   background: var(--code-bg);
   color: var(--code-fg);
   border-radius: 0.75rem;
+  border: 1px solid var(--code-border);
   overflow: hidden;
 }
 .code-window .code-bar {
@@ -943,20 +977,14 @@ html, body { overflow-x: clip; }
   align-items: center;
   gap: 0.5rem;
   padding: 0.4rem 0.6rem;
-  border-bottom: 1px solid #ffffff14;
-}
-.code-window .code-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  flex: none;
+  border-bottom: 1px solid var(--code-border);
 }
 .code-window .code-gutter {
   color: var(--code-gutter);
   user-select: none;
   text-align: end;
   padding-inline-end: 0.75rem;
-  border-inline-end: 1px solid #ffffff14;
+  border-inline-end: 1px solid var(--code-border);
 }
 .tok-key { color: var(--code-key); }
 .tok-str { color: var(--code-str); }

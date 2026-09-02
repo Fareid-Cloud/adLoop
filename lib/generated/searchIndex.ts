@@ -1229,7 +1229,6 @@ export const SEARCH_INDEX: SearchEntry[] = [
   { k: "tagInstall.pagesTitle", h: "/dashboard/tracking" },
   { k: "tagInstall.qaAddPage", h: "/dashboard/tracking" },
   { k: "tagInstall.qaCheckAll", h: "/dashboard/tracking" },
-  { k: "tagInstall.quickActions", h: "/dashboard/tracking" },
   { k: "tagInstall.setupIncomplete", h: "/dashboard/tracking" },
   { k: "tagInstall.setupRemaining", h: "/dashboard/tracking" },
   { k: "tagInstall.st1Todo", h: "/dashboard/tracking" },

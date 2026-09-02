@@ -121,11 +121,10 @@ export function CodeWindow({
 
   return (
     <div className="code-window">
+      {/* 🔴 **نقاطُ نافذة ماك الثلاث سقطت.** كانت تُقلّد نافذةَ نظامٍ بعينه
+          في كتلةِ شيفرةٍ داخل صفحة - زخرفةٌ تدّعي ما ليس هناك: لا نافذة
+          تُغلَق ولا تُصغَّر. يبقى ما يعمل: اسمُ الملفّ، وزرُّ النسخ. */}
       <div className="code-bar">
-        {/* نقاطُ النافذة: إشارةٌ متعارَفة إلى أنّ ما تحتها طرفيّة */}
-        <span className="code-dot" style={{ background: "#ff5f56" }} />
-        <span className="code-dot" style={{ background: "#ffbd2e" }} />
-        <span className="code-dot" style={{ background: "#27c93f" }} />
         {title && (
           <span dir="ltr" className="code-block ms-1.5 text-[11px] text-[var(--code-gutter)]">
             {title}

@@ -427,27 +427,6 @@ export function TrackingCoverageClient({
       {/* ── العمود الجانبيّ ─────────────────────────────────────────── */}
       <aside className="flex flex-col gap-3">
         <section className="card-shadow card pad-md">
-          <h2 className="mb-2.5 text-[13px] font-semibold text-text-primary">{tr("quickActions")}</h2>
-          <div className="flex flex-col gap-2">
-            <button
-              onClick={() => addRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
-              className="btn btn-secondary justify-start"
-            >
-              <Plus size={14} /> {tr("qaAddPage")}
-            </button>
-            <button
-              onClick={recheckAll}
-              disabled={busyId === "all" || pages.length === 0}
-              className="btn btn-secondary justify-start"
-            >
-              {busyId === "all" ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-              {tr("qaCheckAll")}
-            </button>
-          </div>
-          <p className="mt-2.5 text-[11.5px] leading-relaxed text-text-muted">{tr("qaHint")}</p>
-        </section>
-
-        <section className="card-shadow card pad-md">
           <h2 className="mb-2.5 text-[13px] font-semibold text-text-primary">{tr("needHelp")}</h2>
           <div className="flex flex-col gap-2.5">
             {/* الدعمُ يُفتح بالحدث نفسه المستعمل في كلّ المنتج - لا رابطٌ
