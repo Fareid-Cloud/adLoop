@@ -62,6 +62,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       ownerName={user.name ?? user.email.split("@")[0]}
       ownerEmail={user.email}
       role={role}
+      // وضعُ العرض من حساب المالك: اللوحة كانت داكنة بالإجبار، فزرّ الوضع
+      // في الإعدادات مايلمسهاش. الهويّة الحمراء هي المميِّز، لا الظلمة.
+      mode={user.themeMode === "dark" ? "dark" : "light"}
     >
       {children}
     </AdminShell>

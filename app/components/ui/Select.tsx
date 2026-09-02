@@ -48,7 +48,6 @@ export interface SelectOption {
 /** ما دون هذا العدد يُرى كلّه بلمحة، فحقل البحث فيه ضجيجٌ لا عون. */
 const SEARCH_THRESHOLD = 8;
 /** عرض الشاشة الذي تحته ترسو اللوحة إلى الشاشة لا إلى الزرّ (`sm` في تيلويند) */
-const MOBILE_MAX = 640;
 
 export function Select({
   value,
@@ -110,26 +109,44 @@ export function Select({
 
   // ── موضع اللوحة ───────────────────────────────────────────────────
   // تُقاس من الزرّ لا تُورَث منه: اللوحة في `<body>` فلا سلف يضعها.
-  const [pos, setPos] = useState<{ top: number; left: number; width: number; drop: "down" | "up" } | null>(null);
-  const [mobile, setMobile] = useState(false);
+  const [pos, setPos] = useState<{
+    top: number; left: number; width: number; maxWidth: number; drop: "down" | "up";
+  } | null>(null);
 
   useLayoutEffect(() => {
     if (!open) return;
     const place = () => {
       const el = triggerRef.current;
       if (!el) return;
-      const isMobile = window.innerWidth < MOBILE_MAX;
-      setMobile(isMobile);
-      if (isMobile) return;
       const r = el.getBoundingClientRect();
+
       // فوق الزرّ حين لا يتّسع تحته - القائمة التي تُفتح خارج الشاشة
       // تبدو للمستخدم قائمةً لم تُفتح.
       const below = window.innerHeight - r.bottom;
       const drop: "down" | "up" = below < 260 && r.top > below ? "up" : "down";
+
+      // 🔴 **تُقيَّد بحدود الشاشة، ولا تُنقَل إلى أسفلها.**
+      //
+      // كانت اللوحة تحت `sm` تُصيَّر كورقةٍ ملتصقةٍ بأسفل الشاشة
+      // (`inset-x-3 bottom-3`)، لأنّ التثبيت على حرف الزرّ كان يدفعها خارج
+      // الإطار في RTL. والحلّ كان علاجاً للعَرَض: القائمة تفتح بعيداً عن
+      // الشيء الذي فُتحت منه، فينقطع الربط بينهما ويقرأ صاحبها أنّها
+      // «نزلت تحت» لا أنّها انفتحت.
+      //
+      // والسببُ الأصليّ لم يكن التثبيت، بل غيابَ التقييد: `left` كانت
+      // تُنسَخ من الزرّ كما هي فتتجاوز الحافة. فتُحصَر الآن بين هامشين،
+      // ويُقيَّد العرض بما تبقّى - فتفتح في مكانها وتبقى داخل الشاشة معاً،
+      // وهما لم يكونا على خلافٍ أصلاً.
+      const MARGIN = 12;
+      const available = window.innerWidth - MARGIN * 2;
+      const width = Math.min(Math.max(r.width, 180), available);
+      const left = Math.min(Math.max(r.left, MARGIN), window.innerWidth - MARGIN - width);
+
       setPos({
         top: drop === "down" ? r.bottom + 6 : r.top - 6,
-        left: r.left,
-        width: r.width,
+        left,
+        width,
+        maxWidth: available,
         drop,
       });
     };
@@ -256,20 +273,17 @@ export function Select({
       //
       // فتُوسَم اللوحة، ويتخطّاها كلّ حارسِ دوسةٍ خارجية.
       data-portal-panel="true"
-      className={
-        mobile
-          ? "pop-shadow fixed inset-x-3 bottom-3 z-[70] max-h-[70vh] overflow-hidden rounded-2xl border border-border-visible bg-surface p-1.5"
-          : "pop-shadow fixed z-[70] overflow-hidden rounded-2xl border border-border-visible bg-surface p-1.5"
-      }
+      className="pop-shadow fixed z-[70] max-h-[70vh] overflow-hidden rounded-2xl border border-border-visible bg-surface p-1.5"
       style={
-        mobile || !pos
-          ? undefined
-          : {
+        pos
+          ? {
               top: pos.drop === "down" ? pos.top : undefined,
               bottom: pos.drop === "up" ? window.innerHeight - pos.top : undefined,
               left: pos.left,
               minWidth: pos.width,
+              maxWidth: pos.maxWidth,
             }
+          : undefined
       }
       role="presentation"
     >

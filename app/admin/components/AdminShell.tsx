@@ -10,11 +10,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   LayoutDashboard, Users, LifeBuoy, TrendingUp, CreditCard, Flag,
   Activity, ScrollText, ShieldCheck, PanelLeftClose, PanelLeftOpen,
-  ArrowLeft, ShieldAlert, Lock, Bot,
+  ArrowLeft, ShieldAlert, Lock, Bot, Menu, X,
 } from "lucide-react";
 import type { AdminNavGroup } from "@/lib/adminNavConfig";
 import { getCsrfHeader } from "@/lib/csrfClient";
@@ -28,16 +28,27 @@ export function AdminShell({
   ownerName,
   ownerEmail,
   role,
+  mode,
   children,
 }: {
   groups: AdminNavGroup[];
   ownerName: string;
   ownerEmail: string;
   role: string;
+  /** وضعُ العرض من حساب المالك نفسه - راجع التعليق عند `data-mode`. */
+  mode: "light" | "dark";
   children: ReactNode;
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // 🔴 **الدرج بيتقفل مع كلّ تنقّل.** من غير ده بتدوس على بند، الصفحة
+  // بتتغيّر وراه، والدرج فاضل مغطّيها - فتحسّ إنّ الدوسة ماشتغلتش وتدوس
+  // تاني. وربطُه بالمسار لا بحدث الضغط بيغطّي الرجوع بزرار المتصفّح كمان.
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [pathname]);
 
   const router = useRouter();
 
@@ -51,11 +62,40 @@ export function AdminShell({
   }
 
   return (
-    <div dir="ltr" data-accent="red" data-mode="dark" data-mode-fixed="" className="flex min-h-screen bg-bg text-text-primary">
+    // 🔴 **الوضع بقى من حساب المالك بدل `dark` مثبَّتاً.**
+    //
+    // كان `data-mode="dark" data-mode-fixed=""` - يعني اللوحة داكنة على
+    // طول حتى لو صاحبها شغّال فاتح في كل مكان تاني، وزرار الوضع في
+    // الإعدادات مابيلمسهاش. **والهويّة اللي كانت مقصودة من التثبيت لونها
+    // الأحمر (`data-accent="red"`) لا الظلمة**، وهو باقٍ زيّ ما هو -
+    // فاللوحة بتفضل متميّزة عن حساب العميل في الوضعين.
+    <div
+      dir="ltr"
+      data-accent="red"
+      data-mode={mode}
+      // بلا `data-mode-fixed`: العلامة دي بتستثني العنصر من زرّ الوضع،
+      // وكانت صحيحة لمّا اللوحة كانت مثبَّتة داكنة. دلوقتي هي بتتبع
+      // الحساب، فاستثناؤها كان هيمنع التبديل الحيّ عنها وحدها.
+      className="flex min-h-screen bg-bg text-text-primary"
+    >
+      {/* ═══ الموبايل: شريطٌ علويّ ودرجٌ منزلق ═══
+          القائمة كانت `<aside>` عاديّة بعرض ٢٤٠px و`shrink-0` جوّه `flex`،
+          فعلى شاشة ٣٦٠px بتاخد تلتين العرض ويفضل للمحتوى مئةٌ وعشرون -
+          والنتيجة عمودُ نصٍّ بكلمة في السطر. الديسكتوب أوّلاً قرارٌ صحيح،
+          لكنّه مش سببٌ لإنّ الصفحة تبقى غير قابلة للقراءة على التليفون. */}
+      {drawerOpen && (
+        <button
+          type="button"
+          aria-label="Close menu"
+          onClick={() => setDrawerOpen(false)}
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+        />
+      )}
+
       <aside
-        className={`sticky top-0 flex h-screen shrink-0 flex-col border-e border-border bg-surface transition-[width] duration-200 ${
-          collapsed ? "w-16" : "w-60"
-        }`}
+        className={`fixed inset-y-0 start-0 z-50 flex h-screen w-64 shrink-0 flex-col border-e border-border bg-surface transition-transform duration-200 lg:sticky lg:top-0 lg:z-auto lg:translate-x-0 lg:transition-[width] ${
+          drawerOpen ? "translate-x-0" : "-translate-x-full"
+        } ${collapsed ? "lg:w-16" : "lg:w-60"}`}
       >
         <div className="flex items-center gap-2 px-4 py-4">
           <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-critical/15 text-critical">
@@ -114,7 +154,7 @@ export function AdminShell({
           <button
             type="button"
             onClick={() => setCollapsed((c) => !c)}
-            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-text-faint transition-colors hover:bg-surface-raised hover:text-text-primary"
+            className="hidden w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-text-faint transition-colors hover:bg-surface-raised hover:text-text-primary lg:flex"
           >
             {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
             {!collapsed && <span>Collapse</span>}
@@ -143,7 +183,31 @@ export function AdminShell({
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 px-6 py-6 lg:px-8">{children}</main>
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* الشريط ده هو المدخل الوحيد للقائمة تحت lg، فبيفضل لاصقاً:
+            صفحةٌ طويلة والقائمة فوقها بعيد معناها رجوعٌ للأعلى قبل كلّ
+            تنقّل. */}
+        <div className="sticky top-0 z-30 flex items-center gap-2 border-b border-border bg-surface px-4 py-2.5 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setDrawerOpen((o) => !o)}
+            aria-label={drawerOpen ? "Close menu" : "Open menu"}
+            aria-expanded={drawerOpen}
+            className="btn-icon"
+          >
+            {drawerOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+          <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-critical/15 text-critical">
+            <ShieldAlert size={15} />
+          </span>
+          <span className="truncate text-[13px] font-semibold">AdLoop</span>
+          <span className="ms-auto shrink-0 rounded bg-critical/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-critical">
+            {role}
+          </span>
+        </div>
+
+        <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">{children}</main>
+      </div>
     </div>
   );
 }
