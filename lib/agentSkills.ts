@@ -17,6 +17,21 @@
 //      المستوردة من محرّكه لا مكتوبةً هنا مرّةً ثانية. فلو قال المحرّك
 //      «لا تزد قبل ٢٠ تحويلاً» وقال الوكيل «زِد» في الصفحة نفسها، فقد
 //      المنتجُ مصداقيّته كلَّها - والرقمان لا يفترقان ما داما واحداً.
+//
+// ═══ مزيجٌ من أطرٍ منشورة وعتباتٍ خاصّة بنا ═══
+//
+// ما كُتب هنا اجتهاداً وحدَه يبقى رأياً. فأُضيف إليه إطاران متعارَفان
+// راجعتُهما قبل إدخالهما - وكلاهما يسدّ ثغرةً لم يكن اجتهادُنا يراها:
+//
+//   • **تفكيك تكلفة العميل** `CPM ÷ (CTR × CVR)`: يحوّل «التكلفة ارتفعت»
+//     من ملاحظةٍ إلى تشخيصٍ محدَّد - إبداعٌ أم صفحةٌ أم مزاد. وبدونه كان
+//     الوكيل يقترح علاجاً قبل أن يعرف العلّة.
+//   • **مفارقة سيمبسون**: اتّجاهُ المجموع قد ينعكس في كلّ أجزائه حين
+//     يتغيّر التركيب. وهذه بالذات خطيرةٌ هنا لأنّ الجواب يبدو صحيحاً
+//     تماماً وهو مقلوب، والتوصيةُ المبنيّة عليه معاكسةٌ للصواب.
+//
+// والعتباتُ الرقميّة تبقى عتباتِنا المستوردة: الإطارُ المنشور يعطي طريقةَ
+// التفكير، ومنتجُنا يعطي الأرقام التي يحكم بها.
 
 import {
   SAFE_SCALE_INCREASE_PCT,
@@ -116,7 +131,25 @@ function mediaBuyerSkill(ar: boolean): string {
 - **تشبّع التكرار عند ${FREQUENCY_SATURATION_THRESHOLD}:** فوقه تشتري الميزانيةُ تكراراً على الناس أنفسهم لا وصولاً جديداً - فلا تنصح بزيادةٍ مهما بدت التكلفة جيّدة.
 - **الإنفاق ليس نتيجةً تُقاس وحدها.** ارتفاعُه ليس سيّئاً ولا انخفاضُه جيّداً؛ هو المقام في كلّ كسر. احكم بالسعر: كم كلّف العميلُ الواحد.
 - **العائد إشارةُ تأكيدٍ أو نقض، لا بديلٌ عن تكلفة العميل.** رخيصٌ بعائدٍ ضعيف ليس نجاحاً، وغالٍ بعائدٍ قويّ يستحقّ نظرةً بشريّة لا إيقافاً.
-- **الترتيب النسبيّ قبل الحكم:** «أغلى من المتوسّط» لا تكفي - قد يكون المتوسّط نفسه مشوَّهاً بإعلانٍ شاذّ. اسأل: أهو فعلاً ضمن الأضعف؟`
+- **الترتيب النسبيّ قبل الحكم:** «أغلى من المتوسّط» لا تكفي - قد يكون المتوسّط نفسه مشوَّهاً بإعلانٍ شاذّ. اسأل: أهو فعلاً ضمن الأضعف؟
+
+### تفكيكُ تكلفة العميل - لا تقل «ارتفعت» وتقف
+
+تكلفةُ العميل حاصلُ ثلاثةِ عوامل لا عاملٍ واحد:
+
+    تكلفة العميل = تكلفة الألف ظهور ÷ (نسبة النقر × نسبة التحويل)
+
+فإن ارتفعت، **حدّد أيَّ العوامل تحرّك** قبل أن تقترح شيئاً:
+
+| ما تراه | أين المشكلة فعلاً |
+|---|---|
+| تكلفة ظهورٍ طبيعية، ونسبةُ نقرٍ منخفضة | **الإبداع** - الإعلان لم يعد يوقف الناس |
+| تكلفةٌ ونقرٌ جيّدان، وتحويلٌ منخفض | **الصفحة أو العرض** - وصلوا ولم يقتنعوا |
+| تكلفةُ ظهورٍ مرتفعة، ونقرٌ وتحويلٌ طبيعيّان | **المزاد أو الجمهور** - منافسةٌ أو تشبّع أو موسم |
+
+وكلُّ حالةٍ علاجُها مختلف: الأولى تُبدَّل موادُّها، والثانية لا يصلحها رفعُ ميزانية، والثالثة قد لا تكون خطأً في الحساب أصلاً. **اقتراحُ علاجٍ قبل تحديد العامل تخمين.**
+
+- **نقصُ الإبلاغ يرفع التكلفة المُعلَنة بلا سبب حقيقيّ:** تحويلاتٌ وقعت ولم تصل إلى المنصّة تجعل تكلفتها المُعلَنة أعلى ممّا هي. فقبل أن تحكم بارتفاعٍ، انظر إلى نسبة التحقّق - إن كانت هي المتراجعة فالمشكلة في القياس لا في الأداء، وهذا فرقٌ يقلب التوصية رأساً على عقب.`
     : `## Skill: media buying (applies to every verdict about budget or pausing)
 
 - **Sample before verdict:** pausing needs at least ${MIN_CONVERSIONS_FOR_KILL} conversions across ${MIN_DAYS_ACTIVE_FOR_KILL} distinct days. Raising budget needs ${MIN_CONVERSIONS_FOR_SCALE} across ${MIN_DAYS_ACTIVE_FOR_SCALE} days - **deliberately different bars**: a wrong pause stops a loss, a wrong increase doubles one.
@@ -126,7 +159,25 @@ function mediaBuyerSkill(ar: boolean): string {
 - **Frequency saturates at ${FREQUENCY_SATURATION_THRESHOLD}:** above it, budget buys repetition on the same people rather than new reach - do not recommend an increase however good the cost looks.
 - **Spend is not a result measured on its own.** Rising is not bad, falling is not good; it is the denominator of every ratio. Judge by price: what did one customer cost.
 - **Return confirms or denies, it does not replace cost per customer.** Cheap with a weak return is not a win; expensive with a strong return deserves a human look, not a pause.
-- **Relative rank before verdict:** "above average" is not enough - the average itself may be skewed by one outlier. Ask whether it genuinely ranks among the weakest.`;
+- **Relative rank before verdict:** "above average" is not enough - the average itself may be skewed by one outlier. Ask whether it genuinely ranks among the weakest.
+
+### Decompose cost per customer - never say "it rose" and stop
+
+Cost per customer is the product of three factors, not one:
+
+    cost per customer = CPM / (CTR x conversion rate)
+
+When it rises, **identify which factor moved** before proposing anything:
+
+| What you see | Where the problem actually is |
+|---|---|
+| Normal CPM, low click rate | **Creative** - the ad has stopped stopping people |
+| Healthy CPM and clicks, low conversion rate | **Landing page or offer** - they arrived and were not convinced |
+| High CPM, normal clicks and conversion | **Auction or audience** - competition, saturation or season |
+
+Each has a different remedy: the first needs new material, the second is not fixed by more budget, and the third may not be an account error at all. **Proposing a remedy before naming the factor is guesswork.**
+
+- **Under-reporting inflates the reported cost with no real cause:** conversions that happened but never reached the platform make its reported cost look higher than reality. Before calling a rise real, look at the verification rate - if that is what fell, the problem is measurement, not performance, and that distinction reverses the recommendation.`;
 }
 
 function analystSkill(ar: boolean): string {
@@ -138,7 +189,13 @@ function analystSkill(ar: boolean): string {
 - **افحص التركيز:** نتيجةٌ يصنعها يومٌ واحدٌ أو إعلانٌ واحد ليست نتيجةَ الحساب - قل من أين جاءت.
 - **المتوسّطات تُخفي:** متوسّطٌ جيّدٌ فوق نصفٍ خاسرٍ ونصفٍ رابح يخفي القرار كلَّه. انظر إلى التوزيع حين يتاح.
 - **رتّب بالأثر لا بالنسبة:** تحسّنٌ ٥٠٪ في بندٍ صغير أقلُّ شأناً من ٥٪ في البند الأكبر. اضرب النسبةَ في الحجم قبل أن ترتّب.
-- **سمِّ ما لا تعرفه.** الموسميّة والمنافسون وتغييراتُ الموقع لا تظهر في هذه البيانات؛ إن كان تفسيرُك يحتمل أحدها فقل ذلك بدل أن تجزم.`
+- **سمِّ ما لا تعرفه.** الموسميّة والمنافسون وتغييراتُ الموقع لا تظهر في هذه البيانات؛ إن كان تفسيرُك يحتمل أحدها فقل ذلك بدل أن تجزم.
+
+### احذر انقلابَ الاتّجاه عند التجميع (مفارقة سيمبسون)
+
+اتّجاهٌ يظهر في المجموع قد **ينعكس** في كلّ جزءٍ من أجزائه. الرقمُ الكلّيّ يهبط بينما كلُّ منصّةٍ وكلُّ جهازٍ يتحسّن - والسببُ تغيُّرُ التركيب لا تغيُّرُ الأداء: تحوّلَ الإنفاق نحو شريحةٍ أغلى، فبدا الكلُّ أسوأ وكلُّ جزءٍ أفضل.
+
+**العلامةُ الكاشفة:** تحرّكَ الرقمُ الكلّيّ تحرّكاً معتبَراً ولا شريحةَ واحدةً تحرّكت في اتّجاهه. متى رأيتَ ذلك، **فسّر بالتركيب لا بالأداء** - وقل ذلك صراحةً، فالتوصيةُ في الحالتين متعاكسة تماماً.`
     : `## Skill: marketing analysis (applies to any question about a trend or comparison)
 
 - **Compare like with like:** equal-length periods, matching days of the week where possible. A week containing a holiday is not comparable to a working week.
@@ -146,7 +203,13 @@ function analystSkill(ar: boolean): string {
 - **Check concentration:** a result produced by one day or one ad is not the account's result - say where it came from.
 - **Averages hide:** a healthy average over one losing half and one winning half conceals the entire decision. Look at the distribution where it is available.
 - **Rank by impact, not by percentage:** a 50% improvement on a small line matters less than 5% on the largest one. Multiply the percentage by the size before ranking.
-- **Name what you cannot see.** Seasonality, competitors and site changes are not in this data; if your explanation could rest on one of them, say so rather than asserting.`;
+- **Name what you cannot see.** Seasonality, competitors and site changes are not in this data; if your explanation could rest on one of them, say so rather than asserting.
+
+### Watch for a trend that reverses when aggregated (Simpson's paradox)
+
+A trend visible in the total can **reverse** inside every one of its parts. The blended number falls while every platform and every device improves - because the mix changed, not the performance: spend moved toward a more expensive segment, so the whole looks worse while each part looks better.
+
+**The tell:** the aggregate moved meaningfully and no single segment moved in the same direction. When you see that, **explain it as mix, not performance** - and say so plainly, because the recommendation in the two cases is exactly opposite.`;
 }
 
 /** كلُّ ما يُضاف إلى نصّ النظام - إجراءٌ ثمّ مهارتان. */
