@@ -15,18 +15,12 @@ import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { sendPushToUser } from "@/lib/webPush";
 
-export const CHANNELS = ["WEB", "WHATSAPP", "MESSENGER"] as const;
-export type Channel = (typeof CHANNELS)[number];
-
-export const CHANNEL_LABEL: Record<Channel, string> = {
-  WEB: "Website",
-  WHATSAPP: "WhatsApp",
-  MESSENGER: "Messenger",
-};
-
-export function isChannel(v: string | null | undefined): v is Channel {
-  return !!v && (CHANNELS as readonly string[]).includes(v);
-}
+// الثابتاتُ في ملفٍّ بلا استيراد (`lib/inboxChannels.ts`) وتُعاد التصدير
+// من هنا: الملفّ ده بيجرّ `web-push` ومعاه مكتباتِ Node، فاستيرادُ كلاينت
+// كومبوننت منه بيكسر البناء. المستهلكُ الخادميّ بياخدها من هنا، والكلاينت
+// من هناك، والتعريفُ واحد في الحالتين.
+export { CHANNELS, CHANNEL_LABEL, isChannel, type Channel } from "@/lib/inboxChannels";
+import { CHANNEL_LABEL, type Channel } from "@/lib/inboxChannels";
 
 // ══════════════════════════════════════════════════════════════════════
 // الوارد

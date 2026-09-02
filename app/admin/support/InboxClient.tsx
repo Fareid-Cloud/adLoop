@@ -7,7 +7,8 @@ import {
   MessageCircle, Phone, ChevronLeft, Inbox as InboxIcon, AlertTriangle, Paperclip,
 } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
-import { CHANNEL_LABEL, type Channel } from "@/lib/inbox";
+// من `inboxChannels` لا من `inbox`: التاني بيجرّ `web-push` للمتصفّح.
+import { CHANNEL_LABEL, type Channel } from "@/lib/inboxChannels";
 import { countryName } from "@/lib/countries";
 
 // أيقونةُ القناة بتفرّق الصفوف من غير ما تاخد عرضاً - القائمة ضيّقة،
