@@ -67,6 +67,14 @@ export function ProductTab({ data }: { data: ProductAnalytics }) {
             <Stat label="Automation rules" value={data.automationRules} />
             <Stat label="Decisions applied" value={data.appliedDecisions} />
           </div>
+          {/* صفر منصّات مربوطة حالةٌ حقيقيّة ومهمّة - مش تفصيلة تُحذف
+              بصمت. من غير سطر بيقولها، الصفّ بيختفي وكإنّ المكان ده
+              مالوش وجود أصلاً. */}
+          {data.platforms.length === 0 && (
+            <p className="m-0 mt-3 text-[11.5px] text-text-faint">
+              No ad platform is connected on any account yet.
+            </p>
+          )}
           <div className="mt-3 flex flex-wrap gap-1.5">
             {data.platforms.map((p) => (
               <span key={p.platform} className="inline-flex items-center gap-1 rounded-md bg-surface-raised px-1.5 py-0.5 text-[11px] text-text-muted">

@@ -68,11 +68,19 @@ export function CustomersTab({ data }: { data: CustomerAnalytics }) {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card>
           <SectionTitle>By country</SectionTitle>
-          <SimpleList rows={data.byCountry.map((c) => ({ label: c.country, value: c.count }))} total={data.total} />
+          <SimpleList
+            rows={data.byCountry.map((c) => ({ label: c.country, value: c.count }))}
+            total={data.total}
+            empty="No account has a country on it yet — it is captured at signup and on the billing form."
+          />
         </Card>
         <Card>
           <SectionTitle hint="self-reported at signup">By business scale</SectionTitle>
-          <SimpleList rows={data.byScale.map((s) => ({ label: s.scale, value: s.count }))} total={data.total} />
+          <SimpleList
+            rows={data.byScale.map((s) => ({ label: s.scale, value: s.count }))}
+            total={data.total}
+            empty="Nobody has answered the spend-scale question during onboarding yet."
+          />
         </Card>
         <Card>
           <SectionTitle>Status</SectionTitle>
@@ -125,8 +133,22 @@ export function CustomersTab({ data }: { data: CustomerAnalytics }) {
   );
 }
 
-function SimpleList({ rows, total }: { rows: Array<{ label: string; value: number }>; total: number }) {
-  if (rows.length === 0) return <p className="text-[12.5px] text-text-faint">No data.</p>;
+/**
+ * "No data." كانت الرسالة لكلّ استعمال - وهي أسوأ حالة فاضية ممكنة:
+ * بتقول إنّ مافيش شيء وماتقولش ليه، فالقارئ مايعرفش هل الحقل مش
+ * بيتسجّل، ولا اتسجّل وماحدّش ملاه، ولا الفلتر بيخفيه. والتلاتة علاجهم
+ * مختلف تماماً.
+ */
+function SimpleList({
+  rows,
+  total,
+  empty = "Nothing recorded yet.",
+}: {
+  rows: Array<{ label: string; value: number }>;
+  total: number;
+  empty?: string;
+}) {
+  if (rows.length === 0) return <p className="text-[12.5px] text-text-faint">{empty}</p>;
   const max = Math.max(...rows.map((r) => r.value), 1);
   return (
     <ul className="m-0 list-none space-y-1.5 p-0">
