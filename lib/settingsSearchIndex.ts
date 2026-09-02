@@ -17,6 +17,7 @@ export type SettingsTabKey =
   | "preferences"
   | "accounts"
   | "workspace"
+  | "team"
   | "automation"
   | "conversionSync"
   | "security"
@@ -28,6 +29,7 @@ export const SETTINGS_TAB_LABEL_KEYS: Record<SettingsTabKey, string> = {
   preferences: "tabPreferences",
   accounts: "tabAccounts",
   workspace: "tabWorkspace",
+  team: "tabTeam",
   automation: "tabAutomation",
   conversionSync: "tabConversionSync",
   security: "tabSecurity",

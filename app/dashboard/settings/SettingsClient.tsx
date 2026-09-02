@@ -11,7 +11,8 @@ import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { useState, useMemo, useEffect, createContext, useContext, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Settings as SettingsIcon, Bot, Cpu, Star, Terminal, Brain, Zap, Upload, Search, User, Palette, Plug, Building2, RefreshCw, TriangleAlert, ShieldCheck, Check, ChevronDown } from "lucide-react";
+import { TeamTab } from "./TeamTab";
+import { Settings as SettingsIcon, Bot, Cpu, Star, Terminal, Brain, Zap, Upload, Search, User, Palette, Plug, Building2, RefreshCw, TriangleAlert, ShieldCheck, Check, ChevronDown, Users } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
 import { PushNotificationToggle } from "@/app/components/PushNotificationToggle";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -131,6 +132,7 @@ const TABS = [
   { key: "preferences", labelKey: "tabPreferences", icon: Palette },
   { key: "accounts", labelKey: "tabAccounts", icon: Plug },
   { key: "workspace", labelKey: "tabWorkspace", icon: Building2 },
+  { key: "team", labelKey: "tabTeam", icon: Users },
   { key: "automation", labelKey: "tabAutomation", icon: Zap },
   { key: "conversionSync", labelKey: "tabConversionSync", icon: RefreshCw },
   { key: "security", labelKey: "tabSecurity", icon: ShieldCheck },
@@ -147,7 +149,7 @@ const TAB_GROUPS: ReadonlyArray<{
   keys: ReadonlyArray<(typeof TABS)[number]["key"]>;
 }> = [
   { titleKey: "grpAccount", keys: ["profile", "preferences", "security"] },
-  { titleKey: "grpWorkspace", keys: ["workspace", "accounts", "automation", "conversionSync"] },
+  { titleKey: "grpWorkspace", keys: ["workspace", "team", "accounts", "automation", "conversionSync"] },
   { titleKey: "grpAdvanced", keys: ["danger"] },
 ];
 
@@ -385,6 +387,12 @@ export function SettingsClient({
           activeWorkspaceId={activeWorkspaceId}
           onSwitchWorkspace={setActiveWorkspaceId}
         />
+      )}
+      {/* المقاعد تخصّ مساحةً بعينها لا الحساب: مساحتان مختلفتان ممكن
+          يكون لكلٍّ منهما فريقُها. و`key` بيعيد التركيب عند التبديل فلا
+          تفضل بيانات المساحة السابقة معروضة. */}
+      {activeTab === "team" && workspaces.length > 0 && (
+        <TeamTab key={activeWorkspaceId} workspaceId={activeWorkspaceId} locale={locale} />
       )}
       {activeTab === "automation" && workspaces.length > 0 && (
         <AutomationTab
