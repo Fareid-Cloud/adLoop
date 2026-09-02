@@ -13,6 +13,7 @@ import { resolveAdminRole, adminCapabilities } from "@/lib/adminRole";
 import { lastNDays } from "@/lib/admin/shared";
 import { getBusinessSummary, KNOWN_GAPS } from "@/lib/admin/business";
 import { getCustomerAnalytics } from "@/lib/admin/customers";
+import { getAcquisitionAnalytics } from "@/lib/admin/acquisition";
 import { getProductAnalytics } from "@/lib/admin/product";
 import { getOperationalAnalytics } from "@/lib/admin/operational";
 import { getUsageOverview } from "@/lib/admin/usage";
@@ -20,6 +21,7 @@ import { buildInsights } from "@/lib/admin/insights";
 import { AdminPageHeader, InsightStrip } from "../components/AdminUI";
 import { BusinessTab } from "./tabs/BusinessTab";
 import { CustomersTab } from "./tabs/CustomersTab";
+import { AcquisitionTab } from "./tabs/AcquisitionTab";
 import { ProductTab } from "./tabs/ProductTab";
 import { PlansTab } from "./tabs/PlansTab";
 import { OperationalTab } from "./tabs/OperationalTab";
@@ -30,6 +32,7 @@ export const dynamic = "force-dynamic";
 const TABS = [
   { key: "business", label: "Business", financial: true },
   { key: "customers", label: "Customers", financial: false },
+  { key: "acquisition", label: "Acquisition", financial: false },
   { key: "product", label: "Product", financial: false },
   { key: "plans", label: "Plans", financial: true },
   { key: "operational", label: "Operational", financial: false },
@@ -58,6 +61,7 @@ export default async function AnalyticsPage({
   // كل تبويب بيحمّل نفسه بس. الرؤى محتاجة أكتر من مصدر، فبتتحسب من اللي
   // اتحمّل فعلاً - والقواعد اللي ماوصلهاش مصدرها بتتخطّى نفسها بهدوء.
   const business = tab === "business" || tab === "plans" ? await getBusinessSummary(range) : undefined;
+  const acquisition = tab === "acquisition" ? await getAcquisitionAnalytics(range) : undefined;
   const customers = tab === "customers" || tab === "plans" ? await getCustomerAnalytics(range) : undefined;
   const product = tab === "product" ? await getProductAnalytics(days) : undefined;
   const operational = tab === "operational" ? await getOperationalAnalytics(range) : undefined;
@@ -106,6 +110,7 @@ export default async function AnalyticsPage({
 
       {tab === "business" && business && <BusinessTab data={business} gaps={KNOWN_GAPS} />}
       {tab === "customers" && customers && <CustomersTab data={customers} />}
+      {tab === "acquisition" && acquisition && <AcquisitionTab data={acquisition} />}
       {tab === "product" && product && <ProductTab data={product} />}
       {tab === "plans" && business && customers && <PlansTab business={business} customers={customers} />}
       {tab === "operational" && operational && <OperationalTab data={operational} />}
