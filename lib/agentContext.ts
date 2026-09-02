@@ -15,6 +15,7 @@
 import { prisma } from "@/lib/prisma";
 import { buildCampaignSummaries, type CampaignSummary } from "@/lib/aiInsights";
 import { getWorkspaceCreativePerformances } from "@/lib/creativeAnalysis";
+import { metricRollupRows } from "@/lib/metricRollup";
 
 /** حدود الحمولة - كلّ رقم منها سقفُ صفوفٍ تُرسَل، لا سقف ما يُقرأ */
 const MAX_CAMPAIGNS = 15;
@@ -78,6 +79,29 @@ export interface AgentContext {
     pagesNeedingAttention: number;
   };
 
+  /**
+   * 🔴 **مدى الوكيل كان ثلاثين يوماً، وهو لا يعلم أنّه كذلك.**
+   *
+   * فمن يسأل «كيف كنّا قبل ثلاثة أشهر؟» يُجاب من ثلاثين يوماً بثقةٍ
+   * كاملة وبلا تحفّظ - وهو أسوأ من الرفض، لأنّ السائل لا يعرف أنّ
+   * الجواب مقصوص.
+   *
+   * والتاريخ كان متاحاً طوال الوقت: لقطاتُ المقاييس **لا تُحذف أبداً**
+   * (حذفُ التسعين يوماً يمسّ نقرات الزوّار الخام وحدها). فالنقص كان في
+   * القراءة لا في البيانات.
+   *
+   * **ملخَّصٌ شهريّ لا صفوفٌ خام:** المدى كلُّه في اثني عشر سطراً - يجيب
+   * عن الموسميّة والاتّجاه الطويل بكلفةِ رموزٍ لا تُذكر، بينما إرسالُ
+   * الأيّام كلِّها كان سيغرق السياق ويشتّت الانتباه عن الفترة المسؤولة
+   * عن السؤال.
+   */
+  history: Array<{
+    month: string;
+    cost: number;
+    verifiedConversions: number;
+    cpl: number | null;
+  }>;
+
   /** ما جُرِّب فعلاً وما حكمُه - كي لا يقترح الوكيل تجربةً أُجريت */
   experiments: Array<{
     description: string;
@@ -100,7 +124,7 @@ export async function gatherAgentContext(
   const since = new Date();
   since.setDate(since.getDate() - periodDays);
 
-  const [campaigns, creativeData, trends, store, decisions, firstClick, pages, experiments] = await Promise.all([
+  const [campaigns, creativeData, trends, store, decisions, firstClick, pages, allRows, experiments] = await Promise.all([
     buildCampaignSummaries(workspaceId, since, MAX_CAMPAIGNS),
     gatherCreatives(workspaceId),
     gatherTrends(workspaceId),
@@ -117,6 +141,9 @@ export async function gatherAgentContext(
       where: { workspaceId },
       select: { adloopDetected: true, lastError: true, lastCheckedAt: true },
     }),
+    // كلُّ التاريخ - بلا `date` فلا حدَّ زمنيّ. ويمرّ من `metricRollup`
+    // إجباراً: الجمعُ الخام من `MetricSnapshot` يعدّ صرف ميتا مرّتين.
+    metricRollupRows({ workspaceId }),
     prisma.experimentLog.findMany({
       where: { workspaceId },
       select: { description: true, status: true, confidenceLevel: true, changedAt: true },
@@ -143,6 +170,7 @@ export async function gatherAgentContext(
         (p) => p.lastCheckedAt !== null && (p.lastError !== null || p.adloopDetected !== true)
       ).length,
     },
+    history: monthlyHistory(allRows),
     experiments: experiments.map((e) => ({
       description: e.description,
       status: e.status,
@@ -281,4 +309,37 @@ async function gatherStore(workspaceId: string, since: Date): Promise<AgentStore
 
 function round(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+
+/**
+ * المدى كلُّه مضغوطاً في أسطرٍ شهريّة.
+ *
+ * آخرُ اثني عشر شهراً فيها كانت هناك حركة - والشهرُ الفارغ يُسقَط لا
+ * يُرسَل صفراً: صفرٌ في يناير يُقرأ انهياراً بينما الحساب لم يكن قد بدأ.
+ */
+const MAX_HISTORY_MONTHS = 12;
+
+function monthlyHistory(rows: readonly { date: Date; cost: number; verifiedConversions: number }[]) {
+  const byMonth = new Map<string, { cost: number; conv: number }>();
+  for (const r of rows) {
+    const key = r.date.toISOString().slice(0, 7);
+    const cur = byMonth.get(key) ?? { cost: 0, conv: 0 };
+    cur.cost += r.cost;
+    cur.conv += r.verifiedConversions;
+    byMonth.set(key, cur);
+  }
+
+  return [...byMonth.entries()]
+    .filter(([, v]) => v.cost > 0 || v.conv > 0)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .slice(-MAX_HISTORY_MONTHS)
+    .map(([month, v]) => ({
+      month,
+      cost: Math.round(v.cost),
+      verifiedConversions: v.conv,
+      // تكلفةُ العميل تُحسب هنا لا تُترك للوكيل: قسمةٌ يجريها بنفسه على
+      // رقمين مجمَّعين بابُ خطأٍ لا داعي له.
+      cpl: v.conv > 0 ? Math.round((v.cost / v.conv) * 100) / 100 : null,
+    }));
 }

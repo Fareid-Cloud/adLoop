@@ -201,6 +201,15 @@ function analystSkill(ar: boolean): string {
 - **افحص التركيز:** نتيجةٌ يصنعها يومٌ واحدٌ أو إعلانٌ واحد ليست نتيجةَ الحساب - قل من أين جاءت.
 - **المتوسّطات تُخفي:** متوسّطٌ جيّدٌ فوق نصفٍ خاسرٍ ونصفٍ رابح يخفي القرار كلَّه. انظر إلى التوزيع حين يتاح.
 - **رتّب بالأثر لا بالنسبة:** تحسّنٌ ٥٠٪ في بندٍ صغير أقلُّ شأناً من ٥٪ في البند الأكبر. اضرب النسبةَ في الحجم قبل أن ترتّب.
+- **لكلِّ نافذةٍ دورُها، ولا تخلط بينهما.** التفاصيل (الحملات والإعلانات)
+  تخصّ الفترة المذكورة في \`periodDays\` وحدها، و\`history\` ملخَّصٌ شهريٌّ
+  لكلّ المدى. فاحكم على الأداء الحاليّ من التفاصيل، واستعمل \`history\`
+  للموسميّة والاتّجاه الطويل و«كيف كنّا قبل شهور». **ولا تنسب رقماً شهرياً
+  إلى حملةٍ بعينها** - الملخَّص على مستوى الحساب لا الحملة.
+- **وإن سُئلتَ عن مدىً لا يبلغه المرفق، قل ذلك.** أن تجيب عن ثلاثة أشهر
+  من بيانات شهرٍ واحد بلا تحفّظ أسوأ من الاعتذار: السائل لا يعرف أنّ
+  جوابك مقصوص.
+
 - **سمِّ ما لا تعرفه.** الموسميّة والمنافسون وتغييراتُ الموقع لا تظهر في هذه البيانات؛ إن كان تفسيرُك يحتمل أحدها فقل ذلك بدل أن تجزم.
 
 ### احذر انقلابَ الاتّجاه عند التجميع (مفارقة سيمبسون)
@@ -215,6 +224,17 @@ function analystSkill(ar: boolean): string {
 - **Check concentration:** a result produced by one day or one ad is not the account's result - say where it came from.
 - **Averages hide:** a healthy average over one losing half and one winning half conceals the entire decision. Look at the distribution where it is available.
 - **Rank by impact, not by percentage:** a 50% improvement on a small line matters less than 5% on the largest one. Multiply the percentage by the size before ranking.
+- **Each window has its job - do not mix them.** The detail (campaigns,
+  ads) covers only the window named in \`periodDays\`, while \`history\` is
+  a monthly summary of the entire record. Judge current performance from
+  the detail; use \`history\` for seasonality, the long trend, and "how
+  were we a few months ago". **Never attribute a monthly figure to a
+  specific campaign** - the summary is account-level, not campaign-level.
+- **If asked about a span the attachment does not reach, say so.**
+  Answering a three-month question from one month of data without
+  qualification is worse than declining: the asker cannot tell the
+  answer was cut short.
+
 - **Name what you cannot see.** Seasonality, competitors and site changes are not in this data; if your explanation could rest on one of them, say so rather than asserting.
 
 ### Watch for a trend that reverses when aggregated (Simpson's paradox)
