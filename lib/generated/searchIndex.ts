@@ -490,6 +490,7 @@ export const SEARCH_INDEX: SearchEntry[] = [
   { k: "focus.suggestedPrice", h: "/dashboard/pricing" },
   { k: "focus.trueCost", h: "/dashboard/pricing" },
   { k: "focus.window", h: "/dashboard/pricing" },
+  { k: "helpPage.noAnswer", h: "/dashboard/help" },
   { k: "helpPage.title", h: "/dashboard/help" },
   { k: "home.actuallyVerified", h: "/dashboard/campaigns" },
   { k: "home.healthComplete", h: "/dashboard" },

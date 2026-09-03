@@ -23,9 +23,6 @@ import { WelcomeGate } from "@/app/components/WelcomeGate";
 import { AccountMenu } from "@/app/components/AccountMenu";
 import { TopSearch } from "@/app/components/TopSearch";
 import { LiveDataProvider } from "@/app/components/LiveData";
-// مدخلٌ واحد للمساعدة لا اتنين: `HelpButton` كان لوحةَ FAQ ببحث
-// وبلا تصعيد، فاللي مالقاش إجابة كان بيقفلها ويدوّر على طريقٍ تاني.
-import { SupportWidget } from "@/app/components/support/SupportWidget";
 import { AiCreditBadge } from "@/app/components/AiCreditBadge";
 import { MONTHLY_LIMIT } from "@/lib/aiRateLimit";
 import { SidebarNav } from "@/app/components/SidebarNav";
@@ -387,7 +384,6 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             </span>
           )}
           <ThemeModeToggle initialMode={mode} locale={locale} />
-          <SupportWidget locale={locale} />
           <div id="tour-notification-bell"><NotificationBell locale={locale} /></div>
           {/* 🔴 **منتقي الصورة في الإعدادات لا يغيّر شيئاً لمن دخل بجوجل.**
               `avatarUrl` هي صورة حساب جوجل/فيسبوك (تُكتب في مسار الدخول)،
