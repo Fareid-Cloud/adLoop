@@ -96,9 +96,17 @@ export function McpClient({
   }, [workspaceId]);
 
   // الاستطلاع يعمل فقط بعد توليد مفتاح، ويتوقّف فور وصول أوّل نداء.
+  //
+  // 🔴 **وبينتهي لوحده بعد خمس دقائق** حتى لو الاتصال ما وصلش. مَن ولّد
+  // مفتاحاً وساب الصفحة مفتوحة كان بيفضل يسأل كلّ خمس ثوانٍ إلى الأبد -
+  // وهو نفسُ الشكل اللي حرق حدَّ نقل البيانات في القاعدة من صفحةٍ تانية:
+  // استطلاعٌ بلا نهاية على شاشةٍ محدّش قاعدٌ قدّامها. والربطُ لو حصل بعد
+  // كده بيبان بأوّل تحديثٍ للصفحة.
   useEffect(() => {
     if (!fresh || connected) return;
+    const stopAt = Date.now() + 5 * 60_000;
     const timer = setInterval(async () => {
+      if (Date.now() > stopAt || document.visibilityState !== "visible") return;
       const r = await fetch(`/api/workspaces/${workspaceId}/mcp-tokens`);
       if (!r.ok) return;
       const rows: TokenRow[] = (await r.json()).tokens ?? [];
