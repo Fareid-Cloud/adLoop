@@ -85,7 +85,6 @@ export function SupportChat({
   const [thread, setThread] = useState<Thread | null>(null);
   const [unread, setUnread] = useState(0);
   const [q, setQ] = useState("");
-  const [showAll, setShowAll] = useState(false);
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({ name, email, phone: "", country: "", subject: "", text: "" });
   const [images, setImages] = useState<string[]>([]);
@@ -150,7 +149,10 @@ export function SupportChat({
         .join(" ").toLocaleLowerCase().includes(term)
     );
   }, [q, all, locale]);
-  const visible = showAll || q.trim() ? matches : matches.slice(0, TOP_ANSWERS);
+  // اللوحةُ بتعرض أشهرَ الإجابات وبس؛ البحثُ بيعرض كلَّ ما طابق، والباقي
+  // في مركز المساعدة. (كان فيه فردٌ داخل اللوحة، واتشال مع الزرّ اللي
+  // كان بيشغّله - حالةٌ مالهاش من يغيّرها بتفضل تتقري كأنّها بتشتغل.)
+  const visible = q.trim() ? matches : matches.slice(0, TOP_ANSWERS);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -529,15 +531,25 @@ export function SupportChat({
                         ))}
                       </div>
                     )}
-                    {/* «كل الإجابات» بتفتح داخل نفس اللوحة لا في صفحة: الخروج
-                        لصفحةٍ تانية بيضيّع السياق اللي جه منه. */}
+                    {/* 🔴 **«كل الإجابات» بتوّدي لمركز المساعدة، مش بتفرد
+                        القائمة مكانها.**
+                        اللوحةُ دي عرضُها ٣٧٠ بكسل وارتفاعُها ثابت، ففردُ
+                        كلّ المقالات جوّاها بيحوّلها لعمودِ تمريرٍ طويل جوّه
+                        صندوقٍ ضيّق - وهو أسوأ مكانٍ يتقري فيه محتوى طويل.
+                        ومركزُ المساعدة موجودٌ أصلاً بلوحته العريضة وبحثِه
+                        وأقسامِه، فـ«كل الإجابات» بتوصّل له بدل ما تقلّده.
+                        بيتفتح بنفس نمط الأحداث في المنتج، فالودجت مش
+                        محتاجةٌ تعرف مكانه. */}
                     {!q.trim() && matches.length > TOP_ANSWERS && (
                       <button
-                        onClick={() => setShowAll((v) => !v)}
+                        onClick={() => {
+                          setOpen(false);
+                          window.dispatchEvent(new CustomEvent("adloop:open-help"));
+                        }}
                         className="mt-2.5 flex w-full items-center gap-2 text-[12px] text-accent"
                       >
                         <span className="h-px flex-1 bg-border" />
-                        <span className="shrink-0">{showAll ? tr("seeFewer") : tr("seeAll")}</span>
+                        <span className="shrink-0">{tr("seeAll")}</span>
                         <ArrowRight size={12} className="shrink-0 rtl:rotate-180" />
                         <span className="h-px flex-1 bg-border" />
                       </button>

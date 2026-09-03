@@ -2,7 +2,7 @@
 
 // زر المساعدة (؟) جنب الإشعارات - بيفتح لوحة جانبية فيها مركز المساعدة
 // كامل مع بحث. المحتوى من lib/helpContent.ts (نفس مصدر صفحة /dashboard/help).
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { HelpCircle, X, Search, ChevronDown, ArrowRight } from "lucide-react";
 import { HELP_SECTIONS, searchHelp, helpText, type HelpArticle } from "@/lib/helpContent";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -15,6 +15,14 @@ export function HelpButton({ locale }: { locale: "ar" | "en" }) {
   const [openId, setOpenId] = useState<string | null>(null);
 
   const results = q.trim() ? searchHelp(q) : null;
+
+  // «كل الإجابات» في ودجت الدعم بتفتح اللوحة دي بالحدث ده - نفس نمط
+  // `adloop:open-support`، فالنداءُ مالوش علاقةٌ بمكان المكوّن.
+  useEffect(() => {
+    const openIt = () => { setOpen(true); setQ(""); setOpenId(null); };
+    window.addEventListener("adloop:open-help", openIt);
+    return () => window.removeEventListener("adloop:open-help", openIt);
+  }, []);
 
   return (
     <>
