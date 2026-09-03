@@ -49,6 +49,10 @@ export default async function LegalPage() {
       <DocSection locale={locale} doc="terms" id="survival" />
       <DocSection locale={locale} doc="terms" id="changes" />
       <DocSection locale={locale} doc="terms" id="force" />
+      {/* الشرط الجزائي قبل التحكيم قبل الاختصاص: الترتيبُ حجّة -
+          إيه المحظور، وفين بيتحسم، وأيّ محكمةٍ لما التحكيم مايشملهوش. */}
+      <DocSection locale={locale} doc="terms" id="penalty" listCount={6} />
+      <DocSection locale={locale} doc="terms" id="arbitration" listCount={5} />
       <DocSection locale={locale} doc="terms" id="law" />
       <DocSection locale={locale} doc="terms" id="general" hasIntro={false} listCount={6} />
     </DocShell>

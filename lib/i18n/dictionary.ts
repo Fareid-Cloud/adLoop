@@ -1158,8 +1158,25 @@ export const dictionary = {
         forceTitle: "القوة القاهرة",
         forceBody: "لا يسأل أيٌ من الطرفين عن إخلال بالتزاماته إذا كان سببه حدثاً خارجاً عن إرادته المعقولة، كالكوارث الطبيعية والحروب والاضطرابات وانقطاع الاتصالات أو الكهرباء وقرارات السلطات وتعطل مزودي البنية التحتية أو المنصات الإعلانية. ويوقف تنفيذ الالتزام المتأثر مدة قيام السبب.",
 
+        arbitrationTitle: "التحكيم",
+        arbitrationBody: "ما لم يُستثنَ صراحة أدناه، يُحسم كل نزاع ينشأ عن هذه الشروط أو يتصل بها بالتحكيم النهائي الملزم:",
+        arbitrationL1: "يكون التحكيم وفقاً لقواعد مركز القاهرة الإقليمي للتحكيم التجاري الدولي (CRCICA)، بمحكَّم فرد يعيّنه المركز إن لم يتفق الطرفان عليه، ومقر التحكيم القاهرة ولغته العربية.",
+        arbitrationL2: "حكم المحكَّم نهائي وملزم للطرفين، ويجوز طلب الأمر بتنفيذه من المحكمة المختصة.",
+        arbitrationL3: "إجراءات التحكيم ومستنداته وحكمه سرية، ولا يجوز لأي طرف إفشاؤها إلا بقدر ما يلزم للتنفيذ أو بحكم القانون.",
+        arbitrationL4: "يُستثنى من التحكيم ويبقى للمحكمة المختصة: المطالبة باشتراكات مستحقة غير مدفوعة، ودعاوى حماية الملكية الفكرية والأسرار التجارية، وطلبات الإجراءات الوقتية أو التحفظية المستعجلة.",
+        arbitrationL5: "يتحمل كل طرف أتعاب محاميه، وتُقسم رسوم المركز والمحكَّم مناصفة ابتداءً، على أن يقرر المحكَّم توزيعها النهائي في حكمه.",
+
+        penaltyTitle: "التعويض الاتفاقي عن الاعتداء على حقوقنا",
+        penaltyBody: "إثبات قيمة الضرر في حالات نسخ البرمجيات أو كشطها أو إفشاء أسرارها أمر شديد الصعوبة عملياً، لذلك يتفق الطرفان مقدماً - إعمالاً للمادتين 223 و224 من القانون المدني - على تعويض محدد القيمة:",
+        penaltyL1: "يستحق علينا تعويض اتفاقي يعادل قيمة اشتراك أربعة وعشرين شهراً بسعر أعلى باقة منشورة وقت المخالفة، عن كل واقعة من الوقائع التالية.",
+        penaltyL2: "الكشط الآلي للمنصة أو استخراج بياناتها أو محتواها بوسيلة غير الواجهات التي نتيحها لك.",
+        penaltyL3: "الهندسة العكسية للمنصة أو أي جزء منها، أو محاولة الوصول إلى منهجيتها أو نماذجها الحسابية.",
+        penaltyL4: "استخدام المنصة أو مخرجاتها في بناء منتج منافس أو تطويره أو تدريبه، أو إتاحتها لمن يفعل ذلك.",
+        penaltyL5: "إفشاء أسرارنا التجارية أو ما وصل إليك منها بحكم استخدامك المنصة، لطرف ثالث بغير إذن مكتوب منا.",
+        penaltyL6: "هذا التعويض حد أدنى لا يمنعنا من المطالبة بما يجاوزه إن أثبتنا ضرراً أكبر، ولا يمس حقنا في طلب وقف المخالفة فوراً.",
+
         lawTitle: "القانون الواجب التطبيق وتسوية المنازعات",
-        lawBody: "تخضع هذه الشروط وتفسر وفقاً لقوانين جمهورية مصر العربية. وعند نشوء أي نزاع يسعى الطرفان لتسويته ودياً خلال ثلاثين يوماً من الإخطار الكتابي؛ فإن تعذر ذلك انعقد الاختصاص الحصري لمحاكم القاهرة الاقتصادية. ولا يخل ذلك بحق أي من الطرفين في اللجوء للقضاء المستعجل لاتخاذ إجراء تحفظي.",
+        lawBody: "تخضع هذه الشروط وتفسر وفقاً لقوانين جمهورية مصر العربية. وعند نشوء أي نزاع يسعى الطرفان لتسويته ودياً خلال ثلاثين يوماً من الإخطار الكتابي. فإن تعذر ذلك، انعقد الاختصاص الحصري للمحكمة الاقتصادية بقنا - وهي المحكمة المختصة بمقر نشاطنا - في كل ما لا يشمله شرط التحكيم أدناه. ولا يخل ذلك بحق أي من الطرفين في اللجوء للقضاء المستعجل لاتخاذ إجراء تحفظي.",
 
         indemnityTitle: "التعويض",
         indemnityBody: "تلتزم بالدفاع عنا وتعويضنا وإبراء ذمتنا - نحن وموظفينا ومزودينا - عن أي مطالبة أو دعوى أو غرامة أو خسارة، بما فيها أتعاب المحاماة المعقولة، تنشأ عن أيٍ مما يلي:",
@@ -5819,8 +5836,25 @@ export const dictionary = {
         forceTitle: "Force majeure",
         forceBody: "Neither party is liable for failure to perform where the cause lies beyond its reasonable control — including natural disaster, war, civil unrest, failure of telecommunications or power, acts of authorities, and outages at infrastructure providers or advertising platforms. Performance of the affected obligation is suspended for the duration of the cause.",
 
+        arbitrationTitle: "Arbitration",
+        arbitrationBody: "Except as expressly carved out below, every dispute arising out of or connected with these terms is settled by final and binding arbitration:",
+        arbitrationL1: "Arbitration is under the rules of the Cairo Regional Centre for International Commercial Arbitration (CRCICA), before a sole arbitrator appointed by the Centre if the parties do not agree on one, seated in Cairo and conducted in Arabic.",
+        arbitrationL2: "The award is final and binding on both parties, and an order for its enforcement may be sought from the competent court.",
+        arbitrationL3: "The proceedings, the documents in them and the award are confidential, and neither party may disclose them except so far as needed for enforcement or required by law.",
+        arbitrationL4: "Carved out of arbitration and left to the competent court: claims for unpaid subscription fees, actions to protect intellectual property and trade secrets, and applications for urgent interim or protective relief.",
+        arbitrationL5: "Each party bears its own legal fees. The Centre's and the arbitrator's fees are shared equally at the outset, with the arbitrator deciding their final allocation in the award.",
+
+        penaltyTitle: "Agreed compensation for infringing our rights",
+        penaltyBody: "Proving the value of the harm caused by copying, scraping or disclosing software is extremely difficult in practice. The parties therefore agree in advance - under Articles 223 and 224 of the Civil Code - on a fixed sum:",
+        penaltyL1: "Agreed compensation equal to twenty-four months of the highest plan published at the time of the breach is due to us for each of the following.",
+        penaltyL2: "Automated scraping of the platform, or extracting its data or content by any means other than the interfaces we make available to you.",
+        penaltyL3: "Reverse engineering the platform or any part of it, or attempting to reach its methodology or its models.",
+        penaltyL4: "Using the platform or its output to build, develop or train a competing product, or making it available to anyone who does.",
+        penaltyL5: "Disclosing our trade secrets, or what reached you of them through your use of the platform, to a third party without our written permission.",
+        penaltyL6: "This sum is a floor: it does not prevent us claiming more where we prove greater harm, and does not affect our right to demand the breach stop immediately.",
+
         lawTitle: "Governing law and disputes",
-        lawBody: "These terms are governed by and construed in accordance with the laws of the Arab Republic of Egypt. On any dispute, the parties shall seek an amicable settlement within thirty days of written notice; failing that, the Economic Courts of Cairo shall have exclusive jurisdiction. This does not prejudice either party's right to seek urgent interim relief.",
+        lawBody: "These terms are governed by and construed in accordance with the laws of the Arab Republic of Egypt. On any dispute, the parties shall seek an amicable settlement within thirty days of written notice. Failing that, the Economic Court of Qena - the court competent for the seat of our business - shall have exclusive jurisdiction over anything not covered by the arbitration clause below. This does not prejudice either party's right to seek urgent interim relief.",
 
         indemnityTitle: "Indemnity",
         indemnityBody: "You agree to defend, indemnify and hold harmless us, our staff and our providers against any claim, action, fine or loss, including reasonable legal fees, arising from any of the following:",
