@@ -975,6 +975,27 @@ export const dictionary = {
         securityL2: "تجزئة البيانات الشخصية (البريد والهاتف) بخوارزمية SHA-256 قبل أي إرسال خارجي.",
         securityL3: "الاحتفاظ بالبيانات طوال مدة اشتراكك، وحذفها خلال ثلاثين يوماً من طلب حذف الحساب ما لم يوجب القانون خلاف ذلك.",
         securityL4: "لا يوجد نظام آمن بالمطلق؛ نلتزم بإخطارك دون تأخير غير مبرر عند وقوع خرق يمس بياناتك.",
+        securityL5: "ورغم ذلك، لا يوجد نظام أو وسيلة نقل عبر الإنترنت آمن بصورة مطلقة. نحن لا نضمن استحالة الوصول غير المشروع إلى البيانات أو إفشائها أو إتلافها، ولا نتحمل مسؤولية ما ينشأ عن فعل إجرامي للغير أو عن ثغرة في نظام طرف ثالث نعتمد عليه، ما لم يثبت في جانبنا غش أو خطأ جسيم.",
+
+        rolesTitle: "دورنا ودورك",
+        rolesBody: "البيانات التي تصلنا نوعان، ومسؤولية كل نوع مختلفة. بيانات حسابك أنت (اسمك، بريدك، اشتراكك) نحن المتحكم فيها وهذه السياسة تحكمها. أما بيانات عملائك أنت - أرقام هواتفهم، طلباتهم، محادثاتهم - التي تصل من متجرك أو أدوات التتبع التي ثبّتها، فأنت المتحكم فيها ونحن معالج يعمل بتعليماتك. ويترتب على ذلك أن مسؤولية وجود أساس قانوني لجمعها، وإخطار أصحابها، وأخذ موافقاتهم حيث يلزم، تقع عليك أنت.",
+
+        endUsersTitle: "طلبات عملائك",
+        endUsersBody: "إذا تواصل معنا أحد عملائك مباشرة يطلب الاطلاع على بياناته أو تصحيحها أو حذفها، فالأصل أننا نحيله إليك بصفتك المتحكم، ونخطرك بالطلب. ولا نستجيب لطلب يخص بيانات في حسابك دون الرجوع إليك، إلا إذا ألزمنا القانون بذلك. ونعاونك على الاستجابة في حدود ما لدينا وخلال مدة معقولة.",
+
+        breachTitle: "التعامل مع حادث أمني",
+        breachBody: "إذا وقع حادث نرجّح أنه أدى إلى وصول غير مصرح به لبيانات شخصية:",
+        breachL1: "نخطر الجهة الرقابية المختصة في المدة التي يحددها القانون، ونخطرك أنت دون تأخير غير مبرر إذا كان الحادث يمس بيانات في حسابك.",
+        breachL2: "يتضمن الإخطار ما نعرفه وقت إرساله: طبيعة الحادث، ونوع البيانات المرجّح تأثرها، والإجراءات المتخذة، وما نوصيك به. وقد تتغير هذه المعلومات مع تقدم التحقيق.",
+        breachL3: "الإخطار إجراء نقوم به التزاماً بالقانون وحرصاً على الشفافية، ولا يُعد بذاته إقراراً بخطأ أو بمسؤولية من جانبنا.",
+        breachL4: "إذا كان مصدر الحادث بيانات دخولك أنت أو جهازك أو مقعداً منحته لأحد، فالتعامل معه ومسؤوليته يقعان عليك، ونعاونك بما لدينا من سجلات.",
+        breachL5: "نحتفظ بسجل داخلي بالحوادث وما اتُّخذ بشأنها، ويُتاح للجهة الرقابية عند طلبه.",
+
+        platformsTitle: "ما يحدث بعد إرسال البيانات إلى المنصات الإعلانية",
+        platformsBody: "عند تفعيلك مزامنة التحويلات، نرسل إشارات تحويل - مهشّمة بخوارزمية SHA-256 حيثما أمكن - إلى جوجل وميتا وتيك توك. وبمجرد وصولها إليهم تصبح معالجتها خاضعة لسياساتهم هم واتفاقك أنت معهم، لا لهذه السياسة، ولا سلطان لنا على ما يفعلونه بها ولا مسؤولية عنه. وتفعيل المزامنة قرارك أنت، ويمكنك إيقافه في أي وقت من إعدادات المنصة.",
+
+        automatedTitle: "القرارات الآلية",
+        automatedBody: "تنتج المنصة اقتراحات وقرارات آلية تخص حملاتك الإعلانية - كإيقاف إعلان أو تعديل ميزانية. وهذه القرارات تتعلق بأداء حملات لا بأشخاص، ولا يترتب عليها أثر قانوني على أي فرد. ولا يُنفَّذ أي منها على حسابك الإعلاني إلا بتأكيد منك على خطوتين، عدا ما تكون قد فعّلته أنت صراحةً كقاعدة أتمتة، ويظل بإمكانك إيقافه في أي وقت.",
 
         rightsTitle: "حقوقك",
         rightsBody: "لك في أي وقت أن تمارس الحقوق التالية بمراسلتنا:",
@@ -5615,6 +5636,27 @@ export const dictionary = {
         securityL2: "Personal identifiers (email, phone) are hashed with SHA-256 before any external transmission.",
         securityL3: "Data is retained for the duration of your subscription and deleted within thirty days of an account deletion request, unless the law requires otherwise.",
         securityL4: "No system is absolutely secure; we undertake to notify you without undue delay of any breach affecting your data.",
+        securityL5: "Even so, no system and no method of transmission over the internet is perfectly secure. We do not warrant that data can never be accessed unlawfully, disclosed or destroyed, and we are not liable for what results from a criminal act of a third party or from a vulnerability in a third-party system we depend on, absent fraud or gross negligence on our part.",
+
+        rolesTitle: "Our role and yours",
+        rolesBody: "The data reaching us is of two kinds, and responsibility differs for each. Your own account data - your name, email and subscription - we are the controller of, and this policy governs it. Your customers' data, though - their phone numbers, orders and conversations, arriving from your store or the tracking you installed - you are the controller of and we are a processor acting on your instructions. It follows that the responsibility for having a legal basis to collect it, for notifying the people it concerns, and for obtaining their consent where required, rests with you.",
+
+        endUsersTitle: "Requests from your customers",
+        endUsersBody: "If one of your customers contacts us directly asking to see, correct or delete their data, we will as a rule refer them to you as controller and notify you of the request. We do not act on a request concerning data in your account without coming back to you, unless the law obliges us to. We will help you respond, to the extent of what we hold and within a reasonable time.",
+
+        breachTitle: "Handling a security incident",
+        breachBody: "If an incident occurs that we believe has led to unauthorised access to personal data:",
+        breachL1: "We notify the competent supervisory authority within the period the law sets, and notify you without undue delay where the incident concerns data in your account.",
+        breachL2: "The notice contains what we know at the time of sending: the nature of the incident, the kind of data likely affected, the steps taken and what we recommend you do. That information may change as the investigation progresses.",
+        breachL3: "Notification is something we do out of legal obligation and a concern for transparency. It is not, in itself, an admission of fault or of liability on our part.",
+        breachL4: "Where an incident originates in your own credentials, your device, or a seat you granted to someone, handling it and responsibility for it rest with you, and we will assist with the records we hold.",
+        breachL5: "We keep an internal register of incidents and what was done about them, available to the supervisory authority on request.",
+
+        platformsTitle: "What happens after data reaches the advertising platforms",
+        platformsBody: "When you enable conversion sync, we send conversion signals - hashed with SHA-256 wherever possible - to Google, Meta and TikTok. Once the data reaches them, its processing is governed by their policies and your agreement with them, not by this policy; we have no control over what they do with it and no responsibility for it. Enabling the sync is your decision, and you can turn it off at any time from the platform settings.",
+
+        automatedTitle: "Automated decisions",
+        automatedBody: "The platform produces automated suggestions and decisions about your advertising campaigns - pausing an ad, adjusting a budget. These concern campaign performance rather than people, and produce no legal effect on any individual. None of them is executed against your ad account without a two-step confirmation from you, other than what you have explicitly enabled as an automation rule, which you can switch off at any time.",
 
         rightsTitle: "Your rights",
         rightsBody: "You may exercise the following rights at any time by contacting us:",
