@@ -1174,6 +1174,39 @@ textarea::placeholder {
 .btn-icon { width: 2.25rem; height: 2.25rem; padding: 0; flex-shrink: 0; }
 .btn-icon.btn-sm { width: 2rem; height: 2rem; }
 
+/* ── أيقونةٌ بلا صندوق ────────────────────────────────────────────────
+ * 🔴 **المستطيل الرماديّ حوالين زرار النسخ (والإغلاق، والرجوع) مصدرُه
+ * المتصفّح لا نحن.**
+ *
+ * `.btn-icon` وحدها بتكتب المقاس والحشوة وبس - مافيهاش لونٌ ولا إطار،
+ * لأنّها متصمَّمة تتلبس **فوق** دورٍ (`btn btn-primary btn-icon`).
+ * فلمّا تتكتب لوحدها، العنصرُ بيفضل `<button>` خام، والمتصفّحُ بيرسم له
+ * إطارَه وخلفيّتَه الافتراضيين: صندوقٌ رماديٌّ محدّش طلبه، وشكلُه دخيلٌ
+ * على كلّ حاجةٍ حواليه.
+ *
+ * والإصلاحُ هنا لا عند كلّ نداء: القاعدةُ بتمسك **كلّ** استعمالٍ مجرّد
+ * دلوقتي وأيَّ واحدٍ يتكتب بكرة. و`:not(.btn)` بتضمن إنّ الأزرار اللي
+ * فعلاً لابسةٌ دوراً (الإرسال في المساعد، مثلاً) ماتتأثرش - وإلّا كان
+ * الإصلاحُ ده هيمسح خلفيّتها هي كمان.
+ *
+ * وبتفضل تينتٌ خفيف عند المرور: أيقونةٌ لا بتتغيّر خالص تحت المؤشّر
+ * مابتقولش إنّها قابلةٌ للدوس أصلاً. */
+.btn-icon:not(.btn) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+.btn-icon:not(.btn):hover { background: var(--surface-raised); color: var(--text-primary); }
+.btn-icon:not(.btn):disabled { opacity: .5; cursor: not-allowed; }
+
 /* ── ما ليس زرّاً ─────────────────────────────────────────────────────
  * 🔴 وُجد هذان بعد اكتشاف **ثلاثة وعشرين** موضعاً في المنتج تستعمل
  * `btn btn-danger` على `<div>` أو `<span>` لتحصل على شارة أو صندوق تنبيه.

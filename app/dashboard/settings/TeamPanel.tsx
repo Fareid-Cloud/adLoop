@@ -9,10 +9,17 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 /**
  * إدارةُ المقاعد.
  *
- * **الرابطُ يُنسَخ ولا يُبعَت بريداً - دلوقتي.** إرسالُ الدعوة بالبريد
- * بيضيف مسارَ فشلٍ صامتاً (وصلت سبام؟ البريد مضبوط؟)، والمالكُ في الحالة
- * دي عارفُ زميلَه وبيقدر يبعتله الرابط في تلات ثواني. لمّا يبقى فيه
- * فرقٌ كبير، البريد بيتضاف فوق ده لا بدلاً منه.
+ * **«ادعُ» = ابعت رسالة.** الدعوةُ بتخرج بريداً من عندنا بهويّتنا، بتقول
+ * مين دعاه ولأيّ مساحة وبأيّ دور قبل ما تطلب منه يدوس حاجة. الرابطُ
+ * بيفضل معروضاً كطريقٍ إضافيّ لمَن يفضّل يبعته بنفسه.
+ *
+ * وكان الرابطُ هو النتيجةَ الوحيدة: فعلٌ اسمُه «ادعُ» بينتهي بتلات خطواتٍ
+ * يدوية على صاحب الحساب (انسخ، افتح بريدك، اشرح إيه ده) - ورابطٌ بيوصل
+ * عارياً من سياقه بيخلّي اللي بيستلمه يتردّد يدوس عليه، وهو تردّدٌ صحيّ.
+ *
+ * ومسارُ الفشل مُعلَنٌ لا مبلوع: لو البريد ما خرجش (مفتاح Resend مش
+ * مضبوط مثلاً)، الشاشةُ بتقول «احفظ الرابط وابعته بنفسك» بدل ما تدّعي
+ * إرسالاً ما حصلش وتخلّي صاحبَ الحساب يستنّى زميلاً مش جايّ.
  */
 
 interface Member {
@@ -51,6 +58,11 @@ export function TeamPanel({
   const [error, setError] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  // مين اتبعتت له وهل البريد خرج فعلاً: الشاشةُ لازم تفرّق بين «وصلته
+  // رسالة» و«احفظ الرابط وابعته بنفسك» - الادّعاءُ بإرسالٍ ما حصلش
+  // بيخلّي صاحبَ الحساب يستنّى زميلاً مش جايّ.
+  const [sentTo, setSentTo] = useState("");
+  const [emailSent, setEmailSent] = useState(false);
 
   const usedViewer = count(members, invites, "VIEWER");
   const usedOperator = count(members, invites, "OPERATOR");
@@ -74,9 +86,9 @@ export function TeamPanel({
       return;
     }
 
-    // الرمزُ بيرجع مرّة واحدة بس: المخزَّن هاشُه، فمافيش طريقٌ لإظهاره
-    // تاني. والرسالة بتقول كده صراحةً بدل ما اللي قفل الصفحة يدوّر عليه.
     setLink(`${window.location.origin}/invite/${data.token}`);
+    setSentTo(email.trim());
+    setEmailSent(data.emailSent === true);
     setEmail("");
     router.refresh();
   }
@@ -140,9 +152,19 @@ export function TeamPanel({
 
         {error && <p role="alert" className="mt-2 text-[12px] text-critical">{error}</p>}
 
+        {/* 🔴 **الرسالةُ هي النتيجة، والرابطُ إضافة.**
+            كانت النتيجةُ رابطاً وبس، فالدعوةُ بتقف عند صاحب الحساب:
+            ينسخ، ويفتح بريده، ويشرح إيه ده. والسطرُ اللي كان تحته يشرح
+            إنّنا نخزّن بصمةَ الرابط لا نصَّه اتشال - ده كلامٌ عن آليّتنا
+            الداخلية، والمستخدمُ مش بيقرا الشاشة عشان يعرف إزاي بنشتغل. */}
         {link && (
           <div className="mt-3 rounded-xl border border-verified/30 bg-verified/8 p-2.5">
-            <p className="m-0 mb-1.5 text-[12px] text-text-primary">{tr("linkReady")}</p>
+            <p className="m-0 flex items-center gap-1.5 text-[12px] text-text-primary">
+              <Check size={13} className="shrink-0 text-verified" />
+              {emailSent ? tr("sentTo").replace("{email}", sentTo) : tr("sentFallback")}
+            </p>
+
+            <p className="m-0 mb-1 mt-2 text-[11px] text-text-faint">{tr("orShareLink")}</p>
             <div className="flex items-center gap-1.5">
               <code className="min-w-0 flex-1 overflow-x-auto rounded bg-surface px-2 py-1 text-[11px] text-text-muted">{link}</code>
               <button
@@ -151,13 +173,12 @@ export function TeamPanel({
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 }}
-                className="btn-icon shrink-0"
+                className="btn-icon btn-sm shrink-0"
                 aria-label={tr("copy")}
               >
                 {copied ? <Check size={14} className="text-verified" /> : <Copy size={14} />}
               </button>
             </div>
-            <p className="m-0 mt-1.5 text-[11px] leading-relaxed text-text-faint">{tr("linkOnce")}</p>
           </div>
         )}
       </div>

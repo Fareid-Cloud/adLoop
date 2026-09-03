@@ -17,6 +17,7 @@ import { getEntitlements } from "@/lib/entitlements";
 import { workspaceOwnerFilter } from "@/lib/workspaceAccess";
 import { t } from "@/lib/i18n/dictionary";
 import { localeOf } from "@/lib/apiLocale";
+import { sendInviteEmail } from "@/lib/inviteEmail";
 
 const inviteSchema = z.object({
   email: z.string().email().max(254),
@@ -83,9 +84,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   // المالكُ فقط: فلترُ الوصول بيشمل الأعضاء، وهو بالظبط اللي مايصحّش هنا.
+  // والاسمُ بيتجاب معاه: الرسالةُ بتقول «فلان دعاك»، و«حدٌّ ما دعاك»
+  // بتتقري نصباً وبتتقفل.
   const workspace = await prisma.workspace.findFirst({
     where: { id, ...workspaceOwnerFilter(user.id) },
-    select: { id: true },
+    select: { id: true, name: true },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
@@ -127,7 +130,26 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     update: { role, tokenHash, expiresAt, acceptedAt: null, invitedById: user.id },
   });
 
-  return NextResponse.json({ ok: true, token, expiresAt });
+  // 🔴 **الدعوةُ تُبعَت، مش بتستنّى حدّ ينسخ رابطاً.**
+  //
+  // كان الردُّ بينتهي عند الرمز: صاحبُ الحساب لازم ينسخ ويفتح بريده ويبعت
+  // ويشرح إيه ده - تلاتُ خطواتٍ يدوية بعد فعلٍ اسمُه «ادعُ»، ورابطٌ بيوصل
+  // عارياً من سياقه فاللي بيستلمه يتردّد يدوس عليه بحقّ.
+  //
+  // وبينتظر الإرسال (مش `after`) عشان الشاشةُ تعرف تقول «اتبعت لفلان»
+  // ولّا «احفظ الرابط وابعته بنفسك». الفرقُ بين الجملتين هو الفرقُ بين
+  // زميلٍ هيوصله بريد وزميلٍ هيستنّى بلا حاجة.
+  const sent = await sendInviteEmail({
+    to: normalised,
+    inviterName: user.name?.trim() || user.email,
+    workspaceName: workspace.name,
+    role,
+    token,
+    expiresAt,
+    locale,
+  }).catch(() => ({ sent: false }));
+
+  return NextResponse.json({ ok: true, token, expiresAt, emailSent: sent.sent });
 }
 
 const patchSchema = z.object({
