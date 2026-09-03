@@ -8,6 +8,7 @@ import { getSessionUser } from "@/lib/auth";
 import { notifyOwnerNewSupport } from "@/lib/supportEmail";
 import { t } from "@/lib/i18n/dictionary";
 import { localeOf } from "@/lib/apiLocale";
+import { shouldAskForRating } from "@/lib/supportRating";
 
 export async function GET(req: NextRequest) {
   const user = await getSessionUser(req);
@@ -25,7 +26,39 @@ export async function GET(req: NextRequest) {
   if (!thread) return NextResponse.json({ thread: null });
 
   const unread = thread.messages.filter((m) => m.fromSupport && !m.readByUser).length;
-  return NextResponse.json({ thread, unread });
+
+  // التقييم: القرارُ في السيرفر لا في الودجت. القاعدةُ فيها وقتٌ وحالة،
+  // وحسابُها في المتصفّح معناه إنّ ساعةَ الجهاز بتحكم متى نسأل.
+  const ratings = await prisma.supportRating.findMany({
+    where: { threadId: thread.id },
+    orderBy: { createdAt: "desc" },
+  });
+  const last = thread.messages[thread.messages.length - 1] ?? null;
+  const { ask, triggerMessageId } = shouldAskForRating({
+    status: thread.status,
+    last: last ? { id: last.id, fromSupport: last.fromSupport, createdAt: last.createdAt } : null,
+    answeredTriggerIds: ratings
+      .filter((r) => r.score !== null || r.dismissedAt !== null)
+      .map((r) => r.triggerMessageId),
+  });
+
+  // الصفُّ الحاليّ بيترجع كمان لو موجود: العميلُ ممكن يكون دَي درجةً
+  // ولسه ما كتبش سبباً، فالكارت بيفتح على اللي هو سايبه لا من أوّله.
+  const current = triggerMessageId
+    ? ratings.find((r) => r.triggerMessageId === triggerMessageId) ?? null
+    : null;
+
+  return NextResponse.json({
+    thread,
+    unread,
+    rating: {
+      ask,
+      triggerMessageId: triggerMessageId ?? null,
+      score: current?.score ?? null,
+      reasons: current?.reasons ?? [],
+      comment: current?.comment ?? "",
+    },
+  });
 }
 
 export async function POST(req: NextRequest) {

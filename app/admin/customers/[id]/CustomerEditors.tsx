@@ -328,7 +328,10 @@ export function SubscriptionEditor({
     <form onSubmit={submit}>
       <p className="mb-3 text-[12px] leading-relaxed text-text-faint">
         Extend adds days to the current period. Gift grants a plan outright with no payment — it is recorded as a gift,
-        not as revenue, so it never inflates growth figures.
+        not as revenue, so it never inflates growth figures. <strong className="font-medium text-text-muted">Enterprise
+        is granted here and nowhere else</strong>: it has no buy button because its price is agreed on a call. Set the
+        agreed seats, accounts and credits in <em>Limit overrides</em> below, and the agreed price in{" "}
+        <em>Custom price</em> — the plan alone gives the ceiling, not the deal.
       </p>
       <div className="flex flex-wrap items-end gap-2.5">
         <Field label="Action">

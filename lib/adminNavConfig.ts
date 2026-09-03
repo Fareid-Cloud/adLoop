@@ -38,9 +38,23 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     label: "Customers",
     items: [
       { href: "/admin/customers", label: "Customers", iconName: "Users", capability: "customers.view" },
-      { href: "/admin/support", label: "Support", iconName: "LifeBuoy", capability: "support.handle" },
+      // `exact` عشان `/admin/support/quality` مايولّعش البندين مع بعض -
+      // بندان مضيّئان في نفس اللحظة بيخلّوا القائمة تكدب عن مكانك.
+      { href: "/admin/support", label: "Support", iconName: "LifeBuoy", capability: "support.handle", exact: true },
+      // جودةُ الخدمة تحت الدعم مباشرةً: السؤال بيتسأل وإنت في الصندوق.
+      // وصلاحيتُها `analytics.product` لا `support.handle` - فيها مقارنةُ
+      // موظّفين ببعض، وده قرارُ إدارةٍ لا شغلُ صندوق.
+      { href: "/admin/support/quality", label: "Service quality", iconName: "Star", capability: "analytics.product" },
       // تحت "العملاء" لا "الرؤى": ده نصُّ محادثاتِ عملاء، لا إحصاء.
       { href: "/admin/agent", label: "Agent review", iconName: "Bot", capability: "agent.review" },
+    ],
+  },
+  {
+    label: "Revenue",
+    items: [
+      // طابورُ المبيعات مش تحت «العملاء»: صاحبُه غالباً **مش عميلاً بعد** -
+      // ودي كلُّ النقطة.
+      { href: "/admin/sales", label: "Sales enquiries", iconName: "Briefcase", capability: "customers.subscription" },
     ],
   },
   {

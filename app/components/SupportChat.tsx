@@ -33,6 +33,7 @@ import { countriesForDisplay } from "@/lib/countries";
 import { Select } from "@/app/components/ui/Select";
 import { HELP_SECTIONS, helpText, type HelpArticle } from "@/lib/helpContent";
 import { ImageLightbox } from "@/app/components/ui/ImageLightbox";
+import { SupportRatingCard, type RatingState } from "@/app/components/SupportRatingCard";
 
 interface Msg { id: string; fromSupport: boolean; body: string; imageUrls: string[]; createdAt: string; }
 interface Thread {
@@ -93,6 +94,9 @@ export function SupportChat({
   const [error, setError] = useState<string | null>(null);
   const [reply, setReply] = useState("");
   const [zoom, setZoom] = useState<string | null>(null);
+  const [rating, setRating] = useState<RatingState>({
+    ask: false, triggerMessageId: null, score: null, reasons: [], comment: "",
+  });
   const bodyRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -101,6 +105,9 @@ export function SupportChat({
     const d = await res.json();
     setThread(d.thread);
     setUnread(d.unread ?? 0);
+    // السيرفرُ هو اللي بيقرّر إمتى نسأل عن التقييم - القاعدةُ فيها وقتٌ
+    // وحالة، وحسابُها هنا معناه إنّ ساعةَ جهاز العميل بتحكم.
+    if (d.rating) setRating(d.rating);
 
     // 🔴 **البيانات تُسأل مرّةً واحدة.** لو سجّلها قبل كده، بتتملّي من
     // محادثته السابقة وخطوةُ التعريف بتتخطّى كلّها - مافيش سببٌ يخلّي
@@ -235,7 +242,9 @@ export function SupportChat({
     // على سلفٍ بيخلّي المثبَّت يتحسب منه ويتقصّ بحدوده مهما رفعنا `z-index`.
     <Portal>
       {zoom && <ImageLightbox src={zoom} onClose={() => setZoom(null)} />}
-      <div className="fixed bottom-6 left-6 z-[60]">
+      {/* `support-dock` بتزحزحها جنب الشريط الجانبيّ على سطح المكتب بدل
+          ما تقع فوقه - العرضُ في `theme.css` مع تعريف الشريط نفسه. */}
+      <div className="support-dock fixed bottom-6 left-6 z-[60]">
         {open ? (
           <div className="flex h-[540px] max-h-[calc(100dvh-3rem)] w-[370px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
             {/* ═══ الهيدر بالهويّة ═══ */}
@@ -414,6 +423,28 @@ export function SupportChat({
                       </div>
                       </Fragment>
                     ))}
+
+                    {/* التقييمُ في آخر المحادثة لا في نافذةٍ فوقها: المكانُ
+                        الطبيعيّ بعد آخر ردّ، ومَن مش عايز يقيّم بيعدّيه
+                        بلا ما يتقطع عليه أيُّ حاجة. */}
+                    {rating.ask && (
+                      <SupportRatingCard
+                        locale={locale}
+                        state={rating}
+                        onChange={(next) => setRating((r) => ({ ...r, ...next }))}
+                        onDismiss={() => {
+                          setRating((r) => ({ ...r, ask: false }));
+                          void fetch("/api/support/rating", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              triggerMessageId: rating.triggerMessageId,
+                              dismissed: true,
+                            }),
+                          });
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
                 <div className="shrink-0 border-t border-border p-3">

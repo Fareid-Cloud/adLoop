@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
+import { supportUnreadCount } from "@/lib/supportUnread";
 
 export async function GET(req: NextRequest) {
   const user = await getSessionUser(req);
@@ -21,15 +22,23 @@ export async function GET(req: NextRequest) {
 
   const workspace = await getActiveWorkspace(user.id);
 
+  // بلا مساحةِ عمل مافيش فيدُ قرارات - لكن الدعمَ مالوش علاقةٌ بمساحة
+  // عمل أصلاً. حسابٌ جديد سأل الدعم قبل ما يربط حساباً كان بيتردّ عليه
+  // بلا شارةٍ تقول إنّ فيه ردّ.
   if (!workspace) {
-    return NextResponse.json({ unreadCount: 0, supportUnread: 0, new: [] });
+    return NextResponse.json({
+      unreadCount: 0,
+      supportUnread: await supportUnreadCount(user.id),
+      new: [],
+    });
   }
 
   const [unreadCount, supportUnread, fresh] = await Promise.all([
     prisma.actionFeedItem.count({ where: { workspaceId: workspace.id, read: false } }),
-    prisma.supportMessage.count({
-      where: { fromSupport: true, readByUser: false, thread: { userId: user.id } },
-    }),
+    // نفس دالّة العدّ اللي بتستعملها الودجت: الشارةُ والودجت كانوا
+    // بيعدّوا نطاقين مختلفين، فالشارة كانت بتفضل مولّعة على ردٍّ مافيش
+    // شاشة تعرضه.
+    supportUnreadCount(user.id),
     sinceDate
       ? prisma.actionFeedItem.findMany({
           where: { workspaceId: workspace.id, createdAt: { gt: sinceDate } },

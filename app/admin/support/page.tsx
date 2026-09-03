@@ -7,13 +7,16 @@
 // والرجوعُ بزرار المتصفّح بيرجّع الفلتر. ولمّا كانت في الحالة، كلّ فتحةٍ
 // كانت بتبدأ من أوّل القائمة.
 
-import { LifeBuoy } from "lucide-react";
+import Link from "next/link";
+import { LifeBuoy, Star } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import {
-  listThreads, channelCounts, isChannel, inboxWhere, type InboxFilters,
+  listThreads, channelCounts, statusCounts, assigneeCounts,
+  isChannel, isThreadStatus, type InboxFilters,
 } from "@/lib/inbox";
 import { getSessionUserFromCookies } from "@/lib/auth";
-import { isOwnerRole, resolveAdminRole } from "@/lib/adminRole";
+import { isOwnerRole } from "@/lib/adminRole";
+import { STAFF_WHERE } from "@/lib/adminStaff";
 import { AdminPageHeader } from "../components/AdminUI";
 import { InboxClient } from "./InboxClient";
 
@@ -29,25 +32,33 @@ export default async function AdminSupportPage({
   const viewer = await getSessionUserFromCookies();
   const canDelete = isOwnerRole(viewer);
 
+  // 🔴 **الأرشيف كان بيتفلتر لـ«الكلّ».**
+  //
+  // القراءةُ القديمة كانت بتقبل تلات حالات بالاسم وترمي أيَّ حاجة غيرها
+  // على `ALL`، و`ARCHIVED` مكنش منهم - فدوسةُ «Archive» كانت بتطلب الأرشيف
+  // وتتحوّل لـ«الكلّ»، و«الكلّ» بيستثني الأرشيف. الفلترُ الوحيد اللي كان
+  // بيرجّع **عكسَ** المطلوب بالظبط، وبلا رسالةِ خطأ تدلّ عليه.
+  const list = (raw: string | undefined) =>
+    (raw ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+
   const filters: InboxFilters = {
-    channel: isChannel(sp.channel) ? sp.channel : "ALL",
-    status:
-      sp.status === "OPEN" || sp.status === "ANSWERED" || sp.status === "CLOSED"
-        ? sp.status
-        : "ALL",
+    channel: list(sp.channel).filter(isChannel),
+    status: list(sp.status).filter(isThreadStatus),
     unread: sp.unread === "1",
-    assignedToId: sp.assigned || undefined,
-    tag: sp.tag || undefined,
+    assignedToId: list(sp.assigned),
+    tag: list(sp.tag),
     q: sp.q || undefined,
   };
 
-  const [threads, counts, agents, allTags] = await Promise.all([
+  const [threads, counts, statuses, assignees, agents, allTags] = await Promise.all([
     listThreads(filters),
     channelCounts(filters),
+    statusCounts(filters),
+    assigneeCounts(filters),
     // اللي ينفع يتعيّن له: حسابات إدارية بس - تعيينُ محادثة لعميل بيخفيها
     // من كلّ فلتر بيتفرّج عليه الفريق فتضيع بصمت.
     prisma.user.findMany({
-      where: { isAdmin: true },
+      where: STAFF_WHERE,
       select: { id: true, name: true, email: true, lastActiveAt: true },
       orderBy: { createdAt: "asc" },
     }),
@@ -114,17 +125,6 @@ export default async function AdminSupportPage({
   const tags = [...new Set(allTags.flatMap((t) => t.tags))].sort();
   const unreadCount = threads.filter((t) => t.unread).length;
 
-  // عدّادُ كلّ حالة - بيتعرض جنب اسمها في العمود الأوّل فيُعرَف أين الشغل
-  // قبل الفتح. بيتحسب على الفلاتر الحالية عدا الحالة نفسها، وإلّا كلُّ
-  // عدّادٍ بيبقى صفراً إلا المختار.
-  const statusRows = await prisma.supportThread.groupBy({
-    by: ["status"],
-    where: inboxWhere({ ...filters, status: "ALL" }),
-    _count: true,
-  });
-  const statusCounts: Record<string, number> = {};
-  for (const r of statusRows) statusCounts[r.status] = r._count;
-
   const ONLINE_MS = 5 * 60_000;
   const agentRows = agents.map((a) => ({
     id: a.id,
@@ -143,6 +143,14 @@ export default async function AdminSupportPage({
             : "Every channel in one place — website, WhatsApp and Messenger"
         }
         icon={LifeBuoy}
+        actions={
+          <Link
+            href="/admin/support/quality"
+            className="flex items-center gap-1.5 rounded-lg border border-border-visible px-2.5 py-1.5 text-[12.5px] text-text-muted no-underline transition-colors hover:bg-surface-raised hover:text-text-primary"
+          >
+            <Star size={14} /> Service quality
+          </Link>
+        }
       />
       <InboxClient
         threads={JSON.parse(JSON.stringify(threads))}
@@ -151,15 +159,16 @@ export default async function AdminSupportPage({
         activeAvatar={activeAvatar}
         canDelete={canDelete}
         counts={counts}
-        statusCounts={statusCounts}
+        statusCounts={statuses}
+        assigneeCounts={assignees}
         agents={agentRows}
         tags={tags}
         filters={{
-          channel: filters.channel ?? "ALL",
-          status: filters.status ?? "ALL",
+          channel: filters.channel ?? [],
+          status: filters.status ?? [],
           unread: !!filters.unread,
-          assigned: sp.assigned ?? "",
-          tag: sp.tag ?? "",
+          assigned: filters.assignedToId ?? [],
+          tag: filters.tag ?? [],
           q: sp.q ?? "",
         }}
       />

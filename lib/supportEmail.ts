@@ -66,3 +66,55 @@ export async function notifyOwnerNewSupport(t: {
     console.error("فشل إرسال إشعار الدعم:", err);
   }
 }
+
+/**
+ * إشعارُ طلبِ باقةٍ اتفاقية - **بريدٌ منفصلٌ بعنوانٍ منفصل.**
+ *
+ * مش نفس قالب الدعم عن قصد: ده طلبُ شراء، والعنوانُ في صندوق الوارد هو
+ * كلُّ اللي بيقرّر إذا كان هيتفتح في نفس الساعة ولّا بعد يومين. وبيحمل
+ * أرقامَ التأهيل (الحجم والصرف) في المتن نفسه عشان القرارُ يتاخد من
+ * الإشعار من غير ما اللوحةُ تتفتح.
+ */
+export async function notifyOwnerSalesEnquiry(e: {
+  company: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  country?: string | null;
+  spendLabel?: string | null;
+  adAccounts?: number | null;
+  message?: string | null;
+  isCustomer: boolean;
+}) {
+  if (!resend || !OWNER_INBOX) {
+    console.warn("طلب مبيعات محفوظ في قاعدة البيانات بلا إشعار بريد (Resend/العنوان غير مضبوط) - يُقرأ من /admin/sales");
+    return;
+  }
+  try {
+    await resend.emails.send({
+      from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
+      to: OWNER_INBOX,
+      replyTo: e.email,
+      subject: `طلب باقة اتفاقية — ${e.company}`,
+      html: renderEmail({
+        locale: "ar",
+        art: "none",
+        eyebrow: e.isCustomer ? "من حسابٍ قائم" : "من زائر",
+        title: `${e.company} يطلب الباقة الاتفاقية`,
+        blocks: [
+          { stat: { label: "الشركة", value: e.company } },
+          { stat: { label: "الاسم", value: e.name } },
+          { stat: { label: "البريد", value: e.email } },
+          ...(e.phone ? [{ stat: { label: "الهاتف", value: e.phone } }] : []),
+          ...(e.country ? [{ stat: { label: "الدولة", value: e.country } }] : []),
+          ...(e.spendLabel ? [{ stat: { label: "الصرف الشهري", value: e.spendLabel } }] : []),
+          ...(e.adAccounts ? [{ stat: { label: "حسابات الإعلانات", value: String(e.adAccounts) } }] : []),
+          ...(e.message ? [{ text: e.message }] : []),
+        ],
+        cta: { label: "افتح الطلب في اللوحة", url: `${getAppUrl()}/admin/sales` },
+      }),
+    });
+  } catch (err) {
+    console.error("فشل إرسال إشعار طلب المبيعات:", err);
+  }
+}

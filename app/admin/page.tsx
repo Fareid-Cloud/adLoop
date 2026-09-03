@@ -14,6 +14,7 @@ import { MetricCard } from "@/app/components/ui/MetricCard";
 import { Sparkline } from "@/app/components/ui/Sparkline";
 import {
   LayoutDashboard, Users, DollarSign, Activity, AlertTriangle, Cpu, Star, LifeBuoy,
+  Briefcase, ArrowRight,
 } from "lucide-react";
 import { lastNDays } from "@/lib/admin/shared";
 import { getBusinessSummary } from "@/lib/admin/business";
@@ -35,7 +36,9 @@ export default async function AdminOverview() {
 
   const range = lastNDays(30);
 
-  const [customers, product, operational, usage, system, business, recentAudit] = await Promise.all([
+  const canSeeSales = caps.includes("customers.subscription");
+
+  const [customers, product, operational, usage, system, business, recentAudit, newEnquiries, latestEnquiry] = await Promise.all([
     getCustomerAnalytics(range),
     getProductAnalytics(30),
     getOperationalAnalytics(range),
@@ -45,6 +48,16 @@ export default async function AdminOverview() {
     // بس معناه إنّ الاستعلام اتنفّذ والبيانات وصلت للخادم بلا داعي.
     canSeeMoney ? getBusinessSummary(range) : Promise.resolve(undefined),
     prisma.adminAuditLog.findMany({ orderBy: { createdAt: "desc" }, take: 8 }).catch(() => []),
+    // مين مايقدرش يمنح باقة مايشوفش الطابور - البانِرُ بيوعد بفعلٍ
+    // الصفحةُ اللي وراه هتمنعه منه.
+    canSeeSales ? prisma.salesEnquiry.count({ where: { status: "NEW" } }) : Promise.resolve(0),
+    canSeeSales
+      ? prisma.salesEnquiry.findFirst({
+          where: { status: "NEW" },
+          orderBy: { createdAt: "desc" },
+          select: { company: true, createdAt: true },
+        })
+      : Promise.resolve(null),
   ]);
 
   const insights = buildInsights({ business, customers, product, operational, usage, system });
@@ -59,6 +72,35 @@ export default async function AdminOverview() {
         subtitle={`Last 30 days · ${role === "OWNER" ? "Full access" : "Support access"}`}
         icon={LayoutDashboard}
       />
+
+      {/* 🔴 **طلبُ الشراء مايستنّاش دورَه في الترتيب.**
+          كلُّ حاجة تانية في الصفحة دي ملخَّصٌ بيستنّى، وده وحدُه فيه حدٌّ
+          مستنّي ردّاً - وقيمتُه بتنزل بالساعة. فوق الرؤى، وبلونٍ يخطف
+          العين، وبيختفي تماماً لمّا الطابور يفضى: بانِرٌ دائم بيتحوّل
+          لخلفيةٍ في أسبوع فيتقري كزخرفة. */}
+      {newEnquiries > 0 && (
+        <Link
+          href="/admin/sales?status=NEW"
+          className="mb-4 flex items-center gap-3 rounded-xl border border-critical/40 bg-critical/10 px-4 py-3 no-underline transition-colors hover:bg-critical/15"
+        >
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-critical text-white">
+            <Briefcase size={17} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[13.5px] font-semibold text-critical">
+              {newEnquiries === 1
+                ? "1 enterprise request is waiting"
+                : `${newEnquiries} enterprise requests are waiting`}
+            </span>
+            <span className="block text-[12px] text-text-muted">
+              {latestEnquiry
+                ? `Newest: ${latestEnquiry.company} · ${ago(latestEnquiry.createdAt)}`
+                : "Priced on a call — nobody has replied yet"}
+            </span>
+          </span>
+          <ArrowRight size={16} className="shrink-0 text-critical rtl:rotate-180" />
+        </Link>
+      )}
 
       <InsightStrip insights={insights} />
 

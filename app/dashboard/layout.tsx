@@ -16,6 +16,7 @@ import { prisma } from "@/lib/prisma";
 import { markActiveToday } from "@/lib/productTelemetry";
 import { IBM_Plex_Sans_Arabic, Inter } from "next/font/google";
 import { SupportChat } from "@/app/components/SupportChat";
+import { ContactSalesDialog } from "@/app/components/ContactSalesDialog";
 import { ImpersonationBanner } from "@/app/components/ImpersonationBanner";
 import { NotificationBell } from "@/app/components/NotificationBell";
 import { NotificationToast } from "@/app/components/NotificationToast";
@@ -356,6 +357,18 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             whatsappNumber={process.env.SUPPORT_WHATSAPP_NUMBER ?? null}
           /> : null}
       />
+
+      {/* شاشةُ المبيعات مركَّبةٌ هنا مرّةً واحدة وبتتفتح بحدث: أيُّ زرار
+          «تواصل معنا» في أيّ صفحة بيبعت `adloop:contact-sales` بلا ما
+          يعرف مكانها. مابتصيّرش حاجة وهي مقفولة. */}
+      {user && (
+        <ContactSalesDialog
+          locale={locale}
+          name={user.name ?? ""}
+          email={user.email}
+          country={user.billingCountry ?? ""}
+        />
+      )}
 
       {/* 🔴 عمود مرن بارتفاع الشاشة: كان `main` صندوقاً عادياً يتبع ارتفاع
           محتواه، فتظهر صفحة قصيرة (كالتشخيص قبل أوّل فحص) وتذييلها القانوني

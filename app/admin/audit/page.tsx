@@ -11,6 +11,7 @@ import { ScrollText } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { resolveAdminRole, adminCapabilities } from "@/lib/adminRole";
+import { STAFF_WHERE } from "@/lib/adminStaff";
 import { TABLE, TABLE_WRAP, THEAD_ROW, TH, TR, TD, TD_MUTED } from "@/app/components/ui/tableStyles";
 import { AdminPageHeader, Badge, dateTime } from "../components/AdminUI";
 
@@ -57,7 +58,7 @@ export default async function AuditPage({
       _count: true,
       orderBy: { _count: { action: "desc" } },
     }),
-    prisma.user.findMany({ where: { isAdmin: true }, select: { id: true, email: true } }),
+    prisma.user.findMany({ where: STAFF_WHERE, select: { id: true, email: true } }),
   ]);
 
   const emailById = new Map(admins.map((a) => [a.id, a.email]));

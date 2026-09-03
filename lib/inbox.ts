@@ -14,6 +14,7 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { sendPushToUser } from "@/lib/webPush";
+import { STAFF_WHERE } from "@/lib/adminStaff";
 
 // الثابتاتُ في ملفٍّ بلا استيراد (`lib/inboxChannels.ts`) وتُعاد التصدير
 // من هنا: الملفّ ده بيجرّ `web-push` ومعاه مكتباتِ Node، فاستيرادُ كلاينت
@@ -143,7 +144,7 @@ export async function notifyTeamOfInbound(threadId: string) {
   const recipients = thread.assignedToId
     ? [thread.assignedToId]
     : (
-        await prisma.user.findMany({ where: { isAdmin: true }, select: { id: true } })
+        await prisma.user.findMany({ where: STAFF_WHERE, select: { id: true } })
       ).map((u) => u.id);
 
   const payload = {
@@ -160,57 +161,86 @@ export async function notifyTeamOfInbound(threadId: string) {
 // القراءة
 // ══════════════════════════════════════════════════════════════════════
 
+export const THREAD_STATUSES = ["OPEN", "ANSWERED", "CLOSED", "ARCHIVED"] as const;
+export type ThreadStatus = (typeof THREAD_STATUSES)[number];
+export function isThreadStatus(v: unknown): v is ThreadStatus {
+  return typeof v === "string" && (THREAD_STATUSES as readonly string[]).includes(v);
+}
+
+/** المعيَّنُ له: معرَّفُ موظَّف، أو `UNASSIGNED` للمحادثات بلا صاحب. */
+export const UNASSIGNED = "UNASSIGNED";
+
+// 🔴 **كلُّ بُعدٍ قائمةٌ لا قيمةٌ واحدة.**
+//
+// كان كلُّ فلترٍ قيمةً مفردة، فاختيارُ «ماسنجر» بيلغي «الموقع» - والسؤال
+// الطبيعيّ («وَرّيني الاتنين وسيب واتساب») مالوش تعبير. القوائمُ الفاضية
+// معناها «بلا قيد» لا «مافيش حاجة»، فغيابُ الفلتر هو الوضعُ الافتراضيّ
+// من غير قيمةٍ سحرية زيّ `ALL` لازم تتفحص في كلّ مكان تُقرأ فيه.
 export interface InboxFilters {
-  channel?: Channel | "ALL";
-  status?: "OPEN" | "ANSWERED" | "CLOSED" | "ARCHIVED" | "ALL";
+  channel?: Channel[];
+  status?: ThreadStatus[];
   /** غير المقروء فقط */
   unread?: boolean;
-  assignedToId?: string | "UNASSIGNED";
-  tag?: string;
+  assignedToId?: string[];
+  tag?: string[];
   q?: string;
+  /** للعدّادات وحدها: بيرفع استثناءَ الأرشيف عشان صفُّه يعرض رقمَه الحقيقيّ. */
+  includeArchived?: boolean;
 }
 
 export function inboxWhere(f: InboxFilters): Prisma.SupportThreadWhereInput {
   const where: Prisma.SupportThreadWhereInput = { deletedAt: null };
+  // شروطٌ مركَّبة بتتجمّع هنا لا في `where.OR` مباشرةً: أكتر من بُعدٍ
+  // بيحتاج `OR` داخليّ (المعيَّنُ له، وغيرُ المقروء)، وكتابتُهم على نفس
+  // المفتاح بتخلّي التاني **يمسح** الأوّل بصمت.
+  const and: Prisma.SupportThreadWhereInput[] = [];
 
-  if (f.channel && f.channel !== "ALL") where.channel = f.channel;
-  if (f.status && f.status !== "ALL") where.status = f.status;
+  if (f.channel?.length) where.channel = { in: f.channel };
+
+  if (f.status?.length) where.status = { in: f.status };
   // المؤرشَفُ بيختفي من كلّ عرضٍ إلّا لمّا يُطلَب صراحةً: الأرشيفُ مكانٌ
   // بتتحطّ فيه المحادثة عشان **تسيب** الصندوق، فظهورُها في «الكلّ» بيلغي
   // الغرض منه.
-  else if (!f.status || f.status === "ALL") where.status = { not: "ARCHIVED" };
-  if (f.tag) where.tags = { has: f.tag };
+  else if (!f.includeArchived) where.status = { not: "ARCHIVED" };
 
-  if (f.assignedToId === "UNASSIGNED") where.assignedToId = null;
-  else if (f.assignedToId) where.assignedToId = f.assignedToId;
+  if (f.tag?.length) where.tags = { hasSome: f.tag };
+
+  if (f.assignedToId?.length) {
+    const ids = f.assignedToId.filter((v) => v !== UNASSIGNED);
+    const or: Prisma.SupportThreadWhereInput[] = [];
+    if (f.assignedToId.includes(UNASSIGNED)) or.push({ assignedToId: null });
+    if (ids.length) or.push({ assignedToId: { in: ids } });
+    if (or.length) and.push({ OR: or });
+  }
 
   // 🔴 **غير المقروء = وصلت رسالة بعد آخر فتحة.** التعريف ده بيخلّي
   // الحالة مشتقّة من حقيقتين موجودتين، بدل عدّادٍ منفصل لازم يتظبّط في
   // كلّ مسار كتابة - وأوّل مسار يُنسى بيخلّي الرقم يكدب للأبد.
   if (f.unread) {
-    where.OR = [
-      { readByAdminAt: null },
-      { readByAdminAt: { lt: prisma.supportThread.fields.lastMessageAt } },
-    ];
+    and.push({
+      OR: [
+        { readByAdminAt: null },
+        { readByAdminAt: { lt: prisma.supportThread.fields.lastMessageAt } },
+      ],
+    });
   }
 
   if (f.q?.trim()) {
     const q = f.q.trim();
     // البحثُ في النصّ نفسه لا في العناوين وحدها: العميل بيدوّر على كلمةٍ
     // قالها، والموضوع عندنا مقصوصٌ من أوّل رسالة.
-    where.AND = [
-      {
-        OR: [
-          { name: { contains: q, mode: "insensitive" } },
-          { email: { contains: q, mode: "insensitive" } },
-          { phone: { contains: q, mode: "insensitive" } },
-          { subject: { contains: q, mode: "insensitive" } },
-          { messages: { some: { body: { contains: q, mode: "insensitive" } } } },
-        ],
-      },
-    ];
+    and.push({
+      OR: [
+        { name: { contains: q, mode: "insensitive" } },
+        { email: { contains: q, mode: "insensitive" } },
+        { phone: { contains: q, mode: "insensitive" } },
+        { subject: { contains: q, mode: "insensitive" } },
+        { messages: { some: { body: { contains: q, mode: "insensitive" } } } },
+      ],
+    });
   }
 
+  if (and.length) where.AND = and;
   return where;
 }
 
@@ -321,14 +351,45 @@ export async function listThreads(filters: InboxFilters, take = 60): Promise<Thr
   }));
 }
 
+// عدّاداتُ الفلاتر. كلُّ واحدٍ منها بيتحسب على باقي الفلاتر **عدا بُعده
+// هو** - وإلّا كلُّ رقمٍ بيبقى صفراً إلّا المختار، فالعدّادُ بيبطّل يقول
+// «فيه شغلٌ هنا» ويبقى صدىً للاختيار الحاليّ.
+
 /** عدّادُ كلّ قناة - يُعرض جنب اسمها فيُعرَف أين الشغل قبل الفتح. */
 export async function channelCounts(base: InboxFilters) {
   const rows = await prisma.supportThread.groupBy({
     by: ["channel"],
-    where: inboxWhere({ ...base, channel: "ALL" }),
+    where: inboxWhere({ ...base, channel: [] }),
     _count: true,
   });
   const map: Record<string, number> = {};
   for (const r of rows) map[r.channel] = r._count;
+  return map;
+}
+
+/** 🔴 عدّادُ كلّ حالة - **بالأرشيف**.
+ *
+ *  كان بيتحسب باستثناء الأرشيف المفروض على كلّ استعلام، فصفُّ «Archive»
+ *  كان بيقول صفر مهما كان جوّاه - وده اللي خلّى الأرشيف يبان معطَّلاً. */
+export async function statusCounts(base: InboxFilters) {
+  const rows = await prisma.supportThread.groupBy({
+    by: ["status"],
+    where: inboxWhere({ ...base, status: [], includeArchived: true }),
+    _count: true,
+  });
+  const map: Record<string, number> = {};
+  for (const r of rows) map[r.status] = r._count;
+  return map;
+}
+
+/** عدّادُ كلّ موظَّف + غير المعيَّن، عشان اختيارُ «مسنَد لـ» يبان قبل فتحه. */
+export async function assigneeCounts(base: InboxFilters) {
+  const rows = await prisma.supportThread.groupBy({
+    by: ["assignedToId"],
+    where: inboxWhere({ ...base, assignedToId: [] }),
+    _count: true,
+  });
+  const map: Record<string, number> = {};
+  for (const r of rows) map[r.assignedToId ?? UNASSIGNED] = r._count;
   return map;
 }

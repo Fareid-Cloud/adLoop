@@ -11,6 +11,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { guardAdmin } from "@/lib/adminGuard";
 import { isOwnerRole } from "@/lib/adminRole";
+import { staffWhere } from "@/lib/adminStaff";
 import { validateOrError } from "@/lib/validation/schemas";
 
 const schema = z.object({
@@ -44,7 +45,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // من كلّ فلتر بيتفرّج عليه الفريق، فتضيع بصمت.
   if (body.assignedToId) {
     const assignee = await prisma.user.findFirst({
-      where: { id: body.assignedToId, isAdmin: true },
+      // `staffWhere` لا `isAdmin` وحدها: المالكُ ممكن يكون `isAdmin=false`
+      // وهو مالكُ اللوحة، فالتعيينُ له كان بيترفض بـ٤٠٠.
+      where: staffWhere({ id: body.assignedToId }),
       select: { id: true },
     });
     if (!assignee) {

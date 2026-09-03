@@ -45,8 +45,17 @@ interface ActiveThread {
 
 interface Agent { id: string; name: string | null; email: string; online: boolean }
 
+const STATUSES = ["OPEN", "ANSWERED", "CLOSED", "ARCHIVED"] as const;
+const CHANNELS: Channel[] = ["WEB", "WHATSAPP", "MESSENGER"];
+/** «مُتابَعة» تسميةُ `ANSWERED` على الشاشة: مش كلُّ متابعةٍ سؤالٌ منتظرٌ
+ *  ردّاً - ممكن تبقى علامةَ حسابٍ مهمّ يُرجَع له. */
+const STATUS_LABEL: Record<string, string> = {
+  OPEN: "Open", ANSWERED: "Follow-up", CLOSED: "Done", ARCHIVED: "Archive",
+};
+
 export function InboxClient({
-  threads, active, history, counts, statusCounts, agents, tags, filters, activeAvatar, canDelete,
+  threads, active, history, counts, statusCounts, assigneeCounts, agents, tags, filters,
+  activeAvatar, canDelete,
 }: {
   threads: ThreadRow[];
   active: ActiveThread | null;
@@ -55,9 +64,10 @@ export function InboxClient({
   history: Array<{ id: string; subject: string; status: string; channel: string; lastMessageAt: string }>;
   counts: Record<string, number>;
   statusCounts: Record<string, number>;
+  assigneeCounts: Record<string, number>;
   agents: Agent[];
   tags: string[];
-  filters: { channel: string; status: string; unread: boolean; assigned: string; tag: string; q: string };
+  filters: { channel: string[]; status: string[]; unread: boolean; assigned: string[]; tag: string[]; q: string };
   /** المالكُ وحده بيشوف زرَّ الحذف النهائيّ - الدعمُ بيأرشف. */
   canDelete: boolean;
 }) {
@@ -73,6 +83,20 @@ export function InboxClient({
       else next.set(k, v);
     }
     router.push(`/admin/support?${next.toString()}`);
+  }
+
+  /** بيضيف/بيشيل قيمةً من فلترٍ متعدّد. القائمةُ الفاضية بتتشال من الرابط
+   *  خالص فيرجع لـ«بلا قيد» - لا `?channel=` فاضية تتقري قيداً على لا شيء. */
+  function toggle(key: "channel" | "status" | "assigned" | "tag", value: string, current: string[]) {
+    const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
+    go({ [key]: next.join(",") || null, thread: null });
+  }
+
+  /** بيثبّت قيمةً واحدة مكان أيّ اختيارٍ سابق في نفس البُعد - للأعمدة
+   *  الجانبية اللي بتتصرّف كتنقّلٍ لا كفلترٍ مركَّب. */
+  function only(key: "channel" | "status" | "assigned" | "tag", value: string, current: string[]) {
+    const same = current.length === 1 && current[0] === value;
+    go({ [key]: same ? null : value, thread: null });
   }
 
   useEffect(() => {
@@ -105,21 +129,37 @@ export function InboxClient({
   }, [router]);
 
   const total = Object.values(counts).reduce((a, z) => a + z, 0);
-  const statusAll = Object.values(statusCounts).reduce((a, z) => a + z, 0);
+  // «الكلّ» في عمود الحالة لازم يستثني الأرشيف زيّ ما القائمةُ نفسها
+  // بتستثنيه - رقمٌ أكبر من عدد الصفوف المعروضة بيتقري صفوفاً ضاعت.
+  const statusAll = Object.entries(statusCounts)
+    .filter(([k]) => k !== "ARCHIVED")
+    .reduce((a, [, z]) => a + z, 0);
 
   // الرقائقُ المفعَّلة فوق القائمة - كلُّ واحدة بتتشال بدوسة. الفلتر
   // النشط لازم يبقى **مرئياً حيث النتيجة**، لا في عمودٍ تاني بره النظر:
   // قائمةٌ قصيرة بلا سببٍ ظاهر بتتقري "مافيش حاجة" لا "الفلتر ضيّق".
-  const chips: Array<{ label: string; clear: Record<string, string | null> }> = [];
-  if (filters.status !== "ALL") chips.push({ label: title(filters.status), clear: { status: null } });
-  if (filters.channel !== "ALL") chips.push({ label: CHANNEL_LABEL[filters.channel as Channel] ?? filters.channel, clear: { channel: null } });
-  if (filters.unread) chips.push({ label: "Unread", clear: { unread: null } });
-  if (filters.tag) chips.push({ label: filters.tag, clear: { tag: null } });
-  if (filters.assigned === "UNASSIGNED") chips.push({ label: "Unassigned", clear: { assigned: null } });
-  else if (filters.assigned) {
-    const a = agents.find((x) => x.id === filters.assigned);
-    if (a) chips.push({ label: a.name ?? a.email, clear: { assigned: null } });
+  // رقيقةٌ لكلّ **قيمة** لا لكلّ بُعد: اختيارُ قناتين بيبان قناتين تتشال
+  // كلُّ واحدةٍ لوحدها، مش رقيقةً واحدة بتمسح الاتنين.
+  const chips: Array<{ key: string; label: string; onClear: () => void }> = [];
+  for (const s of filters.status)
+    chips.push({ key: `s:${s}`, label: STATUS_LABEL[s] ?? title(s), onClear: () => toggle("status", s, filters.status) });
+  for (const c of filters.channel)
+    chips.push({ key: `c:${c}`, label: CHANNEL_LABEL[c as Channel] ?? c, onClear: () => toggle("channel", c, filters.channel) });
+  for (const a of filters.assigned) {
+    const agent = agents.find((x) => x.id === a);
+    chips.push({
+      key: `a:${a}`,
+      label: a === "UNASSIGNED" ? "Unassigned" : agent?.name ?? agent?.email ?? "Agent",
+      onClear: () => toggle("assigned", a, filters.assigned),
+    });
   }
+  for (const t of filters.tag)
+    chips.push({ key: `t:${t}`, label: t, onClear: () => toggle("tag", t, filters.tag) });
+  if (filters.unread) chips.push({ key: "unread", label: "Unread", onClear: () => go({ unread: null }) });
+
+  const noFilters =
+    filters.channel.length === 0 && filters.status.length === 0 &&
+    filters.assigned.length === 0 && filters.tag.length === 0 && !filters.unread;
 
   return (
     <div>
@@ -156,85 +196,111 @@ export function InboxClient({
             <SlidersHorizontal size={14} />
           </button>
 
+          {/* 🔴 **لوحةٌ عريضةٌ بأعمدة، مش عمودٌ واحد طويل.**
+              القائمةُ الرأسية كانت بتنزل أطولَ من الشاشة بمجرّد وجود
+              موظَّفين ووسوم، فآخرُ فئةٍ فيها بتتقصّ - والفلترُ اللي
+              مايتشافش مايتستعملش. الأعمدةُ بتخلّي الفئات الأربعة كلّها
+              في مجال النظر مرّةً واحدة. */}
           {filterOpen && (
             <>
               <button className="fixed inset-0 z-30 cursor-default" aria-label="Close" onClick={() => setFilterOpen(false)} />
-              <div className="absolute z-40 mt-1 w-60 overflow-hidden rounded-xl border border-border-visible bg-surface py-1 shadow-lg">
-                <FilterSection label="Status">
-                  {(["OPEN", "ANSWERED", "CLOSED", "ARCHIVED"] as const).map((v) => (
-                    <FilterCheck
-                      key={v}
-                      label={v === "ANSWERED" ? "Follow-up" : title(v)}
-                      count={statusCounts[v] ?? 0}
-                      checked={filters.status === v}
-                      onToggle={() => go({ status: filters.status === v ? null : v, thread: null })}
-                    />
-                  ))}
-                </FilterSection>
+              <div className="absolute inset-inline-start-0 z-40 mt-1 w-[min(92vw,34rem)] overflow-hidden rounded-xl border border-border-visible bg-surface shadow-lg">
+                <div className="grid max-h-[60vh] grid-cols-2 gap-x-1 overflow-y-auto p-1 sm:grid-cols-3">
+                  <FilterSection label="Status">
+                    {STATUSES.map((v) => (
+                      <FilterCheck
+                        key={v}
+                        label={STATUS_LABEL[v]}
+                        count={statusCounts[v] ?? 0}
+                        checked={filters.status.includes(v)}
+                        onToggle={() => toggle("status", v, filters.status)}
+                      />
+                    ))}
+                  </FilterSection>
 
-                <FilterSection label="Channel">
-                  {(["WEB", "WHATSAPP", "MESSENGER"] as Channel[]).map((c) => (
-                    <FilterCheck
-                      key={c}
-                      label={CHANNEL_LABEL[c]}
-                      count={counts[c] ?? 0}
-                      checked={filters.channel === c}
-                      onToggle={() => go({ channel: filters.channel === c ? null : c, thread: null })}
-                    />
-                  ))}
-                </FilterSection>
+                  <FilterSection label="Channel">
+                    {CHANNELS.map((c) => (
+                      <FilterCheck
+                        key={c}
+                        label={CHANNEL_LABEL[c]}
+                        count={counts[c] ?? 0}
+                        checked={filters.channel.includes(c)}
+                        onToggle={() => toggle("channel", c, filters.channel)}
+                      />
+                    ))}
+                  </FilterSection>
 
-                <FilterSection label="Assigned">
-                  <FilterCheck
-                    label="Unassigned"
-                    checked={filters.assigned === "UNASSIGNED"}
-                    onToggle={() => go({ assigned: filters.assigned === "UNASSIGNED" ? null : "UNASSIGNED" })}
-                  />
-                  {agents.map((a) => (
+                  {/* «مسنَد لـ» بيفتح على الفريق نفسه لا على «مسنَد/غير
+                      مسنَد» وبس: السؤالُ العمليّ هو «إيه اللي على فلان». */}
+                  <FilterSection label="Assigned to">
                     <FilterCheck
-                      key={a.id}
-                      label={a.name ?? a.email}
-                      checked={filters.assigned === a.id}
-                      onToggle={() => go({ assigned: filters.assigned === a.id ? null : a.id, thread: null })}
+                      label="Unassigned"
+                      count={assigneeCounts.UNASSIGNED ?? 0}
+                      checked={filters.assigned.includes("UNASSIGNED")}
+                      onToggle={() => toggle("assigned", "UNASSIGNED", filters.assigned)}
                     />
-                  ))}
-                </FilterSection>
+                    {agents.map((a) => (
+                      <FilterCheck
+                        key={a.id}
+                        label={a.name ?? a.email.split("@")[0]}
+                        count={assigneeCounts[a.id] ?? 0}
+                        checked={filters.assigned.includes(a.id)}
+                        onToggle={() => toggle("assigned", a.id, filters.assigned)}
+                      />
+                    ))}
+                  </FilterSection>
 
-                <FilterSection label="Other">
-                  <FilterCheck
-                    label="Unread only"
-                    checked={filters.unread}
-                    onToggle={() => go({ unread: filters.unread ? null : "1" })}
-                  />
-                  {tags.slice(0, 8).map((t) => (
+                  <FilterSection label="Other">
                     <FilterCheck
-                      key={t}
-                      label={t}
-                      checked={filters.tag === t}
-                      onToggle={() => go({ tag: filters.tag === t ? null : t, thread: null })}
+                      label="Unread only"
+                      checked={filters.unread}
+                      onToggle={() => go({ unread: filters.unread ? null : "1" })}
                     />
-                  ))}
-                </FilterSection>
+                  </FilterSection>
 
-                {chips.length > 0 && (
-                  <button
-                    onClick={() => {
-                      setFilterOpen(false);
-                      go({ status: null, channel: null, unread: null, tag: null, assigned: null, q: null });
-                    }}
-                    className="mt-1 w-full border-t border-border px-3 py-2 text-start text-[12px] text-critical transition-colors hover:bg-surface-raised"
-                  >
-                    Clear all filters
-                  </button>
-                )}
+                  {tags.length > 0 && (
+                    <FilterSection label="Tags">
+                      {tags.slice(0, 12).map((t) => (
+                        <FilterCheck
+                          key={t}
+                          label={t}
+                          checked={filters.tag.includes(t)}
+                          onToggle={() => toggle("tag", t, filters.tag)}
+                        />
+                      ))}
+                    </FilterSection>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2">
+                  <span className="text-[11.5px] text-text-faint">
+                    {chips.length === 0 ? "No filters" : `${chips.length} active`}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    {chips.length > 0 && (
+                      <button
+                        onClick={() => go({ status: null, channel: null, unread: null, tag: null, assigned: null })}
+                        className="rounded-lg px-2 py-1 text-[12px] text-critical transition-colors hover:bg-critical/10"
+                      >
+                        Clear all
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setFilterOpen(false)}
+                      className="rounded-lg px-2 py-1 text-[12px] text-text-muted transition-colors hover:bg-surface-raised"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
               </div>
             </>
           )}
         </div>
         {chips.map((c) => (
           <button
-            key={c.label}
-            onClick={() => go(c.clear)}
+            key={c.key}
+            onClick={c.onClear}
             className="flex shrink-0 items-center gap-1 rounded-lg border border-accent/40 bg-accent/8 px-2 py-1 text-[11.5px] text-accent transition-colors hover:bg-accent/15"
           >
             {c.label}
@@ -255,8 +321,8 @@ export function InboxClient({
       <aside className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:block lg:overflow-visible lg:px-0 lg:pb-0">
         <Group label="Inbox">
           <Row
-            active={filters.channel === "ALL" && !filters.unread && !filters.assigned && filters.status === "ALL"}
-            onClick={() => go({ channel: null, unread: null, assigned: null, status: null, tag: null })}
+            active={noFilters}
+            onClick={() => go({ channel: null, unread: null, assigned: null, status: null, tag: null, thread: null })}
             count={total}
           >
             All
@@ -265,39 +331,39 @@ export function InboxClient({
             Unread
           </Row>
           <Row
-            active={filters.assigned === "UNASSIGNED"}
-            onClick={() => go({ assigned: filters.assigned === "UNASSIGNED" ? null : "UNASSIGNED" })}
+            active={filters.assigned.includes("UNASSIGNED")}
+            onClick={() => only("assigned", "UNASSIGNED", filters.assigned)}
           >
             Unassigned
           </Row>
         </Group>
 
         <Group label="Status">
-          <Row active={filters.status === "ALL"} onClick={() => go({ status: null, thread: null })} dot="muted" count={statusAll}>
+          <Row active={filters.status.length === 0} onClick={() => go({ status: null, thread: null })} dot="muted" count={statusAll}>
             All
           </Row>
-          {(["OPEN", "ANSWERED", "CLOSED", "ARCHIVED"] as const).map((s) => (
+          {STATUSES.map((s) => (
             <Row
               key={s}
-              active={filters.status === s}
-              onClick={() => go({ status: filters.status === s ? null : s, thread: null })}
+              active={filters.status.includes(s)}
+              onClick={() => only("status", s, filters.status)}
               dot={s === "OPEN" ? "open" : s === "ANSWERED" ? "answered" : s === "CLOSED" ? "closed" : "muted"}
               count={statusCounts[s] ?? 0}
             >
-              {s === "ANSWERED" ? "Follow-up" : title(s)}
+              {STATUS_LABEL[s]}
             </Row>
           ))}
         </Group>
 
         <Group label="Channel">
-          <Row active={filters.channel === "ALL"} onClick={() => go({ channel: null, thread: null })} icon={Globe} count={total}>
+          <Row active={filters.channel.length === 0} onClick={() => go({ channel: null, thread: null })} icon={Globe} count={total}>
             All
           </Row>
-          {(["WEB", "WHATSAPP", "MESSENGER"] as Channel[]).map((c) => (
+          {CHANNELS.map((c) => (
             <Row
               key={c}
-              active={filters.channel === c}
-              onClick={() => go({ channel: filters.channel === c ? null : c, thread: null })}
+              active={filters.channel.includes(c)}
+              onClick={() => only("channel", c, filters.channel)}
               icon={CHANNEL_ICON[c]}
               count={counts[c] ?? 0}
             >
@@ -309,7 +375,7 @@ export function InboxClient({
         {tags.length > 0 && (
           <Group label="Tags">
             {tags.slice(0, 10).map((t) => (
-              <Row key={t} active={filters.tag === t} onClick={() => go({ tag: filters.tag === t ? null : t, thread: null })}>
+              <Row key={t} active={filters.tag.includes(t)} onClick={() => only("tag", t, filters.tag)}>
                 {t}
               </Row>
             ))}
@@ -320,9 +386,9 @@ export function InboxClient({
           {agents.map((a) => (
             <button
               key={a.id}
-              onClick={() => go({ assigned: filters.assigned === a.id ? null : a.id, thread: null })}
+              onClick={() => only("assigned", a.id, filters.assigned)}
               className={`mb-0.5 flex w-full shrink-0 items-center gap-2 rounded-lg px-2 py-1.5 text-start transition-colors ${
-                filters.assigned === a.id ? "bg-critical/12" : "hover:bg-surface-raised"
+                filters.assigned.includes(a.id) ? "bg-critical/12" : "hover:bg-surface-raised"
               }`}
             >
               <Avatar name={a.name ?? a.email} online={a.online} size={24} />
@@ -1127,8 +1193,8 @@ function ago(iso: string) {
 /** فئةٌ داخل قائمة الفلاتر - العنوانُ بيقول «دي مجموعةٌ واحدة يُختار منها». */
 function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="border-b border-border py-1 last:border-0">
-      <div className="px-3 pb-0.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-text-faint">
+    <div className="min-w-0 py-1">
+      <div className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-text-faint">
         {label}
       </div>
       {children}
@@ -1143,7 +1209,7 @@ function FilterCheck({
   return (
     <button
       onClick={onToggle}
-      className="flex w-full items-center gap-2 px-3 py-1.5 text-start text-[12px] transition-colors hover:bg-surface-raised"
+      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start text-[12px] transition-colors hover:bg-surface-raised"
     >
       <span
         className={`grid size-3.5 shrink-0 place-items-center rounded border ${

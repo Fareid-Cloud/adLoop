@@ -1,19 +1,16 @@
 // app/api/support/read/route.ts - العميل شاف ردود الدعم، نعلّمها مقروءة
+//
+// مافيش `threadId` في الطلب عن قصد: العميل بيشوف محادثةً واحدة، والتصفيرُ
+// بمعرَّفٍ من العميل كان بيخلّي ردوداً في محادثاتٍ تانية تفضل غير مقروءة
+// وتولّع الشارة للأبد. التفصيلُ في `lib/supportUnread.ts`.
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { markSupportRead } from "@/lib/supportUnread";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { threadId } = await req.json();
-  const thread = await prisma.supportThread.findFirst({ where: { id: threadId, userId: user.id } });
-  if (!thread) return NextResponse.json({ error: "not found" }, { status: 404 });
-
-  await prisma.supportMessage.updateMany({
-    where: { threadId: thread.id, fromSupport: true, readByUser: false },
-    data: { readByUser: true },
-  });
-  return NextResponse.json({ ok: true });
+  await markSupportRead(user.id);
+  return NextResponse.json({ ok: true, unread: 0 });
 }

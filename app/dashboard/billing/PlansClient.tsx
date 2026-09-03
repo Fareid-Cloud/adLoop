@@ -304,11 +304,12 @@ function PlanCard({
           القارئ أن ينزل ليقرّر. صعد تحت السعر مباشرةً: القرارُ عند
           الرقم، والقائمةُ تفصيلٌ يُقرأ بعده لمن أراد. */}
       {plan.contactOnly ? (
-        // الحلّ يسافر مع الحدّ: من بلغ سقف أكبر باقة يجد هنا طريقاً يمشي
-        // فيه الآن - لا رقم هاتف يكتبه ولا بريداً يبحث عنه. الحدث نفسه
-        // الذي يفتح الدعم من أيّ مكان في المنتج.
+        // 🔴 **كان بيفتح شات الدعم** - فطلبُ شراءٍ بميزانية بيقع في نفس
+        // الطابور مع «الرسم مش ظاهر عندي»، وبيوصل بلا اسمِ شركةٍ ولا حجم.
+        // بقى بيفتح شاشةَ المبيعات: بتسأل مَن أنت وحجمك قدّ إيه، وبتوصل
+        // لطابورٍ له حالاتُه (`/admin/sales`) لا لصندوق تذاكر.
         <button
-          onClick={() => window.dispatchEvent(new CustomEvent("adloop:open-support"))}
+          onClick={() => window.dispatchEvent(new CustomEvent("adloop:contact-sales"))}
           className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-accent bg-accent/[0.08] py-2.5 text-[13.5px] font-medium text-accent transition-colors hover:bg-accent/[0.14]"
         >
           {tr("contactSales")}
@@ -532,7 +533,13 @@ function SubscriptionPanel({
             </button>
           </div>
         ) : (
-          <button onClick={() => setConfirming(true)} className="btn shrink-0">
+          // محايدٌ في وضعه الساكن وأحمرُ عند المرور: الإلغاءُ مش الفعلَ
+          // الرئيسيّ في الصفحة فمايتصدّرش بلون، لكنّ اللونَ لازم يظهر قبل
+          // الدوسة - زرارٌ رماديٌّ تماماً بيتقري «رجوع» ويتداس بالغلط.
+          <button
+            onClick={() => setConfirming(true)}
+            className="btn shrink-0 transition-colors hover:border-critical hover:bg-critical/10 hover:text-critical"
+          >
             {tr("subCancel")}
           </button>
         )}
