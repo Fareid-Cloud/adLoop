@@ -4,7 +4,7 @@
 // كان يترك القواعد تتراكم فتزدحم الصفحة بلا فائدة. ويُعرض نطاق كل قاعدة
 // بالاسم (الحملات المطبَّق عليها) وشعار منصتها، لا رقماً مجرداً.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Pencil, Check, X, Layers, AlertTriangle } from "lucide-react";
 import { Toggle } from "@/app/components/ui/Toggle";
@@ -66,6 +66,34 @@ export function ActiveRulesList({
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
+  // 🔴 **المفتاح كان بيستنّى السيرفر عشان يتحرّك.**
+  //
+  // قيمتُه جايةٌ من `rules` اللي بتيجي من الخادم، فالدوسةُ مابتحرّكش حاجة
+  // لحدّ ما `PATCH` يرجع و`router.refresh()` يعيد التصيير - تانيةٌ كاملة
+  // على اتصالٍ عاديّ. والمستخدمُ بيقرا السكونَ ده «الزرّ مش شغّال»
+  // فيدوس تاني وتالت، وكلُّ دوسةٍ بتبعت طلباً بعكس اللي قبله - فآخرُ
+  // حالةٍ تستقرّ هي حاصلُ سباقٍ بين الطلبات، مش اللي هو طالبه.
+  //
+  // القيمةُ المتفائلة بتتحرّك في نفس اللحظة، والمفتاحُ بيتقفل أثناء
+  // الرحلة فمافيش دوسةٌ تانية أصلاً. وبتتشال لمّا الخادمُ يأكّدها -
+  // مش بمجرّد ما الطلب ينجح: الاتنين مش نفس اللحظة، والشيلُ المبكّر
+  // بيرجّع القيمة القديمة لجزءٍ من الثانية فتبان رفرفة.
+  const [optimistic, setOptimistic] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    setOptimistic((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const r of rules) {
+        if (r.id in next && next[r.id] === r.enabled) {
+          delete next[r.id];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [rules]);
+
   const nameOf = (id: string) => campaigns.find((c) => c.id === id)?.name ?? id;
 
   async function patch(id: string, body: Record<string, unknown>) {
@@ -76,6 +104,31 @@ export function ActiveRulesList({
       body: JSON.stringify(body),
     }).catch(() => {});
     setBusy(null);
+    router.refresh();
+  }
+
+  /** التشغيل/الإيقاف وحده - بيتحرّك فوراً وبيتراجع لو الطلب فشل. */
+  async function setEnabled(id: string, value: boolean) {
+    setOptimistic((o) => ({ ...o, [id]: value }));
+    setBusy(id);
+    const res = await fetch(`/api/workspaces/${workspaceId}/automation-rules/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled: value }),
+    }).catch(() => null);
+    setBusy(null);
+
+    // **الفشلُ بيرجّع المفتاح مكانه.** مفتاحٌ بيقول «شغّال» على قاعدةٍ
+    // الخادمُ مارضيش يشغّلها بيخلّي صاحبَه مطمئنّاً لحمايةٍ مش موجودة -
+    // وده أسوأ من رسالة خطأ.
+    if (!res || !res.ok) {
+      setOptimistic((o) => {
+        const next = { ...o };
+        delete next[id];
+        return next;
+      });
+      return;
+    }
     router.refresh();
   }
 
@@ -103,19 +156,24 @@ export function ActiveRulesList({
   // الآخر - فقارئُ الصفحة مضطرٌّ يفحص كلَّ بطاقة عشان يعرف إيه اللي
   // بيشتغل فعلاً على حسابه دلوقتي. وهو **السؤالُ الوحيد** اللي الصفحة
   // دي موجودةٌ عشانه.
-  const live = rules.filter((r) => r.enabled);
-  const paused = rules.filter((r) => !r.enabled);
+  // المجموعتان بتتبنوا من القيمة المعروضة لا من قيمة الخادم: من غير كده
+  // القاعدةُ اللي لسه اتشغّلت بتفضل تحت «موقوفة» لحدّ ما الخادم يردّ،
+  // فالمفتاحُ بيتحرّك والبطاقةُ ساكنة في المكان الغلط.
+  const shownEnabled = (r: RuleRow) => optimistic[r.id] ?? r.enabled;
+  const live = rules.filter(shownEnabled);
+  const paused = rules.filter((r) => !shownEnabled(r));
 
   const card = (rule: RuleRow) => {
     const tone = ACTION_TONE[rule.action] ?? "var(--text-muted)";
     const isEditing = editing === rule.id;
+    const enabled = shownEnabled(rule);
     const scoped = rule.appliesTo === "SPECIFIC_CAMPAIGNS" && rule.specificCampaignIds.length > 0;
 
     return (
       // `group` عشان أزرارُ التعديل والحذف تهدا لحدّ ما المؤشّر يقرب.
       // تلاتُ أدواتٍ ظاهرة على كلّ بطاقة بتتحوّل لضوضاء لمّا البطاقات
       // تبقى عشرة - والمفتاحُ وحده هو اللي بيتداس كلّ يوم.
-      <div key={rule.id} className={`card pad-md group ${rule.enabled ? "" : "opacity-70"}`}>
+      <div key={rule.id} className={`card pad-md group ${enabled ? "" : "opacity-70"}`}>
         {/* ═══ السطر الأوّل: الاسم والمفتاح ═══
             الاسمُ هو هويّةُ البطاقة فبياخد سطرَه، والمفتاحُ جنبه لأنّه
             الفعلُ الأكثر تكراراً. الشاراتُ تحتهما: بتوصف لا بتعرّف. */}
@@ -124,7 +182,8 @@ export function ActiveRulesList({
             {rule.name}
           </span>
           <div className="flex shrink-0 items-center gap-1">
-            <Toggle checked={rule.enabled} onChange={(v) => patch(rule.id, { enabled: v })} label={tr("enableRule")} />
+            <Toggle checked={enabled} disabled={busy === rule.id}
+                    onChange={(v) => setEnabled(rule.id, v)} label={tr("enableRule")} />
             <button onClick={() => setEditing(isEditing ? null : rule.id)}
                     className="rounded-lg p-1.5 text-text-faint opacity-0 transition-opacity hover:text-text-primary focus-visible:opacity-100 group-hover:opacity-100"
                     aria-label={tr("editRule")}>
