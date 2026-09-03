@@ -183,10 +183,11 @@ export function SupportChat({
     setImages([]);
     setStep(0);
     setView({ k: "sent" });
-    // بيرجع **للرئيسية** لا للمحادثة: الخيارات بتبان من أوّل كلّ مرّة،
-    // والمحادثة بتتفتح لمّا يختار هو. والمهلةُ عشان التأكيد يُقرأ - تحويلٌ
-    // فوريّ بيخلّي الشاشة تومض بلا ما يعرف صاحبها إن كان نجح.
-    setTimeout(() => setView({ k: "home" }), 1600);
+    // 🔴 **بيفضل على الرسالة اللي بعتها.** الطردُ للرئيسية بعد الإرسال
+    // بيخلّي اللي بعت لسّه مايشوفش رسالته في مكانها - فمش متأكّد إنها
+    // وصلت. الرئيسيةُ بتظهر لمّا **يقفل ويفتح تاني**، وساعتها بيلاقي
+    // «كمّل محادثتك» جنب الأسئلة.
+    setTimeout(() => setView({ k: "thread" }), 1400);
   }
 
   async function sendReply() {
@@ -458,39 +459,6 @@ export function SupportChat({
               // ── الرئيسية: بحثٌ وإجابات، والتصعيدُ ملتصقٌ تحت ────────
               <>
                 <div className="flex-1 overflow-y-auto">
-                  {/* 🔴 **محادثةٌ قائمة مش سببٌ لتخطّي الخيارات.** كانت
-                      اللوحة بتفتح على المحادثة مباشرةً لأيّ حدٍّ كلّمنا قبل
-                      كده - فاللي جايّ يدوّر على إجابةٍ بيلاقي نفسه في شاتٍ
-                      قديم بلا ما يطلبه. الرئيسيةُ هي الافتراضيّ دايماً،
-                      والمحادثةُ صفٌّ فوقها يُدخَل إليه باختياره. */}
-                  {/* 🔴 **محادثةٌ قائمة مش سببٌ لتخطّي الخيارات.** اللوحة
-                      كانت بتفتح على المحادثة مباشرةً لأيّ حدٍّ كلّمنا قبل
-                      كده - فاللي جايّ يدوّر على إجابةٍ بيلاقي نفسه في شاتٍ
-                      قديم بلا ما يطلبه. الرئيسيةُ هي الافتراضيّ دايماً،
-                      والمحادثةُ صفٌّ فوقها يُدخَل إليه باختياره. */}
-                  {thread && (
-                    <button
-                      onClick={() => setView({ k: "thread" })}
-                      className="flex w-full items-center gap-2.5 border-b border-border p-3 text-start transition-colors hover:bg-surface-raised"
-                    >
-                      <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-accent/12 text-accent">
-                        <MessageCircle size={15} />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[12.5px] font-medium text-text-primary">
-                          {tr("yourConversations")}
-                        </span>
-                        <span className="block truncate text-[11px] text-text-faint">{thread.subject}</span>
-                      </span>
-                      {unread > 0 && (
-                        <span className="shrink-0 rounded bg-critical px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                          {unread}
-                        </span>
-                      )}
-                      <ArrowRight size={13} className="shrink-0 text-text-faint rtl:rotate-180" />
-                    </button>
-                  )}
-
                   <div className="border-b border-border p-4">
                     <p className="m-0 mb-2 text-[13px] font-semibold text-text-primary">{tr("gotQuestions")}</p>
                     <div className="relative">
@@ -504,43 +472,66 @@ export function SupportChat({
                     </div>
                   </div>
 
-                  <div className="p-2">
-                    <div className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-text-faint">
+                  <div className="p-3">
+                    <div className="pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-faint">
                       {tr("topAnswers")}
                     </div>
                     {visible.length === 0 ? (
-                      <p className="px-2 py-3 text-[12.5px] text-text-muted">{tr("noAnswer")}</p>
+                      <p className="py-3 text-[12.5px] text-text-muted">{tr("noAnswer")}</p>
                     ) : (
-                      visible.map((a) => (
-                        <button
-                          key={a.id}
-                          onClick={() => setView({ k: "article", a })}
-                          className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-start text-[12.5px] text-text-primary transition-colors hover:bg-surface-raised"
-                        >
-                          <span className="min-w-0 flex-1">{helpText(locale, a.q)}</span>
-                          <ArrowRight size={13} className="shrink-0 text-text-faint rtl:rotate-180" />
-                        </button>
-                      ))
+                      <div className="flex flex-col gap-1.5">
+                        {/* كلُّ إجابةٍ صندوقٌ قائم بذاته زيّ المرجع: الصفوفُ
+                            العارية بتتقري فقرةً واحدة، والصندوقُ بيقول
+                            «ده بندٌ يُضغَط». والسهمُ بيظهر عند المرور
+                            وحده - أربعةُ أسهمٍ دايماً بتزاحم النصّ. */}
+                        {visible.map((a) => (
+                          <button
+                            key={a.id}
+                            onClick={() => setView({ k: "article", a })}
+                            className="group/a flex w-full items-center gap-2 rounded-xl border border-border bg-surface-raised px-3 py-2.5 text-start text-[12.5px] text-text-primary transition-colors hover:border-accent/40 hover:bg-accent/6"
+                          >
+                            <span className="min-w-0 flex-1">{helpText(locale, a.q)}</span>
+                            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-accent text-white opacity-0 transition-opacity group-hover/a:opacity-100">
+                              <ArrowRight size={11} className="rtl:rotate-180" />
+                            </span>
+                          </button>
+                        ))}
+                      </div>
                     )}
                     {/* «كل الإجابات» بتفتح داخل نفس اللوحة لا في صفحة: الخروج
                         لصفحةٍ تانية بيضيّع السياق اللي جه منه. */}
                     {!q.trim() && matches.length > TOP_ANSWERS && (
                       <button
                         onClick={() => setShowAll((v) => !v)}
-                        className="mt-1 w-full rounded-lg px-2 py-2 text-[12px] text-accent transition-colors hover:bg-surface-raised"
+                        className="mt-2.5 flex w-full items-center gap-2 text-[12px] text-accent"
                       >
-                        {showAll ? tr("seeFewer") : tr("seeAll")}
+                        <span className="h-px flex-1 bg-border" />
+                        <span className="shrink-0">{showAll ? tr("seeFewer") : tr("seeAll")}</span>
+                        <ArrowRight size={12} className="shrink-0 rtl:rotate-180" />
+                        <span className="h-px flex-1 bg-border" />
                       </button>
                     )}
                   </div>
                 </div>
 
                 <div className="shrink-0 border-t border-border">
-                  <FooterAction
-                    label={tr("sendUsMessage")}
-                    hint={tr("sendUsMessageHint")}
-                    onClick={() => { setView({ k: "intake" }); setStep(0); }}
-                  />
+                  {/* 🔴 **زرٌّ واحد في المكان ده، بيتبدّل حسب الحالة.**
+                      وجودُ «ابعت رسالة» جنب «كمّل محادثتك» بيخلّي صاحبَه
+                      يختار بين حاجتين نتيجتهما واحدة - المحادثةُ واحدة
+                      للعميل أصلاً، فالرسالةُ الجديدة بتكمّلها. */}
+                  {thread ? (
+                    <FooterAction
+                      label={tr("continueConversation")}
+                      hint={unread > 0 ? tr("continueUnread", { n: unread }) : thread.subject}
+                      onClick={() => setView({ k: "thread" })}
+                    />
+                  ) : (
+                    <FooterAction
+                      label={tr("sendUsMessage")}
+                      hint={tr("sendUsMessageHint")}
+                      onClick={() => { setView({ k: "intake" }); setStep(0); }}
+                    />
+                  )}
                   {/* 🔴 **واتساب خيارٌ مساوٍ لا بديلٌ مخفيّ.** ناسٌ كتير في
                       السوق ده بتفضّل واتساب على أيّ صندوقٍ في موقع، وإخفاؤه
                       بيخليهم يقفلوا اللوحة ويدوّروا على الرقم بره.

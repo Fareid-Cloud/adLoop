@@ -64,6 +64,7 @@ export function InboxClient({
   const router = useRouter();
   const sp = useSearchParams();
   const [q, setQ] = useState(filters.q);
+  const [filterOpen, setFilterOpen] = useState(false);
 
   function go(patch: Record<string, string | null>) {
     const next = new URLSearchParams(sp.toString());
@@ -138,15 +139,98 @@ export function InboxClient({
           />
         </div>
 
-        {chips.length > 0 && (
+        {/* 🔴 **قائمةُ فلاتر حقيقية.** كانت أيقونةً بتمسح الكلّ وبس، وقبلها
+            رمزاً بلا فعل. الفلاترُ كلُّها موجودة في العمود الأوّل، لكنّه
+            بيختفي على الشاشات الضيّقة وبيتطلّب تمريراً - والقائمةُ هنا
+            بتجمعهم في مكانٍ واحد مقسَّمٍ بالفئة، ومتعدّدةَ الاختيار. */}
+        <div className="relative shrink-0">
           <button
-            onClick={() => go({ status: null, channel: null, unread: null, tag: null, assigned: null, q: null })}
-            title="Clear all filters"
-            className="grid size-8 shrink-0 place-items-center rounded-lg text-text-faint transition-colors hover:bg-surface-raised hover:text-text-primary"
+            onClick={() => setFilterOpen((o) => !o)}
+            title="Filters"
+            className={`grid size-8 place-items-center rounded-lg transition-colors ${
+              chips.length > 0
+                ? "bg-critical/12 text-critical"
+                : "text-text-faint hover:bg-surface-raised hover:text-text-primary"
+            }`}
           >
             <SlidersHorizontal size={14} />
           </button>
-        )}
+
+          {filterOpen && (
+            <>
+              <button className="fixed inset-0 z-30 cursor-default" aria-label="Close" onClick={() => setFilterOpen(false)} />
+              <div className="absolute z-40 mt-1 w-60 overflow-hidden rounded-xl border border-border-visible bg-surface py-1 shadow-lg">
+                <FilterSection label="Status">
+                  {(["OPEN", "ANSWERED", "CLOSED", "ARCHIVED"] as const).map((v) => (
+                    <FilterCheck
+                      key={v}
+                      label={v === "ANSWERED" ? "Follow-up" : title(v)}
+                      count={statusCounts[v] ?? 0}
+                      checked={filters.status === v}
+                      onToggle={() => go({ status: filters.status === v ? null : v, thread: null })}
+                    />
+                  ))}
+                </FilterSection>
+
+                <FilterSection label="Channel">
+                  {(["WEB", "WHATSAPP", "MESSENGER"] as Channel[]).map((c) => (
+                    <FilterCheck
+                      key={c}
+                      label={CHANNEL_LABEL[c]}
+                      count={counts[c] ?? 0}
+                      checked={filters.channel === c}
+                      onToggle={() => go({ channel: filters.channel === c ? null : c, thread: null })}
+                    />
+                  ))}
+                </FilterSection>
+
+                <FilterSection label="Assigned">
+                  <FilterCheck
+                    label="Unassigned"
+                    checked={filters.assigned === "UNASSIGNED"}
+                    onToggle={() => go({ assigned: filters.assigned === "UNASSIGNED" ? null : "UNASSIGNED" })}
+                  />
+                  {agents.map((a) => (
+                    <FilterCheck
+                      key={a.id}
+                      label={a.name ?? a.email}
+                      checked={filters.assigned === a.id}
+                      onToggle={() => go({ assigned: filters.assigned === a.id ? null : a.id, thread: null })}
+                    />
+                  ))}
+                </FilterSection>
+
+                <FilterSection label="Other">
+                  <FilterCheck
+                    label="Unread only"
+                    checked={filters.unread}
+                    onToggle={() => go({ unread: filters.unread ? null : "1" })}
+                  />
+                  {tags.slice(0, 8).map((t) => (
+                    <FilterCheck
+                      key={t}
+                      label={t}
+                      checked={filters.tag === t}
+                      onToggle={() => go({ tag: filters.tag === t ? null : t, thread: null })}
+                    />
+                  ))}
+                </FilterSection>
+
+                {chips.length > 0 && (
+                  <button
+                    onClick={() => {
+                      setFilterOpen(false);
+                      go({ status: null, channel: null, unread: null, tag: null, assigned: null, q: null });
+                    }}
+                    className="mt-1 w-full border-t border-border px-3 py-2 text-start text-[12px] text-critical transition-colors hover:bg-surface-raised"
+                  >
+                    Clear all filters
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
         {chips.map((c) => (
           <button
             key={c.label}
@@ -1038,4 +1122,40 @@ function ago(iso: string) {
   const h = Math.round(mins / 60);
   if (h < 24) return `${h}h`;
   return `${Math.round(h / 24)}d`;
+}
+
+/** فئةٌ داخل قائمة الفلاتر - العنوانُ بيقول «دي مجموعةٌ واحدة يُختار منها». */
+function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="border-b border-border py-1 last:border-0">
+      <div className="px-3 pb-0.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-text-faint">
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/** بندٌ بمربّع اختيار - الشكلُ بيقول إنّ الاختيارَ متعدّد قبل ما يُجرَّب. */
+function FilterCheck({
+  label, count, checked, onToggle,
+}: { label: string; count?: number; checked: boolean; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      className="flex w-full items-center gap-2 px-3 py-1.5 text-start text-[12px] transition-colors hover:bg-surface-raised"
+    >
+      <span
+        className={`grid size-3.5 shrink-0 place-items-center rounded border ${
+          checked ? "border-critical bg-critical text-white" : "border-border-visible"
+        }`}
+      >
+        {checked && <Check size={9} />}
+      </span>
+      <span className={`min-w-0 flex-1 truncate ${checked ? "text-text-primary" : "text-text-muted"}`}>{label}</span>
+      {count !== undefined && count > 0 && (
+        <span className="shrink-0 tabular-nums text-[11px] text-text-faint">{count}</span>
+      )}
+    </button>
+  );
 }
