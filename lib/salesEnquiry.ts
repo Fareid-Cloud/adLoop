@@ -18,7 +18,12 @@ export function isSpendBand(v: unknown): v is SpendBand {
   return typeof v === "string" && (SPEND_BANDS as readonly string[]).includes(v);
 }
 
-/** حالاتُ الطلب في اللوحة. مافيش حارسُ نوعٍ معاها: المسارُ بيتحقّق
- *  بـ`z.enum(ENQUIRY_STATUSES)` فالقائمةُ نفسها هي التحقّق. */
+/** حالاتُ الطلب في اللوحة. */
 export const ENQUIRY_STATUSES = ["NEW", "CONTACTED", "WON", "LOST"] as const;
 export type EnquiryStatus = (typeof ENQUIRY_STATUSES)[number];
+
+/** لفلترةِ قيمةٍ جاية من رابط. مسارُ التحديث بيستعمل `z.enum` بدلَها
+ *  لأنّه بيتحقّق من جسمٍ كامل، ومسارُ التصدير بياخد بارامتراً مفرداً. */
+export function isEnquiryStatus(v: unknown): v is EnquiryStatus {
+  return typeof v === "string" && (ENQUIRY_STATUSES as readonly string[]).includes(v);
+}

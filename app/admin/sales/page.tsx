@@ -9,7 +9,7 @@
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Briefcase, Mail, Phone, ExternalLink } from "lucide-react";
+import { Briefcase, Mail, Phone, ExternalLink, Download } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { resolveAdminRole, adminCapabilities } from "@/lib/adminRole";
@@ -71,6 +71,18 @@ export default async function AdminSalesPage({
         title="Sales enquiries"
         subtitle="Enterprise requests — priced on a call, granted from the customer's page"
         icon={Briefcase}
+        actions={
+          rows.length > 0 ? (
+            // ملفٌّ بيتنزّل محدَّثاً في اللحظة - إكسل بيفتحه مباشرةً.
+            // وبيحمل الفلترَ المعروض عشان اللي على الشاشة هو اللي بينزل.
+            <a
+              href={`/api/admin/sales/export${status ? `?status=${status}` : ""}`}
+              className="flex items-center gap-1.5 rounded-lg border border-border-visible px-2.5 py-1.5 text-[12.5px] text-text-muted no-underline transition-colors hover:bg-surface-raised hover:text-text-primary"
+            >
+              <Download size={14} /> Export CSV
+            </a>
+          ) : undefined
+        }
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-1">

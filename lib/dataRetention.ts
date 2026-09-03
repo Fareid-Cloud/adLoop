@@ -57,6 +57,24 @@ const WA_CLICK_RETENTION_DAYS = 90;
 // (وسم، تعيين)، فالعدّادُ كان هيرجع لصفره بفعلٍ عابر ومايخلصش أبداً.
 const ARCHIVE_RETENTION_DAYS = 30;
 
+// 🔴 **طلبُ المبيعات بيحمل بيانات شخصٍ ممكن مايبقاش عميلاً أبداً.**
+//
+// اسمٌ وبريدٌ وهاتفٌ لواحدٍ سأل عن السعر مرّةً ومشي. وكان الجدولُ الوحيد
+// الجديد خارج السياسة دي كلّها.
+//
+// **ويُطمَس ولا يُحذَف** - نفس قرار `WaClick` بالظبط ولنفس السبب: الصفُّ
+// نفسه تاريخُ خطِّ المبيعات (شركةٌ بحجمٍ كذا سألت في تاريخ كذا وانتهت
+// لكذا)، وهو سجلٌّ تجاريٌّ مشروعٌ يفضل للأبد ومالوش ضرر. الضررُ في تلات
+// أعمدة بعينها: الاسم والبريد والهاتف. فتتفرّغ وحدها ويفضل السجلّ.
+//
+// وده بيغني عن تصدير البيانات لشيتٍ خارجيّ عشان «ما تضيعش»: التاريخُ
+// موجودٌ في القاعدة أصلاً، والنقلُ لشيتٍ كان هيرجّع نفس المشكلة في مكانٍ
+// حمايتُه أضعف.
+//
+// واتنعشر شهراً لأنّ الليدَ اللي محدّش لمسه سنة ميّتٌ مهما كانت حالتُه
+// مكتوبة - والعدُّ من `updatedAt` عشان المتابعةُ الحقيقية تجدّده.
+const SALES_ENQUIRY_RETENTION_DAYS = 365;
+
 export async function purgeExpiredData() {
   const ctaClickCutoff = new Date();
   ctaClickCutoff.setDate(ctaClickCutoff.getDate() - CTA_CLICK_RETENTION_DAYS);
@@ -75,6 +93,9 @@ export async function purgeExpiredData() {
 
   const archiveCutoff = new Date();
   archiveCutoff.setDate(archiveCutoff.getDate() - ARCHIVE_RETENTION_DAYS);
+
+  const salesCutoff = new Date();
+  salesCutoff.setDate(salesCutoff.getDate() - SALES_ENQUIRY_RETENTION_DAYS);
 
   const [deletedClicks, deletedRateLimits, deletedUnmatched, deletedAttribution, purgedArchive] =
     await Promise.all([
@@ -112,6 +133,18 @@ export async function purgeExpiredData() {
     data: { phoneNumber: null, ipAddress: null, userAgent: null },
   });
 
+  // نفس شرط «أحدُها ليس فارغاً»: من دونه كلُّ تشغيلٍ بيعيد كتابة كلّ صفٍّ
+  // قديم بلا تغييرٍ فعليّ.
+  const redactedEnquiries = await prisma.salesEnquiry.updateMany({
+    where: {
+      updatedAt: { lt: salesCutoff },
+      OR: [{ name: { not: "" } }, { email: { not: "" } }, { phone: { not: null } }],
+    },
+    // الاسمُ والبريدُ مطلوبان في الـschema فمينفعش `null`: بيتحطّ فيهم
+    // علامةٌ صريحة بدل فراغٍ يتقري «البيانات ضاعت».
+    data: { name: "[redacted]", email: "[redacted]", phone: null },
+  });
+
   return {
     deletedClicks: deletedClicks.count,
     deletedRateLimits: deletedRateLimits.count,
@@ -119,5 +152,6 @@ export async function purgeExpiredData() {
     deletedAttribution: deletedAttribution.count,
     purgedArchivedThreads: purgedArchive.count,
     redactedWaClicks: redactedWaClicks.count,
+    redactedSalesEnquiries: redactedEnquiries.count,
   };
 }
