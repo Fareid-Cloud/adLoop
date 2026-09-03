@@ -1059,6 +1059,7 @@ export const dictionary = {
         billingL5: "إذا تعذر تحصيل التجديد نخطرك، ويتوقف الاشتراك عند انتهاء المدة المدفوعة إلى أن يتم الدفع.",
         billingL6: "لا تسترد المبالغ عن مدة بدأت بالفعل، ما لم ينص القانون الواجب التطبيق على خلاف ذلك.",
         billingL7: "قد تتغير الأسعار مستقبلاً، ونخطرك قبل سريان أي تغيير على اشتراكك بمدة معقولة، ويسري السعر الجديد على التجديدات التالية فقط.",
+        billingL8: "إذا نازعت عملية دفع لدى البنك أو بوابة الدفع (استرداد عكسي) دون مراسلتنا أولاً، اعتُبر ذلك إخلالاً بهذه الشروط، وجاز لنا تعليق الحساب فوراً ومطالبتك بالمبلغ محل النزاع مضافاً إليه أي رسوم توقعها البوابة علينا.",
 
         bizUseTitle: "الاستخدام التجاري - ليس تعاقداً استهلاكياً",
         bizUseBody: "تُقدَّم المنصة للاستخدام التجاري والمهني وحده: أنت تستخدمها لإدارة إنفاق إعلاني يخص نشاطاً تجارياً، سواء كان لك أو لعملائك. وهي ليست موجهة للمستهلكين ولا تُقدَّم لتلبية حاجة شخصية أو عائلية أو غير تجارية، ولا يجوز استخدامها لغرض من هذا القبيل. وبقبولك هذه الشروط تقر بأنك تتعاقد بصفة تجارية أو مهنية، وأن هذا الاتفاق اتفاق بين محترفين لا عقد استهلاك.",
@@ -1069,6 +1070,29 @@ export const dictionary = {
         claimsL3: "عند وقوع ما تعتبره إخلالاً، تخطرنا كتابة بأسرع ما يكون عملياً مع بيان الواقعة وأثرها، وتتخذ ما في وسعك للحد من الضرر. وهذا التزام بالتعاون وحسن النية لا يمس أي مدة يقررها القانون.",
         claimsL4: "أنت مسؤول وحدك عن الالتزام بسياسات المنصات الإعلانية ومنصات التجارة التي تربطها، وعن مشروعية ما تعلن عنه، وعن أي تعامل بينك وبين عملائك.",
         claimsL5: "لا يُعد سكوتنا عن مطالبة أو تأخرنا في اتخاذ إجراء بشأنها تنازلاً عنها.",
+
+        dataRolesTitle: "أدوار معالجة البيانات",
+        dataRolesBody: "بيانات عملائك التي تصل إلينا من متجرك أو حساباتك الإعلانية أو أدوات التتبع تخصك أنت. وفي شأنها أنت المتحكم في البيانات ونحن المعالج الذي يعمل بتعليماتك ولحسابك. ويترتب على ذلك:",
+        dataRolesL1: "أنت مسؤول عن وجود أساس قانوني صحيح لجمع هذه البيانات ومشاركتها معنا، وعن إخطار أصحابها وأخذ موافقاتهم حيثما يلزم القانون ذلك.",
+        dataRolesL2: "نعالج هذه البيانات لغرض تشغيل الخدمة لك وحده، ولا نبيعها ولا نستخدمها لأغراضنا التسويقية.",
+        dataRolesL3: "تشغيل الخدمة يقتضي إرسال بيانات - مهشَّمة حيثما أمكن - إلى منصات إعلانية خارج مصر، وهو ما تطلبه أنت صراحةً بتفعيل مزامنة التحويلات. وأنت من يقرر تفعيلها ويتحمل تبعة هذا القرار في نطاق التزاماتك أنت كمتحكم.",
+        dataRolesL4: "تسري على معالجتنا سياسة الخصوصية، وهي جزء لا يتجزأ من هذه الشروط.",
+        dataRolesL5: "إذا طلب منك أحد أصحاب البيانات حقاً من حقوقه، نعاونك على الاستجابة له في حدود ما لدينا وخلال مدة معقولة.",
+
+        taxTitle: "الضرائب",
+        taxBody: "الأسعار المعروضة لا تشمل أي ضريبة أو رسم قد يستحق على الاشتراك، ما لم يُذكر خلاف ذلك صراحة عند الشراء. وتُضاف الضرائب المستحقة قانوناً إلى المبلغ عند التحصيل. وإذا ألزمك القانون بخصم أي مبلغ من مستحقاتنا (كخصم تحت حساب الضريبة)، وجب عليك زيادة المبلغ المدفوع بحيث نتقاضى صافياً ما كنا سنتقاضاه لو لم يقع الخصم، وتزويدنا بما يثبت التوريد.",
+
+        securityTitle: "أمان حسابك",
+        securityBody: "بيانات دخولك مسؤوليتك وحدك: لا تشاركها، وفعّل التحقق بخطوتين، وأخطرنا فور اشتباهك في وصول غير مصرح به. وكل فعل يتم عبر حسابك أو عبر مقعد منحته لأحد يُنسب إليك ويُعد صادراً عنك، ما لم يثبت خلاف ذلك. ونحن لا نُسأل عن ضرر ناشئ عن إفشاء بيانات دخولك أو إهمالك في حفظها.",
+
+        feedbackTitle: "الملاحظات والاقتراحات",
+        feedbackBody: "إذا أرسلت إلينا اقتراحاً أو ملاحظة أو فكرة لتحسين المنصة، جاز لنا استخدامها وتطويرها ودمجها في المنتج دون مقابل ودون التزام بذكر مصدرها، ولا ينشأ لك بذلك أي حق في المنتج أو في ما يترتب عليه. ولا يمنعك ذلك من استخدام فكرتك في شأنك الخاص.",
+
+        noticesTitle: "الإخطارات",
+        noticesBody: "تُوجَّه إخطاراتنا إليك على البريد الإلكتروني المسجل في حسابك أو عبر إشعار داخل المنصة، ويُعد الإخطار واصلاً في اليوم التالي لإرساله. وأنت مسؤول عن صحة هذا البريد وعن متابعته. وتُوجَّه إخطاراتك إلينا كتابةً عبر قنوات الدعم المعلنة في المنصة.",
+
+        survivalTitle: "ما يبقى بعد انتهاء الاتفاق",
+        survivalBody: "تظل نافذة بعد انتهاء الاشتراك أو إنهائه لأي سبب: بنود الملكية الفكرية، وحدود المسؤولية، والتعويض، والمطالبات، والسرية، وأدوار معالجة البيانات، والقانون الواجب التطبيق وتسوية المنازعات، وكل بند تقتضي طبيعته البقاء. ولا يؤدي انتهاء الاتفاق إلى سقوط حق نشأ قبله.",
 
         liabilityTitle: "حدود المسؤولية",
         liabilityBody: "تقدم المنصة «كما هي» و«حسب توافرها»، دون أي ضمان صريح أو ضمني من أي نوع. وتحديداً:",
@@ -1134,6 +1158,7 @@ export const dictionary = {
         accuracyL3: "الإسناد الاحتمالي - حين تفعله - تقديرٌ إحصائي لا واقعة مؤكدة، ويعرض بوصفه كذلك ولا يجوز الاعتماد عليه كدليل قاطع.",
         accuracyL4: "قد تختلف أرقامنا عن أرقام لوحات المنصات الإعلانية اختلافاً كبيراً، وهذا متوقع ومقصود ولا يعد خطأً في الخدمة.",
         accuracyL5: "لا يجوز استخدام مخرجات المنصة وحدها أساساً لمطالبة أو نزاع مع منصة إعلانية أو مع طرف ثالث.",
+        accuracyL6: "بعض المخرجات - كالتحليلات المكتوبة وملخصات الأداء واقتراحات المحتوى - تولّدها نماذج ذكاء اصطناعي، وهي عرضة للخطأ وإساءة التفسير بطبيعتها. تُقدَّم للاسترشاد وحده، وعليك التحقق منها قبل البناء عليها في أي قرار.",
 
         supportTitle: "الدعم والتواصل",
         supportBody: "يقدم الدعم عبر القنوات المتاحة داخل المنصة خلال أيام العمل. نسعى للرد في وقت معقول، ولا نلتزم بزمن استجابة محدد ما لم يتفق عليه كتابةً في باقة تتضمنه صراحةً. ويعد البريد الإلكتروني المسجل في حسابك وسيلة الإخطار الرسمية بيننا، وأنت مسؤول عن صحته وعن متابعته.",
@@ -5674,6 +5699,7 @@ export const dictionary = {
         billingL5: "If a renewal payment cannot be collected we will notify you, and the subscription stops at the end of the paid period until payment is made.",
         billingL6: "Amounts are not refunded for a period that has already started, unless applicable law provides otherwise.",
         billingL7: "Prices may change in future; we will notify you a reasonable time before any change applies to your subscription, and a new price applies only to subsequent renewals.",
+        billingL8: "If you dispute a payment with your bank or the payment gateway (a chargeback) without contacting us first, that is a breach of these terms: we may suspend the account immediately and recover the disputed amount together with any fee the gateway charges us.",
 
         bizUseTitle: "Commercial use - not a consumer contract",
         bizUseBody: "The platform is offered for commercial and professional use only: you use it to manage advertising spend belonging to a business, whether your own or your clients'. It is not directed at consumers and is not supplied to meet a personal, family or non-commercial need, and may not be used for such a purpose. By accepting these terms you confirm that you are contracting in a commercial or professional capacity, and that this is an agreement between businesses rather than a consumer contract.",
@@ -5684,6 +5710,29 @@ export const dictionary = {
         claimsL3: "Where something occurs that you consider a breach, you will notify us in writing as soon as practicable, describing the event and its effect, and will take reasonable steps to limit the harm. This is a duty of cooperation and good faith and does not affect any period fixed by law.",
         claimsL4: "You are solely responsible for complying with the policies of the advertising and commerce platforms you connect, for the lawfulness of what you advertise, and for any dealing between you and your own clients.",
         claimsL5: "Our silence on a claim, or delay in acting on it, is not a waiver of it.",
+
+        dataRolesTitle: "Data processing roles",
+        dataRolesBody: "Your customers' data reaching us from your store, your ad accounts or your tracking belongs to you. In respect of it you are the data controller and we are a processor acting on your instructions and on your behalf. It follows that:",
+        dataRolesL1: "You are responsible for having a valid legal basis to collect that data and share it with us, and for notifying the people it concerns and obtaining their consent where the law requires it.",
+        dataRolesL2: "We process that data solely to operate the service for you. We do not sell it and do not use it for our own marketing.",
+        dataRolesL3: "Operating the service involves sending data - hashed where possible - to advertising platforms outside Egypt, which you expressly request by enabling conversion sync. That choice is yours and its consequences fall within your own obligations as controller.",
+        dataRolesL4: "Our processing is governed by the Privacy Policy, which forms an integral part of these terms.",
+        dataRolesL5: "If someone whose data you hold exercises a right against you, we will assist you in responding, to the extent of what we hold and within a reasonable time.",
+
+        taxTitle: "Taxes",
+        taxBody: "Displayed prices exclude any tax or duty that may fall due on the subscription, unless expressly stated otherwise at the point of purchase. Taxes due by law are added to the amount on collection. If the law obliges you to withhold any amount from sums owed to us, you must gross the payment up so that we receive net what we would have received had no withholding applied, and provide evidence of remittance.",
+
+        securityTitle: "Your account security",
+        securityBody: "Your credentials are your responsibility alone: do not share them, enable two-step verification, and notify us as soon as you suspect unauthorised access. Every action taken through your account, or through a seat you granted to someone, is attributed to you and treated as yours unless proved otherwise. We are not liable for harm arising from disclosure of your credentials or from your failure to keep them safe.",
+
+        feedbackTitle: "Feedback and suggestions",
+        feedbackBody: "If you send us a suggestion, comment or idea for improving the platform, we may use, develop and incorporate it into the product without payment and without any obligation to credit it, and no right in the product or in anything arising from it accrues to you. This does not prevent you from using your own idea for your own purposes.",
+
+        noticesTitle: "Notices",
+        noticesBody: "We give you notice at the email address registered on your account or by a notice inside the platform, and notice is deemed received on the day after it is sent. Keeping that address correct and monitored is your responsibility. You give us notice in writing through the support channels published in the platform.",
+
+        survivalTitle: "What survives the agreement",
+        survivalBody: "The following remain in force after the subscription ends or is terminated for any reason: intellectual property, limitation of liability, indemnity, claims, confidentiality, data processing roles, governing law and dispute resolution, and any clause whose nature requires it to survive. Termination does not extinguish a right that arose before it.",
 
         liabilityTitle: "Limitation of liability",
         liabilityBody: "The platform is provided \"as is\" and \"as available\", without warranty of any kind, express or implied. Specifically:",
@@ -5749,6 +5798,7 @@ export const dictionary = {
         accuracyL3: "Modelled attribution - where you enable it - is a statistical estimate, not an established fact. It is presented as such and must not be relied on as conclusive evidence.",
         accuracyL4: "Our figures may differ substantially from those in advertising platform dashboards. This is expected and intended, and is not a defect in the service.",
         accuracyL5: "Platform output alone may not be used as the basis of a claim or dispute against an advertising platform or any third party.",
+        accuracyL6: "Some output - written analyses, performance summaries and content suggestions - is generated by AI models and is inherently capable of error and misreading. It is offered for guidance only, and you must verify it before relying on it in any decision.",
 
         supportTitle: "Support and communications",
         supportBody: "Support is provided through the channels available within the platform during business days. We aim to respond within a reasonable time and do not commit to a defined response time unless agreed in writing in a plan that expressly includes one. The email address registered on your account is the official means of notice between us, and you are responsible for its accuracy and for monitoring it.",

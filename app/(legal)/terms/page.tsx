@@ -23,14 +23,20 @@ export default async function LegalPage() {
           بين المحترفين، وحدودُ المسؤولية تحت بتقف على ده. */}
       <DocSection locale={locale} doc="terms" id="bizUse" />
       <DocSection locale={locale} doc="terms" id="service" />
-      <DocSection locale={locale} doc="terms" id="accuracy" listCount={5} />
+      <DocSection locale={locale} doc="terms" id="accuracy" listCount={6} />
       <DocSection locale={locale} doc="terms" id="user" listCount={9} />
       <DocSection locale={locale} doc="terms" id="acceptable" listCount={7} />
       <DocSection locale={locale} doc="terms" id="automation" listCount={5} />
       <DocSection locale={locale} doc="terms" id="ip" />
       <DocSection locale={locale} doc="terms" id="dataOwn" />
+      {/* أدوارُ المعالجة بعد ملكيّة البيانات مباشرةً: التانية بتقول
+          «البيانات بتاعتك»، ودي بتقول «وبالتالي الالتزام القانونيّ
+          عليك». الترتيبُ ده هو الحجّة نفسها. */}
+      <DocSection locale={locale} doc="terms" id="dataRoles" listCount={5} />
+      <DocSection locale={locale} doc="terms" id="security" />
       <DocSection locale={locale} doc="terms" id="trial" />
-      <DocSection locale={locale} doc="terms" id="billing" listCount={7} />
+      <DocSection locale={locale} doc="terms" id="billing" listCount={8} />
+      <DocSection locale={locale} doc="terms" id="tax" />
       <DocSection locale={locale} doc="terms" id="availability" listCount={5} />
       <DocSection locale={locale} doc="terms" id="thirdParty" />
       <DocSection locale={locale} doc="terms" id="liability" listCount={7} />
@@ -38,6 +44,9 @@ export default async function LegalPage() {
       <DocSection locale={locale} doc="terms" id="claims" hasIntro={false} listCount={5} />
       <DocSection locale={locale} doc="terms" id="termination" />
       <DocSection locale={locale} doc="terms" id="support" />
+      <DocSection locale={locale} doc="terms" id="feedback" />
+      <DocSection locale={locale} doc="terms" id="notices" />
+      <DocSection locale={locale} doc="terms" id="survival" />
       <DocSection locale={locale} doc="terms" id="changes" />
       <DocSection locale={locale} doc="terms" id="force" />
       <DocSection locale={locale} doc="terms" id="law" />
