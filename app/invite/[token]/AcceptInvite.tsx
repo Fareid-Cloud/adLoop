@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, LogOut } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
@@ -36,19 +36,49 @@ export function AcceptInvite({ token, locale }: { token: string; locale: Locale 
 
   if (done) {
     return (
-      <p className="mt-5 flex items-center justify-center gap-1.5 text-[13px] text-verified">
-        <Check size={15} /> {t(locale, "team.membersTitle")}
+      // 🔴 كانت بتعرض `team.membersTitle` («الأعضاء») كرسالةِ نجاح -
+      // عنوانُ قائمةٍ في شاشةٍ تانية، مالوش أيُّ معنى هنا.
+      <p className="mt-4 flex items-center justify-center gap-1.5 text-[13px] text-verified">
+        <Check size={15} /> {t(locale, "invitePage.accepted")}
       </p>
     );
   }
 
   return (
-    <div className="mt-5">
-      <button onClick={accept} disabled={busy} className="btn btn-primary h-10 w-full">
+    <div className="mt-4">
+      {/* 🔴 الزرارُ كان مكتوباً عليه `team.invite` («ادعُ») - وهو فعلُ
+          الطرف التاني لا فعلُه هو. اللي قدّامه بيقبل، مش بيدعو. */}
+      <button onClick={accept} disabled={busy} className="btn btn-primary h-10 w-full justify-center">
         {busy ? <Loader2 size={15} className="animate-spin" /> : null}
-        <span className="ms-1.5">{t(locale, "team.invite")}</span>
+        <span className="ms-1.5">{t(locale, "invitePage.accept")}</span>
       </button>
-      {error && <p role="alert" className="mt-2 text-[12px] text-critical">{error}</p>}
+      {error && <p role="alert" className="mt-2 text-center text-[12px] text-critical">{error}</p>}
     </div>
+  );
+}
+
+/**
+ * تبديلُ الحساب لمَن فتح الدعوة وهو داخلٌ ببريدٍ غير المدعوّ.
+ *
+ * الخروجُ `POST` لأنّه بيبطّل الجلسة على الخادم كمان (مش بيمسح كوكي وبس)،
+ * فمينفعش يبقى رابطاً - ولازم كلاينت كومبوننت يندهه ويرجّعه للدعوة بعد
+ * الدخول الصحيح.
+ */
+export function SwitchAccount({ token, label }: { token: string; label: string }) {
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <button
+      onClick={async () => {
+        setBusy(true);
+        await fetch("/api/auth/logout", { method: "POST", headers: getCsrfHeader() }).catch(() => {});
+        window.location.assign(`/login?next=${encodeURIComponent(`/invite/${token}`)}`);
+      }}
+      disabled={busy}
+      className="btn btn-secondary btn-sm mt-2.5 w-full justify-center"
+    >
+      {busy ? <Loader2 size={13} className="animate-spin" /> : <LogOut size={13} />}
+      <span className="ms-1.5">{label}</span>
+    </button>
   );
 }

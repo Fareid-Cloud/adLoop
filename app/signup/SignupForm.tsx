@@ -40,7 +40,7 @@ const HEARD = [
   { v: "other", ar: "أخرى", en: "Other" },
 ];
 
-export function SignupForm() {
+export function SignupForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
   const router = useRouter();
   const [locale, setLocale] = useAuthLocale();
   const [f, setF] = useState({
@@ -105,7 +105,7 @@ export function SignupForm() {
     // تحميل كامل لا `router.push`: الكوكي وصل للتوّ في رأس الاستجابة، بينما
     // راوتر العميل قد يخدم حمولة RSC مخبّأة من قبل تسجيل الدخول - فتبقى
     // الصفحة مكانها بلا رسالة ولا انتقال. التحميل الكامل يقرأ الجلسة الجديدة.
-    window.location.assign("/dashboard");
+    window.location.assign(nextPath);
   }
 
 

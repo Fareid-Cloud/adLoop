@@ -236,7 +236,12 @@ export function LoginForm({ nextPath = "/dashboard", expired = false, oauth = nu
             </a>
             <p className="text-text-muted">
               {t(locale, "auth.noAccount")}{" "}
-              <a href="/signup" className="font-medium text-accent no-underline">
+              {/* الوجهةُ بتسافر مع الرابط: من غيرها اللي جه من دعوةٍ بيسجّل
+                  وبيقع على الداشبورد، والدعوةُ بتضيع بلا رسالة. */}
+              <a
+                href={`/signup?next=${encodeURIComponent(nextPath)}`}
+                className="font-medium text-accent no-underline"
+              >
                 {t(locale, "auth.createAccount")}
               </a>
             </p>
