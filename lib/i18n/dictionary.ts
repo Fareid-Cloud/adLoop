@@ -1294,6 +1294,7 @@ export const dictionary = {
       close: "إغلاق",
       stepOf: "خطوة {n} من {total}",
       searchedFor: "بحث العميل عن",
+      yourConversation: "محادثتك مع الدعم",
     },
     // ==== الإيراد لكل منصة ====
     revenue: {
@@ -5813,6 +5814,7 @@ export const dictionary = {
       close: "Close",
       stepOf: "Step {n} of {total}",
       searchedFor: "Customer searched for",
+      yourConversation: "Your conversation with support",
     },
     // ==== Revenue by platform ====
     revenue: {

@@ -34,18 +34,22 @@ import { Select } from "@/app/components/ui/Select";
 import { HELP_SECTIONS, helpText, type HelpArticle } from "@/lib/helpContent";
 
 interface Msg { id: string; fromSupport: boolean; body: string; imageUrls: string[]; createdAt: string; }
-interface Thread { id: string; subject: string; status: string; messages: Msg[]; }
+interface Thread {
+  id: string; subject: string; status: string; messages: Msg[];
+  // بيانات التواصل المسجَّلة سابقاً - أساسُ عدم السؤال عنها تاني.
+  name?: string | null; email?: string | null; phone?: string | null; country?: string | null;
+}
 
 const INPUT = "w-full card px-3 py-2 text-sm text-text-primary placeholder:text-text-faint outline-none focus:border-accent";
 
 /** أربعةٌ تملأ اللوحة بلا تمرير على أضيق شاشة. */
 const TOP_ANSWERS = 4;
-const INTAKE_STEPS = 3;
 
 type View =
   | { k: "home" }
   | { k: "article"; a: HelpArticle }
   | { k: "intake" }
+  | { k: "thread" }
   | { k: "sent" };
 
 export function SupportChat({
@@ -88,7 +92,23 @@ export function SupportChat({
 
   const load = useCallback(async () => {
     const res = await fetch("/api/support");
-    if (res.ok) { const d = await res.json(); setThread(d.thread); setUnread(d.unread ?? 0); }
+    if (!res.ok) return;
+    const d = await res.json();
+    setThread(d.thread);
+    setUnread(d.unread ?? 0);
+
+    // 🔴 **البيانات تُسأل مرّةً واحدة.** لو سجّلها قبل كده، بتتملّي من
+    // محادثته السابقة وخطوةُ التعريف بتتخطّى كلّها - مافيش سببٌ يخلّي
+    // اللي كلّمنا امبارح يكتب اسمه وتليفونه تاني عشان يسأل سؤال.
+    if (d.thread) {
+      setForm((f) => ({
+        ...f,
+        name: d.thread.name?.trim() || f.name,
+        email: d.thread.email?.trim() || f.email,
+        phone: d.thread.phone?.trim() || f.phone,
+        country: d.thread.country?.trim() || f.country,
+      }));
+    }
   }, []);
 
   const live = useLive();
@@ -158,8 +178,9 @@ export function SupportChat({
     setImages([]);
     setStep(0);
     setView({ k: "sent" });
-    // شاشةُ التأكيد تُقرأ ثمّ تنتقل للمحادثة: تحويلٌ فوريّ بيخلّي
-    // الشاشة تومض بلا ما يعرف صاحبها إن كان نجح.
+    // بيرجع **للرئيسية** لا للمحادثة: الخيارات بتبان من أوّل كلّ مرّة،
+    // والمحادثة بتتفتح لمّا يختار هو. والمهلةُ عشان التأكيد يُقرأ - تحويلٌ
+    // فوريّ بيخلّي الشاشة تومض بلا ما يعرف صاحبها إن كان نجح.
     setTimeout(() => setView({ k: "home" }), 1600);
   }
 
@@ -190,7 +211,17 @@ export function SupportChat({
   }
 
   const Backward = locale === "ar" ? ChevronRight : ChevronLeft;
-  const canGoBack = view.k === "article" || (view.k === "intake" && step === 0);
+  const canGoBack =
+    view.k === "article" || view.k === "thread" || (view.k === "intake" && step === 0);
+
+  // 🔴 **معرفةُ بياناته بتقصّر الطريق، مش بتتخطّى السؤال.**
+  // لو مسجّل بياناته قبل كده، خطوةُ التعريف بتختفي ويفضل الموضوعُ
+  // والتفاصيل - الموضوع بيخصّ الرسالة دي هو نفسه، مش الشخص.
+  const knowsHim = !!thread?.phone?.trim() || !!thread?.country?.trim();
+  const steps: Array<"identity" | "context" | "details"> = knowsHim
+    ? ["context", "details"]
+    : ["identity", "context", "details"];
+  const current = steps[step] ?? "details";
 
   return (
     // بوّابة إلى `<body>`: في وضع القائمة الجانبية ده بيتصيَّر جوّه
@@ -258,7 +289,7 @@ export function SupportChat({
                   <div className="mb-3 flex items-center gap-2">
                     {/* شريطُ تقدّمٍ لا رقمٌ وحده: «خطوة ٢ من ٣» بتتقري، والشريط
                         بيتشاف بلا قراءة - والاتنين بيقولوا إنّ فيه نهاية قريبة. */}
-                    {Array.from({ length: INTAKE_STEPS }).map((_, i) => (
+                    {steps.map((_, i) => (
                       <span
                         key={i}
                         className={`h-1 flex-1 rounded-full ${i <= step ? "bg-accent" : "bg-surface-raised"}`}
@@ -266,18 +297,18 @@ export function SupportChat({
                     ))}
                   </div>
                   <p className="m-0 mb-3 text-[11.5px] text-text-faint">
-                    {tr("stepOf", { n: step + 1, total: INTAKE_STEPS })}
+                    {tr("stepOf", { n: step + 1, total: steps.length })}
                   </p>
 
                   <div className="flex flex-col gap-2.5">
-                    {step === 0 && (
+                    {current === "identity" && (
                       <>
                         <input className={INPUT} placeholder={tr("name")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                         <input className={INPUT} placeholder={tr("email")} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
                         <input className={INPUT} placeholder={tr("phone")} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
                       </>
                     )}
-                    {step === 1 && (
+                    {current === "context" && (
                       <>
                         <Select
                           locale={locale}
@@ -293,7 +324,7 @@ export function SupportChat({
                         <input className={INPUT} placeholder={tr("subject")} value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
                       </>
                     )}
-                    {step === 2 && (
+                    {current === "details" && (
                       <>
                         <textarea rows={5} className={INPUT} placeholder={tr("details")} value={form.text} onChange={(e) => setForm({ ...form, text: e.target.value })} />
                         <label className="flex cursor-pointer items-center gap-2 text-[12px] text-text-muted">
@@ -318,15 +349,15 @@ export function SupportChat({
                         {tr("prev")}
                       </button>
                     ) : <span />}
-                    {step < INTAKE_STEPS - 1 ? (
+                    {step < steps.length - 1 ? (
                       <button
                         onClick={() => setStep(step + 1)}
                         // كلُّ خطوةٍ بتتحقّق من نفسها: التالي مقفول لحد ما
                         // خانتها تتملّي، فمافيش إرسالٌ بحمولةٍ ناقصة يترفض
                         // من الخادم برسالةٍ مبهمة.
                         disabled={
-                          (step === 0 && (!form.name.trim() || !form.email.trim())) ||
-                          (step === 1 && !form.subject.trim())
+                          (current === "identity" && (!form.name.trim() || !form.email.trim())) ||
+                          (current === "context" && !form.subject.trim())
                         }
                         className="btn btn-primary"
                       >
@@ -341,7 +372,7 @@ export function SupportChat({
                   </div>
                 </div>
               </>
-            ) : thread ? (
+            ) : view.k === "thread" && thread ? (
               // ── محادثةٌ قائمة ──────────────────────────────────────
               <>
                 <div ref={bodyRef} className="flex-1 overflow-y-auto p-4">
@@ -382,6 +413,34 @@ export function SupportChat({
               // ── الرئيسية: بحثٌ وإجابات، والتصعيدُ ملتصقٌ تحت ────────
               <>
                 <div className="flex-1 overflow-y-auto">
+                  {/* 🔴 **محادثةٌ قائمة مش سببٌ لتخطّي الخيارات.** كانت
+                      اللوحة بتفتح على المحادثة مباشرةً لأيّ حدٍّ كلّمنا قبل
+                      كده - فاللي جايّ يدوّر على إجابةٍ بيلاقي نفسه في شاتٍ
+                      قديم بلا ما يطلبه. الرئيسيةُ هي الافتراضيّ دايماً،
+                      والمحادثةُ صفٌّ فوقها يُدخَل إليه باختياره. */}
+                  {thread && (
+                    <button
+                      onClick={() => setView({ k: "thread" })}
+                      className="flex w-full items-center gap-2.5 border-b border-border p-3 text-start transition-colors hover:bg-surface-raised"
+                    >
+                      <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-accent/12 text-accent">
+                        <MessageCircle size={15} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[12.5px] font-medium text-text-primary">
+                          {tr("yourConversation")}
+                        </span>
+                        <span className="block truncate text-[11px] text-text-faint">{thread.subject}</span>
+                      </span>
+                      {unread > 0 && (
+                        <span className="shrink-0 rounded bg-critical px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                          {unread}
+                        </span>
+                      )}
+                      <ArrowRight size={13} className="shrink-0 text-text-faint rtl:rotate-180" />
+                    </button>
+                  )}
+
                   <div className="border-b border-border p-4">
                     <p className="m-0 mb-2 text-[13px] font-semibold text-text-primary">{tr("gotQuestions")}</p>
                     <div className="relative">
