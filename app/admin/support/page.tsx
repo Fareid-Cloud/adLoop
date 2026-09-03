@@ -12,6 +12,8 @@ import { prisma } from "@/lib/prisma";
 import {
   listThreads, channelCounts, isChannel, inboxWhere, type InboxFilters,
 } from "@/lib/inbox";
+import { getSessionUserFromCookies } from "@/lib/auth";
+import { isOwnerRole, resolveAdminRole } from "@/lib/adminRole";
 import { AdminPageHeader } from "../components/AdminUI";
 import { InboxClient } from "./InboxClient";
 
@@ -23,6 +25,9 @@ export default async function AdminSupportPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const sp = await searchParams;
+  // الحذفُ النهائيّ للمالك وحده - الدعمُ بيأرشف وبس.
+  const viewer = await getSessionUserFromCookies();
+  const canDelete = isOwnerRole(viewer);
 
   const filters: InboxFilters = {
     channel: isChannel(sp.channel) ? sp.channel : "ALL",
@@ -144,6 +149,7 @@ export default async function AdminSupportPage({
         active={active ? JSON.parse(JSON.stringify(active)) : null}
         history={JSON.parse(JSON.stringify(history))}
         activeAvatar={activeAvatar}
+        canDelete={canDelete}
         counts={counts}
         statusCounts={statusCounts}
         agents={agentRows}

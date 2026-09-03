@@ -32,6 +32,7 @@ import { t, type Locale } from "@/lib/i18n/dictionary";
 import { countriesForDisplay } from "@/lib/countries";
 import { Select } from "@/app/components/ui/Select";
 import { HELP_SECTIONS, helpText, type HelpArticle } from "@/lib/helpContent";
+import { ImageLightbox } from "@/app/components/ui/ImageLightbox";
 
 interface Msg { id: string; fromSupport: boolean; body: string; imageUrls: string[]; createdAt: string; }
 interface Thread {
@@ -91,6 +92,7 @@ export function SupportChat({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reply, setReply] = useState("");
+  const [zoom, setZoom] = useState<string | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -231,6 +233,7 @@ export function SupportChat({
     // `<aside>` وعليه `transform` (عشان يعمل درجاً على الهاتف)، و`transform`
     // على سلفٍ بيخلّي المثبَّت يتحسب منه ويتقصّ بحدوده مهما رفعنا `z-index`.
     <Portal>
+      {zoom && <ImageLightbox src={zoom} onClose={() => setZoom(null)} />}
       <div className="fixed bottom-6 left-6 z-[60]">
         {open ? (
           <div className="flex h-[540px] max-h-[calc(100dvh-3rem)] w-[370px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
@@ -403,9 +406,9 @@ export function SupportChat({
                       >
                         <p className="m-0 whitespace-pre-wrap">{m.body}</p>
                         {m.imageUrls?.map((u) => (
-                          <a key={u} href={u} target="_blank" rel="noreferrer">
-                            <img src={u} alt="" className="mt-1.5 max-h-32 rounded-lg" />
-                          </a>
+                          <button key={u} onClick={() => setZoom(u)} className="block">
+                            <img src={u} alt="" className="mt-1.5 max-h-32 cursor-zoom-in rounded-lg" />
+                          </button>
                         ))}
                       </div>
                       </Fragment>

@@ -49,6 +49,14 @@ const ATTRIBUTION_RETENTION_DAYS = 400;
 // الشخصية المصريّ (راجع `docs/security-audit-2026-07-18.md`).
 const WA_CLICK_RETENTION_DAYS = 90;
 
+// **الأرشيفُ مش مخزناً دائماً.** نقلُ المحادثة لهناك قرارٌ بأنّها خلصت،
+// وشهرٌ بعده وقتٌ كافٍ لأيّ مراجعة. واللي مارجعهاش من الأرشيف خلال
+// الشهر ده يبقى فعلاً مش محتاجها.
+//
+// والعدُّ من `archivedAt` لا من `updatedAt`: التاني بيتحرّك بأيّ تعديل
+// (وسم، تعيين)، فالعدّادُ كان هيرجع لصفره بفعلٍ عابر ومايخلصش أبداً.
+const ARCHIVE_RETENTION_DAYS = 30;
+
 export async function purgeExpiredData() {
   const ctaClickCutoff = new Date();
   ctaClickCutoff.setDate(ctaClickCutoff.getDate() - CTA_CLICK_RETENTION_DAYS);
@@ -65,7 +73,10 @@ export async function purgeExpiredData() {
   const waClickCutoff = new Date();
   waClickCutoff.setDate(waClickCutoff.getDate() - WA_CLICK_RETENTION_DAYS);
 
-  const [deletedClicks, deletedRateLimits, deletedUnmatched, deletedAttribution] =
+  const archiveCutoff = new Date();
+  archiveCutoff.setDate(archiveCutoff.getDate() - ARCHIVE_RETENTION_DAYS);
+
+  const [deletedClicks, deletedRateLimits, deletedUnmatched, deletedAttribution, purgedArchive] =
     await Promise.all([
       prisma.ctaClickEvent.deleteMany({
         where: { clickedAt: { lt: ctaClickCutoff } },
@@ -78,6 +89,12 @@ export async function purgeExpiredData() {
       }),
       prisma.attributionResult.deleteMany({
         where: { receivedAt: { lt: attributionCutoff } },
+      }),
+      // حذفٌ صلبٌ عن قصد: الرسائلُ والملاحظاتُ بتروح معاها بـ`onDelete:
+      // Cascade`. الأرشيفُ هو «راجعتُها وخلصت»، وحذفٌ ناعمٌ بعده بيخلّي
+      // الصفوفَ تتراكم للأبد بلا أحدٍ يقراها.
+      prisma.supportThread.deleteMany({
+        where: { status: "ARCHIVED", archivedAt: { lt: archiveCutoff } },
       }),
     ]);
 
@@ -100,6 +117,7 @@ export async function purgeExpiredData() {
     deletedRateLimits: deletedRateLimits.count,
     deletedUnmatched: deletedUnmatched.count,
     deletedAttribution: deletedAttribution.count,
+    purgedArchivedThreads: purgedArchive.count,
     redactedWaClicks: redactedWaClicks.count,
   };
 }

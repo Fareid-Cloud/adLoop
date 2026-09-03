@@ -13,7 +13,7 @@
 
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, ArrowLeft } from "lucide-react";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { resolveAdminRole } from "@/lib/adminRole";
 import { ADMIN_UNLOCK_COOKIE, hasValidUnlockToken, UNLOCK_MINUTES } from "@/lib/adminElevation";
@@ -64,6 +64,17 @@ export default async function AdminUnlockPage({
         </div>
 
         <UnlockForm next={next} minutes={UNLOCK_MINUTES} email={user.email} />
+
+        {/* 🔴 **مخرجٌ من الشاشة دي.** القفلُ بيتطلّب كلمةَ سرّ أو كودَ
+            تحقّق، ومَن مش ماسكٌ تليفونَه في اللحظة دي كان محبوساً: مافيش
+            رابطٌ واحد يخرجه، والرجوعُ بزرّ المتصفّح بيرجّعه للقفل تاني. */}
+        <a
+          href="/dashboard"
+          className="mt-4 inline-flex items-center gap-1.5 text-[12.5px] text-text-faint no-underline transition-colors hover:text-text-primary"
+        >
+          <ArrowLeft size={14} className="rtl:rotate-180" />
+          Back to dashboard
+        </a>
       </div>
     </main>
   );

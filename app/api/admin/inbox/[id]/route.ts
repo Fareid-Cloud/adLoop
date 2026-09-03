@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { guardAdmin } from "@/lib/adminGuard";
+import { isOwnerRole } from "@/lib/adminRole";
 import { validateOrError } from "@/lib/validation/schemas";
 
 const schema = z.object({
@@ -18,7 +19,9 @@ const schema = z.object({
   // و`null` "شيل المعيَّن".
   assignedToId: z.string().min(1).nullable().optional(),
   tags: z.array(z.string().trim().min(1).max(32)).max(12).optional(),
-  status: z.enum(["OPEN", "ANSWERED", "CLOSED"]).optional(),
+  status: z.enum(["OPEN", "ANSWERED", "CLOSED", "ARCHIVED"]).optional(),
+  /** علامةُ «غير مقروء» اليدوية - عكسُ `markRead`. */
+  markUnread: z.boolean().optional(),
   /** فتحُ المحادثة بيعلّمها مقروءة - الوقت من الخادم لا من العميل. */
   markRead: z.boolean().optional(),
   deleted: z.boolean().optional(),
@@ -59,10 +62,25 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
   if (body.status !== undefined) {
     data.status = body.status;
-    data.closedAt = body.status === "CLOSED" ? new Date() : null;
+    data.closedAt = body.status === "CLOSED" || body.status === "ARCHIVED" ? new Date() : null;
+    // وقتُ الأرشفة هو بدايةُ عدّاد الحذف التلقائيّ - يُضبط مرّةً عند
+    // الدخول للأرشيف، ويُمسح عند الخروج منه فالعدّادُ بيقف.
+    data.archivedAt = body.status === "ARCHIVED" ? new Date() : null;
   }
   if (body.markRead) data.readByAdminAt = new Date();
-  if (body.deleted !== undefined) data.deletedAt = body.deleted ? new Date() : null;
+  // `null` بيرجّعها غير مقروءة: الحالةُ مشتقّةٌ من المقارنة بـ`lastMessageAt`،
+  // فمسحُ الوقت بيخلّي أيّ رسالةٍ فيها أحدثَ منه - وهي كلُّها.
+  if (body.markUnread) data.readByAdminAt = null;
+
+  // 🔴 **الحذفُ النهائيّ للمالك وحده.** الدعمُ بيأرشف، والأرشيفُ بيتحذف
+  // لوحده بعد شهر. أمّا مسحُ شكوى عميلٍ فوراً فقرارُ صاحب المنتج - وحارسُ
+  // `support.handle` وحده كان بيدّي الدعمَ نفس القدرة.
+  if (body.deleted !== undefined) {
+    if (!isOwnerRole(guard.admin)) {
+      return NextResponse.json({ error: "only the owner can delete a conversation" }, { status: 403 });
+    }
+    data.deletedAt = body.deleted ? new Date() : null;
+  }
 
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "nothing to change" }, { status: 400 });

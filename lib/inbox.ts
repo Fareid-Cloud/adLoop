@@ -162,7 +162,7 @@ export async function notifyTeamOfInbound(threadId: string) {
 
 export interface InboxFilters {
   channel?: Channel | "ALL";
-  status?: "OPEN" | "ANSWERED" | "CLOSED" | "ALL";
+  status?: "OPEN" | "ANSWERED" | "CLOSED" | "ARCHIVED" | "ALL";
   /** غير المقروء فقط */
   unread?: boolean;
   assignedToId?: string | "UNASSIGNED";
@@ -175,6 +175,10 @@ export function inboxWhere(f: InboxFilters): Prisma.SupportThreadWhereInput {
 
   if (f.channel && f.channel !== "ALL") where.channel = f.channel;
   if (f.status && f.status !== "ALL") where.status = f.status;
+  // المؤرشَفُ بيختفي من كلّ عرضٍ إلّا لمّا يُطلَب صراحةً: الأرشيفُ مكانٌ
+  // بتتحطّ فيه المحادثة عشان **تسيب** الصندوق، فظهورُها في «الكلّ» بيلغي
+  // الغرض منه.
+  else if (!f.status || f.status === "ALL") where.status = { not: "ARCHIVED" };
   if (f.tag) where.tags = { has: f.tag };
 
   if (f.assignedToId === "UNASSIGNED") where.assignedToId = null;

@@ -17,12 +17,46 @@
 // `mounted` لازم: الخادم لا `document` عنده، وتصيير البوّابة قبل الترطيب
 // يُنتج اختلافاً بين ما عرضه الخادم وما بناه المتصفّح.
 
+// 🔴 **والبوّابةُ بتخرج من السمة كمان، لا من القصّ وحده.**
+//
+// `data-accent` و`data-mode` بيتحطّوا على حاوياتٍ في الشجرة (شِلُّ لوحة
+// المالك بيحطّ `red`)، والقواعدُ بتقرأهم بالنسب. والخروجُ إلى `<body>`
+// بيخرج من تحتهم - فأيّ قائمةٍ أو لوحةٍ بتُفتح من اللوحة الحمراء كانت
+// بترجع **زرقاء**: لونٌ شاذٌّ وسط شاشةٍ كلُّها حمراء، وهو ما ظهر في
+// قوائم الاختيار.
+//
+// فبتُنسَخ السمةُ من أقرب سلفٍ يحملها إلى غلافِ البوّابة. نسخٌ لا وراثة،
+// لأنّ الوراثة مقطوعةٌ بحكم مكان التصيير.
+
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 export function Portal({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
-  return createPortal(children, document.body);
+  const [theme, setTheme] = useState<{ accent?: string; mode?: string }>({});
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    // المرساةُ عنصرٌ حقيقيّ في الشجرة، فمنها نقرأ السمةَ السارية عليها.
+    if (!anchor) return;
+    setTheme({
+      accent: anchor.closest("[data-accent]")?.getAttribute("data-accent") ?? undefined,
+      mode: anchor.closest("[data-mode]")?.getAttribute("data-mode") ?? undefined,
+    });
+  }, [anchor]);
+
+  return (
+    <>
+      {/* عنصرٌ صفرُ الحجم يبقى في مكانه من الشجرة ليُقرأ منه السياق. */}
+      <span ref={setAnchor} className="hidden" aria-hidden />
+      {mounted &&
+        createPortal(
+          <div data-accent={theme.accent} data-mode={theme.mode} className="contents">
+            {children}
+          </div>,
+          document.body
+        )}
+    </>
+  );
 }

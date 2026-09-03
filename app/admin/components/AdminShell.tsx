@@ -40,7 +40,20 @@ export function AdminShell({
   children: ReactNode;
 }) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  // 🔴 **مطويّة افتراضياً وبتتوسّع عند المرور - إلّا لو اختار هو.**
+  //
+  // القائمةُ بعرضٍ ثابت بتاخد ٢٤٠ بكسلاً من شاشةٍ فيها أربعةُ أعمدة،
+  // فالمحادثةُ بتتضغط بلا داعٍ وهي أهمُّ ما فيها. والطيُّ الدائم بيخلّي
+  // التنقّلَ تخميناً بالأيقونات.
+  //
+  // فالسلوكُ الافتراضيّ: مطويّة، وبتفتح لمّا الماوس يقرب. **وأوّل ما
+  // يدوس الزرّ، اختيارُه بيثبت لباقي الجلسة** - قرارٌ صريح بيغلب أيّ
+  // ذكاءٍ تلقائيّ، وإلّا القائمةُ بتتحرّك تحت إيده وهو مختار عكس ده.
+  const [pinnedChoice, setPinnedChoice] = useState<boolean | null>(null);
+  const [hovering, setHovering] = useState(false);
+  const collapsed = pinnedChoice ?? !hovering;
+  const setCollapsed = (fn: (c: boolean) => boolean) =>
+    setPinnedChoice((p) => fn(p ?? !hovering));
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // 🔴 **الدرج بيتقفل مع كلّ تنقّل.** من غير ده بتدوس على بند، الصفحة
@@ -93,6 +106,8 @@ export function AdminShell({
       )}
 
       <aside
+        onMouseEnter={() => setHovering(true)}
+        onMouseLeave={() => setHovering(false)}
         className={`fixed inset-y-0 start-0 z-50 flex h-screen w-64 shrink-0 flex-col border-e border-border bg-surface transition-transform duration-200 lg:sticky lg:top-0 lg:z-auto lg:translate-x-0 lg:transition-[width] ${
           drawerOpen ? "translate-x-0" : "-translate-x-full"
         } ${collapsed ? "lg:w-16" : "lg:w-60"}`}

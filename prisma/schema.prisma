@@ -2386,7 +2386,8 @@ model SupportThread {
   phone     String?
   country   String?
   subject   String
-  status    String           @default("OPEN") // OPEN | ANSWERED | CLOSED
+  /// OPEN | ANSWERED | CLOSED | ARCHIVED
+  status    String           @default("OPEN")
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
   messages  SupportMessage[]
@@ -2434,6 +2435,11 @@ model SupportThread {
   /// حذفٌ ناعم: المحادثة بتختفي من الصندوق ويفضل نصُّها للتدقيق. الحذفُ
   /// الصلب بيمسح تاريخَ شكوى عميلٍ ممكن يرجع يسأل عنها.
   deletedAt   DateTime?
+
+  /// لحظةُ الأرشفة - بدايةُ عدّاد الحذف التلقائيّ (شهر). وبدون تاريخٍ
+  /// صريح كان الحذفُ هيتحسب من `updatedAt`، وهو بيتحرّك بأيّ تعديل
+  /// فالعدّادُ بيرجع لصفره بوسمٍ عابر ومابينتهيش أبداً.
+  archivedAt  DateTime?
 
   /// ملاحظاتٌ داخلية - يقرؤها الفريق ولا تُبعَت للعميل أبداً.
   notes       SupportNote[]

@@ -5,12 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search, Pin, Trash2, Check, X, Send, Loader2, Globe, MessageCircle, Phone,
   ChevronLeft, AlertTriangle, Paperclip, MoreHorizontal, SlidersHorizontal,
-  Pencil, Hash, MapPin, Mail, Plus, StickyNote, Pause, Play,
+  Pencil, Hash, MapPin, Mail, Plus, StickyNote, Clock, Archive, MailOpen,
 } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
 // من `inboxChannels` لا من `inbox`: التاني بيجرّ `web-push` للمتصفّح.
 import { CHANNEL_LABEL, type Channel } from "@/lib/inboxChannels";
 import { countryName } from "@/lib/countries";
+import { ImageLightbox } from "@/app/components/ui/ImageLightbox";
 
 const CHANNEL_ICON: Record<string, typeof Globe> = {
   WEB: Globe,
@@ -45,7 +46,7 @@ interface ActiveThread {
 interface Agent { id: string; name: string | null; email: string; online: boolean }
 
 export function InboxClient({
-  threads, active, history, counts, statusCounts, agents, tags, filters, activeAvatar,
+  threads, active, history, counts, statusCounts, agents, tags, filters, activeAvatar, canDelete,
 }: {
   threads: ThreadRow[];
   active: ActiveThread | null;
@@ -57,6 +58,8 @@ export function InboxClient({
   agents: Agent[];
   tags: string[];
   filters: { channel: string; status: string; unread: boolean; assigned: string; tag: string; q: string };
+  /** المالكُ وحده بيشوف زرَّ الحذف النهائيّ - الدعمُ بيأرشف. */
+  canDelete: boolean;
 }) {
   const router = useRouter();
   const sp = useSearchParams();
@@ -189,15 +192,15 @@ export function InboxClient({
           <Row active={filters.status === "ALL"} onClick={() => go({ status: null, thread: null })} dot="muted" count={statusAll}>
             All
           </Row>
-          {(["OPEN", "ANSWERED", "CLOSED"] as const).map((s) => (
+          {(["OPEN", "ANSWERED", "CLOSED", "ARCHIVED"] as const).map((s) => (
             <Row
               key={s}
               active={filters.status === s}
               onClick={() => go({ status: filters.status === s ? null : s, thread: null })}
-              dot={s === "OPEN" ? "open" : s === "ANSWERED" ? "answered" : "closed"}
+              dot={s === "OPEN" ? "open" : s === "ANSWERED" ? "answered" : s === "CLOSED" ? "closed" : "muted"}
               count={statusCounts[s] ?? 0}
             >
-              {title(s)}
+              {s === "ANSWERED" ? "Follow-up" : title(s)}
             </Row>
           ))}
         </Group>
@@ -256,7 +259,7 @@ export function InboxClient({
         {threads.length === 0 ? (
           <p className="m-0 px-2 py-8 text-center text-[12.5px] text-text-faint">Nothing matches this view.</p>
         ) : (
-          <div className="flex max-h-[calc(100dvh-15rem)] flex-col gap-1 overflow-y-auto p-1 -m-1">
+          <div className="flex max-h-[calc(100dvh-12.5rem)] flex-col gap-1 overflow-y-auto p-1 -m-1">
             {threads.map((t) => (
               <ThreadRowItem key={t.id} row={t} activeId={active?.id ?? null} onOpen={() => go({ thread: t.id })} onChanged={() => router.refresh()} />
             ))}
@@ -285,7 +288,7 @@ export function InboxClient({
             onClose={() => go({ thread: null })}
           />
         ) : (
-          <div className="grid h-[calc(100dvh-15rem)] place-items-center rounded-2xl border border-dashed border-border text-center">
+          <div className="grid h-[calc(100dvh-12.5rem)] place-items-center rounded-2xl border border-dashed border-border text-center">
             <p className="m-0 text-[12.5px] text-text-faint">Pick a conversation to read it.</p>
           </div>
         )}
@@ -300,6 +303,7 @@ export function InboxClient({
             history={history}
             tags={tags}
             avatarUrl={activeAvatar}
+            canDelete={canDelete}
             onChanged={() => router.refresh()}
           />
         </aside>
@@ -416,7 +420,9 @@ function ThreadRowItem({
     <div
       className={`group/row relative rounded-xl transition-colors ${
         row.id === activeId
-          ? "bg-accent/8 ring-1 ring-accent/40"
+          // تينتٌ واحد بلا حلقة: الحلقةُ كانت بتترسم رمادية حوالين
+          // التينت الأحمر فتبان طبقتين، والتينتُ وحده كافٍ للتمييز.
+          ? "bg-critical/10"
           : "bg-surface hover:bg-surface-raised"
       }`}
     >
@@ -469,11 +475,17 @@ function ThreadRowItem({
             <MenuItem onClick={() => patch({ pinned: !row.pinned })} icon={Pin}>
               {row.pinned ? "Unpin" : "Pin to top"}
             </MenuItem>
-            <MenuItem onClick={() => patch({ markRead: true })} icon={Check}>Mark read</MenuItem>
-            <MenuItem onClick={() => patch({ status: row.status === "CLOSED" ? "OPEN" : "CLOSED" })} icon={row.status === "CLOSED" ? Play : Pause}>
-              {row.status === "CLOSED" ? "Reopen" : "Close"}
+            {/* الفعلُ بيتقلب حسب الحالة: عرضُ «علّم كمقروء» على صفٍّ
+                مقروءٍ أصلاً خيارٌ مالوش أثر، وغيابُ عكسِه بيخلّي اللي
+                فتح محادثةً بالغلط مالوش طريقٌ يرجّعها لانتباهه. */}
+            {row.unread ? (
+              <MenuItem onClick={() => patch({ markRead: true })} icon={Check}>Mark read</MenuItem>
+            ) : (
+              <MenuItem onClick={() => patch({ markUnread: true })} icon={MailOpen}>Mark unread</MenuItem>
+            )}
+            <MenuItem onClick={() => patch({ status: row.status === "ARCHIVED" ? "OPEN" : "ARCHIVED" })} icon={Archive}>
+              {row.status === "ARCHIVED" ? "Bring back" : "Move to archive"}
             </MenuItem>
-            <MenuItem onClick={() => patch({ deleted: true })} icon={Trash2} danger>Remove</MenuItem>
           </div>
         </>
       )}
@@ -510,6 +522,7 @@ function Conversation({
   const [warning, setWarning] = useState<string | null>(null);
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [zoom, setZoom] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -581,7 +594,9 @@ function Conversation({
     (!!lastInbound && Date.now() - new Date(lastInbound.createdAt).getTime() < 24 * 3600_000);
 
   return (
-    <div className="card flex h-[calc(100dvh-15rem)] flex-col overflow-hidden">
+    <>
+    {zoom && <ImageLightbox src={zoom} onClose={() => setZoom(null)} />}
+    <div className="card flex h-[calc(100dvh-12.5rem)] flex-col overflow-hidden">
       {/* رأسٌ زيّ المرجع: أفتار + اسم + حالة، والأفعال يمين.
           🔴 **الأفعال بتنزل سطراً تحت قبل ما الاسم يتقصّ.** كانت في نفس
           الصفّ بـ`flex-wrap`، فالاسم (وهو الوحيد اللي بيقدر ينكمش) كان
@@ -639,26 +654,39 @@ function Conversation({
 
             واللونُ في حالة المرور مقصود: زرٌّ ما بيتغيّرش تحت الماوس
             بيخلّي صاحبَه مش متأكّد إنّه فوق زرّ أصلاً. */}
+        {/* أيقونةٌ لا مربّعٌ ملوّن: الإيموجي بيتغيّر شكلُه بين المنصّات
+            وبيقرا كزخرفة. `Clock` بيقول «مستنّي» وهو المعنى بالظبط. */}
         <button
           onClick={() => patch({ status: thread.status === "ANSWERED" ? "OPEN" : "ANSWERED" })}
           title="Waiting on the customer"
-          className={`flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2.5 text-[12px] transition-colors active:scale-95 ${
+          className={`flex h-7 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-[12px] transition-colors active:scale-95 ${
             thread.status === "ANSWERED"
-              ? "border-gap/50 bg-gap/15 text-gap"
-              : "border-border text-text-muted hover:border-gap/50 hover:bg-gap/10 hover:text-gap"
+              ? "border-gap bg-gap text-white"
+              : "border-border text-text-muted hover:border-gap/60 hover:bg-gap/10 hover:text-gap"
           }`}
         >
-          🟨 Follow-up
+          <Clock size={12} /> Follow-up
         </button>
+
+        {/* «خلصت» بتودّي للأرشيف مباشرةً: القرارُ واحد - المحادثة انتهت
+            وماعادتش تزاحم الجديد. وفصلُهما كان بيخلّي كلّ محادثةٍ خالصة
+            تحتاج دوستين، فالتانية بتتنسى ويفضل الصندوق مليان بالخالص. */}
         <button
-          onClick={() => patch({ status: thread.status === "CLOSED" ? "OPEN" : "CLOSED" })}
-          className={`flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2.5 text-[12px] transition-colors active:scale-95 ${
-            thread.status === "CLOSED"
-              ? "border-verified/50 bg-verified/15 text-verified"
-              : "border-border text-text-muted hover:border-verified/50 hover:bg-verified/12 hover:text-verified"
+          onClick={() =>
+            patch(
+              thread.status === "ARCHIVED"
+                ? { status: "OPEN" }
+                : { status: "ARCHIVED" }
+            )
+          }
+          title={thread.status === "ARCHIVED" ? "Bring back to the inbox" : "Done — moves to the archive"}
+          className={`flex h-7 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-[12px] transition-colors active:scale-95 ${
+            thread.status === "ARCHIVED"
+              ? "border-verified bg-verified text-white"
+              : "border-border text-text-muted hover:border-verified/60 hover:bg-verified/12 hover:text-verified"
           }`}
         >
-          {thread.status === "CLOSED" ? "Reopen" : <>✅ Done</>}
+          <Check size={12} /> {thread.status === "ARCHIVED" ? "Reopen" : "Done"}
         </button>
       </div>
       </div>
@@ -685,8 +713,10 @@ function Conversation({
               >
                 {m.body}
                 {m.imageUrls.map((u) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={u} src={u} alt="" className="mt-1.5 max-h-56 rounded-lg" />
+                  <button key={u} onClick={() => setZoom(u)} className="block">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={u} alt="" className="mt-1.5 max-h-56 cursor-zoom-in rounded-lg" />
+                  </button>
                 ))}
               </div>
               {/* الوقت **تحت** الفقاعة لا جوّاها، زيّ المرجع: جوّاها بياكل
@@ -721,24 +751,26 @@ function Conversation({
         />
         {/* zbtnattach: كان اتشال واتحطّ مكانه سطرُ شرح - فالدعم بقى
             مايقدرش يبعت صورة أصلاً، وهي نصفُ الشغل في الدعم التقنيّ. */}
-        {images.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {images.map((u) => (
-              <span key={u} className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={u} alt="" className="h-12 w-12 rounded-lg object-cover" />
-                <button
-                  onClick={() => setImages((p) => p.filter((x) => x !== u))}
-                  aria-label="Remove"
-                  className="absolute -end-1 -top-1 grid size-4 place-items-center rounded-full bg-critical text-white"
-                >
-                  <X size={9} />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
         <div className="mt-2 flex items-center justify-between gap-2">
+          {/* المرفقاتُ جنب الشريط لا فوقه: صفٌّ زيادةٌ فوق المربّع بياكل
+              من ارتفاع المحادثة الظاهرة في كلّ مرّة بتترفع فيها صورة. */}
+          {images.length > 0 && (
+            <span className="flex shrink-0 gap-1">
+              {images.map((u) => (
+                <span key={u} className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={u} alt="" className="size-8 rounded-md object-cover" />
+                  <button
+                    onClick={() => setImages((p) => p.filter((x) => x !== u))}
+                    aria-label="Remove"
+                    className="absolute -end-1 -top-1 grid size-3.5 place-items-center rounded-full bg-critical text-white"
+                  >
+                    <X size={8} />
+                  </button>
+                </span>
+              ))}
+            </span>
+          )}
           <label
             className="flex cursor-pointer items-center gap-1.5 rounded-lg px-1.5 py-1 text-[11.5px] text-text-faint transition-colors hover:bg-surface-raised hover:text-text-primary"
             title="Attach an image"
@@ -754,16 +786,18 @@ function Conversation({
         </div>
       </div>
     </div>
+    </>
   );
 }
 
 // ══════════════════════════════════════════════════════════════════════
 
 function Details({
-  thread, history, tags, avatarUrl, onChanged,
+  thread, history, tags, avatarUrl, canDelete, onChanged,
 }: {
   thread: ActiveThread;
   avatarUrl: string | null;
+  canDelete: boolean;
   history: Array<{ id: string; subject: string; status: string; channel: string; lastMessageAt: string }>;
   tags: string[];
   onChanged: () => void;
@@ -771,6 +805,7 @@ function Details({
   const [newTag, setNewTag] = useState("");
   const [note, setNote] = useState("");
   const [savingNote, setSavingNote] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   async function patch(body: Record<string, unknown>) {
     await fetch(`/api/admin/inbox/${thread.id}`, {
@@ -913,12 +948,51 @@ function Details({
         </div>
       )}
 
-      <button
-        onClick={() => patch({ deleted: true })}
-        className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border px-3 py-2 text-[12px] text-text-faint transition-colors hover:border-critical/40 hover:text-critical"
-      >
-        <Trash2 size={13} /> Remove from inbox
-      </button>
+      {/* الأرشفةُ رماديّة والحذفُ أحمر مصمت - الشكلُ بيقول الخطورة قبل
+          ما النصّ يتقري. وكان الحذفُ أبيضَ بحدٍّ أحمر، وهو شكلُ الفعل
+          الثانويّ لا شكلُ الفعل اللي مالوش رجعة. */}
+      {thread.status !== "ARCHIVED" && (
+        <button
+          onClick={() => patch({ status: "ARCHIVED" })}
+          className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-surface-raised px-3 py-2 text-[12px] text-text-muted transition-colors hover:text-text-primary"
+        >
+          <Archive size={13} /> Move to archive
+        </button>
+      )}
+
+      {/* 🔴 **الحذفُ النهائيّ للمالك وحده، وبخطوةِ تأكيد.**
+          الدعمُ بيقدر يأرشف - وده كافٍ لشغله. والحذفُ بيمسح شكوى عميلٍ
+          ممكن يرجع يسأل عنها، فمحتاج مَن يملك القرار ده لا مَن يعالجها. */}
+      {canDelete && (
+        confirming ? (
+          <div className="rounded-xl border border-critical/40 bg-critical/8 p-2.5">
+            <p className="m-0 mb-2 text-[11.5px] leading-relaxed text-text-primary">
+              Delete this conversation for good? Its messages and notes go with it, and it cannot be brought back.
+            </p>
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => patch({ deleted: true })}
+                className="flex-1 rounded-lg bg-critical px-3 py-1.5 text-[12px] font-medium text-white transition-opacity hover:opacity-90 active:scale-95"
+              >
+                Delete permanently
+              </button>
+              <button
+                onClick={() => setConfirming(false)}
+                className="rounded-lg px-3 py-1.5 text-[12px] text-text-muted hover:text-text-primary"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirming(true)}
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-critical px-3 py-2 text-[12px] font-medium text-white transition-opacity hover:opacity-90 active:scale-95"
+          >
+            <Trash2 size={13} /> Delete permanently
+          </button>
+        )
+      )}
       <p className="m-0 text-[10.5px] leading-relaxed text-text-faint">
         Hidden from the inbox, kept in the record. A complaint someone may come back about should not vanish
         because a row was tidied away.
