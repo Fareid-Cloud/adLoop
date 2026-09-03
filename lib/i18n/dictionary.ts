@@ -1060,6 +1060,16 @@ export const dictionary = {
         billingL6: "لا تسترد المبالغ عن مدة بدأت بالفعل، ما لم ينص القانون الواجب التطبيق على خلاف ذلك.",
         billingL7: "قد تتغير الأسعار مستقبلاً، ونخطرك قبل سريان أي تغيير على اشتراكك بمدة معقولة، ويسري السعر الجديد على التجديدات التالية فقط.",
 
+        bizUseTitle: "الاستخدام التجاري - ليس تعاقداً استهلاكياً",
+        bizUseBody: "تُقدَّم المنصة للاستخدام التجاري والمهني وحده: أنت تستخدمها لإدارة إنفاق إعلاني يخص نشاطاً تجارياً، سواء كان لك أو لعملائك. وهي ليست موجهة للمستهلكين ولا تُقدَّم لتلبية حاجة شخصية أو عائلية أو غير تجارية، ولا يجوز استخدامها لغرض من هذا القبيل. وبقبولك هذه الشروط تقر بأنك تتعاقد بصفة تجارية أو مهنية، وأن هذا الاتفاق اتفاق بين محترفين لا عقد استهلاك.",
+
+        claimsTitle: "المطالبات",
+        claimsL1: "هذه الشروط اتفاق بيننا وبينك وحدك. ولا ترتب أي حق لأي طرف ثالث - بما في ذلك عملاؤك أو موظفوك أو من تمنحه وصولاً إلى حسابك - في مطالبتنا بشيء بموجبها.",
+        claimsL2: "لا يجوز لك التنازل عن أي مطالبة قِبَلنا أو إحالتها إلى الغير دون موافقتنا الكتابية.",
+        claimsL3: "عند وقوع ما تعتبره إخلالاً، تخطرنا كتابة بأسرع ما يكون عملياً مع بيان الواقعة وأثرها، وتتخذ ما في وسعك للحد من الضرر. وهذا التزام بالتعاون وحسن النية لا يمس أي مدة يقررها القانون.",
+        claimsL4: "أنت مسؤول وحدك عن الالتزام بسياسات المنصات الإعلانية ومنصات التجارة التي تربطها، وعن مشروعية ما تعلن عنه، وعن أي تعامل بينك وبين عملائك.",
+        claimsL5: "لا يُعد سكوتنا عن مطالبة أو تأخرنا في اتخاذ إجراء بشأنها تنازلاً عنها.",
+
         liabilityTitle: "حدود المسؤولية",
         liabilityBody: "تقدم المنصة «كما هي» و«حسب توافرها»، دون أي ضمان صريح أو ضمني من أي نوع. وتحديداً:",
         liabilityL1: "لا نضمن دقة أي رقم أو تحليل أو توقع تعرضه المنصة. جزء جوهري من البيانات يأتي من واجهات برمجية تابعة لـGoogle وMeta وTikTok ومنصات التجارة الإلكترونية، ولا نتحكم في توفرها ولا في صحتها ولا في تغيرها دون إخطار.",
@@ -1086,9 +1096,16 @@ export const dictionary = {
         acceptableL3: "استخدام المنصة آلياً بمعدل يضر باستقرارها أو يستنفد حصص الواجهات البرمجية المشتركة.",
         acceptableL4: "رفع محتوى مخالف للقانون أو منتهك لحقوق الغير عبر أي مدخل في المنصة.",
         acceptableL5: "استخدام مخرجات المنصة لتقديم خدمة مماثلة للغير دون اتفاق مكتوب معنا.",
+        acceptableL6: "الوصول إلى المنصة أو استخدامها لحساب منافس لنا، أو بغرض تقييمها أو مقارنتها أو تحليلها لبناء منتج منافس أو تطويره.",
+        acceptableL7: "نشر قياسات أداء أو مقارنات أو لقطات شاشة للمنصة لأغراض دعائية أو تنافسية دون موافقتنا الكتابية المسبقة.",
 
         availabilityTitle: "توافر الخدمة والصيانة",
         availabilityBody: "نسعى لإتاحة الخدمة على مدار الساعة، ولا نضمن تشغيلاً متصلاً بلا انقطاع. قد تتوقف الخدمة كلياً أو جزئياً لصيانة مخططة نخطرك بها مسبقاً متى أمكن، أو لأسباب طارئة خارج سيطرتنا. كما أن جزءاً جوهرياً من الخدمة يعتمد على واجهات برمجية تابعة لمنصات إعلانية خارجية؛ فتوقفها أو تغييرها أو تغيير سياساتها قد يعطل ميزات بعينها، ولا نتحمل مسؤولية ذلك.",
+        availabilityL1: "لا نلتزم بنسبة توافر محددة، ولا تستحق أي تعويضات أو أرصدة خدمة أو استرداد عن فترات عدم التوافر أياً كانت مدتها.",
+        availabilityL2: "الصيانة المخططة نخطرك بها متى أمكن. أما الصيانة العاجلة أو الإجراءات اللازمة لحماية المنصة أو بياناتها أو أمنها فقد تُنفَّذ فوراً ودون إخطار مسبق.",
+        availabilityL3: "قد يتوقف جزء من الخدمة بسبب مزودي البنية التحتية أو الاستضافة أو قواعد البيانات أو المنصات الإعلانية أو بوابات الدفع، وهي أطراف لا نسيطر عليها.",
+        availabilityL4: "الميزات الموسومة تجريبية أو قيد التطوير تُقدَّم دون أي ضمان، ويجوز تعديلها أو سحبها في أي وقت دون إخطار ودون أن يرتب ذلك أي حق.",
+        availabilityL5: "أنت مسؤول عن الاحتفاظ بنسخك الخاصة من بياناتك عبر خاصية التصدير المتاحة لك في أي وقت. ونحن نحتفظ بنسخ احتياطية لأغراض تشغيلنا نحن، لا كخدمة استرجاع متعاقد عليها معك.",
 
         changesTitle: "تعديل الشروط",
         changesBody: "لنا تعديل هذه الشروط لمواكبة تطور الخدمة أو متطلبات القانون. ونخطرك بأي تعديل جوهري عبر بريدك المسجل أو داخل المنصة قبل سريانه بثلاثين يوماً على الأقل. واستمرارك في استخدام المنصة بعد سريان التعديل يعد قبولاً به؛ وإن لم تقبله فلك إنهاء اشتراكك قبل تاريخ السريان وتسترد لك المدة غير المستهلكة.",
@@ -5658,6 +5675,16 @@ export const dictionary = {
         billingL6: "Amounts are not refunded for a period that has already started, unless applicable law provides otherwise.",
         billingL7: "Prices may change in future; we will notify you a reasonable time before any change applies to your subscription, and a new price applies only to subsequent renewals.",
 
+        bizUseTitle: "Commercial use - not a consumer contract",
+        bizUseBody: "The platform is offered for commercial and professional use only: you use it to manage advertising spend belonging to a business, whether your own or your clients'. It is not directed at consumers and is not supplied to meet a personal, family or non-commercial need, and may not be used for such a purpose. By accepting these terms you confirm that you are contracting in a commercial or professional capacity, and that this is an agreement between businesses rather than a consumer contract.",
+
+        claimsTitle: "Claims",
+        claimsL1: "These terms are an agreement between us and you alone. They create no right for any third party - including your clients, your staff, or anyone you grant access to your account - to claim anything from us under them.",
+        claimsL2: "You may not assign or transfer any claim against us to a third party without our written consent.",
+        claimsL3: "Where something occurs that you consider a breach, you will notify us in writing as soon as practicable, describing the event and its effect, and will take reasonable steps to limit the harm. This is a duty of cooperation and good faith and does not affect any period fixed by law.",
+        claimsL4: "You are solely responsible for complying with the policies of the advertising and commerce platforms you connect, for the lawfulness of what you advertise, and for any dealing between you and your own clients.",
+        claimsL5: "Our silence on a claim, or delay in acting on it, is not a waiver of it.",
+
         liabilityTitle: "Limitation of liability",
         liabilityBody: "The platform is provided \"as is\" and \"as available\", without warranty of any kind, express or implied. Specifically:",
         liabilityL1: "We do not warrant the accuracy of any figure, analysis or forecast the platform displays. A material part of the data comes from APIs belonging to Google, Meta, TikTok and commerce platforms, whose availability, correctness and stability are outside our control.",
@@ -5684,9 +5711,16 @@ export const dictionary = {
         acceptableL3: "Automated use at a rate that harms platform stability or exhausts shared third-party API quotas.",
         acceptableL4: "Uploading unlawful content, or content infringing the rights of others, through any input in the platform.",
         acceptableL5: "Using platform output to provide a comparable service to third parties without a written agreement with us.",
+        acceptableL6: "Accessing or using the platform on behalf of a competitor of ours, or in order to evaluate, benchmark or analyse it for the purpose of building or developing a competing product.",
+        acceptableL7: "Publishing benchmarks, comparisons or screenshots of the platform for promotional or competitive purposes without our prior written consent.",
 
         availabilityTitle: "Availability and maintenance",
         availabilityBody: "We aim to keep the service available around the clock, and we do not warrant uninterrupted operation. The service may be wholly or partly unavailable for planned maintenance, of which we will give advance notice where practicable, or for urgent reasons outside our control. A material part of the service also depends on third-party advertising APIs; their downtime, changes or policy decisions may disable specific features, and we are not liable for that.",
+        availabilityL1: "We commit to no particular level of availability, and no compensation, service credit or refund is due for any period of unavailability, whatever its length.",
+        availabilityL2: "Planned maintenance is notified where practicable. Urgent maintenance, and any step needed to protect the platform, its data or its security, may be carried out immediately and without prior notice.",
+        availabilityL3: "Part of the service may stop because of infrastructure, hosting, database, advertising platform or payment gateway providers - none of whom we control.",
+        availabilityL4: "Features marked experimental or in development are provided without warranty of any kind and may be changed or withdrawn at any time, without notice and without creating any right.",
+        availabilityL5: "You are responsible for keeping your own copies of your data through the export available to you at any time. We keep backups for our own operations, not as a recovery service contracted to you.",
 
         changesTitle: "Changes to these terms",
         changesBody: "We may amend these terms to keep pace with the service or with legal requirements. We will notify you of any material change by email to your registered address or within the platform at least thirty days before it takes effect. Continuing to use the platform after the effective date constitutes acceptance. If you do not accept a change, you may terminate before the effective date and we will refund the unused portion of your term.",
