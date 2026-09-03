@@ -20,6 +20,15 @@ import { Select } from "@/app/components/ui/Select";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { SPEND_BANDS } from "@/lib/salesEnquiry";
 
+// مكتوبةٌ كاملةً لا مركَّبة: نفس سبب `REASON_KEY` في بطاقة التقييم -
+// فحصُ التغطية بيشوف النصّ الساكن وحده.
+const SPEND_KEY: Record<string, string> = {
+  under_10k: "sales.spendUnder10k",
+  "10k_50k": "sales.spend10k50k",
+  "50k_200k": "sales.spend50k200k",
+  over_200k: "sales.spendOver200k",
+};
+
 export function ContactSalesDialog({
   locale, name = "", email = "", country = "",
 }: {
@@ -161,7 +170,7 @@ export function ContactSalesDialog({
                     value={form.monthlySpend}
                     onChange={(v) => setForm((f) => ({ ...f, monthlySpend: v }))}
                     placeholder={tr("spendPick")}
-                    options={SPEND_BANDS.map((b) => ({ value: b, label: tr(`spend.${b}`) }))}
+                    options={SPEND_BANDS.map((b) => ({ value: b, label: t(locale, SPEND_KEY[b]) }))}
                   />
                 </FieldWrap>
               </div>

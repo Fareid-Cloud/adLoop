@@ -112,17 +112,42 @@ export function InboxClient({
   // مافيش حاجة بتقول لها. فالدعم قاعد قدّام صندوقٍ فيه جديد وهو مش شايفه،
   // وهو بالظبط الوقت اللي بيتقاس عليه.
   //
-  // تحديثٌ كلّ عشر ثوانٍ، **ويقف لمّا التبويب يبقى في الخلفية**: تبويبٌ
-  // متروكٌ مفتوح يومين مايستهلكش استعلاماً كلّ عشر ثوانٍ بلا أحد يقرؤه.
-  // (ده استطلاعٌ لا بثّ - الحلّ الصحيح SSE، لكنّه بنيةٌ أكبر بكتير من
-  // المكسب هنا وعدد المستخدمين اللي بيفتحوا الصندوق قليل.)
+  // 🔴 **كان بيعيد رسم الصفحة كلّها كلّ عشر ثوانٍ - وده كان بيحرق حدَّ
+  // نقل البيانات في قاعدة البيانات.**
+  //
+  // `router.refresh()` بيرجّع تصييرَ مكوّن الخادم من أوّله: الستّون محادثة
+  // برسائلها، وتلاتُ تجميعاتٍ للعدّادات، وخمسمئة صفِّ وسوم، والمحادثةُ
+  // المفتوحة كلّها. عشرةُ استعلامات كلّ عشر ثوانٍ - وأغلبُ ما بترجّعه نفسُ
+  // البايتات اللي رجعت قبلها بعشر ثوانٍ.
+  //
+  // بقى: نبضةٌ رخيصة (`/api/admin/inbox/pulse`) كلّ عشرين ثانية بترجّع
+  // رقمين، والتصييرُ الكامل بيحصل **لمّا الرقمين يتغيّروا وبس**. فصندوقٌ
+  // هادي بيكلّف تجميعةً واحدة كلّ عشرين ثانية بدل عشرة استعلامات كلّ عشرة.
+  // وواقفٌ تماماً والتبويبُ في الخلفية.
+  const pulseRef = useRef<string | null>(null);
   useEffect(() => {
-    const tick = () => {
-      if (document.visibilityState === "visible") router.refresh();
+    let alive = true;
+    const tick = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const res = await fetch("/api/admin/inbox/pulse");
+        if (!res.ok || !alive) return;
+        const { n, t } = await res.json();
+        const sig = `${n}:${t}`;
+        // أوّلُ نبضةٍ بتسجّل الحالة وبس: التصييرُ اللي إحنا فيه أحدثُ
+        // منها أصلاً، وطلبُه تاني بيخلّي كلَّ فتحةِ صفحة تتحمّل مرّتين.
+        if (pulseRef.current !== null && pulseRef.current !== sig) router.refresh();
+        pulseRef.current = sig;
+      } catch {
+        // شبكةٌ وقعت: النبضةُ الجاية هتلاقيها. مافيش رسالةُ خطأ لحاجةٍ
+        // العميلُ لا طلبها ولا بيستنّاها.
+      }
     };
-    const id = setInterval(tick, 10_000);
+    void tick();
+    const id = setInterval(tick, 20_000);
     document.addEventListener("visibilitychange", tick);
     return () => {
+      alive = false;
       clearInterval(id);
       document.removeEventListener("visibilitychange", tick);
     };

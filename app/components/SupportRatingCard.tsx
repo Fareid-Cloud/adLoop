@@ -35,6 +35,20 @@ const SCALE_TONE: Record<number, { on: string; off: string }> = {
   5: { on: "border-success bg-success text-white", off: "border-border-visible text-text-muted hover:border-success hover:text-success" },
 };
 
+// المفاتيحُ مكتوبةٌ كاملةً لا مركَّبة من قطعتين، عشان فحصُ التغطية يشوفها:
+// مفتاحٌ مبنيٌّ في وقت التشغيل بيعدّي من الفحص وهو ناقص، ويطلع مساراً
+// خاماً على شاشة العميل - وهو الشكلُ اللي الفحصُ ده اتعمل عشانه أصلاً.
+const REASON_KEY: Record<string, string> = {
+  slow: "supportChat.ratingReasonSlow",
+  unresolved: "supportChat.ratingReasonUnresolved",
+  unclear: "supportChat.ratingReasonUnclear",
+  repeat: "supportChat.ratingReasonRepeat",
+  fast: "supportChat.ratingReasonFast",
+  resolved: "supportChat.ratingReasonResolved",
+  clear: "supportChat.ratingReasonClear",
+  friendly: "supportChat.ratingReasonFriendly",
+};
+
 export interface RatingState {
   ask: boolean;
   triggerMessageId: string | null;
@@ -52,7 +66,7 @@ export function SupportRatingCard({
   onChange: (next: Partial<RatingState>) => void;
   onDismiss: () => void;
 }) {
-  const tr = (k: string) => t(locale, `supportChat.rating.${k}`);
+  const tr = (k: string) => t(locale, `supportChat.rating${k}`);
   const [comment, setComment] = useState(state.comment);
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -97,7 +111,7 @@ export function SupportRatingCard({
   if (sent) {
     return (
       <div className="mt-2 flex items-center gap-1.5 rounded-2xl bg-success/10 px-3 py-2 text-[12.5px] text-success">
-        <Check size={13} /> {tr("done")}
+        <Check size={13} /> {tr("Done")}
       </div>
     );
   }
@@ -108,7 +122,7 @@ export function SupportRatingCard({
   return (
     <div className="mt-2 rounded-2xl border border-border bg-surface-raised p-3">
       <p className="m-0 mb-2 text-[12.5px] font-medium text-text-primary">
-        {!scored ? tr("ask") : positive ? tr("thanksHigh") : tr("thanksLow")}
+        {!scored ? tr("Ask") : positive ? tr("ThanksHigh") : tr("ThanksLow")}
       </p>
 
       {/* ═══ المقياس ═══
@@ -139,8 +153,8 @@ export function SupportRatingCard({
 
       {!scored && (
         <div className="mt-1.5 flex items-center justify-between">
-          <span className="text-[10.5px] text-text-faint">{tr("scaleLow")}</span>
-          <span className="text-[10.5px] text-text-faint">{tr("scaleHigh")}</span>
+          <span className="text-[10.5px] text-text-faint">{tr("ScaleLow")}</span>
+          <span className="text-[10.5px] text-text-faint">{tr("ScaleHigh")}</span>
         </div>
       )}
 
@@ -161,7 +175,7 @@ export function SupportRatingCard({
                       : "border-border-visible text-text-muted hover:bg-surface"
                   }`}
                 >
-                  {t(locale, `supportChat.rating.reasons.${r}`)}
+                  {t(locale, REASON_KEY[r] ?? r)}
                 </button>
               );
             })}
@@ -171,7 +185,7 @@ export function SupportRatingCard({
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={2}
-            placeholder={tr("commentPlaceholder")}
+            placeholder={tr("CommentPlaceholder")}
             className="field mt-2 w-full resize-none text-[12.5px]"
           />
 
@@ -181,7 +195,7 @@ export function SupportRatingCard({
               disabled={busy}
               className="rounded-lg bg-accent px-3 py-1.5 text-[12px] text-white transition-opacity hover:opacity-90 disabled:opacity-60"
             >
-              {tr("send")}
+              {tr("Send")}
             </button>
           </div>
         </>
@@ -195,7 +209,7 @@ export function SupportRatingCard({
           onClick={onDismiss}
           className="mt-2 text-[11.5px] text-text-faint underline-offset-2 transition-colors hover:text-text-muted hover:underline"
         >
-          {tr("notNow")}
+          {tr("NotNow")}
         </button>
       )}
     </div>
