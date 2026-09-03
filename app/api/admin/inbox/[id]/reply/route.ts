@@ -23,7 +23,17 @@ import { sendPushToUser } from "@/lib/webPush";
 const schema = z
   .object({
     body: z.string().trim().max(8000).default(""),
-    imageUrls: z.array(z.string().url()).max(6).optional(),
+    // 🔴 `.url()` كان بيرفض كلَّ صورة: مسارُ المرفق **نسبيّ**
+    // (`/api/support/attachment/…`) لأنّ الملفّ خاصٌّ ويُقدَّم من مسارنا
+    // المصادَق عليه لا من رابط التخزين. و`z.string().url()` بيتطلّب
+    // بروتوكولاً، فكلُّ رفعٍ كان بيرجع «Invalid URL».
+    //
+    // والشرطُ بقى **مسارَنا وحده**: قبولُ أيّ رابطٍ خارجيّ معناه إنّ حدّاً
+    // يقدر يخلّي المنتج يعرض صورةً من سيرفره هو في محادثةِ عميل.
+    imageUrls: z
+      .array(z.string().regex(/^\/api\/support\/attachment\/[\w./-]+$/))
+      .max(6)
+      .optional(),
   })
   .refine((v) => v.body.trim().length > 0 || (v.imageUrls?.length ?? 0) > 0, {
     message: "Write something or attach an image.",

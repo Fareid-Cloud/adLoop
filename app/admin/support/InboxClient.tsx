@@ -267,7 +267,23 @@ export function InboxClient({
       {/* ═══ ٣) المحادثة ═══ */}
       <div className="min-w-0">
         {active ? (
-          <Conversation thread={active} agents={agents} avatarUrl={activeAvatar} onChanged={() => router.refresh()} onClose={() => go({ thread: null })} />
+          // 🔴🔴 **`key` على معرّف المحادثة - وده أخطر سطر في الملفّ.**
+          //
+          // بدونه رياكت بيعيد استعمال نفس المكوّن عند التبديل، فالمكتوبُ
+          // في مربّع الردّ **والصورةُ المرفوعة** بيفضلوا كما هم. يعني
+          // تكتب ردّاً لعميل، تفتح تانياً، وتدوس إرسال على مربّعٍ شكلُه
+          // فاضٍ - فيروح ردُّ الأوّل للتاني. تسريبُ بياناتٍ بين عميلين
+          // بضغطةٍ واحدة، ومافيش حاجة في الشاشة بتحذّر منه.
+          //
+          // و`key` بيهدم المكوّن ويبنيه، فكلُّ حالته بتتصفّر مع المحادثة.
+          <Conversation
+            key={active.id}
+            thread={active}
+            agents={agents}
+            avatarUrl={activeAvatar}
+            onChanged={() => router.refresh()}
+            onClose={() => go({ thread: null })}
+          />
         ) : (
           <div className="grid h-[calc(100dvh-15rem)] place-items-center rounded-2xl border border-dashed border-border text-center">
             <p className="m-0 text-[12.5px] text-text-faint">Pick a conversation to read it.</p>
@@ -278,7 +294,14 @@ export function InboxClient({
       {/* ═══ ٤) التفاصيل والملاحظات ═══ */}
       {active && (
         <aside className="min-w-0">
-          <Details thread={active} history={history} tags={tags} avatarUrl={activeAvatar} onChanged={() => router.refresh()} />
+          <Details
+            key={active.id}
+            thread={active}
+            history={history}
+            tags={tags}
+            avatarUrl={activeAvatar}
+            onChanged={() => router.refresh()}
+          />
         </aside>
       )}
     </div>

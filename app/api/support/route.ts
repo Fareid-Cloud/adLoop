@@ -34,7 +34,12 @@ export async function POST(req: NextRequest) {
   const locale = localeOf(user);
 
   const body = await req.json();
-  const imageUrls: string[] = Array.isArray(body.imageUrls) ? body.imageUrls.slice(0, 6) : [];
+  // نفس حارس مسار الأدمن: مسارُنا المصادَق عليه وحده. قبولُ رابطٍ خارجيّ
+  // معناه إنّ حدّاً يقدر يخلّي المنتج يعرض صورةً من سيرفره في محادثة.
+  const ATTACHMENT = /^\/api\/support\/attachment\/[\w./-]+$/;
+  const imageUrls: string[] = Array.isArray(body.imageUrls)
+    ? body.imageUrls.filter((u: unknown) => typeof u === "string" && ATTACHMENT.test(u)).slice(0, 6)
+    : [];
 
   // متابعة على محادثة قائمة
   if (body.threadId) {
