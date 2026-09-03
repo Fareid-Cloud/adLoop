@@ -13,7 +13,7 @@
 import { Radio, CheckCircle2, AlertTriangle } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { AdminPageHeader, Card, SectionTitle, Badge, ago } from "../components/AdminUI";
-import { ChannelsClient } from "./ChannelsClient";
+import { ConnectForm, ChannelToggle } from "./ChannelsClient";
 
 export const dynamic = "force-dynamic";
 
@@ -85,7 +85,7 @@ export default async function ChannelsPage() {
                       {c.lastEventAt && ` · last message ${ago(c.lastEventAt)}`}
                     </div>
                   </div>
-                  <ChannelsClient.Toggle id={c.id} active={c.active} />
+                  <ChannelToggle id={c.id} active={c.active} />
                 </div>
                 {!live && (
                   <p className="m-0 mt-2 border-t border-border pt-2 text-[11.5px] leading-relaxed text-text-faint">
@@ -100,7 +100,7 @@ export default async function ChannelsPage() {
         </div>
       )}
 
-      <ChannelsClient.Form />
+      <ConnectForm />
     </div>
   );
 }

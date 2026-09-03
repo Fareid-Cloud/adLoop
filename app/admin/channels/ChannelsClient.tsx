@@ -73,7 +73,20 @@ function ElevationPrompt({
   );
 }
 
-function Toggle({ id, active }: { id: string; active: boolean }) {
+/**
+ * 🔴 **تصديرٌ مسمّى، لا خاصّيةٌ على كائن.**
+ *
+ * كان `export const ChannelsClient = { Form, Toggle }` والصفحة تكتب
+ * `<ChannelsClient.Toggle />`. وده بيتترجم عبر حدّ `"use client"` لمرجع
+ * وحدةٍ لا لكائنٍ حقيقيّ - فالخادم بيقرا `.Toggle` منه فيلاقي `undefined`،
+ * ورياكت بترمي «Element type is invalid» **وتُسقط الصفحة كلّها**.
+ *
+ * و`tsc` مابيشوفهاش: الأنواع سليمة تماماً على الجانبين، والعطب في كيفية
+ * عبور الحدّ. مايظهرش غير وقت التشغيل - وصلني كإيميل من Sentry.
+ *
+ * فكلُّ مكوّنٍ يعبر الحدّ يتصدَّر باسمه مباشرةً.
+ */
+export function ChannelToggle({ id, active }: { id: string; active: boolean }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [needsAuth, setNeedsAuth] = useState(false);
@@ -105,7 +118,7 @@ function Toggle({ id, active }: { id: string; active: boolean }) {
   );
 }
 
-function Form() {
+export function ConnectForm() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -216,4 +229,3 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-export const ChannelsClient = { Form, Toggle };
