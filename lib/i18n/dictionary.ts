@@ -1294,7 +1294,9 @@ export const dictionary = {
       close: "إغلاق",
       stepOf: "خطوة {n} من {total}",
       searchedFor: "بحث العميل عن",
-      yourConversation: "محادثتك مع الدعم",
+      yourConversations: "محادثاتك",
+      whatsapp: "تواصل على واتساب",
+      whatsappHint: "لو تفضّل الرد على تليفونك",
     },
     // ==== الإيراد لكل منصة ====
     revenue: {
@@ -5814,7 +5816,9 @@ export const dictionary = {
       close: "Close",
       stepOf: "Step {n} of {total}",
       searchedFor: "Customer searched for",
-      yourConversation: "Your conversation with support",
+      yourConversations: "Your conversations",
+      whatsapp: "Talk to us on WhatsApp",
+      whatsappHint: "If you would rather reply from your phone",
     },
     // ==== Revenue by platform ====
     revenue: {

@@ -13,9 +13,12 @@ export async function GET(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
+  // **محادثةٌ واحدة للعميل** - والجلساتُ تُفصَل داخلها بفاصلٍ لا بصفٍّ
+  // جديد. عميلٌ واحد بمحادثاتٍ متعدّدة معناه إنّ تاريخَه متفرّق، وإنّ
+  // الدعم بيفتح واحدة ومايشوفش اللي قبلها.
   const thread = await prisma.supportThread.findFirst({
-    where: { userId: user.id },
-    orderBy: { updatedAt: "desc" },
+    where: { userId: user.id, deletedAt: null },
+    orderBy: { lastMessageAt: "desc" },
     include: { messages: { orderBy: { createdAt: "asc" } } },
   });
 
@@ -77,6 +80,51 @@ export async function POST(req: NextRequest) {
   const finalSubject = subject?.trim() || text.trim().slice(0, 80);
 
   const now = new Date();
+
+  // 🔴 **رسالةٌ جديدة بتكمّل محادثته، مابتفتحش واحدة تانية.**
+  //
+  // كانت كلُّ رسالةٍ بتعمل صفّاً جديداً - فالعميل بيشوف الأخيرة بس
+  // ويحسّ إنّ القديمة اتمسحت، والدعم بيلاقي نفس الشخص متكرّراً في
+  // الصندوق بلا تاريخٍ مشترك. الجلساتُ تُفصَل بالوقت داخل المحادثة، لا
+  // بصفوفٍ متفرّقة.
+  const existing = await prisma.supportThread.findFirst({
+    where: { userId: user.id, channel: "WEB", deletedAt: null },
+    orderBy: { lastMessageAt: "desc" },
+    select: { id: true },
+  });
+
+  if (existing) {
+    await prisma.supportMessage.create({
+      data: {
+        threadId: existing.id,
+        fromSupport: false,
+        body: text.trim(),
+        imageUrls,
+        readByUser: true,
+        createdAt: now,
+      },
+    });
+    const reopened = await prisma.supportThread.update({
+      where: { id: existing.id },
+      data: {
+        status: "OPEN",
+        closedAt: null,
+        lastMessageAt: now,
+        readByAdminAt: null,
+        // الموضوعُ بيتحدّث للأحدث: الصندوق بيعرض الموضوع، وموضوعٌ من
+        // شهرٍ فوق رسالةٍ من دقيقة بيوصف الحاجة الغلط.
+        subject: finalSubject,
+        phone: phone?.trim() || undefined,
+        country: country?.trim() || undefined,
+      },
+      include: { messages: { orderBy: { createdAt: "asc" } } },
+    });
+    void notifyOwnerNewSupport({
+      name, email, phone, country, subject: finalSubject, body: text.trim(), isReply: true,
+    });
+    return NextResponse.json({ thread: reopened }, { status: 201 });
+  }
+
   const thread = await prisma.supportThread.create({
     data: {
       userId: user.id,

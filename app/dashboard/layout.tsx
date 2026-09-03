@@ -34,6 +34,7 @@ import { getUsageState } from "@/lib/usageCaps";
 import { DemoBadge } from "@/app/components/DemoBadge";
 import { getMonthlyAiUsage } from "@/lib/aiRateLimit";
 import { ThemeModeToggle } from "@/app/components/ThemeModeToggle";
+import { HeaderHelpButton } from "@/app/components/HeaderHelpButton";
 import { getNavBadges } from "@/lib/navBadges";
 import { LegalLinks } from "@/app/components/LegalLinks";
 import { MobileNavButton } from "@/app/components/MobileNavButton";
@@ -347,7 +348,13 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             />
           ) : null
         }
-        supportSlot={user ? <SupportChat name={user.name ?? ""} email={user.email} variant="sidebar" locale={locale} /> : null}
+        supportSlot={user ? <SupportChat
+            name={user.name ?? ""}
+            email={user.email}
+            variant="sidebar"
+            locale={locale}
+            whatsappNumber={process.env.SUPPORT_WHATSAPP_NUMBER ?? null}
+          /> : null}
       />
 
       {/* 🔴 عمود مرن بارتفاع الشاشة: كان `main` صندوقاً عادياً يتبع ارتفاع
@@ -383,6 +390,10 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               />
             </span>
           )}
+          {/* زرّ المساعدة رجع للهيدر - كان اختفى لمّا اتشال `HelpButton`.
+              وهو مُشغِّلٌ لنفس الودجت لا لوحةٌ تانية: بيبعت نفس الحدث
+              اللي بتفتح بيه بطاقةُ الرئيسية وصفحتا الباقات والتتبّع. */}
+          <HeaderHelpButton locale={locale} />
           <ThemeModeToggle initialMode={mode} locale={locale} />
           <div id="tour-notification-bell"><NotificationBell locale={locale} /></div>
           {/* 🔴 **منتقي الصورة في الإعدادات لا يغيّر شيئاً لمن دخل بجوجل.**

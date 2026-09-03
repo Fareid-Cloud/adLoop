@@ -21,10 +21,10 @@
 // بطبيعتها). وشاشةُ الإدخال بتتنقّل خطوةً خطوة بدل نموذجٍ طويل - كلُّ
 // خطوةٍ سؤالٌ واحد، فمافيش لحظة بيشوف فيها عشر خانات فاضية ويقفل.
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Fragment, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   MessageCircle, X, Paperclip, Send, Search, ChevronLeft, ChevronRight,
-  ArrowRight, Check, Loader2,
+  ArrowRight, Check, Loader2, Phone,
 } from "lucide-react";
 import { useLive } from "@/app/components/LiveData";
 import { Portal } from "@/app/components/ui/Portal";
@@ -58,12 +58,15 @@ export function SupportChat({
   variant = "floating",
   label,
   locale,
+  whatsappNumber,
 }: {
   name: string;
   email: string;
   variant?: "floating" | "sidebar";
   label?: string;
   locale: Locale;
+  /** رقمُ واتساب الدعم - `null` لو مش مضبوط، فالخيار مايظهرش أصلاً. */
+  whatsappNumber?: string | null;
 }) {
   const tr = (k: string, vars?: Record<string, string | number>) => t(locale, `supportChat.${k}`, vars);
   const [open, setOpen] = useState(false);
@@ -377,9 +380,23 @@ export function SupportChat({
               <>
                 <div ref={bodyRef} className="flex-1 overflow-y-auto p-4">
                   <div className="flex flex-col gap-2.5">
-                    {thread.messages.map((m) => (
+                    {thread.messages.map((m, i) => (
+                      <Fragment key={m.id}>
+                        {startsNewSession(thread.messages[i - 1]?.createdAt, m.createdAt) && (
+                          // فاصلٌ لا محادثةٌ جديدة: نفس الشخص ونفس التاريخ،
+                          // وفجوةٌ في الوقت بتقول «ده موضوعٌ تاني» من غير ما
+                          // تفصل تاريخَه في صفوف.
+                          <div className="my-1 flex items-center gap-2">
+                            <span className="h-px flex-1 bg-border" />
+                            <span className="shrink-0 text-[10.5px] text-text-faint">
+                              {new Date(m.createdAt).toLocaleDateString(locale === "ar" ? "ar-EG-u-nu-latn" : "en-GB", {
+                                day: "numeric", month: "short",
+                              })}
+                            </span>
+                            <span className="h-px flex-1 bg-border" />
+                          </div>
+                        )}
                       <div
-                        key={m.id}
                         className={`max-w-[85%] rounded-2xl px-3 py-2 text-[13px] ${
                           m.fromSupport ? "self-start bg-surface-raised text-text-primary" : "self-end bg-accent text-white"
                         }`}
@@ -391,6 +408,7 @@ export function SupportChat({
                           </a>
                         ))}
                       </div>
+                      </Fragment>
                     ))}
                   </div>
                 </div>
@@ -418,6 +436,11 @@ export function SupportChat({
                       كده - فاللي جايّ يدوّر على إجابةٍ بيلاقي نفسه في شاتٍ
                       قديم بلا ما يطلبه. الرئيسيةُ هي الافتراضيّ دايماً،
                       والمحادثةُ صفٌّ فوقها يُدخَل إليه باختياره. */}
+                  {/* 🔴 **محادثةٌ قائمة مش سببٌ لتخطّي الخيارات.** اللوحة
+                      كانت بتفتح على المحادثة مباشرةً لأيّ حدٍّ كلّمنا قبل
+                      كده - فاللي جايّ يدوّر على إجابةٍ بيلاقي نفسه في شاتٍ
+                      قديم بلا ما يطلبه. الرئيسيةُ هي الافتراضيّ دايماً،
+                      والمحادثةُ صفٌّ فوقها يُدخَل إليه باختياره. */}
                   {thread && (
                     <button
                       onClick={() => setView({ k: "thread" })}
@@ -428,7 +451,7 @@ export function SupportChat({
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[12.5px] font-medium text-text-primary">
-                          {tr("yourConversation")}
+                          {tr("yourConversations")}
                         </span>
                         <span className="block truncate text-[11px] text-text-faint">{thread.subject}</span>
                       </span>
@@ -485,11 +508,37 @@ export function SupportChat({
                   </div>
                 </div>
 
-                <FooterAction
-                  label={tr("sendUsMessage")}
-                  hint={tr("sendUsMessageHint")}
-                  onClick={() => { setView({ k: "intake" }); setStep(0); }}
-                />
+                <div className="shrink-0 border-t border-border">
+                  <FooterAction
+                    label={tr("sendUsMessage")}
+                    hint={tr("sendUsMessageHint")}
+                    onClick={() => { setView({ k: "intake" }); setStep(0); }}
+                  />
+                  {/* 🔴 **واتساب خيارٌ مساوٍ لا بديلٌ مخفيّ.** ناسٌ كتير في
+                      السوق ده بتفضّل واتساب على أيّ صندوقٍ في موقع، وإخفاؤه
+                      بيخليهم يقفلوا اللوحة ويدوّروا على الرقم بره.
+                      وبيظهر **بس** لو الرقم مضبوط: خيارٌ بيودّي على رقمٍ
+                      فاضي أسوأ من غيابه. */}
+                  {whatsappNumber && (
+                    <a
+                      href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-between gap-2 border-t border-border px-4 py-3 text-start no-underline transition-colors hover:bg-surface-raised"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Phone size={14} className="shrink-0 text-verified" />
+                        <span className="min-w-0">
+                          <span className="block truncate text-[12.5px] font-medium text-text-primary">
+                            {tr("whatsapp")}
+                          </span>
+                          <span className="block truncate text-[11px] text-text-faint">{tr("whatsappHint")}</span>
+                        </span>
+                      </span>
+                      <ArrowRight size={14} className="shrink-0 text-text-faint rtl:rotate-180" />
+                    </a>
+                  )}
+                </div>
               </>
             )}
           </div>
@@ -524,4 +573,19 @@ function FooterAction({
       <ArrowRight size={14} className="shrink-0 text-text-faint rtl:rotate-180" />
     </button>
   );
+}
+
+/**
+ * هل الرسالةُ دي بدايةُ جلسةٍ جديدة؟
+ *
+ * **ساعتان** فاصلٌ معقول: أقلُّ منها إكمالٌ لنفس الحديث، وأكترُ منها
+ * رجوعٌ بسؤالٍ تاني. والقياسُ بالفجوة لا بالتاريخ: رسالتان الساعة
+ * ١١:٥٨ و١٢:٠٣ في يومين مختلفين حديثٌ واحد، والتاريخُ وحده كان
+ * هيفصلهما.
+ */
+const SESSION_GAP_MS = 2 * 60 * 60 * 1000;
+
+function startsNewSession(previous: string | undefined, current: string): boolean {
+  if (!previous) return false;
+  return new Date(current).getTime() - new Date(previous).getTime() > SESSION_GAP_MS;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search, Pin, Trash2, Check, X, Send, Loader2, Globe, MessageCircle, Phone,
@@ -592,8 +592,19 @@ function Conversation({
       </div>
 
       <div className="flex-1 space-y-2.5 overflow-y-auto p-3">
-        {thread.messages.map((m) => (
-          <div key={m.id} className={`flex ${m.fromSupport ? "justify-end" : "justify-start"}`}>
+        {thread.messages.map((m, i) => (
+          <Fragment key={m.id}>
+          {/* فاصلُ الجلسة: نفس العميل ونفس المحادثة، وفجوةٌ في الوقت بتقول
+              «ده موضوعٌ تاني». الفصلُ لمحادثاتٍ منفصلة كان بيفرّق تاريخ
+              الشخص الواحد على صفوفٍ مالهاش سياقٌ مشترك. */}
+          {startsNewSession(thread.messages[i - 1]?.createdAt, m.createdAt) && (
+            <div className="my-1 flex items-center gap-2">
+              <span className="h-px flex-1 bg-border" />
+              <span className="shrink-0 text-[10.5px] text-text-faint">{sessionDate(m.createdAt)}</span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+          )}
+          <div className={`flex ${m.fromSupport ? "justify-end" : "justify-start"}`}>
             <div className="max-w-[85%]">
               <div
                 className={`rounded-2xl px-3 py-2 text-[12.5px] leading-relaxed whitespace-pre-wrap ${
@@ -613,6 +624,7 @@ function Conversation({
               </div>
             </div>
           </div>
+          </Fragment>
         ))}
         <div ref={endRef} />
       </div>
@@ -828,6 +840,18 @@ function Field({ icon: Icon, label, value }: { icon: typeof Globe; label: string
       <span className="ms-auto min-w-0 truncate text-[12px] text-text-primary">{value}</span>
     </div>
   );
+}
+
+/** ساعتان - نفس عتبةِ الودجت عند العميل، فالجلسة واحدةٌ عند الطرفين. */
+const SESSION_GAP_MS = 2 * 60 * 60 * 1000;
+
+function startsNewSession(previous: string | undefined, current: string): boolean {
+  if (!previous) return false;
+  return new Date(current).getTime() - new Date(previous).getTime() > SESSION_GAP_MS;
+}
+
+function sessionDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
 function time(iso: string) {
