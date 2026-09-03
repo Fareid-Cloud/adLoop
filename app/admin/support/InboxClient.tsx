@@ -118,11 +118,46 @@ export function InboxClient({
   }
 
   return (
-    // 🔴 الشبكة بتتغيّر بوجود محادثةٍ مفتوحة لا بعرض الشاشة وحده.
-    // كانت بتحجز عمودَ التفاصيل دايماً، فلمّا مفيش محادثة مفتوحة بيفضل
-    // العمود فاضياً ويضغط عمودَ المحادثة ويسيب فراغاً ميّتاً على اليمين.
+    <div>
+      {/* ═══ شريطٌ واحد فوق الأعمدة كلّها ═══
+          🔴 كان البحثُ في العمود الأوّل والرقائقُ في التاني، فكلُّ عمودٍ
+          بيبدأ عند ارتفاعٍ مختلف والشاتُ بيبان أوطى من قائمته بصفٍّ كامل.
+          الشريطُ فوقهم بيخلّيهم يبدأوا من نفس السطر - وهو مكانُه الصحيح
+          أصلاً: البحثُ والفلاترُ بيحكموا الأعمدة التلاتة لا عموداً منها. */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="relative min-w-0 flex-1 sm:max-w-xs">
+          <Search size={14} className="pointer-events-none absolute inset-inline-start-0 top-1/2 ms-2.5 -translate-y-1/2 text-text-faint" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search chat"
+            className="field field-sm field-icon-start h-8 w-full"
+          />
+        </div>
+
+        {chips.length > 0 && (
+          <button
+            onClick={() => go({ status: null, channel: null, unread: null, tag: null, assigned: null, q: null })}
+            title="Clear all filters"
+            className="grid size-8 shrink-0 place-items-center rounded-lg text-text-faint transition-colors hover:bg-surface-raised hover:text-text-primary"
+          >
+            <SlidersHorizontal size={14} />
+          </button>
+        )}
+        {chips.map((c) => (
+          <button
+            key={c.label}
+            onClick={() => go(c.clear)}
+            className="flex shrink-0 items-center gap-1 rounded-lg border border-accent/40 bg-accent/8 px-2 py-1 text-[11.5px] text-accent transition-colors hover:bg-accent/15"
+          >
+            {c.label}
+            <X size={11} />
+          </button>
+        ))}
+      </div>
+
     <div
-      className={`grid gap-3 lg:grid-cols-[200px_minmax(0,300px)_minmax(0,1fr)] ${
+      className={`grid items-start gap-3 lg:grid-cols-[200px_minmax(0,300px)_minmax(0,1fr)] ${
         active ? "xl:grid-cols-[210px_320px_minmax(0,1fr)_270px]" : ""
       }`}
     >
@@ -131,16 +166,6 @@ export function InboxClient({
           فلترٍ فيهم، ووضعُه جوّه القائمة بيخلّيه يبان تابعاً للنتيجة
           المعروضة لا محدِّداً لها. */}
       <aside className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:block lg:overflow-visible lg:px-0 lg:pb-0">
-        <div className="relative mb-4 hidden lg:block">
-          <Search size={14} className="pointer-events-none absolute inset-inline-start-0 top-1/2 ms-2.5 -translate-y-1/2 text-text-faint" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search chat"
-            className="field field-sm field-icon-start h-9 w-full"
-          />
-        </div>
-
         <Group label="Inbox">
           <Row
             active={filters.channel === "ALL" && !filters.unread && !filters.assigned && filters.status === "ALL"}
@@ -228,37 +253,10 @@ export function InboxClient({
 
       {/* ═══ ٢) القائمة ═══ */}
       <div className="min-w-0">
-        <div className="mb-2 lg:hidden">
-          <div className="relative">
-            <Search size={14} className="pointer-events-none absolute inset-inline-start-0 top-1/2 ms-2.5 -translate-y-1/2 text-text-faint" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search chat" className="field field-sm field-icon-start h-8 w-full" />
-          </div>
-        </div>
-
-        <div className="mb-2 flex flex-wrap items-center gap-1.5">
-          <span className="grid size-7 shrink-0 place-items-center rounded-lg border border-border text-text-faint">
-            <SlidersHorizontal size={13} />
-          </span>
-          {chips.length === 0 ? (
-            <span className="text-[11.5px] text-text-faint">No filters</span>
-          ) : (
-            chips.map((c) => (
-              <button
-                key={c.label}
-                onClick={() => go(c.clear)}
-                className="flex items-center gap-1 rounded-lg border border-accent/40 bg-accent/8 px-2 py-1 text-[11.5px] text-accent"
-              >
-                {c.label}
-                <X size={11} />
-              </button>
-            ))
-          )}
-        </div>
-
         {threads.length === 0 ? (
           <p className="m-0 px-2 py-8 text-center text-[12.5px] text-text-faint">Nothing matches this view.</p>
         ) : (
-          <div className="flex max-h-[calc(100dvh-14rem)] flex-col gap-1 overflow-y-auto pe-0.5">
+          <div className="flex max-h-[calc(100dvh-15rem)] flex-col gap-1 overflow-y-auto p-1 -m-1">
             {threads.map((t) => (
               <ThreadRowItem key={t.id} row={t} activeId={active?.id ?? null} onOpen={() => go({ thread: t.id })} onChanged={() => router.refresh()} />
             ))}
@@ -271,7 +269,7 @@ export function InboxClient({
         {active ? (
           <Conversation thread={active} agents={agents} avatarUrl={activeAvatar} onChanged={() => router.refresh()} onClose={() => go({ thread: null })} />
         ) : (
-          <div className="grid h-[calc(100dvh-11rem)] place-items-center rounded-2xl border border-dashed border-border text-center">
+          <div className="grid h-[calc(100dvh-15rem)] place-items-center rounded-2xl border border-dashed border-border text-center">
             <p className="m-0 text-[12.5px] text-text-faint">Pick a conversation to read it.</p>
           </div>
         )}
@@ -283,6 +281,7 @@ export function InboxClient({
           <Details thread={active} history={history} tags={tags} avatarUrl={activeAvatar} onChanged={() => router.refresh()} />
         </aside>
       )}
+    </div>
     </div>
   );
 }
@@ -486,7 +485,21 @@ function Conversation({
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState(false);
   const [warning, setWarning] = useState<string | null>(null);
+  const [images, setImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/support/upload", { method: "POST", body: fd });
+    setUploading(false);
+    if (res.ok) { const d = await res.json(); setImages((p) => [...p, d.url]); }
+    else { const d = await res.json().catch(() => null); setWarning(d?.error ?? "The image could not be uploaded."); }
+  }
 
   useEffect(() => {
     fetch(`/api/admin/inbox/${thread.id}`, {
@@ -510,13 +523,13 @@ function Conversation({
   }
 
   async function send() {
-    if (!reply.trim() || busy) return;
+    if ((!reply.trim() && images.length === 0) || busy) return;
     setBusy(true);
     setWarning(null);
     const res = await fetch(`/api/admin/inbox/${thread.id}/reply`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getCsrfHeader() },
-      body: JSON.stringify({ body: reply.trim() }),
+      body: JSON.stringify({ body: reply.trim(), imageUrls: images }),
     }).catch(() => null);
     setBusy(false);
 
@@ -526,6 +539,7 @@ function Conversation({
       return;
     }
     setReply("");
+    setImages([]);
     if (data?.delivery && !data.delivery.ok) {
       setWarning(
         data.delivery.reason === "window_closed"
@@ -544,7 +558,7 @@ function Conversation({
     (!!lastInbound && Date.now() - new Date(lastInbound.createdAt).getTime() < 24 * 3600_000);
 
   return (
-    <div className="card flex h-[calc(100dvh-11rem)] flex-col overflow-hidden">
+    <div className="card flex h-[calc(100dvh-15rem)] flex-col overflow-hidden">
       {/* رأسٌ زيّ المرجع: أفتار + اسم + حالة، والأفعال يمين.
           🔴 **الأفعال بتنزل سطراً تحت قبل ما الاسم يتقصّ.** كانت في نفس
           الصفّ بـ`flex-wrap`، فالاسم (وهو الوحيد اللي بيقدر ينكمش) كان
@@ -582,11 +596,46 @@ function Conversation({
           {agents.map((a) => <option key={a.id} value={a.id}>{a.name ?? a.email}</option>)}
         </select>
 
-        <button onClick={() => patch({ pinned: !thread.pinned })} className="btn-icon shrink-0" aria-label={thread.pinned ? "Unpin" : "Pin"}>
-          <Pin size={15} className={thread.pinned ? "text-accent" : ""} />
+        {/* 🔴 `btn-icon` وحدها بتاخد حدَّ `.btn` وخلفيّتها - فبيظهر مربّعٌ
+            حوالين الأيقونة وهي مش زرّاً بمعنى الفعل. أيقونةٌ عارية بحالةِ
+            مرورٍ فقط. */}
+        <button
+          onClick={() => patch({ pinned: !thread.pinned })}
+          aria-label={thread.pinned ? "Unpin" : "Pin"}
+          title={thread.pinned ? "Unpin" : "Pin"}
+          className={`grid size-7 shrink-0 place-items-center rounded-lg transition-colors hover:bg-surface-raised ${
+            thread.pinned ? "text-accent" : "text-text-faint hover:text-text-primary"
+          }`}
+        >
+          <Pin size={15} />
         </button>
-        <button onClick={() => patch({ status: thread.status === "CLOSED" ? "OPEN" : "CLOSED" })} className="btn btn-sm h-7 shrink-0 px-2.5">
-          {thread.status === "CLOSED" ? "Reopen" : <><Check size={13} className="me-1" />Close</>}
+
+        {/* حالتان لا واحدة: «خلصت» و«محتاجة متابعة». كان فيه «إغلاق» وحده،
+            فالمحادثةُ اللي مستنيّة ردَّ العميل مالهاش مكان - تفضل مفتوحة
+            وتزاحم الجديد، أو تتقفل ويتنسى إنّها ناقصة.
+
+            واللونُ في حالة المرور مقصود: زرٌّ ما بيتغيّرش تحت الماوس
+            بيخلّي صاحبَه مش متأكّد إنّه فوق زرّ أصلاً. */}
+        <button
+          onClick={() => patch({ status: thread.status === "ANSWERED" ? "OPEN" : "ANSWERED" })}
+          title="Waiting on the customer"
+          className={`flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2.5 text-[12px] transition-colors active:scale-95 ${
+            thread.status === "ANSWERED"
+              ? "border-gap/50 bg-gap/15 text-gap"
+              : "border-border text-text-muted hover:border-gap/50 hover:bg-gap/10 hover:text-gap"
+          }`}
+        >
+          🟨 Follow-up
+        </button>
+        <button
+          onClick={() => patch({ status: thread.status === "CLOSED" ? "OPEN" : "CLOSED" })}
+          className={`flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2.5 text-[12px] transition-colors active:scale-95 ${
+            thread.status === "CLOSED"
+              ? "border-verified/50 bg-verified/15 text-verified"
+              : "border-border text-text-muted hover:border-verified/50 hover:bg-verified/12 hover:text-verified"
+          }`}
+        >
+          {thread.status === "CLOSED" ? "Reopen" : <>✅ Done</>}
         </button>
       </div>
       </div>
@@ -647,12 +696,35 @@ function Conversation({
           rows={2}
           className="field w-full text-[12.5px]"
         />
+        {/* zbtnattach: كان اتشال واتحطّ مكانه سطرُ شرح - فالدعم بقى
+            مايقدرش يبعت صورة أصلاً، وهي نصفُ الشغل في الدعم التقنيّ. */}
+        {images.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {images.map((u) => (
+              <span key={u} className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={u} alt="" className="h-12 w-12 rounded-lg object-cover" />
+                <button
+                  onClick={() => setImages((p) => p.filter((x) => x !== u))}
+                  aria-label="Remove"
+                  className="absolute -end-1 -top-1 grid size-4 place-items-center rounded-full bg-critical text-white"
+                >
+                  <X size={9} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
         <div className="mt-2 flex items-center justify-between gap-2">
-          <span className="flex items-center gap-1 text-[11px] text-text-faint">
-            <Paperclip size={12} />
-            Attachments from the customer show inline
-          </span>
-          <button onClick={send} disabled={busy || !reply.trim()} className="btn btn-primary btn-sm h-8 px-3">
+          <label
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg px-1.5 py-1 text-[11.5px] text-text-faint transition-colors hover:bg-surface-raised hover:text-text-primary"
+            title="Attach an image"
+          >
+            <Paperclip size={13} />
+            {uploading ? "Uploading..." : "Attach"}
+            <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
+          </label>
+          <button onClick={send} disabled={busy || (!reply.trim() && images.length === 0)} className="btn btn-primary btn-sm h-8 px-3">
             {busy ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
             <span className="ms-1.5">Send</span>
           </button>

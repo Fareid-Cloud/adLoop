@@ -1036,7 +1036,20 @@ html, body { overflow-x: clip; }
 }
 
 
-.field::placeholder { color: var(--text-faint); }
+/* ── النصُّ الواصف أخفُّ من النصّ المكتوب - قاعدةٌ عامّة ─────────────
+   النصُّ داخل الحقل قبل الكتابة **بيوصف وظيفةَ الحقل**، مش محتوًى.
+   وبوزنٍ مساوٍ للمكتوب بيتقري كإجابةٍ موجودة، فصاحبُه بيتردّد قبل ما
+   يكتب فوقه. الوزنُ الأخفّ بيقول «ده شرحٌ لا قيمة».
+
+   وهي على `input` و`textarea` عامّةً لا على `.field` وحدها: نصف حقول
+   المنتج بتستعمل `card` أو أصنافاً تانية، وقصرُ القاعدة على `.field`
+   كان بيخلّي نصَّ «أضف وسماً» و«اكتب ملاحظة» أثقل من غيره بلا سبب. */
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-faint);
+  opacity: 0.72;
+}
+.field::placeholder { color: var(--text-faint); opacity: 0.72; }
 .field:hover:not(:disabled) { border-color: var(--border-hover); }
 /* `outline` على كلّ حالات التركيز: المتصفّح يرسم إطاره الخاصّ على
    `:focus-visible` بإزاحة، فيظهر خطّ ثانٍ خارج الحدّ الملوّن. */

@@ -188,15 +188,15 @@ export function SupportChat({
   }
 
   async function sendReply() {
-    if (!reply.trim() || !thread) return;
+    if ((!reply.trim() && images.length === 0) || !thread) return;
     setBusy(true);
     const res = await fetch("/api/support", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ threadId: thread.id, text: reply }),
+      body: JSON.stringify({ threadId: thread.id, text: reply.trim(), imageUrls: images }),
     });
     setBusy(false);
-    if (res.ok) { setReply(""); load(); }
+    if (res.ok) { setReply(""); setImages([]); load(); }
   }
 
   // ── زرّ القائمة الجانبية ────────────────────────────────────────────
@@ -413,7 +413,31 @@ export function SupportChat({
                   </div>
                 </div>
                 <div className="shrink-0 border-t border-border p-3">
+                  {/* الإرفاقُ كان في شاشة الإدخال وحدها، فالعميلُ يقدر يبعت
+                      صورةً في أوّل رسالة **ومايقدرش** في أيّ ردٍّ بعدها -
+                      وأغلبُ اللقطات بتيجي في الردّ لمّا الدعم يسأل «ابعتلي
+                      صورة». */}
+                  {images.length > 0 && (
+                    <div className="mb-2 flex flex-wrap gap-1.5">
+                      {images.map((u) => (
+                        <span key={u} className="relative">
+                          <img src={u} alt="" className="h-11 w-11 rounded-lg object-cover" />
+                          <button
+                            onClick={() => setImages((p) => p.filter((x) => x !== u))}
+                            aria-label={tr("close")}
+                            className="absolute -end-1 -top-1 grid size-4 place-items-center rounded-full bg-critical text-white"
+                          >
+                            <X size={9} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex items-center gap-2">
+                    <label className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-xl text-text-faint transition-colors hover:bg-surface-raised hover:text-text-primary" title={tr("attach")}>
+                      {uploading ? <Loader2 size={15} className="animate-spin" /> : <Paperclip size={15} />}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
+                    </label>
                     <input
                       className={INPUT}
                       placeholder={tr("replyPlaceholder")}

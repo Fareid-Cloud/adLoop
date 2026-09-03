@@ -17,10 +17,17 @@ import { validateOrError } from "@/lib/validation/schemas";
 import { deliverReply } from "@/lib/channels/outbound";
 import { sendPushToUser } from "@/lib/webPush";
 
-const schema = z.object({
-  body: z.string().trim().min(1).max(8000),
-  imageUrls: z.array(z.string().url()).max(6).optional(),
-});
+// 🔴 **صورةٌ بلا نصّ رسالةٌ كاملة.** كان `body` مطلوباً بحدٍّ أدنى حرف،
+// فإرسالُ لقطةِ شاشةٍ وحدها بيترفض - وهو أكترُ شكلٍ بيتبعت في الدعم
+// التقنيّ. الشرطُ بقى: نصٌّ **أو** صورة.
+const schema = z
+  .object({
+    body: z.string().trim().max(8000).default(""),
+    imageUrls: z.array(z.string().url()).max(6).optional(),
+  })
+  .refine((v) => v.body.trim().length > 0 || (v.imageUrls?.length ?? 0) > 0, {
+    message: "Write something or attach an image.",
+  });
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -51,7 +58,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       data: {
         threadId: id,
         fromSupport: true,
-        body: validation.data.body,
+        body: validation.data.body.trim(),
         imageUrls: validation.data.imageUrls ?? [],
         readByUser: false,
         authorAdminId: guard.admin.id,
@@ -78,7 +85,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     channel: thread.channel,
     externalThreadId: thread.externalId,
     lastInboundAt: thread.messages[0]?.createdAt ?? null,
-    body: validation.data.body,
+    body: validation.data.body.trim(),
   });
 
   if (delivery.ok && delivery.externalId) {

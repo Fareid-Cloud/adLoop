@@ -40,10 +40,13 @@ export async function POST(req: NextRequest) {
   if (body.threadId) {
     const thread = await prisma.supportThread.findFirst({ where: { id: body.threadId, userId: user.id } });
     if (!thread) return NextResponse.json({ error: "not found" }, { status: 404 });
-    if (!body.text?.trim()) return NextResponse.json({ error: t(locale, "apiErr.messageEmpty") }, { status: 400 });
+    // صورةٌ بلا نصّ رسالةٌ كاملة - أكترُ شكلٍ بيتبعت في الدعم التقنيّ.
+    if (!body.text?.trim() && imageUrls.length === 0) {
+      return NextResponse.json({ error: t(locale, "apiErr.messageEmpty") }, { status: 400 });
+    }
 
     const msg = await prisma.supportMessage.create({
-      data: { threadId: thread.id, fromSupport: false, body: body.text.trim(), imageUrls, readByUser: true },
+      data: { threadId: thread.id, fromSupport: false, body: (body.text ?? "").trim(), imageUrls, readByUser: true },
     });
     // 🔴 `lastMessageAt` مش `updatedAt`: الصندوق بيرتّب بالأوّل، وبدونه
     // رسالةُ العميل الجديدة ماكانتش بتطلّع محادثته فوق القائمة إطلاقاً -
