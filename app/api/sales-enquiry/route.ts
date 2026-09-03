@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { isSpendBand } from "@/lib/salesEnquiry";
 import { notifyOwnerSalesEnquiry } from "@/lib/supportEmail";
 
@@ -26,6 +27,30 @@ export async function POST(req: NextRequest) {
   // لسه ما عملش حساب - وإجبارُه على التسجيل قبل ما يقدر يكلّمنا بيصفّي
   // بالظبط اللي إحنا عايزينه.
   const user = await getSessionUser(req).catch(() => null);
+
+  // 🔴 **مسارٌ مفتوح بيكتب صفّاً وبيبعت بريداً - لازم حدُّ معدّل.**
+  //
+  // من غيره، سكربتٌ في سطرٍ واحد بيملا الطابور بمئات الطلبات المزيّفة
+  // ويغرق بريد المالك - والطابورُ اللي جوّاه ضوضاء بيتساب، فيضيع معاه
+  // الطلبُ الحقيقيّ الوحيد اللي فيه. والضررُ التاني إنّ كلَّ رسالةٍ من
+  // دول مدفوعةٌ عندنا في Resend.
+  //
+  // خمسةٌ في الساعة للـIP: أكترُ بكتير من أيّ حاجةٍ حقيقية (اللي بيطلب
+  // مكالمةَ مبيعات بيطلبها مرّة)، وأقلُّ بكتير من أن يكون الإغراقُ مجدياً.
+  // والمسجَّلُ بيتحسب بحسابه لا بالـIP: المكاتب في مصر ورا CGNAT، فحدٌّ
+  // بالـIP وحده كان هيقفل على شركةٍ كاملة بطلبِ موظّفٍ واحد.
+  const limit = await checkRateLimit(
+    user ? `user:${user.id}` : `ip:${getClientIp(req)}`,
+    "sales-enquiry",
+    5,
+    60
+  );
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "too many requests — please email us directly" },
+      { status: 429 }
+    );
+  }
 
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "bad request" }, { status: 400 });
