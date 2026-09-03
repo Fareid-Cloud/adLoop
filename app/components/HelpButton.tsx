@@ -1,0 +1,125 @@
+"use client";
+
+// زر المساعدة (؟) جنب الإشعارات - بيفتح لوحة جانبية فيها مركز المساعدة
+// كامل مع بحث. المحتوى من lib/helpContent.ts (نفس مصدر صفحة /dashboard/help).
+import { useState } from "react";
+import { HelpCircle, X, Search, ChevronDown, ArrowRight } from "lucide-react";
+import { HELP_SECTIONS, searchHelp, helpText, type HelpArticle } from "@/lib/helpContent";
+import { t, type Locale } from "@/lib/i18n/dictionary";
+
+export function HelpButton({ locale }: { locale: "ar" | "en" }) {
+  const tr = (k: string) => t(locale, `helpPanel.${k}`);
+  const ar = locale === "ar";
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  const results = q.trim() ? searchHelp(q) : null;
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="flex h-9 w-9 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface-hover hover:text-text-primary"
+        aria-label={ar ? tr("button") : "Help"}
+        title={ar ? tr("button") : "Help"}
+      >
+        <HelpCircle size={18} strokeWidth={1.75} />
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-[9998] flex justify-end bg-black/30" onClick={() => setOpen(false)}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="pop-shadow flex h-full w-full max-w-md flex-col border-s border-border bg-surface"
+          >
+            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+              <div>
+                <div className="text-base font-semibold text-text-primary">{ar ? tr("title") : "Help center"}</div>
+                <div className="text-xs text-text-muted">{ar ? tr("subtitle") : "Answers about AdLoop"}</div>
+              </div>
+              <button onClick={() => setOpen(false)} className="text-text-faint hover:text-text-primary" aria-label={ar ? tr("close") : "Close"}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="border-b border-border p-4">
+              <div className="relative">
+                <Search size={15} className="pointer-events-none absolute inset-y-0 my-auto ms-3 text-text-faint" />
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder={ar ? tr("search") : "Search help..."}
+                  className="field field-icon-start w-full"
+                />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              {results ? (
+                results.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-text-faint">{ar ? tr("noResults") : "No results"}</p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {results.map((a) => (
+                      <Article key={a.id} a={a} locale={locale} open={openId === a.id} onToggle={() => setOpenId(openId === a.id ? null : a.id)} />
+                    ))}
+                  </div>
+                )
+              ) : (
+                HELP_SECTIONS.map((s) => (
+                  <div key={s.title.en} className="mb-5">
+                    <div className="mb-2 text-[11px] font-medium uppercase tracking-wider text-text-faint">{helpText(locale, s.title)}</div>
+                    <div className="flex flex-col gap-2">
+                      {s.articles.map((a) => (
+                        <Article key={a.id} a={a} locale={locale} open={openId === a.id} onToggle={() => setOpenId(openId === a.id ? null : a.id)} />
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* التذييلُ كان جملةً بتقول «استعمل زرّ الشات تحت» - إرشادٌ
+                بيطلب من صاحبه يقفل ده ويدوّر على ده. بقى زرّاً بيعمل
+                الحاجتين: بيقفل اللوحة وبيفتح الدعم بنفس الحدث اللي
+                بتفتح بيه بطاقةُ الرئيسية.
+
+                **ومركزُ المساعدة يفضل مركزَ مساعدة**: أسئلةٌ وبحثٌ وبس.
+                الدعمُ سطحٌ تاني، والزرّ ده جسرٌ في الاتجاه الواحد لمن
+                لم تكفه الإجابة - لا دمجٌ بينهما. */}
+            <button
+              onClick={() => {
+                setOpen(false);
+                window.dispatchEvent(new CustomEvent("adloop:open-support"));
+              }}
+              className="flex w-full items-center justify-center gap-1.5 border-t border-border p-4 text-xs text-text-muted transition-colors hover:bg-surface-raised hover:text-text-primary"
+            >
+              {ar ? tr("footer") : "Still stuck? Contact support"}
+              <ArrowRight size={13} className="shrink-0 rtl:rotate-180" />
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function Article({
+  a,
+  open,
+  onToggle,
+  locale,
+}: {
+  a: HelpArticle;
+  locale: "ar" | "en"; open: boolean; onToggle: () => void }) {
+  return (
+    <div className="card-shadow overflow-hidden card-inset">
+      <button onClick={onToggle} className="flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-start text-[13.5px] font-medium text-text-primary">
+        {helpText(locale, a.q)}
+        <ChevronDown size={15} className={`shrink-0 text-text-faint transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && <p className="border-t border-border px-3.5 py-3 text-[13px] leading-relaxed text-text-muted">{helpText(locale, a.a)}</p>}
+    </div>
+  );
+}

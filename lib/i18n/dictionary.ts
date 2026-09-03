@@ -3195,7 +3195,7 @@ export const dictionary = {
       close: "إغلاق",
       search: "ابحث في المساعدة...",
       noResults: "لا نتائج",
-      footer: "لم تجد إجابتك؟ استخدم زر الدعم الفني في القائمة الجانبية.",
+      footer: "لم تجد إجابتك؟ تواصل مع الدعم",
     },
     // ==== تفصيل المنصّات ====
     platformSplit: {
@@ -6214,7 +6214,7 @@ export const dictionary = {
       close: "Close",
       search: "Search help...",
       noResults: "No results",
-      footer: "Didn't find your answer? Use the Support button in the sidebar.",
+      footer: "Still need help? Contact support",
     },
     // ==== Platform split ====
     platformSplit: {

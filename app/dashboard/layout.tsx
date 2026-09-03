@@ -34,7 +34,7 @@ import { getUsageState } from "@/lib/usageCaps";
 import { DemoBadge } from "@/app/components/DemoBadge";
 import { getMonthlyAiUsage } from "@/lib/aiRateLimit";
 import { ThemeModeToggle } from "@/app/components/ThemeModeToggle";
-import { HeaderHelpButton } from "@/app/components/HeaderHelpButton";
+import { HelpButton } from "@/app/components/HelpButton";
 import { getNavBadges } from "@/lib/navBadges";
 import { LegalLinks } from "@/app/components/LegalLinks";
 import { MobileNavButton } from "@/app/components/MobileNavButton";
@@ -390,10 +390,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               />
             </span>
           )}
-          {/* زرّ المساعدة رجع للهيدر - كان اختفى لمّا اتشال `HelpButton`.
-              وهو مُشغِّلٌ لنفس الودجت لا لوحةٌ تانية: بيبعت نفس الحدث
-              اللي بتفتح بيه بطاقةُ الرئيسية وصفحتا الباقات والتتبّع. */}
-          <HeaderHelpButton locale={locale} />
+          {/* 🔴 مركزُ المساعدة رجع كما كان: أسئلةٌ وبحثٌ وسكرول، **مش
+              الدعم**. كنت شلتُه ثمّ رجّعتُه كمُشغِّلٍ للدعم - وده خلطٌ بين
+              سطحين مختلفين: ده بيجاوب، وده بيفتح تذكرة. وفي تذييله زرٌّ
+              واحد بيعبر للدعم لمن لم تكفه الإجابة. */}
+          <HelpButton locale={locale} />
           <ThemeModeToggle initialMode={mode} locale={locale} />
           <div id="tour-notification-bell"><NotificationBell locale={locale} /></div>
           {/* 🔴 **منتقي الصورة في الإعدادات لا يغيّر شيئاً لمن دخل بجوجل.**
