@@ -10,7 +10,7 @@ import { useState, useMemo, useTransition, useRef, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { Stethoscope,
   RefreshCw, AlertOctagon, AlertTriangle, Info, CheckCircle2, Search,
-  ChevronLeft, ChevronDown, Activity, Loader2, Radar,
+  ChevronLeft, ChevronDown, Activity, Loader2, Crosshair,
 } from "lucide-react";
 import { PlatformLogo } from "@/app/components/PlatformLogo";
 import { MetricCard, type MetricTone } from "@/app/components/ui/MetricCard";
@@ -201,7 +201,7 @@ export function DiagnosticsView({
             href="/dashboard/tracking"
             className="btn btn-secondary"
           >
-            <Radar size={15} className="text-text-muted" />
+            <Crosshair size={15} className="text-text-muted" />
             {tr("trackingCoverage")}
           </a>
           <button

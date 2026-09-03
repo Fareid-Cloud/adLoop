@@ -7,7 +7,7 @@ import { TrackingCoverageClient } from "./TrackingCoverageClient";
 import { getAppUrl } from "@/lib/appUrl";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
-import { Radar } from "lucide-react";
+import { Crosshair } from "lucide-react";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export default async function TrackingCoveragePage() {
@@ -42,7 +42,7 @@ export default async function TrackingCoveragePage() {
     // بينما جدولُ الصفحات وكتلُ الشيفرة أحوجُ ما تكون للعرض.
     <div>
       <PageHeader
-        icon={Radar}
+        icon={Crosshair}
         tone="verified"
         eyebrow={workspace.name}
         title={t(locale, "tagInstall.covTitle")}

@@ -2324,6 +2324,9 @@ export const dictionary = {
       askApprovalHint: "عند إلغاء التحديد، ينفذ النظام الإجراء تلقائياً على حسابك الإعلاني دون سؤالك.",
       saving: "جارٍ الحفظ…",
       activateRule: "تفعيل القاعدة",
+      liveHeading: "قواعد شغّالة",
+      pausedHeading: "موقوفة",
+      pausedNote: "لا تُنفَّذ حتى تُشغَّل",
     },
     // ==== التقرير الشهري ====
     monthlyReport: {
@@ -7570,6 +7573,9 @@ export const dictionary = {
       askApprovalHint: "If you clear this, the system applies the action to your ad account automatically without asking.",
       saving: "Saving…",
       activateRule: "Activate rule",
+      liveHeading: "Running",
+      pausedHeading: "Paused",
+      pausedNote: "will not run until switched on",
     },
     // ==== Monthly report ====
     monthlyReport: {

@@ -15,7 +15,7 @@
 // وهو لم يُنجَز بعد - وهو الشيء الوحيد الذي لا يصحّ أن يُنسى.
 
 import Link from "next/link";
-import { Radar } from "lucide-react";
+import { Crosshair } from "lucide-react";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
 export function InstallTagCta({ locale }: { locale: Locale }) {
@@ -25,7 +25,7 @@ export function InstallTagCta({ locale }: { locale: Locale }) {
       // نبرةُ «فجوة» لا خطأ: لا شيء معطوب - خطوةٌ لم تُتَّخذ بعد.
       className="hidden items-center gap-1.5 rounded-xl border border-gap/40 bg-gap/10 px-2.5 py-1.5 text-[12px] font-medium text-gap no-underline transition-colors hover:bg-gap/[0.16] sm:inline-flex"
     >
-      <Radar size={13} className="shrink-0" />
+      <Crosshair size={13} className="shrink-0" />
       {t(locale, "tagInstall.ctaInstall")}
     </Link>
   );

@@ -97,124 +97,185 @@ export function ActiveRulesList({
     );
   }
 
-  return (
-    <div className="flex flex-col gap-2.5">
-      {rules.map((rule) => {
-        const tone = ACTION_TONE[rule.action] ?? "var(--text-muted)";
-        const isEditing = editing === rule.id;
-        const scoped = rule.appliesTo === "SPECIFIC_CAMPAIGNS" && rule.specificCampaignIds.length > 0;
+  // 🔴 **الشغّال قبل الموقوف، مش مخلوطين بترتيب الإنشاء.**
+  //
+  // القاعدةُ الموقوفة والشغّالة كان شكلُهما واحداً إلّا مفتاحٌ صغير في
+  // الآخر - فقارئُ الصفحة مضطرٌّ يفحص كلَّ بطاقة عشان يعرف إيه اللي
+  // بيشتغل فعلاً على حسابه دلوقتي. وهو **السؤالُ الوحيد** اللي الصفحة
+  // دي موجودةٌ عشانه.
+  const live = rules.filter((r) => r.enabled);
+  const paused = rules.filter((r) => !r.enabled);
 
-        return (
-          <div key={rule.id} className="card pad-md">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                  {rule.platform ? (
-                    <span className="flex items-center gap-1.5 rounded-full bg-surface-raised px-2 py-0.5">
-                      <PlatformLogo platform={rule.platform} size={13} />
-                      <span className="text-[11px] font-medium" style={{ color: PLATFORM_TINT[rule.platform] ?? "var(--text-muted)" }}>
-                        {platformLabel(locale, rule.platform)}
-                      </span>
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1.5 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">
-                      <Layers size={12} /> {tr("allPlatforms")}
-                    </span>
-                  )}
-                  <span className="text-[13.5px] font-medium text-text-primary">{rule.name}</span>
-                  <span className="rounded-full px-2 py-0.5 text-[10.5px] font-medium"
-                        style={{ background: `color-mix(in srgb, ${tone} 13%, transparent)`, color: tone }}>
-                    {tr(`a${rule.action}`)}
-                    {rule.actionValue ? ` ${Math.abs(rule.actionValue)}%` : ""}
-                  </span>
-                  {rule.requireApproval && (
-                    <span className="rounded-full bg-gap/12 px-2 py-0.5 text-[10.5px] font-medium text-gap">
-                      {tr("needsApproval")}
-                    </span>
-                  )}
-                </div>
+  const card = (rule: RuleRow) => {
+    const tone = ACTION_TONE[rule.action] ?? "var(--text-muted)";
+    const isEditing = editing === rule.id;
+    const scoped = rule.appliesTo === "SPECIFIC_CAMPAIGNS" && rule.specificCampaignIds.length > 0;
 
-                {isEditing ? (
-                  <EditRow rule={rule} locale={locale} busy={busy === rule.id} onCancel={() => setEditing(null)}
-                           onSave={(body) => { patch(rule.id, body); setEditing(null); }} />
-                ) : (
-                  <>
-                    <p className="text-[12.5px] text-text-muted">
-                      {tr(`m${rule.metric}`)}{" "}
-                      {rule.operator === "GREATER_THAN" ? tr("greaterThan") : tr("lessThan")}{" "}
-                      {/* 🔴 **العتبة كانت رقماً عارياً: «أكبر من ٣٠».**
-                          ثلاثون ماذا؟ العتبة مالية في «تكلفة العميل»، ونسبة
-                          مئوية في «نسبة التضخيم»، ومضاعِف في «العائد». ورقمٌ
-                          يوقف حملةً يجب أن يقول وحدته قبل قيمته. */}
-                      <span className="font-mono text-text-primary">
-                        {rule.threshold}
-                        <span className="ms-1 text-[11px] font-normal text-text-muted">
-                          {thresholdUnit(rule.metric, currency)}
-                        </span>
-                      </span>
-                      {" · "}{tr("consecutiveDays", { n: rule.consecutiveDays })}
-                    </p>
-
-                    {/* نطاق التطبيق بالأسماء لا بالمعرّفات */}
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                      <span className="text-[11.5px] text-text-faint">{tr("appliesTo")}</span>
-                      {scoped ? (
-                        rule.specificCampaignIds.slice(0, 3).map((cid) => (
-                          <span key={cid} className="max-w-[190px] truncate rounded-full bg-surface-raised px-2 py-0.5 text-[11px] text-text-muted">
-                            {nameOf(cid)}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[11px] text-text-muted">
-                          {tr("allCampaigns")}
-                        </span>
-                      )}
-                      {scoped && rule.specificCampaignIds.length > 3 && (
-                        <span className="text-[11px] text-text-faint">
-                          +{rule.specificCampaignIds.length - 3}
-                        </span>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="flex shrink-0 items-center gap-1.5">
-                <Toggle checked={rule.enabled} onChange={(v) => patch(rule.id, { enabled: v })} label={tr("enableRule")} />
-                <button onClick={() => setEditing(isEditing ? null : rule.id)}
-                        className="card-inset p-2 text-text-muted hover:text-text-primary"
-                        aria-label={tr("editRule")}>
-                  <Pencil size={14} />
-                </button>
-                <button onClick={() => setConfirmDelete(rule.id)}
-                        className="card-inset p-2 text-text-muted hover:text-critical"
-                        aria-label={tr("deleteRule")}>
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </div>
-
-            {confirmDelete === rule.id && (
-              <div className="note mt-3 justify-between border-critical/35 bg-critical/[0.06]">
-                <span className="flex items-center gap-2 text-[12.5px] text-text-primary">
-                  <AlertTriangle size={14} className="text-critical" />
-                  {tr("confirmDelete")}
-                </span>
-                <div className="flex gap-2">
-                  <button onClick={() => setConfirmDelete(null)}
-                          className="card px-3 py-1.5 text-[12px] text-text-muted">
-                    {tr("cancel")}
-                  </button>
-                  <button onClick={() => remove(rule.id)} disabled={busy === rule.id}
-                          className="btn btn-danger btn-sm">
-                    {busy === rule.id ? tr("deleting") : tr("del")}
-                  </button>
-                </div>
-              </div>
-            )}
+    return (
+      // `group` عشان أزرارُ التعديل والحذف تهدا لحدّ ما المؤشّر يقرب.
+      // تلاتُ أدواتٍ ظاهرة على كلّ بطاقة بتتحوّل لضوضاء لمّا البطاقات
+      // تبقى عشرة - والمفتاحُ وحده هو اللي بيتداس كلّ يوم.
+      <div key={rule.id} className={`card pad-md group ${rule.enabled ? "" : "opacity-70"}`}>
+        {/* ═══ السطر الأوّل: الاسم والمفتاح ═══
+            الاسمُ هو هويّةُ البطاقة فبياخد سطرَه، والمفتاحُ جنبه لأنّه
+            الفعلُ الأكثر تكراراً. الشاراتُ تحتهما: بتوصف لا بتعرّف. */}
+        <div className="flex items-start justify-between gap-2">
+          <span className="min-w-0 flex-1 text-[13.5px] font-medium leading-snug text-text-primary">
+            {rule.name}
+          </span>
+          <div className="flex shrink-0 items-center gap-1">
+            <Toggle checked={rule.enabled} onChange={(v) => patch(rule.id, { enabled: v })} label={tr("enableRule")} />
+            <button onClick={() => setEditing(isEditing ? null : rule.id)}
+                    className="rounded-lg p-1.5 text-text-faint opacity-0 transition-opacity hover:text-text-primary focus-visible:opacity-100 group-hover:opacity-100"
+                    aria-label={tr("editRule")}>
+              <Pencil size={14} />
+            </button>
+            <button onClick={() => setConfirmDelete(rule.id)}
+                    className="rounded-lg p-1.5 text-text-faint opacity-0 transition-opacity hover:text-critical focus-visible:opacity-100 group-hover:opacity-100"
+                    aria-label={tr("deleteRule")}>
+              <Trash2 size={14} />
+            </button>
           </div>
-        );
-      })}
+        </div>
+
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          {rule.platform ? (
+            <span className="flex items-center gap-1.5 rounded-full bg-surface-raised px-2 py-0.5">
+              <PlatformLogo platform={rule.platform} size={13} />
+              <span className="text-[11px] font-medium" style={{ color: PLATFORM_TINT[rule.platform] ?? "var(--text-muted)" }}>
+                {platformLabel(locale, rule.platform)}
+              </span>
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">
+              <Layers size={12} /> {tr("allPlatforms")}
+            </span>
+          )}
+          <span className="rounded-full px-2 py-0.5 text-[10.5px] font-medium"
+                style={{ background: `color-mix(in srgb, ${tone} 13%, transparent)`, color: tone }}>
+            {tr(`a${rule.action}`)}
+            {rule.actionValue ? ` ${Math.abs(rule.actionValue)}%` : ""}
+          </span>
+          {rule.requireApproval && (
+            <span className="rounded-full bg-gap/12 px-2 py-0.5 text-[10.5px] font-medium text-gap">
+              {tr("needsApproval")}
+            </span>
+          )}
+        </div>
+
+        {isEditing ? (
+          <EditRow rule={rule} locale={locale} busy={busy === rule.id} onCancel={() => setEditing(null)}
+                   onSave={(body) => { patch(rule.id, body); setEditing(null); }} />
+        ) : (
+          <>
+            <p className="mt-2 text-[12.5px] leading-relaxed text-text-muted">
+              {tr(`m${rule.metric}`)}{" "}
+              {rule.operator === "GREATER_THAN" ? tr("greaterThan") : tr("lessThan")}{" "}
+              {/* 🔴 **العتبة كانت رقماً عارياً: «أكبر من ٣٠».**
+                  ثلاثون ماذا؟ العتبة مالية في «تكلفة العميل»، ونسبة
+                  مئوية في «نسبة التضخيم»، ومضاعِف في «العائد». ورقمٌ
+                  يوقف حملةً يجب أن يقول وحدته قبل قيمته. */}
+              <span className="font-mono text-text-primary">
+                {rule.threshold}
+                <span className="ms-1 text-[11px] font-normal text-text-muted">
+                  {thresholdUnit(rule.metric, currency)}
+                </span>
+              </span>
+              {" · "}{tr("consecutiveDays", { n: rule.consecutiveDays })}
+            </p>
+
+            {/* نطاق التطبيق بالأسماء لا بالمعرّفات. اتنين بدل تلاتة:
+                البطاقةُ بقت نصَّ العرض، وتلاتُ أسماءِ حملات بتلفّ لسطرين. */}
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span className="text-[11.5px] text-text-faint">{tr("appliesTo")}</span>
+              {scoped ? (
+                rule.specificCampaignIds.slice(0, 2).map((cid) => (
+                  <span key={cid} className="max-w-[150px] truncate rounded-full bg-surface-raised px-2 py-0.5 text-[11px] text-text-muted">
+                    {nameOf(cid)}
+                  </span>
+                ))
+              ) : (
+                <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[11px] text-text-muted">
+                  {tr("allCampaigns")}
+                </span>
+              )}
+              {scoped && rule.specificCampaignIds.length > 2 && (
+                <span className="text-[11px] text-text-faint">
+                  +{rule.specificCampaignIds.length - 2}
+                </span>
+              )}
+            </div>
+          </>
+        )}
+
+        {confirmDelete === rule.id && (
+          // بيتكدّس رأسياً لا `justify-between`: البطاقةُ بقت نصَّ العرض،
+          // والصفُّ الأفقيّ كان بيلفّ فيبقى الزرُّ الأحمر تحت النصّ بلا
+          // محاذاة.
+          <div className="note mt-3 flex-col items-stretch gap-2 border-critical/35 bg-critical/[0.06]">
+            <span className="flex items-center gap-2 text-[12.5px] text-text-primary">
+              <AlertTriangle size={14} className="shrink-0 text-critical" />
+              {tr("confirmDelete")}
+            </span>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setConfirmDelete(null)}
+                      className="card px-3 py-1.5 text-[12px] text-text-muted">
+                {tr("cancel")}
+              </button>
+              <button onClick={() => remove(rule.id)} disabled={busy === rule.id}
+                      className="btn btn-danger btn-sm">
+                {busy === rule.id ? tr("deleting") : tr("del")}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      {live.length > 0 && (
+        <section>
+          <Heading label={tr("liveHeading")} count={live.length} tone="verified" />
+          {/* عمودان من `lg` فصاعداً - البطاقةُ عرضُها ~٤٩٠ بكسل، وهو
+              كافٍ لجملةِ الشرط وشاراتها. و`items-start` عشان فتحُ نموذج
+              التعديل في بطاقةٍ ما يمطّش جارتها معاها. */}
+          <div className="grid items-start gap-2.5 lg:grid-cols-2">
+            {live.map(card)}
+          </div>
+        </section>
+      )}
+
+      {paused.length > 0 && (
+        <section>
+          <Heading label={tr("pausedHeading")} count={paused.length} tone="muted" note={tr("pausedNote")} />
+          <div className="grid items-start gap-2.5 lg:grid-cols-2">
+            {paused.map(card)}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+/** عنوانُ مجموعةٍ بعدّادها - العددُ بيقول حجمَ اللي تحته قبل التمرير. */
+function Heading({
+  label, count, tone, note,
+}: {
+  label: string; count: number; tone: "verified" | "muted"; note?: string;
+}) {
+  return (
+    <div className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+      <h3 className="text-[12px] font-semibold uppercase tracking-wider text-text-muted">{label}</h3>
+      <span
+        className={`rounded-full px-1.5 py-0.5 text-[11px] font-medium tabular-nums ${
+          tone === "verified" ? "bg-verified/12 text-verified" : "bg-surface-raised text-text-faint"
+        }`}
+      >
+        {count}
+      </span>
+      {note && <span className="text-[11.5px] text-text-faint">{note}</span>}
     </div>
   );
 }

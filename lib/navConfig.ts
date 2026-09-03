@@ -115,16 +115,18 @@ export const NAV_GROUPS: NavGroup[] = [
       // التشخيص - وهو القسم الذي يُفتَح عند الشكّ في عطل، لا عند البدء.
       // وبدون الوسم لا يملك المنتج نقرةً واحدةً يقارن بها ما تدّعيه
       // المنصّة، أي أنّ دعواه كلَّها تسقط. فصار قسماً قائماً بذاته.
-      { href: "/dashboard/tracking", labelAr: "التتبّع", labelEn: "Tracking", iconName: "Radar" },
+      // `Crosshair` لا `Radar`: باقي أيقونات القائمة كلُّها شكلٌ واحد
+      // بضربات قليلة (وسم، درع، سمّاعة)، و`Radar` كان الوحيد المرسوم
+      // كرسمٍ بيانيّ - أقواسٌ متداخلة وخطُّ مسحٍ ونقطة - فبيتلخبط عند
+      // ١٨ بكسل ويبان دخيلاً وسطهم.
+      { href: "/dashboard/tracking", labelAr: "التتبّع", labelEn: "Tracking", iconName: "Crosshair" },
       { href: "/dashboard/truth", labelAr: "مركز الحقيقة", labelEn: "Truth Center", iconName: "ShieldCheck" },
       { href: "/dashboard/pricing", labelAr: "التسعير", labelEn: "Pricing", iconName: "Tag" },
       { href: "/dashboard/site-scan", labelAr: "فحص الموقع", labelEn: "Site Scan", iconName: "ScanSearch" },
-      {
-        href: "/dashboard/diagnostics", labelAr: "صحة الحساب", labelEn: "Account Health", iconName: "Stethoscope",
-        children: [
-          { href: "/dashboard/diagnostics", labelAr: "ملخّص الأداء", labelEn: "Overview" },
-        ],
-      },
+      // بلا `children`: بقت صفحةً واحدة، والابنُ الوحيد كان بيوَدّي لنفس
+      // الرابط. سهمُ التوسّع كان بيوعد بمستوىً تحته، والدوسةُ عليه بترجّع
+      // بندَ نفسها - إشارةٌ لباب مالوش وراء.
+      { href: "/dashboard/diagnostics", labelAr: "صحة الحساب", labelEn: "Account Health", iconName: "Stethoscope" },
     ],
   },
   {
