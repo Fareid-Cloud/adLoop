@@ -5,6 +5,7 @@
 // تفضيلات كل Workspace على حدة (مش كل حاجة بتتبعت لكل الناس بنفس الطريقة).
 
 import { Resend } from "resend";
+import { sendEmail } from "@/lib/sendEmail";
 import { Locale } from "@/lib/i18n/dictionary";
 import { renderEmail } from "@/lib/emailTemplate";
 import { getAppUrl } from "@/lib/appUrl";
@@ -53,10 +54,10 @@ export async function sendUrgentNotificationEmail(params: {
   const locale = params.locale ?? "en";
 
   try {
-    await resend.emails.send({
+    await sendEmail({
+      kind: "notification",
       // "onboarding@resend.dev" شغال فوراً بدون توثيق دومين - للتجربة
       // بس. للإنتاج الفعلي، لازم دومين موثّق (خطوة لاحقة، مش هنا)
-      from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
       to: params.toEmail,
       // إصلاح G من الاختبار العدائي: بنشيل أي CRLF من الـ subject قبل
       // الاستخدام - دفاع إضافي ضد حقن هيدرات بريدية، حتى لو المخاطرة

@@ -13,6 +13,7 @@
 //   3. لا رسالة في اليوم نفسه مع أخرى — رسالتان في يوم واحد تُقرأ إلحاحاً.
 
 import { prisma } from "@/lib/prisma";
+import { sendEmail } from "@/lib/sendEmail";
 import { Resend } from "resend";
 import { renderEmail } from "@/lib/emailTemplate";
 import { getAppUrl } from "@/lib/appUrl";
@@ -102,9 +103,9 @@ export async function runMarketingCampaigns(): Promise<MarketingRunResult> {
       // لا أرقام تكفي: تُتخطّى ولا تُسجَّل، فتُعاد المحاولة غداً بأرقام أحدث
       if (!built) { result.skippedNoData++; continue; }
 
-      await resend.emails.send({
-        from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
-        to: user.email,
+      await sendEmail({
+      kind: "marketing",
+          to: user.email,
         subject: built.subject.replace(/[\r\n]/g, " "),
         html: renderEmail({
           locale: ctx.locale,

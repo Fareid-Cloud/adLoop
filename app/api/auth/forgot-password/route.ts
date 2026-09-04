@@ -1,4 +1,5 @@
 import { getAppUrl } from "@/lib/appUrl";
+import { sendEmail } from "@/lib/sendEmail";
 // app/api/auth/forgot-password/route.ts
 //
 // أمان مهم: بنرجّع نفس الرسالة سواء الإيميل موجود ولا لأ - عشان محدش
@@ -56,8 +57,8 @@ export async function POST(req: NextRequest) {
 
     if (resend) {
       try {
-        await resend.emails.send({
-          from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
+        await sendEmail({
+      kind: "password-reset",
           to: user.email,
           subject: isAr ? "إعادة تعيين كلمة المرور - AdLoop" : "Reset your password - AdLoop",
           html: renderEmail({

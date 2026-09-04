@@ -15,6 +15,7 @@
 // حقيقية بيعدّي مع الباقي. الصمتُ هنا هو اللي بيدّي للرسالة معناها.
 
 import { Resend } from "resend";
+import { sendEmail } from "@/lib/sendEmail";
 import { getAppUrl } from "@/lib/appUrl";
 import { renderEmail } from "@/lib/emailTemplate";
 import { OWNER_EMAIL } from "@/lib/owner";
@@ -50,8 +51,8 @@ export async function sendUsageAnomalyAlert(): Promise<{ sent: boolean; anomalie
     : [{ text: "التكلفة التقديرية غير معروضة: CLAUDE_COST_PER_MTOK_USD غير مضبوط." }];
 
   try {
-    await resend.emails.send({
-      from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
+    await sendEmail({
+      kind: "usage-alert",
       to: OWNER_INBOX,
       subject:
         usage.anomalies.length === 1

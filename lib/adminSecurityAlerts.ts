@@ -6,6 +6,7 @@
 // مش بعد ما يحصل مشكلة.
 
 import { Resend } from "resend";
+import { sendEmail } from "@/lib/sendEmail";
 import { renderEmail } from "@/lib/emailTemplate";
 import { describeDevice } from "@/lib/mfa";
 import { getAppUrl } from "@/lib/appUrl";
@@ -29,8 +30,8 @@ export async function sendNewAdminDeviceAlert(params: {
   const when = new Date().toLocaleString(ar ? "ar-EG-u-nu-latn" : "en-US");
 
   try {
-    await resend.emails.send({
-      from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
+    await sendEmail({
+      kind: "security-alert",
       to: params.toEmail,
       subject: ar ? "دخول جديد للوحة المالك في AdLoop" : "New sign-in to your AdLoop owner panel",
       html: renderEmail({

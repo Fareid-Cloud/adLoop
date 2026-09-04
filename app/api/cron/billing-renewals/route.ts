@@ -28,6 +28,7 @@
 // هوك تخميناً حتى أثبتَته دفعةٌ واحدة. فأوّلُ تجديدٍ تلقائيٍّ يُراقَب.
 
 import { NextRequest } from "next/server";
+import { sendEmail } from "@/lib/sendEmail";
 import { denyUnlessCron } from "@/lib/cronAuth";
 import { prisma } from "@/lib/prisma";
 import { pushToActionFeed } from "@/lib/actionFeed";
@@ -61,8 +62,8 @@ async function sendRenewalReminderEmail(
     const { getAppUrl } = await import("@/lib/appUrl");
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    await resend.emails.send({
-      from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
+    await sendEmail({
+      kind: "renewal",
       to: email,
       subject: t(locale, "alerts.renewalEmailSubject", { days }),
       html: renderEmail({

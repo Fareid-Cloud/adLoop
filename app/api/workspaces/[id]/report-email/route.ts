@@ -6,6 +6,7 @@
 // أرقام جاءت من العميل يعني أن أي شخص يستطيع إرسال بريد بأرقام يخترعها.
 
 import { NextRequest, NextResponse } from "next/server";
+import { sendEmail } from "@/lib/sendEmail";
 import { workspaceWriteFilter } from "@/lib/workspaceAccess";
 import { Resend } from "resend";
 import { prisma } from "@/lib/prisma";
@@ -188,8 +189,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .map((line) => `<li style="margin-bottom:6px;">${escapeHtml(t(locale, `reports.${line.key}`, line.vars))}</li>`)
     .join("");
 
-  await resend.emails.send({
-    from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
+  await sendEmail({
+      kind: "scheduled-report",
     to,
     subject: sanitizeHeader(`[${workspace.name}] ${title} — ${period.range.from} → ${period.range.to}`),
     html: renderEmail({

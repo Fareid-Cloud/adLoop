@@ -4,6 +4,7 @@
 // المنتج - رسالةٌ بشكلٍ آخر تُقرأ تصيّداً لا رسالةً من عندنا.
 
 import { Resend } from "resend";
+import { sendEmail } from "@/lib/sendEmail";
 import { renderEmail } from "@/lib/emailTemplate";
 import { EMAIL_CODE_TTL_MINUTES } from "@/lib/mfa";
 import type { Locale } from "@/lib/i18n/dictionary";
@@ -25,8 +26,8 @@ export async function sendMfaEmailCode(params: {
   const isAr = params.locale === "ar";
 
   try {
-    await resend.emails.send({
-      from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
+    await sendEmail({
+      kind: "mfa-code",
       to: params.toEmail,
       subject: isAr ? `كود الدخول: ${params.code}` : `Your sign-in code: ${params.code}`,
       html: renderEmail({

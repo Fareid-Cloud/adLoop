@@ -12,6 +12,7 @@
 // الدعم عن اللي طلب ما يوصلوش إعلانات.
 
 import { NextRequest, NextResponse } from "next/server";
+import { sendEmail } from "@/lib/sendEmail";
 import { z } from "zod";
 import { Resend } from "resend";
 import { prisma } from "@/lib/prisma";
@@ -81,8 +82,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   });
 
   try {
-    await resend.emails.send({
-      from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
+    await sendEmail({
+      kind: "admin-direct",
       to: target.email,
       subject: body.subject,
       html,

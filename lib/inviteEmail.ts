@@ -13,12 +13,10 @@
 //
 // والرابطُ في الشاشة بيفضل موجوداً كطريقٍ إضافيّ لمَن يفضّل يبعته بنفسه.
 
-import { Resend } from "resend";
+import { sendEmail } from "@/lib/sendEmail";
 import { getAppUrl } from "@/lib/appUrl";
 import { renderEmail } from "@/lib/emailTemplate";
 import { t, type Locale } from "@/lib/i18n/dictionary";
-
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export async function sendInviteEmail(opts: {
   to: string;
@@ -31,10 +29,6 @@ export async function sendInviteEmail(opts: {
   /** لغةُ الداعي: أقربُ تخمينٍ متاح للغة زميله. */
   locale: Locale;
 }): Promise<{ sent: boolean }> {
-  if (!resend) {
-    console.warn("RESEND_API_KEY غير مضبوط - الدعوة محفوظة والرابط بيرجع في الرد، لكن مافيش بريد اتبعت");
-    return { sent: false };
-  }
 
   const tr = (k: string, vars?: Record<string, string | number>) => t(opts.locale, `inviteEmail.${k}`, vars);
   const url = `${getAppUrl()}/invite/${opts.token}`;
@@ -45,9 +39,8 @@ export async function sendInviteEmail(opts: {
     Math.round((opts.expiresAt.getTime() - Date.now()) / 86_400_000)
   );
 
-  try {
-    await resend.emails.send({
-      from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
+  const result = await sendEmail({
+      kind: "invite",
       to: opts.to,
       subject: tr("subject", { inviter: opts.inviterName, workspace: opts.workspaceName }),
       html: renderEmail({
@@ -73,10 +66,10 @@ export async function sendInviteEmail(opts: {
         ],
         cta: { label: tr("cta"), url },
       }),
-    });
-    return { sent: true };
-  } catch (err) {
-    console.error("فشل إرسال دعوة الفريق:", err);
-    return { sent: false };
-  }
+  });
+
+  // النتيجةُ تُقرأ ولا تُهمَل: الشاشةُ تقول «اتبعت» أو «ابعت الرابط
+  // بنفسك» بناءً عليها، فادّعاءُ إرسالٍ لم يقع يترك صاحبَ الحساب
+  // مستنيّاً زميلاً محدّش كلّمه.
+  return { sent: result.sent };
 }

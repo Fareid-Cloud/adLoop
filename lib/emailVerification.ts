@@ -1,4 +1,5 @@
 import { getAppUrl } from "@/lib/appUrl";
+import { sendEmail } from "@/lib/sendEmail";
 // lib/emailVerification.ts
 
 import crypto from "crypto";
@@ -32,8 +33,8 @@ export async function sendVerificationEmail(params: {
   const isAr = locale === "ar";
 
   try {
-    await resend.emails.send({
-      from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
+    await sendEmail({
+      kind: "verify-email",
       to: params.toEmail,
       subject: isAr ? "تأكيد بريدك الإلكتروني - AdLoop" : "Verify your email - AdLoop",
       html: renderEmail({

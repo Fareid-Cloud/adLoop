@@ -3,6 +3,7 @@
 // إشعار صاحب المنتج بأي رسالة دعم جديدة عبر البريد (Resend). لو RESEND_API_KEY
 // مش متظبط، بنتخطى بهدوء (الرسالة تفضل محفوظة في قاعدة البيانات على أي حال).
 import { Resend } from "resend";
+import { sendEmail } from "@/lib/sendEmail";
 import { getAppUrl } from "@/lib/appUrl";
 import { renderEmail } from "@/lib/emailTemplate";
 import { OWNER_EMAIL } from "@/lib/owner";
@@ -38,33 +39,29 @@ export async function notifyOwnerNewSupport(t: {
     return;
   }
   const adminUrl = `${getAppUrl()}/admin/support`;
-  try {
-    await resend.emails.send({
-      from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
-      to: OWNER_INBOX,
-      replyTo: t.email,
-      subject: t.isReply ? `رد جديد على محادثة دعم — ${t.subject}` : `رسالة دعم جديدة — ${t.subject}`,
-      // 🔴 كانت بيانات المرسِل تُحقن في HTML بلا تهريب (`${t.name}`,
-      // `${t.body}`) - أي أنّ عميلاً يكتب وسماً في رسالة دعم يحقنه في
-      // بريد المالك. `renderEmail` يهرّب كلّ قيمة تمرّ به.
-      html: renderEmail({
-        locale: "ar",
-        art: "none",
-        eyebrow: t.isReply ? "ردّ على محادثة قائمة" : "رسالة جديدة",
-        title: t.subject,
-        blocks: [
-          { stat: { label: "الاسم", value: t.name } },
-          { stat: { label: "البريد", value: t.email } },
-          ...(t.phone ? [{ stat: { label: "الهاتف", value: t.phone } }] : []),
-          ...(t.country ? [{ stat: { label: "الدولة", value: t.country } }] : []),
-          { text: t.body },
-        ],
-        cta: { label: "افتح لوحة الدعم للردّ", url: adminUrl },
-      }),
-    });
-  } catch (err) {
-    console.error("فشل إرسال إشعار الدعم:", err);
-  }
+  await sendEmail({
+    kind: "support",
+    to: OWNER_INBOX,
+    replyTo: t.email,
+    subject: t.isReply ? `رد جديد على محادثة دعم — ${t.subject}` : `رسالة دعم جديدة — ${t.subject}`,
+    // 🔴 كانت بيانات المرسِل تُحقن في HTML بلا تهريب (`${t.name}`,
+    // `${t.body}`) - أي أنّ عميلاً يكتب وسماً في رسالة دعم يحقنه في
+    // بريد المالك. `renderEmail` يهرّب كلّ قيمة تمرّ به.
+    html: renderEmail({
+      locale: "ar",
+      art: "none",
+      eyebrow: t.isReply ? "ردّ على محادثة قائمة" : "رسالة جديدة",
+      title: t.subject,
+      blocks: [
+        { stat: { label: "الاسم", value: t.name } },
+        { stat: { label: "البريد", value: t.email } },
+        ...(t.phone ? [{ stat: { label: "الهاتف", value: t.phone } }] : []),
+        ...(t.country ? [{ stat: { label: "الدولة", value: t.country } }] : []),
+        { text: t.body },
+      ],
+      cta: { label: "افتح لوحة الدعم للردّ", url: adminUrl },
+    }),
+  });
 }
 
 /**
@@ -90,31 +87,27 @@ export async function notifyOwnerSalesEnquiry(e: {
     console.warn("طلب مبيعات محفوظ في قاعدة البيانات بلا إشعار بريد (Resend/العنوان غير مضبوط) - يُقرأ من /admin/sales");
     return;
   }
-  try {
-    await resend.emails.send({
-      from: process.env.NOTIFICATION_FROM_EMAIL || "AdLoop <onboarding@resend.dev>",
-      to: OWNER_INBOX,
-      replyTo: e.email,
-      subject: `طلب باقة اتفاقية — ${e.company}`,
-      html: renderEmail({
-        locale: "ar",
-        art: "none",
-        eyebrow: e.isCustomer ? "من حسابٍ قائم" : "من زائر",
-        title: `${e.company} يطلب الباقة الاتفاقية`,
-        blocks: [
-          { stat: { label: "الشركة", value: e.company } },
-          { stat: { label: "الاسم", value: e.name } },
-          { stat: { label: "البريد", value: e.email } },
-          ...(e.phone ? [{ stat: { label: "الهاتف", value: e.phone } }] : []),
-          ...(e.country ? [{ stat: { label: "الدولة", value: e.country } }] : []),
-          ...(e.spendLabel ? [{ stat: { label: "الصرف الشهري", value: e.spendLabel } }] : []),
-          ...(e.adAccounts ? [{ stat: { label: "حسابات الإعلانات", value: String(e.adAccounts) } }] : []),
-          ...(e.message ? [{ text: e.message }] : []),
-        ],
-        cta: { label: "افتح الطلب في اللوحة", url: `${getAppUrl()}/admin/sales` },
-      }),
-    });
-  } catch (err) {
-    console.error("فشل إرسال إشعار طلب المبيعات:", err);
-  }
+  await sendEmail({
+    kind: "support",
+    to: OWNER_INBOX,
+    replyTo: e.email,
+    subject: `طلب باقة اتفاقية — ${e.company}`,
+    html: renderEmail({
+      locale: "ar",
+      art: "none",
+      eyebrow: e.isCustomer ? "من حسابٍ قائم" : "من زائر",
+      title: `${e.company} يطلب الباقة الاتفاقية`,
+      blocks: [
+        { stat: { label: "الشركة", value: e.company } },
+        { stat: { label: "الاسم", value: e.name } },
+        { stat: { label: "البريد", value: e.email } },
+        ...(e.phone ? [{ stat: { label: "الهاتف", value: e.phone } }] : []),
+        ...(e.country ? [{ stat: { label: "الدولة", value: e.country } }] : []),
+        ...(e.spendLabel ? [{ stat: { label: "الصرف الشهري", value: e.spendLabel } }] : []),
+        ...(e.adAccounts ? [{ stat: { label: "حسابات الإعلانات", value: String(e.adAccounts) } }] : []),
+        ...(e.message ? [{ text: e.message }] : []),
+      ],
+      cta: { label: "افتح الطلب في اللوحة", url: `${getAppUrl()}/admin/sales` },
+    }),
+  });
 }
