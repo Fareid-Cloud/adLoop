@@ -888,9 +888,18 @@ function Conversation({
               >
                 {m.body}
                 {m.imageUrls.map((u) => (
-                  <button key={u} onClick={() => setZoom(u)} className="block">
+                  <button
+                            key={u}
+                            onClick={() => setZoom(u)}
+                            // 🔴 **حلقةٌ رمادية كانت تُرسَم حول الصورة عند المرور.**
+                            // القاعدةُ العامّة في theme.css تعطيها لكلّ زرٍّ عريان،
+                            // وهي هنا لا تُقرأ «هذا يُضغط» بل **إطاراً مرسوماً على
+                            // الصورة** - وللصور إطارُها الخاصّ من حوافّها المدوّرة.
+                            // واستجابةُ المرور الخاصّة تُخرجها من القاعدة تلقائياً.
+                            className="block cursor-pointer transition-opacity hover:opacity-90"
+                          >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={u} alt="" className="mt-1.5 max-h-56 cursor-zoom-in rounded-lg" />
+                    <img src={u} alt="" className="mt-1.5 max-h-56 rounded-lg" />
                   </button>
                 ))}
               </div>

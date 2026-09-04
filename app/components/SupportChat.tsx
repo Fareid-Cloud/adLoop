@@ -418,8 +418,17 @@ export function SupportChat({
                       >
                         <p className="m-0 whitespace-pre-wrap">{m.body}</p>
                         {m.imageUrls?.map((u) => (
-                          <button key={u} onClick={() => setZoom(u)} className="block">
-                            <img src={u} alt="" className="mt-1.5 max-h-32 cursor-zoom-in rounded-lg" />
+                          <button
+                            key={u}
+                            onClick={() => setZoom(u)}
+                            // 🔴 **حلقةٌ رمادية كانت تُرسَم حول الصورة عند المرور.**
+                            // القاعدةُ العامّة في theme.css تعطيها لكلّ زرٍّ عريان،
+                            // وهي هنا لا تُقرأ «هذا يُضغط» بل **إطاراً مرسوماً على
+                            // الصورة** - وللصور إطارُها الخاصّ من حوافّها المدوّرة.
+                            // واستجابةُ المرور الخاصّة تُخرجها من القاعدة تلقائياً.
+                            className="block cursor-pointer transition-opacity hover:opacity-90"
+                          >
+                            <img src={u} alt="" className="mt-1.5 max-h-32 rounded-lg" />
                           </button>
                         ))}
                       </div>
