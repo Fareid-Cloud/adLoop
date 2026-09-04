@@ -457,8 +457,19 @@ input, select, textarea {
  * حُذفت القاعدة لصاروا بلا إشارةٍ إطلاقاً.
  *
  * وتصحّح نفسها مستقبلاً: أيّ زرٍّ جديدٍ يُعطى لوناً يخرج منها تلقائياً. */
-button:not(:disabled):not(.btn):not([class*="bg-"]):not([class*="border-"]):not([class*="hover:"]):hover,
-[role="button"]:not([aria-disabled="true"]):not(.btn):not([class*="bg-"]):not([class*="border-"]):not([class*="hover:"]):hover {
+/* 🔴 **واستثناءان جديدان: الصفُّ الكامل، والزرُّ الملوَّن.**
+ *
+ * الحلقةُ إشارةُ **شارةٍ** - سطحٌ صغيرٌ محدَّد يقول «أنا عنصرٌ يُضغط».
+ * وحين تقع على زرٍّ يملأ عرضَ اللوحة - «حلّ المشكلات» بسطرين وأيقونة،
+ * و«كل الإجابات» بخطّين على جانبيه - فهي لا تُقرأ حلقةً بل **مستطيلاً
+ * مرسوماً حول فقرةٍ من النصّ**. وهو ما رآه المالك.
+ *
+ * فيُستثنى `w-full` (صفٌّ لا شارة)، ويُستثنى ما رُسم بلون العلامة
+ * (`text-accent`) لأنّه يملك جوابَه: اللونُ نفسُه يقول إنّه يُضغط،
+ * والرماديُّ فوقه يخصم من وضوحه - وهي نفسُ قاعدة «الرماديّ لا يصحّ فوق
+ * ملوَّن» التي بُنيت عليها هذه القاعدة أصلاً. */
+button:not(:disabled):not(.btn):not([class*="bg-"]):not([class*="border-"]):not([class*="hover:"]):not([class~="w-full"]):not([class*="text-accent"]):hover,
+[role="button"]:not([aria-disabled="true"]):not(.btn):not([class*="bg-"]):not([class*="border-"]):not([class*="hover:"]):not([class~="w-full"]):not([class*="text-accent"]):hover {
   box-shadow: 0 0 0 1px var(--border-visible);
 }
 
@@ -1520,4 +1531,34 @@ select.field {
 @media (prefers-reduced-motion: reduce) {
   .adl-shine:hover::after { animation: none; }
   .adl-shine:active { transform: none; }
+}
+
+/* ==================== شاشةُ المبيعات ====================
+
+   🔴 **العمودُ الأيسر كان بلا خلفية.** الصنفُ كان مستعمَلاً في المكوّن
+   وغيرَ معرَّفٍ هنا إطلاقاً - فالنصفان يظهران بنفس البياض، ويضيع الغرضُ
+   كلُّه من قسمة الشاشة: أن يُقرأ «هذا عرضٌ» ثم «وهذه استمارة».
+
+   والتدرّجُ قطريّ لا رأسيّ: القطريُّ يتبع اتّجاه القراءة فيدفع العينَ
+   نحو العمود الآخر حيث الفعل. */
+.adl-sales-aside {
+  background-image: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--accent) 13%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 6%, transparent) 45%,
+    color-mix(in srgb, var(--accent) 2%, transparent) 100%
+  );
+}
+
+/* 🔴 **حشوةُ الحقل ذي الأيقونة - وسببُها عطبٌ موثَّقٌ في هذا الملفّ.**
+ *
+ * `.field` تكتب `padding` **مختصرةً**، وهذا الملفّ يُحمَّل بعد أدوات
+ * Tailwind - فأداةُ `ps-9` تخسر أمامها دائماً. النتيجة: الأيقونةُ ترسم
+ * فوق أوّل حرفٍ يكتبه المستخدم بدل أن تسبقه.
+ *
+ * والحلُّ خاصيةٌ طويلةٌ هنا لا أداةٌ هناك، لأنّ الطويلة تتأخّر عن
+ * المختصرة في الترتيب فتفوز. ومنطقيّةُ الاتجاه (`inline-start`) تجعلها
+ * تنقلب مع العربية بلا سطرٍ ثانٍ. */
+.adl-field-icon {
+  padding-inline-start: 2.25rem;
 }

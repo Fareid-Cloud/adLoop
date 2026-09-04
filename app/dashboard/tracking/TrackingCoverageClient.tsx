@@ -440,7 +440,9 @@ export function TrackingCoverageClient({
                 إلى صفحةٍ لا وجود لها. */}
             <button
               onClick={() => window.dispatchEvent(new CustomEvent("adloop:open-support"))}
-              className="flex items-start gap-2 text-start"
+              // استجابةُ مرورٍ خاصّةٌ به: تعطيه إشارةً أوضحَ من الحلقة
+              // الرمادية، وتُخرجه منها تلقائياً بحكم القاعدة في theme.css.
+              className="flex items-start gap-2 text-start transition-opacity hover:opacity-70"
             >
               <ShieldCheck size={15} className="mt-0.5 shrink-0 text-accent" />
               <span className="min-w-0">

@@ -78,6 +78,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid email" }, { status: 400 });
   }
 
+  // 🔴 **طلبٌ واحدٌ مفتوحٌ لكلّ عميل - لا طلبٌ كلَّ أسبوعين.**
+  //
+  // حدُّ المعدّل فوق يمنع الإغراق (خمسةٌ في الساعة)، ولا يمنع ما يحصل
+  // فعلاً: مَن بعث أمس ولم يُتَّصل به يبعث تاني، فيدخل الطابورَ صفّان
+  // لنفس الشركة. مَن يفتح اللوحة لا يعرف أيَّهما الأحدث، وقد يُتَّصل
+  // بالعميل مرّتين - أسوأُ انطباعٍ أوّل ممكن في صفقةٍ اتّفاقية.
+  //
+  // **والشرطُ حالةٌ لا ساعة**، وهذا هو القرار المهمّ:
+  //
+  // • ما دام طلبُه السابقُ **مفتوحاً** (`NEW` أو `CONTACTED`) فطلبٌ ثانٍ
+  //   لا يضيف معلومةً - يضيف صفّاً. فيُرَدّ بأنّ طلبه عندنا، لا بأنّه
+  //   ممنوع.
+  // • وإن أُغلق (`WON` / `LOST`) **يُسمَح فوراً**. مَن قيل له «لا» ثمّ
+  //   كبر حجمُه وعاد هو أفضلُ عميلٍ محتمَل عندنا، ومنعُه أسبوعين عقابٌ
+  //   على العودة.
+  // • **وسقفُ أربعةَ عشرَ يوماً يرفع المنعَ حتى لو ظلّ مفتوحاً.** طلبٌ
+  //   مفتوحٌ أسبوعين بلا حسمٍ تقصيرٌ **منّا**، وإسكاتُ العميل عنده يعاقبه
+  //   على تأخيرنا. بعدها من حقّه أن يفترض أنّنا نسيناه ويسأل ثانيةً.
+  //
+  // والمطابقةُ بالحساب إن كان مسجَّلاً، وإلّا فبالبريد بلا حساسيةِ حالة -
+  // فتغييرُ حرفٍ كبيرٍ في العنوان لا يفتح طابوراً ثانياً.
+  const OPEN_ENQUIRY_WINDOW_DAYS = 14;
+  const since = new Date(Date.now() - OPEN_ENQUIRY_WINDOW_DAYS * 86_400_000);
+  const openOne = await prisma.salesEnquiry.findFirst({
+    where: {
+      status: { in: ["NEW", "CONTACTED"] },
+      createdAt: { gte: since },
+      ...(user ? { userId: user.id } : { email: { equals: email, mode: "insensitive" } }),
+    },
+    select: { id: true },
+  });
+  if (openOne) {
+    return NextResponse.json({ errorKey: "alreadyOpen" }, { status: 409 });
+  }
+
   const monthlySpend = isSpendBand(body.monthlySpend) ? body.monthlySpend : null;
   const adAccountsRaw = Number(body.adAccounts);
   const adAccounts =

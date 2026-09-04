@@ -20,8 +20,8 @@
 // مرّتين (عنواناً وسطراً تحته)، وبيدفع النموذجَ لتحت. العنوانُ نزل جوّه
 // العمود اليمين حيث الفعلُ نفسه، فبقي المكانُ للمحتوى.
 //
-// **وشعاراتُ المنصّات شاراتٌ لونية لا شعاراتٌ حقيقية** - قرارٌ قائمٌ في
-// المشروع كلّه لأنّ الشعاراتِ مملوكةٌ لأصحابها.
+// **وشعاراتُ المنصّات حقيقيةٌ من `PlatformLogo`** - نفسُ المكوّن المستعمَل
+// في المنتج كلّه، والمالكُ متكفّلٌ بحقوق العلامات.
 
 import { useEffect, useState } from "react";
 import {
@@ -33,6 +33,7 @@ import { Portal } from "@/app/components/ui/Portal";
 import { Select } from "@/app/components/ui/Select";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 import { SPEND_BANDS } from "@/lib/salesEnquiry";
+import { PlatformLogo } from "@/app/components/PlatformLogo";
 
 // مكتوبةٌ كاملةً لا مركَّبة: نفس سبب `REASON_KEY` في بطاقة التقييم -
 // فحصُ التغطية بيشوف النصّ الساكن وحده.
@@ -52,13 +53,10 @@ const WHY = [
   { key: "why4", Icon: UserRound },
 ] as const;
 
-/** الألوانُ من `CLAUDE.md`: ميتا وتيك توك لهما لونٌ رسميّ واحد، وجوجل
- *  أربعةٌ فلا لونَ لها - فتُترك على لون النصّ. */
-const PLATFORMS = [
-  { label: "Meta", color: "#0866FF" },
-  { label: "Google", color: null },
-  { label: "TikTok", color: "#FE2C55" },
-] as const;
+/** الشعاراتُ الحقيقية من `PlatformLogo` - المكوّنُ المستعمَل في المنتج
+ *  كلّه، والمالكُ متكفّلٌ بحقوق العلامات. ورسمُ شاراتٍ لونيةٍ هنا كان
+ *  سيعطي نفسَ الصفّ شكلاً مختلفاً عن كلّ شاشةٍ أخرى فيه هذه المنصّات. */
+const PLATFORMS = ["META_ADS", "GOOGLE_ADS", "TIKTOK_ADS"] as const;
 
 export function ContactSalesDialog({
   locale, name = "", email = "", country = "",
@@ -104,7 +102,13 @@ export function ContactSalesDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, country, adAccounts: Number(form.adAccounts) || undefined }),
       });
-      if (!res.ok) throw new Error("failed");
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        // مفتاحٌ لا نصّ: الخادمُ لا يعرف لغةَ الواجهة، ويخدم مسجَّلاً
+        // وغيرَ مسجَّل - فيرسل المفتاح وتترجمه الشاشة.
+        setError(tr(data?.errorKey ?? "error"));
+        return;
+      }
       setDone(true);
     } catch {
       setError(tr("error"));
@@ -162,7 +166,7 @@ export function ContactSalesDialog({
               </button>
             </div>
           ) : (
-            <div className="grid md:grid-cols-[minmax(0,0.82fr)_minmax(0,1fr)]">
+            <div className="grid md:grid-cols-[minmax(0,0.72fr)_minmax(0,1fr)]">
               {/* ============ النصف الأوّل: لماذا ============ */}
               <aside className="adl-sales-aside border-b border-border p-6 md:border-b-0 md:border-e md:border-border md:p-7">
                 <span className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-text-faint">
@@ -170,7 +174,7 @@ export function ContactSalesDialog({
                 </span>
                 {/* السطرُ الثاني بلون العلامة: العينُ تقف عليه، وهو الوعدُ
                     نفسُه («حجمك أنت») لا الفعلُ العامّ. */}
-                <h2 className="m-0 mt-2 text-[26px] font-semibold leading-[1.15] tracking-tight text-text-primary">
+                <h2 className="m-0 mt-2.5 text-[34px] font-semibold leading-[1.08] tracking-[-0.02em] text-text-primary">
                   {tr("headline1")}
                   <br />
                   <span className="text-accent">{tr("headline2")}</span>
@@ -193,20 +197,33 @@ export function ContactSalesDialog({
                     صفٍّ إضافيّ يدفع أوّلَ حقلٍ أبعدَ عن الشاشة الأولى. */}
                 <div className="mt-7 hidden md:block">
                   <div className="inline-flex items-center gap-3 rounded-full border border-border bg-surface px-4 py-2">
-                    {PLATFORMS.map((p, i) => (
-                      <span key={p.label} className="flex items-center gap-3">
-                        {i > 0 && <span className="h-3.5 w-px bg-border" />}
-                        <span
-                          className="text-[12.5px] font-semibold"
-                          style={p.color ? { color: p.color } : undefined}
-                        >
-                          {p.label}
-                        </span>
+                    {PLATFORMS.map((key, i) => (
+                      <span key={key} className="flex items-center gap-3">
+                        {i > 0 && <span className="h-4 w-px bg-border" />}
+                        <PlatformLogo platform={key} size={20} />
                       </span>
                     ))}
                   </div>
                   <p className="m-0 mt-2 text-[11.5px] leading-relaxed text-text-faint">{tr("platformsNote")}</p>
                 </div>
+
+                {/* 🔴 **مخرجُ الدعم انتقل إلى هذا العمود.** كان آخرَ سطرٍ
+                    تحت النموذج، فيدفع طولَ العمود الأيمن أبعدَ من الشاشة
+                    ويظهر شريطُ تمرير - وهو آخرُ ما يُراد في شاشةٍ نصفُها
+                    الآخر فارغٌ من تحت. والمعنى لم يتغيّر: مَن فتحها بالغلط
+                    يجد الطريقَ قبل أن يبدأ الملء، لا بعد أن يملأ ستّة
+                    حقولٍ ثمّ يكتشف أنّه في المكان الخطأ. */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    window.dispatchEvent(new CustomEvent("adloop:open-support"));
+                  }}
+                  className="mt-6 flex items-center gap-1 text-[12px] text-accent transition-opacity hover:opacity-75"
+                >
+                  {tr("supportInstead")}
+                  <ArrowRight size={12} className="rtl:rotate-180" />
+                </button>
               </aside>
 
               {/* ============ النصف الثاني: مَن أنت ============ */}
@@ -223,7 +240,7 @@ export function ContactSalesDialog({
                       value={form.company}
                       onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
                       placeholder={tr("companyPlaceholder")}
-                      className="field w-full ps-9"
+                      className="field adl-field-icon w-full"
                     />
                   </FieldWrap>
                   <FieldWrap label={tr("name")} required icon={User}>
@@ -231,7 +248,7 @@ export function ContactSalesDialog({
                       required
                       value={form.name}
                       onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                      className="field w-full ps-9"
+                      className="field adl-field-icon w-full"
                     />
                   </FieldWrap>
                   <FieldWrap label={tr("email")} required icon={Mail}>
@@ -241,7 +258,7 @@ export function ContactSalesDialog({
                       dir="ltr"
                       value={form.email}
                       onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                      className="field w-full ps-9"
+                      className="field adl-field-icon w-full"
                     />
                   </FieldWrap>
                   {/* 🔴 **الهاتف مطلوبٌ لا اختياريّ.** الوعدُ في هذه الشاشة
@@ -255,7 +272,7 @@ export function ContactSalesDialog({
                       inputMode="tel"
                       value={form.phone}
                       onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                      className="field w-full ps-9"
+                      className="field adl-field-icon w-full"
                     />
                   </FieldWrap>
 
@@ -314,19 +331,6 @@ export function ContactSalesDialog({
                   <span className="flex items-center gap-1.5"><ShieldCheck size={13} /> {tr("whyFootSetup")}</span>
                 </div>
 
-                {/* مخرجٌ لمَن فتحها بالغلط: من غيره بيقفل ويدوّر من الأول،
-                    وأغلبُهم مابيدوّرش. */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false);
-                    window.dispatchEvent(new CustomEvent("adloop:open-support"));
-                  }}
-                  className="mt-3 flex w-full items-center justify-center gap-1 text-[12px] text-text-faint transition-colors hover:text-text-primary"
-                >
-                  {tr("supportInstead")}
-                  <ArrowRight size={12} className="rtl:rotate-180" />
-                </button>
               </form>
             </div>
           )}
