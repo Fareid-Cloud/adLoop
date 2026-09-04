@@ -58,9 +58,19 @@ export async function POST(req: NextRequest) {
   const company = str(body.company, 160);
   const name = str(body.name, 120) ?? user?.name ?? null;
   const email = str(body.email, 190) ?? user?.email ?? null;
+  const phone = str(body.phone, 40);
 
-  if (!company || !name || !email) {
-    return NextResponse.json({ error: "company, name and email are required" }, { status: 400 });
+  // الهاتفُ مطلوبٌ هنا كما في الشاشة. `required` في المتصفّح تحسينُ تجربةٍ
+  // لا قاعدة: نداءٌ مباشر يتخطّاه، فيدخل الطلبُ بلا رقمٍ والوعدُ مكالمة.
+  if (!company || !name || !email || !phone) {
+    return NextResponse.json(
+      { error: "company, name, email and phone are required" },
+      { status: 400 }
+    );
+  }
+  // أربعةُ أرقامٍ على الأقلّ: يمنع «-» و«لا يوجد» بلا رفضِ صيغةٍ دوليةٍ صحيحة.
+  if ((phone.match(/\d/g) ?? []).length < 4) {
+    return NextResponse.json({ error: "invalid phone" }, { status: 400 });
   }
   // فحصُ شكلٍ بسيط لا تحقّقٌ من الوجود: الغرضُ منع الخطأ المطبعيّ اللي
   // بيخلّي الردَّ يروح لحدّ تاني، مش إثباتُ ملكية البريد.
@@ -81,7 +91,7 @@ export async function POST(req: NextRequest) {
       company,
       name,
       email,
-      phone: str(body.phone, 40),
+      phone,
       country: str(body.country, 8),
       monthlySpend,
       adAccounts,
@@ -97,7 +107,7 @@ export async function POST(req: NextRequest) {
       company,
       name,
       email,
-      phone: str(body.phone, 40),
+      phone,
       country: str(body.country, 8),
       spendLabel: monthlySpend ? SPEND_LABEL[monthlySpend] : null,
       adAccounts,

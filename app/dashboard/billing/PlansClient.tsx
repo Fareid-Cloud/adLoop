@@ -13,7 +13,7 @@
 // • **الخصم السنوي يُقال بالمبلغ لا بالنسبة.** "توفّر ٥٬٠٠٠ ج.م" تُقرأ،
 //   و"وفّر ١٧٪" تُحسب.
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Check, Minus, Star, ChevronDown, Loader2, Zap, X, ArrowLeft, ShieldCheck,
@@ -21,6 +21,7 @@ import {
 import {
   PLANS, COMPARISON_ROWS, CREDIT_PACKS, MIN_CUSTOM_CREDITS, MAX_CUSTOM_CREDITS,
   planPrice, planListPrice, offerDiscountPct, yearlySaving, priceForCredits, aiModelTier,
+  absentUntilNextPlan,
   type BillingCurrency, type BillingCycle, type Plan, type PlanKey, type PlanLimits,
 } from "@/lib/plans";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -62,6 +63,19 @@ export function PlansClient({
   const [error, setError] = useState<string | null>(null);
 
   const paid = PLANS.filter((p) => p.key !== "free").sort((a, b) => a.order - b.order);
+
+  // موضعُ الشريط على الموبايل. يُقرأ من التمرير نفسه لا يُقاد به: المستخدمُ
+  // يسحب بإصبعه، والنقاطُ تتبعه. جعلُها زراراً يقود التمرير يضيف تحكّماً
+  // لا أحد يطلبه في أربع بطاقات، ويسرق السحبَ الطبيعيّ.
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [activeCard, setActiveCard] = useState(0);
+  function onTrackScroll() {
+    const el = trackRef.current;
+    if (!el) return;
+    const step = el.scrollWidth / paid.length;
+    // القيمة المطلقة: في العربية التمرير سالب، فبغيرها يقف المؤشّر عند الأولى.
+    setActiveCard(Math.min(paid.length - 1, Math.round(Math.abs(el.scrollLeft) / step)));
+  }
 
   async function checkout(planKey: PlanKey) {
     setBuying(planKey);
@@ -151,20 +165,44 @@ export function PlansClient({
       )}
 
       {/* أربع باقات لا ثلاث بعد إضافة المؤسّسية - والشبكة تُوسَّع معها،
-          وإلّا نزلت الرابعة وحدها في صفٍّ تحت الثلاث فبدت ملحقاً لا خياراً. */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          وإلّا نزلت الرابعة وحدها في صفٍّ تحت الثلاث فبدت ملحقاً لا خياراً.
+
+          🔴 **وعلى الموبايل شريطٌ أفقيّ لا عمودٌ من أربع بطاقات.** البطاقةُ
+          الواحدة أطولُ من الشاشة، فأربعٌ فوق بعض تعني أنّ المقارنة - وهي
+          الغرضُ كلُّه - تصير تمريراً بالذاكرة: تقرأ سعراً هنا وتنزل شاشتين
+          لتقرأ الذي يليه. والشريطُ المنزلق بخطفةٍ واحدة يضع البطاقتين في
+          نفس الحركة. وده CSS خالص (`scroll-snap`) - **مش محتاج تطبيقاً**،
+          نفس السلوك اللي في تطبيقات الموبايل بيشتغل في المتصفّح زيّه. */}
+      <div
+        ref={trackRef}
+        onScroll={onTrackScroll}
+        className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4"
+      >
         {paid.map((plan) => (
-          <PlanCard
+          <div key={plan.key} className="w-[85%] shrink-0 snap-center sm:w-auto sm:shrink">
+            <PlanCard
+              plan={plan}
+              cycle={cycle}
+              currency={currency}
+              locale={locale}
+              tr={tr}
+              current={currentPlan === plan.key}
+              busy={buying === plan.key}
+              offerActive={offerActive}
+              onPick={() => checkout(plan.key)}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* مؤشّرُ الموضع - على الموبايل وحده، حيث يوجد ما يُمرَّر أصلاً */}
+      <div className="mt-3 flex justify-center gap-1.5 sm:hidden">
+        {paid.map((plan, i) => (
+          <span
             key={plan.key}
-            plan={plan}
-            cycle={cycle}
-            currency={currency}
-            locale={locale}
-            tr={tr}
-            current={currentPlan === plan.key}
-            busy={buying === plan.key}
-            offerActive={offerActive}
-            onPick={() => checkout(plan.key)}
+            className={`h-1.5 rounded-full transition-all ${
+              i === activeCard ? "w-5 bg-accent" : "w-1.5 bg-border"
+            }`}
           />
         ))}
       </div>
@@ -259,10 +297,12 @@ function PlanCard({
   const listed = planListPrice(plan, currency, cycle);
   const discount = offerActive ? offerDiscountPct(plan, currency) : 0;
   const saving = yearlySaving(plan, currency);
+  // ثلاثةٌ سقفاً: ما بعدها يقلب «إليك ما تفتحه الترقية» إلى قائمة حرمان.
+  const absent = absentUntilNextPlan(plan).slice(0, 3);
 
   return (
     <div
-      className={`relative flex flex-col rounded-2xl border bg-surface p-5 transition-all ${
+      className={`relative flex h-full flex-col rounded-2xl border bg-surface p-5 transition-all ${
         plan.highlighted
           ? "border-accent bg-accent/[0.08] shadow-[0_0_0_1px_var(--accent)] lg:-translate-y-2"
           : "card-shadow border-border"
@@ -350,19 +390,74 @@ function PlanCard({
         </button>
       )}
 
-      {/* ما يفتحه فعلاً - قبل القائمة الطويلة، لأنه سبب الشراء */}
-      <p className="card mb-3 bg-surface-raised/70 p-2.5 text-[12px] leading-relaxed text-text-primary">
+      {/* ما يفتحه فعلاً - قبل القائمة الطويلة، لأنه سبب الشراء.
+
+          🔴 **كان بطاقةً داخل بطاقة.** حدٌّ وظلٌّ وسطحٌ مرفوع حول جملةٍ
+          واحدة، فتقرأ العينُ عنصراً قائماً بذاته يستحقّ وقفةً - وهي جملةٌ
+          تمهيديّة لا كيانٌ منفصل. والتعشيشُ نفسُه يُضعف البطاقةَ الأمّ:
+          حدّان متداخلان يجعلان أيَّهما هو البطاقة سؤالاً.
+          بقيت شريطاً ملوّناً بعلامةٍ جانبية - تمييزٌ بلا تأطير، وبلا أثر
+          تحويمٍ لأنّها ليست شيئاً يُضغَط. */}
+      <p
+        className="mb-3 rounded-lg bg-accent/[0.07] py-2 pe-3 text-[12px] font-medium leading-relaxed text-text-primary"
+        style={{ borderInlineStart: "3px solid var(--accent)", paddingInlineStart: 10 }}
+      >
         {tr(`unlock_${plan.key}`)}
       </p>
 
+      {/* فاصلٌ منقّط: السعرُ والقرار فوقه، والتفصيلُ تحته */}
+      <div className="mb-3 border-t border-dashed border-border" />
+
       <ul className="flex flex-1 flex-col gap-1.5">
-        {(tr(`feats_${plan.key}`) || "").split("|").map((feat, i) => (
-          <li key={i} className="flex items-start gap-1.5 text-[12.5px] leading-relaxed text-text-muted">
-            <Check size={13} className="mt-0.5 shrink-0 text-verified" />
-            {feat}
-          </li>
-        ))}
+        {(tr(`feats_${plan.key}`) || "").split("|").map((feat, i) => {
+          // 🔴 **سطرُ الوراثة عنوانٌ لا بند.** «كل ما في الاحترافية» يساوي
+          // عشرَ ميزاتٍ فوق ما تحته، وكان يُرسَم بنفس حجم «٩ متاجر» ونفس
+          // لونه الباهت - فيمرّ كأنّه أصغرُ بنودها. وهو - في باقةٍ تُباع
+          // بالترقية - أقوى سطرٍ في البطاقة كلّها.
+          // والشرطُ من البيانات لا من نصّ السطر: كلُّ باقةٍ مدفوعةٍ فوق
+          // البداية تبدأ قائمتُها بالوراثة بحكم البناء، فمطابقةُ النصّ
+          // كانت ستنكسر في لغةٍ واحدة دون الأخرى.
+          const isInherit = i === 0 && plan.order > 1;
+          return (
+            <li
+              key={i}
+              className={`flex items-start gap-1.5 leading-relaxed ${
+                isInherit
+                  ? "mb-0.5 text-[12.5px] font-semibold text-text-primary"
+                  : "text-[12.5px] text-text-muted"
+              }`}
+            >
+              <Check size={13} className={`mt-0.5 shrink-0 ${isInherit ? "text-accent" : "text-verified"}`} />
+              <span>
+                {feat}
+                {isInherit && <span className="text-text-faint">{tr("plusMore")}</span>}
+              </span>
+            </li>
+          );
+        })}
       </ul>
+
+      {/* **غيرُ المشمول - إن وُجد فعلاً.**
+          يُشتقّ من `PLANS` بشرط الغياب الصفريّ وحده (`absentUntilNextPlan`)،
+          فما يظهر هنا صحيحٌ دائماً ولا يحتاج مراجعةً حين تتغيّر الحدود.
+          ومن هنا صغرُ القائمة: بندٌ أو اثنان، وباقةُ الوكالات ليس فيها شيء.
+          وهو المقصود - قائمةُ رفضٍ طويلةٌ تحت سعرٍ يُطلب دفعُه تجعل الباقةَ
+          تبدو معطوبة، وهي ليست كذلك. */}
+      {absent.length > 0 && (
+        <div className="mt-3 border-t border-dashed border-border pt-2.5">
+          <p className="m-0 mb-1.5 text-[11px] font-medium uppercase tracking-wide text-text-faint">
+            {tr("notIncluded")}
+          </p>
+          <ul className="flex flex-col gap-1">
+            {absent.map((key) => (
+              <li key={key} className="flex items-start gap-1.5 text-[12px] leading-relaxed text-text-faint">
+                <Minus size={13} className="mt-0.5 shrink-0 opacity-60" />
+                {tr(`f_${key}`)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <span className="hidden">{locale}</span>
     </div>

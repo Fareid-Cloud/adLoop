@@ -1422,3 +1422,38 @@ select.field {
   top: calc(var(--app-header-h) + 1rem);
   max-height: calc(100dvh - var(--app-header-h) - 2rem);
 }
+
+/* ==================== علامةُ الوصول المرسومة ====================
+   تُستعمل في شاشة «وصل طلبك» بعد نموذج المبيعات.
+
+   أسماءٌ مسبوقةٌ بـ`adl-` وخصائصُ حركةٍ فقط - لا اختصارات. الاختصارُ هنا
+   (`background`, `font`) بيكسب على أدوات Tailwind في نفس العنصر لأنّ
+   الملفّ ده بيتحمّل بعدها، وده عطلٌ اتحصل قبل كده في نفس الملفّ.
+
+   ودي حركةُ تأكيدٍ لا زينة: الدائرةُ بتقفل الأوّل، وبعدين العلامة بتتخطّ
+   جوّاها - الترتيبُ ده بيتقري «تمّ» بدل «فيه أيقونة». */
+@keyframes adl-draw { to { stroke-dashoffset: 0; } }
+@keyframes adl-pop {
+  0%   { transform: scale(0.86); opacity: 0; }
+  60%  { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.adl-success-wrap { animation: adl-pop 0.36s ease-out both; }
+.adl-success-ring {
+  stroke-dasharray: 164;
+  stroke-dashoffset: 164;
+  animation: adl-draw 0.5s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+.adl-success-check {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: adl-draw 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.42s forwards;
+}
+/* مَن أطفأ الحركة في نظامه يرى النتيجة كاملةً فوراً، لا شاشةً فارغة. */
+@media (prefers-reduced-motion: reduce) {
+  .adl-success-wrap, .adl-success-ring, .adl-success-check {
+    animation: none;
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}

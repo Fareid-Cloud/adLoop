@@ -242,6 +242,47 @@ export const COMPARISON_ROWS: Array<{ key: keyof PlanLimits; kind: "number" | "t
   { key: "mcp", kind: "bool" },
 ];
 
+/**
+ * ما هو **غائبٌ فعلاً** عن هذه الباقة ويفتحه أوّلُ ترقيةٍ فوقها.
+ *
+ * 🔴 **الشرط: غائبٌ لا أقلّ.** الفرقُ بينهما هو الفرقُ بين معلومةٍ وكذبة.
+ * «ثلاث مساحات عمل» مقابل «خمس عشرة» ليست ميزةً ناقصة - هي رقمٌ أصغر،
+ * وهو معروضٌ أصلاً في القائمة؛ ووضعُه تحت «غير مشمول» يقول للقارئ إنّه لا
+ * يملك مساحاتِ عملٍ من الأساس. وكذلك «نموذجُ التحليل»: باقةُ البداية لها
+ * نموذج، أضعفُ لا معدوم.
+ *
+ * فالغيابُ هنا معرَّفٌ بالحالة الصفرية وحدها: `0`، أو `false`، أو الدرجةُ
+ * الدنيا في حقلٍ تصنيفيّ (`none` / `view`). وأيُّ توسيعٍ لهذا التعريف
+ * يحوّل الصدقَ إلى دعاية، وهي الدعايةُ التي يقرؤها المشتري بعد الدفع.
+ *
+ * والقائمةُ تُشتقّ من `PLANS` لا تُكتب بيد، فلا تفترق عن الحدود المطبَّقة
+ * فعلاً حين يتغيّر رقمٌ واحد.
+ */
+export function absentUntilNextPlan(plan: Plan): Array<keyof PlanLimits> {
+  const next = PLANS
+    .filter((p) => p.order > plan.order && p.key !== "free")
+    .sort((a, b) => a.order - b.order)[0];
+  if (!next) return [];
+
+  // الدرجةُ الدنيا في الحقول التصنيفية - ما دونها لا شيء، لا «أقلّ».
+  const ZERO_STATE = new Set(["none", "view"]);
+
+  const out: Array<keyof PlanLimits> = [];
+  for (const row of COMPARISON_ROWS) {
+    const mine = plan.limits[row.key];
+    const theirs = next.limits[row.key];
+    let absent = false;
+
+    if (row.kind === "bool") absent = mine === false && theirs === true;
+    else if (row.kind === "number") absent = mine === 0 && theirs !== 0;
+    else if (row.kind === "text") absent = ZERO_STATE.has(String(mine)) && !ZERO_STATE.has(String(theirs));
+    // النموذجُ خارج الحساب عمداً: الأضعفُ ليس الغائب.
+
+    if (absent) out.push(row.key);
+  }
+  return out;
+}
+
 // ==================== كريدت الذكاء الاصطناعي ====================
 
 export interface CreditPack {

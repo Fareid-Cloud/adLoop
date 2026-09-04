@@ -14,7 +14,7 @@
 // للدعم لمَن فتحها بالغلط - بدل ما يقفل ويدوّر من أوّل وجديد.
 
 import { useEffect, useState } from "react";
-import { X, Loader2, Check, ArrowRight } from "lucide-react";
+import { X, Loader2, ArrowRight } from "lucide-react";
 import { Portal } from "@/app/components/ui/Portal";
 import { Select } from "@/app/components/ui/Select";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -106,12 +106,32 @@ export function ContactSalesDialog({
           </div>
 
           {done ? (
+            /* **شاشةُ الوصول تُرسَم، لا تَظهر.**
+               علامةُ صحٍّ ساكنةٌ تُقرأ «انتهى النموذج»؛ والدائرةُ التي تُغلَق
+               ثمّ العلامةُ التي تُخَطّ بعدها تُقرأ **«وصل»** - وهي الرسالةُ
+               المطلوبة بالضبط ممّن سلّم بياناته وينتظر مكالمة. نصفُ ثانيةٍ
+               واحدة، وتحترم `prefers-reduced-motion`. */
             <div className="px-5 py-8 text-center">
-              <span className="mx-auto mb-3 grid size-11 place-items-center rounded-2xl bg-success/12 text-success">
-                <Check size={22} />
+              <span className="adl-success-wrap mx-auto mb-4 block w-fit">
+                <svg viewBox="0 0 56 56" className="size-14" fill="none" aria-hidden="true">
+                  <circle cx="28" cy="28" r="26" className="stroke-verified/25" strokeWidth="2.5" />
+                  <circle
+                    cx="28" cy="28" r="26"
+                    className="adl-success-ring stroke-verified"
+                    strokeWidth="2.5" strokeLinecap="round"
+                    transform="rotate(-90 28 28)"
+                  />
+                  <path
+                    d="M17 28.5 L24.5 36 L39 21.5"
+                    className="adl-success-check stroke-verified"
+                    strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                  />
+                </svg>
               </span>
               <p className="m-0 text-[15px] font-medium text-text-primary">{tr("doneTitle")}</p>
-              <p className="m-0 mt-1.5 text-[12.5px] text-text-muted">{tr("doneBody", { email: form.email })}</p>
+              <p className="m-0 mt-1.5 text-[12.5px] leading-relaxed text-text-muted">
+                {tr("doneBody", { email: form.email })}
+              </p>
               <button onClick={() => setOpen(false)} className="btn mt-4">{tr("close")}</button>
             </div>
           ) : (
@@ -143,9 +163,16 @@ export function ContactSalesDialog({
                     className="field w-full"
                   />
                 </FieldWrap>
-                <FieldWrap label={tr("phone")} hint={tr("optional")}>
+                {/* 🔴 **الهاتف مطلوبٌ لا اختياريّ.** الوعدُ في هذه الشاشة
+                    «مكالمةٌ قصيرة»، وطلبٌ بلا رقمٍ يجعل أوّلَ خطوةٍ بعده
+                    بريداً يسأل عن الرقم - أي يومٌ ضائعٌ في صفقةٍ اتّفاقية،
+                    وفرصةٌ لألّا يردّ. ومَن لا يترك رقماً غالباً لم يكن
+                    ليردّ على المكالمة أصلاً. */}
+                <FieldWrap label={tr("phone")} required>
                   <input
+                    required
                     dir="ltr"
+                    inputMode="tel"
                     value={form.phone}
                     onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                     className="field w-full"
