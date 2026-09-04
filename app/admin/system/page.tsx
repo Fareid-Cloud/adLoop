@@ -10,6 +10,7 @@ import Link from "next/link";
 import { Activity, RefreshCw, XCircle, Plug, Rocket, ShieldAlert } from "lucide-react";
 import { MetricCard } from "@/app/components/ui/MetricCard";
 import { getSystemHealth, STALE_AFTER_HOURS, STUCK_AFTER_MINUTES } from "@/lib/admin/system";
+import { listBackups } from "@/lib/backup";
 import { checkReadiness, type ReadinessSeverity } from "@/lib/launchReadiness";
 import { TABLE, TABLE_WRAP, THEAD_ROW, TH, TH_NUM, TR, TD, TD_MUTED, TD_NUM } from "@/app/components/ui/tableStyles";
 import { prisma } from "@/lib/prisma";
@@ -34,6 +35,9 @@ const SEVERITY_LABEL: Record<ReadinessSeverity, string> = {
 
 export default async function SystemPage() {
   const health = await getSystemHealth();
+  // النسخُ الاحتياطية تُعرَض هنا لا في صفحةٍ خاصّة: **نسخةٌ لا يراها أحد
+  // لا يُعرَف أنّها توقّفت** - وأوّلُ من يكتشف توقّفها يكتشفه يوم يحتاجها.
+  const backups = await listBackups().catch(() => []);
   const readiness = checkReadiness();
 
   // صفوف "معلّقة" بمعرّفاتها - محتاجينها عشان زرّ الإغلاق يعرف يقفل أنهي
@@ -260,6 +264,28 @@ export default async function SystemPage() {
           </tbody>
         </table>
       </div>
+
+      <SectionTitle hint="daily, newest first — thirty kept">Backups</SectionTitle>
+      <Card>
+        {backups.length === 0 ? (
+          <p className="m-0 text-[13px] text-gap">
+            No backup files found. Either BLOB_READ_WRITE_TOKEN is unset or the daily job has not
+            run yet — nothing is being kept outside the database right now.
+          </p>
+        ) : (
+          <ul className="m-0 list-none space-y-1.5 p-0">
+            {backups.slice(0, 10).map((b) => (
+              <li key={b.url} className="flex flex-wrap items-center justify-between gap-2 text-[12.5px]">
+                <span className="text-text-primary">{b.pathname.replace("backups/", "")}</span>
+                <span className="text-text-muted">
+                  {Math.round(b.size / 1024).toLocaleString("en-US")} KB
+                  <span className="ms-2 text-text-faint">{ago(b.uploadedAt)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
 
       <SectionTitle>What this page does not cover</SectionTitle>
       <Card>
