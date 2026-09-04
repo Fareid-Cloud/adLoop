@@ -12,6 +12,7 @@ import { getCsrfHeader } from "@/lib/csrfClient";
 import { CHANNEL_LABEL, type Channel } from "@/lib/inboxChannels";
 import { countryName } from "@/lib/countries";
 import { ImageLightbox } from "@/app/components/ui/ImageLightbox";
+import { Portal } from "@/app/components/ui/Portal";
 
 const CHANNEL_ICON: Record<string, typeof Globe> = {
   WEB: Globe,
@@ -575,7 +576,37 @@ function ThreadRowItem({
   row, activeId, onOpen, onChanged,
 }: { row: ThreadRow; activeId: string | null; onOpen: () => void; onChanged: () => void }) {
   const Icon = CHANNEL_ICON[row.channel] ?? Globe;
+  // 🔴 **القائمةُ كانت تُقَصّ.** كانت `absolute` داخل الصفّ، والصفُّ داخل
+  // قائمةٍ عليها `overflow-y-auto` - فالحاويةُ تقصّ كلَّ ما يفيض عنها،
+  // وبندٌ واحدٌ من ثلاثة كان يظهر ونصفُ الصندوق مقطوع. و`z-index` لا
+  // تُصلح هذا: القصُّ يسبق الترتيب، فلا ارتفاعَ يُخرج عنصراً من حاويةٍ
+  // تقصّه.
+  //
+  // فتخرج إلى `<body>` ببوّابة، وتُموضَع بإحداثيات الزرّ نفسه. والبوّابةُ
+  // تنسخ `data-accent` معها، فتبقى القائمةُ بلون اللوحة لا زرقاء.
   const [menu, setMenu] = useState(false);
+  const menuBtn = useRef<HTMLButtonElement>(null);
+  const [menuAt, setMenuAt] = useState<{ top: number; left: number } | null>(null);
+
+  const MENU_W = 160;
+  const MENU_H = 132;
+
+  function openMenu() {
+    const el = menuBtn.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const rtl = getComputedStyle(document.documentElement).direction === "rtl";
+    // المحاذاةُ على الحافّة المنطقية للزرّ: في الإنجليزية يمينُ القائمة
+    // على يمينه، وفي العربية يسارُها على يساره.
+    let left = rtl ? r.left : r.right - MENU_W;
+    left = Math.max(8, Math.min(left, window.innerWidth - MENU_W - 8));
+    // الانقلابُ لأعلى عند نهاية الشاشة: صفٌّ في آخر القائمة كان سيفتح
+    // قائمتَه خارج الشاشة تماماً.
+    const below = r.bottom + 6;
+    const top = below + MENU_H > window.innerHeight ? Math.max(8, r.top - MENU_H - 6) : below;
+    setMenuAt({ top, left });
+    setMenu(true);
+  }
 
   async function patch(body: Record<string, unknown>) {
     setMenu(false);
@@ -634,19 +665,27 @@ function ThreadRowItem({
       )}
 
       <button
-        onClick={() => setMenu((m) => !m)}
+        ref={menuBtn}
+        onClick={() => (menu ? setMenu(false) : openMenu())}
         aria-label="More"
         className="absolute end-2 top-2 rounded p-0.5 text-text-faint opacity-0 transition-opacity hover:text-text-primary focus-visible:opacity-100 group-hover/row:opacity-100"
       >
         <MoreHorizontal size={14} />
       </button>
 
-      {menu && (
-        <>
+      {menu && menuAt && (
+        <Portal>
           {/* طبقةٌ شفّافة بتقفل القائمة عند أيّ دوسة بره - من غيرها بتفضل
               مفتوحة وانت بتتنقّل، وبتغطّي الصفّ اللي تحتها. */}
-          <button className="fixed inset-0 z-10 cursor-default" aria-label="Close menu" onClick={() => setMenu(false)} />
-          <div className="absolute end-2 top-8 z-20 w-40 overflow-hidden rounded-xl border border-border-visible bg-surface py-1 shadow-lg">
+          <button
+            className="fixed inset-0 z-[80] cursor-default"
+            aria-label="Close menu"
+            onClick={() => setMenu(false)}
+          />
+          <div
+            className="fixed z-[81] w-40 overflow-hidden rounded-xl border border-border-visible bg-surface py-1 shadow-lg"
+            style={{ top: menuAt.top, left: menuAt.left }}
+          >
             <MenuItem onClick={() => patch({ pinned: !row.pinned })} icon={Pin}>
               {row.pinned ? "Unpin" : "Pin to top"}
             </MenuItem>
@@ -662,7 +701,7 @@ function ThreadRowItem({
               {row.status === "ARCHIVED" ? "Bring back" : "Move to archive"}
             </MenuItem>
           </div>
-        </>
+        </Portal>
       )}
     </div>
   );
