@@ -1783,6 +1783,33 @@ function MfaFields() {
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+  // ربطُ تطبيقٍ إضافيّ: نفس السرّ يُعرض مرّةً أخرى بعد كلمة السرّ، فيحمله
+  // تطبيقان ويعملان معاً. الاحتياطيُّ هنا ليس رفاهية - فقدانُ التليفون
+  // بلا ثانٍ يترك صاحبَه خارج حسابه ومعتمداً على أكواد الاسترجاع وحدها.
+  const [addOpen, setAddOpen] = useState(false);
+  const [addPassword, setAddPassword] = useState("");
+  const [addQr, setAddQr] = useState<{ secret: string; qrCodeDataUrl: string } | null>(null);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [addBusy, setAddBusy] = useState(false);
+
+  async function addDevice(e: React.FormEvent) {
+    e.preventDefault();
+    setAddBusy(true);
+    setAddError(null);
+    const res = await fetch("/api/auth/mfa/add-device", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getCsrfHeader() },
+      body: JSON.stringify({ password: addPassword }),
+    }).catch(() => null);
+    setAddBusy(false);
+    const data = await res?.json().catch(() => null);
+    if (!res?.ok) {
+      setAddError(data?.error ?? tr("mfaAddFailed"));
+      return;
+    }
+    setAddQr({ secret: data.secret, qrCodeDataUrl: data.qrCodeDataUrl });
+    setAddPassword("");
+  }
   /** الأكواد الصريحة - في الذاكرة فقط ولحظةَ توليدها. */
   const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
   /** 🔴 **«حفظتها» لا تُصدَّق بلا فعل.**
@@ -2007,6 +2034,54 @@ function MfaFields() {
           >
             {tr("bcRegenerate")}
           </button>
+        </div>
+      )}
+
+      {/* ربطُ تطبيقٍ إضافيّ - قبل زرّ التعطيل: الإضافةُ فعلٌ يُبنى
+          والتعطيلُ فعلٌ يهدم، فترتيبُهما ليس محايداً. */}
+      {enabled && (
+        <div className="mb-3">
+          {!addOpen ? (
+            <button
+              onClick={() => setAddOpen(true)}
+              className="text-[12px] text-accent transition-colors hover:text-text-primary"
+            >
+              {tr("mfaAddDevice")}
+            </button>
+          ) : addQr ? (
+            <div className="rounded-xl border border-border bg-surface-raised p-3">
+              <p className="m-0 mb-2 text-xs leading-5 text-text-muted">{tr("mfaAddScan")}</p>
+              <img src={addQr.qrCodeDataUrl} alt="" className="mb-2 h-40 w-40 rounded-xl bg-white p-2" />
+              <code className="block break-all rounded bg-surface px-2 py-1 text-[11px] text-text-muted">
+                {addQr.secret}
+              </code>
+              <button
+                onClick={() => { setAddOpen(false); setAddQr(null); }}
+                className="mt-2 text-[12px] text-accent transition-colors hover:text-text-primary"
+              >
+                {tr("mfaAddDone")}
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={addDevice}>
+              <p className="mb-2 text-xs text-text-faint">{tr("mfaPasswordConfirm")}</p>
+              <input
+                type="password"
+                value={addPassword}
+                onChange={(e) => setAddPassword(e.target.value)}
+                className="field mb-2 w-full"
+              />
+              {addError && <p className="mb-2 text-xs text-critical">{addError}</p>}
+              <div className="flex gap-2">
+                <button type="submit" disabled={addBusy || !addPassword} className="btn btn-primary btn-sm rounded-full">
+                  {addBusy ? tr("mfaLoading") : tr("mfaAddShow")}
+                </button>
+                <button type="button" onClick={() => { setAddOpen(false); setAddError(null); }} className="btn btn-sm rounded-full">
+                  {tr("cancel")}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       )}
 
