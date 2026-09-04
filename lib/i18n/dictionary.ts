@@ -1596,11 +1596,6 @@ export const dictionary = {
       d_agency: "لوكالة تدير عشرات العملاء وتحتاج أرقاماً موثوقة.",
       d_enterprise: "لمن تجاوز حدود باقة الوكالات: 50 حساباً إعلانياً أو أكثر.",
 
-      unlock_free: "ترى الفرق بين ما تقوله المنصة وما حدث فعلاً.",
-      unlock_starter: "توقف الإعلان الخاسر، وتزيد ميزانية الرابح، وترسل التحويلات المؤكدة إلى منصة واحدة.",
-      unlock_pro: "تترك القرار للقواعد، وترسل التحويلات المؤكدة إلى كل المنصات، فتتعلم كل منصة من عملائك الحقيقيين.",
-      unlock_agency: "تدير كل عملائك بأرقام موثوقة، وبعدد قواعد غير محدود.",
-      unlock_enterprise: "مساحات وحسابات إعلانية بلا حدود، وأرقام تُضبط على حجمك.",
 
       feats_free: "مساحة عمل واحدة|منصة إعلانية واحدة|200 تحويل مؤكد شهرياً|بيانات آخر 30 يوماً|القرارات للاطلاع فقط",
       feats_starter: "كل المنصات الإعلانية|2,000 تحويل مؤكد شهرياً|إرسال التحويلات إلى منصة واحدة|3 قواعد أتمتة|تنفيذ قرارات الزيادة والإيقاف|متجران (سلة، شوبيفاي...)|50 رصيد تحليل ذكي|تقارير تصلك بالبريد",
@@ -6287,11 +6282,6 @@ export const dictionary = {
       d_agency: "For an agency running dozens of clients on verified numbers.",
       d_enterprise: "For anyone past the Agency limits — fifty ad accounts or more.",
 
-      unlock_free: "You see the gap between what the platform claims and what was verified.",
-      unlock_starter: "You act: pause and scale, and send verified conversions back to one platform.",
-      unlock_pro: "You automate the decision and send conversions to every platform — the algorithm learns from your real customers.",
-      unlock_agency: "You run every client on verified numbers, with no cap on rules.",
-      unlock_enterprise: "Unlimited workspaces and ad accounts, with the numbers set to your size.",
 
       feats_free: "One workspace|One ad platform|200 verified conversions a month|30 days of history|Decisions are view-only",
       feats_starter: "Every ad platform|2,000 verified conversions|Conversion upload to one platform|3 automation rules|Apply scale and pause decisions|Two stores (Salla, Shopify...)|50 AI credits|Scheduled email reports",

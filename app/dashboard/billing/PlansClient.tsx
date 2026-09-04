@@ -130,7 +130,13 @@ export function PlansClient({
             >
               {tr(c === "monthly" ? "monthly" : "yearly")}
               {c === "yearly" && (
-                <span className={`ms-1.5 text-[11px] ${cycle === c ? "text-white/80" : "text-verified"}`}>
+                // شارةٌ لا نصٌّ ملوّن: المكسبُ يُقرأ حين يُؤطَّر، ونصٌّ أخضر
+                // جنبَ كلمةٍ سوداء يمرّ كجزءٍ من التسمية لا كعرض.
+                <span
+                  className={`ms-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                    cycle === c ? "bg-white/20 text-white" : "bg-verified/12 text-verified"
+                  }`}
+                >
                   {tr("twoMonthsFree")}
                 </span>
               )}
@@ -315,9 +321,17 @@ function PlanCard({
       )}
 
       <h2 className="text-[17px] font-semibold text-text-primary">{tr(`p_${plan.key}`)}</h2>
-      <p className="mt-1 min-h-[36px] text-[12.5px] leading-relaxed text-text-muted">{tr(`d_${plan.key}`)}</p>
+      {/* 🔴 **ارتفاعان ثابتان، وإلّا لم تصطفّ الأزرار.** البطاقاتُ خلايا
+          شبكةٍ مستقلّة، فكلُّ واحدةٍ تحسب ارتفاعَها وحدها: وصفٌ من سطرين
+          جنبَ وصفٍ من ثلاثة، وباقةٌ لها سطرُ خصمٍ جنبَ «تواصل معنا» بلا
+          سطرٍ فوقه - فينزل زرٌّ ويعلو آخر بعشرين بكسل. وصفُّ الأزرار ليس
+          تجميلاً: العينُ تمسحها أفقياً لتقارن، فاهتزازُها يجعل المسحَ
+          وقفاتٍ متتالية.
+          وكتلةُ السعر تُحاذى من أسفل لا من أعلى، فيقع الرقمُ الكبير على
+          خطٍّ واحدٍ في البطاقات الأربع مهما اختُلف ما فوقه. */}
+      <p className="mt-1 min-h-[40px] text-[12.5px] leading-relaxed text-text-muted">{tr(`d_${plan.key}`)}</p>
 
-      <div className="my-4">
+      <div className="my-4 flex min-h-[76px] flex-col justify-end">
         {plan.contactOnly ? (
           // سعرُ هذه الباقة يُحدَّد بالاتّفاق، وعرضُ «0 جنيه» مكانه أسوأ من
           // عدم عرض شيء: يقرأها القارئ مجّانية.
@@ -390,21 +404,6 @@ function PlanCard({
         </button>
       )}
 
-      {/* ما يفتحه فعلاً - قبل القائمة الطويلة، لأنه سبب الشراء.
-
-          🔴 **كان بطاقةً داخل بطاقة.** حدٌّ وظلٌّ وسطحٌ مرفوع حول جملةٍ
-          واحدة، فتقرأ العينُ عنصراً قائماً بذاته يستحقّ وقفةً - وهي جملةٌ
-          تمهيديّة لا كيانٌ منفصل. والتعشيشُ نفسُه يُضعف البطاقةَ الأمّ:
-          حدّان متداخلان يجعلان أيَّهما هو البطاقة سؤالاً.
-          بقيت شريطاً ملوّناً بعلامةٍ جانبية - تمييزٌ بلا تأطير، وبلا أثر
-          تحويمٍ لأنّها ليست شيئاً يُضغَط. */}
-      <p
-        className="mb-3 rounded-lg bg-accent/[0.07] py-2 pe-3 text-[12px] font-medium leading-relaxed text-text-primary"
-        style={{ borderInlineStart: "3px solid var(--accent)", paddingInlineStart: 10 }}
-      >
-        {tr(`unlock_${plan.key}`)}
-      </p>
-
       {/* فاصلٌ منقّط: السعرُ والقرار فوقه، والتفصيلُ تحته */}
       <div className="mb-3 border-t border-dashed border-border" />
 
@@ -421,14 +420,22 @@ function PlanCard({
           return (
             <li
               key={i}
-              className={`flex items-start gap-1.5 leading-relaxed ${
+              className={`flex items-start gap-2 leading-relaxed ${
                 isInherit
-                  ? "mb-0.5 text-[12.5px] font-semibold text-text-primary"
+                  ? "mb-1 text-[12.5px] font-semibold text-text-primary"
                   : "text-[12.5px] text-text-muted"
               }`}
             >
-              <Check size={13} className={`mt-0.5 shrink-0 ${isInherit ? "text-accent" : "text-verified"}`} />
-              <span>
+              {/* 🔴 **سطرُ الوراثة بلا علامةِ صحّ عن قصد.** العلامةُ تعني
+                  «بندٌ واحد مشمول»، وهذا السطرُ ليس بنداً - هو عنوانٌ يقول
+                  إنّ قائمةً كاملةً فوقه مشمولة. ووضعُ علامةٍ جنبَه يساويه
+                  بـ«٩ متاجر» تحته، ويجعل القائمةَ تبدأ بصفٍّ زائد. */}
+              {!isInherit && (
+                <span className="mt-0.5 grid size-[17px] shrink-0 place-items-center rounded-md bg-accent/12">
+                  <Check size={11} strokeWidth={3} className="text-accent" />
+                </span>
+              )}
+              <span className={isInherit ? "" : "pt-px"}>
                 {feat}
                 {isInherit && <span className="text-text-faint">{tr("plusMore")}</span>}
               </span>
