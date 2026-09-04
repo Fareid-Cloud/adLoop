@@ -89,6 +89,15 @@ export interface Plan {
   /** الباقة المُبرَزة: الأكثر ملاءمة لأغلب العملاء، لا الأغلى */
   highlighted: boolean;
   price: Record<BillingCurrency, number>;
+  /**
+   * السعر الأساسي - **ما يُدفع حين ينتهي عرض الإطلاق**.
+   *
+   * 🔴 ليس رقماً تسويقياً مخترعاً: لو لم يكن هذا هو السعر الذي ستتقاضاه
+   * فعلاً بعد العرض، فعرضُه مشطوباً **سعرٌ مرجعيّ كاذب** - وهي ممارسةٌ
+   * مضلِّلة يحظرها قانون حماية المستهلك صراحةً. المفتاح في اللوحة يرفع
+   * السعر إلى هذا الرقم فعلياً، فيبقى الادّعاء صحيحاً.
+   */
+  listPrice: Record<BillingCurrency, number>;
   limits: PlanLimits;
   /**
    * باقةٌ لا تُشترى بضغطة بل باتّفاق - يُعرض «تواصل معنا» مكان السعر.
@@ -109,6 +118,7 @@ export const PLANS: Plan[] = [
     order: 0,
     highlighted: false,
     price: { EGP: 0, SAR: 0, USD: 0 },
+    listPrice: { EGP: 0, SAR: 0, USD: 0 },
     limits: {
       seatsViewer: 0, seatsOperator: 0,
       workspaces: 1, platforms: 1, adAccounts: 1, monthlySpendUsd: 2_000, verifiedConversions: 200,
@@ -121,6 +131,7 @@ export const PLANS: Plan[] = [
     order: 1,
     highlighted: false,
     price: { EGP: 899, SAR: 189, USD: 49 },
+    listPrice: { EGP: 1_199, SAR: 249, USD: 69 },
     limits: {
       // 🔴 **البداية بلا فريق - صفر لا واحد.**
       // كانت `seatsViewer: 1`، فمشترك البداية يقدر يدعو زميلاً بينما
@@ -141,6 +152,7 @@ export const PLANS: Plan[] = [
     // قيمة الاشتراك أكثر من إبراز الأغلى الذي يبدو بعيداً فيُتجاهَل.
     highlighted: true,
     price: { EGP: 2_499, SAR: 559, USD: 149 },
+    listPrice: { EGP: 3_299, SAR: 749, USD: 199 },
     limits: {
       seatsViewer: 3, seatsOperator: 0,
       workspaces: 3, platforms: "all", adAccounts: 3, monthlySpendUsd: 60_000, verifiedConversions: 10_000,
@@ -153,6 +165,7 @@ export const PLANS: Plan[] = [
     order: 3,
     highlighted: false,
     price: { EGP: 6_999, SAR: 1_499, USD: 399 },
+    listPrice: { EGP: 9_299, SAR: 1_999, USD: 549 },
     limits: {
       seatsViewer: 10, seatsOperator: 3,
       workspaces: 15, platforms: "all", adAccounts: 15, monthlySpendUsd: 250_000, verifiedConversions: 50_000,
@@ -174,7 +187,9 @@ export const PLANS: Plan[] = [
     order: 4,
     highlighted: false,
     contactOnly: true,
+    // صفران: السعر بالاتّفاق، والبطاقة تعرض «السعر عند الطلب» لا رقماً.
     price: { EGP: 0, SAR: 0, USD: 0 },
+    listPrice: { EGP: 0, SAR: 0, USD: 0 },
     limits: {
       seatsViewer: -1, seatsOperator: -1,
       workspaces: -1, platforms: "all", adAccounts: -1, monthlySpendUsd: -1, verifiedConversions: -1,
@@ -273,9 +288,37 @@ export function billingCurrencyFor(workspaceCurrency: string): BillingCurrency {
   return "USD";
 }
 
-export function planPrice(plan: Plan, currency: BillingCurrency, cycle: BillingCycle): number {
-  const monthly = plan.price[currency];
+/**
+ * السعر المعروض والمُحصَّل - **الاثنان واحد دائماً**.
+ *
+ * `offerActive` يأتي من مفتاح `pricing.launchOffer` في اللوحة ويُمرَّر من
+ * الخادم. حين يُطفأ، يصير السعر الأساسي هو السعر - في البطاقة وفي
+ * الفاتورة معاً، لأنّ الدالّة واحدة. وفصلُهما كان سيسمح بشاشةٍ تعرض رقماً
+ * وبوابةٍ تخصم غيره، وهو أسوأ عطلٍ ممكن في صفحة دفع.
+ */
+export function planPrice(
+  plan: Plan,
+  currency: BillingCurrency,
+  cycle: BillingCycle,
+  offerActive = true
+): number {
+  const monthly = offerActive ? plan.price[currency] : plan.listPrice[currency];
   return cycle === "yearly" ? monthly * YEARLY_MONTHS_CHARGED : monthly;
+}
+
+/** السعر الأساسي مشطوباً في البطاقة - يُعرض حين يكون العرض قائماً فقط. */
+export function planListPrice(plan: Plan, currency: BillingCurrency, cycle: BillingCycle): number {
+  const monthly = plan.listPrice[currency];
+  return cycle === "yearly" ? monthly * YEARLY_MONTHS_CHARGED : monthly;
+}
+
+/** نسبة الخصم الفعلية محسوبةً من الرقمين، لا مكتوبةً بيد - رقمٌ مكتوبٌ
+ *  بيد يفترق عن الحساب أوّل ما يتغيّر سعرٌ واحد. */
+export function offerDiscountPct(plan: Plan, currency: BillingCurrency): number {
+  const list = plan.listPrice[currency];
+  const now = plan.price[currency];
+  if (!list || list <= now) return 0;
+  return Math.round(((list - now) / list) * 100);
 }
 
 /** ما يُقارَن به السعر السنوي في الواجهة - قيمة الخصم لا نسبته المجرّدة */

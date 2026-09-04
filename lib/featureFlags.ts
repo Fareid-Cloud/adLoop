@@ -16,6 +16,17 @@ import { prisma } from "@/lib/prisma";
 
 export const FEATURE_FLAGS = [
   {
+    // 🔴 **المفتاح ده بيغيّر فلوساً، مش عرضاً.**
+    // وهو مطفأ يبقى السعر الأساسي هو المعروض **والمحصَّل** معاً - لأنّ
+    // البطاقة والفاتورة بيقروا من نفس الدالّة. إطفاؤه ينهي عرض الإطلاق
+    // فوراً لكلّ زائر جديد؛ الاشتراكات القائمة تكمل بسعرها حتى تجديدها.
+    key: "pricing.launchOffer",
+    label: "Launch offer pricing",
+    description:
+      "On: plans are sold at the offer price with the standard price struck through. Off: the standard price becomes the price - on the card and at checkout together.",
+    defaultOn: true,
+  },
+  {
     key: "sync.google",
     label: "Google Ads sync",
     description: "Daily Google Ads data pull. Turn off during a Google-side outage to stop failed runs piling up.",

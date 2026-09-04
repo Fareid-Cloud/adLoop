@@ -9,6 +9,7 @@
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PlansClient } from "./PlansClient";
+import { isFeatureEnabled } from "@/lib/featureFlags";
 import { PLAN_BY_KEY, type PlanKey } from "@/lib/plans";
 import { priceListFor, resolveBillingCountry } from "@/lib/billingRegion";
 import { isAutoChargeConfigured } from "@/lib/paymob";
@@ -46,8 +47,13 @@ export default async function BillingPage({
   const purchased = user.aiCreditsPurchased ?? 0;
   const left = Math.max(0, allowance - used) + purchased;
 
+  // حالةُ عرض الإطلاق: نفس المفتاح اللي بيحكم السعر المحصَّل، فالشاشةُ
+  // والفاتورةُ مايفترقوش أبداً.
+  const offerActive = await isFeatureEnabled("pricing.launchOffer");
+
   return (
     <PlansClient
+      offerActive={offerActive}
       locale={locale}
       // نفس دالّة مسار الدفع حرفياً: العرض والخصم من مصدرٍ واحد،
       // فيستحيل أن يختلفا كما كان يحدث (٢٬٤٩٩ جنيهاً معروضة، ١٤٩ دولاراً مخصومة).

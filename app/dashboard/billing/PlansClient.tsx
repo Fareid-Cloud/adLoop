@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import {
   PLANS, COMPARISON_ROWS, CREDIT_PACKS, MIN_CUSTOM_CREDITS, MAX_CUSTOM_CREDITS,
-  planPrice, yearlySaving, priceForCredits, aiModelTier,
+  planPrice, planListPrice, offerDiscountPct, yearlySaving, priceForCredits, aiModelTier,
   type BillingCurrency, type BillingCycle, type Plan, type PlanKey, type PlanLimits,
 } from "@/lib/plans";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -34,6 +34,7 @@ export function PlansClient({
   creditsAllowance,
   openCreditsOnLoad = false,
   subscription = null,
+  offerActive = true,
 }: {
   locale: Locale;
   currency: BillingCurrency;
@@ -41,6 +42,8 @@ export function PlansClient({
   creditsLeft: number;
   creditsAllowance: number;
   openCreditsOnLoad?: boolean;
+  /** عرض الإطلاق قائم؟ يأتي من مفتاح اللوحة عبر الخادم. */
+  offerActive?: boolean;
   subscription?: {
     periodEnd: string;
     cancelAtPeriodEnd: boolean;
@@ -160,6 +163,7 @@ export function PlansClient({
             tr={tr}
             current={currentPlan === plan.key}
             busy={buying === plan.key}
+            offerActive={offerActive}
             onPick={() => checkout(plan.key)}
           />
         ))}
@@ -212,7 +216,7 @@ export function PlansClient({
                   {PLANS.map((p) => (
                     <td key={p.key} className="px-4 py-3">
                       <span className="tabular-nums text-[13px] font-semibold text-text-primary">
-                        {p.key === "free" ? tr("freeForever") : `${fmt(planPrice(p, currency, cycle))} ${currency}`}
+                        {p.key === "free" ? tr("freeForever") : `${fmt(planPrice(p, currency, cycle, offerActive))} ${currency}`}
                       </span>
                     </td>
                   ))}
@@ -239,7 +243,7 @@ export function PlansClient({
 // ==================== بطاقة الباقة ====================
 
 function PlanCard({
-  plan, cycle, currency, locale, tr, current, busy, onPick,
+  plan, cycle, currency, locale, tr, current, busy, offerActive, onPick,
 }: {
   plan: Plan;
   cycle: BillingCycle;
@@ -248,9 +252,12 @@ function PlanCard({
   tr: (k: string, v?: Record<string, string | number>) => string;
   current: boolean;
   busy: boolean;
+  offerActive: boolean;
   onPick: () => void;
 }) {
-  const price = planPrice(plan, currency, cycle);
+  const price = planPrice(plan, currency, cycle, offerActive);
+  const listed = planListPrice(plan, currency, cycle);
+  const discount = offerActive ? offerDiscountPct(plan, currency) : 0;
   const saving = yearlySaving(plan, currency);
 
   return (
@@ -281,6 +288,20 @@ function PlanCard({
           </div>
         ) : (
           <>
+            {/* السعر الأساسي مشطوباً فوق السعر الحالي - لا جنبه.
+                جنبه بيخلّي العين تقراهم رقمين للاختيار؛ فوقه بترتيبٍ أصغر
+                وأبهت بيتقروا «كان وبقى»، وهو المقصود. ويختفي تماماً لمّا
+                العرضُ يُطفأ فمافيش شطبٌ على سعرٍ هو السعر. */}
+            {discount > 0 && (
+              <div className="mb-1 flex items-center gap-2">
+                <span className="text-[14px] tabular-nums text-text-faint line-through">
+                  {fmt(listed)} {currency}
+                </span>
+                <span className="rounded-full bg-verified/12 px-2 py-0.5 text-[11px] font-semibold text-verified">
+                  {tr("offerOff", { pct: discount })}
+                </span>
+              </div>
+            )}
             <div className="flex items-baseline gap-1.5">
               <span className="text-[32px] font-semibold leading-none tracking-tight tabular-nums text-text-primary">
                 {fmt(price)}

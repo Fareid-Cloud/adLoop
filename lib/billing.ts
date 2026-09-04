@@ -74,7 +74,7 @@ export async function startSubscriptionCheckout(
   // جديدة لعميل واحد. **والعملة شرطٌ لا تحسين:** رقمٌ اتّفق عليه بالجنيه
   // لا يُحصَّل بالدولار لأنّ عملة المساحة تغيّرت، فعند اختلافها نرجع
   // للسعر المعلَن - رجوعٌ إلى ما يعرفه العميل أأمن من تحصيلٍ مفاجئ.
-  const amount = resolveMonthlyChargeable(plan, input.currency, input.cycle, user);
+  const amount = await resolveMonthlyChargeable(plan, input.currency, input.cycle, user);
   if (amount <= 0) return { ok: false, errorKey: "errUnknownPlan" };
 
   // شراء الباقة نفسها وهي فعّالة: لا فائدة منه وقد يكون ضغطة مكرّرة
@@ -106,18 +106,22 @@ export async function startSubscriptionCheckout(
  * بيختلفوا لحساب واحد بس ومعاه اتّفاق. خلطهما كان معناه إن صفحة الأسعار
  * العامة تعرض خصماً خاصاً بحساب واحد لكل الزوّار.
  */
-export function resolveMonthlyChargeable(
+export async function resolveMonthlyChargeable(
   plan: Plan,
   currency: BillingCurrency,
   cycle: BillingCycle,
   override: { customPriceOverrideCents?: number | null; customPriceCurrency?: string | null } | null
-): number {
+): Promise<number> {
   const cents = override?.customPriceOverrideCents;
   if (cents && cents > 0 && override?.customPriceCurrency === currency) {
     const monthly = cents / 100;
     return cycle === "yearly" ? monthly * YEARLY_MONTHS_CHARGED : monthly;
   }
-  return planPrice(plan, currency, cycle);
+  // 🔴 **حالةُ العرض تُقرأ هنا، لا في الواجهة.** لو قرأتها الشاشةُ وحدها،
+  // إطفاءُ المفتاح كان هيغيّر الرقم المعروض ويسيب البوابة تخصم القديم -
+  // شاشةٌ تقول رقماً وفاتورةٌ تقول غيره، وهو أسوأ عطلٍ في صفحة دفع.
+  const offerActive = await isFeatureEnabled("pricing.launchOffer");
+  return planPrice(plan, currency, cycle, offerActive);
 }
 
 // ==================== كريدت ====================
@@ -537,7 +541,7 @@ export async function renewViaSavedCard(userId: string): Promise<RenewalOutcome>
 
   const cycle = (user.subscriptionCycle === "yearly" ? "yearly" : "monthly") as BillingCycle;
   const listCurrency = priceListFor(user.billingCountry);
-  const listAmount = resolveMonthlyChargeable(plan, listCurrency, cycle, user);
+  const listAmount = await resolveMonthlyChargeable(plan, listCurrency, cycle, user);
   if (listAmount <= 0) return { ok: false, reason: "not_eligible" };
 
   const listCents = Math.round(listAmount * 100);
