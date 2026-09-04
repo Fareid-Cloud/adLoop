@@ -1457,3 +1457,67 @@ select.field {
     opacity: 1;
   }
 }
+
+/* ==================== لمعةُ زرّ الاشتراك وضغطتُه ====================
+
+   خصائصُ طويلةٌ فقط وأسماءٌ مسبوقةٌ بـ`adl-`. الاختصارُ هنا (`background`,
+   `transition`) بيكسب على أدوات Tailwind في نفس العنصر لأنّ الملفّ بيتحمّل
+   بعدها - عطلٌ وقع في هذا الملفّ نفسه من قبل.
+
+   واللمعةُ بـ`currentColor` لا بالأبيض عن قصد: زرُّ الباقة المُبرَزة أبيضُ
+   النصّ على أزرق، والباقي نصُّه داكنٌ على فاتح. الأبيضُ كان هيلمع على
+   الأزرق ويختفي تماماً على الباقي - أي أثرٌ على بطاقةٍ واحدة من أربع. */
+.adl-shine {
+  position: relative;
+  overflow: hidden;
+  transition-property: transform;
+  transition-duration: 0.12s;
+  transition-timing-function: ease-out;
+}
+.adl-shine::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  inset-inline-start: -60%;
+  width: 45%;
+  background-image: linear-gradient(100deg, transparent, currentColor, transparent);
+  transform: skewX(-18deg);
+  opacity: 0;
+  pointer-events: none;
+}
+.adl-shine:hover::after {
+  animation: adl-sweep 0.75s ease-out;
+}
+/* الضغطةُ تُحَسّ: انكماشٌ طفيفٌ يقول إنّ النقرة وصلت، وهو ما يمنع
+   النقرةَ الثانية على زرٍّ يفتح بوّابةَ دفع. */
+.adl-shine:active {
+  transform: scale(0.975);
+}
+.adl-shine:disabled {
+  transform: none;
+}
+.adl-shine:disabled::after {
+  animation: none;
+}
+@keyframes adl-sweep {
+  0%   { inset-inline-start: -60%; opacity: 0; }
+  18%  { opacity: 0.22; }
+  100% { inset-inline-start: 115%; opacity: 0; }
+}
+
+/* البطاقةُ المُبرَزة: تدرّجٌ خفيفٌ من أعلى بدل تعبئةٍ زرقاء مسطّحة.
+   المسطَّحةُ تجعل البطاقةَ سطحاً آخر، والتدرّجُ يجعلها نفسَ السطح
+   وعليه ضوء - وهو الفرقُ بين «بطاقةٌ ملوّنة» و«بطاقةٌ مُبرَزة». */
+.adl-plan-featured {
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 8%, transparent),
+    transparent 60%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adl-shine:hover::after { animation: none; }
+  .adl-shine:active { transform: none; }
+}

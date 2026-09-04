@@ -14,7 +14,7 @@
 // للدعم لمَن فتحها بالغلط - بدل ما يقفل ويدوّر من أوّل وجديد.
 
 import { useEffect, useState } from "react";
-import { X, Loader2, ArrowRight } from "lucide-react";
+import { X, Loader2, ArrowRight, Check, Clock, Zap } from "lucide-react";
 import { Portal } from "@/app/components/ui/Portal";
 import { Select } from "@/app/components/ui/Select";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -87,7 +87,7 @@ export function ContactSalesDialog({
       <div className="fixed inset-0 z-[70] grid place-items-center bg-black/55 p-4" onClick={() => setOpen(false)}>
         <div
           onClick={(e) => e.stopPropagation()}
-          className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-surface shadow-2xl"
+          className="max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-border bg-surface shadow-2xl"
         >
           {/* رأسٌ بلون العلامة: الشاشةُ دي بتتقري «شركة بتكلّمك» لا «نموذج
               دعم» - والفرقُ في أوّل نصف ثانية من النظر إليها. */}
@@ -132,10 +132,46 @@ export function ContactSalesDialog({
               <p className="m-0 mt-1.5 text-[12.5px] leading-relaxed text-text-muted">
                 {tr("doneBody", { email: form.email })}
               </p>
-              <button onClick={() => setOpen(false)} className="btn mt-4">{tr("close")}</button>
+              {/* 🔴 **الزرُّ الوحيد في الشاشة كان يبدو معطَّلاً.** زرٌّ رمادي
+                  بلا لونٍ تحت رسالة نجاح يُقرأ كخيارٍ ثانوي، فيقعد صاحبُه
+                  ينتظر شيئاً آخر يحصل. ولمّا يكون **الفعلَ الوحيد المتاح**
+                  فهو الفعلُ الرئيسيّ بالتعريف. */}
+              <button onClick={() => setOpen(false)} className="btn btn-primary mt-4 px-6">
+                {tr("close")}
+              </button>
             </div>
           ) : (
-            <form onSubmit={submit} className="p-5">
+            /* **نصفان: لماذا، ثم مَن أنت.**
+               كان النموذجُ وحدَه في الشاشة - ستّةُ حقولٍ تُطلب ممّن لم
+               يُقَل له بعدُ ما الذي يشتريه. وطلبُ الاسم والشركة والهاتف
+               قبل أيّ سببٍ يجعل الشاشةَ استمارةً لا عرضاً، وأغلبُ مَن
+               يفتحها بفضولٍ يقفلها عندها.
+               فالنصفُ الأوّل يقول ما يفتحه الاتّفاق في أربعة أسطر، والثاني
+               يسأل. وعلى الموبايل يقع فوقه لا جنبه - نفس الترتيب. */
+            <div className="grid md:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)]">
+              <aside className="border-b border-border bg-accent/[0.05] p-5 md:border-b-0 md:border-e md:border-border">
+                <h3 className="m-0 mb-3 text-[13px] font-semibold text-text-primary">{tr("whyTitle")}</h3>
+                <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+                  {["why1", "why2", "why3", "why4"].map((k) => (
+                    <li key={k} className="flex items-start gap-2 text-[12.5px] leading-relaxed text-text-muted">
+                      <span className="mt-0.5 grid size-[17px] shrink-0 place-items-center rounded-md bg-accent/12">
+                        <Check size={11} strokeWidth={3} className="text-accent" />
+                      </span>
+                      {tr(k)}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-4 flex flex-col gap-1.5 border-t border-border pt-3">
+                  <span className="flex items-center gap-1.5 text-[11.5px] text-text-faint">
+                    <Clock size={12} /> {tr("whyFootCall")}
+                  </span>
+                  <span className="flex items-center gap-1.5 text-[11.5px] text-text-faint">
+                    <Zap size={12} /> {tr("whyFootSetup")}
+                  </span>
+                </div>
+              </aside>
+
+              <form onSubmit={submit} className="p-5">
               <div className="grid gap-3 sm:grid-cols-2">
                 <FieldWrap label={tr("company")} required>
                   <input
@@ -238,7 +274,8 @@ export function ContactSalesDialog({
                 {tr("supportInstead")}
                 <ArrowRight size={12} className="rtl:rotate-180" />
               </button>
-            </form>
+              </form>
+            </div>
           )}
         </div>
       </div>

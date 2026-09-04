@@ -310,7 +310,7 @@ function PlanCard({
     <div
       className={`relative flex h-full flex-col rounded-2xl border bg-surface p-5 transition-all ${
         plan.highlighted
-          ? "border-accent bg-accent/[0.08] shadow-[0_0_0_1px_var(--accent)] lg:-translate-y-2"
+          ? "adl-plan-featured border-accent shadow-[0_0_0_1px_var(--accent)] lg:-translate-y-2"
           : "card-shadow border-border"
       }`}
     >
@@ -385,7 +385,7 @@ function PlanCard({
         // لطابورٍ له حالاتُه (`/admin/sales`) لا لصندوق تذاكر.
         <button
           onClick={() => window.dispatchEvent(new CustomEvent("adloop:contact-sales"))}
-          className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-accent bg-accent/[0.08] py-2.5 text-[13.5px] font-medium text-accent transition-colors hover:bg-accent/[0.14]"
+          className="adl-shine flex w-full items-center justify-center gap-1.5 rounded-xl border border-accent bg-accent/[0.08] py-2.5 text-[13.5px] font-medium text-accent transition-colors hover:bg-accent/[0.14]"
         >
           {tr("contactSales")}
           <ArrowLeft size={14} className="rtl:rotate-0 ltr:rotate-180" />
@@ -394,7 +394,7 @@ function PlanCard({
         <button
           onClick={onPick}
           disabled={busy || current}
-          className={`flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-[13.5px] font-medium transition-opacity disabled:opacity-60 ${
+          className={`adl-shine flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-[13.5px] font-medium transition-opacity disabled:opacity-60 ${
             plan.highlighted ? "bg-accent text-white" : "border border-border bg-surface-raised text-text-primary"
           }`}
         >
