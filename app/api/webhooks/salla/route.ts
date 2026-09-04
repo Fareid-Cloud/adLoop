@@ -1,129 +1,53 @@
-// app/api/webhooks/salla/route.ts
+// app/api/webhooks/salla/route.ts - **مسارٌ مُحال، لا يستقبل شيئاً.**
 //
-// سلة بتبعت طلب POST هنا في كل مرة يتعمل فيها طلب جديد (order.created).
-// بنربط الطلب بالكليك الأصلي (gclid) عن طريق UTM parameters اللي بتتحفظ
-// وقت الكليك على صفحة المتجر، بنفس مبدأ نظام تتبع الواتساب بالظبط.
+// 🔴 **كان مسارَ استقبالٍ ثانياً حيّاً لسلّة، بمنطقٍ مختلفٍ عن الموحَّد** -
+// وهو ما رصده الأوديت (D-4، High) وأمر بحذفه، ولم يُحذف.
 //
-// أمان: (1) بنتحقق من توقيع سلة (HMAC-SHA256) على الـ body الخام قبل أي
-// معالجة - وإلا أي حد يعرف الرابط يقدر يبعت طلبات وهمية تتسجل كمبيعات
-// حقيقية. (2) بنسجل معرف كل طلب اتعالج فعلاً، عشان لو سلة بعتت نفس
-// الحدث تاني (بتعمل كده لحد 3 مرات لو ماخدتش رد 200 خلال 30 ثانية)
-// منضاعفش الإيراد.
+// العنوانُ المعتمَد الوحيد الآن:
+//   /api/webhooks/ecommerce/salla
+// وهو ما تعرضه شاشةُ ربط المتجر (`StoreConnectDialog`) وما توثّقه قائمةُ
+// التفعيل. والسرُّ يُحفظ **لكلّ مساحة عمل** مشفَّراً في
+// `EcommerceConnection.webhookSecret`، لا في متغيّر بيئةٍ واحدٍ للجميع.
+//
+// **لماذا لم يكفِ تركُه يعمل:**
+//
+// ١) **الطلبُ يُعَدّ مرّتين لمن سجّل العنوانين.** منعُ التكرار هنا كان
+//    `markEventAsProcessed("SALLA", orderId, storeId)`، وفي الموحَّد
+//    `markEventAsProcessed(platform, "<orderId>#<fingerprint>", connectionId)`.
+//    المعرّفُ والنطاقُ مختلفان، فقيدُ `@@unique` لا يتصادم أبداً - ويصير
+//    `ordersCount` ضعفَه والإيرادُ مقسوماً على صفّين.
+//
+// ٢) **ومن سجّل هذا وحده كان أسوأ:** يكتب `storeRevenue` تحت
+//    `campaignId:"unlinked"` **ولا ينشئ `Order` ولا `Customer` ولا
+//    `ProductSaleEvent`** - فكوهورت العملاء ومعدّل الشراء المتكرّر والمرتجعات
+//    وتقييمُ الاحتيال كلُّها فارغةٌ بينما اللوحة تعرض طلبات.
+//
+// ٣) **وحسمُ الملكية كان يتخطّى `lib/ecommerce/resolveStore.ts`** إلى
+//    `campaignLink.findFirst` بسرٍّ عامٍّ واحد - وهو النمطُ الذي وُجد ذلك
+//    الملفُّ أصلاً لأنّه سرّب طلباتٍ بين المستأجرين.
+//
+// و`410 Gone` لا حذفُ الملفّ: الحذفُ يعطي `404`، وهي عند المتجر «خطأٌ
+// مؤقّت» فيعيد المحاولة أياماً. و`410` تعني «راح ولن يعود» فيتوقّف، وتترك
+// للمالك سطراً يقرؤه إن كان قد سجّل هذا العنوان يوماً. والأهمّ: العنوانُ
+// القديم لا يستطيع بعد اليوم أن يبتلع طلباً بصمت.
 
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { verifyHmacSignature, markEventAsProcessed } from "@/lib/webhookSecurity";
+import { NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
-  // لازم ناخد الـ body كنص خام قبل أي تحليل - التوقيع بيتحسب على البايتات
-  // الأصلية بالظبط، مش على نسخة JSON معاد تجميعها ممكن تختلف شكلاً
-  const rawBody = await req.text();
+const GONE = {
+  error: "gone",
+  message:
+    "This endpoint was retired. Register the Salla webhook at /api/webhooks/ecommerce/salla " +
+    "and set the signing secret when connecting the store in AdLoop.",
+} as const;
 
-  const signature = req.headers.get("x-salla-signature");
-  const secret = process.env.SALLA_WEBHOOK_SECRET;
+export async function POST() {
+  console.warn(
+    "[webhooks/salla] استُقبل طلبٌ على المسار القديم المُحال - سجّل العنوان الموحَّد " +
+      "/api/webhooks/ecommerce/salla من شاشة ربط المتجر."
+  );
+  return NextResponse.json(GONE, { status: 410 });
+}
 
-  if (!secret) {
-    console.error("SALLA_WEBHOOK_SECRET غير مضبوط - رافضين كل الطلبات لحد ما يتظبط");
-    return NextResponse.json({ error: "server misconfigured" }, { status: 500 });
-  }
-
-  if (!verifyHmacSignature(rawBody, signature, secret)) {
-    console.warn("توقيع Salla غير صحيح - الطلب مرفوض");
-    return NextResponse.json({ error: "invalid signature" }, { status: 401 });
-  }
-
-  const body = JSON.parse(rawBody);
-
-  if (body.event !== "order.created") {
-    return NextResponse.json({ ok: true }); // بنتجاهل أي حدث غير الطلبات الجديدة
-  }
-
-  const order = body.data;
-  const storeId = String(body.merchant); // معرف المتجر في سلة
-
-  // الحماية من التكرار - لو الطلب ده اتعالج قبل كده، نوقف هنا فوراً
-  const orderId = String(order.id ?? order.reference_id ?? "");
-  if (!orderId) {
-    console.error("طلب سلة بدون معرف - مينفعش نضمن عدم التكرار، بنرفضه");
-    return NextResponse.json({ error: "missing order id" }, { status: 400 });
-  }
-
-  // النطاق معرّف التاجر عند سلّة - متاحٌ قبل أيّ استعلام. وبدونه كان
-  // رقمُ طلبٍ عند تاجرٍ يمنع رقمَه نفسه عند تاجرٍ آخر من الدخول.
-  const isFirstTime = await markEventAsProcessed("SALLA", orderId, storeId);
-  if (!isFirstTime) {
-    return NextResponse.json({ ok: true, note: "already processed" });
-  }
-
-  // بنحاول نلاقي الـ Workspace المربوط بالمتجر ده
-  const link = await prisma.campaignLink.findFirst({
-    where: { platform: "SALLA", externalAccountId: storeId },
-  });
-
-  if (!link) {
-    console.warn(`لا توجد مساحة عمل مرتبطة بمتجر سلة: ${storeId}`);
-    return NextResponse.json({ ok: true });
-  }
-
-  // بنجمّع طلبات المتجر يومياً في صف واحد (campaignId ثابت "unlinked").
-  // مهم: payload سلة مبيحملش معرّف الكليك/الحملة، فالإسناد لحملة بعينها
-  // بيتم عبر محرك الإسناد (تطابق الطلب بكليك سابق)، مش من هنا. كان الكود
-  // بيحط order.reference_id (مرجع الطلب) في campaignId - وده فريد لكل طلب،
-  // فكان بيعمل صف منفصل لكل طلب و increment عمره ما بيشتغل ويلوّث الحقل.
-  const orderDate = new Date(order.created_at ?? Date.now());
-  const dateOnly = new Date(orderDate.toISOString().slice(0, 10));
-  const orderRevenue = Number(order.total?.amount ?? 0);
-
-  await prisma.metricSnapshot.upsert({
-    where: {
-      workspaceId_platform_campaignId_date_placementBreakdown_placementDetail: {
-        workspaceId: link.workspaceId,
-        platform: "SALLA",
-        campaignId: "unlinked",
-        date: dateOnly,
-        placementBreakdown: "ALL",
-        placementDetail: "ALL",
-      },
-    },
-    create: {
-      workspaceId: link.workspaceId,
-      platform: "SALLA",
-      campaignId: "unlinked",
-      date: dateOnly,
-      ordersCount: 1,
-      storeRevenue: orderRevenue,
-      returnedOrdersCount: 0,
-    },
-    update: {
-      ordersCount: { increment: 1 },
-      storeRevenue: { increment: orderRevenue },
-    },
-  });
-
-  // ربط حقيقي على مستوى المنتج الفردي - كان مفقود تماماً قبل كده
-  // (بس إجمالي على مستوى الـWorkspace). لو الطلب فيه تفاصيل عناصر
-  // (order.items، بمطابقة sku)، بنسجّل حدث بيع حقيقي لكل منتج معروف
-  if (Array.isArray(order.items)) {
-    for (const item of order.items) {
-      const sku = item.sku ?? null;
-      if (!sku) continue; // مفيش SKU نقدر نطابق بيه، بنتجاهل السطر ده
-
-      const product = await prisma.product.findFirst({
-        where: { workspaceId: link.workspaceId, sku },
-      });
-      if (!product) continue; // منتج مش متسجّل عندنا لسه - مش خطأ، بس مفيش نربطه بيه
-
-      await prisma.productSaleEvent.create({
-        data: {
-          productId: product.id,
-          quantity: Number(item.quantity ?? 1),
-          revenue: Number(item.amounts?.total?.amount ?? item.price ?? 0),
-          returned: false,
-          occurredAt: orderDate,
-        },
-      });
-    }
-  }
-
-  return NextResponse.json({ ok: true });
+export async function GET() {
+  return NextResponse.json(GONE, { status: 410 });
 }

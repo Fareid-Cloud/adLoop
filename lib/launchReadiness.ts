@@ -124,8 +124,13 @@ export const READINESS: readonly ReadinessItem[] = [
     breaks: "The WhatsApp tracker cannot call the product — the attribution engine stops." },
 
   // ==================== الويب هوك ====================
-  { key: "SALLA_WEBHOOK_SECRET", group: "Webhooks", severity: "FEATURE",
-    breaks: "Salla webhooks are rejected — the merchant reports missing orders." },
+  // 🔴 **`SALLA_WEBHOOK_SECRET` اتشال من هنا، وده مش تنظيف.**
+  //
+  // كان بيتعرض كنقصٍ دائم لا يُسَدّ: أسرارُ المتاجر الخمسة كلُّها **لكلّ
+  // مساحة عمل** في `EcommerceConnection.webhookSecret` مشفَّرةً، ومفيش
+  // متغيّرُ بيئةٍ لأيٍّ منها. فالصفُّ ده كان بيقول لصاحب المنتج إنّ سلّة
+  // معطّلة وهي شغّالة - **وشاشةُ جاهزيةٍ بتكذب في بندٍ واحد بتفقد ثقتَها
+  // في البنود كلّها**، وهو أسوأ من غيابها.
   { key: "META_WEBHOOK_VERIFY_TOKEN", group: "Webhooks", severity: "FEATURE",
     breaks: "The Meta lead-form subscription cannot complete." },
   { key: "META_MESSENGER_VERIFY_TOKEN", group: "Webhooks", severity: "FEATURE",
