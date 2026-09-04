@@ -297,7 +297,7 @@ prematurely. The resolution:
 | Decision | Chosen | Alternatives considered | Why rejected |
 |---|---|---|---|
 | Framework | Next.js (App Router) | Remix, plain Express + React SPA | App Router's Server Components eliminate an entire class of client-state/data-fetching complexity (§6) that would otherwise need a library; matches the founder's existing stack on their other projects, reducing context-switching cost. |
-| Database | PostgreSQL via Prisma, hosted on Supabase/Neon free tier | SQLite, MongoDB | SQLite doesn't handle concurrent writes well on serverless (documented in project README from day one); Postgres relational integrity (foreign keys, cascades) is core to §5's data-integrity guarantees, which a document store would make harder to enforce. |
+| Database | PostgreSQL via Prisma, hosted on **Neon** (Supabase was considered, never used; the free tier's limits were reached in practice and are a live cost consideration) | SQLite, MongoDB | SQLite doesn't handle concurrent writes well on serverless (documented in project README from day one); Postgres relational integrity (foreign keys, cascades) is core to §5's data-integrity guarantees, which a document store would make harder to enforce. |
 | Auth | Hand-rolled JWT + bcrypt, **plus direct Google/Facebook social login** (name+avatar pulled directly) | NextAuth.js / Auth.js | Simpler for the current model. **Update:** OAuth account-linking for ad platforms (Google/Meta/TikTok) is now extensively built, meeting the original trigger for revisiting NextAuth — the migration is a conscious ongoing deferral, not a blocker, since the hand-rolled system works and migrating has real risk/cost with no acute pain point forcing it yet. |
 | Styling | **Tailwind CSS (adopted, executed)** — CSS custom properties in `theme.css` (`--bg`, `--surface`, `--accent`, `--verified`, `--gap`, `--critical`, etc.) as the design-token layer underneath Tailwind utility classes | Inline `style={{}}` objects (the original early state), CSS Modules, styled-components | Tailwind chosen for exactly the reasons the original "Challenge" note below predicted - utility-class consistency, purged bundle size, tooling-enforced spacing/typography scale. Migration is complete; every current screen uses `className` with the theme tokens, not inline style objects. |
 | Charts | Recharts | Chart.js, D3 directly, Plotly | Already an approved/available dependency; React-native API fits the Server/Client Component split better than imperative libraries (D3) which fight React's render model. |
@@ -319,17 +319,20 @@ This section is kept for historical record of the reasoning; there is no remaini
 
 Decisions intentionally postponed, and the trigger condition for revisiting each:
 
-- ✅ **Tailwind migration** — completed. Every current screen uses Tailwind utility classes against
-  the `theme.css` design tokens, not inline style objects. (Exception, tracked separately: a handful
-  of pre-Tailwind-era auth pages — login/signup/password reset — still use inline styles as a
-  deliberate, acknowledged placeholder pending a dedicated auth-UI design pass.)
+- ✅ **Tailwind migration** — completed, with **no remaining exception** (corrected 4 Sep 2026).
+  This entry carried a caveat that the auth pages "still use inline styles as a deliberate,
+  acknowledged placeholder". They no longer do: `app/login/LoginForm.tsx` and
+  `app/signup/SignupForm.tsx` contain **zero** `style={{` occurrences and use `className`
+  throughout. The auth-UI design pass the caveat was waiting for happened.
 - **Shared `lib/scoring.ts` for weighted-average calculations** — currently duplicated across
   `ecommerceMetrics.ts`, `landingPageAudit.ts`, `healthScore.ts`. Trigger: next time any of the
   three is touched for an unrelated change — fix opportunistically rather than as a standalone
   refactor PR that risks the "big scary rewrite" trap.
-- **`zod` (or similar) input validation** — introduce when the API surface stabilizes enough that
-  writing a schema per route is worth more than it costs. Trigger: the first time a malformed
-  request causes a production bug that validation would have caught.
+- ✅ **`zod` input validation — adopted.** `zod@4` is a dependency and `lib/validation/schemas.ts`
+  holds 11 schemas used through a shared `validateOrError` helper. The trigger written here was
+  "the first time a malformed request causes a production bug"; it was reached and acted on. What
+  remains open is coverage, not the decision: not every route validates through a schema yet, and
+  new routes should reach for the shared helper rather than hand-rolling checks.
 - **NextAuth.js migration** — deferred until Google/Meta OAuth account-linking is built (the actual
   moment this project needs multi-provider session handling). Building it earlier means solving a
   problem (unifying providers) that doesn't exist yet.
@@ -345,14 +348,15 @@ Decisions intentionally postponed, and the trigger condition for revisiting each
   measured, user-reported problem. Not before.
 - **Public/partner API + versioning** — revisit if/when a third party (not AdLoop's own frontend)
   needs to consume this data.
-- **SQLite → fully retired (partially achieved)** — `wa-conversion-tracker` still runs its own
-  SQLite database independently, but the trigger condition ("data needs to be queried jointly with
-  AdLoop's") is now met in practice: every real verification event (WhatsApp code match, Messenger
-  conversation confirmed genuine) calls back to AdLoop's own Postgres via `/api/attribution/*` and
-  increments `MetricSnapshot.verifiedConversions` directly — the two databases are integrated at the
-  event level, not merged at the storage level. Full SQLite retirement (moving click-tracking storage
-  itself into Postgres) remains open; revisit if SQLite's serverless concurrent-write limitations
-  (the original reason it was flagged, per README history) become an actual observed problem.
+- ✅ **SQLite → fully retired. Done, and this entry was wrong about it** (corrected 4 Sep 2026).
+  It read "`wa-conversion-tracker` still runs its own SQLite database independently". It does not,
+  and has not for some time. Verified: the tracker has **no `prisma/` directory and no schema at
+  all**; its only database dependency is `pg`; and its `DATABASE_URL` on Vercel points at the same
+  Neon Postgres instance as the product. Storage is merged, not merely integrated at the event level.
+  **The consequence is operational and sharp:** `db push` from the product drops any table its schema
+  does not declare. So a table the tracker creates in raw SQL **must be declared in
+  `adloop-saas/prisma/schema.prisma`**, or every build deletes it. Sharing one database removed the
+  concurrency limitation that flagged SQLite originally; it introduced this in its place.
 - **Recurring product decisions log:** MCP Server, in-app contextual Help, AI Forecast, Attribution
   Explorer, Competitor Monitor, and the payment/subscription system remain tracked as product
   backlog (outside this ADR's scope, which is architecture, not feature roadmap) — see `README.md`
@@ -363,8 +367,8 @@ Decisions intentionally postponed, and the trigger condition for revisiting each
   grammar via `TrustNumber`/`MetricCard` trust-signal treatment, applied to the highest-leverage
   shared components first (not yet every single page — extension is incremental, tracked in
   `CLAUDE.md`). Real brand colors per ad platform, colorful semantic KPI cards, and interactive
-  data-tied gauges (`TrackingAccuracyGauge`) were added in the same pass. The auth pages
-  (login/signup/password reset) remain the one deliberately-deferred exception noted above.
+  data-tied gauges (`TrackingAccuracyGauge`) were added in the same pass. The auth pages were
+  redesigned subsequently and are no longer an exception — see the corrected Tailwind entry above.
 - **Rejected: custom failover/multi-region infrastructure before launch.** User asked
   specifically about an automatic backup system to keep the product running during
   server downtime. Explicitly declined to build this now — Vercel's own infrastructure
@@ -391,3 +395,11 @@ Decisions intentionally postponed, and the trigger condition for revisiting each
 out-of-date ADR is worse than no ADR — if you find a mismatch between this file and the code, treat
 that as a bug and resolve it (either fix the code or amend this document with the reasoning for the
 change).*
+
+*Audited against the code on 4 September 2026. Four entries were wrong, and all four failed the
+same way: they described a **deferral that had since been resolved** — SQLite, zod, the auth pages,
+and the database host. That is the drift pattern to watch for here. This file records decisions
+including the ones not to build something; when one of those is later built, nothing forces the
+entry to change, so it quietly becomes a lie about the present. When you close a deferral, close it
+here in the same commit — and prefer "✅ done, and here is what replaced the reasoning" over
+deleting the entry, since the trigger condition that fired is the useful part of the record.*

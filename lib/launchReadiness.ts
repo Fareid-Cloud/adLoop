@@ -110,7 +110,7 @@ export const READINESS: readonly ReadinessItem[] = [
 
   // ==================== التخزين والنسخ ====================
   { key: "BLOB_READ_WRITE_TOKEN", group: "Storage", severity: "FEATURE",
-    breaks: "Support attachments and the weekly backup — both skip silently." },
+    breaks: "Support attachments and the nightly backup — both skip silently." },
 
   // ==================== الحماية ====================
   { key: "TURNSTILE_SECRET_KEY", group: "Security", severity: "FEATURE",
@@ -141,18 +141,75 @@ export const READINESS: readonly ReadinessItem[] = [
     breaks: "Browser and mobile push notifications." },
   { key: "VAPID_PRIVATE_KEY", group: "Push", severity: "OPTIONAL",
     breaks: "Same as above." },
+  // الثالثُ إلزاميّ في معيار Web Push: مفتاحان بلا عنوان تواصلٍ يُرفضان
+  // عند بعض المزوّدين، فغيابُه يوقف الإشعارات كما يوقفها غيابُ المفتاح.
+  { key: "VAPID_CONTACT_EMAIL", group: "Push", severity: "OPTIONAL",
+    breaks: "Push providers reject a subscription whose VAPID block has no contact address." },
 
   // ==================== تكاملات ثانوية ====================
   { key: "GOOGLE_PAGESPEED_API_KEY", group: "Secondary", severity: "OPTIONAL",
     breaks: "Landing-page speed measurement inside the deep scan." },
   { key: "SCREENSHOT_API_KEY", group: "Secondary", severity: "OPTIONAL",
     breaks: "Competitor page screenshots." },
+  // 🔴 **الأسرارُ كانت غائبةً والمعرّفاتُ وحدها مفحوصة.** فحصُ نصفِ زوجٍ
+  // لا يفحص شيئاً: `GOOGLE_LOGIN_CLIENT_ID` مضبوطٌ و`..._SECRET` ناقص
+  // يعطي شاشةً خضراء وتسجيلَ دخولٍ يفشل عند آخر خطوة - وهي أسوأُ صورةٍ
+  // للعطل، لأنّ الشاشةَ التي وُجدت لتكشفه هي التي تخفيه.
   { key: "GOOGLE_LOGIN_CLIENT_ID", group: "Secondary", severity: "OPTIONAL",
     breaks: "Sign in with Google. Email and password login is unaffected." },
+  { key: "GOOGLE_LOGIN_CLIENT_SECRET", group: "Secondary", severity: "OPTIONAL",
+    breaks: "Sign in with Google fails at the token exchange, after the user has already approved." },
   { key: "META_LOGIN_APP_ID", group: "Secondary", severity: "OPTIONAL",
     breaks: "Sign in with Facebook. Same note as above." },
+  { key: "META_LOGIN_APP_SECRET", group: "Secondary", severity: "OPTIONAL",
+    breaks: "Sign in with Facebook fails at the token exchange, after approval." },
   { key: "NEXT_PUBLIC_TRACKER_BASE_URL", group: "Secondary", severity: "OPTIONAL",
     breaks: "The WhatsApp tracking link never appears in the customer settings." },
+
+  // ==================== ما كان يقرؤه الكود بلا صفٍّ هنا ====================
+  //
+  // 🔴 الملفُّ يقول عن نفسه إنّ قائمته **«مغلقة ومشتقّة من الكود»** - ولم
+  // تكن. جردٌ بـgrep على `app` و`lib` أعطى نحو خمسين متغيّراً، والقائمة
+  // تغطّي أربعةً وثلاثين. والغيابُ هنا ليس نقصَ توثيق: هذه الشاشةُ هي
+  // الجوابُ على «هل نحن جاهزون؟»، فما لا تراه تعلنه جاهزاً بالسكوت.
+  { key: "NEXT_PUBLIC_APP_URL", group: "Core", severity: "FEATURE",
+    breaks: "Client-side links (tracking snippet, share URLs) point at the wrong origin.",
+    fallback: "Server code reads APP_URL instead; only browser-built URLs are affected." },
+  { key: "DATABASE_URL_UNPOOLED", group: "Core", severity: "FEATURE",
+    breaks: "Schema push at build time uses the pooled connection and can fail mid-deploy.",
+    fallback: "db-push-safe also accepts DIRECT_URL or POSTGRES_URL_NON_POOLING." },
+
+  { key: "PAYMOB_MOTO_INTEGRATION_ID", group: "Payments", severity: "OPTIONAL",
+    breaks: "Renewals cannot charge a saved card — every renewal needs the customer to pay by hand.",
+    fallback: "Renewal falls back to the manual path; nothing fails silently." },
+
+  { key: "CLAUDE_COST_PER_MTOK_USD", group: "AI", severity: "OPTIONAL",
+    breaks: "Usage dashboards show token volume but state that cost needs configuring — no figure is guessed." },
+
+  { key: "SENTRY_DSN", group: "Monitoring", severity: "OPTIONAL",
+    breaks: "Server errors are not reported anywhere — a crash is only found when a customer says so." },
+  { key: "NEXT_PUBLIC_SENTRY_DSN", group: "Monitoring", severity: "OPTIONAL",
+    breaks: "Browser errors go unreported — the half of failures the server never sees." },
+  { key: "SENTRY_ORG", group: "Monitoring", severity: "OPTIONAL",
+    breaks: "Source maps are not uploaded, so stack traces stay minified and unreadable.",
+    fallback: "Its absence also skips Sentry's build wrapper entirely, which protects the build from OOM." },
+  { key: "SENTRY_PROJECT", group: "Monitoring", severity: "OPTIONAL",
+    breaks: "Same as SENTRY_ORG — the upload target is incomplete." },
+
+  { key: "SUPPORT_WHATSAPP_NUMBER", group: "Support", severity: "OPTIONAL",
+    breaks: "The WhatsApp support button is not rendered at all." },
+  { key: "NEXT_PUBLIC_BRAND_LOGO_URL", group: "Brand", severity: "OPTIONAL",
+    breaks: "Every email goes out with no logo — the header renders empty." },
+  { key: "NEXT_PUBLIC_SOCIAL_FACEBOOK", group: "Brand", severity: "OPTIONAL",
+    breaks: "The email footer's social links are omitted." },
+  { key: "NEXT_PUBLIC_SOCIAL_INSTAGRAM", group: "Brand", severity: "OPTIONAL",
+    breaks: "Same as above." },
+  { key: "NEXT_PUBLIC_SOCIAL_LINKEDIN", group: "Brand", severity: "OPTIONAL",
+    breaks: "Same as above." },
+  { key: "NEXT_PUBLIC_SOCIAL_TIKTOK", group: "Brand", severity: "OPTIONAL",
+    breaks: "Same as above." },
+  { key: "PUSH_INACTIVITY_THRESHOLD_HOURS", group: "Push", severity: "OPTIONAL",
+    breaks: "The inactivity nudge uses its built-in threshold instead of yours." },
 ] as const;
 
 export interface ReadinessResult {
