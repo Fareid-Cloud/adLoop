@@ -277,6 +277,8 @@ model User {
   supportNotes             SupportNote[]       @relation("SupportNoteAuthor")
   /// تقييماتُ العملاء المحسوبة على هذا الحساب كمسؤولٍ عن المحادثة.
   supportRatings           SupportRating[]     @relation("SupportRatingAgent")
+  /// روابطُ تغذية الشيتات التي أنشأها.
+  sheetFeeds               SheetFeed[]         @relation("SheetFeedCreator")
   /// طلباتُ الباقة الاتفاقية اللي بعتها هو.
   salesEnquiries           SalesEnquiry[]      @relation("SalesEnquiryUser")
   /// طلباتُ المبيعات اللي هو متولّيها.
@@ -2250,6 +2252,41 @@ model ExchangeRateSnapshot {
 }
 
 // ==================== رابط تقرير مشاركة للعميل النهائي ====================
+/// تغذيةُ شيت: رابطٌ سرّيّ يقرأ منه Google Sheets بنفسه.
+///
+/// **لا تكاملَ OAuth ولا مشروعَ Google Cloud.** دالّةُ `IMPORTDATA` في
+/// الشيت بتسحب من رابط CSV وبتحدّث نفسها دورياً - فالنتيجة «شيتٌ حيّ»
+/// بلا مفاتيح ولا صلاحيات ولا مسارِ فشلٍ صامت في مزامنةٍ نكتبها ونصونها.
+///
+/// 🔴 **والثمنُ إنّ الرابط نفسه هو كلمةُ السرّ.** `IMPORTDATA` مابتبعتش
+/// ترويسة، فالإذنُ لازم يعيش في الرابط - أيُّ حدٍّ معاه يقرأ. عشان كده:
+/// المخزَّن هاشُ الرمز لا نصُّه، والإلغاءُ بضغطة، وكلُّ قراءةٍ تُسجَّل
+/// بوقتها وعددها فيبان الرابطُ المتسرِّب من كثرة قراءته أو من توقّفها.
+model SheetFeed {
+  id    String @id @default(cuid())
+  /// اسمٌ يكتبه المالك ليعرف أيّ شيتٍ معلَّقٌ على أيّ رابط.
+  label String
+  /// sales | customers - أيّ بياناتٍ يقدّمها هذا الرابط.
+  dataset String
+
+  /// هاشُ الرمز: تسريبُ قاعدة البيانات لا يعطي أحداً رابطاً صالحاً.
+  tokenHash String @unique
+
+  createdById String
+  createdBy   User   @relation("SheetFeedCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  /// الإلغاء لا الحذف: الصفُّ يبقى ليُعرَف أنّ رابطاً كان موجوداً ومتى
+  /// أُلغي - سجلٌّ يُسأل عنه بعد أيّ تسريب.
+  revokedAt DateTime?
+
+  lastReadAt DateTime?
+  readCount  Int       @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([dataset, revokedAt])
+}
+
 model SharedReportLink {
   id          String    @id @default(cuid())
   workspaceId String

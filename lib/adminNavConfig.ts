@@ -76,6 +76,9 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   {
     label: "Governance",
     items: [
+      // تحت الحوكمة لا الإيراد: الرابط الواحد يخرج بقاعدة العملاء كلّها،
+      // فهو قرارُ وصولٍ قبل أن يكون أداةَ تقارير.
+      { href: "/admin/sheets", label: "Sheet feeds", iconName: "Table2", capability: "customers.export" },
       { href: "/admin/audit", label: "Audit Log", iconName: "ScrollText" },
       { href: "/admin/staff", label: "Staff", iconName: "ShieldCheck", capability: "staff.manage" },
     ],
