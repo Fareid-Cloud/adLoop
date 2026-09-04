@@ -10,8 +10,9 @@ Whatagraph). القيمة الحقيقية: **مقارنة CPL/ROAS بناءً �
 - **Auth حقيقي** كامل (تسجيل دخول/خروج، MFA، تسجيل بجوجل/فيسبوك مباشرة
   مع سحب الاسم والصورة، CSRF، rate limiting)
 - **OAuth حقيقي** لجوجل وميتا وتيك توك (ربط حسابات إعلانات حقيقية)
-- **79 صفحة داشبورد**، **133 API endpoint**، **80 جدول قاعدة بيانات**
-  (~24,600 سطر كود) - راجع تفاصيل كل قرار في `CLAUDE.md`
+- **90 صفحة**، **156 API endpoint**، **88 جدول قاعدة بيانات**، **7 كرونات**
+  (معدودة من الشجرة في ٤ سبتمبر ٢٠٢٦؛ الأرقام السابقة هنا كانت ٧٩/١٣٣/٨٠)
+  - راجع تفاصيل كل قرار في `CLAUDE.md`
 
 ## البنية (مبسّطة - النماذج الكاملة في `prisma/schema.prisma`)
 
@@ -33,7 +34,8 @@ User — تسجيل دخول (إيميل/باسورد أو Google/Facebook مب�
 - `applyModeledAttribution()` - دمج الاحتمالي مع المؤكد (متصلة بصفحة التقارير)
 
 ## الربط بمشروع تتبع الواتساب/الماسنجر
-`wa-conversion-tracker` (مشروع منفصل، SQLite) **متصل فعلياً** بـ adloop-saas
+`wa-conversion-tracker` (مشروع منفصل، **بيشارك نفس قاعدة Postgres - مش
+SQLite؛ ومفيهوش Prisma أصلاً، بيكلّم القاعدة بـ`pg` خام**) **متصل فعلياً** بـ adloop-saas
 عبر `/api/attribution/*` - أي تحقق حقيقي (كود واتساب أو محادثة ماسنجر) بيزوّد
 `MetricSnapshot.verifiedConversions` مباشرة. الماسنجر نفسه مبني **جوه**
 adloop-saas (`/api/webhooks/meta-messenger`) - قرار معماري مقصود، مش
@@ -41,14 +43,28 @@ adloop-saas (`/api/webhooks/meta-messenger`) - قرار معماري مقصود�
 
 ## Backlog حقيقي محدّث (اتأكد منه بالكود فعلياً، مش تخمين)
 
+> **مراجعة ٤ سبتمبر ٢٠٢٦:** ستّةُ بنودٍ هنا كانت مكتوبةً «مش مبنيّة» وهي
+> مبنيّة. والعنوانُ ده بيقول «اتأكد منه بالكود فعلياً» - فالدرسُ إنّ
+> **الجملة دي نفسها بتشيخ**: التأكّدُ حصل يومَها وما اتكرّرش. أيُّ بندٍ
+> هنا يتقفل، يتشطب هنا في نفس الكوميت.
+
 - [x] **MCP Server ("Ask Claude about your data")** — مبنيّ: خادم JSON-RPC على
       `/api/mcp` بأربع عشرة أداة قراءة، ومصادقة بمفتاح في ترويسة **أو** OAuth 2.1
       (اكتشاف RFC 9728 و8414، تسجيل ديناميكيّ RFC 7591، PKCE S256، شاشة موافقة).
       **غير مُختبَر حيّاً** مع claude.ai أو ChatGPT بعد.
-- [ ] Multi-user لنفس الـ Workspace (قرار واعٍ، مش مطلوب حالياً)
-- [ ] **Shopify + Easy Orders webhooks** - سلة بس مبنية فعلاً (تأكدت بالفحص المباشر - كان فيه مجلد فاضي لShopify اتلبّس بالغلط كإنه مبني في مراجعة سابقة)
-- [ ] **رفع التحويل رجوعاً للمنصة** (Offline Conversion) لغير جوجل -
-      `sendMetaConversion`/`sendTikTokConversion` لسه TODO في الكود نفسه
+- [x] **Multi-user لنفس الـ Workspace** — اتبنى. مقاعدُ اطّلاعٍ وتنفيذ
+      بحدودٍ لكلّ باقة، وأربعةُ فلاتر وصولٍ في `lib/workspaceAccess.ts`،
+      وبوّابةُ بناءٍ بتمنع أيّ مسارِ كتابةٍ يستعمل فلترَ القراءة.
+- [x] **ويب هوك المتاجر — الخمسة مبنيّة**: شوبيفاي وسلّة وزد وووكومرس
+      وإيزي أوردرز، كلُّهم على `/api/webhooks/ecommerce/[platform]`،
+      و`scripts/checkWebhookAuth.mjs` بيختبر توقيعَ الخمسة في كلّ بناء.
+      (السطر ده كان بيقول «سلة بس» - وده بقى غلط.)
+- [x] **رفع التحويل رجوعاً للمنصة** (Offline Conversion) — **مبنيّ للتلاتة**
+      في `lib/conversionSync.ts`: Meta CAPI و TikTok Events API وGoogle
+      `uploadClickConversions`، بكرون `/api/cron/conversion-sync` اليوميّ.
+      🔴 **الاسمان `sendMetaConversion`/`sendTikTokConversion` مش موجودين**
+      لأنّ التنفيذ اسمُه غيرُ كده - وده الغلطُ اللي خلّى السطر ده يفضل
+      مكتوباً «TODO» في تلات ملفّات. **grep على اسمٍ متوقَّعٍ مش دليلَ غياب.**
 - [x] ~~`comparePlatforms()`~~ ✅ اتوصّلت - جملة المقارنة التلقائية في الصفحة الرئيسية
 - [x] ~~`explainRoasGap`/`computeEcommerceMetrics`~~ ✅ اتوصّلوا - صفحة التسعير
 - [x] ~~`runFullPricingSafetyNet`~~ ✅ اتوصّلت - `ProductSaleEvent` جديد + SKU على المنتج، مبيعات حقيقية من سلة
@@ -58,9 +74,13 @@ adloop-saas (`/api/webhooks/meta-messenger`) - قرار معماري مقصود�
       `countGenuineLeads`, `detectCreativeFatigue`, `getMultiTouchRate`,
       `resolvePeriodComparison`, `resolveSessionConversion`, `auditFullCatalogPricing`)
       - لُقطت في مراجعة شاملة، مش كلها اتفحصت بعمق واحدة واحدة لسه
-- [ ] **Scale الحقيقي** (تنفيذ زيادة ميزانية فعلي عند المنصة) - لسه معلوماتي
-      بس، Kill (إيقاف إعلان) بس اتفعّل فعلياً
-- [ ] **نظام مساعدة (Help) مبرمج داخل المنتج** - contextual، مش صفحة أسئلة شائعة ثابتة
+- [x] **Scale الحقيقي** — بينفّذ فعلاً عبر `POST /api/creatives/decision`
+      (بيرفع ميزانيةَ الأب)، مش معلوماتيّاً زي ما كان مكتوب هنا. وعشان كده
+      بوّاباتُ `classifyScaleKillWatch` بقت مُلزِمةً **عند نقطة الكتابة**
+      لا عند رسم الزرار. المرجعُ الوحيد لأيّ نداءٍ حقيقيّ:
+      `lib/executingActions.ts`.
+- [x] **نظام مساعدة داخل المنتج** — مركزُ مساعدةٍ بـ٥١ مقالاً في ١٠ أقسام
+      ببحثٍ، مربوطٌ بودجت الدعم (سؤالٌ بيلاقي إجابته قبل ما يفتح تذكرة).
 - [ ] **AI Forecast** - توقع أداء مستقبلي لكل Workspace لوحده، معلَّم "beta"
 - [ ] **Attribution Explorer** - واجهة استكشاف تفاعلية لمحرك التوزيع الاحتمالي
 - [ ] **Competitor Monitor** - مخصص لخطة دفع أعلى لاحقاً
