@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserFromCookies } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { findClient, redirectUriAllowed, issueAuthCode } from "@/lib/mcp/oauth";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceOwnerFilter } from "@/lib/workspaceAccess";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUserFromCookies();
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   }
 
   const workspace = await prisma.workspace.findFirst({
-    where: { id: workspaceId, ...workspaceAccess(user.id) },
+    where: { id: workspaceId, ...workspaceOwnerFilter(user.id) },
     select: { id: true },
   });
   if (!workspace) return NextResponse.json({ error: "invalid_request" }, { status: 400 });

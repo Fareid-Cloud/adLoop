@@ -7,7 +7,7 @@
 // وكم تغيّرت حالته - لأنّ «تمّ» وحدها لا تُطمئن مَن ينتظر تاريخه.
 
 import { NextRequest, NextResponse } from "next/server";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceWriteFilter } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { backfillOrdersForWorkspace } from "@/lib/ecommerce/orderBackfill";
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const workspace = await prisma.workspace.findFirst({
-    where: { id, ...workspaceAccess(user.id) },
+    where: { id, ...workspaceWriteFilter(user.id) },
     select: { id: true, isDemo: true },
   });
   if (!workspace) return NextResponse.json({ error: "unauthorized" }, { status: 401 });

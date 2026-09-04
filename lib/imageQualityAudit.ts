@@ -31,7 +31,9 @@ export interface ImageQualityResult {
 export async function auditAdImageQuality(
   imageUrl: string,
   platform: "GOOGLE_ADS" | "META_ADS",
-  locale: Locale
+  locale: Locale,
+  /** موديلُ الباقة - الافتراضيّ باقةُ الأساس، فمَن مايمرّرش مايرقّاش نفسه. */
+  model: string = "claude-sonnet-4-6"
 ): Promise<ImageQualityResult | null> {
   let imageBase64: string;
   let mediaType: "image/jpeg" | "image/png";
@@ -72,7 +74,7 @@ Respond in JSON only:
 {"score": 0-100, "resolutionAssessment": "...", "textOverlayAssessment": "...", "professionalismAssessment": "...", "recommendation": "..."}`;
 
   const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
+    model,
     max_tokens: 1800,
     // التفكير التلقائي: النموذج يقرّر عمقه بنفسه حسب صعوبة المدخل، و`effort`
     // يحدّ سقف ذلك العمق. الحقل كان غائباً لا مُطفأً - وغيابه على Sonnet 4.6

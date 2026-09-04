@@ -4,7 +4,7 @@
 // توكنات المنصات الإعلانية، ولا يُعاد إرساله إلى الواجهة أبداً.
 
 import { NextRequest, NextResponse } from "next/server";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceAccess, workspaceOwnerFilter } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { encryptToken } from "@/lib/encryption";
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const locale = localeOf(user);
 
-  const workspace = await prisma.workspace.findFirst({ where: { id, ...workspaceAccess(user.id) } });
+  const workspace = await prisma.workspace.findFirst({ where: { id, ...workspaceOwnerFilter(user.id) } });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const body = await req.json().catch(() => null);
@@ -161,7 +161,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const locale = localeOf(user);
 
-  const workspace = await prisma.workspace.findFirst({ where: { id, ...workspaceAccess(user.id) } });
+  const workspace = await prisma.workspace.findFirst({ where: { id, ...workspaceOwnerFilter(user.id) } });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const { searchParams } = new URL(req.url);

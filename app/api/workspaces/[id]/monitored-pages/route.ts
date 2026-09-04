@@ -1,7 +1,7 @@
 // app/api/workspaces/[id]/monitored-pages/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceAccess, workspaceWriteFilter } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { checkTrackingPresence } from "@/lib/trackingCoverage";
@@ -39,7 +39,7 @@ export async function POST(
   const locale = localeOf(user);
 
   const workspace = await prisma.workspace.findFirst({
-    where: { id: id, ...workspaceAccess(user.id) },
+    where: { id: id, ...workspaceWriteFilter(user.id) },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 

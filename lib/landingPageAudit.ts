@@ -316,7 +316,13 @@ export async function auditVisualAndCopy(
   screenshotBase64: string,
   pageTextContent: string,
   industryVertical: string | null,
-  locale: Locale
+  locale: Locale,
+  // 🔴 **الموديل كان مثبَّتاً على الأقدم مهما كانت الباقة.**
+  // الفحصُ العميق أغلى ميزةِ ذكاءٍ بنبيعها، وجدولُ الباقات بيدّي
+  // `claude-sonnet-5` من الاحترافية فوق - وكان الكودُ بينادي
+  // `claude-sonnet-4-6` للكلّ. القيمةُ الافتراضية هي باقةُ الأساس، فمَن
+  // مايمرّرش موديلاً مابيرقّاش نفسه بالغلط.
+  model: string = "claude-sonnet-4-6"
 ): Promise<VisualAuditResult> {
   const verticalContext = industryVertical
     ? locale === "ar"
@@ -392,7 +398,7 @@ Respond in JSON format only, exactly as follows:
 }`;
 
   const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
+    model,
     max_tokens: 4200,
     // التفكير التلقائي: النموذج يقرّر عمقه بنفسه حسب صعوبة المدخل، و`effort`
     // يحدّ سقف ذلك العمق. الحقل كان غائباً لا مُطفأً - وغيابه على Sonnet 4.6
@@ -517,7 +523,8 @@ export interface AuditSynthesis {
 
 export async function synthesizeAuditReport(
   report: FullAuditReport,
-  locale: Locale
+  locale: Locale,
+  model: string = "claude-sonnet-4-6"
 ): Promise<AuditSynthesis> {
   // بنجمع كل النتايج التفصيلية في نص واحد عشان الـ AI يقدر يفكر فيها مع بعض
   const allFindings = {
@@ -566,7 +573,7 @@ Respond in JSON format only, exactly as follows:
 }`;
 
   const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
+    model,
     max_tokens: 4000,
     thinking: { type: "adaptive" },
     // تجميع فحوص متعدّدة في حكم واحد: أثقل النداءات الأربعة استدلالاً

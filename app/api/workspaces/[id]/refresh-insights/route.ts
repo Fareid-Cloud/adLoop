@@ -5,7 +5,7 @@
 // يستهلك فلوس بلا حدود.
 
 import { NextRequest, NextResponse } from "next/server";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceWriteFilter } from "@/lib/workspaceAccess";
 import { toUserFacingAiError, quotaExhaustedError } from "@/lib/aiErrors";
 import { checkAndConsumeAIRefreshQuota, refundAiRefreshQuota, isAiConfigured } from "@/lib/aiRateLimit";
 import { generateInsights, buildCampaignSummaries } from "@/lib/aiInsights";
@@ -27,7 +27,7 @@ export async function POST(
   // إن الـ Workspace ده فعلاً بتاعه - نمط خطر، خصوصاً وقت ما البيانات
   // الحقيقية تتوصل (الـ TODO تحت) بدل المصفوفة الفاضية الآن
   const workspace = await prisma.workspace.findFirst({
-    where: { id: id, ...workspaceAccess(user.id) },
+    where: { id: id, ...workspaceWriteFilter(user.id) },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 

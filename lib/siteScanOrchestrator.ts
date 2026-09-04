@@ -48,7 +48,8 @@ async function fetchPageText(url: string): Promise<string> {
 async function scanSinglePage(
   url: string,
   industryVertical: string | null,
-  locale: Locale
+  locale: Locale,
+  model: string = "claude-sonnet-4-6"
 ): Promise<SinglePageScanResult> {
   const [technicalSEO, domainTrust, pageText, screenshot, performance] = await Promise.all([
     auditTechnicalSEO(url),
@@ -61,7 +62,7 @@ async function scanSinglePage(
   // الجزء البصري محتاج الصورة - لو فشلت (خدمة معطّلة، رابط محمي)، بنكمل
   // بباقي التقرير من غيره بدل ما نوقف كل حاجة
   const visual = screenshot
-    ? await auditVisualAndCopy(screenshot, pageText, industryVertical, locale)
+    ? await auditVisualAndCopy(screenshot, pageText, industryVertical, locale, model)
     : null;
 
   // حساب الدرجة الإجمالية - بنستبعد أي مصدر مش متاح رياضياً (نفس مبدأ
@@ -93,9 +94,11 @@ export async function runDeepSiteScan(
   url: string,
   competitorUrls: string[],
   industryVertical: string | null,
-  locale: Locale
+  locale: Locale,
+  /** موديلُ الباقة - بيتحدّد في المسار من `planModelFor` ويتمرّر لآخر نداء. */
+  model: string = "claude-sonnet-4-6"
 ): Promise<DeepSiteScanResult> {
-  const primary = await scanSinglePage(url, industryVertical, locale);
+  const primary = await scanSinglePage(url, industryVertical, locale, model);
 
   // التركيب المترابط محتاج شكل FullAuditReport - لو الصورة فشلت، بنبني
   // نتيجة بصرية فاضية بدل ما نكسر الدالة (نفس أسلوب معالجة الأخطاء
@@ -119,14 +122,15 @@ export async function runDeepSiteScan(
       domainTrust: primary.domainTrust,
       visual: primary.visual ?? emptyVisual,
     },
-    locale
+    locale,
+    model
   );
 
   // Promise.allSettled مش Promise.all - عشان فشل منافس واحد (رابط غلط،
   // موقع بطيء جداً) منيسقطش بيه الفحص كله، رغم إن موقعك انت اتفحص صح
   // تماماً. فشل جزئي لازم يتعامل معاه جزئياً، مش يهدم كل حاجة.
   const competitorResults = await Promise.allSettled(
-    competitorUrls.slice(0, 2).map((u) => scanSinglePage(u, industryVertical, locale))
+    competitorUrls.slice(0, 2).map((u) => scanSinglePage(u, industryVertical, locale, model))
   );
 
   const competitors: SinglePageScanResult[] = [];

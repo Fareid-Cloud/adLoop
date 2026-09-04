@@ -1,9 +1,10 @@
 // app/api/creatives/quality-check/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceWriteFilter } from "@/lib/workspaceAccess";
 import { getSessionUser } from "@/lib/auth";
 import { auditAdImageQuality } from "@/lib/imageQualityAudit";
+import { planModelFor } from "@/lib/plans";
 import { checkAndConsumeImageQualityQuota, refundImageQualityQuota, isAiConfigured } from "@/lib/aiRateLimit";
 import { blockAiInDemo } from "@/lib/demo";
 import { prisma } from "@/lib/prisma";
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
   // ملكيّة المساحة تُتحقَّق قبل أيّ نداء: المعرّف يصل من العميل، فقبوله كما
   // ورد يعني أنّ أيّ حساب يصرف من حصّة غيره.
   const workspace = await prisma.workspace.findFirst({
-    where: { id: workspaceId, ...workspaceAccess(user.id) },
+    where: { id: workspaceId, ...workspaceWriteFilter(user.id) },
     select: { id: true },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
@@ -66,7 +67,12 @@ export async function POST(req: NextRequest) {
   // في الحالتين لم يصل المستخدم شيء، فلا يصحّ أن يدفع.
   let result;
   try {
-    result = await auditAdImageQuality(imageUrl, platform, (user.preferredLocale as "ar" | "en") ?? "en");
+    result = await auditAdImageQuality(
+      imageUrl,
+      platform,
+      (user.preferredLocale as "ar" | "en") ?? "en",
+      await planModelFor(user.id)
+    );
   } catch (err) {
     console.error("[quality-check] فشل النداء - يُردّ الرصيد:", err);
     await refundImageQualityQuota(user.id);

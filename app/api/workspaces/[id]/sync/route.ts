@@ -7,7 +7,7 @@
 // نزامن المنصات المرتبطة فقط، وكل منصة على حدة: فشل واحدة لا يمنع الأخرى.
 
 import { NextRequest, NextResponse } from "next/server";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceWriteFilter } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { getUsageState } from "@/lib/usageCaps";
@@ -26,7 +26,7 @@ export async function POST(
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const locale = localeOf(user);
 
-  const workspace = await prisma.workspace.findFirst({ where: { id, ...workspaceAccess(user.id) } });
+  const workspace = await prisma.workspace.findFirst({ where: { id, ...workspaceWriteFilter(user.id) } });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const links = await prisma.campaignLink.findMany({

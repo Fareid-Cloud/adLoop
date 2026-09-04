@@ -6,10 +6,12 @@
 // أرقام جاءت من العميل يعني أن أي شخص يستطيع إرسال بريد بأرقام يخترعها.
 
 import { NextRequest, NextResponse } from "next/server";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceWriteFilter } from "@/lib/workspaceAccess";
 import { Resend } from "resend";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { getEntitlements } from "@/lib/entitlements";
+import { localeOf } from "@/lib/apiLocale";
 import { runReport, METRICS, type DataSource, type Dimension, type MetricKey } from "@/lib/reports/reportEngine";
 import { periodFromParams } from "@/lib/dateRange";
 import { clampRangeForUser } from "@/lib/historyWindow";
@@ -27,8 +29,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const workspace = await prisma.workspace.findFirst({ where: { id, ...workspaceAccess(user.id) } });
+  const workspace = await prisma.workspace.findFirst({ where: { id, ...workspaceWriteFilter(user.id) } });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
+
+  // ميزةٌ مُعلَنة في الجدول (مقفولة في المجانية، مفتوحة من البداية فوق)
+  // وكانت بلا بوابة - فالمجانيّ كان بياخدها كاملة.
+  const ent = await getEntitlements(workspace.userId);
+  if (!ent.limits.scheduledReports) {
+    return NextResponse.json(
+      { error: t(localeOf(user), "limits.scheduledReportsLocked"), limitReached: true },
+      { status: 403 }
+    );
+  }
 
   const body = await req.json().catch(() => null);
   const to = typeof body?.email === "string" ? body.email.trim() : "";

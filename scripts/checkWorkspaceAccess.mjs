@@ -100,4 +100,76 @@ if (unique.length > 0) {
   process.exit(1);
 }
 
-console.log("✓ كلّ شروط الوصول إلى المساحة تمرّ من lib/workspaceAccess.ts");
+// ══════════════════════════════════════════════════════════════════════
+// 🔴 **الفحصُ الثاني: أيُّ فلتر، لا أيُّ ملفّ.**
+//
+// الفحصُ فوق بيتأكد إنّ الشرط جايٌّ من نقطة الاختناق - وده مايقولش حاجة
+// عن **أيّ** فلترٍ منها اتّستعمل. وفي `lib/workspaceAccess.ts` أربعة،
+// والخطرُ الحقيقيّ في اختيار الغلط:
+//
+//   `workspaceAccessFilter` بيشمل الأعضاء - فمسارُ كتابةٍ عليه بيحوّل
+//   **كلَّ مقعد اطّلاع بنبيعه إلى مقعد تنفيذ**. مساحةٌ تتحذف، ومنصّةٌ
+//   إعلانية تتفصل، وحسابٌ يتقفل فيمسح بيانات مساحةٍ مش بتاعته - كلُّها
+//   كانت ممكنة بمقعدٍ «للاطّلاع فقط».
+//
+// اتكشفت في مسحٍ يدويّ لأربعةٍ وعشرين مساراً، والفحصُ ده هو اللي بيمنعها
+// ترجع مع أوّل مسارٍ جديد يتكتب.
+//
+// الاستثناءُ الوحيد مُعلَنٌ بالاسم: تبديلُ مساحة العمل النشطة اختيارٌ بين
+// ما تراه، لا كتابةٌ على المساحة نفسها.
+// ══════════════════════════════════════════════════════════════════════
+
+const WRITE_HANDLERS = ["POST", "PATCH", "PUT", "DELETE"];
+
+/** مساراتُ كتابةٍ فلترُ الوصول فيها صحيحٌ فعلاً - بسببٍ مكتوب لكلّ واحد. */
+const ACCESS_OK_IN_WRITE = new Set([
+  // اختيارُ المساحة النشطة من بين ما يراه العضو: لا يكتب على المساحة.
+  "app/api/workspaces/active/route.ts",
+]);
+
+const wrongFilter = [];
+
+function checkWriteHandlers(dir) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      checkWriteHandlers(full);
+      continue;
+    }
+    if (entry.name !== "route.ts") continue;
+
+    const rel = path.relative(process.cwd(), full).split(path.sep).join("/");
+    if (ACCESS_OK_IN_WRITE.has(rel)) continue;
+
+    const src = fs.readFileSync(full, "utf8");
+    // نقسم عند كلّ handler مُصدَّر ونفحص أجسام الكتابة وحدها: نفس الملفّ
+    // بيحمل `GET` بفلتر الوصول عن حقّ.
+    const parts = src.split(/\nexport async function (\w+)/);
+    for (let i = 1; i < parts.length - 1; i += 2) {
+      const name = parts[i];
+      const body = parts[i + 1];
+      if (!WRITE_HANDLERS.includes(name)) continue;
+      if (/workspaceAccess(Filter)?\s*\(/.test(body)) {
+        const lineNo = src.slice(0, src.indexOf(body)).split("\n").length;
+        wrongFilter.push(`${rel}:${lineNo}  ${name} يستعمل فلترَ الوصول في الكتابة`);
+      }
+    }
+  }
+}
+
+checkWriteHandlers(ROOT);
+
+if (wrongFilter.length > 0) {
+  console.error("مساراتُ كتابةٍ على فلتر الوصول - كلُّ مقعد اطّلاع يصير مقعدَ تنفيذ:\n");
+  for (const p of wrongFilter) console.error("  • " + p);
+  console.error(
+    `\nالمجموع: ${wrongFilter.length}.` +
+      "\nاستعمل workspaceWriteFilter للكتابة العادية، وworkspaceOwnerFilter لما يمسّ" +
+      "\nالمساحةَ نفسها أو الربطَ أو الفلوس. ولو الوصولُ صحيحٌ فعلاً، أضف المسار" +
+      "\nإلى ACCESS_OK_IN_WRITE بسببٍ مكتوب."
+  );
+  process.exit(1);
+}
+
+console.log("✓ كلّ شروط الوصول تمرّ من lib/workspaceAccess.ts، ولا مسارَ كتابةٍ على فلتر الوصول.");
+

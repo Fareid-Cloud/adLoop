@@ -1,5 +1,5 @@
 import { getAppUrl } from "@/lib/appUrl";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceAccess, workspaceWriteFilter } from "@/lib/workspaceAccess";
 // app/api/workspaces/[id]/share-link/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
@@ -43,7 +43,7 @@ export async function DELETE(
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const workspace = await prisma.workspace.findFirst({
-    where: { id: id, ...workspaceAccess(user.id) },
+    where: { id: id, ...workspaceWriteFilter(user.id) },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 

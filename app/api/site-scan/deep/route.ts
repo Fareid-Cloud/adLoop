@@ -7,12 +7,13 @@
 // غير ما نأخّر رد المستخدم أو نصطدم بحد وقت استجابة السيرفر.
 
 import { NextRequest, NextResponse } from "next/server";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceWriteFilter } from "@/lib/workspaceAccess";
 import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { runDeepSiteScan } from "@/lib/siteScanOrchestrator";
 import { checkAndConsumeSiteScanQuota, refundSiteScanQuota, isAiConfigured } from "@/lib/aiRateLimit";
+import { planModelFor } from "@/lib/plans";
 import { blockAiInDemo } from "@/lib/demo";
 import { t } from "@/lib/i18n/dictionary";
 import { localeOf } from "@/lib/apiLocale";
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   const workspace = await prisma.workspace.findFirst({
-    where: { id: workspaceId, ...workspaceAccess(user.id) },
+    where: { id: workspaceId, ...workspaceWriteFilter(user.id) },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
 
@@ -89,11 +90,14 @@ export async function POST(req: NextRequest) {
     try {
       await prisma.siteScanResult.update({ where: { id: scan.id }, data: { status: "RUNNING" } });
 
+      // موديلُ الباقة لا موديلٌ ثابت: الفحصُ العميق أغلى ميزةِ ذكاءٍ
+      // في الجدول، وكان بيشتغل على الأقدم مهما دفع صاحبُه.
       const result = await runDeepSiteScan(
         url,
         Array.isArray(competitorUrls) ? competitorUrls : [],
         workspace.industryVertical,
-        "ar"
+        "ar",
+        await planModelFor(user.id)
       );
 
       await prisma.siteScanResult.update({

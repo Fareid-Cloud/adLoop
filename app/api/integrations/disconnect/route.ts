@@ -9,7 +9,7 @@
 // نحذف التوكن وحده، فيتوقّف التدفّق ويبقى الماضي قابلاً للقراءة.
 
 import { NextRequest, NextResponse } from "next/server";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceOwnerFilter } from "@/lib/workspaceAccess";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { integrationByKey } from "@/lib/integrationsCatalog";
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   if (!workspaceId || !key) return NextResponse.json({ error: t(locale, "apiErr.missingFields") }, { status: 400 });
 
   const workspace = await prisma.workspace.findFirst({
-    where: { id: workspaceId, ...workspaceAccess(user.id) },
+    where: { id: workspaceId, ...workspaceOwnerFilter(user.id) },
     select: { id: true },
   });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });

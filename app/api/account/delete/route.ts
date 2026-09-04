@@ -12,7 +12,7 @@ import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { deleteAccountSchema, validateOrError } from "@/lib/validation/schemas";
 import { verifyCsrfToken } from "@/lib/csrf";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceOwnerFilter } from "@/lib/workspaceAccess";
 import { t } from "@/lib/i18n/dictionary";
 import { localeOf } from "@/lib/apiLocale";
 
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
   // موثَّقٌ أنّه **قد لا يكون معرّف مساحة** - فقيدٌ أجنبيّ عليه قد يفشل عند
   // المزامنة فيوقف كلّ نشرة. الحذف الصريح يبلغ الغاية نفسها بلا هذا الخطر.
   const workspaces = await prisma.workspace.findMany({
-    where: workspaceAccess(user.id),
+    where: workspaceOwnerFilter(user.id),
     select: { id: true },
   });
   const workspaceIds = workspaces.map((w) => w.id);

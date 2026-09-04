@@ -5,7 +5,7 @@
 // دون وسيلة لإزالته.
 
 import { NextRequest, NextResponse } from "next/server";
-import { workspaceAccess } from "@/lib/workspaceAccess";
+import { workspaceWriteFilter } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 
@@ -18,7 +18,7 @@ export async function DELETE(
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const page = await prisma.monitoredPage.findFirst({
-    where: { id, workspace: workspaceAccess(user.id) },
+    where: { id, workspace: workspaceWriteFilter(user.id) },
   });
   if (!page) return NextResponse.json({ error: "not found" }, { status: 404 });
 

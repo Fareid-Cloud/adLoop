@@ -4,9 +4,12 @@
 // فتح من بيانات اليوم، وإلا صار العرض صورة قديمة تُتّخذ عليها قرارات جديدة.
 
 import { NextRequest, NextResponse } from "next/server";
-import { workspaceAccess, ownRowFilter } from "@/lib/workspaceAccess";
+import { workspaceAccess, ownRowFilter, workspaceWriteFilter } from "@/lib/workspaceAccess";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { getEntitlements } from "@/lib/entitlements";
+import { t } from "@/lib/i18n/dictionary";
+import { localeOf } from "@/lib/apiLocale";
 import { METRICS } from "@/lib/reports/reportEngine";
 import { logFeatureUse } from "@/lib/productTelemetry";
 
@@ -38,8 +41,26 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const user = await getSessionUser(req);
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const workspace = await prisma.workspace.findFirst({ where: { id, ...workspaceAccess(user.id) }, select: { id: true } });
+  const workspace = await prisma.workspace.findFirst({ where: { id, ...workspaceWriteFilter(user.id) }, select: { id: true, userId: true } });
   if (!workspace) return NextResponse.json({ error: "not found" }, { status: 404 });
+
+  // 🔴 **الحدّ كان معروضاً في جدول الباقات وبلا بوابة.** المجانية بتقول
+  // «تقرير محفوظ واحد» والاحترافية «بلا حدود»، والمسار كان بيقبل من
+  // الاتنين بلا حساب - فسببُ الترقية نفسه بيسقط.
+  //
+  // والحدُّ من **باقة صاحب المساحة** لا من باقة اللي بيكتب: العضو بيشتغل
+  // داخل اشتراكِ غيره، وقراءةُ باقته هو كانت هتدّي كلَّ عضوٍ حدَّه الخاصّ.
+  const ent = await getEntitlements(workspace.userId);
+  const viewCap = ent.limits.savedViews;
+  if (viewCap >= 0) {
+    const existing = await prisma.savedReportView.count({ where: { workspaceId: id } });
+    if (existing >= viewCap) {
+      return NextResponse.json(
+        { error: t(localeOf(user), "limits.reachedViews", { limit: viewCap }), limitReached: true, limit: viewCap },
+        { status: 403 }
+      );
+    }
+  }
 
   const body = await req.json().catch(() => null);
   const name = typeof body?.name === "string" ? body.name.trim().slice(0, 80) : "";
