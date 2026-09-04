@@ -12,7 +12,7 @@ import { useState, useMemo, useEffect, createContext, useContext, useRef } from 
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TeamTab } from "./TeamTab";
-import { Settings as SettingsIcon, Bot, Cpu, Star, Terminal, Brain, Zap, Upload, Search, User, Palette, Plug, Building2, RefreshCw, TriangleAlert, ShieldCheck, Check, ChevronDown, Users } from "lucide-react";
+import { Settings as SettingsIcon, Bot, Cpu, Star, Terminal, Brain, Zap, Upload, Search, User, Palette, Plug, Building2, RefreshCw, TriangleAlert, ShieldCheck, Check, Copy, ChevronDown, Users } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
 import { PushNotificationToggle } from "@/app/components/PushNotificationToggle";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -1783,6 +1783,7 @@ function MfaFields() {
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+  const [secretCopied, setSecretCopied] = useState(false);
   // ربطُ تطبيقٍ إضافيّ: نفس السرّ يُعرض مرّةً أخرى بعد كلمة السرّ، فيحمله
   // تطبيقان ويعملان معاً. الاحتياطيُّ هنا ليس رفاهية - فقدانُ التليفون
   // بلا ثانٍ يترك صاحبَه خارج حسابه ومعتمداً على أكواد الاسترجاع وحدها.
@@ -2119,6 +2120,30 @@ function MfaFields() {
           <p className="mb-2 text-xs text-text-faint">
             {tr("mfaScanHint")}
           </p>
+          {/* 🔴 **المفتاح نصّاً جنب المربّع، لا بدلاً منه.**
+              المربّع يُمسَح بكاميرا - وهو ما لا يملكه من يفعّل التحقّق من
+              على اللابتوب: التطبيق في يده والشاشة أمامه ولا كاميرا بينهما.
+              كان الطريق مسدوداً تماماً في تلك الحالة، بلا بديلٍ معروض. */}
+          <div className="mb-2">
+            <p className="m-0 mb-1 text-[11px] text-text-faint">{tr("mfaManualHint")}</p>
+            <div className="flex items-center gap-1.5">
+              <code className="min-w-0 flex-1 select-all break-all rounded bg-surface-raised px-2 py-1.5 text-[11.5px] tracking-wider text-text-primary">
+                {setupData.secret}
+              </code>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(setupData.secret);
+                  setSecretCopied(true);
+                  setTimeout(() => setSecretCopied(false), 2000);
+                }}
+                className="btn-icon btn-sm shrink-0"
+                aria-label={tr("mfaCopySecret")}
+              >
+                {secretCopied ? <Check size={14} className="text-verified" /> : <Copy size={14} />}
+              </button>
+            </div>
+          </div>
           <input
             type="text"
             inputMode="numeric"
