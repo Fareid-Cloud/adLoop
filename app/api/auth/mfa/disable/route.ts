@@ -1,11 +1,11 @@
 // app/api/auth/mfa/disable/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { deleteAccountSchema, validateOrError } from "@/lib/validation/schemas";
+import { checkRateLimit } from "@/lib/rateLimit";
 import { verifyCsrfToken } from "@/lib/csrf";
+import { verifyMfaStepUp } from "@/lib/mfaStepUp";
 import { t } from "@/lib/i18n/dictionary";
 import { localeOf } from "@/lib/apiLocale";
 
@@ -18,25 +18,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "csrf validation failed" }, { status: 403 });
   }
 
-  const rawBody = await req.json();
-  const validation = validateOrError(deleteAccountSchema, rawBody);
-  if (!validation.success) {
-    return NextResponse.json({ error: validation.error }, { status: 400 });
+  // 🔴 **حدُّ معدّلٍ كان غائباً هنا وحده.** المسارُ يجرّب دليلاً - رمزاً من
+  // ستّة أرقام أو كودَ استرجاع - وبلا حدٍّ يصير تخمينُه ممكناً بالتكرار،
+  // ونتيجةُ نجاحه **إطفاءُ التحقّق بخطوتين كلِّه**. نفسُ حدّ «أضِف تطبيقاً».
+  const limit = await checkRateLimit(`mfa-disable:${user.id}`, "mfa-disable", 5, 15);
+  if (!limit.allowed) {
+    return NextResponse.json({ error: t(locale, "apiErr.tooManyAttempts") }, { status: 429 });
   }
 
-  // إصلاح باگ حقيقي: حساب OAuth بلا باسورد خالص - bcrypt.compare كانت
-  // هترمي خطأ وقت التشغيل. حساب OAuth بس فعلياً مينفعش يأكد بباسورد
-  // مش موجود أصلاً - رفض واضح، مش تخمين أو محاولة تجاوز
-  if (!user.passwordHash) {
-    return NextResponse.json(
-      { error: t(locale, "apiErr.mfaNoPassword") },
-      { status: 400 }
-    );
-  }
-
-  const isValid = await bcrypt.compare(validation.data.password, user.passwordHash);
-  if (!isValid) {
-    return NextResponse.json({ error: t(locale, "apiErr.wrongPassword") }, { status: 401 });
+  // **التأكيدُ بأيّ عاملٍ يملكه، لا بكلمة السرّ وحدها.** كان حسابُ جوجل
+  // يُرفض هنا رفضاً نهائياً ويُحال إلى الدعم - أي أنّ إطفاءَ الحماية صار
+  // مكالمةً يحكم فيها موظّفٌ بانطباعه. التفصيل في `lib/mfaStepUp.ts`.
+  const body = await req.json().catch(() => null);
+  const proof = await verifyMfaStepUp(user, body ?? {});
+  if (!proof.ok) {
+    return NextResponse.json({ error: t(locale, `apiErr.${proof.key}`) }, { status: proof.status });
   }
 
   // 🔴 يُمسَح معه كلُّ أثر: أكوادُ استرجاعٍ وأجهزةٌ موثوقة.

@@ -1781,14 +1781,20 @@ function MfaFields() {
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [setupData, setSetupData] = useState<{ secret: string; qrCodeDataUrl: string } | null>(null);
   const [code, setCode] = useState("");
-  const [password, setPassword] = useState("");
+  // نفسُ السبب: التعطيلُ كان مقفولاً على حسابات جوجل، فيُحال صاحبُها
+  // إلى الدعم - أي أنّ إطفاءَ الحماية صار قراراً بشرياً لا فحصاً.
+  const [disableCode, setDisableCode] = useState("");
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
   const [secretCopied, setSecretCopied] = useState(false);
   // ربطُ تطبيقٍ إضافيّ: نفس السرّ يُعرض مرّةً أخرى بعد كلمة السرّ، فيحمله
   // تطبيقان ويعملان معاً. الاحتياطيُّ هنا ليس رفاهية - فقدانُ التليفون
   // بلا ثانٍ يترك صاحبَه خارج حسابه ومعتمداً على أكواد الاسترجاع وحدها.
   const [addOpen, setAddOpen] = useState(false);
-  const [addPassword, setAddPassword] = useState("");
+  // 🔴 **رمزُ التطبيق لا كلمةُ السرّ.** الحقلُ كان كلمةَ سرّ، فمَن يدخل
+  // بجوجل - وهو ليس له واحدة - كان يُرَدّ بـ«التأكيد غير متاح، تواصل
+  // معنا». والرمزُ يعمل للجميع بلا استثناء: مَن يرى هذه الشاشة مفعِّلٌ
+  // للتحقّق أصلاً، أي أنّ التطبيقَ في يده الآن بحكم التعريف.
+  const [addCode, setAddCode] = useState("");
   const [addQr, setAddQr] = useState<{ secret: string; qrCodeDataUrl: string } | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
   const [addBusy, setAddBusy] = useState(false);
@@ -1800,7 +1806,7 @@ function MfaFields() {
     const res = await fetch("/api/auth/mfa/add-device", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getCsrfHeader() },
-      body: JSON.stringify({ password: addPassword }),
+      body: JSON.stringify({ code: addCode }),
     }).catch(() => null);
     setAddBusy(false);
     const data = await res?.json().catch(() => null);
@@ -1809,7 +1815,7 @@ function MfaFields() {
       return;
     }
     setAddQr({ secret: data.secret, qrCodeDataUrl: data.qrCodeDataUrl });
-    setAddPassword("");
+    setAddCode("");
   }
   /** الأكواد الصريحة - في الذاكرة فقط ولحظةَ توليدها. */
   const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
@@ -1921,7 +1927,7 @@ function MfaFields() {
     const res = await fetch("/api/auth/mfa/disable", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getCsrfHeader() },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ code: disableCode }),
     });
     const data = await res.json();
     setLoading(false);
@@ -1931,7 +1937,7 @@ function MfaFields() {
     }
     setEnabled(false);
     setShowDisableConfirm(false);
-    setPassword("");
+    setDisableCode("");
   }
 
   if (enabled === null) return null;
@@ -2065,16 +2071,20 @@ function MfaFields() {
             </div>
           ) : (
             <form onSubmit={addDevice}>
-              <p className="mb-2 text-xs text-text-faint">{tr("mfaPasswordConfirm")}</p>
+              <p className="mb-2 text-xs text-text-faint">{tr("mfaCodeConfirm")}</p>
               <input
-                type="password"
-                value={addPassword}
-                onChange={(e) => setAddPassword(e.target.value)}
-                className="field mb-2 w-full"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                dir="ltr"
+                placeholder="000000"
+                value={addCode}
+                onChange={(e) => setAddCode(e.target.value.replace(/[^0-9]/g, ""))}
+                className="field mb-2 w-full text-center tracking-[0.3em]"
               />
               {addError && <p className="mb-2 text-xs text-critical">{addError}</p>}
               <div className="flex gap-2">
-                <button type="submit" disabled={addBusy || !addPassword} className="btn btn-primary btn-sm rounded-full">
+                <button type="submit" disabled={addBusy || addCode.length < 6} className="btn btn-primary btn-sm rounded-full">
                   {addBusy ? tr("mfaLoading") : tr("mfaAddShow")}
                 </button>
                 <button type="button" onClick={() => { setAddOpen(false); setAddError(null); }} className="btn btn-sm rounded-full">
@@ -2097,17 +2107,21 @@ function MfaFields() {
           </button>
         ) : (
           <div>
-            <p className="mb-2 text-xs text-text-faint">{tr("mfaPasswordConfirm")}</p>
+            <p className="mb-2 text-xs text-text-faint">{tr("mfaCodeConfirm")}</p>
             <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="field mb-2 w-full"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              dir="ltr"
+              placeholder="000000"
+              value={disableCode}
+              onChange={(e) => setDisableCode(e.target.value.replace(/[^0-9]/g, ""))}
+              className="field mb-2 w-full text-center tracking-[0.3em]"
             />
             {error && <p className="mb-2 text-xs text-critical">{error}</p>}
             <button
               onClick={handleDisable}
-              disabled={loading}
+              disabled={loading || disableCode.length < 6}
               className="btn btn-danger btn-sm rounded-full"
             >
               {tr("mfaConfirmDisable")}
