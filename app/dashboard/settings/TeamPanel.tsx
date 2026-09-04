@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users, UserPlus, Loader2, Copy, Check, X, Eye, Wrench } from "lucide-react";
+import { Users, UserPlus, Loader2, Copy, Check, X, Eye, Wrench, TriangleAlert } from "lucide-react";
 import { getCsrfHeader } from "@/lib/csrfClient";
 import { t, type Locale } from "@/lib/i18n/dictionary";
 
@@ -156,11 +156,24 @@ export function TeamPanel({
             كانت النتيجةُ رابطاً وبس، فالدعوةُ بتقف عند صاحب الحساب:
             ينسخ، ويفتح بريده، ويشرح إيه ده. والسطرُ اللي كان تحته يشرح
             إنّنا نخزّن بصمةَ الرابط لا نصَّه اتشال - ده كلامٌ عن آليّتنا
-            الداخلية، والمستخدمُ مش بيقرا الشاشة عشان يعرف إزاي بنشتغل. */}
+            الداخلية، والمستخدمُ مش بيقرا الشاشة عشان يعرف إزاي بنشتغل.
+
+            🔴 **واللونُ والأيقونة يتبعان ما حدث فعلاً.** كان الصندوقُ أخضرَ
+            بعلامة صحّ في الحالتين - أي أنّ «تعذّر إرسالُ البريد» كانت تُعرض
+            تحت تأكيد نجاح. ومَن يرى الأخضرَ يقرؤه ولا يقرأ ما تحته، فينصرف
+            ظانّاً أنّ زميله بلغته رسالة. */}
         {link && (
-          <div className="mt-3 rounded-xl border border-verified/30 bg-verified/8 p-2.5">
-            <p className="m-0 flex items-center gap-1.5 text-[12px] text-text-primary">
-              <Check size={13} className="shrink-0 text-verified" />
+          <div
+            className={`mt-3 rounded-xl border p-2.5 ${
+              emailSent ? "border-verified/30 bg-verified/8" : "border-gap/35 bg-gap/[0.07]"
+            }`}
+          >
+            <p className="m-0 flex items-start gap-1.5 text-[12px] leading-relaxed text-text-primary">
+              {emailSent ? (
+                <Check size={13} className="mt-0.5 shrink-0 text-verified" />
+              ) : (
+                <TriangleAlert size={13} className="mt-0.5 shrink-0 text-gap" />
+              )}
               {emailSent ? tr("sentTo").replace("{email}", sentTo) : tr("sentFallback")}
             </p>
 
