@@ -168,7 +168,7 @@ export function ContactSalesDialog({
           ) : (
             <div className="grid md:grid-cols-[minmax(0,0.72fr)_minmax(0,1fr)]">
               {/* ============ النصف الأوّل: لماذا ============ */}
-              <aside className="adl-sales-aside border-b border-border p-6 md:border-b-0 md:border-e md:border-border md:p-7">
+              <aside className="adl-sales-aside border-b border-border p-6 md:border-b-0 md:border-e md:border-border">
                 <span className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-text-faint">
                   {tr("eyebrow")}
                 </span>
@@ -181,7 +181,7 @@ export function ContactSalesDialog({
                 </h2>
                 <p className="m-0 mt-3 text-[12.5px] leading-relaxed text-text-muted">{tr("blurb")}</p>
 
-                <ul className="m-0 mt-6 flex list-none flex-col gap-3.5 p-0">
+                <ul className="m-0 mt-5 flex list-none flex-col gap-3 p-0">
                   {WHY.map(({ key, Icon }) => (
                     <li key={key} className="flex items-start gap-3 text-[12.5px] leading-relaxed text-text-primary">
                       <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent/10">
@@ -195,7 +195,7 @@ export function ContactSalesDialog({
                 {/* شاراتٌ لونية لا شعارات - الشعاراتُ مملوكةٌ لأصحابها.
                     وتُخفى على الموبايل: العمودُ فوق النموذج هناك، فكلُّ
                     صفٍّ إضافيّ يدفع أوّلَ حقلٍ أبعدَ عن الشاشة الأولى. */}
-                <div className="mt-7 hidden md:block">
+                <div className="mt-6 hidden md:block">
                   <div className="inline-flex items-center gap-3 rounded-full border border-border bg-surface px-4 py-2">
                     {PLATFORMS.map((key, i) => (
                       <span key={key} className="flex items-center gap-3">
@@ -219,21 +219,22 @@ export function ContactSalesDialog({
                     setOpen(false);
                     window.dispatchEvent(new CustomEvent("adloop:open-support"));
                   }}
-                  className="mt-6 flex items-center gap-1 text-[12px] text-accent transition-opacity hover:opacity-75"
+                  className="mt-6 text-start text-[12px] leading-relaxed text-accent transition-opacity hover:opacity-75"
                 >
                   {tr("supportInstead")}
-                  <ArrowRight size={12} className="rtl:rotate-180" />
+                  <ArrowRight size={12} className="ms-1 inline-block align-[-1px] rtl:rotate-180" />
                 </button>
               </aside>
 
               {/* ============ النصف الثاني: مَن أنت ============ */}
-              <form onSubmit={submit} className="p-6 md:p-7">
+              <form onSubmit={submit} className="p-6">
                 <h3 className="m-0 pe-8 text-[20px] font-semibold tracking-tight text-text-primary">
                   {tr("title")}
                 </h3>
                 <p className="m-0 mt-1.5 text-[12.5px] leading-relaxed text-text-muted">{tr("formSubtitle")}</p>
 
-                <div className="mt-5 grid gap-3">
+                <div className="mt-4 grid gap-2.5">
+                  <div className="grid gap-2.5 sm:grid-cols-2">
                   <FieldWrap label={tr("company")} required icon={Building2}>
                     <input
                       required
@@ -275,6 +276,7 @@ export function ContactSalesDialog({
                       className="field adl-field-icon w-full"
                     />
                   </FieldWrap>
+                  </div>
 
                   {/* الحقلان دول همّ **سببُ وجود النموذج**: من غيرهم المكالمة
                       الجاية بتبدأ من «حضرتك حجمك قدّ إيه؟» وبتضيع فيها. */}
@@ -316,7 +318,7 @@ export function ContactSalesDialog({
                 <button
                   type="submit"
                   disabled={busy}
-                  className="adl-shine btn btn-primary mt-5 w-full justify-center gap-2 py-3 text-[14px] disabled:opacity-60"
+                  className="adl-shine btn btn-primary mt-4 w-full justify-center gap-2 py-2.5 text-[14px] disabled:opacity-60"
                 >
                   {busy ? <Loader2 size={15} className="animate-spin" /> : null}
                   {busy ? tr("sending") : tr("submit")}
@@ -325,7 +327,7 @@ export function ContactSalesDialog({
 
                 {/* سطرا الطمأنة تحت الزرّ لا فوقه: يُقرآن في اللحظة التي
                     يتردّد فيها الإصبع، وهي بعد قراءة الزرّ لا قبله. */}
-                <div className="mt-4 flex items-center justify-center gap-4 border-t border-border pt-3 text-[11.5px] text-text-faint">
+                <div className="mt-3.5 flex items-center justify-center gap-4 border-t border-border pt-3 text-[11.5px] text-text-faint">
                   <span className="flex items-center gap-1.5"><Clock size={13} /> {tr("whyFootCall")}</span>
                   <span className="h-3.5 w-px bg-border" />
                   <span className="flex items-center gap-1.5"><ShieldCheck size={13} /> {tr("whyFootSetup")}</span>
