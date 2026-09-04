@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import {
   PLANS, COMPARISON_ROWS, CREDIT_PACKS, MIN_CUSTOM_CREDITS, MAX_CUSTOM_CREDITS,
-  planPrice, yearlySaving, priceForCredits,
+  planPrice, yearlySaving, priceForCredits, aiModelTier,
   type BillingCurrency, type BillingCycle, type Plan, type PlanKey, type PlanLimits,
 } from "@/lib/plans";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -552,13 +552,16 @@ function LimitCell({
   value, kind, tr,
 }: {
   value: PlanLimits[keyof PlanLimits];
-  kind: "number" | "text" | "bool";
+  kind: "number" | "text" | "bool" | "model";
   tr: (k: string, v?: Record<string, string | number>) => string;
 }) {
   if (kind === "bool") {
     return value
       ? <Check size={14} className="text-verified" />
       : <Minus size={14} className="text-text-faint" />;
+  }
+  if (kind === "model") {
+    return <span className="text-[12.5px] text-text-primary">{tr(aiModelTier(String(value)))}</span>;
   }
   if (kind === "text") {
     return <span className="text-[12.5px] text-text-primary">{tr(`v_${String(value)}`)}</span>;

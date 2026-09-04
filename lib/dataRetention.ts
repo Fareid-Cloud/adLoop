@@ -6,6 +6,7 @@
 // اللي هي أساس أي تقرير تاريخي حقيقي، دي بتفضل للأبد.
 
 import { prisma } from "@/lib/prisma";
+import { isCountryCode, countryCodeFromName } from "@/lib/countries";
 
 // كليك فردي (CtaClickEvent) قيمته الحقيقية في أول 30 يوم بس (نافذة
 // التحقق ونوافذ الإسناد المستخدمة في النظام كله) - بعدها بقاؤه مجرد
@@ -138,14 +139,46 @@ export async function purgeExpiredData() {
   const redactedEnquiries = await prisma.salesEnquiry.updateMany({
     where: {
       updatedAt: { lt: salesCutoff },
-      OR: [{ name: { not: "" } }, { email: { not: "" } }, { phone: { not: null } }],
+      OR: [
+        { name: { not: "[redacted]" } },
+        { email: { not: "[redacted]" } },
+        { phone: { not: null } },
+        { internalNote: { not: null } },
+      ],
     },
     // الاسمُ والبريدُ مطلوبان في الـschema فمينفعش `null`: بيتحطّ فيهم
     // علامةٌ صريحة بدل فراغٍ يتقري «البيانات ضاعت».
-    data: { name: "[redacted]", email: "[redacted]", phone: null },
+    // 🔴 **والملاحظة الداخلية معهم.** كانت مستثناة بحجّة إنّها سجلٌّ
+    // تجاريّ - وهي **نصٌّ حرّ يكتبه الفريق**، وأوّل ما يكتب فيه أحدٌ رقمَ
+    // تليفون بيده يصير الاستثناءُ ثغرةً في سياسةٍ تبدو مكتملة. والقيمةُ
+    // التجارية بعد سنة في الحالة (رَبِح/خسر) لا في نصّ مكالمةٍ منسيّة.
+    data: { name: "[redacted]", email: "[redacted]", phone: null, internalNote: null },
   });
 
+  // ── تطبيعُ الدول المكتوبة نصّاً ─────────────────────────────────
+  //
+  // 🔴 صفوفٌ قديمة تخزّن «السعودية» بدل `SA`، من قبل ما يبقى الحقلُ
+  // قائمةً مغلقة. النتيجة إنّ الفلتر بيسيبها والاسمَ الخام بيظهر على
+  // الشاشة. تتصلَّح مرّةً هنا بدل ما تفضل تُقرأ غلط للأبد.
+  //
+  // ومحصورةٌ في صفٍّ لا يُعرَف كودُه: اللي مش في القائمة يُترك كما هو -
+  // التخمينُ بيحوّل صفّاً مقروءاً غلط إلى صفٍّ غلط بثقة.
+  let normalisedCountries = 0;
+  const oddCountries = await prisma.supportThread.findMany({
+    where: { country: { not: null } },
+    select: { id: true, country: true },
+    take: 500,
+  });
+  for (const row of oddCountries) {
+    if (!row.country || isCountryCode(row.country)) continue;
+    const code = countryCodeFromName(row.country);
+    if (!code) continue;
+    await prisma.supportThread.update({ where: { id: row.id }, data: { country: code } });
+    normalisedCountries += 1;
+  }
+
   return {
+    normalisedCountries,
     deletedClicks: deletedClicks.count,
     deletedRateLimits: deletedRateLimits.count,
     deletedUnmatched: deletedUnmatched.count,

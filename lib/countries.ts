@@ -255,3 +255,26 @@ export function countriesForDisplay(locale: "ar" | "en"): Country[] {
 export function isCountryCode(v: unknown): v is string {
   return typeof v === "string" && BY_CODE.has(v);
 }
+
+/**
+ * تحويلُ اسم دولةٍ مكتوب بالنصّ إلى كودها.
+ *
+ * 🔴 **بياناتٌ قديمة تخزّن «السعودية» بدل `SA`.** صفوفٌ اتكتبت قبل ما
+ * يبقى الحقلُ قائمةً مغلقة، ونتيجتُها إنّ فلترَ الدولة بيسيبها والاسمَ
+ * بيظهر خام على الشاشة. الدالّة دي تُصلّحها في الكرون اليوميّ مرّةً
+ * واحدة، وبتقبل الاسم بالعربية أو الإنجليزية.
+ *
+ * وترجع `null` لما مش عارفة - التخمينُ هنا بيحوّل صفّاً مقروءاً غلط إلى
+ * صفٍّ غلط بثقة.
+ */
+export function countryCodeFromName(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const v = raw.trim();
+  if (!v) return null;
+  if (BY_CODE.has(v)) return v;
+  const needle = v.toLocaleLowerCase();
+  const hit = COUNTRIES.find(
+    (c) => c.ar.trim().toLocaleLowerCase() === needle || c.en.trim().toLocaleLowerCase() === needle
+  );
+  return hit ? hit.code : null;
+}

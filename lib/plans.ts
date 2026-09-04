@@ -122,7 +122,13 @@ export const PLANS: Plan[] = [
     highlighted: false,
     price: { EGP: 899, SAR: 189, USD: 49 },
     limits: {
-      seatsViewer: 1, seatsOperator: 0,
+      // 🔴 **البداية بلا فريق - صفر لا واحد.**
+      // كانت `seatsViewer: 1`، فمشترك البداية يقدر يدعو زميلاً بينما
+      // الباقة مصمَّمة لشخصٍ واحد. الجدول كان يقول «مقعد اطلاع واحد»
+      // ويعطيه فعلاً - فالوعدُ صحيح والتصميمُ غلط، وهي أسوأ الحالتين:
+      // ميزةٌ تُمنَح بلا قصد تُلغي سببَ الترقية للاحترافية.
+      // **الفريق يبدأ من الاحترافية.**
+      seatsViewer: 0, seatsOperator: 0,
       workspaces: 1, platforms: "all", adAccounts: 1, monthlySpendUsd: 15_000, verifiedConversions: 2_000,
       historyMonths: 12, conversionSync: "one", automationRules: 3, scaleKill: "apply",
       stores: 2, aiCredits: 50, deepScans: 0, aiModel: "claude-sonnet-4-6", savedViews: 5, scheduledReports: true, mcp: true,
@@ -183,8 +189,19 @@ export const PLANS: Plan[] = [
 
 export const PLAN_BY_KEY = new Map(PLANS.map((p) => [p.key, p]));
 
+/**
+ * مستوى الموديل كما يُعرض للعميل، لا اسمه.
+ *
+ * أسماء Anthropic الداخلية (`claude-sonnet-4-6`) لا تعني للمشتري شيئاً،
+ * وتتغيّر مع كلّ ترقية - فجدولٌ يعرضها يصير قديماً بلا أن يلمسه أحد.
+ * المستوى ثابت: أساسيّ ومتقدّم.
+ */
+export function aiModelTier(model: string): "aiStandard" | "aiAdvanced" {
+  return model === "claude-sonnet-4-6" ? "aiStandard" : "aiAdvanced";
+}
+
 /** الصفوف المعروضة في جدول المقارنة، بترتيب الأهمّية لا بترتيب الحقول */
-export const COMPARISON_ROWS: Array<{ key: keyof PlanLimits; kind: "number" | "text" | "bool" }> = [
+export const COMPARISON_ROWS: Array<{ key: keyof PlanLimits; kind: "number" | "text" | "bool" | "model" }> = [
   { key: "workspaces", kind: "number" },
   { key: "platforms", kind: "text" },
   { key: "adAccounts", kind: "number" },
@@ -197,6 +214,12 @@ export const COMPARISON_ROWS: Array<{ key: keyof PlanLimits; kind: "number" | "t
   { key: "deepScans", kind: "number" },
   { key: "stores", kind: "number" },
   { key: "historyMonths", kind: "number" },
+  // 🔴 **موديل الذكاء كان فرقاً بين الباقات لا يراه المشتري.**
+  // الحقل موجود منذ البداية ويفرّق فعلاً (الأساس مقابل الأحدث من
+  // الاحترافية فوق)، وكان خارج جدول المقارنة تماماً - أي أنّنا نفرّق في
+  // شيء ندفع فيه فرقاً ولا نُحسَب عليه في قرار الشراء. عرضُه أصدق من
+  // حذفه: الفرق حقيقيّ ومطبَّق في الكود بعد إصلاح الفحص العميق.
+  { key: "aiModel", kind: "model" },
   { key: "seatsViewer", kind: "number" },
   { key: "seatsOperator", kind: "number" },
   { key: "savedViews", kind: "number" },
