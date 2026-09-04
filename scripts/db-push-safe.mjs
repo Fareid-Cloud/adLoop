@@ -34,7 +34,19 @@ if (!process.env.DATABASE_URL) {
 // في Neon وSupabase. إن وُفِّر DIRECT_URL نمرّره كـ DATABASE_URL لهذه
 // العملية وحدها، فنحصل على اتصال مباشر دون وضع directUrl في المخطط
 // (وضعه هناك يُفشل المخطط كلياً لدى كل من لم يضبط المتغيّر).
-const directUrl = process.env.DIRECT_URL;
+// 🔴 **الأسماء التي يحقنها المزوّد نفسه، لا اسمٌ واحدٌ نطلبه منه.**
+//
+// كان يبحث عن `DIRECT_URL` وحده. وتكاملُ Neon يحقن الاتصالَ المباشر
+// باسمَي `DATABASE_URL_UNPOOLED` و`POSTGRES_URL_NON_POOLING` - فالمتغيّر
+// موجودٌ فعلاً والسكربت لا يراه، فيمرّ عبر الـpooler ثمّ يفشل تعديلُ
+// البنية برسالةٍ تطلب ضبطَ ما هو مضبوطٌ أصلاً باسمٍ آخر.
+//
+// والترتيب مقصود: `DIRECT_URL` أوّلاً لأنّه اختيارٌ صريح من صاحب المشروع،
+// ثمّ ما يحقنه المزوّد.
+const directUrl =
+  process.env.DIRECT_URL ||
+  process.env.DATABASE_URL_UNPOOLED ||
+  process.env.POSTGRES_URL_NON_POOLING;
 
 console.log(
   directUrl
@@ -58,6 +70,7 @@ if (res.status !== 0) {
       "الأسباب الشائعة:",
       "  - DATABASE_URL يمر عبر connection pooler ولا يسمح بتعديل البنية.",
       "    الحل: اضبط DIRECT_URL بسلسلة الاتصال المباشر (بدون pooler).",
+      "    وNeon يحقنها تلقائياً باسم DATABASE_URL_UNPOOLED - وهو مقبولٌ هنا كذلك.",
       "  - قاعدة البيانات متوقفة أو تجاوزت حصتها.",
       "  - تغيير في المخطط يتطلب تأكيداً يدوياً (احتمال فقدان بيانات).",
       "",
