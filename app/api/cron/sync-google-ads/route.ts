@@ -40,6 +40,7 @@ import { isSyncBlocked, refreshUsageAndNotify } from "@/lib/usageCaps";
 import { ownerNotSuspended } from "@/lib/accountActive";
 import { loadFeatureFlags, type FeatureFlagKey } from "@/lib/featureFlags";
 import { captureUsageSnapshots } from "@/lib/admin/usage";
+import { sendUsageAnomalyAlert } from "@/lib/usageAlertEmail";
 
 // أزواج العملات المدعومة في اختيار "العملة" بصفحة الإعدادات - بنسجل
 // سعرها يومياً كلهم مع بعض، بدل ما نحاول نحدد عملة فوترة كل حساب Google
@@ -352,6 +353,14 @@ export async function GET(req: NextRequest) {
   try {
     const snapshots = await captureUsageSnapshots();
     console.log(`[cron] سُجّلت ${snapshots} لقطة استهلاك.`);
+
+    // **التنبيه بعد اللقطة مباشرةً، لا قبلها.** الشذوذ بيتقري من آخر لقطة
+    // كاملة، فالنداء هنا بيقارن يوماً منتهياً بمعدّله - قبل الكتابة كان
+    // هيقارن يوم إمبارح بنفسه ويسكت دايماً.
+    const alert = await sendUsageAnomalyAlert();
+    if (alert.anomalies > 0) {
+      console.log(`[cron] ${alert.anomalies} حساباً باستهلاك شاذّ - البريد ${alert.sent ? "اتبعت" : "ما اتبعتش"}.`);
+    }
   } catch (err) {
     console.error("[cron] فشل تسجيل لقطات الاستهلاك:", err);
   }
