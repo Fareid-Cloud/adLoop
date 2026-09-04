@@ -1160,11 +1160,11 @@ export const dictionary = {
 
         arbitrationTitle: "التحكيم",
         arbitrationBody: "ما لم يُستثنَ صراحة أدناه، يُحسم كل نزاع ينشأ عن هذه الشروط أو يتصل بها بالتحكيم النهائي الملزم:",
-        arbitrationL1: "يكون التحكيم وفقاً لقواعد مركز القاهرة الإقليمي للتحكيم التجاري الدولي (CRCICA)، بمحكَّم فرد يعيّنه المركز إن لم يتفق الطرفان عليه، ومقر التحكيم القاهرة ولغته العربية.",
+        arbitrationL1: "يكون التحكيم وفقاً لقواعد مركز القاهرة الإقليمي للتحكيم التجاري الدولي (CRCICA)، بمحكَّم فرد يعيّنه المركز إن لم يتفق الطرفان عليه، ومقر التحكيم القاهرة ولغته العربية. وتُعقد الجلسات عن بُعد بوسيلة مرئية ما لم يقرر المحكَّم خلاف ذلك لسبب جوهري، فلا يتحمل أي طرف عبء السفر.",
         arbitrationL2: "حكم المحكَّم نهائي وملزم للطرفين، ويجوز طلب الأمر بتنفيذه من المحكمة المختصة.",
         arbitrationL3: "إجراءات التحكيم ومستنداته وحكمه سرية، ولا يجوز لأي طرف إفشاؤها إلا بقدر ما يلزم للتنفيذ أو بحكم القانون.",
         arbitrationL4: "يُستثنى من التحكيم ويبقى للمحكمة المختصة: المطالبة باشتراكات مستحقة غير مدفوعة، ودعاوى حماية الملكية الفكرية والأسرار التجارية، وطلبات الإجراءات الوقتية أو التحفظية المستعجلة.",
-        arbitrationL5: "يتحمل كل طرف أتعاب محاميه، وتُقسم رسوم المركز والمحكَّم مناصفة ابتداءً، على أن يقرر المحكَّم توزيعها النهائي في حكمه.",
+        arbitrationL5: "تُقسم رسوم المركز والمحكَّم مناصفة عند بدء الإجراءات، ثم يحمّلها المحكَّم في حكمه على الطرف الخاسر، وله أن يقضي بأتعاب محاماة معقولة عليه كذلك. فمن يرفع مطالبة لا أساس لها يتحمل كلفتها كاملة.",
 
         penaltyTitle: "التعويض الاتفاقي عن الاعتداء على حقوقنا",
         penaltyBody: "إثبات قيمة الضرر في حالات نسخ البرمجيات أو كشطها أو إفشاء أسرارها أمر شديد الصعوبة عملياً، لذلك يتفق الطرفان مقدماً - إعمالاً للمادتين 223 و224 من القانون المدني - على تعويض محدد القيمة:",
@@ -5840,11 +5840,11 @@ export const dictionary = {
 
         arbitrationTitle: "Arbitration",
         arbitrationBody: "Except as expressly carved out below, every dispute arising out of or connected with these terms is settled by final and binding arbitration:",
-        arbitrationL1: "Arbitration is under the rules of the Cairo Regional Centre for International Commercial Arbitration (CRCICA), before a sole arbitrator appointed by the Centre if the parties do not agree on one, seated in Cairo and conducted in Arabic.",
+        arbitrationL1: "Arbitration is under the rules of the Cairo Regional Centre for International Commercial Arbitration (CRCICA), before a sole arbitrator appointed by the Centre if the parties do not agree on one, seated in Cairo and conducted in Arabic. Hearings are held remotely by video unless the arbitrator directs otherwise for substantial reason, so neither party carries the burden of travel.",
         arbitrationL2: "The award is final and binding on both parties, and an order for its enforcement may be sought from the competent court.",
         arbitrationL3: "The proceedings, the documents in them and the award are confidential, and neither party may disclose them except so far as needed for enforcement or required by law.",
         arbitrationL4: "Carved out of arbitration and left to the competent court: claims for unpaid subscription fees, actions to protect intellectual property and trade secrets, and applications for urgent interim or protective relief.",
-        arbitrationL5: "Each party bears its own legal fees. The Centre's and the arbitrator's fees are shared equally at the outset, with the arbitrator deciding their final allocation in the award.",
+        arbitrationL5: "The Centre's and the arbitrator's fees are shared equally when proceedings begin, and are then placed by the arbitrator on the unsuccessful party in the award, who may also be ordered to pay reasonable legal costs. Whoever brings a claim without foundation carries its full cost.",
 
         penaltyTitle: "Agreed compensation for infringing our rights",
         penaltyBody: "Proving the value of the harm caused by copying, scraping or disclosing software is extremely difficult in practice. The parties therefore agree in advance - under Articles 223 and 224 of the Civil Code - on a fixed sum:",
