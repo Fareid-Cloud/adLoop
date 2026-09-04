@@ -211,7 +211,7 @@ function ReviewCard({ row }: { row: ReviewRow }) {
 
       {open && (
         <>
-          <div className="mt-2 max-h-80 overflow-auto rounded-xl border border-border bg-surface-raised p-3 text-[12.5px] leading-relaxed whitespace-pre-wrap text-text-primary">
+          <div className="hover-scrollbar mt-2 max-h-80 overflow-auto rounded-xl border border-border bg-surface-raised p-3 text-[12.5px] leading-relaxed whitespace-pre-wrap text-text-primary">
             {row.answer}
           </div>
 

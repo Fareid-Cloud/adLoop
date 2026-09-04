@@ -230,7 +230,7 @@ export function InboxClient({
             <>
               <button className="fixed inset-0 z-30 cursor-default" aria-label="Close" onClick={() => setFilterOpen(false)} />
               <div className="absolute inset-inline-start-0 z-40 mt-1 w-[min(92vw,34rem)] overflow-hidden rounded-xl border border-border-visible bg-surface shadow-lg">
-                <div className="grid max-h-[60vh] grid-cols-2 gap-x-1 overflow-y-auto p-1 sm:grid-cols-3">
+                <div className="hover-scrollbar grid max-h-[60vh] grid-cols-2 gap-x-1 overflow-y-auto p-1 sm:grid-cols-3">
                   <FilterSection label="Status">
                     {STATUSES.map((v) => (
                       <FilterCheck
@@ -434,7 +434,7 @@ export function InboxClient({
         {threads.length === 0 ? (
           <p className="m-0 px-2 py-8 text-center text-[12.5px] text-text-faint">Nothing matches this view.</p>
         ) : (
-          <div className="flex max-h-[calc(100dvh-12.5rem)] flex-col gap-1 overflow-y-auto p-1 -m-1">
+          <div className="hover-scrollbar flex max-h-[calc(100dvh-12.5rem)] flex-col gap-1 overflow-y-auto p-1 -m-1">
             {threads.map((t) => (
               <ThreadRowItem key={t.id} row={t} activeId={active?.id ?? null} onOpen={() => go({ thread: t.id })} onChanged={() => router.refresh()} />
             ))}
@@ -866,7 +866,7 @@ function Conversation({
       </div>
       </div>
 
-      <div className="flex-1 space-y-2.5 overflow-y-auto p-3">
+      <div className="hover-scrollbar flex-1 space-y-2.5 overflow-y-auto p-3">
         {thread.messages.map((m, i) => (
           <Fragment key={m.id}>
           {/* فاصلُ الجلسة: نفس العميل ونفس المحادثة، وفجوةٌ في الوقت بتقول

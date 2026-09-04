@@ -125,7 +125,7 @@ export function AdminShell({
           )}
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-2 pb-3">
+        <nav className="hover-scrollbar flex-1 overflow-y-auto px-2 pb-3">
           {groups.map((group, gi) => (
             <div key={group.label ?? `g${gi}`} className="mb-3">
               {group.label && !collapsed && (
