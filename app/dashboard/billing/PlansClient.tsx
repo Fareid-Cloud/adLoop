@@ -404,8 +404,10 @@ function PlanCard({
         </button>
       )}
 
-      {/* فاصلٌ منقّط: السعرُ والقرار فوقه، والتفصيلُ تحته */}
-      <div className="mb-3 border-t border-dashed border-border" />
+      {/* فاصلٌ منقّط: السعرُ والقرار فوقه، والتفصيلُ تحته.
+          🔴 وكان بلا مسافةٍ فوقه، فيلتصق بحافّة الزرّ السفلى - فيُقرأ
+          حدّاً للزرّ لا فاصلاً للبطاقة، ويبدو الزرُّ كأنّه داخلَ صندوق. */}
+      <div className="mb-3 mt-4 border-t border-dashed border-border" />
 
       <ul className="flex flex-1 flex-col gap-1.5">
         {(tr(`feats_${plan.key}`) || "").split("|").map((feat, i) => {

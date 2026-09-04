@@ -9,12 +9,26 @@
 // اللي بيسأل عن الشراء عايز يحسّ إنّه بيكلّم حدّاً بيبيع، واللي عنده مشكلة
 // عايز يحسّ إنّه بيكلّم حدّاً بيصلّح. شاشةٌ واحدة للاتنين بتخذل الاتنين.
 //
-// وشكلُها بيقول ده: عنوانٌ بيقول «مبيعات»، وحقولٌ بتسأل **مَن أنت وحجمك
-// قدّ إيه** لا «إيه المشكلة»، ووعدٌ صريح بموعدِ ردّ. وفي آخرها مخرجٌ
-// للدعم لمَن فتحها بالغلط - بدل ما يقفل ويدوّر من أوّل وجديد.
+// **والشاشةُ نصفان: لماذا، ثمّ مَن أنت.**
+//
+// كان النموذجُ وحدَه فيها - ستّةُ حقولٍ تُطلب ممّن لم يُقَل له بعدُ ما الذي
+// يشتريه. وطلبُ الاسم والشركة والهاتف قبل أيّ سببٍ يجعلها استمارةً لا
+// عرضاً، وأغلبُ مَن يفتحها بفضولٍ يقفلها عندها. فالنصفُ الأوّل يقول ما
+// يفتحه الاتّفاق، والثاني يسأل.
+//
+// **والرأسُ الأزرق العريض اتشال:** كان بياخد خُمسَ الشاشة ليقول اسمَها
+// مرّتين (عنواناً وسطراً تحته)، وبيدفع النموذجَ لتحت. العنوانُ نزل جوّه
+// العمود اليمين حيث الفعلُ نفسه، فبقي المكانُ للمحتوى.
+//
+// **وشعاراتُ المنصّات شاراتٌ لونية لا شعاراتٌ حقيقية** - قرارٌ قائمٌ في
+// المشروع كلّه لأنّ الشعاراتِ مملوكةٌ لأصحابها.
 
 import { useEffect, useState } from "react";
-import { X, Loader2, ArrowRight, Check, Clock, Zap } from "lucide-react";
+import {
+  X, Loader2, ArrowRight, Check, Clock, ShieldCheck,
+  ChartNoAxesColumn, Link2, SlidersHorizontal, UserRound,
+  Building2, User, Mail, Phone,
+} from "lucide-react";
 import { Portal } from "@/app/components/ui/Portal";
 import { Select } from "@/app/components/ui/Select";
 import { t, type Locale } from "@/lib/i18n/dictionary";
@@ -28,6 +42,23 @@ const SPEND_KEY: Record<string, string> = {
   "50k_200k": "sales.spend50k200k",
   over_200k: "sales.spendOver200k",
 };
+
+/** أيقونةٌ لكلّ ميزة: أربعُ علاماتِ صحٍّ متطابقة تُقرأ قائمةً واحدة
+ *  طويلة، وأربعُ أيقوناتٍ مختلفة تُقرأ أربعَ قدراتٍ منفصلة. */
+const WHY = [
+  { key: "why1", Icon: ChartNoAxesColumn },
+  { key: "why2", Icon: Link2 },
+  { key: "why3", Icon: SlidersHorizontal },
+  { key: "why4", Icon: UserRound },
+] as const;
+
+/** الألوانُ من `CLAUDE.md`: ميتا وتيك توك لهما لونٌ رسميّ واحد، وجوجل
+ *  أربعةٌ فلا لونَ لها - فتُترك على لون النصّ. */
+const PLATFORMS = [
+  { label: "Meta", color: "#0866FF" },
+  { label: "Google", color: null },
+  { label: "TikTok", color: "#FE2C55" },
+] as const;
 
 export function ContactSalesDialog({
   locale, name = "", email = "", country = "",
@@ -87,31 +118,22 @@ export function ContactSalesDialog({
       <div className="fixed inset-0 z-[70] grid place-items-center bg-black/55 p-4" onClick={() => setOpen(false)}>
         <div
           onClick={(e) => e.stopPropagation()}
-          className="max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-border bg-surface shadow-2xl"
+          className="relative max-h-[92dvh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-surface shadow-2xl"
         >
-          {/* رأسٌ بلون العلامة: الشاشةُ دي بتتقري «شركة بتكلّمك» لا «نموذج
-              دعم» - والفرقُ في أوّل نصف ثانية من النظر إليها. */}
-          <div className="flex items-start justify-between gap-3 rounded-t-2xl bg-accent px-5 py-4 text-white">
-            <div>
-              <h2 className="m-0 text-[16px] font-semibold">{tr("title")}</h2>
-              {!done && <p className="m-0 mt-1 text-[12.5px] leading-relaxed opacity-90">{tr("subtitle")}</p>}
-            </div>
-            <button
-              onClick={() => setOpen(false)}
-              aria-label={tr("close")}
-              className="grid size-7 shrink-0 place-items-center rounded-lg text-white/80 transition-colors hover:bg-white/15 hover:text-white"
-            >
-              <X size={15} />
-            </button>
-          </div>
+          <button
+            onClick={() => setOpen(false)}
+            aria-label={tr("close")}
+            className="absolute top-3 z-10 grid size-8 place-items-center rounded-lg text-text-faint transition-colors hover:bg-surface-raised hover:text-text-primary"
+            style={{ insetInlineEnd: 12 }}
+          >
+            <X size={16} />
+          </button>
 
           {done ? (
             /* **شاشةُ الوصول تُرسَم، لا تَظهر.**
                علامةُ صحٍّ ساكنةٌ تُقرأ «انتهى النموذج»؛ والدائرةُ التي تُغلَق
-               ثمّ العلامةُ التي تُخَطّ بعدها تُقرأ **«وصل»** - وهي الرسالةُ
-               المطلوبة بالضبط ممّن سلّم بياناته وينتظر مكالمة. نصفُ ثانيةٍ
-               واحدة، وتحترم `prefers-reduced-motion`. */
-            <div className="px-5 py-8 text-center">
+               ثمّ العلامةُ التي تُخَطّ بعدها تُقرأ **«وصل»**. */
+            <div className="px-5 py-12 text-center">
               <span className="adl-success-wrap mx-auto mb-4 block w-fit">
                 <svg viewBox="0 0 56 56" className="size-14" fill="none" aria-hidden="true">
                   <circle cx="28" cy="28" r="26" className="stroke-verified/25" strokeWidth="2.5" />
@@ -128,152 +150,183 @@ export function ContactSalesDialog({
                   />
                 </svg>
               </span>
-              <p className="m-0 text-[15px] font-medium text-text-primary">{tr("doneTitle")}</p>
-              <p className="m-0 mt-1.5 text-[12.5px] leading-relaxed text-text-muted">
+              <p className="m-0 text-[16px] font-semibold text-text-primary">{tr("doneTitle")}</p>
+              <p className="m-0 mx-auto mt-1.5 max-w-sm text-[12.5px] leading-relaxed text-text-muted">
                 {tr("doneBody", { email: form.email })}
               </p>
-              {/* 🔴 **الزرُّ الوحيد في الشاشة كان يبدو معطَّلاً.** زرٌّ رمادي
-                  بلا لونٍ تحت رسالة نجاح يُقرأ كخيارٍ ثانوي، فيقعد صاحبُه
-                  ينتظر شيئاً آخر يحصل. ولمّا يكون **الفعلَ الوحيد المتاح**
-                  فهو الفعلُ الرئيسيّ بالتعريف. */}
-              <button onClick={() => setOpen(false)} className="btn btn-primary mt-4 px-6">
+              {/* 🔴 الفعلُ الوحيد المتاح هو الفعلُ الرئيسيّ بالتعريف. زرٌّ
+                  رمادي تحت رسالة نجاح يُقرأ خياراً ثانوياً، فيقعد صاحبُه
+                  ينتظر شيئاً آخر يحصل. */}
+              <button onClick={() => setOpen(false)} className="btn btn-primary mt-5 px-7">
                 {tr("close")}
               </button>
             </div>
           ) : (
-            /* **نصفان: لماذا، ثم مَن أنت.**
-               كان النموذجُ وحدَه في الشاشة - ستّةُ حقولٍ تُطلب ممّن لم
-               يُقَل له بعدُ ما الذي يشتريه. وطلبُ الاسم والشركة والهاتف
-               قبل أيّ سببٍ يجعل الشاشةَ استمارةً لا عرضاً، وأغلبُ مَن
-               يفتحها بفضولٍ يقفلها عندها.
-               فالنصفُ الأوّل يقول ما يفتحه الاتّفاق في أربعة أسطر، والثاني
-               يسأل. وعلى الموبايل يقع فوقه لا جنبه - نفس الترتيب. */
-            <div className="grid md:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)]">
-              <aside className="border-b border-border bg-accent/[0.05] p-5 md:border-b-0 md:border-e md:border-border">
-                <h3 className="m-0 mb-3 text-[13px] font-semibold text-text-primary">{tr("whyTitle")}</h3>
-                <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
-                  {["why1", "why2", "why3", "why4"].map((k) => (
-                    <li key={k} className="flex items-start gap-2 text-[12.5px] leading-relaxed text-text-muted">
-                      <span className="mt-0.5 grid size-[17px] shrink-0 place-items-center rounded-md bg-accent/12">
-                        <Check size={11} strokeWidth={3} className="text-accent" />
+            <div className="grid md:grid-cols-[minmax(0,0.82fr)_minmax(0,1fr)]">
+              {/* ============ النصف الأوّل: لماذا ============ */}
+              <aside className="adl-sales-aside border-b border-border p-6 md:border-b-0 md:border-e md:border-border md:p-7">
+                <span className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-text-faint">
+                  {tr("eyebrow")}
+                </span>
+                {/* السطرُ الثاني بلون العلامة: العينُ تقف عليه، وهو الوعدُ
+                    نفسُه («حجمك أنت») لا الفعلُ العامّ. */}
+                <h2 className="m-0 mt-2 text-[26px] font-semibold leading-[1.15] tracking-tight text-text-primary">
+                  {tr("headline1")}
+                  <br />
+                  <span className="text-accent">{tr("headline2")}</span>
+                </h2>
+                <p className="m-0 mt-3 text-[12.5px] leading-relaxed text-text-muted">{tr("blurb")}</p>
+
+                <ul className="m-0 mt-6 flex list-none flex-col gap-3.5 p-0">
+                  {WHY.map(({ key, Icon }) => (
+                    <li key={key} className="flex items-start gap-3 text-[12.5px] leading-relaxed text-text-primary">
+                      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent/10">
+                        <Icon size={16} className="text-accent" />
                       </span>
-                      {tr(k)}
+                      <span className="pt-1.5">{tr(key)}</span>
                     </li>
                   ))}
                 </ul>
-                <div className="mt-4 flex flex-col gap-1.5 border-t border-border pt-3">
-                  <span className="flex items-center gap-1.5 text-[11.5px] text-text-faint">
-                    <Clock size={12} /> {tr("whyFootCall")}
-                  </span>
-                  <span className="flex items-center gap-1.5 text-[11.5px] text-text-faint">
-                    <Zap size={12} /> {tr("whyFootSetup")}
-                  </span>
+
+                {/* شاراتٌ لونية لا شعارات - الشعاراتُ مملوكةٌ لأصحابها.
+                    وتُخفى على الموبايل: العمودُ فوق النموذج هناك، فكلُّ
+                    صفٍّ إضافيّ يدفع أوّلَ حقلٍ أبعدَ عن الشاشة الأولى. */}
+                <div className="mt-7 hidden md:block">
+                  <div className="inline-flex items-center gap-3 rounded-full border border-border bg-surface px-4 py-2">
+                    {PLATFORMS.map((p, i) => (
+                      <span key={p.label} className="flex items-center gap-3">
+                        {i > 0 && <span className="h-3.5 w-px bg-border" />}
+                        <span
+                          className="text-[12.5px] font-semibold"
+                          style={p.color ? { color: p.color } : undefined}
+                        >
+                          {p.label}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                  <p className="m-0 mt-2 text-[11.5px] leading-relaxed text-text-faint">{tr("platformsNote")}</p>
                 </div>
               </aside>
 
-              <form onSubmit={submit} className="p-5">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <FieldWrap label={tr("company")} required>
-                  <input
-                    required
-                    value={form.company}
-                    onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
-                    className="field w-full"
-                  />
-                </FieldWrap>
-                <FieldWrap label={tr("name")} required>
-                  <input
-                    required
-                    value={form.name}
-                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                    className="field w-full"
-                  />
-                </FieldWrap>
-                <FieldWrap label={tr("email")} required>
-                  <input
-                    required
-                    type="email"
-                    dir="ltr"
-                    value={form.email}
-                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                    className="field w-full"
-                  />
-                </FieldWrap>
-                {/* 🔴 **الهاتف مطلوبٌ لا اختياريّ.** الوعدُ في هذه الشاشة
-                    «مكالمةٌ قصيرة»، وطلبٌ بلا رقمٍ يجعل أوّلَ خطوةٍ بعده
-                    بريداً يسأل عن الرقم - أي يومٌ ضائعٌ في صفقةٍ اتّفاقية،
-                    وفرصةٌ لألّا يردّ. ومَن لا يترك رقماً غالباً لم يكن
-                    ليردّ على المكالمة أصلاً. */}
-                <FieldWrap label={tr("phone")} required>
-                  <input
-                    required
-                    dir="ltr"
-                    inputMode="tel"
-                    value={form.phone}
-                    onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                    className="field w-full"
-                  />
-                </FieldWrap>
+              {/* ============ النصف الثاني: مَن أنت ============ */}
+              <form onSubmit={submit} className="p-6 md:p-7">
+                <h3 className="m-0 pe-8 text-[20px] font-semibold tracking-tight text-text-primary">
+                  {tr("title")}
+                </h3>
+                <p className="m-0 mt-1.5 text-[12.5px] leading-relaxed text-text-muted">{tr("formSubtitle")}</p>
 
-                {/* الحقلان دول همّ **سببُ وجود النموذج**: من غيرهم المكالمة
-                    الجاية بتبدأ من «حضرتك حجمك قدّ إيه؟» وبتضيع فيها. */}
-                <FieldWrap label={tr("adAccounts")} hint={tr("optional")}>
-                  <input
-                    type="number"
-                    min={1}
-                    inputMode="numeric"
-                    value={form.adAccounts}
-                    onChange={(e) => setForm((f) => ({ ...f, adAccounts: e.target.value }))}
-                    className="field w-full"
-                  />
-                </FieldWrap>
-                <FieldWrap label={tr("monthlySpend")} hint={tr("optional")}>
-                  <Select
-                    locale={locale}
-                    value={form.monthlySpend}
-                    onChange={(v) => setForm((f) => ({ ...f, monthlySpend: v }))}
-                    placeholder={tr("spendPick")}
-                    options={SPEND_BANDS.map((b) => ({ value: b, label: t(locale, SPEND_KEY[b]) }))}
-                  />
-                </FieldWrap>
-              </div>
+                <div className="mt-5 grid gap-3">
+                  <FieldWrap label={tr("company")} required icon={Building2}>
+                    <input
+                      required
+                      value={form.company}
+                      onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
+                      placeholder={tr("companyPlaceholder")}
+                      className="field w-full ps-9"
+                    />
+                  </FieldWrap>
+                  <FieldWrap label={tr("name")} required icon={User}>
+                    <input
+                      required
+                      value={form.name}
+                      onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                      className="field w-full ps-9"
+                    />
+                  </FieldWrap>
+                  <FieldWrap label={tr("email")} required icon={Mail}>
+                    <input
+                      required
+                      type="email"
+                      dir="ltr"
+                      value={form.email}
+                      onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                      className="field w-full ps-9"
+                    />
+                  </FieldWrap>
+                  {/* 🔴 **الهاتف مطلوبٌ لا اختياريّ.** الوعدُ في هذه الشاشة
+                      «مكالمةٌ قصيرة»، وطلبٌ بلا رقمٍ يجعل أوّلَ خطوةٍ بعده
+                      بريداً يسأل عن الرقم - أي يومٌ ضائعٌ في صفقةٍ اتّفاقية،
+                      وفرصةٌ لألّا يردّ. */}
+                  <FieldWrap label={tr("phone")} required icon={Phone}>
+                    <input
+                      required
+                      dir="ltr"
+                      inputMode="tel"
+                      value={form.phone}
+                      onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                      className="field w-full ps-9"
+                    />
+                  </FieldWrap>
 
-              <div className="mt-3">
-                <FieldWrap label={tr("message")} hint={tr("optional")}>
-                  <textarea
-                    rows={3}
-                    value={form.message}
-                    onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-                    placeholder={tr("messagePlaceholder")}
-                    className="field w-full resize-none"
-                  />
-                </FieldWrap>
-              </div>
+                  {/* الحقلان دول همّ **سببُ وجود النموذج**: من غيرهم المكالمة
+                      الجاية بتبدأ من «حضرتك حجمك قدّ إيه؟» وبتضيع فيها. */}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <FieldWrap label={tr("adAccounts")} hint={tr("optional")}>
+                      <input
+                        type="number"
+                        min={1}
+                        inputMode="numeric"
+                        value={form.adAccounts}
+                        onChange={(e) => setForm((f) => ({ ...f, adAccounts: e.target.value }))}
+                        className="field w-full"
+                      />
+                    </FieldWrap>
+                    <FieldWrap label={tr("monthlySpend")} hint={tr("optional")}>
+                      <Select
+                        locale={locale}
+                        value={form.monthlySpend}
+                        onChange={(v) => setForm((f) => ({ ...f, monthlySpend: v }))}
+                        placeholder={tr("spendPick")}
+                        options={SPEND_BANDS.map((b) => ({ value: b, label: t(locale, SPEND_KEY[b]) }))}
+                      />
+                    </FieldWrap>
+                  </div>
 
-              {error && <p className="mt-2 text-[12.5px] text-critical">{error}</p>}
+                  <FieldWrap label={tr("message")} hint={tr("optional")}>
+                    <textarea
+                      rows={2}
+                      value={form.message}
+                      onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
+                      placeholder={tr("messagePlaceholder")}
+                      className="field w-full resize-none"
+                    />
+                  </FieldWrap>
+                </div>
 
-              <button
-                type="submit"
-                disabled={busy}
-                className="btn btn-primary mt-4 w-full justify-center gap-1.5 disabled:opacity-60"
-              >
-                {busy ? <Loader2 size={14} className="animate-spin" /> : null}
-                {busy ? tr("sending") : tr("submit")}
-              </button>
+                {error && <p className="mt-2.5 text-[12.5px] text-critical">{error}</p>}
 
-              {/* مخرجٌ لمَن فتحها بالغلط: من غيره بيقفل ويدوّر من الأول،
-                  وأغلبُهم مابيدوّرش. */}
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  window.dispatchEvent(new CustomEvent("adloop:open-support"));
-                }}
-                className="mt-3 flex w-full items-center justify-center gap-1 text-[12px] text-text-faint transition-colors hover:text-text-primary"
-              >
-                {tr("supportInstead")}
-                <ArrowRight size={12} className="rtl:rotate-180" />
-              </button>
+                <button
+                  type="submit"
+                  disabled={busy}
+                  className="adl-shine btn btn-primary mt-5 w-full justify-center gap-2 py-3 text-[14px] disabled:opacity-60"
+                >
+                  {busy ? <Loader2 size={15} className="animate-spin" /> : null}
+                  {busy ? tr("sending") : tr("submit")}
+                  {!busy && <ArrowRight size={15} className="rtl:rotate-180" />}
+                </button>
+
+                {/* سطرا الطمأنة تحت الزرّ لا فوقه: يُقرآن في اللحظة التي
+                    يتردّد فيها الإصبع، وهي بعد قراءة الزرّ لا قبله. */}
+                <div className="mt-4 flex items-center justify-center gap-4 border-t border-border pt-3 text-[11.5px] text-text-faint">
+                  <span className="flex items-center gap-1.5"><Clock size={13} /> {tr("whyFootCall")}</span>
+                  <span className="h-3.5 w-px bg-border" />
+                  <span className="flex items-center gap-1.5"><ShieldCheck size={13} /> {tr("whyFootSetup")}</span>
+                </div>
+
+                {/* مخرجٌ لمَن فتحها بالغلط: من غيره بيقفل ويدوّر من الأول،
+                    وأغلبُهم مابيدوّرش. */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    window.dispatchEvent(new CustomEvent("adloop:open-support"));
+                  }}
+                  className="mt-3 flex w-full items-center justify-center gap-1 text-[12px] text-text-faint transition-colors hover:text-text-primary"
+                >
+                  {tr("supportInstead")}
+                  <ArrowRight size={12} className="rtl:rotate-180" />
+                </button>
               </form>
             </div>
           )}
@@ -284,9 +337,15 @@ export function ContactSalesDialog({
 }
 
 function FieldWrap({
-  label, hint, required, children,
+  label, hint, required, icon: Icon, children,
 }: {
-  label: string; hint?: string; required?: boolean; children: React.ReactNode;
+  label: string;
+  hint?: string;
+  required?: boolean;
+  /** أيقونةٌ داخل الحقل - للحقول الأربعة الأولى وحدها. الأيقونةُ على كلّ
+   *  حقلٍ تصير زخرفةً متكرّرة، وعلى الأساسية منها تصير علامةَ نوعٍ تُقرأ. */
+  icon?: typeof Building2;
+  children: React.ReactNode;
 }) {
   return (
     <label className="block">
@@ -295,7 +354,19 @@ function FieldWrap({
         {required && <span className="ms-1 text-critical">*</span>}
         {hint && <span className="ms-1 text-[11px] text-text-faint">({hint})</span>}
       </span>
-      {children}
+      {Icon ? (
+        <span className="relative block">
+          <Icon
+            size={15}
+            aria-hidden="true"
+            className="pointer-events-none absolute top-1/2 -translate-y-1/2 text-text-faint"
+            style={{ insetInlineStart: 11 }}
+          />
+          {children}
+        </span>
+      ) : (
+        children
+      )}
     </label>
   );
 }
