@@ -1,7 +1,11 @@
 // sentry.server.config.ts
 import * as Sentry from "@sentry/nextjs";
+import { scrubEvent, SCRUB_PII } from "@/lib/sentryScrub";
 
 Sentry.init({
+  // 🔴 لا نُرسل PII افتراضياً، و`beforeSend` شبكةُ أمانٍ فوقه — التفصيل في lib/sentryScrub.ts
+  sendDefaultPii: SCRUB_PII,
+  beforeSend: scrubEvent,
   dsn: process.env.SENTRY_DSN,
   // 100% في التطوير عشان نشوف كل حاجة، 10% في الإنتاج عشان نفضل جوه
   // الحد المجاني (5000 خطأ شهرياً) حتى لو الاستخدام زاد
