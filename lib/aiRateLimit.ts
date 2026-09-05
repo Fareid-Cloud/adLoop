@@ -343,6 +343,43 @@ export async function checkAndConsumeChatQuota(userId: string): Promise<QuotaRes
   return { allowed: true, remainingThisMonth: effectiveMonthly - (monthlyCount + 1) };
 }
 
+/**
+ * ردُّ حصّة محادثةٍ خُصمت ولم تُسلَّم - نفس مبدأ `refundAiRefreshQuota`.
+ *
+ * 🔴 **كان الردُّ مكتوباً بالإيد في مسار المحادثة، وناقصاً من ثلاث جهات:**
+ *
+ *   ١) **العدّادُ الساعيّ لم يكن يُردّ إطلاقاً.** `checkAndConsumeChatQuota`
+ *      يخصم شهرياً *وساعياً*، والردُّ اليدويّ أعاد الشهريَّ وحده - فتبقى
+ *      خانةُ الساعة مستهلَكةً على نداءٍ فشل، ويُمنع صاحبُها من إعادة
+ *      المحاولة بسبب فشلٍ ليس ذنبَه.
+ *
+ *   ٢) **`update` خام بلا `gt: 0`.** التعليقُ فوق `refundAiRefreshQuota`
+ *      يشرح العطلَ بعينه: استردادان متوازيان يقرآن الرقمَ نفسه فينقص
+ *      واحداً - أو ينزل تحت الصفر فيصير رصيداً مجّانياً.
+ *
+ *   ٣) **بلا فحص المالك.** المالكُ لا يُخصَم منه أصلاً، فالردُّ عليه يمنحه
+ *      عدّاداً سالباً.
+ *
+ * والشهريُّ هنا `aiRefreshMonthlyCount` عن قصدٍ لا خطأً: الحوضُ الشهريُّ
+ * **مشتركٌ** بين التحديث والمحادثة، وهو ما يخصمه الاستهلاكُ نفسه.
+ */
+export async function refundChatQuota(userId: string): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true },
+  });
+  if (!user || isOwnerEmail(user.email)) return;
+
+  await prisma.user.updateMany({
+    where: { id: userId, aiRefreshMonthlyCount: { gt: 0 } },
+    data: { aiRefreshMonthlyCount: { decrement: 1 } },
+  });
+  await prisma.user.updateMany({
+    where: { id: userId, aiChatHourlyCount: { gt: 0 } },
+    data: { aiChatHourlyCount: { decrement: 1 } },
+  });
+}
+
 // ==================== فحص جودة صور الإعلانات ====================
 // كانت من غير أي حد أقصى خالص - ثغرة مالية حقيقية. 30/شهر، 5/ساعة
 // (سقف أعلى نسبياً - فحص إعلانات كتير مرة واحدة استخدام شرعي متوقّع)

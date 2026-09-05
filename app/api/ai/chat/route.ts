@@ -11,7 +11,7 @@ import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getActiveWorkspace } from "@/lib/activeWorkspace";
 import { blockAiInDemo } from "@/lib/demo";
-import { checkAndConsumeChatQuota, isAiConfigured } from "@/lib/aiRateLimit";
+import { checkAndConsumeChatQuota, refundChatQuota, isAiConfigured } from "@/lib/aiRateLimit";
 import { planModelFor } from "@/lib/plans";
 import {
   gatherAgentContext, hasEnoughData, type AgentContext,
@@ -114,9 +114,10 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[ai/chat] فشل النداء:", err);
     // الرصيد خُصم قبل النداء، وفشلُ النداء ليس ذنب المستخدم - يُردّ إليه.
-    await prisma.user
-      .update({ where: { id: user.id }, data: { aiRefreshMonthlyCount: { decrement: 1 } } })
-      .catch(() => {});
+    // **عبر `refundChatQuota` لا بكتابةٍ خام هنا:** اليدويّةُ كانت تردّ
+    // الشهريَّ وحده وتترك الساعيَّ مستهلَكاً، وبلا شرط `gt: 0` فتنزل تحت
+    // الصفر عند استردادين متوازيين، وبلا فحص المالك. التفصيل عند الدالّة.
+    await refundChatQuota(user.id).catch(() => {});
     return NextResponse.json({ error: t(locale, "aiAsk.errFailed") }, { status: 502 });
   }
 }
